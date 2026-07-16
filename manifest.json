@@ -1,9 +1,9 @@
 {
-  "id": "A1MSTODO",
-  "name": "A1MSTODO",
+  "id": "fluent-tasks",
+  "name": "Fluent Tasks",
   "version": "1.0.0",
   "minAppVersion": "1.0.0",
-  "description": "A Microsoft To-Do inspired task management plugin for Obsidian.",
+  "description": "A beautiful, drag-and-drop task manager inspired by Fluent Design.",
   "author": "Jeff1024",
   "isDesktopOnly": false
 }

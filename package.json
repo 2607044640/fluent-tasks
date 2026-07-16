@@ -1,7 +1,7 @@
 {
-  "name": "MStodo",
+  "name": "fluent-tasks",
   "version": "1.0.0",
-  "description": "Microsoft To-Do replica for Obsidian",
+  "description": "A beautiful, drag-and-drop task manager inspired by Fluent Design.",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",

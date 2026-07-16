@@ -1,18 +1,18 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
-import type MStodoPlugin from "./main";
+import type FluentTasksPlugin from "./main";
 
-export interface MStodoSettings {
+export interface FluentTasksSettings {
     accentColor: string;
 }
 
-export const DEFAULT_SETTINGS: MStodoSettings = {
+export const DEFAULT_SETTINGS: FluentTasksSettings = {
     accentColor: "#8b5cf6"
 }
 
-export class MStodoSettingTab extends PluginSettingTab {
-    plugin: MStodoPlugin;
+export class FluentTasksSettingTab extends PluginSettingTab {
+    plugin: FluentTasksPlugin;
 
-    constructor(app: App, plugin: MStodoPlugin) {
+    constructor(app: App, plugin: FluentTasksPlugin) {
         super(app, plugin);
         this.plugin = plugin;
     }
@@ -21,7 +21,7 @@ export class MStodoSettingTab extends PluginSettingTab {
         const { containerEl } = this;
         containerEl.empty();
 
-        containerEl.createEl("h2", { text: "MStodo Settings" });
+        containerEl.createEl("h2", { text: "Fluent Tasks Settings" });
 
         // Use Obsidian's native addColorPicker so the UI renders correctly
         const colorSetting = new Setting(containerEl)

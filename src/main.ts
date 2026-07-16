@@ -36,7 +36,7 @@ class TaskSidebarViewWrapper extends ItemView {
     }
 
     getViewType(): string { return VIEW_TYPE_SIDEBAR; }
-    getDisplayText(): string { return "MStodo Lists"; }
+    getDisplayText(): string { return "Fluent Tasks"; }
     getIcon(): string { return "list"; }
 
     async onOpen(): Promise<void> {
@@ -66,7 +66,7 @@ class TaskMainViewWrapper extends ItemView {
     }
 
     getViewType(): string { return VIEW_TYPE_MAIN; }
-    getDisplayText(): string { return "MStodo Tasks"; }
+    getDisplayText(): string { return "Tasks"; }
     getIcon(): string { return "check-square"; }
 
     async onOpen(): Promise<void> {
@@ -101,7 +101,7 @@ class TaskDetailViewWrapper extends ItemView {
     }
 
     getViewType(): string { return VIEW_TYPE_DETAIL; }
-    getDisplayText(): string { return "MStodo Detail"; }
+    getDisplayText(): string { return "Task Details"; }
     getIcon(): string { return "file-text"; }
 
     async onOpen(): Promise<void> {
@@ -129,13 +129,13 @@ class TaskDetailViewWrapper extends ItemView {
 // Plugin
 // =============================================
 
-export default class MStodoPlugin extends Plugin {
+export default class FluentTasksPlugin extends Plugin {
     private dataService!: DataService;
-    settings!: MStodoSettings;
+    settings!: FluentTasksSettings;
 
     async onload(): Promise<void> {
         Logger.init(this.app);
-        Logger.log("MStodo plugin loading...");
+        Logger.log("Fluent Tasks plugin loading...");
         
         window.addEventListener('error', e => Logger.log("Global error:", e.error?.stack || e.message));
         window.addEventListener('unhandledrejection', e => Logger.log("Unhandled rejection:", e.reason?.stack || e.reason));
@@ -146,7 +146,7 @@ export default class MStodoPlugin extends Plugin {
         // FIX: Register settings tab synchronously!
         // If we await loadSettings BEFORE adding the tab, plugins like 'settings-in-tab'
         // that monkey-patch the settings gear will miss our tab and cause the gear button to break.
-        this.addSettingTab(new MStodoSettingTab(this.app, this));
+        this.addSettingTab(new FluentTasksSettingTab(this.app, this));
 
         // Register all three view types (must be synchronous, before layout ready)
         this.registerView(VIEW_TYPE_SIDEBAR, (leaf) => new TaskSidebarViewWrapper(leaf, this.dataService));
@@ -154,32 +154,32 @@ export default class MStodoPlugin extends Plugin {
         this.registerView(VIEW_TYPE_DETAIL, (leaf) => new TaskDetailViewWrapper(leaf, this.dataService));
 
         // Ribbon icon - always visible in left sidebar
-        this.addRibbonIcon("check-square", "Open A1MSTODO", () => {
+        this.addRibbonIcon("check-square", "Open Fluent Tasks", () => {
             this.activateAllViews();
         });
 
         // Register commands
         this.addCommand({
-            id: "open-mstodo",
-            name: "Open MStodo",
+            id: "open-fluent-tasks",
+            name: "Open Fluent Tasks",
             callback: () => this.activateAllViews(),
         });
 
         this.addCommand({
-            id: "open-mstodo-sidebar",
-            name: "Open MStodo Sidebar",
+            id: "open-fluent-tasks-sidebar",
+            name: "Open Fluent Tasks Sidebar",
             callback: () => this.activateView(VIEW_TYPE_SIDEBAR, "left"),
         });
 
         this.addCommand({
-            id: "open-mstodo-main",
-            name: "Open MStodo Main View",
+            id: "open-fluent-tasks-main",
+            name: "Open Fluent Tasks Main View",
             callback: () => this.activateView(VIEW_TYPE_MAIN, "center"),
         });
 
         this.addCommand({
-            id: "open-mstodo-detail",
-            name: "Open MStodo Detail View",
+            id: "open-fluent-tasks-detail",
+            name: "Open Fluent Tasks Detail View",
             callback: () => this.activateView(VIEW_TYPE_DETAIL, "right"),
         });
 
@@ -231,7 +231,7 @@ export default class MStodoPlugin extends Plugin {
         this.app.workspace.detachLeavesOfType(VIEW_TYPE_MAIN);
         this.app.workspace.detachLeavesOfType(VIEW_TYPE_DETAIL);
 
-        Logger.log("MStodo plugin unloaded.");
+        Logger.log("Fluent Tasks plugin unloaded.");
     }
 
     // =============================================

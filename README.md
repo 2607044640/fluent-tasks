@@ -1,4 +1,4 @@
-# MStodo - Microsoft To-Do Replica for Obsidian
+# Fluent Tasks - A beautiful task manager for Obsidian
 
 **Author**: Jeff1024  
 **Framework**: TypeScript + Svelte  

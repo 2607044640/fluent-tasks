@@ -7,9 +7,9 @@
 // =============================================
 // View Type Constants
 // =============================================
-export const VIEW_TYPE_SIDEBAR = "ms-todo-sidebar";
-export const VIEW_TYPE_MAIN = "ms-todo-main";
-export const VIEW_TYPE_DETAIL = "ms-todo-detail";
+export const VIEW_TYPE_SIDEBAR = "fluent-tasks-sidebar";
+export const VIEW_TYPE_MAIN = "fluent-tasks-main";
+export const VIEW_TYPE_DETAIL = "fluent-tasks-detail";
 
 export const DATA_FOLDER = "TodoData";
 

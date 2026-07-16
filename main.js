@@ -49,15 +49,15 @@ var require_styles = __commonJS({
 // src/main.ts
 var main_exports = {};
 __export(main_exports, {
-  default: () => MStodoPlugin
+  default: () => FluentTasksPlugin
 });
 module.exports = __toCommonJS(main_exports);
 var import_obsidian6 = require("obsidian");
 
 // src/types.ts
-var VIEW_TYPE_SIDEBAR = "ms-todo-sidebar";
-var VIEW_TYPE_MAIN = "ms-todo-main";
-var VIEW_TYPE_DETAIL = "ms-todo-detail";
+var VIEW_TYPE_SIDEBAR = "fluent-tasks-sidebar";
+var VIEW_TYPE_MAIN = "fluent-tasks-main";
+var VIEW_TYPE_DETAIL = "fluent-tasks-detail";
 var DATA_FOLDER = "TodoData";
 
 // src/EventBus.ts
@@ -7986,31 +7986,6 @@ var import_obsidian5 = require("obsidian");
 var DEFAULT_SETTINGS = {
   accentColor: "#8b5cf6"
 };
-var MStodoSettingTab = class extends import_obsidian5.PluginSettingTab {
-  constructor(app, plugin) {
-    super(app, plugin);
-    this.plugin = plugin;
-  }
-  display() {
-    const { containerEl } = this;
-    containerEl.empty();
-    containerEl.createEl("h2", { text: "MStodo Settings" });
-    const colorSetting = new import_obsidian5.Setting(containerEl).setName("Accent Color").setDesc("Choose the primary accent color for the plugin (e.g., active borders, stars).").addColorPicker((color) => color.setValue(this.plugin.settings.accentColor).onChange(async (value) => {
-      this.plugin.settings.accentColor = value;
-      await this.plugin.saveSettings();
-      this.plugin.applySettings();
-    }));
-    const nativeInput = colorSetting.controlEl.querySelector('input[type="color"]');
-    if (nativeInput) {
-      nativeInput.addEventListener("input", async (e) => {
-        const value = e.target.value;
-        this.plugin.settings.accentColor = value;
-        await this.plugin.saveSettings();
-        this.plugin.applySettings();
-      });
-    }
-  }
-};
 
 // src/main.ts
 var TaskSidebarViewWrapper = class extends import_obsidian6.ItemView {
@@ -8023,7 +7998,7 @@ var TaskSidebarViewWrapper = class extends import_obsidian6.ItemView {
     return VIEW_TYPE_SIDEBAR;
   }
   getDisplayText() {
-    return "MStodo Lists";
+    return "Fluent Tasks";
   }
   getIcon() {
     return "list";
@@ -8053,7 +8028,7 @@ var TaskMainViewWrapper = class extends import_obsidian6.ItemView {
     return VIEW_TYPE_MAIN;
   }
   getDisplayText() {
-    return "MStodo Tasks";
+    return "Tasks";
   }
   getIcon() {
     return "check-square";
@@ -8087,7 +8062,7 @@ var TaskDetailViewWrapper = class extends import_obsidian6.ItemView {
     return VIEW_TYPE_DETAIL;
   }
   getDisplayText() {
-    return "MStodo Detail";
+    return "Task Details";
   }
   getIcon() {
     return "file-text";
@@ -8110,10 +8085,10 @@ var TaskDetailViewWrapper = class extends import_obsidian6.ItemView {
     return this.component;
   }
 };
-var MStodoPlugin = class extends import_obsidian6.Plugin {
+var FluentTasksPlugin = class extends import_obsidian6.Plugin {
   async onload() {
     Logger.init(this.app);
-    Logger.log("MStodo plugin loading...");
+    Logger.log("Fluent Tasks plugin loading...");
     window.addEventListener("error", (e) => {
       var _a;
       return Logger.log("Global error:", ((_a = e.error) == null ? void 0 : _a.stack) || e.message);
@@ -8123,31 +8098,31 @@ var MStodoPlugin = class extends import_obsidian6.Plugin {
       return Logger.log("Unhandled rejection:", ((_a = e.reason) == null ? void 0 : _a.stack) || e.reason);
     });
     this.dataService = new DataService(this.app);
-    this.addSettingTab(new MStodoSettingTab(this.app, this));
+    this.addSettingTab(new FluentTasksSettingTab(this.app, this));
     this.registerView(VIEW_TYPE_SIDEBAR, (leaf) => new TaskSidebarViewWrapper(leaf, this.dataService));
     this.registerView(VIEW_TYPE_MAIN, (leaf) => new TaskMainViewWrapper(leaf, this.dataService));
     this.registerView(VIEW_TYPE_DETAIL, (leaf) => new TaskDetailViewWrapper(leaf, this.dataService));
-    this.addRibbonIcon("check-square", "Open A1MSTODO", () => {
+    this.addRibbonIcon("check-square", "Open Fluent Tasks", () => {
       this.activateAllViews();
     });
     this.addCommand({
-      id: "open-mstodo",
-      name: "Open MStodo",
+      id: "open-fluent-tasks",
+      name: "Open Fluent Tasks",
       callback: () => this.activateAllViews()
     });
     this.addCommand({
-      id: "open-mstodo-sidebar",
-      name: "Open MStodo Sidebar",
+      id: "open-fluent-tasks-sidebar",
+      name: "Open Fluent Tasks Sidebar",
       callback: () => this.activateView(VIEW_TYPE_SIDEBAR, "left")
     });
     this.addCommand({
-      id: "open-mstodo-main",
-      name: "Open MStodo Main View",
+      id: "open-fluent-tasks-main",
+      name: "Open Fluent Tasks Main View",
       callback: () => this.activateView(VIEW_TYPE_MAIN, "center")
     });
     this.addCommand({
-      id: "open-mstodo-detail",
-      name: "Open MStodo Detail View",
+      id: "open-fluent-tasks-detail",
+      name: "Open Fluent Tasks Detail View",
       callback: () => this.activateView(VIEW_TYPE_DETAIL, "right")
     });
     this.loadStyles();
@@ -8179,7 +8154,7 @@ var MStodoPlugin = class extends import_obsidian6.Plugin {
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_SIDEBAR);
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_MAIN);
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_DETAIL);
-    Logger.log("MStodo plugin unloaded.");
+    Logger.log("Fluent Tasks plugin unloaded.");
   }
   // =============================================
   // Settings Management
