@@ -1,0 +1,27 @@
+{
+  "name": "MStodo",
+  "version": "1.0.0",
+  "description": "Microsoft To-Do replica for Obsidian",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "node esbuild.config.mjs production"
+  },
+  "keywords": [],
+  "author": "Jeff1024",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "builtin-modules": "^3.3.0",
+    "esbuild": "^0.20.0",
+    "esbuild-svelte": "^0.8.0",
+    "obsidian": "latest",
+    "svelte": "^4.2.0",
+    "svelte-preprocess": "^5.1.0",
+    "typescript": "5.3.3"
+  },
+  "dependencies": {
+    "lucide-svelte": "^0.300.0",
+    "svelte-dnd-action": "^0.9.70"
+  }
+}

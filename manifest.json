@@ -1,0 +1,9 @@
+{
+  "id": "A1MSTODO",
+  "name": "A1MSTODO",
+  "version": "1.0.0",
+  "minAppVersion": "1.0.0",
+  "description": "A Microsoft To-Do inspired task management plugin for Obsidian.",
+  "author": "Jeff1024",
+  "isDesktopOnly": false
+}
