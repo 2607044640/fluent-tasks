@@ -21,7 +21,7 @@ export class FluentTasksSettingTab extends PluginSettingTab {
         const { containerEl } = this;
         containerEl.empty();
 
-        containerEl.createEl("h2", { text: "Fluent Tasks Settings" });
+        new Setting(containerEl).setName("Fluent Tasks Settings").setHeading();
 
         // Use Obsidian's native addColorPicker so the UI renders correctly
         const colorSetting = new Setting(containerEl)

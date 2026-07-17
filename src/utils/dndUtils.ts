@@ -12,10 +12,12 @@
 export function killDndGhostElement(): void {
     const ghost = document.getElementById('dnd-action-dragged-el');
     if (ghost) {
-        ghost.style.display = 'none';
-        ghost.style.opacity = '0';
-        ghost.style.transition = 'none';
-        ghost.style.transform = 'none';
+        ghost.setCssStyles({
+            display: 'none',
+            opacity: '0',
+            transition: 'none',
+            transform: 'none'
+        });
     }
 }
 
@@ -24,23 +26,12 @@ export function killDndGhostElement(): void {
  * stop all CSS transitions momentarily (anti-flicker).
  */
 export function injectDndGhostShield(): void {
-    if (document.getElementById('mstodo-dnd-kill')) return;
-    
-    const style = document.createElement("style");
-    style.id = 'mstodo-dnd-kill';
-    style.textContent = [
-        "#dnd-action-dragged-el { display: none !important; opacity: 0 !important; transition: none !important; transform: none !important; }",
-        "* { transition: none !important; }",
-    ].join("\n");
-    document.head.appendChild(style);
+    document.body.classList.add('is-dragging-ghost');
 }
 
 /**
  * Removes the global CSS shield added by injectDndGhostShield().
  */
 export function removeDndGhostShield(): void {
-    const style = document.getElementById('mstodo-dnd-kill');
-    if (style) {
-        style.remove();
-    }
+    document.body.classList.remove('is-dragging-ghost');
 }

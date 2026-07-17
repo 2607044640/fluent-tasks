@@ -21,6 +21,7 @@ import TaskSidebarView from "./TaskSidebarView.svelte";
 import TaskMainView from "./TaskMainView.svelte";
 import TaskDetailView from "./TaskDetailView.svelte";
 import { FluentTasksSettings, DEFAULT_SETTINGS, FluentTasksSettingTab } from "./settings";
+import "./styles.css";
 
 // =============================================
 // Svelte View Wrappers (Obsidian ItemView → Svelte)
@@ -183,9 +184,6 @@ export default class FluentTasksPlugin extends Plugin {
             callback: () => this.activateView(VIEW_TYPE_DETAIL, "right"),
         });
 
-        // Load CSS
-        this.loadStyles();
-
         // FIX: All workspace/vault operations MUST wait until layout is ready.
         // Running them before this causes silent startup crashes on Obsidian boot.
         this.app.workspace.onLayoutReady(async () => {
@@ -226,11 +224,6 @@ export default class FluentTasksPlugin extends Plugin {
         // Clean up global drag data
         (window as any).__mstodo_drag_data = null;
 
-        // Detach leaves to prevent "Plugin no longer active" dead tabs on reload
-        this.app.workspace.detachLeavesOfType(VIEW_TYPE_SIDEBAR);
-        this.app.workspace.detachLeavesOfType(VIEW_TYPE_MAIN);
-        this.app.workspace.detachLeavesOfType(VIEW_TYPE_DETAIL);
-
         Logger.log("Fluent Tasks plugin unloaded.");
     }
 
@@ -247,20 +240,11 @@ export default class FluentTasksPlugin extends Plugin {
     }
 
     applySettings() {
-        let styleEl = document.getElementById("mstodo-custom-theme") as HTMLStyleElement;
-        if (!styleEl) {
-            styleEl = document.createElement("style");
-            styleEl.id = "mstodo-custom-theme";
-            document.head.appendChild(styleEl);
-        }
-        
-        styleEl.textContent = `
-            body {
-                --todo-accent: ${this.settings.accentColor} !important;
-                --todo-accent-glow: ${this.settings.accentColor}99 !important;
-                --todo-accent-light: ${this.settings.accentColor}26 !important;
-            }
-        `;
+        document.body.setCssProps({
+            "--todo-accent": this.settings.accentColor,
+            "--todo-accent-glow": `${this.settings.accentColor}99`,
+            "--todo-accent-light": `${this.settings.accentColor}26`,
+        });
     }
 
     // =============================================
@@ -316,24 +300,5 @@ export default class FluentTasksPlugin extends Plugin {
         return leaf;
     }
 
-    // =============================================
-    // Style Loading
-    // =============================================
 
-    private loadStyles(): void {
-        // Styles are injected by esbuild-svelte's "css: injected" mode,
-        // but our global styles.css needs to be imported explicitly.
-        // This is handled by importing it in the build entry point.
-        // We also register the styles.css as a standard Obsidian style.
-        const styleEl = document.createElement("style");
-        styleEl.id = "mstodo-global-styles";
-
-        // The styles will be bundled by esbuild. We import them here.
-        import("./styles.css").then(() => {
-            Logger.log("Global styles loaded.");
-        }).catch(() => {
-            // Fallback: styles may be loaded via styles.css in the plugin root
-            Logger.log("Styles loaded via plugin root styles.css");
-        });
-    }
 }

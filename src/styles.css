@@ -697,3 +697,14 @@
     padding: 0 !important;
     overflow: hidden;
 }
+
+/* Drag and Drop Ghost Shield Class */
+body.is-dragging-ghost * {
+    transition: none !important;
+}
+body.is-dragging-ghost #dnd-action-dragged-el {
+    display: none !important;
+    opacity: 0 !important;
+    transition: none !important;
+    transform: none !important;
+}
