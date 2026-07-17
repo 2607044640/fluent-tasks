@@ -161,26 +161,26 @@ export default class FluentTasksPlugin extends Plugin {
 
         // Register commands
         this.addCommand({
-            id: "open-fluent-tasks",
-            name: "Open Fluent Tasks",
+            id: "open-all-views",
+            name: "Open all views",
             callback: () => this.activateAllViews(),
         });
 
         this.addCommand({
-            id: "open-fluent-tasks-sidebar",
-            name: "Open Fluent Tasks Sidebar",
+            id: "open-sidebar",
+            name: "Open sidebar",
             callback: () => this.activateView(VIEW_TYPE_SIDEBAR, "left"),
         });
 
         this.addCommand({
-            id: "open-fluent-tasks-main",
-            name: "Open Fluent Tasks Main View",
+            id: "open-main-view",
+            name: "Open main view",
             callback: () => this.activateView(VIEW_TYPE_MAIN, "center"),
         });
 
         this.addCommand({
-            id: "open-fluent-tasks-detail",
-            name: "Open Fluent Tasks Detail View",
+            id: "open-detail-view",
+            name: "Open detail view",
             callback: () => this.activateView(VIEW_TYPE_DETAIL, "right"),
         });
 

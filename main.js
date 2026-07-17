@@ -8058,7 +8058,6 @@ var FluentTasksSettingTab = class extends import_obsidian5.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    new import_obsidian5.Setting(containerEl).setName("Fluent Tasks Settings").setHeading();
     const colorSetting = new import_obsidian5.Setting(containerEl).setName("Accent Color").setDesc("Choose the primary accent color for the plugin (e.g., active borders, stars).").addColorPicker((color) => color.setValue(this.plugin.settings.accentColor).onChange(async (value) => {
       this.plugin.settings.accentColor = value;
       await this.plugin.saveSettings();
@@ -8195,23 +8194,23 @@ var FluentTasksPlugin = class extends import_obsidian6.Plugin {
       this.activateAllViews();
     });
     this.addCommand({
-      id: "open-fluent-tasks",
-      name: "Open Fluent Tasks",
+      id: "open-all-views",
+      name: "Open all views",
       callback: () => this.activateAllViews()
     });
     this.addCommand({
-      id: "open-fluent-tasks-sidebar",
-      name: "Open Fluent Tasks Sidebar",
+      id: "open-sidebar",
+      name: "Open sidebar",
       callback: () => this.activateView(VIEW_TYPE_SIDEBAR, "left")
     });
     this.addCommand({
-      id: "open-fluent-tasks-main",
-      name: "Open Fluent Tasks Main View",
+      id: "open-main-view",
+      name: "Open main view",
       callback: () => this.activateView(VIEW_TYPE_MAIN, "center")
     });
     this.addCommand({
-      id: "open-fluent-tasks-detail",
-      name: "Open Fluent Tasks Detail View",
+      id: "open-detail-view",
+      name: "Open detail view",
       callback: () => this.activateView(VIEW_TYPE_DETAIL, "right")
     });
     this.app.workspace.onLayoutReady(async () => {
