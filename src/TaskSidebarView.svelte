@@ -353,6 +353,15 @@
         await saveAndSyncSidebarState(tempItems);
     }
 
+    function getLastItem(): SidebarItem | CategoryInfo | null {
+        if (sidebarItems.length === 0) return null;
+        const lastRoot = sidebarItems[sidebarItems.length - 1];
+        if (lastRoot.type === "group" && lastRoot.isExpanded && lastRoot.items.length > 0) {
+            return lastRoot.items[lastRoot.items.length - 1];
+        }
+        return lastRoot;
+    }
+
     function handleRootDragOver(e: DragEvent) {
         e.preventDefault();
         if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
@@ -360,8 +369,14 @@
         const draggedItem = getDraggedItem();
         if (!draggedItem) return;
 
-        dragOverId = "root-bottom";
-        dragPosition = "bottom";
+        const lastItem = getLastItem();
+        if (lastItem) {
+            dragOverId = lastItem.id;
+            dragPosition = "bottom";
+        } else {
+            dragOverId = "root-bottom";
+            dragPosition = "bottom";
+        }
     }
 
     async function handleRootDrop(e: DragEvent) {
