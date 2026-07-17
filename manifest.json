@@ -1,7 +1,7 @@
 {
   "id": "fluent-tasks",
   "name": "Fluent Tasks",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "minAppVersion": "1.4.0",
   "description": "A beautiful, drag-and-drop task manager inspired by Fluent Design.",
   "author": "Jeff1024",
