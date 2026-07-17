@@ -6,34 +6,25 @@
 
 ---
 
-## 部署方法：NTFS Junction 链接
+## 部署与发布架构：双 Junction 软链接
+为了避免 GitHub Desktop 中的嵌套子仓库 (Submodule) 冲突与路径限制，本项目采用了**双 Junction 软链接架构**：
+* **物理仓库 (Source of Truth)**: `C:\ObsidianPublish\fluent-tasks`（包含独立的 Git 历史，用于 GitHub Desktop 进行版本管理与推送）。
+* **开发工作区 (Workspace Link)**: `C:\ObsidianDev\plugins\fluent-tasks`（通过 Junction 软链接指向物理仓库，保证 AI 编译与编辑权限）。
+* **Obsidian 插件库 (Obsidian Vault Link)**: `C:\ObsidianNote\.obsidian\plugins\fluent-tasks`（通过 Junction 软链接指向物理仓库，保证实时加载运行）。
 
-此插件的源码位于 `C:\ObsidianDev\plugins\MStodo`，需要通过 NTFS Junction（目录符号链接）映射到 Obsidian Vault 的插件目录中，Obsidian 才能识别并加载它。
-
-### 执行步骤
-
-**前提**：确认你的 Obsidian Vault 路径。以下示例假设 Vault 在 `C:\ObsidianNote`。
-
-**1. 以管理员身份打开 PowerShell 或 CMD**
-
-**2. 执行以下命令（二选一）：**
-
-PowerShell：
+### 重新建立软链接步骤（如果链接损坏）
+如果您需要重新生成这些软链接，请依次执行以下 PowerShell 命令：
 ```powershell
-New-Item -ItemType Junction -Path "C:\ObsidianNote\.obsidian\plugins\MStodo" -Target "C:\ObsidianDev\plugins\MStodo"
+# 1. 清理可能存在的旧软链接（用 os.rmdir 保证物理文件安全）
+python -c "import os; os.path.exists(r'C:\ObsidianDev\plugins\fluent-tasks') and os.rmdir(r'C:\ObsidianDev\plugins\fluent-tasks')"
+python -c "import os; os.path.exists(r'C:\ObsidianNote\.obsidian\plugins\fluent-tasks') and os.rmdir(r'C:\ObsidianNote\.obsidian\plugins\fluent-tasks')"
+
+# 2. 创建开发工作区软链接
+New-Item -ItemType Junction -Path "C:\ObsidianDev\plugins\fluent-tasks" -Target "C:\ObsidianPublish\fluent-tasks"
+
+# 3. 创建 Obsidian 库内软链接
+New-Item -ItemType Junction -Path "C:\ObsidianNote\.obsidian\plugins\fluent-tasks" -Target "C:\ObsidianPublish\fluent-tasks"
 ```
-
-CMD：
-```cmd
-mklink /J "C:\ObsidianNote\.obsidian\plugins\MStodo" "C:\ObsidianDev\plugins\MStodo"
-```
-
-**3. 验证**：在 Obsidian 中打开 设置 → 社区插件，应该能看到 MStodo。启用后按 `Ctrl+P` 搜索 `Open MStodo`。
-
-### 注意事项
-- Junction 的 **第一个参数是目标位置**（Vault 插件目录内），**第二个参数是源码位置**（本项目）。
-- 如果目标路径已存在同名文件夹，必须先删除它再创建 Junction。
-- Junction 不需要管理员权限（与 symlink 不同），但如果报权限错误，请用管理员终端。
 
 ---
 

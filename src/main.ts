@@ -20,7 +20,7 @@ import { DataService } from "./DataService";
 import TaskSidebarView from "./TaskSidebarView.svelte";
 import TaskMainView from "./TaskMainView.svelte";
 import TaskDetailView from "./TaskDetailView.svelte";
-import { MStodoSettings, DEFAULT_SETTINGS, MStodoSettingTab } from "./settings";
+import { FluentTasksSettings, DEFAULT_SETTINGS, FluentTasksSettingTab } from "./settings";
 
 // =============================================
 // Svelte View Wrappers (Obsidian ItemView → Svelte)
@@ -214,7 +214,7 @@ export default class FluentTasksPlugin extends Plugin {
                 await this.activateAllViews();
             }
 
-            Logger.log("MStodo plugin loaded successfully.");
+            Logger.log("Fluent Tasks plugin loaded successfully.");
         });
     }
 

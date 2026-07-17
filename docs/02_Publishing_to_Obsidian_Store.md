@@ -15,7 +15,7 @@
 3. 在你 Fork 后的仓库里，找到 `community-plugins.json` 这个大列表，把你的插件信息按 JSON 格式加到**文件最底部**。
    ```json
    {
-       "id": "obsidian-fluent-tasks",
+       "id": "fluent-tasks",
        "name": "Fluent Tasks",
        "author": "YourName",
        "description": "A beautiful, drag-and-drop task manager inspired by Fluent Design.",

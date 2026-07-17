@@ -233,8 +233,10 @@
                     dragPosition = "bottom";
                 }
             } else {
-                if (relativeY < rect.height * 0.3) {
+                if (relativeY < rect.height * 0.25) {
                     dragPosition = "top";
+                } else if (relativeY > rect.height * 0.75) {
+                    dragPosition = "bottom";
                 } else {
                     dragPosition = "inside";
                 }
@@ -347,6 +349,57 @@
 
             tempItems = insertNextTo(tempItems, targetId, listToMove, pos);
         }
+
+        await saveAndSyncSidebarState(tempItems);
+    }
+
+    function handleRootDragOver(e: DragEvent) {
+        e.preventDefault();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+
+        const draggedItem = getDraggedItem();
+        if (!draggedItem) return;
+
+        dragOverId = "root-bottom";
+        dragPosition = "bottom";
+    }
+
+    async function handleRootDrop(e: DragEvent) {
+        e.preventDefault();
+        const movedItemId = draggedItemId;
+        handleDragEnd();
+
+        if (!movedItemId) return;
+
+        let listToMove: SidebarItem | null = null;
+        const extractItem = (list: SidebarItem[]): SidebarItem[] => {
+            const nextList: SidebarItem[] = [];
+            for (const item of list) {
+                if (item.id === movedItemId) {
+                    listToMove = item;
+                } else if (item.type === "group") {
+                    const childIdx = item.items.findIndex(c => c.id === movedItemId);
+                    if (childIdx !== -1) {
+                        listToMove = item.items[childIdx];
+                        nextList.push({
+                            ...item,
+                            items: item.items.filter(c => c.id !== movedItemId)
+                        });
+                    } else {
+                        nextList.push(item);
+                    }
+                } else {
+                    nextList.push(item);
+                }
+            }
+            return nextList;
+        };
+
+        let tempItems = extractItem(sidebarItems);
+        if (!listToMove) return;
+
+        // Append to the root list
+        tempItems = [...tempItems, listToMove];
 
         await saveAndSyncSidebarState(tempItems);
     }
@@ -519,13 +572,19 @@
 />
 
 <div class="sidebar-container">
-    <div class="custom-lists" data-root="true">
+    <div class="custom-lists" 
+         data-root="true"
+         role="list"
+         class:drag-over-bottom={dragOverId === "root-bottom"}
+         on:dragover={handleRootDragOver}
+         on:drop={handleRootDrop}
+    >
         {#each sidebarItems as item (item.id)}
             <div
                 draggable="true"
                 on:dragstart={(e) => handleDragStart(e, item)}
-                on:dragover={(e) => handleDragOver(e, item)}
-                on:drop={(e) => handleDrop(e, item)}
+                on:dragover|stopPropagation={(e) => handleDragOver(e, item)}
+                on:drop|stopPropagation={(e) => handleDrop(e, item)}
                 on:dragend={handleDragEnd}
                 class={item.type === 'category' ? 'category-item' : 'group-container'}
                 class:active={item.type === 'category' && activeCategoryPath === item.filepath}
