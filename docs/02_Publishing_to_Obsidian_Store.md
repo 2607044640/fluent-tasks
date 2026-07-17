@@ -10,20 +10,17 @@
    - 上传三个编译好的核心文件到该 release 的附件中：`main.js`, `manifest.json`, `styles.css`。
 
 ## 提交审核 (Submission)
-1. 访问 Obsidian 的官方发布仓库：[obsidianmd/obsidian-releases](https://github.com/obsidianmd/obsidian-releases)。
-2. Fork 这个仓库到你自己的 GitHub 账号下。
-3. 在你 Fork 后的仓库里，找到 `community-plugins.json` 这个大列表，把你的插件信息按 JSON 格式加到**文件最底部**。
-   ```json
-   {
-       "id": "fluent-tasks",
-       "name": "Fluent Tasks",
-       "author": "YourName",
-       "description": "A beautiful, drag-and-drop task manager inspired by Fluent Design.",
-       "repo": "YourName/obsidian-fluent-tasks"
-   }
-   ```
-4. 提交一个 **Pull Request (PR)** 给官方仓库。
-5. **填写 PR 模板**：PR 描述里会有一长串官方要求的“检查清单 (Checklist)”，你必须逐字阅读并打勾确认你没有违规（例如没有恶意联网、没有滥用底层的 DOM API）。
+Obsidian 官方已于 2024 年关闭了 GitHub 手动 Pull Request 提交通道，所有新插件必须通过官方的新版开发者门户进行提交。
+
+1. **创建 GitHub Release**：
+   - 在你的插件 GitHub 仓库中，创建一个对应版本号的 Release（例如 `1.0.0`）。
+   - 必须在 Release 附件中上传编译好的 3 个核心文件：`main.js`、`manifest.json`、`styles.css` (如有)。
+2. **登录开发者门户**：
+   - 访问并登录 **[Obsidian Developer Portal (community.obsidian.md)](https://community.obsidian.md/)**。
+3. **绑定与提交**：
+   - 登录你的 Obsidian 账号，并在门户设置中绑定你的 GitHub 账号。
+   - 导航至 **Plugins** 标签页，点击 **New plugin**（新插件）。
+   - 输入你的插件 GitHub 仓库 URL，确认信息并提交审核！
 
 ## 等待审核 (Wait for Review)
 - Obsidian 官方开发者（如 Licat）会逐行人工 Review 你的代码。
