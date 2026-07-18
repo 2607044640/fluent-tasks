@@ -8250,6 +8250,11 @@ var FluentTasksPlugin = class extends import_obsidian6.Plugin {
       EventBus.on("detail:close" /* DETAIL_CLOSE */, () => {
         this.app.workspace.detachLeavesOfType(VIEW_TYPE_DETAIL);
       });
+      EventBus.on("category:selected" /* CATEGORY_SELECTED */, async (payload) => {
+        if (payload && payload.category) {
+          await this.activateView(VIEW_TYPE_MAIN, "center");
+        }
+      });
       EventBus.on("task:selected" /* TASK_SELECTED */, async (payload) => {
         const leaf = await this.activateView(VIEW_TYPE_DETAIL, "right");
         if (leaf && leaf.view instanceof TaskDetailViewWrapper) {

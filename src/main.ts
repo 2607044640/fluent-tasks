@@ -197,6 +197,12 @@ export default class FluentTasksPlugin extends Plugin {
                 this.app.workspace.detachLeavesOfType(VIEW_TYPE_DETAIL);
             });
 
+            EventBus.on(EventName.CATEGORY_SELECTED, async (payload: any) => {
+                if (payload && payload.category) {
+                    await this.activateView(VIEW_TYPE_MAIN, "center");
+                }
+            });
+
             EventBus.on(EventName.TASK_SELECTED, async (payload: any) => {
                 const leaf = await this.activateView(VIEW_TYPE_DETAIL, "right");
                 if (leaf && leaf.view instanceof TaskDetailViewWrapper) {
