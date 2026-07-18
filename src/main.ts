@@ -12,7 +12,7 @@
  * All data I/O flows through DataService.
  */
 
-import { Plugin, ItemView, WorkspaceLeaf } from "obsidian";
+import { Plugin, ItemView, WorkspaceLeaf, TFile } from "obsidian";
 import { VIEW_TYPE_SIDEBAR, VIEW_TYPE_MAIN, VIEW_TYPE_DETAIL, EventName } from "./types";
 import { EventBus } from "./EventBus";
 import { Logger } from "./Logger";
@@ -89,6 +89,15 @@ class TaskMainViewWrapper extends ItemView {
     /** Expose the inner Svelte component for direct method calls from the plugin */
     getComponent(): TaskMainView | null {
         return this.component;
+    }
+
+    get file(): TFile | null {
+        const cat = this.component?.getCurrentCategory();
+        if (cat && cat.filepath) {
+            const f = this.app.vault.getAbstractFileByPath(cat.filepath);
+            if (f instanceof TFile) return f;
+        }
+        return null;
     }
 }
 

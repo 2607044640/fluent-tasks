@@ -62,6 +62,10 @@
         await loadTasks();
     }
 
+    export function getCurrentCategory() {
+        return currentCategory;
+    }
+
     // =============================================
     // EventBus Handlers
     // =============================================
