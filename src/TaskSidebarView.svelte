@@ -595,25 +595,45 @@
          on:drop={handleRootDrop}
     >
         {#each sidebarItems as item (item.id)}
-            <div
-                draggable="true"
-                on:dragstart={(e) => handleDragStart(e, item)}
-                on:dragover|stopPropagation={(e) => handleDragOver(e, item)}
-                on:drop|stopPropagation={(e) => handleDrop(e, item)}
-                on:dragend={handleDragEnd}
-                class={item.type === 'category' ? 'category-item' : 'group-container'}
-                class:active={item.type === 'category' && activeCategoryPath === item.filepath}
-                class:drag-over={(dragOverId === item.id && dragPosition === 'inside') || (item.type === 'category' && dragOverPath === item.filepath)}
-                class:drag-over-top={dragOverId === item.id && dragPosition === 'top'}
-                class:drag-over-bottom={dragOverId === item.id && dragPosition === 'bottom'}
-                data-filepath={item.type === 'category' ? item.filepath : undefined}
-                on:click={item.type === 'category' ? () => selectCategory(item) : undefined}
-                on:contextmenu={item.type === 'category' ? (e) => handleCategoryContextMenu(e, item) : undefined}
-                on:keydown={item.type === 'category' ? (e) => e.key === "Enter" && selectCategory(item) : undefined}
-                tabindex={item.type === 'category' ? "0" : undefined}
-                role={item.type === 'category' ? "button" : undefined}
-            >
-                {#if item.type === "group"}
+            {#if item.type === 'category'}
+                <div
+                    draggable="true"
+                    on:dragstart={(e) => handleDragStart(e, item)}
+                    on:dragover|stopPropagation={(e) => handleDragOver(e, item)}
+                    on:drop|stopPropagation={(e) => handleDrop(e, item)}
+                    on:dragend={handleDragEnd}
+                    class="category-item"
+                    class:active={activeCategoryPath === item.filepath}
+                    class:drag-over={(dragOverId === item.id && dragPosition === 'inside') || dragOverPath === item.filepath}
+                    class:drag-over-top={dragOverId === item.id && dragPosition === 'top'}
+                    class:drag-over-bottom={dragOverId === item.id && dragPosition === 'bottom'}
+                    data-filepath={item.filepath}
+                    on:click={() => selectCategory(item)}
+                    on:contextmenu={(e) => handleCategoryContextMenu(e, item)}
+                    on:keydown={(e) => e.key === "Enter" && selectCategory(item)}
+                    tabindex="0"
+                    role="button"
+                >
+                    <span class="cat-icon drag-handle">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
+                        </svg>
+                    </span>
+                    <span class="cat-name drag-handle">{item.name}</span>
+                </div>
+            {:else}
+                <div
+                    draggable="true"
+                    on:dragstart={(e) => handleDragStart(e, item)}
+                    on:dragover|stopPropagation={(e) => handleDragOver(e, item)}
+                    on:drop|stopPropagation={(e) => handleDrop(e, item)}
+                    on:dragend={handleDragEnd}
+                    class="group-container"
+                    class:drag-over={dragOverId === item.id && dragPosition === 'inside'}
+                    class:drag-over-top={dragOverId === item.id && dragPosition === 'top'}
+                    class:drag-over-bottom={dragOverId === item.id && dragPosition === 'bottom'}
+                    role="listitem"
+                >
                     <div class="group-header" data-groupid={item.id} on:click|stopPropagation={() => toggleGroup(item)} role="button" tabindex="0" on:keydown={(e) => e.key === "Enter" && toggleGroup(item)}>
                         <span class="group-name">{item.name}</span>
                         <svg class="chevron {item.isExpanded ? 'expanded' : ''}" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -657,15 +677,8 @@
                             {/each}
                         </div>
                     {/if}
-                {:else if item.type === "category"}
-                    <span class="cat-icon drag-handle">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
-                        </svg>
-                    </span>
-                    <span class="cat-name drag-handle">{item.name}</span>
-                {/if}
-            </div>
+                </div>
+            {/if}
         {/each}
     </div>
 

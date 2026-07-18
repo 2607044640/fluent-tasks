@@ -75,7 +75,7 @@ class TaskMainViewWrapper extends ItemView {
         container.empty();
         this.component = new TaskMainView({
             target: container,
-            props: { app: this.app, dataService: this.dataService },
+            props: { dataService: this.dataService },
         });
     }
 
@@ -110,7 +110,7 @@ class TaskDetailViewWrapper extends ItemView {
         container.empty();
         this.component = new TaskDetailView({
             target: container,
-            props: { app: this.app, dataService: this.dataService },
+            props: { dataService: this.dataService },
         });
     }
 
