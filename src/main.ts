@@ -309,7 +309,7 @@ export default class FluentTasksPlugin extends Plugin {
         }
 
         if (leaf) {
-            workspace.revealLeaf(leaf);
+            (workspace as any).revealLeaf(leaf);
         }
 
         return leaf;
