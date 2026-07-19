@@ -2,7 +2,7 @@
     import { onMount, onDestroy } from "svelte";
     import { EventBus } from "./EventBus";
     import { DataService } from "./DataService";
-    import { EventName, type SidebarItem, type CategoryInfo, DATA_FOLDER } from "./types";
+    import { EventName, type SidebarItem, type CategoryInfo, type GroupInfo, DATA_FOLDER } from "./types";
     import { killDndGhostElement, injectDndGhostShield, removeDndGhostShield } from "./utils/dndUtils";
     import { INPUT_FOCUS_DELAY_MS, BLUR_CONFIRM_DELAY_MS, DND_SHIELD_REMOVAL_DELAY_MS, DND_RESCUE_DELAY_MS } from "./constants";
     import { Menu, type App, type TAbstractFile, type EventRef } from "obsidian";
@@ -129,6 +129,36 @@
         }
 
         menu.showAtMouseEvent(e);
+    }
+
+    async function handleGroupContextMenu(e: MouseEvent, group: SidebarItem) {
+        if (group.type !== "group") return;
+        e.preventDefault();
+        const menu = new Menu();
+
+        menu.addItem((item: any) => {
+            item.setTitle("Delete Group")
+                .setIcon("trash")
+                .onClick(async () => {
+                    await deleteGroup(group.id);
+                });
+        });
+
+        menu.showAtMouseEvent(e);
+    }
+
+    async function deleteGroup(groupId: string) {
+        const groupIdx = sidebarItems.findIndex(i => i.id === groupId && i.type === "group");
+        if (groupIdx === -1) return;
+
+        const group = sidebarItems[groupIdx] as GroupInfo;
+        const children = group.items || [];
+
+        // Remove the group and insert its children at the same index
+        let nextSidebarItems = [...sidebarItems];
+        nextSidebarItems.splice(groupIdx, 1, ...children);
+
+        await saveAndSyncSidebarState(nextSidebarItems);
     }
 
     async function moveListToGroup(listId: string, targetGroupId: string) {
@@ -634,7 +664,7 @@
                     class:drag-over-bottom={dragOverId === item.id && dragPosition === 'bottom'}
                     role="listitem"
                 >
-                    <div class="group-header" data-groupid={item.id} on:click|stopPropagation={() => toggleGroup(item)} role="button" tabindex="0" on:keydown={(e) => e.key === "Enter" && toggleGroup(item)}>
+                    <div class="group-header" data-groupid={item.id} on:click|stopPropagation={() => toggleGroup(item)} on:contextmenu|stopPropagation={(e) => handleGroupContextMenu(e, item)} role="button" tabindex="0" on:keydown={(e) => e.key === "Enter" && toggleGroup(item)}>
                         <span class="group-name">{item.name}</span>
                         <svg class="chevron {item.isExpanded ? 'expanded' : ''}" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="9 18 15 12 9 6"></polyline>
