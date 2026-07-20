@@ -45,3 +45,4 @@ export class FluentTasksSettingTab extends PluginSettingTab {
         }
     }
 }
+
