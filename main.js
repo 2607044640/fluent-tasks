@@ -8162,17 +8162,6 @@ var FluentTasksSettingTab = class extends import_obsidian5.PluginSettingTab {
         this.plugin.applySettings();
       });
     }
-    new import_obsidian5.Setting(containerEl).setName("Custom Hotkey").setDesc("Configure the keyboard shortcut to directly open the Tasks view.").addButton((button) => button.setButtonText("Configure Hotkey").onClick(() => {
-      const settingObj = this.app.setting;
-      if (settingObj) {
-        settingObj.open();
-        const tab = settingObj.openTabById("hotkeys");
-        if (tab) {
-          tab.searchComponent.setValue("Fluent Tasks: Open all views");
-          tab.updateHotkeyVisibility();
-        }
-      }
-    }));
   }
 };
 
