@@ -2,6 +2,9 @@
 
 A beautiful, drag-and-drop task manager for Obsidian, inspired by Microsoft To-Do and Microsoft's Fluent Design principles.
 
+> [!NOTE]
+> If you are looking for a local alternative to **Microsoft To-Do**, **Todoist**, **TickTick (滴答清单)**, **Things 3**, or **Google Tasks** directly inside your Obsidian vault, Fluent Tasks provides a beautiful drag-and-drop workflow that stores all your lists and tasks in standard Markdown files.
+
 ![Fluent Tasks Presentation](https://raw.githubusercontent.com/Jeff1024/obsidian-fluent-tasks/main/docs/assets/preview.png)
 
 ## ✨ Features
@@ -36,3 +39,8 @@ Fluent Tasks respects your data ownership. All lists are stored as `.md` files i
 ## 📄 License
 
 This project is licensed under the [MIT License](LICENSE).
+
+---
+
+###### Keywords
+`microsoft todo` `todoist alternative` `ticktick` `滴答清单` `things3` `google tasks` `task manager` `checklist` `task planner` `todo list` `kanban` `fluent design` `glassmorphism`

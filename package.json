@@ -1,6 +1,6 @@
 {
   "name": "fluent-tasks",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "A beautiful, drag-and-drop task manager inspired by Fluent Design.",
   "main": "main.js",
   "scripts": {
