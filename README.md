@@ -15,7 +15,7 @@ Organize your task lists into drag-and-drop groups. Easily reorder lists, create
 ### 2. Task Details, Subtasks & Starring
 Add multi-step checklist subtasks, star/pin priority items, write notes, and mark tasks as complete with real-time UI updates.
 
-![Task Features Demo](https://raw.githubusercontent.com/2607044640/fluent-tasks/main/docs/assets/task_features.gif)
+![Task Details Demo](https://raw.githubusercontent.com/2607044640/fluent-tasks/main/docs/assets/task_features.gif)
 
 ### 3. Custom Accent Colors
 Customize the primary accent color to match your personal theme preference.
