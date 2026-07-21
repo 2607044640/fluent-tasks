@@ -5,18 +5,26 @@ A beautiful, drag-and-drop task manager for Obsidian, inspired by Microsoft To-D
 > [!NOTE]
 > If you are looking for a local alternative to **Microsoft To-Do**, **Todoist**, **TickTick (滴答清单)**, **Things 3**, or **Google Tasks** directly inside your Obsidian vault, Fluent Tasks provides a beautiful drag-and-drop workflow that stores all your lists and tasks in standard Markdown files.
 
-![Fluent Tasks Presentation](https://raw.githubusercontent.com/Jeff1024/obsidian-fluent-tasks/main/docs/assets/preview.png)
+![Lists and Groups Drag & Drop](https://raw.githubusercontent.com/2607044640/fluent-tasks/main/docs/assets/lists_and_groups.gif)
 
-## ✨ Features
+## ✨ Key Features & Demo
 
-- **Stunning UI/UX**: Clean light and dark modes with elegant glassmorphism, tailored HSL color palettes, and smooth animations.
-- **Drag-and-Drop Simplicity**: 
-  - Easily reorder tasks within a list.
-  - Move tasks instantly between lists.
-  - Reorder, group, or drag lists out of groups in the sidebar.
-- **Hierarchical Groups**: Keep your sidebar organized by grouping task lists together.
-- **Robust Task Detail Panel**: Add multi-step subtasks, star/pin important tasks, add notes, and track creation dates.
-- **100% Offline & Local**: Your tasks are stored directly inside your vault as standard Markdown checklists.
+### 1. Hierarchical Lists & Group Management
+Organize your task lists into drag-and-drop groups. Easily reorder lists, create groups, or drag lists out of groups in the sidebar.
+
+![Lists and Groups Demo](https://raw.githubusercontent.com/2607044640/fluent-tasks/main/docs/assets/lists_and_groups.gif)
+
+### 2. Task Details, Subtasks & Starring
+Add multi-step checklist subtasks, star/pin priority items, write notes, and mark tasks as complete with real-time UI updates.
+
+![Task Features Demo](https://raw.githubusercontent.com/2607044640/fluent-tasks/main/docs/assets/task_features.gif)
+
+### 3. Custom Accent Colors
+Customize the primary accent color to match your personal theme preference.
+
+![Custom Accent Color Demo](https://raw.githubusercontent.com/2607044640/fluent-tasks/main/docs/assets/custom_colors.gif)
+
+---
 
 ## 🚀 How to Use
 
@@ -24,6 +32,8 @@ A beautiful, drag-and-drop task manager for Obsidian, inspired by Microsoft To-D
 2. **Open Sidebar**: The task sidebar is opened automatically on startup. You can also open it via the Command Palette (`Ctrl+P` -> `Fluent Tasks: Open Sidebar`).
 3. **Create Lists & Groups**: Create a new task list or group from the bottom of the sidebar.
 4. **Manage Tasks**: Click a list to view its tasks, drag them to reorder, or click a task to view and edit its details.
+
+---
 
 ## 💾 Markdown Data Storage
 
