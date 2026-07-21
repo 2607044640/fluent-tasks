@@ -7,7 +7,7 @@ A beautiful, drag-and-drop task manager for Obsidian, inspired by Microsoft To-D
 
 ![Fluent Tasks Overview](https://raw.githubusercontent.com/2607044640/fluent-tasks/main/docs/assets/task_features.gif)
 
-## ✨ Key Features & Demo
+## Key Features
 
 ### 1. Hierarchical Lists & Group Management
 Organize your task lists into drag-and-drop groups. Easily reorder lists, create groups, or drag lists out of groups in the sidebar.
@@ -17,8 +17,6 @@ Organize your task lists into drag-and-drop groups. Easily reorder lists, create
 ### 2. Task Details, Subtasks & Starring
 Add multi-step checklist subtasks, star/pin priority items, write notes, and mark tasks as complete with real-time UI updates.
 
-![Task Features Demo](https://raw.githubusercontent.com/2607044640/fluent-tasks/main/docs/assets/task_features.gif)
-
 ### 3. Custom Accent Colors
 Customize the primary accent color to match your personal theme preference.
 
@@ -26,7 +24,7 @@ Customize the primary accent color to match your personal theme preference.
 
 ---
 
-## 🚀 How to Use
+## How to Use
 
 1. **Install & Enable**: Install Fluent Tasks from the Obsidian Community Store and enable it.
 2. **Open Sidebar**: The task sidebar is opened automatically on startup. You can also open it via the Command Palette (`Ctrl+P` -> `Fluent Tasks: Open Sidebar`).
@@ -35,7 +33,7 @@ Customize the primary accent color to match your personal theme preference.
 
 ---
 
-## 💾 Markdown Data Storage
+## Markdown Data Storage
 
 Fluent Tasks respects your data ownership. All lists are stored as `.md` files inside the `TodoData/` folder in your vault. Tasks are saved in standard checklist formatting, with metadata stored inside discrete HTML/Markdown comments:
 
@@ -46,7 +44,7 @@ Fluent Tasks respects your data ownership. All lists are stored as `.md` files i
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the [MIT License](LICENSE).
 
