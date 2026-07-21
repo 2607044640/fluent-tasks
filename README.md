@@ -5,9 +5,7 @@ A beautiful, drag-and-drop task manager for Obsidian, inspired by Microsoft To-D
 > [!NOTE]
 > If you are looking for a local alternative to **Microsoft To-Do**, **Todoist**, **TickTick (滴答清单)**, **Things 3**, or **Google Tasks** directly inside your Obsidian vault, Fluent Tasks provides a beautiful drag-and-drop workflow that stores all your lists and tasks in standard Markdown files.
 
-![Fluent Tasks Overview](https://raw.githubusercontent.com/2607044640/fluent-tasks/main/docs/assets/task_features.gif)
-
-## Key Features
+## Features
 
 ### 1. Hierarchical Lists & Group Management
 Organize your task lists into drag-and-drop groups. Easily reorder lists, create groups, or drag lists out of groups in the sidebar.
@@ -16,6 +14,8 @@ Organize your task lists into drag-and-drop groups. Easily reorder lists, create
 
 ### 2. Task Details, Subtasks & Starring
 Add multi-step checklist subtasks, star/pin priority items, write notes, and mark tasks as complete with real-time UI updates.
+
+![Task Features Demo](https://raw.githubusercontent.com/2607044640/fluent-tasks/main/docs/assets/task_features.gif)
 
 ### 3. Custom Accent Colors
 Customize the primary accent color to match your personal theme preference.
