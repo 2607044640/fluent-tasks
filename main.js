@@ -182,7 +182,7 @@ var CategoryService = class {
     var _a;
     await this.io.ensureDataFolder();
     const folder = this.app.vault.getAbstractFileByPath(DATA_FOLDER);
-    if (!folder || !("children" in folder))
+    if (!folder || !(folder instanceof import_obsidian2.TFolder))
       return [];
     const fileMap = /* @__PURE__ */ new Map();
     for (const child of folder.children) {
@@ -310,8 +310,8 @@ var CategoryService = class {
   async deleteCategory(filepath) {
     const file = this.app.vault.getAbstractFileByPath(filepath);
     if (file && file instanceof import_obsidian2.TFile) {
-      await this.app.vault.trash(file, false);
-      Logger.log("Moved category to local trash:", filepath);
+      await this.app.fileManager.trashFile(file);
+      Logger.log("Moved category to trash:", filepath);
       const items = await this.getSidebarItems();
       const basename = file.basename;
       const cleanup = (list) => {
@@ -8291,27 +8291,35 @@ var FluentTasksPlugin = class extends import_obsidian6.Plugin {
     this.registerView(VIEW_TYPE_MAIN, (leaf) => new TaskMainViewWrapper(leaf, this.dataService));
     this.registerView(VIEW_TYPE_DETAIL, (leaf) => new TaskDetailViewWrapper(leaf, this.dataService));
     this.addRibbonIcon("check-square", "Open Fluent Tasks", () => {
-      this.activateAllViews();
+      void this.activateAllViews();
     });
     this.addCommand({
       id: "open-all-views",
       name: "Open all views",
-      callback: () => this.activateAllViews()
+      callback: () => {
+        void this.activateAllViews();
+      }
     });
     this.addCommand({
       id: "open-sidebar",
       name: "Open sidebar",
-      callback: () => this.activateView(VIEW_TYPE_SIDEBAR, "left")
+      callback: () => {
+        void this.activateView(VIEW_TYPE_SIDEBAR, "left");
+      }
     });
     this.addCommand({
       id: "open-main-view",
       name: "Open main view",
-      callback: () => this.activateView(VIEW_TYPE_MAIN, "center")
+      callback: () => {
+        void this.activateView(VIEW_TYPE_MAIN, "center");
+      }
     });
     this.addCommand({
       id: "open-detail-view",
       name: "Open detail view",
-      callback: () => this.activateView(VIEW_TYPE_DETAIL, "right")
+      callback: () => {
+        void this.activateView(VIEW_TYPE_DETAIL, "right");
+      }
     });
     this.app.workspace.onLayoutReady(async () => {
       await this.dataService.ensureDataFolder();
@@ -8320,19 +8328,21 @@ var FluentTasksPlugin = class extends import_obsidian6.Plugin {
       EventBus.on("detail:close" /* DETAIL_CLOSE */, () => {
         this.app.workspace.detachLeavesOfType(VIEW_TYPE_DETAIL);
       });
-      EventBus.on("category:selected" /* CATEGORY_SELECTED */, async (payload) => {
+      EventBus.on("category:selected" /* CATEGORY_SELECTED */, (payload) => {
         if (payload && payload.category) {
-          await this.activateView(VIEW_TYPE_MAIN, "center");
+          void this.activateView(VIEW_TYPE_MAIN, "center");
         }
       });
-      EventBus.on("task:selected" /* TASK_SELECTED */, async (payload) => {
-        const leaf = await this.activateView(VIEW_TYPE_DETAIL, "right");
-        if (leaf && leaf.view instanceof TaskDetailViewWrapper) {
-          const comp = leaf.view.getComponent();
-          if (comp) {
-            comp.loadTask(payload.task, payload.categoryFilepath);
+      EventBus.on("task:selected" /* TASK_SELECTED */, (payload) => {
+        void (async () => {
+          const leaf = await this.activateView(VIEW_TYPE_DETAIL, "right");
+          if (leaf && leaf.view instanceof TaskDetailViewWrapper) {
+            const comp = leaf.view.getComponent();
+            if (comp) {
+              comp.loadTask(payload.task, payload.categoryFilepath);
+            }
           }
-        }
+        })();
       });
       if (this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR).length === 0) {
         await this.activateAllViews();

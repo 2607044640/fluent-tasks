@@ -19,11 +19,11 @@ export class CategoryService {
     async getSidebarItems(): Promise<SidebarItem[]> {
         await this.io.ensureDataFolder();
         const folder = this.app.vault.getAbstractFileByPath(DATA_FOLDER);
-        if (!folder || !("children" in folder)) return [];
+        if (!folder || !(folder instanceof TFolder)) return [];
 
         // 1. Gather all physical markdown files
         const fileMap = new Map<string, TFile>();
-        for (const child of (folder as TFolder).children) {
+        for (const child of folder.children) {
             if (child instanceof TFile && child.extension === "md" && !child.name.startsWith(".")) {
                 fileMap.set(child.basename, child);
             }
@@ -165,8 +165,8 @@ export class CategoryService {
     async deleteCategory(filepath: string): Promise<void> {
         const file = this.app.vault.getAbstractFileByPath(filepath);
         if (file && file instanceof TFile) {
-            await this.app.vault.trash(file, false);
-            Logger.log("Moved category to local trash:", filepath);
+            await this.app.fileManager.trashFile(file);
+            Logger.log("Moved category to trash:", filepath);
             // Optimization: Remove from sidebar state
             const items = await this.getSidebarItems();
             const basename = file.basename;

@@ -165,32 +165,32 @@ export default class FluentTasksPlugin extends Plugin {
 
         // Ribbon icon - always visible in left sidebar
         this.addRibbonIcon("check-square", "Open Fluent Tasks", () => {
-            this.activateAllViews();
+            void this.activateAllViews();
         });
 
         // Register commands
         this.addCommand({
             id: "open-all-views",
             name: "Open all views",
-            callback: () => this.activateAllViews(),
+            callback: () => { void this.activateAllViews(); },
         });
 
         this.addCommand({
             id: "open-sidebar",
             name: "Open sidebar",
-            callback: () => this.activateView(VIEW_TYPE_SIDEBAR, "left"),
+            callback: () => { void this.activateView(VIEW_TYPE_SIDEBAR, "left"); },
         });
 
         this.addCommand({
             id: "open-main-view",
             name: "Open main view",
-            callback: () => this.activateView(VIEW_TYPE_MAIN, "center"),
+            callback: () => { void this.activateView(VIEW_TYPE_MAIN, "center"); },
         });
 
         this.addCommand({
             id: "open-detail-view",
             name: "Open detail view",
-            callback: () => this.activateView(VIEW_TYPE_DETAIL, "right"),
+            callback: () => { void this.activateView(VIEW_TYPE_DETAIL, "right"); },
         });
 
         // FIX: All workspace/vault operations MUST wait until layout is ready.
@@ -206,20 +206,22 @@ export default class FluentTasksPlugin extends Plugin {
                 this.app.workspace.detachLeavesOfType(VIEW_TYPE_DETAIL);
             });
 
-            EventBus.on(EventName.CATEGORY_SELECTED, async (payload: any) => {
+            EventBus.on(EventName.CATEGORY_SELECTED, (payload: any) => {
                 if (payload && payload.category) {
-                    await this.activateView(VIEW_TYPE_MAIN, "center");
+                    void this.activateView(VIEW_TYPE_MAIN, "center");
                 }
             });
 
-            EventBus.on(EventName.TASK_SELECTED, async (payload: any) => {
-                const leaf = await this.activateView(VIEW_TYPE_DETAIL, "right");
-                if (leaf && leaf.view instanceof TaskDetailViewWrapper) {
-                    const comp = leaf.view.getComponent();
-                    if (comp) {
-                        comp.loadTask(payload.task, payload.categoryFilepath);
+            EventBus.on(EventName.TASK_SELECTED, (payload: any) => {
+                void (async () => {
+                    const leaf = await this.activateView(VIEW_TYPE_DETAIL, "right");
+                    if (leaf && leaf.view instanceof TaskDetailViewWrapper) {
+                        const comp = leaf.view.getComponent();
+                        if (comp) {
+                            comp.loadTask(payload.task, payload.categoryFilepath);
+                        }
                     }
-                }
+                })();
             });
 
             // Automatically open views on startup if not already open
@@ -309,7 +311,7 @@ export default class FluentTasksPlugin extends Plugin {
         }
 
         if (leaf) {
-            (workspace as any).revealLeaf(leaf);
+            workspace.revealLeaf(leaf);
         }
 
         return leaf;
