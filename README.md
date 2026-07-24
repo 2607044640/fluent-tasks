@@ -5,6 +5,10 @@ A beautiful, drag-and-drop task manager for Obsidian, inspired by Microsoft To-D
 > [!NOTE]
 > If you are looking for a local alternative to **Microsoft To-Do**, **Todoist**, **TickTick (滴答清单)**, **Things 3**, or **Google Tasks** directly inside your Obsidian vault, Fluent Tasks provides a beautiful drag-and-drop workflow that stores all your lists and tasks in standard Markdown files.
 
+<context>
+For underlying architecture modifications, data flow sequence, component boundaries, and AI-assisted development ("vibe coding"), please refer to: [fluent-tasks_Architecture.md](file:///C:/ObsidianPublish/fluent-tasks/fluent-tasks_Architecture.md).
+</context>
+
 ## Features
 
 ### 1. Hierarchical Lists & Group Management
@@ -41,6 +45,24 @@ Fluent Tasks respects your data ownership. All lists are stored as `.md` files i
 - [ ] Buy groceries %%{"id":"t-1234","starred":false,"steps":[],"note":"","createdAt":"2026-07-17T08:00:00Z"}%%
 - [x] Walk the dog %%{"id":"t-5678","starred":true,"steps":[{"text":"Grab leash","done":true}],"note":"Likes the park.","createdAt":"2026-07-16T09:00:00Z"}%%
 ```
+
+---
+
+## Contributing & Vibe Coding
+
+We welcome contributions! Whether you are writing TypeScript code directly or using AI agents ("vibe coding"), follow these steps to get started:
+
+1. **Clone & Install**:
+   ```bash
+   git clone https://github.com/2607044640/fluent-tasks.git
+   cd fluent-tasks
+   npm install
+   ```
+2. **Build & Watch**:
+   - Development watch mode: `npm run dev`
+   - Production build: `npm run build`
+3. **Architecture Reference**:
+   Read [fluent-tasks_Architecture.md](file:///C:/ObsidianPublish/fluent-tasks/fluent-tasks_Architecture.md) to understand state flows, EventBus events, and strict system invariants before submitting pull requests.
 
 ---
 
