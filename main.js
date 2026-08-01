@@ -408,7 +408,8 @@ var MarkdownParser = class {
         starred: (_a = meta.starred) != null ? _a : false,
         steps: (_b = meta.steps) != null ? _b : [],
         note: (_c = meta.note) != null ? _c : "",
-        createdAt
+        createdAt,
+        frames: meta.frames
       });
     }
     return tasks2;
@@ -426,6 +427,9 @@ var MarkdownParser = class {
         note: task.note,
         createdAt: task.createdAt
       };
+      if (task.frames && task.frames.length > 0) {
+        meta.frames = task.frames;
+      }
       return `- ${checkbox} ${task.title} %%${JSON.stringify(meta)}%%`;
     }).join("\n");
   }
@@ -452,7 +456,8 @@ var MarkdownParser = class {
       starred: false,
       steps: [],
       note: "",
-      createdAt
+      createdAt,
+      frames: []
     };
   }
 };
@@ -781,6 +786,12 @@ function insert(target, node, anchor) {
 function detach(node) {
   if (node.parentNode) {
     node.parentNode.removeChild(node);
+  }
+}
+function destroy_each(iterations, detaching) {
+  for (let i = 0; i < iterations.length; i += 1) {
+    if (iterations[i])
+      iterations[i].d(detaching);
   }
 }
 function element(name) {
@@ -5740,12 +5751,34 @@ function flip(node, { from, to }, params = {}) {
 var import_obsidian4 = require("obsidian");
 function get_each_context2(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[47] = list[i];
+  child_ctx[52] = list[i];
   return child_ctx;
 }
 function get_each_context_12(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[47] = list[i];
+  child_ctx[55] = list[i];
+  child_ctx[57] = i;
+  return child_ctx;
+}
+function get_each_context_2(ctx, list, i) {
+  const child_ctx = ctx.slice();
+  child_ctx[58] = list[i];
+  return child_ctx;
+}
+function get_each_context_3(ctx, list, i) {
+  const child_ctx = ctx.slice();
+  child_ctx[52] = list[i];
+  return child_ctx;
+}
+function get_each_context_4(ctx, list, i) {
+  const child_ctx = ctx.slice();
+  child_ctx[55] = list[i];
+  child_ctx[57] = i;
+  return child_ctx;
+}
+function get_each_context_5(ctx, list, i) {
+  const child_ctx = ctx.slice();
+  child_ctx[58] = list[i];
   return child_ctx;
 }
 function create_else_block2(ctx) {
@@ -5772,7 +5805,7 @@ function create_if_block2(ctx) {
   let h1;
   let t0_value = (
     /*currentCategory*/
-    ctx[0].name + ""
+    ctx[1].name + ""
   );
   let t0;
   let t1;
@@ -5789,22 +5822,22 @@ function create_if_block2(ctx) {
   let if_block_anchor;
   let mounted;
   let dispose;
-  let each_value_1 = ensure_array_like(
+  let each_value_3 = ensure_array_like(
     /*incompleteTasks*/
-    ctx[1]
+    ctx[2]
   );
   const get_key = (ctx2) => (
     /*task*/
-    ctx2[47].id
+    ctx2[52].id
   );
-  for (let i = 0; i < each_value_1.length; i += 1) {
-    let child_ctx = get_each_context_12(ctx, each_value_1, i);
+  for (let i = 0; i < each_value_3.length; i += 1) {
+    let child_ctx = get_each_context_3(ctx, each_value_3, i);
     let key = get_key(child_ctx);
-    each_1_lookup.set(key, each_blocks[i] = create_each_block_12(key, child_ctx));
+    each_1_lookup.set(key, each_blocks[i] = create_each_block_3(key, child_ctx));
   }
   let if_block = (
     /*completedTasks*/
-    ctx[2].length > 0 && create_if_block_12(ctx)
+    ctx[3].length > 0 && create_if_block_12(ctx)
   );
   return {
     c() {
@@ -5847,7 +5880,7 @@ function create_if_block2(ctx) {
       set_input_value(
         input,
         /*newTaskTitle*/
-        ctx[3]
+        ctx[4]
       );
       insert(target, t3, anchor);
       insert(target, div2, anchor);
@@ -5866,18 +5899,18 @@ function create_if_block2(ctx) {
             input,
             "input",
             /*input_input_handler*/
-            ctx[18]
+            ctx[21]
           ),
           listen(
             input,
             "keydown",
             /*handleAddTaskKeydown*/
-            ctx[6]
+            ctx[9]
           ),
           action_destroyer(dndzone_action = dndzone.call(null, div2, {
             items: (
               /*incompleteTasks*/
-              ctx[1]
+              ctx[2]
             ),
             flipDurationMs: DND_FLIP_DURATION,
             dropAnimationDisabled: true,
@@ -5887,13 +5920,13 @@ function create_if_block2(ctx) {
             div2,
             "consider",
             /*consider_handler*/
-            ctx[27]
+            ctx[31]
           ),
           listen(
             div2,
             "finalize",
             /*finalize_handler*/
-            ctx[28]
+            ctx[32]
           )
         ];
         mounted = true;
@@ -5901,36 +5934,36 @@ function create_if_block2(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*currentCategory*/
-      1 && t0_value !== (t0_value = /*currentCategory*/
-      ctx2[0].name + ""))
+      2 && t0_value !== (t0_value = /*currentCategory*/
+      ctx2[1].name + ""))
         set_data(t0, t0_value);
       if (dirty[0] & /*newTaskTitle*/
-      8 && input.value !== /*newTaskTitle*/
-      ctx2[3]) {
+      16 && input.value !== /*newTaskTitle*/
+      ctx2[4]) {
         set_input_value(
           input,
           /*newTaskTitle*/
-          ctx2[3]
+          ctx2[4]
         );
       }
-      if (dirty[0] & /*incompleteTasks, selectedTaskId, handleTaskPointerDown, selectTask, handleContextMenu, toggleStar, toggleComplete*/
-      25506) {
-        each_value_1 = ensure_array_like(
+      if (dirty[0] & /*incompleteTasks, selectedTaskId, handleTaskPointerDown, selectTask, handleContextMenu, toggleStar, plugin, handleDeleteFrame, toggleComplete*/
+      204101) {
+        each_value_3 = ensure_array_like(
           /*incompleteTasks*/
-          ctx2[1]
+          ctx2[2]
         );
         for (let i = 0; i < each_blocks.length; i += 1)
           each_blocks[i].r();
-        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_1, each_1_lookup, div2, fix_and_destroy_block, create_each_block_12, null, get_each_context_12);
+        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_3, each_1_lookup, div2, fix_and_destroy_block, create_each_block_3, null, get_each_context_3);
         for (let i = 0; i < each_blocks.length; i += 1)
           each_blocks[i].a();
       }
       if (dndzone_action && is_function(dndzone_action.update) && dirty[0] & /*incompleteTasks*/
-      2)
+      4)
         dndzone_action.update.call(null, {
           items: (
             /*incompleteTasks*/
-            ctx2[1]
+            ctx2[2]
           ),
           flipDurationMs: DND_FLIP_DURATION,
           dropAnimationDisabled: true,
@@ -5938,7 +5971,7 @@ function create_if_block2(ctx) {
         });
       if (
         /*completedTasks*/
-        ctx2[2].length > 0
+        ctx2[3].length > 0
       ) {
         if (if_block) {
           if_block.p(ctx2, dirty);
@@ -5972,17 +6005,17 @@ function create_if_block2(ctx) {
     }
   };
 }
-function create_if_block_32(ctx) {
+function create_if_block_5(ctx) {
   let span;
   let t0_value = (
     /*task*/
-    ctx[47].steps.filter(func).length + ""
+    ctx[52].steps.filter(func).length + ""
   );
   let t0;
   let t1;
   let t2_value = (
     /*task*/
-    ctx[47].steps.length + ""
+    ctx[52].steps.length + ""
   );
   let t2;
   let t3;
@@ -6004,12 +6037,12 @@ function create_if_block_32(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*incompleteTasks*/
-      2 && t0_value !== (t0_value = /*task*/
-      ctx2[47].steps.filter(func).length + ""))
+      4 && t0_value !== (t0_value = /*task*/
+      ctx2[52].steps.filter(func).length + ""))
         set_data(t0, t0_value);
       if (dirty[0] & /*incompleteTasks*/
-      2 && t2_value !== (t2_value = /*task*/
-      ctx2[47].steps.length + ""))
+      4 && t2_value !== (t2_value = /*task*/
+      ctx2[52].steps.length + ""))
         set_data(t2, t2_value);
     },
     d(detaching) {
@@ -6019,7 +6052,205 @@ function create_if_block_32(ctx) {
     }
   };
 }
-function create_each_block_12(key_1, ctx) {
+function create_if_block_4(ctx) {
+  let div;
+  let each_value_4 = ensure_array_like(
+    /*task*/
+    ctx[52].frames.slice(
+      0,
+      /*plugin*/
+      ctx[0].settings.maxFrames
+    )
+  );
+  let each_blocks = [];
+  for (let i = 0; i < each_value_4.length; i += 1) {
+    each_blocks[i] = create_each_block_4(get_each_context_4(ctx, each_value_4, i));
+  }
+  return {
+    c() {
+      div = element("div");
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        each_blocks[i].c();
+      }
+      attr(div, "class", "image-frames");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        if (each_blocks[i]) {
+          each_blocks[i].m(div, null);
+        }
+      }
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*handleDeleteFrame, incompleteTasks, plugin*/
+      261) {
+        each_value_4 = ensure_array_like(
+          /*task*/
+          ctx2[52].frames.slice(
+            0,
+            /*plugin*/
+            ctx2[0].settings.maxFrames
+          )
+        );
+        let i;
+        for (i = 0; i < each_value_4.length; i += 1) {
+          const child_ctx = get_each_context_4(ctx2, each_value_4, i);
+          if (each_blocks[i]) {
+            each_blocks[i].p(child_ctx, dirty);
+          } else {
+            each_blocks[i] = create_each_block_4(child_ctx);
+            each_blocks[i].c();
+            each_blocks[i].m(div, null);
+          }
+        }
+        for (; i < each_blocks.length; i += 1) {
+          each_blocks[i].d(1);
+        }
+        each_blocks.length = each_value_4.length;
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+      destroy_each(each_blocks, detaching);
+    }
+  };
+}
+function create_each_block_5(ctx) {
+  let span;
+  let renderIcon_action;
+  let mounted;
+  let dispose;
+  return {
+    c() {
+      span = element("span");
+      attr(span, "class", "imagination-icon");
+    },
+    m(target, anchor) {
+      insert(target, span, anchor);
+      if (!mounted) {
+        dispose = action_destroyer(renderIcon_action = /*renderIcon*/
+        ctx[7].call(
+          null,
+          span,
+          /*iconStr*/
+          ctx[58]
+        ));
+        mounted = true;
+      }
+    },
+    p(new_ctx, dirty) {
+      ctx = new_ctx;
+      if (renderIcon_action && is_function(renderIcon_action.update) && dirty[0] & /*incompleteTasks, plugin*/
+      5)
+        renderIcon_action.update.call(
+          null,
+          /*iconStr*/
+          ctx[58]
+        );
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(span);
+      }
+      mounted = false;
+      dispose();
+    }
+  };
+}
+function create_each_block_4(ctx) {
+  let div;
+  let t;
+  let mounted;
+  let dispose;
+  let each_value_5 = ensure_array_like(
+    /*frame*/
+    ctx[55].slice(
+      0,
+      /*plugin*/
+      ctx[0].settings.maxIconsPerFrame
+    )
+  );
+  let each_blocks = [];
+  for (let i = 0; i < each_value_5.length; i += 1) {
+    each_blocks[i] = create_each_block_5(get_each_context_5(ctx, each_value_5, i));
+  }
+  function contextmenu_handler(...args) {
+    return (
+      /*contextmenu_handler*/
+      ctx[24](
+        /*task*/
+        ctx[52],
+        /*frameIndex*/
+        ctx[57],
+        ...args
+      )
+    );
+  }
+  return {
+    c() {
+      div = element("div");
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        each_blocks[i].c();
+      }
+      t = space();
+      attr(div, "class", "image-frame");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        if (each_blocks[i]) {
+          each_blocks[i].m(div, null);
+        }
+      }
+      append(div, t);
+      if (!mounted) {
+        dispose = listen(div, "contextmenu", stop_propagation(contextmenu_handler));
+        mounted = true;
+      }
+    },
+    p(new_ctx, dirty) {
+      ctx = new_ctx;
+      if (dirty[0] & /*incompleteTasks, plugin*/
+      5) {
+        each_value_5 = ensure_array_like(
+          /*frame*/
+          ctx[55].slice(
+            0,
+            /*plugin*/
+            ctx[0].settings.maxIconsPerFrame
+          )
+        );
+        let i;
+        for (i = 0; i < each_value_5.length; i += 1) {
+          const child_ctx = get_each_context_5(ctx, each_value_5, i);
+          if (each_blocks[i]) {
+            each_blocks[i].p(child_ctx, dirty);
+          } else {
+            each_blocks[i] = create_each_block_5(child_ctx);
+            each_blocks[i].c();
+            each_blocks[i].m(div, t);
+          }
+        }
+        for (; i < each_blocks.length; i += 1) {
+          each_blocks[i].d(1);
+        }
+        each_blocks.length = each_value_5.length;
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+      destroy_each(each_blocks, detaching);
+      mounted = false;
+      dispose();
+    }
+  };
+}
+function create_each_block_3(key_1, ctx) {
   let div1;
   let span0;
   let t0;
@@ -6027,16 +6258,17 @@ function create_each_block_12(key_1, ctx) {
   let span1;
   let t1_value = (
     /*task*/
-    ctx[47].title + ""
+    ctx[52].title + ""
   );
   let t1;
   let t2;
   let t3;
+  let t4;
   let span2;
   let svg1;
   let polygon;
   let svg1_fill_value;
-  let t4;
+  let t5;
   let div1_id_value;
   let rect;
   let stop_animation = noop;
@@ -6045,41 +6277,46 @@ function create_each_block_12(key_1, ctx) {
   function click_handler() {
     return (
       /*click_handler*/
-      ctx[19](
+      ctx[22](
         /*task*/
-        ctx[47]
+        ctx[52]
       )
     );
   }
   function keydown_handler(...args) {
     return (
       /*keydown_handler*/
-      ctx[20](
+      ctx[23](
         /*task*/
-        ctx[47],
+        ctx[52],
         ...args
       )
     );
   }
-  let if_block = (
+  let if_block0 = (
     /*task*/
-    ctx[47].steps.length > 0 && create_if_block_32(ctx)
+    ctx[52].steps.length > 0 && create_if_block_5(ctx)
+  );
+  let if_block1 = (
+    /*task*/
+    ctx[52].frames && /*task*/
+    ctx[52].frames.length > 0 && create_if_block_4(ctx)
   );
   function click_handler_1() {
     return (
       /*click_handler_1*/
-      ctx[21](
+      ctx[25](
         /*task*/
-        ctx[47]
+        ctx[52]
       )
     );
   }
   function keydown_handler_1(...args) {
     return (
       /*keydown_handler_1*/
-      ctx[22](
+      ctx[26](
         /*task*/
-        ctx[47],
+        ctx[52],
         ...args
       )
     );
@@ -6087,27 +6324,27 @@ function create_each_block_12(key_1, ctx) {
   function pointerdown_handler() {
     return (
       /*pointerdown_handler*/
-      ctx[23](
+      ctx[27](
         /*task*/
-        ctx[47]
+        ctx[52]
       )
     );
   }
   function click_handler_2() {
     return (
       /*click_handler_2*/
-      ctx[24](
+      ctx[28](
         /*task*/
-        ctx[47]
+        ctx[52]
       )
     );
   }
-  function contextmenu_handler(...args) {
+  function contextmenu_handler_1(...args) {
     return (
-      /*contextmenu_handler*/
-      ctx[25](
+      /*contextmenu_handler_1*/
+      ctx[29](
         /*task*/
-        ctx[47],
+        ctx[52],
         ...args
       )
     );
@@ -6115,9 +6352,9 @@ function create_each_block_12(key_1, ctx) {
   function keydown_handler_2(...args) {
     return (
       /*keydown_handler_2*/
-      ctx[26](
+      ctx[30](
         /*task*/
-        ctx[47],
+        ctx[52],
         ...args
       )
     );
@@ -6134,13 +6371,16 @@ function create_each_block_12(key_1, ctx) {
       span1 = element("span");
       t1 = text(t1_value);
       t2 = space();
-      if (if_block)
-        if_block.c();
+      if (if_block0)
+        if_block0.c();
       t3 = space();
+      if (if_block1)
+        if_block1.c();
+      t4 = space();
       span2 = element("span");
       svg1 = svg_element("svg");
       polygon = svg_element("polygon");
-      t4 = space();
+      t5 = space();
       attr(span0, "class", "checkbox");
       attr(span0, "role", "checkbox");
       attr(span0, "aria-checked", "false");
@@ -6152,7 +6392,7 @@ function create_each_block_12(key_1, ctx) {
       attr(svg1, "height", "18");
       attr(svg1, "viewBox", "0 0 24 24");
       attr(svg1, "fill", svg1_fill_value = /*task*/
-      ctx[47].starred ? "currentColor" : "none");
+      ctx[52].starred ? "currentColor" : "none");
       attr(svg1, "stroke", "currentColor");
       attr(svg1, "stroke-width", "2");
       attr(span2, "class", "star");
@@ -6162,10 +6402,10 @@ function create_each_block_12(key_1, ctx) {
         span2,
         "active",
         /*task*/
-        ctx[47].starred
+        ctx[52].starred
       );
       attr(div1, "id", div1_id_value = "task-" + /*task*/
-      ctx[47].id);
+      ctx[52].id);
       attr(div1, "class", "task-item");
       attr(div1, "tabindex", "0");
       attr(div1, "role", "button");
@@ -6173,8 +6413,8 @@ function create_each_block_12(key_1, ctx) {
         div1,
         "selected",
         /*selectedTaskId*/
-        ctx[5] === /*task*/
-        ctx[47].id
+        ctx[6] === /*task*/
+        ctx[52].id
       );
       this.first = div1;
     },
@@ -6186,13 +6426,16 @@ function create_each_block_12(key_1, ctx) {
       append(div0, span1);
       append(span1, t1);
       append(div0, t2);
-      if (if_block)
-        if_block.m(div0, null);
+      if (if_block0)
+        if_block0.m(div0, null);
       append(div1, t3);
+      if (if_block1)
+        if_block1.m(div1, null);
+      append(div1, t4);
       append(div1, span2);
       append(span2, svg1);
       append(svg1, polygon);
-      append(div1, t4);
+      append(div1, t5);
       if (!mounted) {
         dispose = [
           listen(span0, "click", stop_propagation(click_handler)),
@@ -6201,7 +6444,7 @@ function create_each_block_12(key_1, ctx) {
           listen(span2, "keydown", stop_propagation(keydown_handler_1)),
           listen(div1, "pointerdown", pointerdown_handler),
           listen(div1, "click", click_handler_2),
-          listen(div1, "contextmenu", contextmenu_handler),
+          listen(div1, "contextmenu", contextmenu_handler_1),
           listen(div1, "keydown", keydown_handler_2)
         ];
         mounted = true;
@@ -6210,51 +6453,67 @@ function create_each_block_12(key_1, ctx) {
     p(new_ctx, dirty) {
       ctx = new_ctx;
       if (dirty[0] & /*incompleteTasks*/
-      2 && t1_value !== (t1_value = /*task*/
-      ctx[47].title + ""))
+      4 && t1_value !== (t1_value = /*task*/
+      ctx[52].title + ""))
         set_data(t1, t1_value);
       if (
         /*task*/
-        ctx[47].steps.length > 0
+        ctx[52].steps.length > 0
       ) {
-        if (if_block) {
-          if_block.p(ctx, dirty);
+        if (if_block0) {
+          if_block0.p(ctx, dirty);
         } else {
-          if_block = create_if_block_32(ctx);
-          if_block.c();
-          if_block.m(div0, null);
+          if_block0 = create_if_block_5(ctx);
+          if_block0.c();
+          if_block0.m(div0, null);
         }
-      } else if (if_block) {
-        if_block.d(1);
-        if_block = null;
+      } else if (if_block0) {
+        if_block0.d(1);
+        if_block0 = null;
+      }
+      if (
+        /*task*/
+        ctx[52].frames && /*task*/
+        ctx[52].frames.length > 0
+      ) {
+        if (if_block1) {
+          if_block1.p(ctx, dirty);
+        } else {
+          if_block1 = create_if_block_4(ctx);
+          if_block1.c();
+          if_block1.m(div1, t4);
+        }
+      } else if (if_block1) {
+        if_block1.d(1);
+        if_block1 = null;
       }
       if (dirty[0] & /*incompleteTasks*/
-      2 && svg1_fill_value !== (svg1_fill_value = /*task*/
-      ctx[47].starred ? "currentColor" : "none")) {
+      4 && svg1_fill_value !== (svg1_fill_value = /*task*/
+      ctx[52].starred ? "currentColor" : "none")) {
         attr(svg1, "fill", svg1_fill_value);
       }
       if (dirty[0] & /*incompleteTasks*/
-      2) {
+      4) {
         toggle_class(
           span2,
           "active",
           /*task*/
-          ctx[47].starred
+          ctx[52].starred
         );
       }
       if (dirty[0] & /*incompleteTasks*/
-      2 && div1_id_value !== (div1_id_value = "task-" + /*task*/
-      ctx[47].id)) {
+      4 && div1_id_value !== (div1_id_value = "task-" + /*task*/
+      ctx[52].id)) {
         attr(div1, "id", div1_id_value);
       }
       if (dirty[0] & /*selectedTaskId, incompleteTasks*/
-      34) {
+      68) {
         toggle_class(
           div1,
           "selected",
           /*selectedTaskId*/
-          ctx[5] === /*task*/
-          ctx[47].id
+          ctx[6] === /*task*/
+          ctx[52].id
         );
       }
     },
@@ -6273,8 +6532,10 @@ function create_each_block_12(key_1, ctx) {
       if (detaching) {
         detach(div1);
       }
-      if (if_block)
-        if_block.d();
+      if (if_block0)
+        if_block0.d();
+      if (if_block1)
+        if_block1.d();
       mounted = false;
       run_all(dispose);
     }
@@ -6290,7 +6551,7 @@ function create_if_block_12(ctx) {
   let span2;
   let t3_value = (
     /*completedTasks*/
-    ctx[2].length + ""
+    ctx[3].length + ""
   );
   let t3;
   let t4;
@@ -6298,7 +6559,7 @@ function create_if_block_12(ctx) {
   let dispose;
   let if_block = (
     /*showCompleted*/
-    ctx[4] && create_if_block_22(ctx)
+    ctx[5] && create_if_block_22(ctx)
   );
   return {
     c() {
@@ -6320,7 +6581,7 @@ function create_if_block_12(ctx) {
         span0,
         "open",
         /*showCompleted*/
-        ctx[4]
+        ctx[5]
       );
       attr(span2, "class", "completed-count");
       attr(div0, "class", "completed-header");
@@ -6346,13 +6607,13 @@ function create_if_block_12(ctx) {
             div0,
             "click",
             /*toggleCompletedSection*/
-            ctx[10]
+            ctx[13]
           ),
           listen(
             div0,
             "keydown",
             /*keydown_handler_3*/
-            ctx[29]
+            ctx[33]
           )
         ];
         mounted = true;
@@ -6360,21 +6621,21 @@ function create_if_block_12(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*showCompleted*/
-      16) {
+      32) {
         toggle_class(
           span0,
           "open",
           /*showCompleted*/
-          ctx2[4]
+          ctx2[5]
         );
       }
       if (dirty[0] & /*completedTasks*/
-      4 && t3_value !== (t3_value = /*completedTasks*/
-      ctx2[2].length + ""))
+      8 && t3_value !== (t3_value = /*completedTasks*/
+      ctx2[3].length + ""))
         set_data(t3, t3_value);
       if (
         /*showCompleted*/
-        ctx2[4]
+        ctx2[5]
       ) {
         if (if_block) {
           if_block.p(ctx2, dirty);
@@ -6408,11 +6669,11 @@ function create_if_block_22(ctx) {
   let dispose;
   let each_value = ensure_array_like(
     /*completedTasks*/
-    ctx[2]
+    ctx[3]
   );
   const get_key = (ctx2) => (
     /*task*/
-    ctx2[47].id
+    ctx2[52].id
   );
   for (let i = 0; i < each_value.length; i += 1) {
     let child_ctx = get_each_context2(ctx, each_value, i);
@@ -6439,7 +6700,7 @@ function create_if_block_22(ctx) {
           action_destroyer(dndzone_action = dndzone.call(null, div, {
             items: (
               /*completedTasks*/
-              ctx[2]
+              ctx[3]
             ),
             flipDurationMs: DND_FLIP_DURATION,
             dropAnimationDisabled: true,
@@ -6449,24 +6710,24 @@ function create_if_block_22(ctx) {
             div,
             "consider",
             /*consider_handler_1*/
-            ctx[38]
+            ctx[43]
           ),
           listen(
             div,
             "finalize",
             /*finalize_handler_1*/
-            ctx[39]
+            ctx[44]
           )
         ];
         mounted = true;
       }
     },
     p(ctx2, dirty) {
-      if (dirty[0] & /*completedTasks, selectedTaskId, handleTaskPointerDown, selectTask, handleContextMenu, toggleStar, toggleComplete*/
-      25508) {
+      if (dirty[0] & /*completedTasks, selectedTaskId, handleTaskPointerDown, selectTask, handleContextMenu, toggleStar, plugin, handleDeleteFrame, toggleComplete*/
+      204105) {
         each_value = ensure_array_like(
           /*completedTasks*/
-          ctx2[2]
+          ctx2[3]
         );
         for (let i = 0; i < each_blocks.length; i += 1)
           each_blocks[i].r();
@@ -6475,11 +6736,11 @@ function create_if_block_22(ctx) {
           each_blocks[i].a();
       }
       if (dndzone_action && is_function(dndzone_action.update) && dirty[0] & /*completedTasks*/
-      4)
+      8)
         dndzone_action.update.call(null, {
           items: (
             /*completedTasks*/
-            ctx2[2]
+            ctx2[3]
           ),
           flipDurationMs: DND_FLIP_DURATION,
           dropAnimationDisabled: true,
@@ -6498,6 +6759,204 @@ function create_if_block_22(ctx) {
     }
   };
 }
+function create_if_block_32(ctx) {
+  let div;
+  let each_value_1 = ensure_array_like(
+    /*task*/
+    ctx[52].frames.slice(
+      0,
+      /*plugin*/
+      ctx[0].settings.maxFrames
+    )
+  );
+  let each_blocks = [];
+  for (let i = 0; i < each_value_1.length; i += 1) {
+    each_blocks[i] = create_each_block_12(get_each_context_12(ctx, each_value_1, i));
+  }
+  return {
+    c() {
+      div = element("div");
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        each_blocks[i].c();
+      }
+      attr(div, "class", "image-frames");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        if (each_blocks[i]) {
+          each_blocks[i].m(div, null);
+        }
+      }
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*handleDeleteFrame, completedTasks, plugin*/
+      265) {
+        each_value_1 = ensure_array_like(
+          /*task*/
+          ctx2[52].frames.slice(
+            0,
+            /*plugin*/
+            ctx2[0].settings.maxFrames
+          )
+        );
+        let i;
+        for (i = 0; i < each_value_1.length; i += 1) {
+          const child_ctx = get_each_context_12(ctx2, each_value_1, i);
+          if (each_blocks[i]) {
+            each_blocks[i].p(child_ctx, dirty);
+          } else {
+            each_blocks[i] = create_each_block_12(child_ctx);
+            each_blocks[i].c();
+            each_blocks[i].m(div, null);
+          }
+        }
+        for (; i < each_blocks.length; i += 1) {
+          each_blocks[i].d(1);
+        }
+        each_blocks.length = each_value_1.length;
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+      destroy_each(each_blocks, detaching);
+    }
+  };
+}
+function create_each_block_2(ctx) {
+  let span;
+  let renderIcon_action;
+  let mounted;
+  let dispose;
+  return {
+    c() {
+      span = element("span");
+      attr(span, "class", "imagination-icon");
+    },
+    m(target, anchor) {
+      insert(target, span, anchor);
+      if (!mounted) {
+        dispose = action_destroyer(renderIcon_action = /*renderIcon*/
+        ctx[7].call(
+          null,
+          span,
+          /*iconStr*/
+          ctx[58]
+        ));
+        mounted = true;
+      }
+    },
+    p(new_ctx, dirty) {
+      ctx = new_ctx;
+      if (renderIcon_action && is_function(renderIcon_action.update) && dirty[0] & /*completedTasks, plugin*/
+      9)
+        renderIcon_action.update.call(
+          null,
+          /*iconStr*/
+          ctx[58]
+        );
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(span);
+      }
+      mounted = false;
+      dispose();
+    }
+  };
+}
+function create_each_block_12(ctx) {
+  let div;
+  let t;
+  let mounted;
+  let dispose;
+  let each_value_2 = ensure_array_like(
+    /*frame*/
+    ctx[55].slice(
+      0,
+      /*plugin*/
+      ctx[0].settings.maxIconsPerFrame
+    )
+  );
+  let each_blocks = [];
+  for (let i = 0; i < each_value_2.length; i += 1) {
+    each_blocks[i] = create_each_block_2(get_each_context_2(ctx, each_value_2, i));
+  }
+  function contextmenu_handler_2(...args) {
+    return (
+      /*contextmenu_handler_2*/
+      ctx[36](
+        /*task*/
+        ctx[52],
+        /*frameIndex*/
+        ctx[57],
+        ...args
+      )
+    );
+  }
+  return {
+    c() {
+      div = element("div");
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        each_blocks[i].c();
+      }
+      t = space();
+      attr(div, "class", "image-frame");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        if (each_blocks[i]) {
+          each_blocks[i].m(div, null);
+        }
+      }
+      append(div, t);
+      if (!mounted) {
+        dispose = listen(div, "contextmenu", stop_propagation(contextmenu_handler_2));
+        mounted = true;
+      }
+    },
+    p(new_ctx, dirty) {
+      ctx = new_ctx;
+      if (dirty[0] & /*completedTasks, plugin*/
+      9) {
+        each_value_2 = ensure_array_like(
+          /*frame*/
+          ctx[55].slice(
+            0,
+            /*plugin*/
+            ctx[0].settings.maxIconsPerFrame
+          )
+        );
+        let i;
+        for (i = 0; i < each_value_2.length; i += 1) {
+          const child_ctx = get_each_context_2(ctx, each_value_2, i);
+          if (each_blocks[i]) {
+            each_blocks[i].p(child_ctx, dirty);
+          } else {
+            each_blocks[i] = create_each_block_2(child_ctx);
+            each_blocks[i].c();
+            each_blocks[i].m(div, t);
+          }
+        }
+        for (; i < each_blocks.length; i += 1) {
+          each_blocks[i].d(1);
+        }
+        each_blocks.length = each_value_2.length;
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+      destroy_each(each_blocks, detaching);
+      mounted = false;
+      dispose();
+    }
+  };
+}
 function create_each_block2(key_1, ctx) {
   let div1;
   let span0;
@@ -6506,15 +6965,16 @@ function create_each_block2(key_1, ctx) {
   let span1;
   let t1_value = (
     /*task*/
-    ctx[47].title + ""
+    ctx[52].title + ""
   );
   let t1;
   let t2;
+  let t3;
   let span2;
   let svg1;
   let polygon;
   let svg1_fill_value;
-  let t3;
+  let t4;
   let div1_id_value;
   let rect;
   let stop_animation = noop;
@@ -6523,37 +6983,42 @@ function create_each_block2(key_1, ctx) {
   function click_handler_3() {
     return (
       /*click_handler_3*/
-      ctx[30](
+      ctx[34](
         /*task*/
-        ctx[47]
+        ctx[52]
       )
     );
   }
   function keydown_handler_4(...args) {
     return (
       /*keydown_handler_4*/
-      ctx[31](
+      ctx[35](
         /*task*/
-        ctx[47],
+        ctx[52],
         ...args
       )
     );
   }
+  let if_block = (
+    /*task*/
+    ctx[52].frames && /*task*/
+    ctx[52].frames.length > 0 && create_if_block_32(ctx)
+  );
   function click_handler_4() {
     return (
       /*click_handler_4*/
-      ctx[32](
+      ctx[37](
         /*task*/
-        ctx[47]
+        ctx[52]
       )
     );
   }
   function keydown_handler_5(...args) {
     return (
       /*keydown_handler_5*/
-      ctx[33](
+      ctx[38](
         /*task*/
-        ctx[47],
+        ctx[52],
         ...args
       )
     );
@@ -6561,27 +7026,27 @@ function create_each_block2(key_1, ctx) {
   function pointerdown_handler_1() {
     return (
       /*pointerdown_handler_1*/
-      ctx[34](
+      ctx[39](
         /*task*/
-        ctx[47]
+        ctx[52]
       )
     );
   }
   function click_handler_5() {
     return (
       /*click_handler_5*/
-      ctx[35](
+      ctx[40](
         /*task*/
-        ctx[47]
+        ctx[52]
       )
     );
   }
-  function contextmenu_handler_1(...args) {
+  function contextmenu_handler_3(...args) {
     return (
-      /*contextmenu_handler_1*/
-      ctx[36](
+      /*contextmenu_handler_3*/
+      ctx[41](
         /*task*/
-        ctx[47],
+        ctx[52],
         ...args
       )
     );
@@ -6589,9 +7054,9 @@ function create_each_block2(key_1, ctx) {
   function keydown_handler_6(...args) {
     return (
       /*keydown_handler_6*/
-      ctx[37](
+      ctx[42](
         /*task*/
-        ctx[47],
+        ctx[52],
         ...args
       )
     );
@@ -6608,10 +7073,13 @@ function create_each_block2(key_1, ctx) {
       span1 = element("span");
       t1 = text(t1_value);
       t2 = space();
+      if (if_block)
+        if_block.c();
+      t3 = space();
       span2 = element("span");
       svg1 = svg_element("svg");
       polygon = svg_element("polygon");
-      t3 = space();
+      t4 = space();
       attr(span0, "class", "checkbox");
       attr(span0, "role", "checkbox");
       attr(span0, "aria-checked", "true");
@@ -6623,7 +7091,7 @@ function create_each_block2(key_1, ctx) {
       attr(svg1, "height", "18");
       attr(svg1, "viewBox", "0 0 24 24");
       attr(svg1, "fill", svg1_fill_value = /*task*/
-      ctx[47].starred ? "currentColor" : "none");
+      ctx[52].starred ? "currentColor" : "none");
       attr(svg1, "stroke", "currentColor");
       attr(svg1, "stroke-width", "2");
       attr(span2, "class", "star");
@@ -6633,10 +7101,10 @@ function create_each_block2(key_1, ctx) {
         span2,
         "active",
         /*task*/
-        ctx[47].starred
+        ctx[52].starred
       );
       attr(div1, "id", div1_id_value = "task-" + /*task*/
-      ctx[47].id);
+      ctx[52].id);
       attr(div1, "class", "task-item completed");
       attr(div1, "tabindex", "0");
       attr(div1, "role", "button");
@@ -6644,8 +7112,8 @@ function create_each_block2(key_1, ctx) {
         div1,
         "selected",
         /*selectedTaskId*/
-        ctx[5] === /*task*/
-        ctx[47].id
+        ctx[6] === /*task*/
+        ctx[52].id
       );
       this.first = div1;
     },
@@ -6657,10 +7125,13 @@ function create_each_block2(key_1, ctx) {
       append(div0, span1);
       append(span1, t1);
       append(div1, t2);
+      if (if_block)
+        if_block.m(div1, null);
+      append(div1, t3);
       append(div1, span2);
       append(span2, svg1);
       append(svg1, polygon);
-      append(div1, t3);
+      append(div1, t4);
       if (!mounted) {
         dispose = [
           listen(span0, "click", stop_propagation(click_handler_3)),
@@ -6669,7 +7140,7 @@ function create_each_block2(key_1, ctx) {
           listen(span2, "keydown", stop_propagation(keydown_handler_5)),
           listen(div1, "pointerdown", pointerdown_handler_1),
           listen(div1, "click", click_handler_5),
-          listen(div1, "contextmenu", contextmenu_handler_1),
+          listen(div1, "contextmenu", contextmenu_handler_3),
           listen(div1, "keydown", keydown_handler_6)
         ];
         mounted = true;
@@ -6678,36 +7149,52 @@ function create_each_block2(key_1, ctx) {
     p(new_ctx, dirty) {
       ctx = new_ctx;
       if (dirty[0] & /*completedTasks*/
-      4 && t1_value !== (t1_value = /*task*/
-      ctx[47].title + ""))
+      8 && t1_value !== (t1_value = /*task*/
+      ctx[52].title + ""))
         set_data(t1, t1_value);
+      if (
+        /*task*/
+        ctx[52].frames && /*task*/
+        ctx[52].frames.length > 0
+      ) {
+        if (if_block) {
+          if_block.p(ctx, dirty);
+        } else {
+          if_block = create_if_block_32(ctx);
+          if_block.c();
+          if_block.m(div1, t3);
+        }
+      } else if (if_block) {
+        if_block.d(1);
+        if_block = null;
+      }
       if (dirty[0] & /*completedTasks*/
-      4 && svg1_fill_value !== (svg1_fill_value = /*task*/
-      ctx[47].starred ? "currentColor" : "none")) {
+      8 && svg1_fill_value !== (svg1_fill_value = /*task*/
+      ctx[52].starred ? "currentColor" : "none")) {
         attr(svg1, "fill", svg1_fill_value);
       }
       if (dirty[0] & /*completedTasks*/
-      4) {
+      8) {
         toggle_class(
           span2,
           "active",
           /*task*/
-          ctx[47].starred
+          ctx[52].starred
         );
       }
       if (dirty[0] & /*completedTasks*/
-      4 && div1_id_value !== (div1_id_value = "task-" + /*task*/
-      ctx[47].id)) {
+      8 && div1_id_value !== (div1_id_value = "task-" + /*task*/
+      ctx[52].id)) {
         attr(div1, "id", div1_id_value);
       }
       if (dirty[0] & /*selectedTaskId, completedTasks*/
-      36) {
+      72) {
         toggle_class(
           div1,
           "selected",
           /*selectedTaskId*/
-          ctx[5] === /*task*/
-          ctx[47].id
+          ctx[6] === /*task*/
+          ctx[52].id
         );
       }
     },
@@ -6726,6 +7213,8 @@ function create_each_block2(key_1, ctx) {
       if (detaching) {
         detach(div1);
       }
+      if (if_block)
+        if_block.d();
       mounted = false;
       run_all(dispose);
     }
@@ -6736,12 +7225,12 @@ function create_fragment2(ctx) {
   function select_block_type(ctx2, dirty) {
     if (
       /*currentCategory*/
-      ctx2[0]
+      ctx2[1]
     )
       return create_if_block2;
     return create_else_block2;
   }
-  let current_block_type = select_block_type(ctx, [-1, -1]);
+  let current_block_type = select_block_type(ctx, [-1, -1, -1]);
   let if_block = current_block_type(ctx);
   return {
     c() {
@@ -6806,6 +7295,7 @@ function instance2($$self, $$props, $$invalidate) {
     });
   };
   let { dataService } = $$props;
+  let { plugin } = $$props;
   let currentCategory = null;
   let incompleteTasks = [];
   let completedTasks = [];
@@ -6829,14 +7319,14 @@ function instance2($$self, $$props, $$invalidate) {
       if (!currentCategory)
         return;
       const tasks2 = yield dataService.getTasks(currentCategory.filepath);
-      $$invalidate(1, incompleteTasks = tasks2.filter((t) => !t.completed));
-      $$invalidate(2, completedTasks = tasks2.filter((t) => t.completed));
+      $$invalidate(2, incompleteTasks = tasks2.filter((t) => !t.completed));
+      $$invalidate(3, completedTasks = tasks2.filter((t) => t.completed));
     });
   }
   function loadCategory(cat) {
     return __awaiter(this, void 0, void 0, function* () {
-      $$invalidate(0, currentCategory = cat);
-      $$invalidate(5, selectedTaskId = "");
+      $$invalidate(1, currentCategory = cat);
+      $$invalidate(6, selectedTaskId = "");
       yield loadTasks();
     });
   }
@@ -6862,14 +7352,14 @@ function instance2($$self, $$props, $$invalidate) {
         const existsInComplete = completedTasks.find((t) => t.id === payload.task.id);
         if (!existsInIncomplete && !existsInComplete) {
           if (payload.task.completed) {
-            $$invalidate(2, completedTasks = [...completedTasks, payload.task]);
+            $$invalidate(3, completedTasks = [...completedTasks, payload.task]);
           } else {
-            $$invalidate(1, incompleteTasks = [...incompleteTasks, payload.task]);
+            $$invalidate(2, incompleteTasks = [...incompleteTasks, payload.task]);
           }
         }
       } else if (payload.sourcePath === (currentCategory === null || currentCategory === void 0 ? void 0 : currentCategory.filepath)) {
-        $$invalidate(1, incompleteTasks = incompleteTasks.filter((t) => t.id !== payload.task.id));
-        $$invalidate(2, completedTasks = completedTasks.filter((t) => t.id !== payload.task.id));
+        $$invalidate(2, incompleteTasks = incompleteTasks.filter((t) => t.id !== payload.task.id));
+        $$invalidate(3, completedTasks = completedTasks.filter((t) => t.id !== payload.task.id));
       }
       setTimeout(
         () => __awaiter(this, void 0, void 0, function* () {
@@ -6883,12 +7373,45 @@ function instance2($$self, $$props, $$invalidate) {
   function handleTaskDeleted(payload) {
     return __awaiter(this, void 0, void 0, function* () {
       if (payload.categoryFilepath === (currentCategory === null || currentCategory === void 0 ? void 0 : currentCategory.filepath)) {
-        $$invalidate(1, incompleteTasks = incompleteTasks.filter((t) => t.id !== payload.task.id));
-        $$invalidate(2, completedTasks = completedTasks.filter((t) => t.id !== payload.task.id));
+        $$invalidate(2, incompleteTasks = incompleteTasks.filter((t) => t.id !== payload.task.id));
+        $$invalidate(3, completedTasks = completedTasks.filter((t) => t.id !== payload.task.id));
         if (selectedTaskId === payload.task.id) {
-          $$invalidate(5, selectedTaskId = "");
+          $$invalidate(6, selectedTaskId = "");
         }
       }
+    });
+  }
+  function renderIcon(node, iconStr) {
+    if (iconStr.startsWith("lucide-")) {
+      const iconName = iconStr.substring(7);
+      (0, import_obsidian4.setIcon)(node, iconName);
+    } else if (iconStr.startsWith("<svg")) {
+      node.innerHTML = iconStr;
+    } else {
+      node.textContent = iconStr;
+    }
+  }
+  function handleDeleteFrame(e, task, frameIndex) {
+    return __awaiter(this, void 0, void 0, function* () {
+      e.preventDefault();
+      if (!currentCategory)
+        return;
+      const menu = new import_obsidian4.Menu();
+      menu.addItem((item) => {
+        item.setTitle("Delete image frame").setIcon("trash").onClick(() => __awaiter(this, void 0, void 0, function* () {
+          if (task.frames) {
+            task.frames = task.frames.filter((_, idx) => idx !== frameIndex);
+            $$invalidate(2, incompleteTasks = [...incompleteTasks]);
+            $$invalidate(3, completedTasks = [...completedTasks]);
+            yield dataService.updateTask(currentCategory.filepath, task);
+            EventBus.emit("task:updated" /* TASK_UPDATED */, {
+              task,
+              categoryFilepath: currentCategory.filepath
+            });
+          }
+        }));
+      });
+      menu.showAtMouseEvent(e);
     });
   }
   function addTask() {
@@ -6897,8 +7420,8 @@ function instance2($$self, $$props, $$invalidate) {
       if (!title || !currentCategory)
         return;
       const newTask = yield dataService.addTask(currentCategory.filepath, title);
-      $$invalidate(3, newTaskTitle = "");
-      $$invalidate(1, incompleteTasks = [...incompleteTasks, newTask]);
+      $$invalidate(4, newTaskTitle = "");
+      $$invalidate(2, incompleteTasks = [...incompleteTasks, newTask]);
     });
   }
   function handleAddTaskKeydown(e) {
@@ -6912,11 +7435,11 @@ function instance2($$self, $$props, $$invalidate) {
         return;
       task.completed = !task.completed;
       if (task.completed) {
-        $$invalidate(1, incompleteTasks = incompleteTasks.filter((t) => t.id !== task.id));
-        $$invalidate(2, completedTasks = [task, ...completedTasks]);
+        $$invalidate(2, incompleteTasks = incompleteTasks.filter((t) => t.id !== task.id));
+        $$invalidate(3, completedTasks = [task, ...completedTasks]);
       } else {
-        $$invalidate(2, completedTasks = completedTasks.filter((t) => t.id !== task.id));
-        $$invalidate(1, incompleteTasks = [...incompleteTasks, task]);
+        $$invalidate(3, completedTasks = completedTasks.filter((t) => t.id !== task.id));
+        $$invalidate(2, incompleteTasks = [...incompleteTasks, task]);
       }
       yield dataService.updateTask(currentCategory.filepath, task);
       EventBus.emit("task:updated" /* TASK_UPDATED */, {
@@ -6930,8 +7453,8 @@ function instance2($$self, $$props, $$invalidate) {
       if (!currentCategory)
         return;
       task.starred = !task.starred;
-      $$invalidate(1, incompleteTasks = [...incompleteTasks]);
-      $$invalidate(2, completedTasks = [...completedTasks]);
+      $$invalidate(2, incompleteTasks = [...incompleteTasks]);
+      $$invalidate(3, completedTasks = [...completedTasks]);
       yield dataService.updateTask(currentCategory.filepath, task);
       EventBus.emit("task:updated" /* TASK_UPDATED */, {
         task,
@@ -6940,20 +7463,20 @@ function instance2($$self, $$props, $$invalidate) {
     });
   }
   function selectTask(task) {
-    $$invalidate(5, selectedTaskId = task.id);
+    $$invalidate(6, selectedTaskId = task.id);
     EventBus.emit("task:selected" /* TASK_SELECTED */, {
       task,
       categoryFilepath: (currentCategory === null || currentCategory === void 0 ? void 0 : currentCategory.filepath) || ""
     });
   }
   function toggleCompletedSection() {
-    $$invalidate(4, showCompleted = !showCompleted);
+    $$invalidate(5, showCompleted = !showCompleted);
   }
   function handleDndConsider(e, listType) {
     if (listType === "incomplete")
-      $$invalidate(1, incompleteTasks = e.detail.items);
+      $$invalidate(2, incompleteTasks = e.detail.items);
     else
-      $$invalidate(2, completedTasks = e.detail.items);
+      $$invalidate(3, completedTasks = e.detail.items);
     const draggedId = e.detail.info.id;
     const task = (listType === "incomplete" ? incompleteTasks : completedTasks).find((t) => t.id === draggedId);
     if (task && currentCategory) {
@@ -6973,15 +7496,15 @@ function instance2($$self, $$props, $$invalidate) {
             domNode.style.display = "none";
           killDndGhostElement();
           if (listType === "incomplete") {
-            $$invalidate(1, incompleteTasks = e.detail.items.filter((t) => t.id !== draggedId));
+            $$invalidate(2, incompleteTasks = e.detail.items.filter((t) => t.id !== draggedId));
           } else {
-            $$invalidate(2, completedTasks = e.detail.items.filter((t) => t.id !== draggedId));
+            $$invalidate(3, completedTasks = e.detail.items.filter((t) => t.id !== draggedId));
           }
         } else {
           if (listType === "incomplete")
-            $$invalidate(1, incompleteTasks = e.detail.items);
+            $$invalidate(2, incompleteTasks = e.detail.items);
           else
-            $$invalidate(2, completedTasks = e.detail.items);
+            $$invalidate(3, completedTasks = e.detail.items);
           window.__mstodo_drag_data = null;
         }
         return;
@@ -6992,9 +7515,9 @@ function instance2($$self, $$props, $$invalidate) {
         t.completed = isCompletedList;
       });
       if (listType === "incomplete")
-        $$invalidate(1, incompleteTasks = updatedItems);
+        $$invalidate(2, incompleteTasks = updatedItems);
       else
-        $$invalidate(2, completedTasks = updatedItems);
+        $$invalidate(3, completedTasks = updatedItems);
       window.__mstodo_drag_data = null;
       if (!currentCategory)
         return;
@@ -7023,8 +7546,8 @@ function instance2($$self, $$props, $$invalidate) {
         menu.addItem((item) => {
           item.setTitle(`Move to "${cat.name}"`).setIcon("folder").onClick(() => __awaiter(this, void 0, void 0, function* () {
             injectDndGhostShield();
-            $$invalidate(1, incompleteTasks = incompleteTasks.filter((t) => t.id !== task.id));
-            $$invalidate(2, completedTasks = completedTasks.filter((t) => t.id !== task.id));
+            $$invalidate(2, incompleteTasks = incompleteTasks.filter((t) => t.id !== task.id));
+            $$invalidate(3, completedTasks = completedTasks.filter((t) => t.id !== task.id));
             yield dataService.moveTask(task, currentCategory.filepath, cat.filepath);
             EventBus.emit("task:moved" /* TASK_MOVED */, {
               task,
@@ -7038,8 +7561,8 @@ function instance2($$self, $$props, $$invalidate) {
       menu.addSeparator();
       menu.addItem((item) => {
         item.setTitle("Delete task").setIcon("trash").onClick(() => __awaiter(this, void 0, void 0, function* () {
-          $$invalidate(1, incompleteTasks = incompleteTasks.filter((t) => t.id !== task.id));
-          $$invalidate(2, completedTasks = completedTasks.filter((t) => t.id !== task.id));
+          $$invalidate(2, incompleteTasks = incompleteTasks.filter((t) => t.id !== task.id));
+          $$invalidate(3, completedTasks = completedTasks.filter((t) => t.id !== task.id));
           yield dataService.deleteTask(currentCategory.filepath, task);
           EventBus.emit("task:deleted" /* TASK_DELETED */, {
             task,
@@ -7052,40 +7575,47 @@ function instance2($$self, $$props, $$invalidate) {
   }
   function input_input_handler() {
     newTaskTitle = this.value;
-    $$invalidate(3, newTaskTitle);
+    $$invalidate(4, newTaskTitle);
   }
   const click_handler = (task) => toggleComplete(task);
   const keydown_handler = (task, e) => e.key === "Enter" && toggleComplete(task);
+  const contextmenu_handler = (task, frameIndex, e) => handleDeleteFrame(e, task, frameIndex);
   const click_handler_1 = (task) => toggleStar(task);
   const keydown_handler_1 = (task, e) => e.key === "Enter" && toggleStar(task);
   const pointerdown_handler = (task) => handleTaskPointerDown(task);
   const click_handler_2 = (task) => selectTask(task);
-  const contextmenu_handler = (task, e) => handleContextMenu(e, task);
+  const contextmenu_handler_1 = (task, e) => handleContextMenu(e, task);
   const keydown_handler_2 = (task, e) => e.key === "Enter" && selectTask(task);
   const consider_handler = (e) => handleDndConsider(e, "incomplete");
   const finalize_handler = (e) => handleDndFinalize(e, "incomplete");
   const keydown_handler_3 = (e) => e.key === "Enter" && toggleCompletedSection();
   const click_handler_3 = (task) => toggleComplete(task);
   const keydown_handler_4 = (task, e) => e.key === "Enter" && toggleComplete(task);
+  const contextmenu_handler_2 = (task, frameIndex, e) => handleDeleteFrame(e, task, frameIndex);
   const click_handler_4 = (task) => toggleStar(task);
   const keydown_handler_5 = (task, e) => e.key === "Enter" && toggleStar(task);
   const pointerdown_handler_1 = (task) => handleTaskPointerDown(task);
   const click_handler_5 = (task) => selectTask(task);
-  const contextmenu_handler_1 = (task, e) => handleContextMenu(e, task);
+  const contextmenu_handler_3 = (task, e) => handleContextMenu(e, task);
   const keydown_handler_6 = (task, e) => e.key === "Enter" && selectTask(task);
   const consider_handler_1 = (e) => handleDndConsider(e, "completed");
   const finalize_handler_1 = (e) => handleDndFinalize(e, "completed");
   $$self.$$set = ($$props2) => {
     if ("dataService" in $$props2)
-      $$invalidate(15, dataService = $$props2.dataService);
+      $$invalidate(18, dataService = $$props2.dataService);
+    if ("plugin" in $$props2)
+      $$invalidate(0, plugin = $$props2.plugin);
   };
   return [
+    plugin,
     currentCategory,
     incompleteTasks,
     completedTasks,
     newTaskTitle,
     showCompleted,
     selectedTaskId,
+    renderIcon,
+    handleDeleteFrame,
     handleAddTaskKeydown,
     toggleComplete,
     toggleStar,
@@ -7101,22 +7631,24 @@ function instance2($$self, $$props, $$invalidate) {
     input_input_handler,
     click_handler,
     keydown_handler,
+    contextmenu_handler,
     click_handler_1,
     keydown_handler_1,
     pointerdown_handler,
     click_handler_2,
-    contextmenu_handler,
+    contextmenu_handler_1,
     keydown_handler_2,
     consider_handler,
     finalize_handler,
     keydown_handler_3,
     click_handler_3,
     keydown_handler_4,
+    contextmenu_handler_2,
     click_handler_4,
     keydown_handler_5,
     pointerdown_handler_1,
     click_handler_5,
-    contextmenu_handler_1,
+    contextmenu_handler_3,
     keydown_handler_6,
     consider_handler_1,
     finalize_handler_1
@@ -7132,19 +7664,20 @@ var TaskMainView = class extends SvelteComponent {
       create_fragment2,
       safe_not_equal,
       {
-        dataService: 15,
-        loadCategory: 16,
-        getCurrentCategory: 17
+        dataService: 18,
+        plugin: 0,
+        loadCategory: 19,
+        getCurrentCategory: 20
       },
       null,
-      [-1, -1]
+      [-1, -1, -1]
     );
   }
   get loadCategory() {
-    return this.$$.ctx[16];
+    return this.$$.ctx[19];
   }
   get getCurrentCategory() {
-    return this.$$.ctx[17];
+    return this.$$.ctx[20];
   }
 };
 var TaskMainView_default = TaskMainView;
@@ -8138,7 +8671,9 @@ var TaskDetailView_default = TaskDetailView;
 // src/settings.ts
 var import_obsidian5 = require("obsidian");
 var DEFAULT_SETTINGS = {
-  accentColor: "#8b5cf6"
+  accentColor: "#8b5cf6",
+  maxFrames: 3,
+  maxIconsPerFrame: 5
 };
 var FluentTasksSettingTab = class extends import_obsidian5.PluginSettingTab {
   constructor(app, plugin) {
@@ -8162,6 +8697,14 @@ var FluentTasksSettingTab = class extends import_obsidian5.PluginSettingTab {
         this.plugin.applySettings();
       });
     }
+    new import_obsidian5.Setting(containerEl).setName("Max Image Frames").setDesc("Maximum number of image frames allowed per task (1-5).").addSlider((slider) => slider.setLimits(1, 5, 1).setValue(this.plugin.settings.maxFrames).setDynamicTooltip().onChange(async (value) => {
+      this.plugin.settings.maxFrames = value;
+      await this.plugin.saveSettings();
+    }));
+    new import_obsidian5.Setting(containerEl).setName("Max Icons Per Frame").setDesc("Maximum number of icons allowed in each image frame (1-10).").addSlider((slider) => slider.setLimits(1, 10, 1).setValue(this.plugin.settings.maxIconsPerFrame).setDynamicTooltip().onChange(async (value) => {
+      this.plugin.settings.maxIconsPerFrame = value;
+      await this.plugin.saveSettings();
+    }));
   }
 };
 
@@ -8197,10 +8740,11 @@ var TaskSidebarViewWrapper = class extends import_obsidian6.ItemView {
   }
 };
 var TaskMainViewWrapper = class extends import_obsidian6.ItemView {
-  constructor(leaf, dataService) {
+  constructor(leaf, dataService, plugin) {
     super(leaf);
     this.component = null;
     this.dataService = dataService;
+    this.plugin = plugin;
   }
   getViewType() {
     return VIEW_TYPE_MAIN;
@@ -8216,7 +8760,7 @@ var TaskMainViewWrapper = class extends import_obsidian6.ItemView {
     container.empty();
     this.component = new TaskMainView_default({
       target: container,
-      props: { dataService: this.dataService }
+      props: { dataService: this.dataService, plugin: this.plugin }
     });
   }
   async onClose() {
@@ -8288,7 +8832,7 @@ var FluentTasksPlugin = class extends import_obsidian6.Plugin {
     this.dataService = new DataService(this.app);
     this.addSettingTab(new FluentTasksSettingTab(this.app, this));
     this.registerView(VIEW_TYPE_SIDEBAR, (leaf) => new TaskSidebarViewWrapper(leaf, this.dataService));
-    this.registerView(VIEW_TYPE_MAIN, (leaf) => new TaskMainViewWrapper(leaf, this.dataService));
+    this.registerView(VIEW_TYPE_MAIN, (leaf) => new TaskMainViewWrapper(leaf, this.dataService, this));
     this.registerView(VIEW_TYPE_DETAIL, (leaf) => new TaskDetailViewWrapper(leaf, this.dataService));
     this.addRibbonIcon("check-square", "Open Fluent Tasks", () => {
       void this.activateAllViews();

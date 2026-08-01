@@ -71,7 +71,7 @@ Data movement across views and persistent storage follows a strict 7-step sequen
 - **File Deletion API**: MUST use `app.fileManager.trashFile(file)` instead of `app.vault.trash(file)`. (Why: respects user's configured trash preferences).
 - **Static CSS Styling**: NEVER inject dynamic `<style>` DOM tags at runtime. Use `document.body.setCssProps()` for dynamic theme variables. (Why: strictly required by Obsidian Community Store automated checks).
 - **Type-Safe Folder Inspection**: MUST use `if (!(folder instanceof TFolder))` runtime checks instead of `(folder as TFolder)` casting. (Why: prevents runtime type assertion errors).
-- **Pure Markdown Data Storage**: Tasks MUST be stored as standard checklists `- [ ] Title %%{"id":...}%%`. (Why: preserves complete user data ownership in open Markdown format).
+- **Pure Markdown Data Storage**: Tasks MUST be stored as standard checklists `- [ ] Title %%{"id":...}%%`. New UI metadata (like `frames` for Image Frames) MUST be serialized inside this JSON block. (Why: preserves complete user data ownership in open Markdown format).
 </key_invariants>
 
 ## Key API Reference

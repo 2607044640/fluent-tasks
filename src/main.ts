@@ -60,10 +60,12 @@ class TaskSidebarViewWrapper extends ItemView {
 class TaskMainViewWrapper extends ItemView {
     private component: TaskMainView | null = null;
     private dataService: DataService;
+    private plugin: FluentTasksPlugin;
 
-    constructor(leaf: WorkspaceLeaf, dataService: DataService) {
+    constructor(leaf: WorkspaceLeaf, dataService: DataService, plugin: FluentTasksPlugin) {
         super(leaf);
         this.dataService = dataService;
+        this.plugin = plugin;
     }
 
     getViewType(): string { return VIEW_TYPE_MAIN; }
@@ -75,7 +77,7 @@ class TaskMainViewWrapper extends ItemView {
         container.empty();
         this.component = new TaskMainView({
             target: container,
-            props: { dataService: this.dataService },
+            props: { dataService: this.dataService, plugin: this.plugin },
         });
     }
 
@@ -160,7 +162,7 @@ export default class FluentTasksPlugin extends Plugin {
 
         // Register all three view types (must be synchronous, before layout ready)
         this.registerView(VIEW_TYPE_SIDEBAR, (leaf) => new TaskSidebarViewWrapper(leaf, this.dataService));
-        this.registerView(VIEW_TYPE_MAIN, (leaf) => new TaskMainViewWrapper(leaf, this.dataService));
+        this.registerView(VIEW_TYPE_MAIN, (leaf) => new TaskMainViewWrapper(leaf, this.dataService, this));
         this.registerView(VIEW_TYPE_DETAIL, (leaf) => new TaskDetailViewWrapper(leaf, this.dataService));
 
         // Ribbon icon - always visible in left sidebar

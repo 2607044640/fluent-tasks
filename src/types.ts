@@ -30,6 +30,7 @@ export interface TaskItem {
     steps: TaskStep[];
     note: string;
     createdAt: string; // ISO 8601
+    frames?: string[][];
 }
 
 export interface CategoryInfo {
