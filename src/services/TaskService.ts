@@ -12,12 +12,7 @@ export class TaskService {
 
     /** Insert a task before the first completed task, or append if none exist */
     private insertTaskBeforeCompleted(tasks: TaskItem[], task: TaskItem): void {
-        const firstCompletedIdx = tasks.findIndex(t => t.completed);
-        if (firstCompletedIdx === -1) {
-            tasks.push(task);
-        } else {
-            tasks.splice(firstCompletedIdx, 0, task);
-        }
+        tasks.unshift(task);
     }
 
     /** Read tasks from file (safe, read-only unless auto-healing) */

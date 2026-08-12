@@ -4,7 +4,7 @@
     import { flip } from "svelte/animate";
     import { EventBus } from "./EventBus";
     import { DataService } from "./DataService";
-    import { EventName, type CategoryInfo, type TaskItem } from "./types";
+    import { EventName, VIEW_TYPE_SIDEBAR, type CategoryInfo, type TaskItem } from "./types";
     import { killDndGhostElement, removeDndGhostShield, injectDndGhostShield } from "./utils/dndUtils";
     import { DISK_SYNC_DELAY_MS, ANTI_FLICKER_DURATION_MS } from "./constants";
     import { Menu, setIcon, type App } from "obsidian";
@@ -14,6 +14,22 @@
     // =============================================
     export let dataService: DataService;
     export let plugin: any;
+
+    /**
+     * Expand sidebar and reveal Fluent Tasks list tab.
+     * @param force If true, ignores the autoExpandSidebar setting (used by manual button).
+     */
+    function expandSidebar(force: boolean = false) {
+        if (!force && !plugin.settings?.autoExpandSidebar) return;
+        const leftSplit = plugin.app.workspace.leftSplit as any;
+        if (leftSplit.collapsed) {
+            leftSplit.expand();
+        }
+        const sidebarLeaves = plugin.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR);
+        if (sidebarLeaves.length > 0) {
+            plugin.app.workspace.revealLeaf(sidebarLeaves[0]);
+        }
+    }
 
     // =============================================
     // State
@@ -349,11 +365,22 @@
     }
 </script>
 
-<div class="main-container">
+<div class="main-container" on:click={() => expandSidebar(false)} on:keydown={() => {}} role="application">
     {#if currentCategory}
         <!-- Header -->
         <div class="main-header">
-            <h1 class="category-title">{currentCategory.name}</h1>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="icon-btn" on:click|stopPropagation={() => expandSidebar(true)}
+                      role="button" tabindex="0" aria-label="Show sidebar list"
+                      on:keydown|stopPropagation={(e) => e.key === "Enter" && expandSidebar(true)}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="9" y1="3" x2="9" y2="21"/>
+                    </svg>
+                </span>
+                <h1 class="category-title">{currentCategory.name}</h1>
+            </div>
         </div>
 
         <!-- Add Task Input -->

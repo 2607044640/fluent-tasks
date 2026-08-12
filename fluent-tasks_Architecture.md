@@ -72,6 +72,7 @@ Data movement across views and persistent storage follows a strict 7-step sequen
 - **Static CSS Styling**: NEVER inject dynamic `<style>` DOM tags at runtime. Use `document.body.setCssProps()` for dynamic theme variables. (Why: strictly required by Obsidian Community Store automated checks).
 - **Type-Safe Folder Inspection**: MUST use `if (!(folder instanceof TFolder))` runtime checks instead of `(folder as TFolder)` casting. (Why: prevents runtime type assertion errors).
 - **Pure Markdown Data Storage**: Tasks MUST be stored as standard checklists `- [ ] Title %%{"id":...}%%`. New UI metadata (like `frames` for Image Frames) MUST be serialized inside this JSON block. (Why: preserves complete user data ownership in open Markdown format).
+- **Global Drag State Cleanup (CRITICAL)**: MUST unconditionally clear `(window as any).__mstodo_drag_data = null` on ANY global `pointerup` event, regardless of drop validity. (Why: prevents phantom drag states from teleporting items on subsequent clicks).
 </key_invariants>
 
 ## Key API Reference
@@ -165,4 +166,5 @@ new Setting(containerEl)
 - **Zombie CSS Cache**: After editing `src/styles.css` or building CSS, verify that `styles.css` in the plugin root matches `main.css` in size. (Obsidian only loads `styles.css` from the plugin root).
 - **Dotfile Metadata Missing**: If categories or sidebar order fail to persist, ensure `CategoryService` uses `this.app.vault.adapter.read/write` on `TodoData/.metadata.json` instead of standard Vault API calls.
 - **Floating Promise Warnings**: Always wrap unawaited async callbacks in command handlers or EventBus listeners with `void (async () => { ... })()` or `void fn()`.
+- **Phantom Drag Teleportation**: If items spontaneously move lists after normal clicks, verify that `__mstodo_drag_data` is being unconditionally cleared on all `pointerup` escape paths in the Drag & Drop orchestration handlers.
 </troubleshooting>

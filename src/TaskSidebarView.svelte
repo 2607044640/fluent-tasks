@@ -566,16 +566,16 @@
 
         const targetPath = dragOverPath;
         dragOverPath = "";
+        
+        // ALWAYS clear the drag state on pointerup, whether valid or not.
+        (window as any).__mstodo_drag_data = null;
+        killDndGhostElement();
 
         if (!targetPath) return;
 
         const { task, sourceFilepath } = dragData;
         if (sourceFilepath === targetPath) return;
 
-        // Clear only for valid cross-category drops
-        (window as any).__mstodo_drag_data = null;
-
-        killDndGhostElement();
         injectDndGhostShield();
 
         try {

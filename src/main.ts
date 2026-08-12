@@ -231,6 +231,15 @@ export default class FluentTasksPlugin extends Plugin {
                 await this.activateAllViews();
             }
 
+            // Auto-expand sidebar when main view is focused via tab switching
+            this.registerEvent(this.app.workspace.on('active-leaf-change', (leaf) => {
+                if (leaf && leaf.view.getViewType() === VIEW_TYPE_MAIN) {
+                    if (this.settings.autoExpandSidebar) {
+                        this.expandSidebarToList();
+                    }
+                }
+            }));
+
             Logger.log("Fluent Tasks plugin loaded successfully.");
         });
     }
@@ -264,6 +273,24 @@ export default class FluentTasksPlugin extends Plugin {
             "--todo-accent-glow": `${this.settings.accentColor}99`,
             "--todo-accent-light": `${this.settings.accentColor}26`,
         });
+    }
+
+    // =============================================
+    // Sidebar Auto-Expand
+    // =============================================
+
+    /**
+     * Expand the left sidebar and reveal the Fluent Tasks sidebar list tab.
+     */
+    expandSidebarToList(): void {
+        const leftSplit = this.app.workspace.leftSplit as any;
+        if (leftSplit.collapsed) {
+            leftSplit.expand();
+        }
+        const sidebarLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR);
+        if (sidebarLeaves.length > 0) {
+            this.app.workspace.revealLeaf(sidebarLeaves[0]);
+        }
     }
 
     // =============================================
