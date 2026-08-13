@@ -104,4 +104,5 @@ export enum EventName {
     TASK_DELETED = "task:deleted",
     TASK_COMPLETED = "task:completed",
     DETAIL_CLOSE = "detail:close",
+    TASK_NAVIGATE = "task:navigate",
 }

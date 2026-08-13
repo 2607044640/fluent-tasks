@@ -4,11 +4,13 @@ import type FluentTasksPlugin from "./main";
 export interface FluentTasksSettings {
     accentColor: string;
     autoExpandSidebar: boolean;
+    searchHideCompleted: boolean;
 }
 
 export const DEFAULT_SETTINGS: FluentTasksSettings = {
     accentColor: "#8b5cf6",
-    autoExpandSidebar: true
+    autoExpandSidebar: true,
+    searchHideCompleted: true
 }
 
 export class FluentTasksSettingTab extends PluginSettingTab {
@@ -55,6 +57,16 @@ export class FluentTasksSettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.autoExpandSidebar)
                 .onChange(async (value) => {
                     this.plugin.settings.autoExpandSidebar = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName("Search: Hide Completed Tasks")
+            .setDesc("When searching, hide completed tasks by default. Can also be toggled directly in the search modal.")
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.searchHideCompleted)
+                .onChange(async (value) => {
+                    this.plugin.settings.searchHideCompleted = value;
                     await this.plugin.saveSettings();
                 }));
     }
