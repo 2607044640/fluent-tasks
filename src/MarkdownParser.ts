@@ -78,7 +78,6 @@ export class MarkdownParser {
                 steps: meta.steps ?? [],
                 note: meta.note ?? "",
                 createdAt,
-                frames: meta.frames,
             });
         }
 
@@ -98,9 +97,6 @@ export class MarkdownParser {
                 note: task.note,
                 createdAt: task.createdAt,
             } as any;
-            if (task.frames && task.frames.length > 0) {
-                meta.frames = task.frames;
-            }
             return `- ${checkbox} ${task.title} %%${JSON.stringify(meta)}%%`;
         }).join("\n");
     }
@@ -129,7 +125,6 @@ export class MarkdownParser {
             steps: [],
             note: "",
             createdAt,
-            frames: [],
         };
     }
 

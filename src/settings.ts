@@ -3,15 +3,11 @@ import type FluentTasksPlugin from "./main";
 
 export interface FluentTasksSettings {
     accentColor: string;
-    maxFrames: number;
-    maxIconsPerFrame: number;
     autoExpandSidebar: boolean;
 }
 
 export const DEFAULT_SETTINGS: FluentTasksSettings = {
     accentColor: "#8b5cf6",
-    maxFrames: 3,
-    maxIconsPerFrame: 5,
     autoExpandSidebar: true
 }
 
@@ -50,29 +46,7 @@ export class FluentTasksSettingTab extends PluginSettingTab {
             });
         }
 
-        new Setting(containerEl)
-            .setName("Max Image Frames")
-            .setDesc("Maximum number of image frames allowed per task (1-5).")
-            .addSlider(slider => slider
-                .setLimits(1, 5, 1)
-                .setValue(this.plugin.settings.maxFrames)
-                .setDynamicTooltip()
-                .onChange(async (value) => {
-                    this.plugin.settings.maxFrames = value;
-                    await this.plugin.saveSettings();
-                }));
 
-        new Setting(containerEl)
-            .setName("Max Icons Per Frame")
-            .setDesc("Maximum number of icons allowed in each image frame (1-10).")
-            .addSlider(slider => slider
-                .setLimits(1, 10, 1)
-                .setValue(this.plugin.settings.maxIconsPerFrame)
-                .setDynamicTooltip()
-                .onChange(async (value) => {
-                    this.plugin.settings.maxIconsPerFrame = value;
-                    await this.plugin.saveSettings();
-                }));
 
         new Setting(containerEl)
             .setName("Auto-Expand Sidebar on Focus")

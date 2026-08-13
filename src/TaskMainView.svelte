@@ -8,7 +8,6 @@
     import { killDndGhostElement, removeDndGhostShield, injectDndGhostShield } from "./utils/dndUtils";
     import { DISK_SYNC_DELAY_MS, ANTI_FLICKER_DURATION_MS } from "./constants";
     import { Menu, setIcon, type App } from "obsidian";
-    import { resolveIconifyIcon } from "./IconifyService";
 
     // =============================================
     // Props
@@ -136,49 +135,7 @@
     // Task Actions
     // =============================================
 
-    function renderIcon(node: HTMLElement, iconStr: string) {
-        if (iconStr.startsWith("lucide-")) {
-            const iconName = iconStr.substring(7);
-            setIcon(node, iconName);
-        } else if (iconStr.startsWith("iconify:")) {
-            // Why: Show a loading spinner while fetching from Iconify API, then swap in the real SVG
-            setIcon(node, "loader-2");
-            node.classList.add("icon-loading");
-            resolveIconifyIcon(iconStr).then(svgHtml => {
-                node.innerHTML = svgHtml;
-                node.classList.remove("icon-loading");
-            });
-        } else if (iconStr.startsWith("<svg")) {
-            node.innerHTML = iconStr;
-        } else {
-            node.textContent = iconStr;
-        }
-    }
 
-    async function handleDeleteFrame(e: MouseEvent, task: TaskItem, frameIndex: number) {
-        e.preventDefault();
-        if (!currentCategory) return;
-        
-        const menu = new Menu();
-        menu.addItem((item: any) => {
-            item.setTitle("Delete image frame")
-                .setIcon("trash")
-                .onClick(async () => {
-                    if (task.frames) {
-                        task.frames = task.frames.filter((_, idx) => idx !== frameIndex);
-                        incompleteTasks = [...incompleteTasks];
-                        completedTasks = [...completedTasks];
-                        
-                        await dataService.updateTask(currentCategory!.filepath, task);
-                        EventBus.emit(EventName.TASK_UPDATED, {
-                            task,
-                            categoryFilepath: currentCategory!.filepath,
-                        });
-                    }
-                });
-        });
-        menu.showAtMouseEvent(e);
-    }
 
     async function addTask() {
         const title = newTaskTitle.trim();
@@ -448,19 +405,7 @@
                         {/if}
                     </div>
 
-                    <!-- Image Frames -->
-                    {#if task.frames && task.frames.length > 0}
-                        <div class="image-frames">
-                            {#each task.frames.slice(0, plugin.settings.maxFrames) as frame, frameIndex}
-                                <div class="image-frame" 
-                                     on:contextmenu|stopPropagation={(e) => handleDeleteFrame(e, task, frameIndex)}>
-                                    {#each frame.slice(0, plugin.settings.maxIconsPerFrame) as iconStr}
-                                        <span class="imagination-icon" use:renderIcon={iconStr}></span>
-                                    {/each}
-                                </div>
-                            {/each}
-                        </div>
-                    {/if}
+
 
                     <!-- Star -->
                     <span class="star" class:active={task.starred}
@@ -526,19 +471,7 @@
                                     <span class="task-title">{task.title}</span>
                                 </div>
 
-                                <!-- Image Frames -->
-                                {#if task.frames && task.frames.length > 0}
-                                    <div class="image-frames">
-                                        {#each task.frames.slice(0, plugin.settings.maxFrames) as frame, frameIndex}
-                                            <div class="image-frame" 
-                                                 on:contextmenu|stopPropagation={(e) => handleDeleteFrame(e, task, frameIndex)}>
-                                                {#each frame.slice(0, plugin.settings.maxIconsPerFrame) as iconStr}
-                                                    <span class="imagination-icon" use:renderIcon={iconStr}></span>
-                                                {/each}
-                                            </div>
-                                        {/each}
-                                    </div>
-                                {/if}
+
 
                                 <span class="star" class:active={task.starred}
                                       on:click|stopPropagation={() => toggleStar(task)}
