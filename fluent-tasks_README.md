@@ -46,3 +46,21 @@ If a specific icon is not available in Lucide, you can inject raw SVG code direc
 - **Data Structure (`frames: string[][]`)**: Each inner array represents one "Frame" (a visual border box).
 - **Settings Control**: Users can configure the `Max Image Frames` (default: 3) and `Max Icons Per Frame` (default: 5) via the plugin's Settings panel to prevent UI bloat.
 </image_frames_guide>
+
+## Microsoft To Do External Sync & Safety
+
+<external_sync_integration>
+Fluent Tasks supports interoperability with Microsoft To Do through the companion sync plugin `obsidian-MicrosoftToDoLink` (`microsoft-todo-link`).
+
+### Data Isolation Policy
+- **Strict Storage Separation**: Fluent Tasks tasks reside exclusively in `TodoData/*.md`. Microsoft To Do sync outputs exclusively to the central sync file `MicrosoftTodoTasks.md`.
+- **Zero Accidental Overwrite**: Sync operations on `MicrosoftTodoTasks.md` do NOT touch or overwrite existing `TodoData/*.md` categories.
+
+### Key Operational Constraints & Precautions
+- **Enforce Central Sync Mode**: MUST configure `microsoft-todo-link` to use Central Sync Mode (`MicrosoftTodoTasks.md`). NEVER bind individual `TodoData/*.md` files directly without an atomic bridge parser. (Why: prevents corruption of `%%{...}%%` embedded JSON metadata).
+- **Safe Deletion Policy**: `deletionBehavior` MUST remain set to `"complete"` (default). Remote tasks are marked completed rather than permanently deleted.
+- **Safety Thresholds**:
+  - `MAX_REMOTE_DELETIONS_PER_SYNC = 10`: Limits remote batch deletions.
+  - `EMPTY_FILE_DELETION_SAFETY_THRESHOLD = 3`: Prevents clearing cloud tasks if local files are emptied unexpectedly.
+</external_sync_integration>
+

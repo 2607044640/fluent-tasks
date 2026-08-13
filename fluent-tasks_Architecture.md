@@ -73,6 +73,8 @@ Data movement across views and persistent storage follows a strict 7-step sequen
 - **Type-Safe Folder Inspection**: MUST use `if (!(folder instanceof TFolder))` runtime checks instead of `(folder as TFolder)` casting. (Why: prevents runtime type assertion errors).
 - **Pure Markdown Data Storage**: Tasks MUST be stored as standard checklists `- [ ] Title %%{"id":...}%%`. New UI metadata (like `frames` for Image Frames) MUST be serialized inside this JSON block. (Why: preserves complete user data ownership in open Markdown format).
 - **Global Drag State Cleanup (CRITICAL)**: MUST unconditionally clear `(window as any).__mstodo_drag_data = null` on ANY global `pointerup` event, regardless of drop validity. (Why: prevents phantom drag states from teleporting items on subsequent clicks).
+- **Microsoft To Do Sync Boundary & Isolation**: External synchronization with Microsoft To Do (via `microsoft-todo-link`) MUST write strictly to `MicrosoftTodoTasks.md`. `TodoData/*.md` files MUST NOT be directly modified by unvetted third-party sync processes without serialization through `MarkdownParser` and `AtomicIOPipeline`. (Why: guarantees schema integrity and prevents JSON metadata corruption).
+- **Sync Safety Thresholds**: Central sync operations MUST maintain `MAX_REMOTE_DELETIONS_PER_SYNC = 10` and `EMPTY_FILE_DELETION_SAFETY_THRESHOLD = 3` with `deletionBehavior: "complete"`. (Why: prevents catastrophic data loss from accidental cloud-side deletions or empty-file sync triggers).
 </key_invariants>
 
 ## Key API Reference
