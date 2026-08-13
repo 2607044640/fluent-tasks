@@ -8,6 +8,7 @@
     import { killDndGhostElement, removeDndGhostShield, injectDndGhostShield } from "./utils/dndUtils";
     import { DISK_SYNC_DELAY_MS, ANTI_FLICKER_DURATION_MS } from "./constants";
     import { Menu, setIcon, type App } from "obsidian";
+    import { TaskSearchModal } from "./TaskSearchModal";
 
     // =============================================
     // Props
@@ -146,7 +147,7 @@
 
         // Optimistic UI: insert into local state immediately.
         // We do NOT call loadTasks() here because Obsidian's async I/O might cause a race condition.
-        incompleteTasks = [...incompleteTasks, newTask];
+        incompleteTasks = [newTask, ...incompleteTasks];
     }
 
     function handleAddTaskKeydown(e: KeyboardEvent) {
@@ -337,7 +338,7 @@
         <div class="main-header">
             <div style="display: flex; align-items: center; gap: 10px;">
                 <span class="icon-btn" on:click|stopPropagation={() => expandSidebar(true)}
-                      role="button" tabindex="0" aria-label="Show sidebar list"
+                      role="button" tabindex="0" aria-label="Show sidebar list" title="Show sidebar list"
                       on:keydown|stopPropagation={(e) => e.key === "Enter" && expandSidebar(true)}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -346,6 +347,15 @@
                     </svg>
                 </span>
                 <h1 class="category-title">{currentCategory.name}</h1>
+                <span class="icon-btn" on:click|stopPropagation={() => new TaskSearchModal(plugin.app, dataService, currentCategory?.filepath).open()}
+                      role="button" tabindex="0" aria-label="Search this list" title="Search this list"
+                      on:keydown|stopPropagation={(e) => e.key === "Enter" && new TaskSearchModal(plugin.app, dataService, currentCategory?.filepath).open()}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"/>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                </span>
             </div>
         </div>
 

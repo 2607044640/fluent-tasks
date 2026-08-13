@@ -6,6 +6,7 @@
     import { killDndGhostElement, injectDndGhostShield, removeDndGhostShield } from "./utils/dndUtils";
     import { INPUT_FOCUS_DELAY_MS, BLUR_CONFIRM_DELAY_MS, DND_SHIELD_REMOVAL_DELAY_MS, DND_RESCUE_DELAY_MS } from "./constants";
     import { Menu, type App, type TAbstractFile, type EventRef } from "obsidian";
+    import { TaskSearchModal } from "./TaskSearchModal";
 
     // =============================================
     // Props
@@ -609,6 +610,10 @@
             }
         }, DND_RESCUE_DELAY_MS);
     }
+
+    function openGlobalSearch() {
+        new TaskSearchModal(app, dataService).open();
+    }
 </script>
 
 <svelte:window 
@@ -617,6 +622,18 @@
 />
 
 <div class="sidebar-container">
+    <div class="sidebar-header" style="display: flex; align-items: center; justify-content: space-between;">
+        <span>Lists</span>
+        <span class="icon-btn" on:click={openGlobalSearch}
+              role="button" tabindex="0" aria-label="Search all tasks" title="Search all tasks"
+              on:keydown={(e) => e.key === "Enter" && openGlobalSearch()}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+        </span>
+    </div>
     <div class="custom-lists" 
          data-root="true"
          role="list"

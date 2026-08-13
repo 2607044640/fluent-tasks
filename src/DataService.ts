@@ -75,4 +75,30 @@ export class DataService {
     async moveTask(task: TaskItem, sourceFilepath: string, targetFilepath: string): Promise<void> {
         return this.taskSvc.moveTask(task, sourceFilepath, targetFilepath);
     }
+
+    /** Deep search across tasks — matches title, steps text, and note content */
+    async searchTasks(query: string, scopeFilepath?: string | null): Promise<Array<{ task: TaskItem; category: CategoryInfo; matchField: string }>> {
+        const results: Array<{ task: TaskItem; category: CategoryInfo; matchField: string }> = [];
+        const q = query.toLowerCase().trim();
+        if (!q) return results;
+
+        const categories = await this.getCategories();
+        const targetCategories = scopeFilepath
+            ? categories.filter(c => c.filepath === scopeFilepath)
+            : categories;
+
+        for (const cat of targetCategories) {
+            const tasks = await this.getTasks(cat.filepath);
+            for (const task of tasks) {
+                if (task.title.toLowerCase().includes(q)) {
+                    results.push({ task, category: cat, matchField: "Title" });
+                } else if (task.steps && task.steps.some(s => s.text.toLowerCase().includes(q))) {
+                    results.push({ task, category: cat, matchField: "Steps" });
+                } else if (task.note && task.note.toLowerCase().includes(q)) {
+                    results.push({ task, category: cat, matchField: "Note" });
+                }
+            }
+        }
+        return results;
+    }
 }

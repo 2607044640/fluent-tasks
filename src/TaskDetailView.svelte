@@ -28,12 +28,14 @@
         EventBus.on(EventName.TASK_SELECTED, handleTaskSelected);
         EventBus.on(EventName.DETAIL_CLOSE, handleClose);
         EventBus.on(EventName.TASK_DELETED, handleTaskDeleted);
+        EventBus.on(EventName.TASK_UPDATED, handleExternalTaskUpdate);
     });
 
     onDestroy(() => {
         EventBus.off(EventName.TASK_SELECTED, handleTaskSelected);
         EventBus.off(EventName.DETAIL_CLOSE, handleClose);
         EventBus.off(EventName.TASK_DELETED, handleTaskDeleted);
+        EventBus.off(EventName.TASK_UPDATED, handleExternalTaskUpdate);
         if (saveTimeout) clearTimeout(saveTimeout);
     });
 
@@ -58,6 +60,13 @@
     function handleTaskDeleted(payload: any) {
         if (task && payload.task.id === task.id) {
             handleClose();
+        }
+    }
+
+    function handleExternalTaskUpdate(payload: any) {
+        if (task && payload.task && payload.task.id === task.id) {
+            task = { ...payload.task, steps: payload.task.steps.map((s: any) => ({ ...s })) };
+            categoryFilepath = payload.categoryFilepath || categoryFilepath;
         }
     }
 

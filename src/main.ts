@@ -21,6 +21,7 @@ import TaskSidebarView from "./TaskSidebarView.svelte";
 import TaskMainView from "./TaskMainView.svelte";
 import TaskDetailView from "./TaskDetailView.svelte";
 import { FluentTasksSettings, DEFAULT_SETTINGS, FluentTasksSettingTab } from "./settings";
+import { TaskSearchModal } from "./TaskSearchModal";
 import "./styles.css";
 
 // =============================================
@@ -195,6 +196,29 @@ export default class FluentTasksPlugin extends Plugin {
             callback: () => { void this.activateView(VIEW_TYPE_DETAIL, "right"); },
         });
 
+        this.addCommand({
+            id: "search-all-tasks",
+            name: "Search all tasks",
+            callback: () => {
+                new TaskSearchModal(this.app, this.dataService).open();
+            },
+        });
+
+        this.addCommand({
+            id: "search-current-list",
+            name: "Search tasks in current list",
+            callback: () => {
+                const mainLeaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_MAIN)[0];
+                let scopePath: string | null = null;
+                if (mainLeaf && mainLeaf.view instanceof TaskMainViewWrapper) {
+                    const comp = mainLeaf.view.getComponent();
+                    const cat = comp?.getCurrentCategory();
+                    if (cat) scopePath = cat.filepath;
+                }
+                new TaskSearchModal(this.app, this.dataService, scopePath).open();
+            },
+        });
+
         // FIX: All workspace/vault operations MUST wait until layout is ready.
         // Running them before this causes silent startup crashes on Obsidian boot.
         this.app.workspace.onLayoutReady(async () => {
@@ -239,6 +263,12 @@ export default class FluentTasksPlugin extends Plugin {
                     }
                 }
             }));
+
+            await this.registerCategoryCommands();
+
+            EventBus.on(EventName.CATEGORY_LIST_CHANGED, () => {
+                void this.registerCategoryCommands();
+            });
 
             Logger.log("Fluent Tasks plugin loaded successfully.");
         });
@@ -290,6 +320,31 @@ export default class FluentTasksPlugin extends Plugin {
         const sidebarLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR);
         if (sidebarLeaves.length > 0) {
             this.app.workspace.revealLeaf(sidebarLeaves[0]);
+        }
+    }
+
+    private registeredCategoryCommandIds: Set<string> = new Set();
+
+    /** Register a jump command for each category list */
+    async registerCategoryCommands(): Promise<void> {
+        const categories = await this.dataService.getCategories();
+        for (const cat of categories) {
+            const commandId = `jump-to-list-${cat.name.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase()}`;
+            if (this.registeredCategoryCommandIds.has(commandId)) continue;
+            this.registeredCategoryCommandIds.add(commandId);
+            this.addCommand({
+                id: commandId,
+                name: `Jump to list: ${cat.name}`,
+                callback: () => {
+                    void (async () => {
+                        await this.activateView(VIEW_TYPE_MAIN, "center");
+                        EventBus.emit(EventName.CATEGORY_SELECTED, { category: cat });
+                        if (this.settings.autoExpandSidebar) {
+                            this.expandSidebarToList();
+                        }
+                    })();
+                },
+            });
         }
     }
 
