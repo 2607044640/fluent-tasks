@@ -75,6 +75,7 @@ Data movement across views and persistent storage follows a strict 7-step sequen
 - **Global Drag State Cleanup (CRITICAL)**: MUST unconditionally clear `(window as any).__mstodo_drag_data = null` on ANY global `pointerup` event, regardless of drop validity. (Why: prevents phantom drag states from teleporting items on subsequent clicks).
 - **Microsoft To Do Sync Boundary & Isolation**: External synchronization with Microsoft To Do (via `microsoft-todo-link`) MUST write strictly to `MicrosoftTodoTasks.md`. `TodoData/*.md` files MUST NOT be directly modified by unvetted third-party sync processes without serialization through `MarkdownParser` and `AtomicIOPipeline`. (Why: guarantees schema integrity and prevents JSON metadata corruption).
 - **Sync Safety Thresholds**: Central sync operations MUST maintain `MAX_REMOTE_DELETIONS_PER_SYNC = 10` and `EMPTY_FILE_DELETION_SAFETY_THRESHOLD = 3` with `deletionBehavior: "complete"`. (Why: prevents catastrophic data loss from accidental cloud-side deletions or empty-file sync triggers).
+- **Sidebar Expansion Protocol**: Automatic sidebar expansion on view focus MUST verify `leftSplit.collapsed` prior to `expand()` and check `getLeavesOfType(VIEW_TYPE_SIDEBAR).length > 0` before invoking `workspace.revealLeaf()`. (Why: prevents runtime crashes or layout disruptions if the sidebar leaf is closed or not yet initialized).
 </key_invariants>
 
 ## Key API Reference
@@ -93,6 +94,7 @@ Data movement across views and persistent storage follows a strict 7-step sequen
 | `AtomicIOPipeline` | `processFile` | `(filepath: string, mutator: (data: string) => string) => Promise<void>` | Atomically updates file via `app.vault.process` |
 | `MarkdownParser` | `parseTasksFromMarkdown` | `(content: string) => TaskItem[]` | Pure query, zero side-effects |
 | `MarkdownParser` | `serializeTasksToMarkdown` | `(tasks: TaskItem[]) => string` | Pure query, zero side-effects |
+| `FluentTasksPlugin` | `expandSidebarToList` | `() => void` | Expands `leftSplit` and reveals `VIEW_TYPE_SIDEBAR` leaf |
 </api_reference>
 
 ## Development Recipes for Contributors
