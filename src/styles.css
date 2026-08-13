@@ -747,3 +747,12 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     width: 100%;
     height: 100%;
 }
+
+.icon-loading svg {
+    animation: icon-spin 1s linear infinite;
+}
+
+@keyframes icon-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}

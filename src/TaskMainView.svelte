@@ -8,6 +8,7 @@
     import { killDndGhostElement, removeDndGhostShield, injectDndGhostShield } from "./utils/dndUtils";
     import { DISK_SYNC_DELAY_MS, ANTI_FLICKER_DURATION_MS } from "./constants";
     import { Menu, setIcon, type App } from "obsidian";
+    import { resolveIconifyIcon } from "./IconifyService";
 
     // =============================================
     // Props
@@ -139,6 +140,14 @@
         if (iconStr.startsWith("lucide-")) {
             const iconName = iconStr.substring(7);
             setIcon(node, iconName);
+        } else if (iconStr.startsWith("iconify:")) {
+            // Why: Show a loading spinner while fetching from Iconify API, then swap in the real SVG
+            setIcon(node, "loader-2");
+            node.classList.add("icon-loading");
+            resolveIconifyIcon(iconStr).then(svgHtml => {
+                node.innerHTML = svgHtml;
+                node.classList.remove("icon-loading");
+            });
         } else if (iconStr.startsWith("<svg")) {
             node.innerHTML = iconStr;
         } else {

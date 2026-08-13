@@ -5751,6 +5751,55 @@ function flip(node, { from, to }, params = {}) {
 
 // src/TaskMainView.svelte
 var import_obsidian4 = require("obsidian");
+
+// src/IconifyService.ts
+var ICONIFY_API = "https://api.iconify.design";
+var cache = /* @__PURE__ */ new Map();
+var inflight = /* @__PURE__ */ new Map();
+var FALLBACK_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+async function resolveIconifyIcon(iconStr) {
+  const parts = iconStr.split(":");
+  if (parts.length !== 3)
+    return FALLBACK_SVG;
+  const prefix = parts[1];
+  const name = parts[2];
+  const cacheKey = `${prefix}:${name}`;
+  const cached = cache.get(cacheKey);
+  if (cached)
+    return cached;
+  const existing = inflight.get(cacheKey);
+  if (existing)
+    return existing;
+  const promise = fetchAndCache(prefix, name, cacheKey);
+  inflight.set(cacheKey, promise);
+  try {
+    return await promise;
+  } finally {
+    inflight.delete(cacheKey);
+  }
+}
+async function fetchAndCache(prefix, name, cacheKey) {
+  var _a, _b, _c, _d, _e;
+  try {
+    const url = `${ICONIFY_API}/${prefix}.json?icons=${name}`;
+    const resp = await fetch(url);
+    if (!resp.ok)
+      return FALLBACK_SVG;
+    const data = await resp.json();
+    const iconData = (_a = data == null ? void 0 : data.icons) == null ? void 0 : _a[name];
+    if (!(iconData == null ? void 0 : iconData.body))
+      return FALLBACK_SVG;
+    const width = (_c = (_b = iconData.width) != null ? _b : data.width) != null ? _c : 24;
+    const height = (_e = (_d = iconData.height) != null ? _d : data.height) != null ? _e : 24;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" fill="currentColor">${iconData.body}</svg>`;
+    cache.set(cacheKey, svg);
+    return svg;
+  } catch (e) {
+    return FALLBACK_SVG;
+  }
+}
+
+// src/TaskMainView.svelte
 function get_each_context2(ctx, list, i) {
   const child_ctx = ctx.slice();
   child_ctx[56] = list[i];
@@ -7444,6 +7493,13 @@ function instance2($$self, $$props, $$invalidate) {
     if (iconStr.startsWith("lucide-")) {
       const iconName = iconStr.substring(7);
       (0, import_obsidian4.setIcon)(node, iconName);
+    } else if (iconStr.startsWith("iconify:")) {
+      (0, import_obsidian4.setIcon)(node, "loader-2");
+      node.classList.add("icon-loading");
+      resolveIconifyIcon(iconStr).then((svgHtml) => {
+        node.innerHTML = svgHtml;
+        node.classList.remove("icon-loading");
+      });
     } else if (iconStr.startsWith("<svg")) {
       node.innerHTML = iconStr;
     } else {
