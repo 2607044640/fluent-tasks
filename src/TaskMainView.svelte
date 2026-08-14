@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount, onDestroy } from "svelte";
+    import { onMount, onDestroy, tick } from "svelte";
     import { dndzone, TRIGGERS } from "svelte-dnd-action";
     import { flip } from "svelte/animate";
     import { EventBus } from "./EventBus";
@@ -53,6 +53,7 @@
         EventBus.on(EventName.TASK_UPDATED, handleTaskUpdated);
         EventBus.on(EventName.TASK_MOVED, handleTaskMoved);
         EventBus.on(EventName.TASK_DELETED, handleTaskDeleted);
+        EventBus.on(EventName.TASK_NAVIGATE, handleTaskNavigate);
     });
 
     onDestroy(() => {
@@ -60,6 +61,7 @@
         EventBus.off(EventName.TASK_UPDATED, handleTaskUpdated);
         EventBus.off(EventName.TASK_MOVED, handleTaskMoved);
         EventBus.off(EventName.TASK_DELETED, handleTaskDeleted);
+        EventBus.off(EventName.TASK_NAVIGATE, handleTaskNavigate);
     });
 
     // =============================================
@@ -202,6 +204,25 @@
 
     function toggleCompletedSection() {
         showCompleted = !showCompleted;
+    }
+
+    /** Navigate to a specific task: expand completed section if needed, scroll into view, highlight */
+    async function handleTaskNavigate(payload: any) {
+        const { taskId, isCompleted } = payload;
+        // If the task is completed and the section is collapsed, expand it
+        if (isCompleted && !showCompleted) {
+            showCompleted = true;
+        }
+        selectedTaskId = taskId;
+        // Wait for Svelte to render the DOM after state changes
+        await tick();
+        const el = document.getElementById('task-' + taskId);
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Brief highlight flash
+            el.classList.add('navigate-highlight');
+            setTimeout(() => el.classList.remove('navigate-highlight'), 1500);
+        }
     }
 
     // =============================================
@@ -347,9 +368,9 @@
                     </svg>
                 </span>
                 <h1 class="category-title">{currentCategory.name}</h1>
-                <span class="icon-btn" on:click|stopPropagation={() => new TaskSearchModal(plugin.app, dataService, currentCategory?.filepath).open()}
+                <span class="icon-btn" on:click|stopPropagation={() => new TaskSearchModal(plugin.app, plugin, dataService, currentCategory?.filepath).open()}
                       role="button" tabindex="0" aria-label="Search this list" title="Search this list"
-                      on:keydown|stopPropagation={(e) => e.key === "Enter" && new TaskSearchModal(plugin.app, dataService, currentCategory?.filepath).open()}>
+                      on:keydown|stopPropagation={(e) => e.key === "Enter" && new TaskSearchModal(plugin.app, plugin, dataService, currentCategory?.filepath).open()}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="11" cy="11" r="8"/>

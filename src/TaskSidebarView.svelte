@@ -13,6 +13,7 @@
     // =============================================
     export let app: App;
     export let dataService: DataService;
+    export let plugin: any;
 
     // =============================================
     // State
@@ -57,13 +58,25 @@
             vaultEventRefs.push(app.vault.on("rename", handleVaultChange));
         });
 
+        // Sync visual selection when category is selected externally (e.g. jump commands, search)
+        EventBus.on(EventName.CATEGORY_SELECTED, handleExternalCategorySelected);
+
         window.addEventListener("pointermove", handleGlobalPointerMove, true);
     });
 
     onDestroy(() => {
         window.removeEventListener("pointermove", handleGlobalPointerMove, true);
+        EventBus.off(EventName.CATEGORY_SELECTED, handleExternalCategorySelected);
         vaultEventRefs.forEach(ref => app.vault.offref(ref));
     });
+
+    function handleExternalCategorySelected(payload: any) {
+        if (payload && payload.category) {
+            activeCategoryPath = payload.category.filepath;
+        } else {
+            activeCategoryPath = "";
+        }
+    }
 
     async function loadSidebarItems() {
         sidebarItems = await dataService.getSidebarItems();
@@ -612,7 +625,7 @@
     }
 
     function openGlobalSearch() {
-        new TaskSearchModal(app, dataService).open();
+        new TaskSearchModal(app, plugin, dataService).open();
     }
 </script>
 

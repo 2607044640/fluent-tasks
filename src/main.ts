@@ -31,10 +31,12 @@ import "./styles.css";
 class TaskSidebarViewWrapper extends ItemView {
     private component: TaskSidebarView | null = null;
     private dataService: DataService;
+    private plugin: FluentTasksPlugin;
 
-    constructor(leaf: WorkspaceLeaf, dataService: DataService) {
+    constructor(leaf: WorkspaceLeaf, dataService: DataService, plugin: FluentTasksPlugin) {
         super(leaf);
         this.dataService = dataService;
+        this.plugin = plugin;
     }
 
     getViewType(): string { return VIEW_TYPE_SIDEBAR; }
@@ -46,7 +48,7 @@ class TaskSidebarViewWrapper extends ItemView {
         container.empty();
         this.component = new TaskSidebarView({
             target: container,
-            props: { app: this.app, dataService: this.dataService },
+            props: { app: this.app, dataService: this.dataService, plugin: this.plugin },
         });
     }
 
@@ -162,7 +164,7 @@ export default class FluentTasksPlugin extends Plugin {
         this.addSettingTab(new FluentTasksSettingTab(this.app, this));
 
         // Register all three view types (must be synchronous, before layout ready)
-        this.registerView(VIEW_TYPE_SIDEBAR, (leaf) => new TaskSidebarViewWrapper(leaf, this.dataService));
+        this.registerView(VIEW_TYPE_SIDEBAR, (leaf) => new TaskSidebarViewWrapper(leaf, this.dataService, this));
         this.registerView(VIEW_TYPE_MAIN, (leaf) => new TaskMainViewWrapper(leaf, this.dataService, this));
         this.registerView(VIEW_TYPE_DETAIL, (leaf) => new TaskDetailViewWrapper(leaf, this.dataService));
 
@@ -200,7 +202,7 @@ export default class FluentTasksPlugin extends Plugin {
             id: "search-all-tasks",
             name: "Search all tasks",
             callback: () => {
-                new TaskSearchModal(this.app, this.dataService).open();
+                new TaskSearchModal(this.app, this, this.dataService).open();
             },
         });
 
@@ -215,7 +217,7 @@ export default class FluentTasksPlugin extends Plugin {
                     const cat = comp?.getCurrentCategory();
                     if (cat) scopePath = cat.filepath;
                 }
-                new TaskSearchModal(this.app, this.dataService, scopePath).open();
+                new TaskSearchModal(this.app, this, this.dataService, scopePath).open();
             },
         });
 

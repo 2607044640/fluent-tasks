@@ -709,4 +709,49 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     transform: none !important;
 }
 
+/* =============================================
+   Search Modal - Filter Button
+   ============================================= */
+.todo-search-filter-btn {
+    padding: 2px 10px;
+    font-size: 12px;
+    border-radius: var(--todo-radius);
+    border: 1px solid var(--todo-border);
+    background: var(--todo-panel-bg);
+    color: var(--todo-text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background var(--todo-transition), color var(--todo-transition);
+    margin-left: 6px;
+    flex-shrink: 0;
+}
+.todo-search-filter-btn.is-active {
+    background: var(--todo-accent-light);
+    color: var(--todo-accent);
+    border-color: var(--todo-accent);
+}
+.todo-search-filter-btn:hover {
+    background: var(--todo-hover-bg);
+}
 
+/* =============================================
+   Task Navigate Highlight
+   ============================================= */
+.task-item.navigate-highlight {
+    animation: navigate-pulse 1.5s ease-out;
+}
+@keyframes navigate-pulse {
+    0% { background-color: var(--todo-accent-light); }
+    100% { background-color: transparent; }
+}
+
+/* =============================================
+   Sidebar Header
+   ============================================= */
+.sidebar-header {
+    padding: 8px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--todo-text-muted);
+    border-bottom: 1px solid var(--todo-border);
+}
