@@ -408,7 +408,10 @@ var MarkdownParser = class {
         starred: (_a = meta.starred) != null ? _a : false,
         steps: (_b = meta.steps) != null ? _b : [],
         note: (_c = meta.note) != null ? _c : "",
-        createdAt
+        createdAt,
+        ...meta.dueDate ? { dueDate: meta.dueDate } : {},
+        ...meta.msGraphId ? { msGraphId: meta.msGraphId } : {},
+        ...meta.msGraphListId ? { msGraphListId: meta.msGraphListId } : {}
       });
     }
     return tasks2;
@@ -426,6 +429,12 @@ var MarkdownParser = class {
         note: task.note,
         createdAt: task.createdAt
       };
+      if (task.dueDate)
+        meta.dueDate = task.dueDate;
+      if (task.msGraphId)
+        meta.msGraphId = task.msGraphId;
+      if (task.msGraphListId)
+        meta.msGraphListId = task.msGraphListId;
       return `- ${checkbox} ${task.title} %%${JSON.stringify(meta)}%%`;
     }).join("\n");
   }
@@ -8346,7 +8355,8 @@ var TaskDetailView_default = TaskDetailView;
 var import_obsidian6 = require("obsidian");
 var DEFAULT_SETTINGS = {
   accentColor: "#8b5cf6",
-  autoExpandSidebar: true
+  autoExpandSidebar: true,
+  searchHideCompleted: true
 };
 var FluentTasksSettingTab = class extends import_obsidian6.PluginSettingTab {
   constructor(app, plugin) {
@@ -8372,6 +8382,10 @@ var FluentTasksSettingTab = class extends import_obsidian6.PluginSettingTab {
     }
     new import_obsidian6.Setting(containerEl).setName("Auto-Expand Sidebar on Focus").setDesc("Automatically expand and reveal the sidebar list panel when the main task view is focused or clicked.").addToggle((toggle) => toggle.setValue(this.plugin.settings.autoExpandSidebar).onChange(async (value) => {
       this.plugin.settings.autoExpandSidebar = value;
+      await this.plugin.saveSettings();
+    }));
+    new import_obsidian6.Setting(containerEl).setName("Search: Hide Completed Tasks").setDesc("When searching, hide completed tasks by default. Can also be toggled directly in the search modal.").addToggle((toggle) => toggle.setValue(this.plugin.settings.searchHideCompleted).onChange(async (value) => {
+      this.plugin.settings.searchHideCompleted = value;
       await this.plugin.saveSettings();
     }));
   }

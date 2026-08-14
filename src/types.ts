@@ -30,6 +30,9 @@ export interface TaskItem {
     steps: TaskStep[];
     note: string;
     createdAt: string; // ISO 8601
+    dueDate?: string;       // ISO date "YYYY-MM-DD", synced from MS Graph
+    msGraphId?: string;     // Microsoft Graph todoTask ID
+    msGraphListId?: string; // Microsoft Graph todoTaskList ID
 }
 
 export interface CategoryInfo {

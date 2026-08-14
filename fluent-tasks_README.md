@@ -28,20 +28,24 @@ if (mainLeaf && mainLeaf.view && mainLeaf.view.file) {
 
 
 
-## Microsoft To Do External Sync & Safety
+## Microsoft To Do Bidirectional Sync
 
 <external_sync_integration>
-Fluent Tasks supports interoperability with Microsoft To Do through the companion sync plugin `obsidian-MicrosoftToDoLink` (`microsoft-todo-link`).
+Fluent Tasks supports bidirectional synchronization with Microsoft To Do through the companion bridge plugin `A1MSTodoSync` (`a1-ms-todo-sync`). For full setup and configuration, refer to: [`A1MSTodoSync_README.md`](file:///c:/ObsidianDev/plugins/A1MSTodoSync/A1MSTodoSync_README.md).
 
-### Data Isolation Policy
-- **Strict Storage Separation**: Fluent Tasks tasks reside exclusively in `TodoData/*.md`. Microsoft To Do sync outputs exclusively to the central sync file `MicrosoftTodoTasks.md`.
-- **Zero Accidental Overwrite**: Sync operations on `MicrosoftTodoTasks.md` do NOT touch or overwrite existing `TodoData/*.md` categories.
+### Architecture: Zero-Coupling Bridge
+- **No runtime dependency**: `A1MSTodoSync` is an independent personal plugin that reads/writes `TodoData/*.md` using the same `%%{...}%%` format. `fluent-tasks` detects changes via existing vault file event listeners.
+- **Sync metadata fields**: `TaskItem` carries optional `dueDate?`, `msGraphId?`, `msGraphListId?` fields. These are transparent to the UI — they only exist in `%%{...}%%` JSON and are preserved during serialization.
 
-### Key Operational Constraints & Precautions
-- **Enforce Central Sync Mode**: MUST configure `microsoft-todo-link` to use Central Sync Mode (`MicrosoftTodoTasks.md`). NEVER bind individual `TodoData/*.md` files directly without an atomic bridge parser. (Why: prevents corruption of `%%{...}%%` embedded JSON metadata).
-- **Safe Deletion Policy**: `deletionBehavior` MUST remain set to `"complete"` (default). Remote tasks are marked completed rather than permanently deleted.
-- **Safety Thresholds**:
-  - `MAX_REMOTE_DELETIONS_PER_SYNC = 10`: Limits remote batch deletions.
-  - `EMPTY_FILE_DELETION_SAFETY_THRESHOLD = 3`: Prevents clearing cloud tasks if local files are emptied unexpectedly.
+### Data Safety Policy
+- **Direct TodoData Writing**: Unlike the previous `microsoft-todo-link` approach (which used a separate `MicrosoftTodoTasks.md`), `A1MSTodoSync` writes directly to `TodoData/*.md` using the exact `MarkdownParser` format. This eliminates the need for a separate bridge file.
+- **Conflict Resolution**: Last-Writer-Wins by timestamp comparison (local `file.stat.mtime` vs cloud `lastModifiedDateTime`).
+- **First-Sync Merge**: Cloud tasks are appended to local files without overwriting existing tasks.
+- **Sync State Tracking**: Per-task MD5 hashes and cloud timestamps stored in `TodoData/.sync-state.json`.
+
+### Key Constraints
+- MUST NOT modify `MarkdownParser` serialization format without updating `A1MSTodoSync.MarkdownBridge` in lockstep. (Why: format divergence causes silent data corruption).
+- Optional sync fields (`dueDate`, `msGraphId`, `msGraphListId`) MUST remain backward-compatible — NEVER make them required. (Why: existing users without sync must not be affected).
 </external_sync_integration>
+
 

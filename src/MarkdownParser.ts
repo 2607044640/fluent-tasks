@@ -78,6 +78,9 @@ export class MarkdownParser {
                 steps: meta.steps ?? [],
                 note: meta.note ?? "",
                 createdAt,
+                ...(meta.dueDate ? { dueDate: meta.dueDate } : {}),
+                ...(meta.msGraphId ? { msGraphId: meta.msGraphId } : {}),
+                ...(meta.msGraphListId ? { msGraphListId: meta.msGraphListId } : {}),
             });
         }
 
@@ -90,13 +93,16 @@ export class MarkdownParser {
     static serializeTasksToMarkdown(tasks: TaskItem[]): string {
         return tasks.map(task => {
             const checkbox = task.completed ? "[x]" : "[ ]";
-            const meta = {
+            const meta: Record<string, any> = {
                 id: task.id,
                 starred: task.starred,
                 steps: task.steps,
                 note: task.note,
                 createdAt: task.createdAt,
-            } as any;
+            };
+            if (task.dueDate) meta.dueDate = task.dueDate;
+            if (task.msGraphId) meta.msGraphId = task.msGraphId;
+            if (task.msGraphListId) meta.msGraphListId = task.msGraphListId;
             return `- ${checkbox} ${task.title} %%${JSON.stringify(meta)}%%`;
         }).join("\n");
     }
