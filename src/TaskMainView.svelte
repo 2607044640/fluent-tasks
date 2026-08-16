@@ -41,6 +41,7 @@
     let newTaskTitle: string = "";
     let showCompleted: boolean = true;
     let selectedTaskId: string = "";
+    let addTaskInputEl: HTMLInputElement;
 
     // DND requires items to have an `id` field — our TaskItem already has it
     const DND_FLIP_DURATION = 200;
@@ -91,6 +92,11 @@
     // =============================================
     async function handleCategorySelected(payload: any) {
         await loadCategory(payload.category);
+        // Auto-focus the "Add a task" input when triggered by a jump command
+        if (payload.focusInput) {
+            await tick();
+            addTaskInputEl?.focus();
+        }
     }
 
     async function handleTaskUpdated(payload: any) {
@@ -394,6 +400,7 @@
                 type="text"
                 placeholder="Add a task"
                 bind:value={newTaskTitle}
+                bind:this={addTaskInputEl}
                 on:keydown={handleAddTaskKeydown}
             />
         </div>

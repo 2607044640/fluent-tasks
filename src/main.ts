@@ -340,7 +340,7 @@ export default class FluentTasksPlugin extends Plugin {
                 callback: () => {
                     void (async () => {
                         await this.activateView(VIEW_TYPE_MAIN, "center");
-                        EventBus.emit(EventName.CATEGORY_SELECTED, { category: cat });
+                        EventBus.emit(EventName.CATEGORY_SELECTED, { category: cat, focusInput: true });
                         if (this.settings.autoExpandSidebar) {
                             this.expandSidebarToList();
                         }
