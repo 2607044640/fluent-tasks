@@ -21,6 +21,12 @@ export interface TaskStep {
     done: boolean;
 }
 
+export interface RecurrenceRule {
+    type: 'daily' | 'weekdays' | 'weekly' | 'custom';
+    interval: number;
+    daysOfWeek?: number[];  // 0=Sun, 1=Mon, ..., 6=Sat
+}
+
 export interface TaskItem {
     /** Stable fingerprint ID derived from content + creation timestamp */
     id: string;
@@ -33,6 +39,7 @@ export interface TaskItem {
     dueDate?: string;       // ISO date "YYYY-MM-DD", synced from MS Graph
     msGraphId?: string;     // Microsoft Graph todoTask ID
     msGraphListId?: string; // Microsoft Graph todoTaskList ID
+    recurrence?: RecurrenceRule;
 }
 
 export interface CategoryInfo {

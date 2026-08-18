@@ -2,7 +2,7 @@
     import { onMount, onDestroy } from "svelte";
     import { EventBus } from "./EventBus";
     import { DataService } from "./DataService";
-    import { EventName, type TaskItem, type TaskStep } from "./types";
+    import { EventName, type TaskItem, type TaskStep, type RecurrenceRule } from "./types";
     import { SAVE_DEBOUNCE_MS } from "./constants";
     import type { App } from "obsidian";
 
@@ -17,6 +17,92 @@
     let task: TaskItem | null = null;
     let categoryFilepath: string = "";
     let newStepText: string = "";
+    let showRepeatPicker: boolean = false;
+
+    const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    function getRecurrenceLabel(rule: RecurrenceRule | undefined): string {
+        if (!rule) return "Does not repeat";
+        switch (rule.type) {
+            case 'daily': return rule.interval === 1 ? "Every day" : `Every ${rule.interval} days`;
+            case 'weekdays': return "Weekdays (Mon–Fri)";
+            case 'weekly': {
+                const days = (rule.daysOfWeek || []).map(d => DAY_LABELS[d]).join(', ');
+                const prefix = rule.interval === 1 ? "Every week" : `Every ${rule.interval} weeks`;
+                return days ? `${prefix} on ${days}` : prefix;
+            }
+            case 'custom': {
+                if (rule.daysOfWeek && rule.daysOfWeek.length > 0) {
+                    const days = rule.daysOfWeek.map(d => DAY_LABELS[d]).join(', ');
+                    return `Every ${rule.interval} week(s) on ${days}`;
+                }
+                return `Every ${rule.interval} day(s)`;
+            }
+            default: return "Does not repeat";
+        }
+    }
+
+    function setRecurrencePreset(type: RecurrenceRule['type']) {
+        if (!task) return;
+        // Ensure dueDate exists
+        if (!task.dueDate) {
+            task.dueDate = new Date().toISOString().slice(0, 10);
+        }
+        switch (type) {
+            case 'daily':
+                task.recurrence = { type: 'daily', interval: 1 };
+                break;
+            case 'weekdays':
+                task.recurrence = { type: 'weekdays', interval: 1 };
+                break;
+            case 'weekly':
+                task.recurrence = { type: 'weekly', interval: 1, daysOfWeek: [new Date(task.dueDate + "T00:00:00").getDay()] };
+                break;
+        }
+        showRepeatPicker = false;
+        scheduleSave();
+    }
+
+    function clearRecurrence() {
+        if (!task) return;
+        task.recurrence = undefined;
+        showRepeatPicker = false;
+        scheduleSave();
+    }
+
+    function toggleWeekday(day: number) {
+        if (!task || !task.recurrence) return;
+        let days = task.recurrence.daysOfWeek || [];
+        if (days.includes(day)) {
+            days = days.filter(d => d !== day);
+        } else {
+            days = [...days, day].sort((a, b) => a - b);
+        }
+        task.recurrence = { ...task.recurrence, daysOfWeek: days };
+        scheduleSave();
+    }
+
+    function handleWeekdayClick(day: number) {
+        if (!task) return;
+        if (!task.recurrence) {
+            task.recurrence = { type: 'weekly', interval: 1, daysOfWeek: [day] };
+        } else {
+            toggleWeekday(day);
+        }
+        if (!task.dueDate) {
+            task.dueDate = new Date().toISOString().slice(0, 10);
+        }
+        scheduleSave();
+    }
+
+    function setCustomInterval(val: number) {
+        if (!task) return;
+        if (!task.dueDate) {
+            task.dueDate = new Date().toISOString().slice(0, 10);
+        }
+        task.recurrence = { type: 'custom', interval: Math.max(1, val) };
+        scheduleSave();
+    }
 
     // Debounce timer for auto-saving on input changes
     let saveTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -308,6 +394,110 @@
                 bind:value={task.note}
                 on:input={handleNoteInput}
             ></textarea>
+        </div>
+
+        <!-- Due Date & Repeat Section -->
+        <div class="detail-schedule-section">
+            <!-- Due Date Row -->
+            <div class="schedule-row">
+                <div class="schedule-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                </div>
+                <div class="schedule-content">
+                    <span class="schedule-label">Due date</span>
+                    <input
+                        type="date"
+                        class="due-date-input"
+                        value={task.dueDate || ''}
+                        on:change={(e) => {
+                            task.dueDate = e.currentTarget.value || undefined;
+                            scheduleSave();
+                        }}
+                    />
+                </div>
+                {#if task.dueDate}
+                    <span class="schedule-clear-btn" on:click={() => { task.dueDate = undefined; task.recurrence = undefined; scheduleSave(); }}
+                          role="button" tabindex="0" title="Clear due date"
+                          on:keydown={(e) => e.key === "Enter" && (() => { task.dueDate = undefined; task.recurrence = undefined; scheduleSave(); })()}>
+                        ✕
+                    </span>
+                {/if}
+            </div>
+
+            <!-- Repeat Row -->
+            <div class="schedule-row clickable" on:click={() => showRepeatPicker = !showRepeatPicker}
+                 role="button" tabindex="0"
+                 on:keydown={(e) => e.key === "Enter" && (showRepeatPicker = !showRepeatPicker)}>
+                <div class="schedule-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="17 1 21 5 17 9"/>
+                        <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+                        <polyline points="7 23 3 19 7 15"/>
+                        <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+                    </svg>
+                </div>
+                <div class="schedule-content">
+                    <span class="schedule-label">Repeat</span>
+                    <span class="schedule-value" class:active={!!task.recurrence}>
+                        {getRecurrenceLabel(task.recurrence)}
+                    </span>
+                </div>
+                {#if task.recurrence}
+                    <span class="schedule-clear-btn" on:click|stopPropagation={clearRecurrence}
+                          role="button" tabindex="0" title="Remove recurrence"
+                          on:keydown|stopPropagation={(e) => e.key === "Enter" && clearRecurrence()}>
+                        ✕
+                    </span>
+                {/if}
+            </div>
+
+            <!-- Repeat Picker Panel -->
+            {#if showRepeatPicker}
+                <div class="repeat-picker-panel">
+                    <div class="repeat-presets">
+                        <button type="button" class="preset-btn" class:active={task.recurrence?.type === 'daily' && task.recurrence?.interval === 1}
+                                on:click={() => setRecurrencePreset('daily')}>Daily</button>
+                        <button type="button" class="preset-btn" class:active={task.recurrence?.type === 'weekdays'}
+                                on:click={() => setRecurrencePreset('weekdays')}>Weekdays</button>
+                        <button type="button" class="preset-btn" class:active={task.recurrence?.type === 'weekly' && task.recurrence?.interval === 1}
+                                on:click={() => setRecurrencePreset('weekly')}>Weekly</button>
+                    </div>
+
+                    <!-- Custom / Weekday selector -->
+                    <div class="custom-repeat-section">
+                        <div class="repeat-days-grid">
+                            {#each [1, 2, 3, 4, 5, 6, 0] as day}
+                                <button
+                                    type="button"
+                                    class="weekday-chip"
+                                    class:active={task.recurrence?.daysOfWeek?.includes(day)}
+                                    on:click={() => handleWeekdayClick(day)}
+                                >
+                                    {DAY_LABELS[day]}
+                                </button>
+                            {/each}
+                        </div>
+
+                        <div class="custom-interval-row">
+                            <span>Every</span>
+                            <input
+                                type="number"
+                                min="1"
+                                max="99"
+                                class="interval-input"
+                                value={task.recurrence?.interval || 1}
+                                on:change={(e) => setCustomInterval(parseInt(e.currentTarget.value) || 1)}
+                            />
+                            <span>day(s)</span>
+                        </div>
+                    </div>
+                </div>
+            {/if}
         </div>
 
         <!-- Footer: Collapse | Created date | Delete -->

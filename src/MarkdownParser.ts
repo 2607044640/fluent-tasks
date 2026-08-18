@@ -81,6 +81,7 @@ export class MarkdownParser {
                 ...(meta.dueDate ? { dueDate: meta.dueDate } : {}),
                 ...(meta.msGraphId ? { msGraphId: meta.msGraphId } : {}),
                 ...(meta.msGraphListId ? { msGraphListId: meta.msGraphListId } : {}),
+                ...(meta.recurrence ? { recurrence: meta.recurrence } : {}),
             });
         }
 
@@ -103,6 +104,7 @@ export class MarkdownParser {
             if (task.dueDate) meta.dueDate = task.dueDate;
             if (task.msGraphId) meta.msGraphId = task.msGraphId;
             if (task.msGraphListId) meta.msGraphListId = task.msGraphListId;
+            if (task.recurrence) meta.recurrence = task.recurrence;
             return `- ${checkbox} ${task.title} %%${JSON.stringify(meta)}%%`;
         }).join("\n");
     }

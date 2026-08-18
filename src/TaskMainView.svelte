@@ -9,6 +9,7 @@
     import { DISK_SYNC_DELAY_MS, ANTI_FLICKER_DURATION_MS } from "./constants";
     import { Menu, setIcon, type App } from "obsidian";
     import { TaskSearchModal } from "./TaskSearchModal";
+    import { RecurrenceService } from "./services/RecurrenceService";
 
     // =============================================
     // Props
@@ -168,6 +169,23 @@
         if (!currentCategory) return;
 
         // Optimistic UI: move the task visually first
+        const isBecomingCompleted = !task.completed;
+
+        // Recurring task: advance to next occurrence instead of completing
+        if (isBecomingCompleted && task.recurrence) {
+            const advanced = RecurrenceService.handleRecurringCompletion(task);
+            Object.assign(task, advanced);
+            // Task stays in incompleteTasks — just trigger reactivity
+            incompleteTasks = [...incompleteTasks];
+
+            await dataService.updateTask(currentCategory.filepath, task);
+            EventBus.emit(EventName.TASK_UPDATED, {
+                task,
+                categoryFilepath: currentCategory.filepath,
+            });
+            return;
+        }
+
         task.completed = !task.completed;
         if (task.completed) {
             incompleteTasks = incompleteTasks.filter(t => t.id !== task.id);
@@ -436,11 +454,29 @@
 
                     <div class="task-content">
                         <span class="task-title">{task.title}</span>
-                        {#if task.steps.length > 0}
-                            <span class="task-meta">
-                                {task.steps.filter(s => s.done).length}/{task.steps.length} steps
-                            </span>
-                        {/if}
+                        <div class="task-meta-row">
+                            {#if task.steps.length > 0}
+                                <span class="task-meta">
+                                    {task.steps.filter(s => s.done).length}/{task.steps.length} steps
+                                </span>
+                            {/if}
+                            {#if task.dueDate}
+                                <span class="task-meta due-date">
+                                    {task.dueDate}
+                                </span>
+                            {/if}
+                            {#if task.recurrence}
+                                <span class="task-meta recurrence" title="Recurring task">
+                                    <svg class="recurrence-icon" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="17 1 21 5 17 9"/>
+                                        <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+                                        <polyline points="7 23 3 19 7 15"/>
+                                        <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+                                    </svg>
+                                </span>
+                            {/if}
+                        </div>
                     </div>
 
 
@@ -507,6 +543,24 @@
 
                                 <div class="task-content">
                                     <span class="task-title">{task.title}</span>
+                                    {#if task.dueDate || task.recurrence}
+                                        <div class="task-meta-row">
+                                            {#if task.dueDate}
+                                                <span class="task-meta due-date">{task.dueDate}</span>
+                                            {/if}
+                                            {#if task.recurrence}
+                                                <span class="task-meta recurrence">
+                                                    <svg class="recurrence-icon" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <polyline points="17 1 21 5 17 9"/>
+                                                        <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+                                                        <polyline points="7 23 3 19 7 15"/>
+                                                        <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+                                                    </svg>
+                                                </span>
+                                            {/if}
+                                        </div>
+                                    {/if}
                                 </div>
 
 
