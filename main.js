@@ -7406,7 +7406,7 @@ function instance2($$self, $$props, $$invalidate) {
   let incompleteTasks = [];
   let completedTasks = [];
   let newTaskTitle = "";
-  let showCompleted = true;
+  let showCompleted = false;
   let selectedTaskId = "";
   let addTaskInputEl;
   onMount(() => {
@@ -7436,6 +7436,7 @@ function instance2($$self, $$props, $$invalidate) {
     return __awaiter(this, void 0, void 0, function* () {
       $$invalidate(2, currentCategory = cat);
       $$invalidate(7, selectedTaskId = "");
+      $$invalidate(6, showCompleted = false);
       yield loadTasks();
     });
   }

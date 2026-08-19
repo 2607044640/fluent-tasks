@@ -40,7 +40,7 @@
     let incompleteTasks: TaskItem[] = [];
     let completedTasks: TaskItem[] = [];
     let newTaskTitle: string = "";
-    let showCompleted: boolean = true;
+    let showCompleted: boolean = false;
     let selectedTaskId: string = "";
     let addTaskInputEl: HTMLInputElement;
 
@@ -81,6 +81,7 @@
     export async function loadCategory(cat: CategoryInfo) {
         currentCategory = cat;
         selectedTaskId = "";
+        showCompleted = false;
         await loadTasks();
     }
 
