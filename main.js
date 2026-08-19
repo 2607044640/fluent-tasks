@@ -1647,8 +1647,12 @@ var TaskSearchModal = class extends import_obsidian3.SuggestModal {
   }
   onOpen() {
     super.onOpen();
+    this.modalEl.addClass("fluent-tasks-search-modal");
     const promptEl = this.modalEl.querySelector(".prompt-input-container");
     if (promptEl) {
+      const clearBtn = promptEl.querySelector(".search-input-clear-button, .prompt-input-clear-button");
+      if (clearBtn)
+        clearBtn.style.display = "none";
       this.toggleEl = promptEl.createEl("button", {
         cls: "todo-search-filter-btn",
         attr: { "aria-label": "Toggle completed tasks filter" }

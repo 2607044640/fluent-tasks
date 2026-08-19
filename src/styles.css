@@ -712,6 +712,12 @@ body.is-dragging-ghost #dnd-action-dragged-el {
 /* =============================================
    Search Modal - Filter Button
    ============================================= */
+.fluent-tasks-search-modal .search-input-clear-button,
+.fluent-tasks-search-modal .prompt-input-clear-button,
+.fluent-tasks-search-modal input::-webkit-search-cancel-button {
+    display: none !important;
+}
+
 .todo-search-filter-btn {
     padding: 2px 10px;
     font-size: 12px;
