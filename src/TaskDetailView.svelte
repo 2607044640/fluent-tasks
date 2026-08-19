@@ -17,9 +17,57 @@
     let task: TaskItem | null = null;
     let categoryFilepath: string = "";
     let newStepText: string = "";
+    let showScheduleSection: boolean = false;
     let showRepeatPicker: boolean = false;
 
     const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    function toggleScheduleSection() {
+        showScheduleSection = !showScheduleSection;
+        if (!showScheduleSection) {
+            showRepeatPicker = false;
+        }
+    }
+
+    function getScheduleBadge(t: TaskItem | null): {
+        letter?: string;
+        isOverdue: boolean;
+        isActive: boolean;
+        tooltip: string;
+    } {
+        if (!t) return { isOverdue: false, isActive: false, tooltip: "Due date & repeat" };
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const isOverdue = !!(t.dueDate && t.dueDate < todayStr && !t.completed);
+        const isDueToday = !!(t.dueDate && t.dueDate === todayStr);
+        const hasRecurrence = !!t.recurrence;
+        const isActive = isOverdue || isDueToday || hasRecurrence || !!t.dueDate;
+
+        let letter: string | undefined = undefined;
+        let tooltip = "Due date & repeat";
+
+        if (t.recurrence) {
+            const r = t.recurrence;
+            if (r.type === 'daily' && (r.interval === 1 || !r.interval)) {
+                letter = 'D';
+                tooltip = isOverdue ? `Overdue (Daily, due ${t.dueDate})` : "Repeats daily";
+            } else if (r.type === 'weekdays') {
+                letter = 'W';
+                tooltip = isOverdue ? `Overdue (Weekdays, due ${t.dueDate})` : "Repeats weekdays (Mon–Fri)";
+            } else if (r.type === 'weekly' && r.daysOfWeek && r.daysOfWeek.length === 1) {
+                const dayLetters = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+                letter = dayLetters[r.daysOfWeek[0]];
+                tooltip = isOverdue ? `Overdue (${DAY_LABELS[r.daysOfWeek[0]]}, due ${t.dueDate})` : `Repeats weekly on ${DAY_LABELS[r.daysOfWeek[0]]}`;
+            } else {
+                tooltip = isOverdue ? `Overdue (${t.dueDate})` : getRecurrenceLabel(r);
+            }
+        } else if (t.dueDate) {
+            tooltip = isOverdue ? `Overdue (${t.dueDate})` : (isDueToday ? "Due today" : `Due ${t.dueDate}`);
+        }
+
+        return { letter, isOverdue, isActive, tooltip };
+    }
+
+    $: scheduleBadge = getScheduleBadge(task);
 
     function getRecurrenceLabel(rule: RecurrenceRule | undefined): string {
         if (!rule) return "Does not repeat";
@@ -59,6 +107,14 @@
                 task.recurrence = { type: 'weekly', interval: 1, daysOfWeek: [new Date(task.dueDate + "T00:00:00").getDay()] };
                 break;
         }
+        showRepeatPicker = false;
+        scheduleSave();
+    }
+
+    function clearDueDate() {
+        if (!task) return;
+        task.dueDate = undefined;
+        task.recurrence = undefined;
         showRepeatPicker = false;
         scheduleSave();
     }
@@ -129,6 +185,8 @@
     export function loadTask(t: TaskItem, filepath: string) {
         task = { ...t, steps: t.steps.map(s => ({ ...s })) };
         categoryFilepath = filepath;
+        showScheduleSection = false;
+        showRepeatPicker = false;
     }
 
     // =============================================
@@ -141,6 +199,8 @@
     function handleClose() {
         task = null;
         categoryFilepath = "";
+        showScheduleSection = false;
+        showRepeatPicker = false;
     }
 
     function handleTaskDeleted(payload: any) {
@@ -396,122 +456,141 @@
             ></textarea>
         </div>
 
-        <!-- Due Date & Repeat Section -->
-        <div class="detail-schedule-section">
-            <!-- Due Date Row -->
-            <div class="schedule-row">
-                <div class="schedule-icon">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                        <line x1="16" y1="2" x2="16" y2="6"/>
-                        <line x1="8" y1="2" x2="8" y2="6"/>
-                        <line x1="3" y1="10" x2="21" y2="10"/>
-                    </svg>
+        <!-- Due Date & Repeat Section (Collapsible Drawer) -->
+        {#if showScheduleSection}
+            <div class="detail-schedule-section">
+                <!-- Due Date Row -->
+                <div class="schedule-row">
+                    <div class="schedule-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                    </div>
+                    <div class="schedule-content">
+                        <span class="schedule-label">Due date</span>
+                        <input
+                            type="date"
+                            class="due-date-input"
+                            value={task.dueDate || ''}
+                            on:change={(e) => {
+                                task.dueDate = e.currentTarget.value || undefined;
+                                scheduleSave();
+                            }}
+                        />
+                    </div>
+                    {#if task.dueDate}
+                        <span class="schedule-clear-btn" on:click={clearDueDate}
+                              role="button" tabindex="0" title="Clear due date"
+                              on:keydown={(e) => e.key === "Enter" && clearDueDate()}>
+                            ✕
+                        </span>
+                    {/if}
                 </div>
-                <div class="schedule-content">
-                    <span class="schedule-label">Due date</span>
-                    <input
-                        type="date"
-                        class="due-date-input"
-                        value={task.dueDate || ''}
-                        on:change={(e) => {
-                            task.dueDate = e.currentTarget.value || undefined;
-                            scheduleSave();
-                        }}
-                    />
+
+                <!-- Repeat Row -->
+                <div class="schedule-row clickable" on:click={() => showRepeatPicker = !showRepeatPicker}
+                     role="button" tabindex="0"
+                     on:keydown={(e) => e.key === "Enter" && (showRepeatPicker = !showRepeatPicker)}>
+                    <div class="schedule-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="17 1 21 5 17 9"/>
+                            <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+                            <polyline points="7 23 3 19 7 15"/>
+                            <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+                        </svg>
+                    </div>
+                    <div class="schedule-content">
+                        <span class="schedule-label">Repeat</span>
+                        <span class="schedule-value" class:active={!!task.recurrence}>
+                            {getRecurrenceLabel(task.recurrence)}
+                        </span>
+                    </div>
+                    {#if task.recurrence}
+                        <span class="schedule-clear-btn" on:click|stopPropagation={clearRecurrence}
+                              role="button" tabindex="0" title="Remove recurrence"
+                              on:keydown|stopPropagation={(e) => e.key === "Enter" && clearRecurrence()}>
+                            ✕
+                        </span>
+                    {/if}
                 </div>
-                {#if task.dueDate}
-                    <span class="schedule-clear-btn" on:click={() => { task.dueDate = undefined; task.recurrence = undefined; scheduleSave(); }}
-                          role="button" tabindex="0" title="Clear due date"
-                          on:keydown={(e) => e.key === "Enter" && (() => { task.dueDate = undefined; task.recurrence = undefined; scheduleSave(); })()}>
-                        ✕
-                    </span>
+
+                <!-- Repeat Picker Panel -->
+                {#if showRepeatPicker}
+                    <div class="repeat-picker-panel">
+                        <div class="repeat-presets">
+                            <button type="button" class="preset-btn" class:active={task.recurrence?.type === 'daily' && task.recurrence?.interval === 1}
+                                    on:click={() => setRecurrencePreset('daily')}>Daily</button>
+                            <button type="button" class="preset-btn" class:active={task.recurrence?.type === 'weekdays'}
+                                    on:click={() => setRecurrencePreset('weekdays')}>Weekdays</button>
+                            <button type="button" class="preset-btn" class:active={task.recurrence?.type === 'weekly' && task.recurrence?.interval === 1}
+                                    on:click={() => setRecurrencePreset('weekly')}>Weekly</button>
+                        </div>
+
+                        <!-- Custom / Weekday selector -->
+                        <div class="custom-repeat-section">
+                            <div class="repeat-days-grid">
+                                {#each [1, 2, 3, 4, 5, 6, 0] as day}
+                                    <button
+                                        type="button"
+                                        class="weekday-chip"
+                                        class:active={task.recurrence?.daysOfWeek?.includes(day)}
+                                        on:click={() => handleWeekdayClick(day)}
+                                    >
+                                        {DAY_LABELS[day]}
+                                    </button>
+                                {/each}
+                            </div>
+
+                            <div class="custom-interval-row">
+                                <span>Every</span>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="99"
+                                    class="interval-input"
+                                    value={task.recurrence?.interval || 1}
+                                    on:change={(e) => setCustomInterval(parseInt(e.currentTarget.value) || 1)}
+                                />
+                                <span>day(s)</span>
+                            </div>
+                        </div>
+                    </div>
                 {/if}
             </div>
+        {/if}
 
-            <!-- Repeat Row -->
-            <div class="schedule-row clickable" on:click={() => showRepeatPicker = !showRepeatPicker}
-                 role="button" tabindex="0"
-                 on:keydown={(e) => e.key === "Enter" && (showRepeatPicker = !showRepeatPicker)}>
-                <div class="schedule-icon">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <!-- Footer: Schedule Drawer Toggle | Created date | Delete -->
+        <div class="detail-footer">
+            <!-- Schedule / Repeat Drawer Toggle -->
+            <span class="footer-btn schedule-toggle-btn"
+                  class:is-active={scheduleBadge.isActive}
+                  class:is-overdue={scheduleBadge.isOverdue}
+                  class:is-open={showScheduleSection}
+                  on:click={toggleScheduleSection}
+                  role="button" tabindex="0" title={scheduleBadge.tooltip}
+                  on:keydown={(e) => e.key === "Enter" && toggleScheduleSection()}>
+                {#if scheduleBadge.letter}
+                    <span class="schedule-badge-letter">{scheduleBadge.letter}</span>
+                {:else if task.recurrence}
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="17 1 21 5 17 9"/>
                         <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
                         <polyline points="7 23 3 19 7 15"/>
                         <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
                     </svg>
-                </div>
-                <div class="schedule-content">
-                    <span class="schedule-label">Repeat</span>
-                    <span class="schedule-value" class:active={!!task.recurrence}>
-                        {getRecurrenceLabel(task.recurrence)}
-                    </span>
-                </div>
-                {#if task.recurrence}
-                    <span class="schedule-clear-btn" on:click|stopPropagation={clearRecurrence}
-                          role="button" tabindex="0" title="Remove recurrence"
-                          on:keydown|stopPropagation={(e) => e.key === "Enter" && clearRecurrence()}>
-                        ✕
-                    </span>
+                {:else}
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
                 {/if}
-            </div>
-
-            <!-- Repeat Picker Panel -->
-            {#if showRepeatPicker}
-                <div class="repeat-picker-panel">
-                    <div class="repeat-presets">
-                        <button type="button" class="preset-btn" class:active={task.recurrence?.type === 'daily' && task.recurrence?.interval === 1}
-                                on:click={() => setRecurrencePreset('daily')}>Daily</button>
-                        <button type="button" class="preset-btn" class:active={task.recurrence?.type === 'weekdays'}
-                                on:click={() => setRecurrencePreset('weekdays')}>Weekdays</button>
-                        <button type="button" class="preset-btn" class:active={task.recurrence?.type === 'weekly' && task.recurrence?.interval === 1}
-                                on:click={() => setRecurrencePreset('weekly')}>Weekly</button>
-                    </div>
-
-                    <!-- Custom / Weekday selector -->
-                    <div class="custom-repeat-section">
-                        <div class="repeat-days-grid">
-                            {#each [1, 2, 3, 4, 5, 6, 0] as day}
-                                <button
-                                    type="button"
-                                    class="weekday-chip"
-                                    class:active={task.recurrence?.daysOfWeek?.includes(day)}
-                                    on:click={() => handleWeekdayClick(day)}
-                                >
-                                    {DAY_LABELS[day]}
-                                </button>
-                            {/each}
-                        </div>
-
-                        <div class="custom-interval-row">
-                            <span>Every</span>
-                            <input
-                                type="number"
-                                min="1"
-                                max="99"
-                                class="interval-input"
-                                value={task.recurrence?.interval || 1}
-                                on:change={(e) => setCustomInterval(parseInt(e.currentTarget.value) || 1)}
-                            />
-                            <span>day(s)</span>
-                        </div>
-                    </div>
-                </div>
-            {/if}
-        </div>
-
-        <!-- Footer: Collapse | Created date | Delete -->
-        <div class="detail-footer">
-            <!-- Collapse (hide panel) -->
-            <span class="footer-btn" on:click={closePanel}
-                  role="button" tabindex="0" title="Hide detail panel"
-                  on:keydown={(e) => e.key === "Enter" && closePanel()}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="2" y="3" width="20" height="18" rx="2"/>
-                    <line x1="15" y1="3" x2="15" y2="21"/>
-                    <polyline points="11 9 8 12 11 15"/>
-                </svg>
             </span>
 
             <!-- Created date -->

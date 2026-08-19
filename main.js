@@ -7811,16 +7811,16 @@ var TaskMainView_default = TaskMainView;
 // src/TaskDetailView.svelte
 function get_each_context3(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[55] = list[i];
+  child_ctx[59] = list[i];
   return child_ctx;
 }
 function get_each_context_13(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[58] = list[i];
-  child_ctx[60] = i;
+  child_ctx[62] = list[i];
+  child_ctx[64] = i;
   return child_ctx;
 }
-function create_else_block_2(ctx) {
+function create_else_block_3(ctx) {
   let div;
   return {
     c() {
@@ -7866,47 +7866,20 @@ function create_if_block3(ctx) {
   let div4;
   let textarea;
   let t6;
-  let div11;
-  let div7;
-  let div5;
   let t7;
-  let div6;
+  let div5;
   let span2;
-  let t9;
-  let input2;
-  let input2_value_value;
-  let t10;
-  let t11;
-  let div10;
-  let div8;
-  let t12;
-  let div9;
+  let span2_title_value;
+  let t8;
   let span3;
-  let t14;
-  let span4;
-  let t15_value = (
-    /*getRecurrenceLabel*/
-    ctx[4](
-      /*task*/
-      ctx[0].recurrence
-    ) + ""
-  );
-  let t15;
-  let t16;
-  let t17;
-  let t18;
-  let div12;
-  let span5;
-  let t19;
-  let span6;
-  let t20;
-  let t21_value = formatDate(
+  let t9;
+  let t10_value = formatDate(
     /*task*/
     ctx[0].createdAt
   ) + "";
-  let t21;
-  let t22;
-  let span7;
+  let t10;
+  let t11;
+  let span4;
   let mounted;
   let dispose;
   function select_block_type_1(ctx2, dirty) {
@@ -7914,10 +7887,10 @@ function create_if_block3(ctx) {
       /*task*/
       ctx2[0].completed
     )
-      return create_if_block_52;
-    return create_else_block_12;
+      return create_if_block_82;
+    return create_else_block_2;
   }
-  let current_block_type = select_block_type_1(ctx, [-1, -1]);
+  let current_block_type = select_block_type_1(ctx, [-1, -1, -1]);
   let if_block0 = current_block_type(ctx);
   let each_value_1 = ensure_array_like(
     /*task*/
@@ -7925,7 +7898,7 @@ function create_if_block3(ctx) {
   );
   const get_key = (ctx2) => (
     /*i*/
-    ctx2[60]
+    ctx2[64]
   );
   for (let i = 0; i < each_value_1.length; i += 1) {
     let child_ctx = get_each_context_13(ctx, each_value_1, i);
@@ -7933,17 +7906,24 @@ function create_if_block3(ctx) {
     each_1_lookup.set(key, each_blocks[i] = create_each_block_13(key, child_ctx));
   }
   let if_block1 = (
-    /*task*/
-    ctx[0].dueDate && create_if_block_33(ctx)
+    /*showScheduleSection*/
+    ctx[2] && create_if_block_33(ctx)
   );
-  let if_block2 = (
-    /*task*/
-    ctx[0].recurrence && create_if_block_23(ctx)
-  );
-  let if_block3 = (
-    /*showRepeatPicker*/
-    ctx[2] && create_if_block_13(ctx)
-  );
+  function select_block_type_3(ctx2, dirty) {
+    if (
+      /*scheduleBadge*/
+      ctx2[4].letter
+    )
+      return create_if_block_13;
+    if (
+      /*task*/
+      ctx2[0].recurrence
+    )
+      return create_if_block_23;
+    return create_else_block3;
+  }
+  let current_block_type_1 = select_block_type_3(ctx, [-1, -1, -1]);
+  let if_block2 = current_block_type_1(ctx);
   return {
     c() {
       div3 = element("div");
@@ -7972,47 +7952,19 @@ function create_if_block3(ctx) {
       div4 = element("div");
       textarea = element("textarea");
       t6 = space();
-      div11 = element("div");
-      div7 = element("div");
-      div5 = element("div");
-      div5.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>`;
-      t7 = space();
-      div6 = element("div");
-      span2 = element("span");
-      span2.textContent = "Due date";
-      t9 = space();
-      input2 = element("input");
-      t10 = space();
       if (if_block1)
         if_block1.c();
-      t11 = space();
-      div10 = element("div");
-      div8 = element("div");
-      div8.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>`;
-      t12 = space();
-      div9 = element("div");
+      t7 = space();
+      div5 = element("div");
+      span2 = element("span");
+      if_block2.c();
+      t8 = space();
       span3 = element("span");
-      span3.textContent = "Repeat";
-      t14 = space();
+      t9 = text("Created on ");
+      t10 = text(t10_value);
+      t11 = space();
       span4 = element("span");
-      t15 = text(t15_value);
-      t16 = space();
-      if (if_block2)
-        if_block2.c();
-      t17 = space();
-      if (if_block3)
-        if_block3.c();
-      t18 = space();
-      div12 = element("div");
-      span5 = element("span");
-      span5.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="18" rx="2"></rect><line x1="15" y1="3" x2="15" y2="21"></line><polyline points="11 9 8 12 11 15"></polyline></svg>`;
-      t19 = space();
-      span6 = element("span");
-      t20 = text("Created on ");
-      t21 = text(t21_value);
-      t22 = space();
-      span7 = element("span");
-      span7.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+      span4.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
       attr(span0, "class", "checkbox");
       attr(span0, "role", "checkbox");
       attr(span0, "aria-checked", span0_aria_checked_value = /*task*/
@@ -8064,34 +8016,35 @@ function create_if_block3(ctx) {
       attr(textarea, "class", "note-textarea");
       attr(textarea, "placeholder", "Add note");
       attr(div4, "class", "note-section");
-      attr(div5, "class", "schedule-icon");
-      attr(span2, "class", "schedule-label");
-      attr(input2, "type", "date");
-      attr(input2, "class", "due-date-input");
-      input2.value = input2_value_value = /*task*/
-      ctx[0].dueDate || "";
-      attr(div6, "class", "schedule-content");
-      attr(div7, "class", "schedule-row");
-      attr(div8, "class", "schedule-icon");
-      attr(span3, "class", "schedule-label");
-      attr(span4, "class", "schedule-value");
-      toggle_class(span4, "active", !!/*task*/
-      ctx[0].recurrence);
-      attr(div9, "class", "schedule-content");
-      attr(div10, "class", "schedule-row clickable");
-      attr(div10, "role", "button");
-      attr(div10, "tabindex", "0");
-      attr(div11, "class", "detail-schedule-section");
-      attr(span5, "class", "footer-btn");
-      attr(span5, "role", "button");
-      attr(span5, "tabindex", "0");
-      attr(span5, "title", "Hide detail panel");
-      attr(span6, "class", "created-info");
-      attr(span7, "class", "footer-btn danger");
-      attr(span7, "role", "button");
-      attr(span7, "tabindex", "0");
-      attr(span7, "title", "Delete task");
-      attr(div12, "class", "detail-footer");
+      attr(span2, "class", "footer-btn schedule-toggle-btn");
+      attr(span2, "role", "button");
+      attr(span2, "tabindex", "0");
+      attr(span2, "title", span2_title_value = /*scheduleBadge*/
+      ctx[4].tooltip);
+      toggle_class(
+        span2,
+        "is-active",
+        /*scheduleBadge*/
+        ctx[4].isActive
+      );
+      toggle_class(
+        span2,
+        "is-overdue",
+        /*scheduleBadge*/
+        ctx[4].isOverdue
+      );
+      toggle_class(
+        span2,
+        "is-open",
+        /*showScheduleSection*/
+        ctx[2]
+      );
+      attr(span3, "class", "created-info");
+      attr(span4, "class", "footer-btn danger");
+      attr(span4, "role", "button");
+      attr(span4, "tabindex", "0");
+      attr(span4, "title", "Delete task");
+      attr(div5, "class", "detail-footer");
     },
     m(target, anchor) {
       insert(target, div3, anchor);
@@ -8137,144 +8090,103 @@ function create_if_block3(ctx) {
         ctx[0].note
       );
       insert(target, t6, anchor);
-      insert(target, div11, anchor);
-      append(div11, div7);
-      append(div7, div5);
-      append(div7, t7);
-      append(div7, div6);
-      append(div6, span2);
-      append(div6, t9);
-      append(div6, input2);
-      append(div7, t10);
       if (if_block1)
-        if_block1.m(div7, null);
-      append(div11, t11);
-      append(div11, div10);
-      append(div10, div8);
-      append(div10, t12);
-      append(div10, div9);
-      append(div9, span3);
-      append(div9, t14);
-      append(div9, span4);
-      append(span4, t15);
-      append(div10, t16);
-      if (if_block2)
-        if_block2.m(div10, null);
-      append(div11, t17);
-      if (if_block3)
-        if_block3.m(div11, null);
-      insert(target, t18, anchor);
-      insert(target, div12, anchor);
-      append(div12, span5);
-      append(div12, t19);
-      append(div12, span6);
-      append(span6, t20);
-      append(span6, t21);
-      append(div12, t22);
-      append(div12, span7);
+        if_block1.m(target, anchor);
+      insert(target, t7, anchor);
+      insert(target, div5, anchor);
+      append(div5, span2);
+      if_block2.m(span2, null);
+      append(div5, t8);
+      append(div5, span3);
+      append(span3, t9);
+      append(span3, t10);
+      append(div5, t11);
+      append(div5, span4);
       if (!mounted) {
         dispose = [
           listen(
             span0,
             "click",
             /*toggleComplete*/
-            ctx[11]
+            ctx[15]
           ),
           listen(
             span0,
             "keydown",
             /*keydown_handler*/
-            ctx[22]
+            ctx[25]
           ),
           listen(
             input0,
             "input",
             /*input0_input_handler*/
-            ctx[23]
+            ctx[26]
           ),
           listen(
             input0,
             "input",
             /*handleTitleInput*/
-            ctx[10]
+            ctx[14]
           ),
           listen(
             span1,
             "click",
             /*toggleStar*/
-            ctx[12]
+            ctx[16]
           ),
           listen(
             span1,
             "keydown",
             /*keydown_handler_1*/
-            ctx[24]
+            ctx[27]
           ),
           listen(
             input1,
             "input",
             /*input1_input_handler*/
-            ctx[30]
+            ctx[33]
           ),
           listen(
             input1,
             "keydown",
             /*handleStepKeydown*/
-            ctx[13]
+            ctx[17]
           ),
           listen(
             textarea,
             "input",
             /*textarea_input_handler*/
-            ctx[31]
+            ctx[34]
           ),
           listen(
             textarea,
             "input",
             /*handleNoteInput*/
-            ctx[17]
+            ctx[21]
           ),
           listen(
-            input2,
-            "change",
-            /*change_handler*/
-            ctx[32]
-          ),
-          listen(
-            div10,
+            span2,
             "click",
-            /*click_handler_3*/
-            ctx[36]
+            /*toggleScheduleSection*/
+            ctx[6]
           ),
           listen(
-            div10,
-            "keydown",
-            /*keydown_handler_6*/
-            ctx[37]
-          ),
-          listen(
-            span5,
-            "click",
-            /*closePanel*/
-            ctx[18]
-          ),
-          listen(
-            span5,
+            span2,
             "keydown",
             /*keydown_handler_7*/
-            ctx[43]
+            ctx[45]
           ),
           listen(
-            span7,
+            span4,
             "click",
             /*deleteTask*/
-            ctx[19]
+            ctx[22]
           ),
           listen(
-            span7,
+            span4,
             "keydown",
             /*keydown_handler_8*/
-            ctx[44]
+            ctx[46]
           )
         ];
         mounted = true;
@@ -8318,7 +8230,7 @@ function create_if_block3(ctx) {
         );
       }
       if (dirty[0] & /*deleteStep, task, updateStepText, toggleStepDone*/
-      114689) {
+      1835009) {
         each_value_1 = ensure_array_like(
           /*task*/
           ctx2[0].steps
@@ -8342,74 +8254,69 @@ function create_if_block3(ctx) {
           ctx2[0].note
         );
       }
-      if (dirty[0] & /*task*/
-      1 && input2_value_value !== (input2_value_value = /*task*/
-      ctx2[0].dueDate || "")) {
-        input2.value = input2_value_value;
-      }
       if (
-        /*task*/
-        ctx2[0].dueDate
+        /*showScheduleSection*/
+        ctx2[2]
       ) {
         if (if_block1) {
           if_block1.p(ctx2, dirty);
         } else {
           if_block1 = create_if_block_33(ctx2);
           if_block1.c();
-          if_block1.m(div7, null);
+          if_block1.m(t7.parentNode, t7);
         }
       } else if (if_block1) {
         if_block1.d(1);
         if_block1 = null;
       }
-      if (dirty[0] & /*task*/
-      1 && t15_value !== (t15_value = /*getRecurrenceLabel*/
-      ctx2[4](
-        /*task*/
-        ctx2[0].recurrence
-      ) + ""))
-        set_data(t15, t15_value);
-      if (dirty[0] & /*task*/
-      1) {
-        toggle_class(span4, "active", !!/*task*/
-        ctx2[0].recurrence);
-      }
-      if (
-        /*task*/
-        ctx2[0].recurrence
-      ) {
-        if (if_block2) {
-          if_block2.p(ctx2, dirty);
-        } else {
-          if_block2 = create_if_block_23(ctx2);
-          if_block2.c();
-          if_block2.m(div10, null);
-        }
-      } else if (if_block2) {
+      if (current_block_type_1 === (current_block_type_1 = select_block_type_3(ctx2, dirty)) && if_block2) {
+        if_block2.p(ctx2, dirty);
+      } else {
         if_block2.d(1);
-        if_block2 = null;
-      }
-      if (
-        /*showRepeatPicker*/
-        ctx2[2]
-      ) {
-        if (if_block3) {
-          if_block3.p(ctx2, dirty);
-        } else {
-          if_block3 = create_if_block_13(ctx2);
-          if_block3.c();
-          if_block3.m(div11, null);
+        if_block2 = current_block_type_1(ctx2);
+        if (if_block2) {
+          if_block2.c();
+          if_block2.m(span2, null);
         }
-      } else if (if_block3) {
-        if_block3.d(1);
-        if_block3 = null;
+      }
+      if (dirty[0] & /*scheduleBadge*/
+      16 && span2_title_value !== (span2_title_value = /*scheduleBadge*/
+      ctx2[4].tooltip)) {
+        attr(span2, "title", span2_title_value);
+      }
+      if (dirty[0] & /*scheduleBadge*/
+      16) {
+        toggle_class(
+          span2,
+          "is-active",
+          /*scheduleBadge*/
+          ctx2[4].isActive
+        );
+      }
+      if (dirty[0] & /*scheduleBadge*/
+      16) {
+        toggle_class(
+          span2,
+          "is-overdue",
+          /*scheduleBadge*/
+          ctx2[4].isOverdue
+        );
+      }
+      if (dirty[0] & /*showScheduleSection*/
+      4) {
+        toggle_class(
+          span2,
+          "is-open",
+          /*showScheduleSection*/
+          ctx2[2]
+        );
       }
       if (dirty[0] & /*task*/
-      1 && t21_value !== (t21_value = formatDate(
+      1 && t10_value !== (t10_value = formatDate(
         /*task*/
         ctx2[0].createdAt
       ) + ""))
-        set_data(t21, t21_value);
+        set_data(t10, t10_value);
     },
     d(detaching) {
       if (detaching) {
@@ -8417,26 +8324,22 @@ function create_if_block3(ctx) {
         detach(t5);
         detach(div4);
         detach(t6);
-        detach(div11);
-        detach(t18);
-        detach(div12);
+        detach(t7);
+        detach(div5);
       }
       if_block0.d();
       for (let i = 0; i < each_blocks.length; i += 1) {
         each_blocks[i].d();
       }
       if (if_block1)
-        if_block1.d();
-      if (if_block2)
-        if_block2.d();
-      if (if_block3)
-        if_block3.d();
+        if_block1.d(detaching);
+      if_block2.d();
       mounted = false;
       run_all(dispose);
     }
   };
 }
-function create_else_block_12(ctx) {
+function create_else_block_2(ctx) {
   let svg;
   let circle;
   return {
@@ -8464,7 +8367,7 @@ function create_else_block_12(ctx) {
     }
   };
 }
-function create_if_block_52(ctx) {
+function create_if_block_82(ctx) {
   let svg;
   let circle;
   let polyline;
@@ -8496,7 +8399,7 @@ function create_if_block_52(ctx) {
     }
   };
 }
-function create_else_block3(ctx) {
+function create_else_block_12(ctx) {
   let svg;
   let circle;
   return {
@@ -8524,7 +8427,7 @@ function create_else_block3(ctx) {
     }
   };
 }
-function create_if_block_42(ctx) {
+function create_if_block_72(ctx) {
   let svg;
   let circle;
   let polyline;
@@ -8571,28 +8474,28 @@ function create_each_block_13(key_1, ctx) {
   function select_block_type_2(ctx2, dirty) {
     if (
       /*step*/
-      ctx2[58].done
+      ctx2[62].done
     )
-      return create_if_block_42;
-    return create_else_block3;
+      return create_if_block_72;
+    return create_else_block_12;
   }
-  let current_block_type = select_block_type_2(ctx, [-1, -1]);
+  let current_block_type = select_block_type_2(ctx, [-1, -1, -1]);
   let if_block = current_block_type(ctx);
   function click_handler() {
     return (
       /*click_handler*/
-      ctx[25](
+      ctx[28](
         /*i*/
-        ctx[60]
+        ctx[64]
       )
     );
   }
   function keydown_handler_2(...args) {
     return (
       /*keydown_handler_2*/
-      ctx[26](
+      ctx[29](
         /*i*/
-        ctx[60],
+        ctx[64],
         ...args
       )
     );
@@ -8600,9 +8503,9 @@ function create_each_block_13(key_1, ctx) {
   function input_handler(...args) {
     return (
       /*input_handler*/
-      ctx[27](
+      ctx[30](
         /*i*/
-        ctx[60],
+        ctx[64],
         ...args
       )
     );
@@ -8610,18 +8513,18 @@ function create_each_block_13(key_1, ctx) {
   function click_handler_1() {
     return (
       /*click_handler_1*/
-      ctx[28](
+      ctx[31](
         /*i*/
-        ctx[60]
+        ctx[64]
       )
     );
   }
   function keydown_handler_3(...args) {
     return (
       /*keydown_handler_3*/
-      ctx[29](
+      ctx[32](
         /*i*/
-        ctx[60],
+        ctx[64],
         ...args
       )
     );
@@ -8642,16 +8545,16 @@ function create_each_block_13(key_1, ctx) {
       attr(span0, "class", "checkbox");
       attr(span0, "role", "checkbox");
       attr(span0, "aria-checked", span0_aria_checked_value = /*step*/
-      ctx[58].done);
+      ctx[62].done);
       attr(span0, "tabindex", "0");
       attr(input, "type", "text");
       input.value = input_value_value = /*step*/
-      ctx[58].text;
+      ctx[62].text;
       toggle_class(
         input,
         "completed",
         /*step*/
-        ctx[58].done
+        ctx[62].done
       );
       attr(span1, "class", "delete-step");
       attr(span1, "role", "button");
@@ -8691,12 +8594,12 @@ function create_each_block_13(key_1, ctx) {
       }
       if (dirty[0] & /*task*/
       1 && span0_aria_checked_value !== (span0_aria_checked_value = /*step*/
-      ctx[58].done)) {
+      ctx[62].done)) {
         attr(span0, "aria-checked", span0_aria_checked_value);
       }
       if (dirty[0] & /*task*/
       1 && input_value_value !== (input_value_value = /*step*/
-      ctx[58].text) && input.value !== input_value_value) {
+      ctx[62].text) && input.value !== input_value_value) {
         input.value = input_value_value;
       }
       if (dirty[0] & /*task*/
@@ -8705,7 +8608,7 @@ function create_each_block_13(key_1, ctx) {
           input,
           "completed",
           /*step*/
-          ctx[58].done
+          ctx[62].done
         );
       }
     },
@@ -8720,6 +8623,230 @@ function create_each_block_13(key_1, ctx) {
   };
 }
 function create_if_block_33(ctx) {
+  let div6;
+  let div2;
+  let div0;
+  let t0;
+  let div1;
+  let span0;
+  let t2;
+  let input;
+  let input_value_value;
+  let t3;
+  let t4;
+  let div5;
+  let div3;
+  let t5;
+  let div4;
+  let span1;
+  let t7;
+  let span2;
+  let t8_value = (
+    /*getRecurrenceLabel*/
+    ctx[7](
+      /*task*/
+      ctx[0].recurrence
+    ) + ""
+  );
+  let t8;
+  let t9;
+  let t10;
+  let mounted;
+  let dispose;
+  let if_block0 = (
+    /*task*/
+    ctx[0].dueDate && create_if_block_62(ctx)
+  );
+  let if_block1 = (
+    /*task*/
+    ctx[0].recurrence && create_if_block_52(ctx)
+  );
+  let if_block2 = (
+    /*showRepeatPicker*/
+    ctx[3] && create_if_block_42(ctx)
+  );
+  return {
+    c() {
+      div6 = element("div");
+      div2 = element("div");
+      div0 = element("div");
+      div0.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>`;
+      t0 = space();
+      div1 = element("div");
+      span0 = element("span");
+      span0.textContent = "Due date";
+      t2 = space();
+      input = element("input");
+      t3 = space();
+      if (if_block0)
+        if_block0.c();
+      t4 = space();
+      div5 = element("div");
+      div3 = element("div");
+      div3.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>`;
+      t5 = space();
+      div4 = element("div");
+      span1 = element("span");
+      span1.textContent = "Repeat";
+      t7 = space();
+      span2 = element("span");
+      t8 = text(t8_value);
+      t9 = space();
+      if (if_block1)
+        if_block1.c();
+      t10 = space();
+      if (if_block2)
+        if_block2.c();
+      attr(div0, "class", "schedule-icon");
+      attr(span0, "class", "schedule-label");
+      attr(input, "type", "date");
+      attr(input, "class", "due-date-input");
+      input.value = input_value_value = /*task*/
+      ctx[0].dueDate || "";
+      attr(div1, "class", "schedule-content");
+      attr(div2, "class", "schedule-row");
+      attr(div3, "class", "schedule-icon");
+      attr(span1, "class", "schedule-label");
+      attr(span2, "class", "schedule-value");
+      toggle_class(span2, "active", !!/*task*/
+      ctx[0].recurrence);
+      attr(div4, "class", "schedule-content");
+      attr(div5, "class", "schedule-row clickable");
+      attr(div5, "role", "button");
+      attr(div5, "tabindex", "0");
+      attr(div6, "class", "detail-schedule-section");
+    },
+    m(target, anchor) {
+      insert(target, div6, anchor);
+      append(div6, div2);
+      append(div2, div0);
+      append(div2, t0);
+      append(div2, div1);
+      append(div1, span0);
+      append(div1, t2);
+      append(div1, input);
+      append(div2, t3);
+      if (if_block0)
+        if_block0.m(div2, null);
+      append(div6, t4);
+      append(div6, div5);
+      append(div5, div3);
+      append(div5, t5);
+      append(div5, div4);
+      append(div4, span1);
+      append(div4, t7);
+      append(div4, span2);
+      append(span2, t8);
+      append(div5, t9);
+      if (if_block1)
+        if_block1.m(div5, null);
+      append(div6, t10);
+      if (if_block2)
+        if_block2.m(div6, null);
+      if (!mounted) {
+        dispose = [
+          listen(
+            input,
+            "change",
+            /*change_handler*/
+            ctx[35]
+          ),
+          listen(
+            div5,
+            "click",
+            /*click_handler_2*/
+            ctx[38]
+          ),
+          listen(
+            div5,
+            "keydown",
+            /*keydown_handler_6*/
+            ctx[39]
+          )
+        ];
+        mounted = true;
+      }
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*task*/
+      1 && input_value_value !== (input_value_value = /*task*/
+      ctx2[0].dueDate || "")) {
+        input.value = input_value_value;
+      }
+      if (
+        /*task*/
+        ctx2[0].dueDate
+      ) {
+        if (if_block0) {
+          if_block0.p(ctx2, dirty);
+        } else {
+          if_block0 = create_if_block_62(ctx2);
+          if_block0.c();
+          if_block0.m(div2, null);
+        }
+      } else if (if_block0) {
+        if_block0.d(1);
+        if_block0 = null;
+      }
+      if (dirty[0] & /*task*/
+      1 && t8_value !== (t8_value = /*getRecurrenceLabel*/
+      ctx2[7](
+        /*task*/
+        ctx2[0].recurrence
+      ) + ""))
+        set_data(t8, t8_value);
+      if (dirty[0] & /*task*/
+      1) {
+        toggle_class(span2, "active", !!/*task*/
+        ctx2[0].recurrence);
+      }
+      if (
+        /*task*/
+        ctx2[0].recurrence
+      ) {
+        if (if_block1) {
+          if_block1.p(ctx2, dirty);
+        } else {
+          if_block1 = create_if_block_52(ctx2);
+          if_block1.c();
+          if_block1.m(div5, null);
+        }
+      } else if (if_block1) {
+        if_block1.d(1);
+        if_block1 = null;
+      }
+      if (
+        /*showRepeatPicker*/
+        ctx2[3]
+      ) {
+        if (if_block2) {
+          if_block2.p(ctx2, dirty);
+        } else {
+          if_block2 = create_if_block_42(ctx2);
+          if_block2.c();
+          if_block2.m(div6, null);
+        }
+      } else if (if_block2) {
+        if_block2.d(1);
+        if_block2 = null;
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div6);
+      }
+      if (if_block0)
+        if_block0.d();
+      if (if_block1)
+        if_block1.d();
+      if (if_block2)
+        if_block2.d();
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
+function create_if_block_62(ctx) {
   let span;
   let mounted;
   let dispose;
@@ -8739,14 +8866,14 @@ function create_if_block_33(ctx) {
           listen(
             span,
             "click",
-            /*click_handler_2*/
-            ctx[33]
+            /*clearDueDate*/
+            ctx[9]
           ),
           listen(
             span,
             "keydown",
             /*keydown_handler_4*/
-            ctx[34]
+            ctx[36]
           )
         ];
         mounted = true;
@@ -8762,7 +8889,7 @@ function create_if_block_33(ctx) {
     }
   };
 }
-function create_if_block_23(ctx) {
+function create_if_block_52(ctx) {
   let span;
   let mounted;
   let dispose;
@@ -8781,11 +8908,11 @@ function create_if_block_23(ctx) {
         dispose = [
           listen(span, "click", stop_propagation(
             /*clearRecurrence*/
-            ctx[6]
+            ctx[10]
           )),
           listen(span, "keydown", stop_propagation(
             /*keydown_handler_5*/
-            ctx[35]
+            ctx[37]
           ))
         ];
         mounted = true;
@@ -8801,7 +8928,7 @@ function create_if_block_23(ctx) {
     }
   };
 }
-function create_if_block_13(ctx) {
+function create_if_block_42(ctx) {
   let div4;
   let div0;
   let button0;
@@ -8921,26 +9048,26 @@ function create_if_block_13(ctx) {
           listen(
             button0,
             "click",
-            /*click_handler_4*/
-            ctx[38]
+            /*click_handler_3*/
+            ctx[40]
           ),
           listen(
             button1,
             "click",
-            /*click_handler_5*/
-            ctx[39]
+            /*click_handler_4*/
+            ctx[41]
           ),
           listen(
             button2,
             "click",
-            /*click_handler_6*/
-            ctx[40]
+            /*click_handler_5*/
+            ctx[42]
           ),
           listen(
             input,
             "change",
             /*change_handler_1*/
-            ctx[42]
+            ctx[44]
           )
         ];
         mounted = true;
@@ -8978,7 +9105,7 @@ function create_if_block_13(ctx) {
         );
       }
       if (dirty[0] & /*task, handleWeekdayClick, DAY_LABELS*/
-      137) {
+      2081) {
         each_value = ensure_array_like([1, 2, 3, 4, 5, 6, 0]);
         let i;
         for (i = 0; i < 7; i += 1) {
@@ -9015,12 +9142,12 @@ function create_each_block3(ctx) {
   let button;
   let mounted;
   let dispose;
-  function click_handler_7() {
+  function click_handler_6() {
     return (
-      /*click_handler_7*/
-      ctx[41](
+      /*click_handler_6*/
+      ctx[43](
         /*day*/
-        ctx[55]
+        ctx[59]
       )
     );
   }
@@ -9029,9 +9156,9 @@ function create_each_block3(ctx) {
       var _a, _b;
       button = element("button");
       button.textContent = `${/*DAY_LABELS*/
-      ctx[3][
+      ctx[5][
         /*day*/
-        ctx[55]
+        ctx[59]
       ]} `;
       attr(button, "type", "button");
       attr(button, "class", "weekday-chip");
@@ -9041,14 +9168,14 @@ function create_each_block3(ctx) {
         /*task*/
         (_b = (_a = ctx[0].recurrence) == null ? void 0 : _a.daysOfWeek) == null ? void 0 : _b.includes(
           /*day*/
-          ctx[55]
+          ctx[59]
         )
       );
     },
     m(target, anchor) {
       insert(target, button, anchor);
       if (!mounted) {
-        dispose = listen(button, "click", click_handler_7);
+        dispose = listen(button, "click", click_handler_6);
         mounted = true;
       }
     },
@@ -9063,7 +9190,7 @@ function create_each_block3(ctx) {
           /*task*/
           (_b = (_a = ctx[0].recurrence) == null ? void 0 : _a.daysOfWeek) == null ? void 0 : _b.includes(
             /*day*/
-            ctx[55]
+            ctx[59]
           )
         );
       }
@@ -9077,6 +9204,132 @@ function create_each_block3(ctx) {
     }
   };
 }
+function create_else_block3(ctx) {
+  let svg;
+  let rect;
+  let line0;
+  let line1;
+  let line2;
+  return {
+    c() {
+      svg = svg_element("svg");
+      rect = svg_element("rect");
+      line0 = svg_element("line");
+      line1 = svg_element("line");
+      line2 = svg_element("line");
+      attr(rect, "x", "3");
+      attr(rect, "y", "4");
+      attr(rect, "width", "18");
+      attr(rect, "height", "18");
+      attr(rect, "rx", "2");
+      attr(rect, "ry", "2");
+      attr(line0, "x1", "16");
+      attr(line0, "y1", "2");
+      attr(line0, "x2", "16");
+      attr(line0, "y2", "6");
+      attr(line1, "x1", "8");
+      attr(line1, "y1", "2");
+      attr(line1, "x2", "8");
+      attr(line1, "y2", "6");
+      attr(line2, "x1", "3");
+      attr(line2, "y1", "10");
+      attr(line2, "x2", "21");
+      attr(line2, "y2", "10");
+      attr(svg, "width", "18");
+      attr(svg, "height", "18");
+      attr(svg, "viewBox", "0 0 24 24");
+      attr(svg, "fill", "none");
+      attr(svg, "stroke", "currentColor");
+      attr(svg, "stroke-width", "2");
+      attr(svg, "stroke-linecap", "round");
+      attr(svg, "stroke-linejoin", "round");
+    },
+    m(target, anchor) {
+      insert(target, svg, anchor);
+      append(svg, rect);
+      append(svg, line0);
+      append(svg, line1);
+      append(svg, line2);
+    },
+    p: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(svg);
+      }
+    }
+  };
+}
+function create_if_block_23(ctx) {
+  let svg;
+  let polyline0;
+  let path0;
+  let polyline1;
+  let path1;
+  return {
+    c() {
+      svg = svg_element("svg");
+      polyline0 = svg_element("polyline");
+      path0 = svg_element("path");
+      polyline1 = svg_element("polyline");
+      path1 = svg_element("path");
+      attr(polyline0, "points", "17 1 21 5 17 9");
+      attr(path0, "d", "M3 11V9a4 4 0 0 1 4-4h14");
+      attr(polyline1, "points", "7 23 3 19 7 15");
+      attr(path1, "d", "M21 13v2a4 4 0 0 1-4 4H3");
+      attr(svg, "width", "18");
+      attr(svg, "height", "18");
+      attr(svg, "viewBox", "0 0 24 24");
+      attr(svg, "fill", "none");
+      attr(svg, "stroke", "currentColor");
+      attr(svg, "stroke-width", "2");
+      attr(svg, "stroke-linecap", "round");
+      attr(svg, "stroke-linejoin", "round");
+    },
+    m(target, anchor) {
+      insert(target, svg, anchor);
+      append(svg, polyline0);
+      append(svg, path0);
+      append(svg, polyline1);
+      append(svg, path1);
+    },
+    p: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(svg);
+      }
+    }
+  };
+}
+function create_if_block_13(ctx) {
+  let span;
+  let t_value = (
+    /*scheduleBadge*/
+    ctx[4].letter + ""
+  );
+  let t;
+  return {
+    c() {
+      span = element("span");
+      t = text(t_value);
+      attr(span, "class", "schedule-badge-letter");
+    },
+    m(target, anchor) {
+      insert(target, span, anchor);
+      append(span, t);
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*scheduleBadge*/
+      16 && t_value !== (t_value = /*scheduleBadge*/
+      ctx2[4].letter + ""))
+        set_data(t, t_value);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(span);
+      }
+    }
+  };
+}
 function create_fragment3(ctx) {
   let div;
   function select_block_type(ctx2, dirty) {
@@ -9085,9 +9338,9 @@ function create_fragment3(ctx) {
       ctx2[0]
     )
       return create_if_block3;
-    return create_else_block_2;
+    return create_else_block_3;
   }
-  let current_block_type = select_block_type(ctx, [-1, -1]);
+  let current_block_type = select_block_type(ctx, [-1, -1, -1]);
   let if_block = current_block_type(ctx);
   return {
     c() {
@@ -9135,6 +9388,7 @@ function formatDate(iso) {
   }
 }
 function instance3($$self, $$props, $$invalidate) {
+  let scheduleBadge;
   var __awaiter = this && this.__awaiter || function(thisArg, _arguments, P, generator) {
     function adopt(value) {
       return value instanceof P ? value : new P(function(resolve) {
@@ -9166,8 +9420,49 @@ function instance3($$self, $$props, $$invalidate) {
   let task = null;
   let categoryFilepath = "";
   let newStepText = "";
+  let showScheduleSection = false;
   let showRepeatPicker = false;
   const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  function toggleScheduleSection() {
+    $$invalidate(2, showScheduleSection = !showScheduleSection);
+    if (!showScheduleSection) {
+      $$invalidate(3, showRepeatPicker = false);
+    }
+  }
+  function getScheduleBadge(t) {
+    if (!t)
+      return {
+        isOverdue: false,
+        isActive: false,
+        tooltip: "Due date & repeat"
+      };
+    const todayStr = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+    const isOverdue = !!(t.dueDate && t.dueDate < todayStr && !t.completed);
+    const isDueToday = !!(t.dueDate && t.dueDate === todayStr);
+    const hasRecurrence = !!t.recurrence;
+    const isActive = isOverdue || isDueToday || hasRecurrence || !!t.dueDate;
+    let letter = void 0;
+    let tooltip = "Due date & repeat";
+    if (t.recurrence) {
+      const r = t.recurrence;
+      if (r.type === "daily" && (r.interval === 1 || !r.interval)) {
+        letter = "D";
+        tooltip = isOverdue ? `Overdue (Daily, due ${t.dueDate})` : "Repeats daily";
+      } else if (r.type === "weekdays") {
+        letter = "W";
+        tooltip = isOverdue ? `Overdue (Weekdays, due ${t.dueDate})` : "Repeats weekdays (Mon\u2013Fri)";
+      } else if (r.type === "weekly" && r.daysOfWeek && r.daysOfWeek.length === 1) {
+        const dayLetters = ["S", "M", "T", "W", "T", "F", "S"];
+        letter = dayLetters[r.daysOfWeek[0]];
+        tooltip = isOverdue ? `Overdue (${DAY_LABELS[r.daysOfWeek[0]]}, due ${t.dueDate})` : `Repeats weekly on ${DAY_LABELS[r.daysOfWeek[0]]}`;
+      } else {
+        tooltip = isOverdue ? `Overdue (${t.dueDate})` : getRecurrenceLabel(r);
+      }
+    } else if (t.dueDate) {
+      tooltip = isOverdue ? `Overdue (${t.dueDate})` : isDueToday ? "Due today" : `Due ${t.dueDate}`;
+    }
+    return { letter, isOverdue, isActive, tooltip };
+  }
   function getRecurrenceLabel(rule) {
     if (!rule)
       return "Does not repeat";
@@ -9217,14 +9512,22 @@ function instance3($$self, $$props, $$invalidate) {
         );
         break;
     }
-    $$invalidate(2, showRepeatPicker = false);
+    $$invalidate(3, showRepeatPicker = false);
+    scheduleSave();
+  }
+  function clearDueDate() {
+    if (!task)
+      return;
+    $$invalidate(0, task.dueDate = void 0, task);
+    $$invalidate(0, task.recurrence = void 0, task);
+    $$invalidate(3, showRepeatPicker = false);
     scheduleSave();
   }
   function clearRecurrence() {
     if (!task)
       return;
     $$invalidate(0, task.recurrence = void 0, task);
-    $$invalidate(2, showRepeatPicker = false);
+    $$invalidate(3, showRepeatPicker = false);
     scheduleSave();
   }
   function toggleWeekday(day) {
@@ -9296,6 +9599,8 @@ function instance3($$self, $$props, $$invalidate) {
       steps: t.steps.map((s) => Object.assign({}, s))
     }));
     categoryFilepath = filepath;
+    $$invalidate(2, showScheduleSection = false);
+    $$invalidate(3, showRepeatPicker = false);
   }
   function handleTaskSelected(payload) {
     loadTask(payload.task, payload.categoryFilepath);
@@ -9303,6 +9608,8 @@ function instance3($$self, $$props, $$invalidate) {
   function handleClose() {
     $$invalidate(0, task = null);
     categoryFilepath = "";
+    $$invalidate(2, showScheduleSection = false);
+    $$invalidate(3, showRepeatPicker = false);
   }
   function handleTaskDeleted(payload) {
     if (task && payload.task.id === task.id) {
@@ -9440,37 +9747,39 @@ function instance3($$self, $$props, $$invalidate) {
     $$invalidate(0, task.dueDate = e.currentTarget.value || void 0, task);
     scheduleSave();
   };
-  const click_handler_2 = () => {
-    $$invalidate(0, task.dueDate = void 0, task);
-    $$invalidate(0, task.recurrence = void 0, task);
-    scheduleSave();
-  };
-  const keydown_handler_4 = (e) => e.key === "Enter" && (() => {
-    $$invalidate(0, task.dueDate = void 0, task);
-    $$invalidate(0, task.recurrence = void 0, task);
-    scheduleSave();
-  })();
+  const keydown_handler_4 = (e) => e.key === "Enter" && clearDueDate();
   const keydown_handler_5 = (e) => e.key === "Enter" && clearRecurrence();
-  const click_handler_3 = () => $$invalidate(2, showRepeatPicker = !showRepeatPicker);
-  const keydown_handler_6 = (e) => e.key === "Enter" && $$invalidate(2, showRepeatPicker = !showRepeatPicker);
-  const click_handler_4 = () => setRecurrencePreset("daily");
-  const click_handler_5 = () => setRecurrencePreset("weekdays");
-  const click_handler_6 = () => setRecurrencePreset("weekly");
-  const click_handler_7 = (day) => handleWeekdayClick(day);
+  const click_handler_2 = () => $$invalidate(3, showRepeatPicker = !showRepeatPicker);
+  const keydown_handler_6 = (e) => e.key === "Enter" && $$invalidate(3, showRepeatPicker = !showRepeatPicker);
+  const click_handler_3 = () => setRecurrencePreset("daily");
+  const click_handler_4 = () => setRecurrencePreset("weekdays");
+  const click_handler_5 = () => setRecurrencePreset("weekly");
+  const click_handler_6 = (day) => handleWeekdayClick(day);
   const change_handler_1 = (e) => setCustomInterval(parseInt(e.currentTarget.value) || 1);
-  const keydown_handler_7 = (e) => e.key === "Enter" && closePanel();
+  const keydown_handler_7 = (e) => e.key === "Enter" && toggleScheduleSection();
   const keydown_handler_8 = (e) => e.key === "Enter" && deleteTask();
   $$self.$$set = ($$props2) => {
     if ("dataService" in $$props2)
-      $$invalidate(20, dataService = $$props2.dataService);
+      $$invalidate(23, dataService = $$props2.dataService);
+  };
+  $$self.$$.update = () => {
+    if ($$self.$$.dirty[0] & /*task*/
+    1) {
+      $:
+        $$invalidate(4, scheduleBadge = getScheduleBadge(task));
+    }
   };
   return [
     task,
     newStepText,
+    showScheduleSection,
     showRepeatPicker,
+    scheduleBadge,
     DAY_LABELS,
+    toggleScheduleSection,
     getRecurrenceLabel,
     setRecurrencePreset,
+    clearDueDate,
     clearRecurrence,
     handleWeekdayClick,
     setCustomInterval,
@@ -9483,7 +9792,6 @@ function instance3($$self, $$props, $$invalidate) {
     updateStepText,
     deleteStep,
     handleNoteInput,
-    closePanel,
     deleteTask,
     dataService,
     loadTask,
@@ -9498,15 +9806,14 @@ function instance3($$self, $$props, $$invalidate) {
     input1_input_handler,
     textarea_input_handler,
     change_handler,
-    click_handler_2,
     keydown_handler_4,
     keydown_handler_5,
-    click_handler_3,
+    click_handler_2,
     keydown_handler_6,
+    click_handler_3,
     click_handler_4,
     click_handler_5,
     click_handler_6,
-    click_handler_7,
     change_handler_1,
     keydown_handler_7,
     keydown_handler_8
@@ -9515,10 +9822,10 @@ function instance3($$self, $$props, $$invalidate) {
 var TaskDetailView = class extends SvelteComponent {
   constructor(options) {
     super();
-    init(this, options, instance3, create_fragment3, safe_not_equal, { dataService: 20, loadTask: 21 }, null, [-1, -1]);
+    init(this, options, instance3, create_fragment3, safe_not_equal, { dataService: 23, loadTask: 24 }, null, [-1, -1, -1]);
   }
   get loadTask() {
-    return this.$$.ctx[21];
+    return this.$$.ctx[24];
   }
 };
 var TaskDetailView_default = TaskDetailView;

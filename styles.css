@@ -570,6 +570,37 @@
 .footer-btn.danger:hover {
   color: var(--todo-red);
 }
+.footer-btn.schedule-toggle-btn {
+  min-width: 28px;
+  height: 28px;
+  padding: 4px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--todo-radius);
+  border: 1px solid transparent;
+  font-weight: 600;
+}
+.footer-btn.schedule-toggle-btn.is-active {
+  color: var(--todo-accent);
+  background-color: var(--todo-accent-light);
+  border-color: var(--todo-accent);
+}
+.footer-btn.schedule-toggle-btn.is-overdue {
+  color: var(--todo-red);
+  background-color: rgba(235, 87, 87, 0.15);
+  border-color: var(--todo-red);
+}
+.footer-btn.schedule-toggle-btn.is-open {
+  box-shadow: 0 0 0 1px currentColor;
+}
+.schedule-badge-letter {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  display: inline-block;
+  text-align: center;
+}
 .workspace-leaf-content[data-type=ms-todo-sidebar] .view-content,
 .workspace-leaf-content[data-type=ms-todo-main] .view-content,
 .workspace-leaf-content[data-type=ms-todo-detail] .view-content {
