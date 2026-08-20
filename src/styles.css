@@ -71,7 +71,8 @@
 
 /* Allocate transparent top/bottom border spacing to prevent layout shifts */
 .category-item,
-.group-container {
+.group-container,
+.group-header {
     border-top: 2px solid transparent !important;
     border-bottom: 2px solid transparent !important;
     transition: border-color var(--todo-transition), background-color var(--todo-transition), box-shadow var(--todo-transition);
@@ -86,12 +87,14 @@
 }
 
 /* Native HTML5 drag indicator styling: edge glow */
-.drag-over-top {
+.drag-over-top,
+.group-header.drag-over-top {
     border-top-color: var(--todo-accent) !important;
     box-shadow: 0 -4px 10px -2px var(--todo-accent-glow) !important;
 }
 
-.drag-over-bottom {
+.drag-over-bottom,
+.group-header.drag-over-bottom {
     border-bottom-color: var(--todo-accent) !important;
     box-shadow: 0 4px 10px -2px var(--todo-accent-glow) !important;
 }
@@ -114,6 +117,7 @@
 }
 
 .group-container.drag-over > .group-header,
+.group-header.drag-over,
 .group-items.drag-over {
     background-color: var(--todo-accent-light) !important;
     outline: 2px dashed var(--todo-accent) !important;

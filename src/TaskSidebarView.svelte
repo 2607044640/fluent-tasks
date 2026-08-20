@@ -244,9 +244,37 @@
         }
     }
 
+    function checkAutoScroll(e: DragEvent) {
+        const container = document.querySelector(".custom-lists") as HTMLElement;
+        if (!container) return;
+        const rect = container.getBoundingClientRect();
+        const y = e.clientY;
+        const threshold = 45;
+        const speed = 8;
+        if (y - rect.top < threshold && container.scrollTop > 0) {
+            container.scrollTop -= speed;
+        } else if (rect.bottom - y < threshold) {
+            container.scrollTop += speed;
+        }
+    }
+
+    function handleDragLeave(e: DragEvent) {
+        const el = e.currentTarget as HTMLElement;
+        const related = e.relatedTarget as HTMLElement | null;
+        if (!related || !el.contains(related)) {
+            const itemId = el.dataset.itemid || el.dataset.groupid || el.dataset.filepath;
+            if (dragOverId === itemId) {
+                dragOverId = "";
+                dragPosition = null;
+            }
+        }
+    }
+
     function handleDragOver(e: DragEvent, target: SidebarItem | CategoryInfo, parentGroup?: GroupInfo) {
         e.preventDefault();
         if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+
+        checkAutoScroll(e);
 
         if (target.id === draggedItemId) {
             dragOverId = "";
@@ -271,26 +299,25 @@
 
         if (target.type === "group") {
             if (draggedItem.type === "group") {
-                if (relativeY < rect.height * 0.5) {
+                dragPosition = relativeY < rect.height * 0.5 ? "top" : "bottom";
+            } else if (!target.isExpanded || target.items.length === 0) {
+                if (relativeY < rect.height * 0.33) {
                     dragPosition = "top";
-                } else {
+                } else if (relativeY > rect.height * 0.67) {
                     dragPosition = "bottom";
+                } else {
+                    dragPosition = "inside";
                 }
             } else {
-                if (relativeY < rect.height * 0.25) {
+                // Expanded group header: top 40% drops before group, bottom 60% drops into group
+                if (relativeY < rect.height * 0.4) {
                     dragPosition = "top";
-                } else if (relativeY > rect.height * 0.75) {
-                    dragPosition = "bottom";
                 } else {
                     dragPosition = "inside";
                 }
             }
         } else {
-            if (relativeY < rect.height * 0.5) {
-                dragPosition = "top";
-            } else {
-                dragPosition = "bottom";
-            }
+            dragPosition = relativeY < rect.height * 0.5 ? "top" : "bottom";
         }
     }
 
@@ -410,6 +437,8 @@
         e.preventDefault();
         if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
 
+        checkAutoScroll(e);
+
         const draggedItem = getDraggedItem();
         if (!draggedItem) return;
 
@@ -522,7 +551,7 @@
         try {
             const newGroup = await dataService.createGroup(name);
             // Optimistic UI: Immediately inject the new group to prevent Obsidian cache race condition
-            sidebarItems = [...sidebarItems, newGroup];
+            sidebarItems = [newGroup, ...sidebarItems];
         } catch (e) {
             console.error("[MStodo Sidebar] Failed to create group:", e);
         }
@@ -658,8 +687,10 @@
             {#if item.type === 'category'}
                 <div
                     draggable="true"
+                    data-itemid={item.id}
                     on:dragstart={(e) => handleDragStart(e, item)}
                     on:dragover|stopPropagation={(e) => handleDragOver(e, item)}
+                    on:dragleave={handleDragLeave}
                     on:drop|stopPropagation={(e) => handleDrop(e, item)}
                     on:dragend={handleDragEnd}
                     class="category-item"
@@ -684,9 +715,8 @@
             {:else}
                 <div
                     draggable="true"
+                    data-itemid={item.id}
                     on:dragstart={(e) => handleDragStart(e, item)}
-                    on:dragover|stopPropagation={(e) => handleDragOver(e, item)}
-                    on:drop|stopPropagation={(e) => handleDrop(e, item)}
                     on:dragend={handleDragEnd}
                     class="group-container"
                     class:drag-over={dragOverId === item.id && dragPosition === 'inside'}
@@ -694,7 +724,16 @@
                     class:drag-over-bottom={dragOverId === item.id && dragPosition === 'bottom'}
                     role="listitem"
                 >
-                    <div class="group-header" data-groupid={item.id} on:click|stopPropagation={() => toggleGroup(item)} on:contextmenu|stopPropagation={(e) => handleGroupContextMenu(e, item)} role="button" tabindex="0" on:keydown={(e) => e.key === "Enter" && toggleGroup(item)}>
+                    <div class="group-header"
+                         data-itemid={item.id}
+                         data-groupid={item.id}
+                         on:dragover|stopPropagation={(e) => handleDragOver(e, item)}
+                         on:dragleave={handleDragLeave}
+                         on:drop|stopPropagation={(e) => handleDrop(e, item)}
+                         on:click|stopPropagation={() => toggleGroup(item)}
+                         on:contextmenu|stopPropagation={(e) => handleGroupContextMenu(e, item)}
+                         role="button" tabindex="0"
+                         on:keydown={(e) => e.key === "Enter" && toggleGroup(item)}>
                         <span class="group-name">{item.name}</span>
                         <svg class="chevron {item.isExpanded ? 'expanded' : ''}" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="9 18 15 12 9 6"></polyline>
@@ -705,14 +744,16 @@
                              data-groupid={item.id}
                              class:empty={item.items.length === 0}
                              class:drag-over={dragOverId === item.id && dragPosition === 'inside'}
-                             on:dragover|stopPropagation={(e) => handleDragOver(e, item)}
-                             on:drop|stopPropagation={(e) => handleDrop(e, item)}
+                             on:dragover|stopPropagation={(e) => item.items.length === 0 ? handleDragOver(e, item) : undefined}
+                             on:drop|stopPropagation={(e) => item.items.length === 0 ? handleDrop(e, item) : undefined}
                              role="list">
                             {#each item.items as cat (cat.id)}
                                 <div
                                     draggable="true"
+                                    data-itemid={cat.id}
                                     on:dragstart|stopPropagation={(e) => handleDragStart(e, cat)}
                                     on:dragover|stopPropagation={(e) => handleDragOver(e, cat, item)}
+                                    on:dragleave={handleDragLeave}
                                     on:drop|stopPropagation={(e) => handleDrop(e, cat, item)}
                                     on:dragend|stopPropagation={handleDragEnd}
                                     class="category-item"

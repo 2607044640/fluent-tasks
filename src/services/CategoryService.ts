@@ -144,7 +144,14 @@ export class CategoryService {
         }
         await this.app.vault.create(filepath, "");
         Logger.log("Created category:", name);
-        return { id: filepath, type: "category", name, filepath };
+
+        // Prepend new category to the top of sidebar state
+        const newCat: CategoryInfo = { id: filepath, type: "category", name, filepath };
+        const items = await this.getSidebarItems();
+        items.unshift(newCat);
+        await this.saveSidebarState(items);
+
+        return newCat;
     }
 
     async createGroup(name: string): Promise<GroupInfo> {
@@ -156,7 +163,7 @@ export class CategoryService {
             items: [],
             isExpanded: true
         };
-        items.push(newGroup);
+        items.unshift(newGroup);
         await this.saveSidebarState(items);
         Logger.log("Created group:", name);
         return newGroup;
