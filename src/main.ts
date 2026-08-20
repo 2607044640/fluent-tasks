@@ -257,15 +257,6 @@ export default class FluentTasksPlugin extends Plugin {
                 await this.activateAllViews();
             }
 
-            // Auto-expand sidebar when main view is focused via tab switching
-            this.registerEvent(this.app.workspace.on('active-leaf-change', (leaf) => {
-                if (leaf && leaf.view.getViewType() === VIEW_TYPE_MAIN) {
-                    if (this.settings.autoExpandSidebar) {
-                        this.expandSidebarToList();
-                    }
-                }
-            }));
-
             await this.registerCategoryCommands();
 
             EventBus.on(EventName.CATEGORY_LIST_CHANGED, () => {

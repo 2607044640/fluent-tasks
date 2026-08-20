@@ -18,11 +18,9 @@
     export let plugin: any;
 
     /**
-     * Expand sidebar and reveal Fluent Tasks list tab.
-     * @param force If true, ignores the autoExpandSidebar setting (used by manual button).
+     * Expand sidebar and reveal Fluent Tasks list tab (manual button).
      */
-    function expandSidebar(force: boolean = false) {
-        if (!force && !plugin.settings?.autoExpandSidebar) return;
+    function expandSidebar() {
         const leftSplit = plugin.app.workspace.leftSplit as any;
         if (leftSplit.collapsed) {
             leftSplit.expand();
@@ -378,14 +376,14 @@
     }
 </script>
 
-<div class="main-container" on:click={() => expandSidebar(false)} on:keydown={() => {}} role="application">
+<div class="main-container" role="application">
     {#if currentCategory}
         <!-- Header -->
         <div class="main-header">
             <div style="display: flex; align-items: center; gap: 10px;">
-                <span class="icon-btn" on:click|stopPropagation={() => expandSidebar(true)}
+                <span class="icon-btn" on:click|stopPropagation={expandSidebar}
                       role="button" tabindex="0" aria-label="Show sidebar list" title="Show sidebar list"
-                      on:keydown|stopPropagation={(e) => e.key === "Enter" && expandSidebar(true)}>
+                      on:keydown|stopPropagation={(e) => e.key === "Enter" && expandSidebar()}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
