@@ -6,17 +6,13 @@ export interface FluentTasksSettings {
     autoExpandSidebar: boolean;
     searchHideCompleted: boolean;
     hideRibbonIcon: boolean;
-    maxFrames: number;
-    maxIconsPerFrame: number;
 }
 
 export const DEFAULT_SETTINGS: FluentTasksSettings = {
     accentColor: "#8b5cf6",
     autoExpandSidebar: true,
     searchHideCompleted: true,
-    hideRibbonIcon: false,
-    maxFrames: 3,
-    maxIconsPerFrame: 5,
+    hideRibbonIcon: false
 }
 
 export class FluentTasksSettingTab extends PluginSettingTab {
@@ -85,30 +81,6 @@ export class FluentTasksSettingTab extends PluginSettingTab {
                     this.plugin.settings.hideRibbonIcon = value;
                     await this.plugin.saveSettings();
                     this.plugin.refreshRibbonIcon();
-                }));
-
-        new Setting(containerEl)
-            .setName("Max Image Frames per Task")
-            .setDesc("Maximum number of visual icon frames allowed on a single task (default: 3).")
-            .addSlider(slider => slider
-                .setLimits(1, 5, 1)
-                .setValue(this.plugin.settings.maxFrames ?? 3)
-                .setDynamicTooltip()
-                .onChange(async (value) => {
-                    this.plugin.settings.maxFrames = value;
-                    await this.plugin.saveSettings();
-                }));
-
-        new Setting(containerEl)
-            .setName("Max Icons per Frame")
-            .setDesc("Maximum number of icons allowed inside a single image frame (default: 5).")
-            .addSlider(slider => slider
-                .setLimits(1, 10, 1)
-                .setValue(this.plugin.settings.maxIconsPerFrame ?? 5)
-                .setDynamicTooltip()
-                .onChange(async (value) => {
-                    this.plugin.settings.maxIconsPerFrame = value;
-                    await this.plugin.saveSettings();
                 }));
     }
 }

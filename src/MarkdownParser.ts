@@ -10,7 +10,7 @@
  * The %%{...}%% is an Obsidian invisible comment containing structured JSON metadata.
  */
 
-import type { TaskItem } from "./types";
+import { TaskItem, TaskStep, DATA_FOLDER } from "./types";
 
 // =============================================
 // Internal Constants
@@ -62,7 +62,7 @@ export class MarkdownParser {
 
             if (metaMatch) {
                 try {
-                    meta = JSON.parse(metaMatch[1]) as Partial<TaskItem>;
+                    meta = JSON.parse(metaMatch[1]);
                 } catch { /* swallow parse errors gracefully */ }
                 title = rawContent.replace(/\s*%%\{.*?\}%%/, "").trim();
             }
@@ -84,9 +84,8 @@ export class MarkdownParser {
                 ...(meta.recurrence ? { recurrence: meta.recurrence } : {}),
                 ...(meta.why ? { why: meta.why } : {}),
                 ...(meta.svgs && meta.svgs.length > 0 ? { svgs: meta.svgs } : {}),
-                ...(meta.note_link ? { note_link: meta.note_link } : {}),
-                ...(meta.customMeta ? { customMeta: meta.customMeta } : {}),
-                ...(meta.frames && meta.frames.length > 0 ? { frames: meta.frames } : {}),
+                ...(meta.note_link ? { note_link: meta.note_link } : (meta as any).noteLink ? { note_link: (meta as any).noteLink } : {}),
+                ...(meta.customMeta && Object.keys(meta.customMeta).length > 0 ? { customMeta: meta.customMeta } : {}),
             });
         }
 
@@ -99,7 +98,7 @@ export class MarkdownParser {
     static serializeTasksToMarkdown(tasks: TaskItem[]): string {
         return tasks.map(task => {
             const checkbox = task.completed ? "[x]" : "[ ]";
-            const meta: Record<string, unknown> = {
+            const meta: Record<string, any> = {
                 id: task.id,
                 starred: task.starred,
                 steps: task.steps,
@@ -113,8 +112,7 @@ export class MarkdownParser {
             if (task.why) meta.why = task.why;
             if (task.svgs && task.svgs.length > 0) meta.svgs = task.svgs;
             if (task.note_link) meta.note_link = task.note_link;
-            if (task.customMeta) meta.customMeta = task.customMeta;
-            if (task.frames && task.frames.length > 0) meta.frames = task.frames;
+            if (task.customMeta && Object.keys(task.customMeta).length > 0) meta.customMeta = task.customMeta;
             return `- ${checkbox} ${task.title} %%${JSON.stringify(meta)}%%`;
         }).join("\n");
     }

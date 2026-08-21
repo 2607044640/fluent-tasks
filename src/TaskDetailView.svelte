@@ -4,13 +4,12 @@
     import { DataService } from "./DataService";
     import { EventName, type TaskItem, type TaskStep, type RecurrenceRule } from "./types";
     import { SAVE_DEBOUNCE_MS } from "./constants";
-    import { setIcon, type App } from "obsidian";
+    import type { App } from "obsidian";
 
     // =============================================
     // Props
     // =============================================
     export let dataService: DataService;
-    export let plugin: any = null;
 
     // =============================================
     // State
@@ -232,6 +231,13 @@
         }, SAVE_DEBOUNCE_MS);
     }
 
+    function openLinkedNote(link: string) {
+        if (!link || !plugin?.app) return;
+        const clean = link.replace(/^\[\[/, "").replace(/\]\]$/, "").trim();
+        if (!clean) return;
+        plugin.app.workspace.openLinkText(clean, categoryFilepath || "", false);
+    }
+
     // =============================================
     // Task Actions
     // =============================================
@@ -330,58 +336,98 @@
     }
 
     // =============================================
-    // Image Frames & Lucide Icons
+    // Helpers & Meta Modal
     // =============================================
-    function renderLucideIcon(node: HTMLElement, iconName: string) {
-        if (!iconName) return;
-        node.empty();
-        setIcon(node, iconName);
-        return {
-            update(newName: string) {
-                node.empty();
-                if (newName) setIcon(node, newName);
-            }
-        };
-    }
+    let showAddMetaModal: boolean = false;
+    let metaFormType: "custom" | "why" | "note_link" | "svg" = "custom";
+    let metaCustomKey: string = "";
+    let metaCustomVal: string = "";
+    let metaWhyVal: string = "";
+    let metaNoteLinkVal: string = "";
+    let metaSvgVal: string = "";
 
-    function addNewFrame() {
+    function openAddMetaModal() {
         if (!task) return;
-        const maxFrames = plugin?.settings?.maxFrames ?? 3;
-        if (!task.frames) task.frames = [];
-        if (task.frames.length >= maxFrames) return;
-        task.frames = [...task.frames, []];
-        task = task;
-        scheduleSave();
+        metaCustomKey = "";
+        metaCustomVal = "";
+        metaWhyVal = task.why || "";
+        metaNoteLinkVal = task.note_link || "";
+        metaSvgVal = "";
+        metaFormType = "custom";
+        showAddMetaModal = true;
     }
 
-    function removeFrameDetail(frameIndex: number) {
-        if (!task || !task.frames) return;
-        task.frames = task.frames.filter((_, i) => i !== frameIndex);
-        if (task.frames.length === 0) task.frames = undefined;
-        task = task;
-        scheduleSave();
+    function closeAddMetaModal() {
+        showAddMetaModal = false;
     }
 
-    function removeIconFromFrame(frameIndex: number, iconIndex: number) {
-        if (!task || !task.frames || !task.frames[frameIndex]) return;
-        task.frames[frameIndex] = task.frames[frameIndex].filter((_, i) => i !== iconIndex);
-        if (task.frames[frameIndex].length === 0) {
-            task.frames = task.frames.filter((_, i) => i !== frameIndex);
+    function saveNewMetadata() {
+        if (!task) return;
+        if (metaFormType === "custom") {
+            const key = metaCustomKey.trim();
+            const val = metaCustomVal.trim();
+            if (key) {
+                if (!task.customMeta) task.customMeta = {};
+                task.customMeta[key] = val;
+                task.customMeta = { ...task.customMeta };
+            }
+        } else if (metaFormType === "why") {
+            task.why = metaWhyVal.trim();
+        } else if (metaFormType === "note_link") {
+            task.note_link = metaNoteLinkVal.trim();
+        } else if (metaFormType === "svg") {
+            const svgStr = metaSvgVal.trim();
+            if (svgStr) {
+                if (!task.svgs) task.svgs = [];
+                task.svgs = [...task.svgs, svgStr];
+            }
         }
-        if (task.frames.length === 0) task.frames = undefined;
+        task = task;
+        scheduleSave();
+        showAddMetaModal = false;
+    }
+
+    function removeCustomMetaKey(key: string) {
+        if (!task || !task.customMeta) return;
+        delete task.customMeta[key];
+        task.customMeta = { ...task.customMeta };
         task = task;
         scheduleSave();
     }
 
-    function promptAddIcon(frameIndex: number) {
-        if (!task || !task.frames) return;
-        const maxIcons = plugin?.settings?.maxIconsPerFrame ?? 5;
-        if (task.frames[frameIndex].length >= maxIcons) return;
-        const iconName = window.prompt("Enter Lucide icon name (e.g. brain, sparkles, rocket, flame, zap):");
-        if (!iconName || !iconName.trim()) return;
-        task.frames[frameIndex] = [...task.frames[frameIndex], iconName.trim().replace(/^lucide-/, "")];
-        task = task;
-        scheduleSave();
+    function formatExactTime(iso: string): string {
+        try {
+            const d = new Date(iso);
+            if (isNaN(d.getTime())) return iso;
+            const pad = (n: number) => String(n).padStart(2, "0");
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        } catch {
+            return iso;
+        }
+    }
+
+    function getRelativeTime(iso: string): string {
+        try {
+            const d = new Date(iso);
+            if (isNaN(d.getTime())) return "";
+            const now = Date.now();
+            const diffMs = now - d.getTime();
+            const diffSecs = Math.floor(diffMs / 1000);
+            const diffMins = Math.floor(diffSecs / 60);
+            const diffHours = Math.floor(diffMins / 60);
+            const diffDays = Math.floor(diffHours / 24);
+
+            if (diffSecs < 60) return "just now";
+            if (diffMins < 60) return `${diffMins}m ago`;
+            if (diffHours < 24) return `${diffHours}h ago`;
+            if (diffDays === 1) return "yesterday";
+            if (diffDays < 30) return `${diffDays}d ago`;
+            const diffMonths = Math.floor(diffDays / 30);
+            if (diffMonths < 12) return `${diffMonths}mo ago`;
+            return `${Math.floor(diffDays / 365)}y ago`;
+        } catch {
+            return "";
+        }
     }
 
     function formatDate(iso: string): string {
@@ -509,50 +555,171 @@
             ></textarea>
         </div>
 
-        <!-- Image Frames Section -->
-        <div class="detail-section frames-section">
-            <div class="section-label frames-label">
+        <!-- Why Metadata -->
+        <div class="detail-section meta-section">
+            <div class="section-label meta-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                Why (Rationale)
+            </div>
+            <textarea
+                class="meta-why-input"
+                placeholder="Why does this task exist? What is the core reasoning?"
+                bind:value={task.why}
+                on:input={scheduleSave}
+                rows="2"
+            ></textarea>
+        </div>
+
+        <!-- SVG Icons Metadata -->
+        <div class="detail-section meta-section">
+            <div class="section-label meta-label">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                     <circle cx="8.5" cy="8.5" r="1.5"/>
                     <polyline points="21 15 16 10 5 21"/>
                 </svg>
-                Image Frames (Visual Memory)
+                SVG Icons
             </div>
-
-            {#if task.frames && task.frames.length > 0}
-                {#each task.frames as frame, fIdx}
-                    <div class="frame-editor">
-                        <div class="frame-header">
-                            <span class="frame-label">Frame {fIdx + 1}</span>
-                            <button type="button" class="frame-remove-btn"
-                                    on:click={() => removeFrameDetail(fIdx)} title="Delete frame">✕</button>
+            {#if task.svgs && task.svgs.length > 0}
+                <div class="meta-svg-list">
+                    {#each task.svgs as svgContent, i}
+                        <div class="meta-svg-item">
+                            <div class="meta-svg-preview">
+                                {#if svgContent}
+                                    {@html svgContent}
+                                {/if}
+                            </div>
+                            <input
+                                class="meta-svg-code-input"
+                                type="text"
+                                value={svgContent}
+                                placeholder="<svg ...>...</svg>"
+                                on:input={(e) => {
+                                    if (task) {
+                                        if (!task.svgs) task.svgs = [];
+                                        task.svgs[i] = e.currentTarget.value;
+                                        task.svgs = [...task.svgs];
+                                        scheduleSave();
+                                    }
+                                }}
+                            />
+                            <span class="meta-svg-remove"
+                                  on:click={() => {
+                                      if (task && task.svgs) {
+                                          task.svgs = task.svgs.filter((_, idx) => idx !== i);
+                                          scheduleSave();
+                                      }
+                                  }}
+                                  on:keydown={(e) => {
+                                      if (e.key === "Enter" && task && task.svgs) {
+                                          task.svgs = task.svgs.filter((_, idx) => idx !== i);
+                                          scheduleSave();
+                                      }
+                                  }}
+                                  role="button" tabindex="0" title="Remove icon">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"/>
+                                    <line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                            </span>
                         </div>
-                        <div class="frame-icons-row">
-                            {#each frame as iconName, iIdx}
-                                <div class="frame-icon-chip">
-                                    <span class="frame-icon-preview" use:renderLucideIcon={iconName}></span>
-                                    <span class="frame-icon-name">{iconName}</span>
-                                    <button type="button" class="frame-icon-remove"
-                                            on:click={() => removeIconFromFrame(fIdx, iIdx)} title="Remove icon">✕</button>
-                                </div>
-                            {/each}
-                            {#if frame.length < (plugin?.settings?.maxIconsPerFrame ?? 5)}
-                                <button type="button" class="frame-add-icon-btn"
-                                        on:click={() => promptAddIcon(fIdx)} title="Add Lucide icon">+ Icon</button>
-                            {/if}
-                        </div>
-                    </div>
-                {/each}
+                    {/each}
+                </div>
             {/if}
-
-            {#if !task.frames || task.frames.length < (plugin?.settings?.maxFrames ?? 3)}
-                <button type="button" class="frame-add-btn" on:click={addNewFrame}>
-                    + Add Frame
-                </button>
-            {/if}
+            <span class="meta-add-btn"
+                  on:click={() => {
+                      if (task) {
+                          if (!task.svgs) task.svgs = [];
+                          task.svgs = [...task.svgs, ''];
+                      }
+                  }}
+                  on:keydown={(e) => {
+                      if (e.key === "Enter" && task) {
+                          if (!task.svgs) task.svgs = [];
+                          task.svgs = [...task.svgs, ''];
+                      }
+                  }}
+                  role="button" tabindex="0">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Add SVG icon
+            </span>
         </div>
+
+        <!-- Linked Note Metadata -->
+        <div class="detail-section meta-section">
+            <div class="section-label meta-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10 9 9 9 8 9"/>
+                </svg>
+                Linked Note
+            </div>
+            <div class="meta-note-link-row">
+                <input
+                    class="meta-note-link-input"
+                    type="text"
+                    placeholder="e.g. [[Topic]] or OneNote/Domain/Topic.md"
+                    bind:value={task.note_link}
+                    on:input={scheduleSave}
+                />
+                {#if task.note_link}
+                    <span class="meta-note-open-btn"
+                          on:click={() => openLinkedNote(task.note_link || '')}
+                          on:keydown={(e) => e.key === "Enter" && openLinkedNote(task.note_link || '')}
+                          role="button" tabindex="0" title="Open note in Obsidian">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                            <polyline points="15 3 21 3 21 9"/>
+                            <line x1="10" y1="14" x2="21" y2="3"/>
+                        </svg>
+                    </span>
+                {/if}
+            </div>
+        </div>
+
+        <!-- Custom Key-Value Metadata Section -->
+        {#if task.customMeta && Object.keys(task.customMeta).length > 0}
+            <div class="detail-section meta-section">
+                <div class="section-label meta-label">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                        <line x1="7" y1="7" x2="7.01" y2="7"/>
+                    </svg>
+                    Custom Properties
+                </div>
+                <div class="custom-meta-tags-list">
+                    {#each Object.entries(task.customMeta) as [k, v]}
+                        <div class="custom-meta-tag">
+                            <span class="custom-meta-k">{k}:</span>
+                            <span class="custom-meta-v">{v}</span>
+                            <span class="custom-meta-remove"
+                                  on:click={() => removeCustomMetaKey(k)}
+                                  on:keydown={(e) => e.key === "Enter" && removeCustomMetaKey(k)}
+                                  role="button" tabindex="0" title="Delete property">
+                                ✕
+                            </span>
+                        </div>
+                    {/each}
+                </div>
+            </div>
+        {/if}
 
         <!-- Due Date & Repeat Section (Collapsible Drawer) -->
         {#if showScheduleSection}
@@ -693,6 +860,31 @@
                 {/if}
             </span>
 
+            <!-- Center: Time Badge + Add Meta Button -->
+            <div class="footer-meta-tools">
+                <span class="footer-btn time-badge-btn"
+                      role="button" tabindex="0"
+                      title={`Created: ${formatExactTime(task.createdAt)} (${getRelativeTime(task.createdAt)})`}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    <span class="time-badge-text">{getRelativeTime(task.createdAt)}</span>
+                </span>
+
+                <span class="footer-btn add-meta-btn"
+                      on:click={openAddMetaModal}
+                      on:keydown={(e) => e.key === "Enter" && openAddMetaModal()}
+                      role="button" tabindex="0" title="Add custom metadata">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                </span>
+            </div>
+
             <!-- Delete -->
             <span class="footer-btn danger" on:click={deleteTask}
                   role="button" tabindex="0" title="Delete task"
@@ -704,6 +896,71 @@
                 </svg>
             </span>
         </div>
+
+        <!-- Add Metadata Modal Dialog -->
+        {#if showAddMetaModal}
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <div class="meta-modal-backdrop" on:click={(e) => e.target === e.currentTarget && closeAddMetaModal()} role="presentation">
+                <div class="meta-modal-dialog" role="dialog" aria-modal="true" tabindex="-1">
+                    <div class="meta-modal-header">
+                        <span>Add Metadata</span>
+                        <span class="meta-modal-close" on:click={closeAddMetaModal}
+                              on:keydown={(e) => e.key === "Enter" && closeAddMetaModal()}
+                              role="button" tabindex="0">✕</span>
+                    </div>
+
+                    <div class="meta-modal-tabs">
+                        <button type="button" class="meta-modal-tab" class:active={metaFormType === 'custom'}
+                                on:click={() => metaFormType = 'custom'}>Custom Property</button>
+                        <button type="button" class="meta-modal-tab" class:active={metaFormType === 'why'}
+                                on:click={() => metaFormType = 'why'}>Why</button>
+                        <button type="button" class="meta-modal-tab" class:active={metaFormType === 'note_link'}
+                                on:click={() => metaFormType = 'note_link'}>Note Link</button>
+                        <button type="button" class="meta-modal-tab" class:active={metaFormType === 'svg'}
+                                on:click={() => metaFormType = 'svg'}>SVG Icon</button>
+                    </div>
+
+                    <div class="meta-modal-body">
+                        {#if metaFormType === 'custom'}
+                            <div class="meta-form-field">
+                                <span class="meta-field-label">Property Name / Key</span>
+                                <input class="meta-form-input" type="text" placeholder="e.g. priority, source, tag"
+                                       bind:value={metaCustomKey} />
+                            </div>
+                            <div class="meta-form-field">
+                                <span class="meta-field-label">Value</span>
+                                <input class="meta-form-input" type="text" placeholder="e.g. High, Web, #urgent"
+                                       bind:value={metaCustomVal} />
+                            </div>
+                        {:else if metaFormType === 'why'}
+                            <div class="meta-form-field">
+                                <span class="meta-field-label">Why / Rationale</span>
+                                <textarea class="meta-form-textarea" placeholder="Why does this task exist?"
+                                          bind:value={metaWhyVal} rows="3"></textarea>
+                            </div>
+                        {:else if metaFormType === 'note_link'}
+                            <div class="meta-form-field">
+                                <span class="meta-field-label">Note Link or Path</span>
+                                <input class="meta-form-input" type="text" placeholder="e.g. [[My Note]] or path/note.md"
+                                       bind:value={metaNoteLinkVal} />
+                            </div>
+                        {:else if metaFormType === 'svg'}
+                            <div class="meta-form-field">
+                                <span class="meta-field-label">Inline SVG Code</span>
+                                <textarea class="meta-form-textarea monospace" placeholder="<svg ...>...</svg>"
+                                          bind:value={metaSvgVal} rows="3"></textarea>
+                            </div>
+                        {/if}
+                    </div>
+
+                    <div class="meta-modal-footer">
+                        <button type="button" class="meta-btn-secondary" on:click={closeAddMetaModal}>Cancel</button>
+                        <button type="button" class="meta-btn-primary" on:click={saveNewMetadata}>Save Metadata</button>
+                    </div>
+                </div>
+            </div>
+        {/if}
     {:else}
         <div class="detail-empty">
             Click a task to view details.

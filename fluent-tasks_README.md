@@ -26,17 +26,20 @@ if (mainLeaf && mainLeaf.view && mainLeaf.view.file) {
 ```
 </adding_new_item_recipe>
 
-## Image Frames (Visual Memory Anchors)
+## Metadata Badges & Cognitive Steering
 
-<image_frames_system>
-Fluent Tasks supports visual Image Frames to facilitate human memory and cognitive indexing:
-- **Location**: Displayed to the left of the star (★) icon on each task card.
-- **Structure**: Up to 3 frames per task (configurable), with up to 5 Lucide icons per frame (configurable).
-- **Interactions**:
-  - Right-click any frame on the task card to delete it.
-  - Manage, add, and remove frames and icons within the task detail panel.
-- **Serialization**: Saved in `%%{"id":"...","frames":[["brain","sparkles"],["rocket"]]}%%`.
-</image_frames_system>
+<metadata_badges_system>
+Fluent Tasks uses a lightweight Meta Badge system to keep task cards clean while surfacing rich human-agent instructions and metadata on demand:
+
+### Badge Types & Behaviors
+- **Why Rationale (`why`)**: Displayed as a `?` circle badge. Hovering pops up a rationale card explaining why the task/rule exists.
+- **Visual Icons (`svgs`)**: Array of custom inline SVG icons displayed as individual mini badges. Hovering reveals a 64px preview.
+- **Linked Note (`note_link`)**: Displayed as a document link badge. Hovering triggers Obsidian's native `Page Preview` popover; clicking immediately navigates to and focuses the note.
+- **Custom Properties (`customMeta`)**: Key-value pairs displayed as interactive tag chips in the task detail panel.
+
+### Invariant: Zero Empty Placeholders
+Badges render conditionally between the task title and the star button. If a task has no metadata, zero badge elements or placeholders are rendered in the DOM.
+</metadata_badges_system>
 
 ## Microsoft To Do Bidirectional Sync
 
@@ -55,7 +58,7 @@ Fluent Tasks supports bidirectional synchronization with Microsoft To Do through
 
 ### Key Constraints
 - MUST NOT modify `MarkdownParser` serialization format without updating `A1MSTodoSync.MarkdownBridge` in lockstep. (Why: format divergence causes silent data corruption).
-- Optional sync and memory fields (`dueDate`, `msGraphId`, `msGraphListId`, `frames`) MUST remain backward-compatible — NEVER make them required. (Why: existing users without sync must not be affected).
+- Optional sync fields (`dueDate`, `msGraphId`, `msGraphListId`, `why`, `svgs`, `note_link`, `customMeta`) MUST remain backward-compatible — NEVER make them required. (Why: existing users without sync must not be affected).
 </external_sync_integration>
 
 

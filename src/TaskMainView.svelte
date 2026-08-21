@@ -55,33 +55,66 @@
     const AUTO_SCROLL_MIN_SPEED = 2;
 
     // =============================================
-    // Image Frames & Lucide Icons
+    // Meta Badge Hover Popover
     // =============================================
-    function renderLucideIcon(node: HTMLElement, iconName: string) {
-        if (!iconName) return;
-        node.empty();
-        setIcon(node, iconName);
-        return {
-            update(newName: string) {
-                node.empty();
-                if (newName) setIcon(node, newName);
-            }
-        };
+    let popoverTask: TaskItem | null = null;
+    let popoverType: 'why' | 'svg' | null = null;
+    let popoverSvgIndex: number = 0;
+    let popoverX: number = 0;
+    let popoverY: number = 0;
+    let popoverVisible: boolean = false;
+    let popoverTimeout: any = null;
+
+    function showPopover(e: MouseEvent, task: TaskItem, type: 'why' | 'svg', svgIndex: number = 0) {
+        if (popoverTimeout) clearTimeout(popoverTimeout);
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        popoverX = rect.left + rect.width / 2;
+        popoverY = rect.top;
+        popoverTask = task;
+        popoverType = type;
+        popoverSvgIndex = svgIndex;
+        popoverVisible = true;
     }
 
-    async function removeFrame(task: TaskItem, frameIndex: number) {
-        if (!task.frames || !currentCategory) return;
-        task.frames = task.frames.filter((_, i) => i !== frameIndex);
-        if (task.frames.length === 0) {
-            delete task.frames;
-        }
-        incompleteTasks = [...incompleteTasks];
-        completedTasks = [...completedTasks];
-        await dataService.updateTask(currentCategory.filepath, task);
-        EventBus.emit(EventName.TASK_UPDATED, {
-            task,
-            categoryFilepath: currentCategory.filepath,
+    function scheduleHidePopover() {
+        if (popoverTimeout) clearTimeout(popoverTimeout);
+        popoverTimeout = setTimeout(() => {
+            popoverVisible = false;
+            popoverTask = null;
+            popoverType = null;
+        }, 200);
+    }
+
+    function cancelHidePopover() {
+        if (popoverTimeout) clearTimeout(popoverTimeout);
+    }
+
+    function handleNoteLinkHover(e: MouseEvent, noteLink: string) {
+        if (!noteLink || !plugin?.app) return;
+        const cleanLink = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").trim();
+        if (!cleanLink) return;
+
+        plugin.app.workspace.trigger("hover-link", {
+            event: e,
+            source: "fluent-tasks",
+            hoverParent: e.currentTarget as HTMLElement,
+            targetEl: e.currentTarget as HTMLElement,
+            linktext: cleanLink,
+            sourcePath: currentCategory?.filepath || "",
         });
+    }
+
+    function handleNoteLinkClick(e: MouseEvent, noteLink: string) {
+        e.stopPropagation();
+        if (!noteLink || !plugin?.app) return;
+        const cleanLink = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").trim();
+        if (!cleanLink) return;
+
+        plugin.app.workspace.openLinkText(
+            cleanLink,
+            currentCategory?.filepath || "",
+            false
+        );
     }
 
     // =============================================
@@ -98,6 +131,7 @@
 
     onDestroy(() => {
         stopAutoScroll();
+        if (popoverTimeout) clearTimeout(popoverTimeout);
         window.removeEventListener('pointermove', handleDragPointerMove);
         EventBus.off(EventName.CATEGORY_SELECTED, handleCategorySelected);
         EventBus.off(EventName.TASK_UPDATED, handleTaskUpdated);
@@ -575,21 +609,50 @@
                         </div>
                     </div>
 
-                    <!-- Image Frames -->
-                    {#if task.frames && task.frames.length > 0}
-                        <div class="icon-frames-container">
-                            {#each task.frames as frame, frameIndex}
-                                <div class="icon-frame"
-                                     role="button" tabindex="0"
-                                     on:contextmenu|stopPropagation|preventDefault={() => removeFrame(task, frameIndex)}
-                                     on:keydown|stopPropagation={(e) => e.key === "Delete" && removeFrame(task, frameIndex)}
-                                     title="Right-click to remove frame">
-                                    {#each frame as iconName}
-                                        <span class="frame-icon" use:renderLucideIcon={iconName}></span>
-                                    {/each}
-                                </div>
-                            {/each}
-                        </div>
+                    <!-- Meta Badges -->
+                    {#if task.why}
+                        <span class="meta-badge why-badge"
+                              on:mouseenter={(e) => showPopover(e, task, 'why')}
+                              on:mouseleave={scheduleHidePopover}
+                              role="button" tabindex="0"
+                              title="Why: view rationale">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                                <line x1="12" y1="17" x2="12.01" y2="17"/>
+                            </svg>
+                        </span>
+                    {/if}
+                    {#if task.svgs && task.svgs.length > 0}
+                        {#each task.svgs as svgContent, i}
+                            {#if svgContent}
+                                <span class="meta-badge svg-badge"
+                                      on:mouseenter={(e) => showPopover(e, task, 'svg', i)}
+                                      on:mouseleave={scheduleHidePopover}
+                                      role="button" tabindex="0"
+                                      title="SVG icon metadata">
+                                    {@html svgContent}
+                                </span>
+                            {/if}
+                        {/each}
+                    {/if}
+                    {#if task.note_link}
+                        <span class="meta-badge note-badge"
+                              on:mouseenter={(e) => handleNoteLinkHover(e, task.note_link)}
+                              on:click={(e) => handleNoteLinkClick(e, task.note_link)}
+                              on:keydown={(e) => e.key === "Enter" && handleNoteLinkClick(e, task.note_link)}
+                              role="button" tabindex="0"
+                              title={`Linked note: ${task.note_link} (Click to open, hover to preview)`}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                                <polyline points="10 9 9 9 8 9"/>
+                            </svg>
+                        </span>
                     {/if}
 
                     <!-- Star -->
@@ -674,21 +737,50 @@
                                     {/if}
                                 </div>
 
-                                <!-- Image Frames -->
-                                {#if task.frames && task.frames.length > 0}
-                                    <div class="icon-frames-container">
-                                        {#each task.frames as frame, frameIndex}
-                                            <div class="icon-frame"
-                                                 role="button" tabindex="0"
-                                                 on:contextmenu|stopPropagation|preventDefault={() => removeFrame(task, frameIndex)}
-                                                 on:keydown|stopPropagation={(e) => e.key === "Delete" && removeFrame(task, frameIndex)}
-                                                 title="Right-click to remove frame">
-                                                {#each frame as iconName}
-                                                    <span class="frame-icon" use:renderLucideIcon={iconName}></span>
-                                                {/each}
-                                            </div>
-                                        {/each}
-                                    </div>
+                                <!-- Meta Badges -->
+                                {#if task.why}
+                                    <span class="meta-badge why-badge"
+                                          on:mouseenter={(e) => showPopover(e, task, 'why')}
+                                          on:mouseleave={scheduleHidePopover}
+                                          role="button" tabindex="0"
+                                          title="Why: view rationale">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="10"/>
+                                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                        </svg>
+                                    </span>
+                                {/if}
+                                {#if task.svgs && task.svgs.length > 0}
+                                    {#each task.svgs as svgContent, i}
+                                        {#if svgContent}
+                                            <span class="meta-badge svg-badge"
+                                                  on:mouseenter={(e) => showPopover(e, task, 'svg', i)}
+                                                  on:mouseleave={scheduleHidePopover}
+                                                  role="button" tabindex="0"
+                                                  title="SVG icon metadata">
+                                                {@html svgContent}
+                                            </span>
+                                        {/if}
+                                    {/each}
+                                {/if}
+                                {#if task.note_link}
+                                    <span class="meta-badge note-badge"
+                                          on:mouseenter={(e) => handleNoteLinkHover(e, task.note_link)}
+                                          on:click={(e) => handleNoteLinkClick(e, task.note_link)}
+                                          on:keydown={(e) => e.key === "Enter" && handleNoteLinkClick(e, task.note_link)}
+                                          role="button" tabindex="0"
+                                          title={`Linked note: ${task.note_link} (Click to open, hover to preview)`}>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                            <polyline points="14 2 14 8 20 8"/>
+                                            <line x1="16" y1="13" x2="8" y2="13"/>
+                                            <line x1="16" y1="17" x2="8" y2="17"/>
+                                            <polyline points="10 9 9 9 8 9"/>
+                                        </svg>
+                                    </span>
                                 {/if}
 
                                 <span class="star" class:active={task.starred}
@@ -710,6 +802,35 @@
     {:else}
         <div class="detail-empty">
             Select a list from the sidebar to view tasks.
+        </div>
+    {/if}
+
+    <!-- Global Meta Badge Popover -->
+    {#if popoverVisible && popoverTask}
+        <div class="meta-popover"
+             style="left: {popoverX}px; top: {popoverY}px;"
+             on:mouseenter={cancelHidePopover}
+             on:mouseleave={scheduleHidePopover}
+             role="tooltip">
+            {#if popoverType === 'why' && popoverTask.why}
+                <div class="meta-popover-header">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    <span>Why</span>
+                </div>
+                <div class="meta-popover-body">{popoverTask.why}</div>
+            {:else if popoverType === 'svg' && popoverTask.svgs && popoverTask.svgs[popoverSvgIndex]}
+                <div class="meta-popover-header">
+                    <span>Icon Preview</span>
+                </div>
+                <div class="meta-popover-svg-preview">
+                    {@html popoverTask.svgs[popoverSvgIndex]}
+                </div>
+            {/if}
         </div>
     {/if}
 </div>
