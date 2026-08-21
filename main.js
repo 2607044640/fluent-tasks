@@ -9946,7 +9946,7 @@ var TaskDetailView_default = TaskDetailView;
 var import_obsidian6 = require("obsidian");
 var DEFAULT_SETTINGS = {
   accentColor: "#8b5cf6",
-  autoExpandSidebar: false,
+  autoExpandSidebar: true,
   searchHideCompleted: true
 };
 var FluentTasksSettingTab = class extends import_obsidian6.PluginSettingTab {
@@ -9971,7 +9971,7 @@ var FluentTasksSettingTab = class extends import_obsidian6.PluginSettingTab {
         this.plugin.applySettings();
       });
     }
-    new import_obsidian6.Setting(containerEl).setName("Auto-Expand Sidebar on Jump Command").setDesc("Automatically expand and reveal the sidebar list panel when jumping to a list via command.").addToggle((toggle) => toggle.setValue(this.plugin.settings.autoExpandSidebar).onChange(async (value) => {
+    new import_obsidian6.Setting(containerEl).setName("Auto-Expand Sidebar on Focus").setDesc("Automatically expand the left sidebar list panel when switching to Fluent Tasks tab (via Ctrl+Tab, Ctrl+Shift+Tab, or clicking the tab).").addToggle((toggle) => toggle.setValue(this.plugin.settings.autoExpandSidebar).onChange(async (value) => {
       this.plugin.settings.autoExpandSidebar = value;
       await this.plugin.saveSettings();
     }));
@@ -10167,9 +10167,24 @@ var FluentTasksPlugin = class extends import_obsidian7.Plugin {
       }
     });
     this.app.workspace.onLayoutReady(async () => {
+      var _a, _b;
       await this.dataService.ensureDataFolder();
       await this.loadSettings();
       this.applySettings();
+      let lastActiveViewType = ((_b = (_a = this.app.workspace.activeLeaf) == null ? void 0 : _a.view) == null ? void 0 : _b.getViewType()) || "";
+      this.registerEvent(
+        this.app.workspace.on("active-leaf-change", (leaf) => {
+          if (!leaf || !leaf.view)
+            return;
+          const currentType = leaf.view.getViewType();
+          const isPluginView = currentType === VIEW_TYPE_MAIN || currentType === VIEW_TYPE_SIDEBAR || currentType === VIEW_TYPE_DETAIL;
+          const wasPluginView = lastActiveViewType === VIEW_TYPE_MAIN || lastActiveViewType === VIEW_TYPE_SIDEBAR || lastActiveViewType === VIEW_TYPE_DETAIL;
+          if (isPluginView && !wasPluginView && this.settings.autoExpandSidebar) {
+            this.expandSidebarToList();
+          }
+          lastActiveViewType = currentType;
+        })
+      );
       EventBus.on("detail:close" /* DETAIL_CLOSE */, () => {
         this.app.workspace.detachLeavesOfType(VIEW_TYPE_DETAIL);
       });

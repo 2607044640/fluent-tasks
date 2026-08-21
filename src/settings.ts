@@ -9,7 +9,7 @@ export interface FluentTasksSettings {
 
 export const DEFAULT_SETTINGS: FluentTasksSettings = {
     accentColor: "#8b5cf6",
-    autoExpandSidebar: false,
+    autoExpandSidebar: true,
     searchHideCompleted: true
 }
 
@@ -51,8 +51,8 @@ export class FluentTasksSettingTab extends PluginSettingTab {
 
 
         new Setting(containerEl)
-            .setName("Auto-Expand Sidebar on Jump Command")
-            .setDesc("Automatically expand and reveal the sidebar list panel when jumping to a list via command.")
+            .setName("Auto-Expand Sidebar on Focus")
+            .setDesc("Automatically expand the left sidebar list panel when switching to Fluent Tasks tab (via Ctrl+Tab, Ctrl+Shift+Tab, or clicking the tab).")
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.autoExpandSidebar)
                 .onChange(async (value) => {

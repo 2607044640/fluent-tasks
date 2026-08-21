@@ -229,6 +229,31 @@ export default class FluentTasksPlugin extends Plugin {
             await this.loadSettings();
             this.applySettings();
 
+            // Track active view type to expand sidebar ONLY when switching from external tabs (Ctrl+Tab, Ctrl+Shift+Tab, etc.)
+            let lastActiveViewType = this.app.workspace.activeLeaf?.view?.getViewType() || "";
+
+            this.registerEvent(
+                this.app.workspace.on("active-leaf-change", (leaf) => {
+                    if (!leaf || !leaf.view) return;
+                    const currentType = leaf.view.getViewType();
+
+                    const isPluginView = currentType === VIEW_TYPE_MAIN || 
+                                         currentType === VIEW_TYPE_SIDEBAR || 
+                                         currentType === VIEW_TYPE_DETAIL;
+
+                    const wasPluginView = lastActiveViewType === VIEW_TYPE_MAIN || 
+                                          lastActiveViewType === VIEW_TYPE_SIDEBAR || 
+                                          lastActiveViewType === VIEW_TYPE_DETAIL;
+
+                    // When switching focus from an external tab (e.g. Markdown note via Ctrl+Tab / Ctrl+Shift+Tab) to Fluent Tasks
+                    if (isPluginView && !wasPluginView && this.settings.autoExpandSidebar) {
+                        this.expandSidebarToList();
+                    }
+
+                    lastActiveViewType = currentType;
+                })
+            );
+
             // Manage dynamic opening/closing of the detail view
             EventBus.on(EventName.DETAIL_CLOSE, () => {
                 this.app.workspace.detachLeavesOfType(VIEW_TYPE_DETAIL);
