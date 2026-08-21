@@ -40,6 +40,10 @@ export interface TaskItem {
     msGraphId?: string;     // Microsoft Graph todoTask ID
     msGraphListId?: string; // Microsoft Graph todoTaskList ID
     recurrence?: RecurrenceRule;
+    /** Core reasoning / rationale behind this task or instruction */
+    why?: string;
+    /** Array of inline SVG code strings for visual metadata icons */
+    svgs?: string[];
 }
 
 export interface CategoryInfo {

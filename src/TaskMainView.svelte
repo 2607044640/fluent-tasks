@@ -55,6 +55,41 @@
     const AUTO_SCROLL_MIN_SPEED = 2;
 
     // =============================================
+    // Meta Badge Hover Popover
+    // =============================================
+    let popoverTask: TaskItem | null = null;
+    let popoverType: 'why' | 'svg' | null = null;
+    let popoverSvgIndex: number = 0;
+    let popoverX: number = 0;
+    let popoverY: number = 0;
+    let popoverVisible: boolean = false;
+    let popoverTimeout: any = null;
+
+    function showPopover(e: MouseEvent, task: TaskItem, type: 'why' | 'svg', svgIndex: number = 0) {
+        if (popoverTimeout) clearTimeout(popoverTimeout);
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        popoverX = rect.left + rect.width / 2;
+        popoverY = rect.top;
+        popoverTask = task;
+        popoverType = type;
+        popoverSvgIndex = svgIndex;
+        popoverVisible = true;
+    }
+
+    function scheduleHidePopover() {
+        if (popoverTimeout) clearTimeout(popoverTimeout);
+        popoverTimeout = setTimeout(() => {
+            popoverVisible = false;
+            popoverTask = null;
+            popoverType = null;
+        }, 200);
+    }
+
+    function cancelHidePopover() {
+        if (popoverTimeout) clearTimeout(popoverTimeout);
+    }
+
+    // =============================================
     // Lifecycle
     // =============================================
     onMount(() => {
@@ -68,6 +103,7 @@
 
     onDestroy(() => {
         stopAutoScroll();
+        if (popoverTimeout) clearTimeout(popoverTimeout);
         window.removeEventListener('pointermove', handleDragPointerMove);
         EventBus.off(EventName.CATEGORY_SELECTED, handleCategorySelected);
         EventBus.off(EventName.TASK_UPDATED, handleTaskUpdated);
@@ -545,7 +581,34 @@
                         </div>
                     </div>
 
-
+                    <!-- Meta Badges -->
+                    {#if task.why}
+                        <span class="meta-badge why-badge"
+                              on:mouseenter={(e) => showPopover(e, task, 'why')}
+                              on:mouseleave={scheduleHidePopover}
+                              role="button" tabindex="0"
+                              title="Why: view rationale">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                                <line x1="12" y1="17" x2="12.01" y2="17"/>
+                            </svg>
+                        </span>
+                    {/if}
+                    {#if task.svgs && task.svgs.length > 0}
+                        {#each task.svgs as svgContent, i}
+                            {#if svgContent}
+                                <span class="meta-badge svg-badge"
+                                      on:mouseenter={(e) => showPopover(e, task, 'svg', i)}
+                                      on:mouseleave={scheduleHidePopover}
+                                      role="button" tabindex="0"
+                                      title="SVG icon metadata">
+                                    {@html svgContent}
+                                </span>
+                            {/if}
+                        {/each}
+                    {/if}
 
                     <!-- Star -->
                     <span class="star" class:active={task.starred}
@@ -583,7 +646,7 @@
                          use:dndzone={{ items: completedTasks, flipDurationMs: DND_FLIP_DURATION, dropAnimationDisabled: true, dropTargetStyle: {} }}
                          on:consider={(e) => handleDndConsider(e, 'completed')}
                          on:finalize={(e) => handleDndFinalize(e, 'completed')}
-                    >
+                     >
                         {#each completedTasks as task (task.id)}
                             <div
                                 id={'task-' + task.id}
@@ -629,7 +692,34 @@
                                     {/if}
                                 </div>
 
-
+                                <!-- Meta Badges -->
+                                {#if task.why}
+                                    <span class="meta-badge why-badge"
+                                          on:mouseenter={(e) => showPopover(e, task, 'why')}
+                                          on:mouseleave={scheduleHidePopover}
+                                          role="button" tabindex="0"
+                                          title="Why: view rationale">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="10"/>
+                                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                        </svg>
+                                    </span>
+                                {/if}
+                                {#if task.svgs && task.svgs.length > 0}
+                                    {#each task.svgs as svgContent, i}
+                                        {#if svgContent}
+                                            <span class="meta-badge svg-badge"
+                                                  on:mouseenter={(e) => showPopover(e, task, 'svg', i)}
+                                                  on:mouseleave={scheduleHidePopover}
+                                                  role="button" tabindex="0"
+                                                  title="SVG icon metadata">
+                                                {@html svgContent}
+                                            </span>
+                                        {/if}
+                                    {/each}
+                                {/if}
 
                                 <span class="star" class:active={task.starred}
                                       on:click|stopPropagation={() => toggleStar(task)}
@@ -650,6 +740,35 @@
     {:else}
         <div class="detail-empty">
             Select a list from the sidebar to view tasks.
+        </div>
+    {/if}
+
+    <!-- Global Meta Badge Popover -->
+    {#if popoverVisible && popoverTask}
+        <div class="meta-popover"
+             style="left: {popoverX}px; top: {popoverY}px;"
+             on:mouseenter={cancelHidePopover}
+             on:mouseleave={scheduleHidePopover}
+             role="tooltip">
+            {#if popoverType === 'why' && popoverTask.why}
+                <div class="meta-popover-header">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    <span>Why</span>
+                </div>
+                <div class="meta-popover-body">{popoverTask.why}</div>
+            {:else if popoverType === 'svg' && popoverTask.svgs && popoverTask.svgs[popoverSvgIndex]}
+                <div class="meta-popover-header">
+                    <span>Icon Preview</span>
+                </div>
+                <div class="meta-popover-svg-preview">
+                    {@html popoverTask.svgs[popoverSvgIndex]}
+                </div>
+            {/if}
         </div>
     {/if}
 </div>
