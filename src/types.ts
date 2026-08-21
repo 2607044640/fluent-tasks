@@ -44,6 +44,8 @@ export interface TaskItem {
     why?: string;
     /** Array of inline SVG code strings for visual metadata icons */
     svgs?: string[];
+    /** Linked Obsidian note path or wikilink (e.g. [[Topic]] or OneNote/Domain/Topic.md) */
+    note_link?: string;
 }
 
 export interface CategoryInfo {

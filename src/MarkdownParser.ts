@@ -84,6 +84,7 @@ export class MarkdownParser {
                 ...(meta.recurrence ? { recurrence: meta.recurrence } : {}),
                 ...(meta.why ? { why: meta.why } : {}),
                 ...(meta.svgs && meta.svgs.length > 0 ? { svgs: meta.svgs } : {}),
+                ...(meta.note_link ? { note_link: meta.note_link } : (meta as any).noteLink ? { note_link: (meta as any).noteLink } : {}),
             });
         }
 
@@ -109,6 +110,7 @@ export class MarkdownParser {
             if (task.recurrence) meta.recurrence = task.recurrence;
             if (task.why) meta.why = task.why;
             if (task.svgs && task.svgs.length > 0) meta.svgs = task.svgs;
+            if (task.note_link) meta.note_link = task.note_link;
             return `- ${checkbox} ${task.title} %%${JSON.stringify(meta)}%%`;
         }).join("\n");
     }

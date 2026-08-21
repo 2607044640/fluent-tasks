@@ -231,6 +231,13 @@
         }, SAVE_DEBOUNCE_MS);
     }
 
+    function openLinkedNote(link: string) {
+        if (!link || !plugin?.app) return;
+        const clean = link.replace(/^\[\[/, "").replace(/\]\]$/, "").trim();
+        if (!clean) return;
+        plugin.app.workspace.openLinkText(clean, categoryFilepath || "", false);
+    }
+
     // =============================================
     // Task Actions
     // =============================================
@@ -555,6 +562,43 @@
                 </svg>
                 Add SVG icon
             </span>
+        </div>
+
+        <!-- Linked Note Metadata -->
+        <div class="detail-section meta-section">
+            <div class="section-label meta-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10 9 9 9 8 9"/>
+                </svg>
+                Linked Note
+            </div>
+            <div class="meta-note-link-row">
+                <input
+                    class="meta-note-link-input"
+                    type="text"
+                    placeholder="e.g. [[Topic]] or OneNote/Domain/Topic.md"
+                    bind:value={task.note_link}
+                    on:input={scheduleSave}
+                />
+                {#if task.note_link}
+                    <span class="meta-note-open-btn"
+                          on:click={() => openLinkedNote(task.note_link || '')}
+                          on:keydown={(e) => e.key === "Enter" && openLinkedNote(task.note_link || '')}
+                          role="button" tabindex="0" title="Open note in Obsidian">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                            <polyline points="15 3 21 3 21 9"/>
+                            <line x1="10" y1="14" x2="21" y2="3"/>
+                        </svg>
+                    </span>
+                {/if}
+            </div>
         </div>
 
         <!-- Due Date & Repeat Section (Collapsible Drawer) -->

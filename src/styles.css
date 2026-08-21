@@ -1046,6 +1046,10 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     color: var(--todo-text-muted);
 }
 
+.meta-badge.note-badge {
+    color: var(--todo-accent);
+}
+
 /* Constrain user-supplied SVGs inside badges */
 .meta-badge.svg-badge svg {
     width: 14px;
@@ -1150,6 +1154,52 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     opacity: 0.6;
 }
 
+.meta-note-link-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.meta-note-link-input {
+    flex: 1;
+    background: transparent;
+    border: 1px solid var(--todo-border);
+    border-radius: var(--todo-radius);
+    padding: 6px 10px;
+    font-size: 13px;
+    color: var(--todo-text);
+}
+
+.meta-note-link-input:focus {
+    border-color: var(--todo-accent);
+    outline: none;
+}
+
+.meta-note-link-input::placeholder {
+    color: var(--todo-text-muted);
+    opacity: 0.6;
+}
+
+.meta-note-open-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--todo-radius);
+    border: 1px solid var(--todo-border);
+    color: var(--todo-accent);
+    cursor: pointer;
+    background: var(--todo-item-bg);
+    flex-shrink: 0;
+    transition: background-color var(--todo-transition), border-color var(--todo-transition);
+}
+
+.meta-note-open-btn:hover {
+    background-color: var(--todo-hover-bg);
+    border-color: var(--todo-accent);
+}
+
 .meta-svg-list {
     display: flex;
     flex-direction: column;
@@ -1225,5 +1275,6 @@ body.is-dragging-ghost #dnd-action-dragged-el {
 .meta-add-btn:hover {
     opacity: 1;
 }
+
 
 
