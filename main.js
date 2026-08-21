@@ -209,7 +209,7 @@ var CategoryService = class {
           }
         }
         sidebarItems.push({
-          id: itemState.id || Date.now().toString() + Math.random().toString(36).substr(2, 5),
+          id: itemState.id || Date.now().toString() + Math.random().toString(36).substring(2, 7),
           type: "group",
           name: itemState.name,
           items: groupItems,
@@ -249,15 +249,15 @@ var CategoryService = class {
       const content = await this.app.vault.adapter.read(path);
       if (!content)
         return [];
-      const data = JSON.parse(content);
-      if (data.sidebar) {
-        return data.sidebar;
-      } else if (data.categoryOrder) {
-        return data.categoryOrder.map((name) => ({ type: "category", name }));
+      const parsed = JSON.parse(content);
+      if (parsed == null ? void 0 : parsed.sidebar) {
+        return parsed.sidebar;
+      } else if (parsed == null ? void 0 : parsed.categoryOrder) {
+        return parsed.categoryOrder.map((name) => ({ type: "category", name }));
       }
       return [];
     } catch (e) {
-      Logger.log("ERROR reading sidebar state:", e);
+      void Logger.log("ERROR reading sidebar state:", e);
       return [];
     }
   }
@@ -290,7 +290,7 @@ var CategoryService = class {
       throw new Error(`Category "${name}" already exists.`);
     }
     await this.app.vault.create(filepath, "");
-    Logger.log("Created category:", name);
+    void Logger.log("Created category:", name);
     const newCat = { id: filepath, type: "category", name, filepath };
     const items = await this.getSidebarItems();
     items.unshift(newCat);
@@ -300,7 +300,7 @@ var CategoryService = class {
   async createGroup(name) {
     const items = await this.getSidebarItems();
     const newGroup = {
-      id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+      id: Date.now().toString() + Math.random().toString(36).substring(2, 7),
       type: "group",
       name,
       items: [],
@@ -308,7 +308,7 @@ var CategoryService = class {
     };
     items.unshift(newGroup);
     await this.saveSidebarState(items);
-    Logger.log("Created group:", name);
+    void Logger.log("Created group:", name);
     return newGroup;
   }
   async deleteCategory(filepath) {
@@ -417,6 +417,10 @@ var MarkdownParser = class {
         ...meta.msGraphId ? { msGraphId: meta.msGraphId } : {},
         ...meta.msGraphListId ? { msGraphListId: meta.msGraphListId } : {},
         ...meta.recurrence ? { recurrence: meta.recurrence } : {},
+        ...meta.why ? { why: meta.why } : {},
+        ...meta.svgs && meta.svgs.length > 0 ? { svgs: meta.svgs } : {},
+        ...meta.note_link ? { note_link: meta.note_link } : {},
+        ...meta.customMeta ? { customMeta: meta.customMeta } : {},
         ...meta.frames && meta.frames.length > 0 ? { frames: meta.frames } : {}
       });
     }
@@ -443,6 +447,14 @@ var MarkdownParser = class {
         meta.msGraphListId = task.msGraphListId;
       if (task.recurrence)
         meta.recurrence = task.recurrence;
+      if (task.why)
+        meta.why = task.why;
+      if (task.svgs && task.svgs.length > 0)
+        meta.svgs = task.svgs;
+      if (task.note_link)
+        meta.note_link = task.note_link;
+      if (task.customMeta)
+        meta.customMeta = task.customMeta;
       if (task.frames && task.frames.length > 0)
         meta.frames = task.frames;
       return `- ${checkbox} ${task.title} %%${JSON.stringify(meta)}%%`;
@@ -1665,7 +1677,7 @@ var TaskSearchModal = class extends import_obsidian3.SuggestModal {
     if (promptEl) {
       const clearBtn = promptEl.querySelector(".search-input-clear-button, .prompt-input-clear-button");
       if (clearBtn)
-        clearBtn.style.display = "none";
+        clearBtn.setCssStyles({ display: "none" });
       this.toggleEl = promptEl.createEl("button", {
         cls: "todo-search-filter-btn",
         attr: { "aria-label": "Toggle completed tasks filter" }
@@ -1708,7 +1720,7 @@ var TaskSearchModal = class extends import_obsidian3.SuggestModal {
   }
   onChooseSuggestion(item, evt) {
     EventBus.emit("category:selected" /* CATEGORY_SELECTED */, { category: item.category });
-    setTimeout(() => {
+    window.setTimeout(() => {
       EventBus.emit("task:navigate" /* TASK_NAVIGATE */, {
         taskId: item.task.id,
         isCompleted: item.task.completed
@@ -11137,22 +11149,15 @@ var FluentTasksPlugin = class extends import_obsidian8.Plugin {
   constructor() {
     super(...arguments);
     this.ribbonIconEl = null;
+    this.settings = Object.assign({}, DEFAULT_SETTINGS);
     this.registeredCategoryCommandIds = /* @__PURE__ */ new Set();
   }
   async onload() {
-    Logger.init(this.app);
-    Logger.log("Fluent Tasks plugin loading...");
-    window.addEventListener("error", (e) => {
-      var _a;
-      return Logger.log("Global error:", ((_a = e.error) == null ? void 0 : _a.stack) || e.message);
-    });
-    window.addEventListener("unhandledrejection", (e) => {
-      var _a;
-      return Logger.log("Unhandled rejection:", ((_a = e.reason) == null ? void 0 : _a.stack) || e.reason);
-    });
-    await this.loadSettings();
     this.dataService = new DataService(this.app);
     this.addSettingTab(new FluentTasksSettingTab(this.app, this));
+    Logger.init(this.app);
+    void Logger.log("Fluent Tasks plugin loading...");
+    await this.loadSettings();
     this.registerView(VIEW_TYPE_SIDEBAR, (leaf) => new TaskSidebarViewWrapper(leaf, this.dataService, this));
     this.registerView(VIEW_TYPE_MAIN, (leaf) => new TaskMainViewWrapper(leaf, this.dataService, this));
     this.registerView(VIEW_TYPE_DETAIL, (leaf) => new TaskDetailViewWrapper(leaf, this.dataService, this));
@@ -11207,62 +11212,64 @@ var FluentTasksPlugin = class extends import_obsidian8.Plugin {
         new TaskSearchModal(this.app, this, this.dataService, scopePath).open();
       }
     });
-    this.app.workspace.onLayoutReady(async () => {
-      var _a, _b;
-      await this.dataService.ensureDataFolder();
-      await this.loadSettings();
-      this.applySettings();
-      let lastActiveViewType = ((_b = (_a = this.app.workspace.activeLeaf) == null ? void 0 : _a.view) == null ? void 0 : _b.getViewType()) || "";
-      this.registerEvent(
-        this.app.workspace.on("active-leaf-change", (leaf) => {
-          if (!leaf || !leaf.view)
-            return;
-          const currentType = leaf.view.getViewType();
-          const isPluginView = currentType === VIEW_TYPE_MAIN || currentType === VIEW_TYPE_SIDEBAR || currentType === VIEW_TYPE_DETAIL;
-          const wasPluginView = lastActiveViewType === VIEW_TYPE_MAIN || lastActiveViewType === VIEW_TYPE_SIDEBAR || lastActiveViewType === VIEW_TYPE_DETAIL;
-          if (isPluginView && !wasPluginView && this.settings.autoExpandSidebar) {
-            this.expandSidebarToList();
-          }
-          lastActiveViewType = currentType;
-        })
-      );
-      EventBus.on("detail:close" /* DETAIL_CLOSE */, () => {
-        this.app.workspace.detachLeavesOfType(VIEW_TYPE_DETAIL);
-      });
-      EventBus.on("category:selected" /* CATEGORY_SELECTED */, (payload) => {
-        if (payload && payload.category) {
-          void this.activateView(VIEW_TYPE_MAIN, "center");
-        }
-      });
-      EventBus.on("task:selected" /* TASK_SELECTED */, (payload) => {
-        void (async () => {
-          const leaf = await this.activateView(VIEW_TYPE_DETAIL, "right");
-          if (leaf && leaf.view instanceof TaskDetailViewWrapper) {
-            const comp = leaf.view.getComponent();
-            if (comp) {
-              comp.loadTask(payload.task, payload.categoryFilepath);
+    this.app.workspace.onLayoutReady(() => {
+      void (async () => {
+        var _a;
+        await this.dataService.ensureDataFolder();
+        await this.loadSettings();
+        this.applySettings();
+        let lastActiveViewType = ((_a = this.app.workspace.getActiveViewOfType(import_obsidian8.ItemView)) == null ? void 0 : _a.getViewType()) || "";
+        this.registerEvent(
+          this.app.workspace.on("active-leaf-change", (leaf) => {
+            if (!leaf || !leaf.view)
+              return;
+            const currentType = leaf.view.getViewType();
+            const isPluginView = currentType === VIEW_TYPE_MAIN || currentType === VIEW_TYPE_SIDEBAR || currentType === VIEW_TYPE_DETAIL;
+            const wasPluginView = lastActiveViewType === VIEW_TYPE_MAIN || lastActiveViewType === VIEW_TYPE_SIDEBAR || lastActiveViewType === VIEW_TYPE_DETAIL;
+            if (isPluginView && !wasPluginView && this.settings.autoExpandSidebar) {
+              this.expandSidebarToList();
             }
+            lastActiveViewType = currentType;
+          })
+        );
+        EventBus.on("detail:close" /* DETAIL_CLOSE */, () => {
+          this.app.workspace.detachLeavesOfType(VIEW_TYPE_DETAIL);
+        });
+        EventBus.on("category:selected" /* CATEGORY_SELECTED */, (payload) => {
+          if (payload && payload.category) {
+            void this.activateView(VIEW_TYPE_MAIN, "center");
           }
-        })();
-      });
-      if (this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR).length === 0) {
-        await this.activateAllViews();
-      }
-      await this.registerCategoryCommands();
-      EventBus.on("category:list-changed" /* CATEGORY_LIST_CHANGED */, () => {
-        void this.registerCategoryCommands();
-      });
-      Logger.log("Fluent Tasks plugin loaded successfully.");
+        });
+        EventBus.on("task:selected" /* TASK_SELECTED */, (payload) => {
+          void (async () => {
+            const leaf = await this.activateView(VIEW_TYPE_DETAIL, "right");
+            if (leaf && leaf.view instanceof TaskDetailViewWrapper) {
+              const comp = leaf.view.getComponent();
+              if (comp) {
+                comp.loadTask(payload.task, payload.categoryFilepath);
+              }
+            }
+          })();
+        });
+        if (this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR).length === 0) {
+          await this.activateAllViews();
+        }
+        await this.registerCategoryCommands();
+        EventBus.on("category:list-changed" /* CATEGORY_LIST_CHANGED */, () => {
+          void this.registerCategoryCommands();
+        });
+        void Logger.log("Fluent Tasks plugin loaded successfully.");
+      })();
     });
   }
-  async onunload() {
+  onunload() {
     if (this.ribbonIconEl) {
       this.ribbonIconEl.remove();
       this.ribbonIconEl = null;
     }
     EventBus.destroy();
     window.__mstodo_drag_data = null;
-    Logger.log("Fluent Tasks plugin unloaded.");
+    void Logger.log("Fluent Tasks plugin unloaded.");
   }
   /** Dynamically add or remove ribbon icon based on settings */
   refreshRibbonIcon() {
@@ -11306,7 +11313,7 @@ var FluentTasksPlugin = class extends import_obsidian8.Plugin {
     }
     const sidebarLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR);
     if (sidebarLeaves.length > 0) {
-      this.app.workspace.revealLeaf(sidebarLeaves[0]);
+      void this.app.workspace.revealLeaf(sidebarLeaves[0]);
     }
   }
   /** Register a jump command for each category list */
@@ -11369,7 +11376,7 @@ var FluentTasksPlugin = class extends import_obsidian8.Plugin {
       }
     }
     if (leaf) {
-      workspace.revealLeaf(leaf);
+      void workspace.revealLeaf(leaf);
     }
     return leaf;
   }

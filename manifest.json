@@ -1,8 +1,8 @@
 {
   "id": "fluent-tasks",
   "name": "Fluent Tasks",
-  "version": "1.0.11",
-  "minAppVersion": "1.7.0",
+  "version": "1.0.12",
+  "minAppVersion": "1.7.2",
   "description": "A beautiful, drag-and-drop task manager inspired by Microsoft To-Do, Todoist, and TickTick. Features subtasks, stars, and list groups.",
   "author": "Jeff1024",
   "authorUrl": "https://github.com/2607044640",

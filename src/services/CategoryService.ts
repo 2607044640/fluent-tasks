@@ -51,7 +51,7 @@ export class CategoryService {
                     }
                 }
                 sidebarItems.push({
-                    id: itemState.id || Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                    id: itemState.id || Date.now().toString() + Math.random().toString(36).substring(2, 7),
                     type: "group",
                     name: itemState.name,
                     items: groupItems,
@@ -94,16 +94,16 @@ export class CategoryService {
             if (!exists) return [];
             const content = await this.app.vault.adapter.read(path);
             if (!content) return [];
-            const data = JSON.parse(content);
-            if (data.sidebar) {
-                return data.sidebar;
-            } else if (data.categoryOrder) {
+            const parsed = JSON.parse(content) as { sidebar?: SidebarItemState[]; categoryOrder?: string[] } | null;
+            if (parsed?.sidebar) {
+                return parsed.sidebar;
+            } else if (parsed?.categoryOrder) {
                 // Migrate from legacy format
-                return data.categoryOrder.map((name: string) => ({ type: "category", name }));
+                return parsed.categoryOrder.map((name: string) => ({ type: "category", name }));
             }
             return [];
         } catch (e) {
-            Logger.log("ERROR reading sidebar state:", e);
+            void Logger.log("ERROR reading sidebar state:", e);
             return [];
         }
     }
@@ -143,7 +143,7 @@ export class CategoryService {
             throw new Error(`Category "${name}" already exists.`);
         }
         await this.app.vault.create(filepath, "");
-        Logger.log("Created category:", name);
+        void Logger.log("Created category:", name);
 
         // Prepend new category to the top of sidebar state
         const newCat: CategoryInfo = { id: filepath, type: "category", name, filepath };
@@ -157,7 +157,7 @@ export class CategoryService {
     async createGroup(name: string): Promise<GroupInfo> {
         const items = await this.getSidebarItems();
         const newGroup: GroupInfo = {
-            id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+            id: Date.now().toString() + Math.random().toString(36).substring(2, 7),
             type: "group",
             name,
             items: [],
@@ -165,7 +165,7 @@ export class CategoryService {
         };
         items.unshift(newGroup);
         await this.saveSidebarState(items);
-        Logger.log("Created group:", name);
+        void Logger.log("Created group:", name);
         return newGroup;
     }
 

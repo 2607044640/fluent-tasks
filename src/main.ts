@@ -149,24 +149,17 @@ class TaskDetailViewWrapper extends ItemView {
 export default class FluentTasksPlugin extends Plugin {
     private dataService!: DataService;
     private ribbonIconEl: HTMLElement | null = null;
-    settings!: FluentTasksSettings;
+    settings: FluentTasksSettings = Object.assign({}, DEFAULT_SETTINGS);
 
     async onload(): Promise<void> {
+        // Synchronous initialization before any async awaits
+        this.dataService = new DataService(this.app);
+        this.addSettingTab(new FluentTasksSettingTab(this.app, this));
+
         Logger.init(this.app);
-        Logger.log("Fluent Tasks plugin loading...");
-        
-        window.addEventListener('error', e => Logger.log("Global error:", e.error?.stack || e.message));
-        window.addEventListener('unhandledrejection', e => Logger.log("Unhandled rejection:", e.reason?.stack || e.reason));
+        void Logger.log("Fluent Tasks plugin loading...");
 
         await this.loadSettings();
-
-        // Instantiate DataService synchronously so it's available for ViewWrappers
-        this.dataService = new DataService(this.app);
-
-        // FIX: Register settings tab synchronously!
-        // If we await loadSettings BEFORE adding the tab, plugins like 'settings-in-tab'
-        // that monkey-patch the settings gear will miss our tab and cause the gear button to break.
-        this.addSettingTab(new FluentTasksSettingTab(this.app, this));
 
         // Register all three view types (must be synchronous, before layout ready)
         this.registerView(VIEW_TYPE_SIDEBAR, (leaf) => new TaskSidebarViewWrapper(leaf, this.dataService, this));
@@ -226,18 +219,19 @@ export default class FluentTasksPlugin extends Plugin {
 
         // FIX: All workspace/vault operations MUST wait until layout is ready.
         // Running them before this causes silent startup crashes on Obsidian boot.
-        this.app.workspace.onLayoutReady(async () => {
-            await this.dataService.ensureDataFolder();
+        this.app.workspace.onLayoutReady(() => {
+            void (async () => {
+                await this.dataService.ensureDataFolder();
 
-            await this.loadSettings();
-            this.applySettings();
+                await this.loadSettings();
+                this.applySettings();
 
-            // Track active view type to expand sidebar ONLY when switching from external tabs (Ctrl+Tab, Ctrl+Shift+Tab, etc.)
-            let lastActiveViewType = this.app.workspace.activeLeaf?.view?.getViewType() || "";
+                // Track active view type to expand sidebar ONLY when switching from external tabs (Ctrl+Tab, Ctrl+Shift+Tab, etc.)
+                let lastActiveViewType = this.app.workspace.getActiveViewOfType(ItemView)?.getViewType() || "";
 
-            this.registerEvent(
-                this.app.workspace.on("active-leaf-change", (leaf) => {
-                    if (!leaf || !leaf.view) return;
+                this.registerEvent(
+                    this.app.workspace.on("active-leaf-change", (leaf) => {
+                        if (!leaf || !leaf.view) return;
                     const currentType = leaf.view.getViewType();
 
                     const isPluginView = currentType === VIEW_TYPE_MAIN || 
@@ -291,12 +285,12 @@ export default class FluentTasksPlugin extends Plugin {
                 void this.registerCategoryCommands();
             });
 
-            Logger.log("Fluent Tasks plugin loaded successfully.");
+            void Logger.log("Fluent Tasks plugin loaded successfully.");
+            })();
         });
     }
 
-
-    async onunload(): Promise<void> {
+    onunload(): void {
         if (this.ribbonIconEl) {
             this.ribbonIconEl.remove();
             this.ribbonIconEl = null;
@@ -306,9 +300,9 @@ export default class FluentTasksPlugin extends Plugin {
         EventBus.destroy();
 
         // Clean up global drag data
-        (window as any).__mstodo_drag_data = null;
+        (window as Window & { __mstodo_drag_data?: unknown }).__mstodo_drag_data = null;
 
-        Logger.log("Fluent Tasks plugin unloaded.");
+        void Logger.log("Fluent Tasks plugin unloaded.");
     }
 
     /** Dynamically add or remove ribbon icon based on settings */
@@ -329,7 +323,7 @@ export default class FluentTasksPlugin extends Plugin {
     // =============================================
 
     async loadSettings() {
-        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, (await this.loadData()) as Partial<FluentTasksSettings> | null);
     }
 
     async saveSettings() {
@@ -352,13 +346,13 @@ export default class FluentTasksPlugin extends Plugin {
      * Expand the left sidebar and reveal the Fluent Tasks sidebar list tab.
      */
     expandSidebarToList(): void {
-        const leftSplit = this.app.workspace.leftSplit as any;
+        const leftSplit = this.app.workspace.leftSplit as { collapsed?: boolean; expand: () => void };
         if (leftSplit.collapsed) {
             leftSplit.expand();
         }
         const sidebarLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR);
         if (sidebarLeaves.length > 0) {
-            this.app.workspace.revealLeaf(sidebarLeaves[0]);
+            void this.app.workspace.revealLeaf(sidebarLeaves[0]);
         }
     }
 
@@ -434,7 +428,7 @@ export default class FluentTasksPlugin extends Plugin {
         }
 
         if (leaf) {
-            workspace.revealLeaf(leaf);
+            void workspace.revealLeaf(leaf);
         }
 
         return leaf;

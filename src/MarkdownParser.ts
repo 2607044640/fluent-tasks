@@ -10,7 +10,7 @@
  * The %%{...}%% is an Obsidian invisible comment containing structured JSON metadata.
  */
 
-import { TaskItem, TaskStep, DATA_FOLDER } from "./types";
+import type { TaskItem } from "./types";
 
 // =============================================
 // Internal Constants
@@ -62,7 +62,7 @@ export class MarkdownParser {
 
             if (metaMatch) {
                 try {
-                    meta = JSON.parse(metaMatch[1]);
+                    meta = JSON.parse(metaMatch[1]) as Partial<TaskItem>;
                 } catch { /* swallow parse errors gracefully */ }
                 title = rawContent.replace(/\s*%%\{.*?\}%%/, "").trim();
             }
@@ -82,6 +82,10 @@ export class MarkdownParser {
                 ...(meta.msGraphId ? { msGraphId: meta.msGraphId } : {}),
                 ...(meta.msGraphListId ? { msGraphListId: meta.msGraphListId } : {}),
                 ...(meta.recurrence ? { recurrence: meta.recurrence } : {}),
+                ...(meta.why ? { why: meta.why } : {}),
+                ...(meta.svgs && meta.svgs.length > 0 ? { svgs: meta.svgs } : {}),
+                ...(meta.note_link ? { note_link: meta.note_link } : {}),
+                ...(meta.customMeta ? { customMeta: meta.customMeta } : {}),
                 ...(meta.frames && meta.frames.length > 0 ? { frames: meta.frames } : {}),
             });
         }
@@ -95,7 +99,7 @@ export class MarkdownParser {
     static serializeTasksToMarkdown(tasks: TaskItem[]): string {
         return tasks.map(task => {
             const checkbox = task.completed ? "[x]" : "[ ]";
-            const meta: Record<string, any> = {
+            const meta: Record<string, unknown> = {
                 id: task.id,
                 starred: task.starred,
                 steps: task.steps,
@@ -106,6 +110,10 @@ export class MarkdownParser {
             if (task.msGraphId) meta.msGraphId = task.msGraphId;
             if (task.msGraphListId) meta.msGraphListId = task.msGraphListId;
             if (task.recurrence) meta.recurrence = task.recurrence;
+            if (task.why) meta.why = task.why;
+            if (task.svgs && task.svgs.length > 0) meta.svgs = task.svgs;
+            if (task.note_link) meta.note_link = task.note_link;
+            if (task.customMeta) meta.customMeta = task.customMeta;
             if (task.frames && task.frames.length > 0) meta.frames = task.frames;
             return `- ${checkbox} ${task.title} %%${JSON.stringify(meta)}%%`;
         }).join("\n");

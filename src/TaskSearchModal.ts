@@ -39,8 +39,8 @@ export class TaskSearchModal extends SuggestModal<TaskSearchResult> {
         const promptEl = this.modalEl.querySelector(".prompt-input-container");
         if (promptEl) {
             // Hide native clear button if present
-            const clearBtn = promptEl.querySelector(".search-input-clear-button, .prompt-input-clear-button") as HTMLElement | null;
-            if (clearBtn) clearBtn.style.display = "none";
+            const clearBtn = promptEl.querySelector<HTMLElement>(".search-input-clear-button, .prompt-input-clear-button");
+            if (clearBtn) clearBtn.setCssStyles({ display: "none" });
 
             this.toggleEl = promptEl.createEl("button", {
                 cls: "todo-search-filter-btn",
@@ -90,7 +90,7 @@ export class TaskSearchModal extends SuggestModal<TaskSearchResult> {
         // Switch to the category first
         EventBus.emit(EventName.CATEGORY_SELECTED, { category: item.category });
         // Then navigate to the specific task (scroll + highlight)
-        setTimeout(() => {
+        window.setTimeout(() => {
             EventBus.emit(EventName.TASK_NAVIGATE, {
                 taskId: item.task.id,
                 isCompleted: item.task.completed,
