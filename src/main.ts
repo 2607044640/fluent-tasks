@@ -146,6 +146,7 @@ class TaskDetailViewWrapper extends ItemView {
 
 export default class FluentTasksPlugin extends Plugin {
     private dataService!: DataService;
+    private ribbonIconEl: HTMLElement | null = null;
     settings!: FluentTasksSettings;
 
     async onload(): Promise<void> {
@@ -154,6 +155,8 @@ export default class FluentTasksPlugin extends Plugin {
         
         window.addEventListener('error', e => Logger.log("Global error:", e.error?.stack || e.message));
         window.addEventListener('unhandledrejection', e => Logger.log("Unhandled rejection:", e.reason?.stack || e.reason));
+
+        await this.loadSettings();
 
         // Instantiate DataService synchronously so it's available for ViewWrappers
         this.dataService = new DataService(this.app);
@@ -168,10 +171,8 @@ export default class FluentTasksPlugin extends Plugin {
         this.registerView(VIEW_TYPE_MAIN, (leaf) => new TaskMainViewWrapper(leaf, this.dataService, this));
         this.registerView(VIEW_TYPE_DETAIL, (leaf) => new TaskDetailViewWrapper(leaf, this.dataService));
 
-        // Ribbon icon - always visible in left sidebar
-        this.addRibbonIcon("check-square", "Open Fluent Tasks", () => {
-            void this.activateAllViews();
-        });
+        // Ribbon icon (controlled by hideRibbonIcon setting)
+        this.refreshRibbonIcon();
 
         // Register commands
         this.addCommand({
@@ -294,6 +295,11 @@ export default class FluentTasksPlugin extends Plugin {
 
 
     async onunload(): Promise<void> {
+        if (this.ribbonIconEl) {
+            this.ribbonIconEl.remove();
+            this.ribbonIconEl = null;
+        }
+
         // Clean up EventBus to prevent memory leaks
         EventBus.destroy();
 
@@ -301,6 +307,19 @@ export default class FluentTasksPlugin extends Plugin {
         (window as any).__mstodo_drag_data = null;
 
         Logger.log("Fluent Tasks plugin unloaded.");
+    }
+
+    /** Dynamically add or remove ribbon icon based on settings */
+    refreshRibbonIcon(): void {
+        if (this.ribbonIconEl) {
+            this.ribbonIconEl.remove();
+            this.ribbonIconEl = null;
+        }
+        if (!this.settings?.hideRibbonIcon) {
+            this.ribbonIconEl = this.addRibbonIcon("check-square", "Open Fluent Tasks", () => {
+                void this.activateAllViews();
+            });
+        }
     }
 
     // =============================================

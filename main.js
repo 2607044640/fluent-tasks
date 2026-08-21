@@ -9947,7 +9947,8 @@ var import_obsidian6 = require("obsidian");
 var DEFAULT_SETTINGS = {
   accentColor: "#8b5cf6",
   autoExpandSidebar: true,
-  searchHideCompleted: true
+  searchHideCompleted: true,
+  hideRibbonIcon: false
 };
 var FluentTasksSettingTab = class extends import_obsidian6.PluginSettingTab {
   constructor(app, plugin) {
@@ -9979,6 +9980,14 @@ var FluentTasksSettingTab = class extends import_obsidian6.PluginSettingTab {
       this.plugin.settings.searchHideCompleted = value;
       await this.plugin.saveSettings();
     }));
+    new import_obsidian6.Setting(containerEl).setName("Hide Ribbon Icon").setDesc("Hide the Fluent Tasks icon in the left ribbon.").addToggle((toggle) => {
+      var _a;
+      return toggle.setValue((_a = this.plugin.settings.hideRibbonIcon) != null ? _a : false).onChange(async (value) => {
+        this.plugin.settings.hideRibbonIcon = value;
+        await this.plugin.saveSettings();
+        this.plugin.refreshRibbonIcon();
+      });
+    });
   }
 };
 
@@ -10095,6 +10104,7 @@ var TaskDetailViewWrapper = class extends import_obsidian7.ItemView {
 var FluentTasksPlugin = class extends import_obsidian7.Plugin {
   constructor() {
     super(...arguments);
+    this.ribbonIconEl = null;
     this.registeredCategoryCommandIds = /* @__PURE__ */ new Set();
   }
   async onload() {
@@ -10108,14 +10118,13 @@ var FluentTasksPlugin = class extends import_obsidian7.Plugin {
       var _a;
       return Logger.log("Unhandled rejection:", ((_a = e.reason) == null ? void 0 : _a.stack) || e.reason);
     });
+    await this.loadSettings();
     this.dataService = new DataService(this.app);
     this.addSettingTab(new FluentTasksSettingTab(this.app, this));
     this.registerView(VIEW_TYPE_SIDEBAR, (leaf) => new TaskSidebarViewWrapper(leaf, this.dataService, this));
     this.registerView(VIEW_TYPE_MAIN, (leaf) => new TaskMainViewWrapper(leaf, this.dataService, this));
     this.registerView(VIEW_TYPE_DETAIL, (leaf) => new TaskDetailViewWrapper(leaf, this.dataService));
-    this.addRibbonIcon("check-square", "Open Fluent Tasks", () => {
-      void this.activateAllViews();
-    });
+    this.refreshRibbonIcon();
     this.addCommand({
       id: "open-all-views",
       name: "Open all views",
@@ -10215,9 +10224,26 @@ var FluentTasksPlugin = class extends import_obsidian7.Plugin {
     });
   }
   async onunload() {
+    if (this.ribbonIconEl) {
+      this.ribbonIconEl.remove();
+      this.ribbonIconEl = null;
+    }
     EventBus.destroy();
     window.__mstodo_drag_data = null;
     Logger.log("Fluent Tasks plugin unloaded.");
+  }
+  /** Dynamically add or remove ribbon icon based on settings */
+  refreshRibbonIcon() {
+    var _a;
+    if (this.ribbonIconEl) {
+      this.ribbonIconEl.remove();
+      this.ribbonIconEl = null;
+    }
+    if (!((_a = this.settings) == null ? void 0 : _a.hideRibbonIcon)) {
+      this.ribbonIconEl = this.addRibbonIcon("check-square", "Open Fluent Tasks", () => {
+        void this.activateAllViews();
+      });
+    }
   }
   // =============================================
   // Settings Management

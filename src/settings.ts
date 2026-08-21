@@ -5,12 +5,14 @@ export interface FluentTasksSettings {
     accentColor: string;
     autoExpandSidebar: boolean;
     searchHideCompleted: boolean;
+    hideRibbonIcon: boolean;
 }
 
 export const DEFAULT_SETTINGS: FluentTasksSettings = {
     accentColor: "#8b5cf6",
     autoExpandSidebar: true,
-    searchHideCompleted: true
+    searchHideCompleted: true,
+    hideRibbonIcon: false
 }
 
 export class FluentTasksSettingTab extends PluginSettingTab {
@@ -68,6 +70,17 @@ export class FluentTasksSettingTab extends PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.searchHideCompleted = value;
                     await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName("Hide Ribbon Icon")
+            .setDesc("Hide the Fluent Tasks icon in the left ribbon.")
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.hideRibbonIcon ?? false)
+                .onChange(async (value) => {
+                    this.plugin.settings.hideRibbonIcon = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.refreshRibbonIcon();
                 }));
     }
 }
