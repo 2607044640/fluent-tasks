@@ -1,5 +1,6 @@
 {
   "accentColor": "#006eff",
   "autoExpandSidebar": true,
-  "searchHideCompleted": true
+  "searchHideCompleted": true,
+  "hideRibbonIcon": true
 }
