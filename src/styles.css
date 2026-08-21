@@ -378,6 +378,7 @@
 .task-list {
     flex-grow: 1;
     overflow-y: auto;
+    scroll-behavior: auto !important;
 }
 
 .task-item {

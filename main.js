@@ -6082,12 +6082,12 @@ var RecurrenceService = class _RecurrenceService {
 // src/TaskMainView.svelte
 function get_each_context2(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[55] = list[i];
+  child_ctx[63] = list[i];
   return child_ctx;
 }
 function get_each_context_12(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[55] = list[i];
+  child_ctx[63] = list[i];
   return child_ctx;
 }
 function create_else_block2(ctx) {
@@ -6142,7 +6142,7 @@ function create_if_block2(ctx) {
   );
   const get_key = (ctx2) => (
     /*task*/
-    ctx2[55].id
+    ctx2[63].id
   );
   for (let i = 0; i < each_value_1.length; i += 1) {
     let child_ctx = get_each_context_12(ctx, each_value_1, i);
@@ -6366,13 +6366,13 @@ function create_if_block_8(ctx) {
   let span;
   let t0_value = (
     /*task*/
-    ctx[55].steps.filter(func).length + ""
+    ctx[63].steps.filter(func).length + ""
   );
   let t0;
   let t1;
   let t2_value = (
     /*task*/
-    ctx[55].steps.length + ""
+    ctx[63].steps.length + ""
   );
   let t2;
   let t3;
@@ -6395,11 +6395,11 @@ function create_if_block_8(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*incompleteTasks*/
       8 && t0_value !== (t0_value = /*task*/
-      ctx2[55].steps.filter(func).length + ""))
+      ctx2[63].steps.filter(func).length + ""))
         set_data(t0, t0_value);
       if (dirty[0] & /*incompleteTasks*/
       8 && t2_value !== (t2_value = /*task*/
-      ctx2[55].steps.length + ""))
+      ctx2[63].steps.length + ""))
         set_data(t2, t2_value);
     },
     d(detaching) {
@@ -6413,7 +6413,7 @@ function create_if_block_7(ctx) {
   let span;
   let t_value = (
     /*task*/
-    ctx[55].dueDate + ""
+    ctx[63].dueDate + ""
   );
   let t;
   return {
@@ -6429,7 +6429,7 @@ function create_if_block_7(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*incompleteTasks*/
       8 && t_value !== (t_value = /*task*/
-      ctx2[55].dueDate + ""))
+      ctx2[63].dueDate + ""))
         set_data(t, t_value);
     },
     d(detaching) {
@@ -6466,7 +6466,7 @@ function create_each_block_12(key_1, ctx) {
   let span1;
   let t1_value = (
     /*task*/
-    ctx[55].title + ""
+    ctx[63].title + ""
   );
   let t1;
   let t2;
@@ -6489,7 +6489,7 @@ function create_each_block_12(key_1, ctx) {
       /*click_handler_1*/
       ctx[26](
         /*task*/
-        ctx[55]
+        ctx[63]
       )
     );
   }
@@ -6498,29 +6498,29 @@ function create_each_block_12(key_1, ctx) {
       /*keydown_handler_2*/
       ctx[27](
         /*task*/
-        ctx[55],
+        ctx[63],
         ...args
       )
     );
   }
   let if_block0 = (
     /*task*/
-    ctx[55].steps.length > 0 && create_if_block_8(ctx)
+    ctx[63].steps.length > 0 && create_if_block_8(ctx)
   );
   let if_block1 = (
     /*task*/
-    ctx[55].dueDate && create_if_block_7(ctx)
+    ctx[63].dueDate && create_if_block_7(ctx)
   );
   let if_block2 = (
     /*task*/
-    ctx[55].recurrence && create_if_block_6(ctx)
+    ctx[63].recurrence && create_if_block_6(ctx)
   );
   function click_handler_2() {
     return (
       /*click_handler_2*/
       ctx[28](
         /*task*/
-        ctx[55]
+        ctx[63]
       )
     );
   }
@@ -6529,7 +6529,7 @@ function create_each_block_12(key_1, ctx) {
       /*keydown_handler_3*/
       ctx[29](
         /*task*/
-        ctx[55],
+        ctx[63],
         ...args
       )
     );
@@ -6539,7 +6539,7 @@ function create_each_block_12(key_1, ctx) {
       /*pointerdown_handler*/
       ctx[30](
         /*task*/
-        ctx[55]
+        ctx[63]
       )
     );
   }
@@ -6548,7 +6548,7 @@ function create_each_block_12(key_1, ctx) {
       /*click_handler_3*/
       ctx[31](
         /*task*/
-        ctx[55]
+        ctx[63]
       )
     );
   }
@@ -6557,7 +6557,7 @@ function create_each_block_12(key_1, ctx) {
       /*contextmenu_handler*/
       ctx[32](
         /*task*/
-        ctx[55],
+        ctx[63],
         ...args
       )
     );
@@ -6567,7 +6567,7 @@ function create_each_block_12(key_1, ctx) {
       /*keydown_handler_4*/
       ctx[33](
         /*task*/
-        ctx[55],
+        ctx[63],
         ...args
       )
     );
@@ -6610,7 +6610,7 @@ function create_each_block_12(key_1, ctx) {
       attr(svg1, "height", "18");
       attr(svg1, "viewBox", "0 0 24 24");
       attr(svg1, "fill", svg1_fill_value = /*task*/
-      ctx[55].starred ? "currentColor" : "none");
+      ctx[63].starred ? "currentColor" : "none");
       attr(svg1, "stroke", "currentColor");
       attr(svg1, "stroke-width", "2");
       attr(span2, "class", "star");
@@ -6620,10 +6620,10 @@ function create_each_block_12(key_1, ctx) {
         span2,
         "active",
         /*task*/
-        ctx[55].starred
+        ctx[63].starred
       );
       attr(div2, "id", div2_id_value = "task-" + /*task*/
-      ctx[55].id);
+      ctx[63].id);
       attr(div2, "class", "task-item");
       attr(div2, "tabindex", "0");
       attr(div2, "role", "button");
@@ -6632,7 +6632,7 @@ function create_each_block_12(key_1, ctx) {
         "selected",
         /*selectedTaskId*/
         ctx[7] === /*task*/
-        ctx[55].id
+        ctx[63].id
       );
       this.first = div2;
     },
@@ -6676,11 +6676,11 @@ function create_each_block_12(key_1, ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*incompleteTasks*/
       8 && t1_value !== (t1_value = /*task*/
-      ctx[55].title + ""))
+      ctx[63].title + ""))
         set_data(t1, t1_value);
       if (
         /*task*/
-        ctx[55].steps.length > 0
+        ctx[63].steps.length > 0
       ) {
         if (if_block0) {
           if_block0.p(ctx, dirty);
@@ -6695,7 +6695,7 @@ function create_each_block_12(key_1, ctx) {
       }
       if (
         /*task*/
-        ctx[55].dueDate
+        ctx[63].dueDate
       ) {
         if (if_block1) {
           if_block1.p(ctx, dirty);
@@ -6710,7 +6710,7 @@ function create_each_block_12(key_1, ctx) {
       }
       if (
         /*task*/
-        ctx[55].recurrence
+        ctx[63].recurrence
       ) {
         if (if_block2) {
         } else {
@@ -6724,7 +6724,7 @@ function create_each_block_12(key_1, ctx) {
       }
       if (dirty[0] & /*incompleteTasks*/
       8 && svg1_fill_value !== (svg1_fill_value = /*task*/
-      ctx[55].starred ? "currentColor" : "none")) {
+      ctx[63].starred ? "currentColor" : "none")) {
         attr(svg1, "fill", svg1_fill_value);
       }
       if (dirty[0] & /*incompleteTasks*/
@@ -6733,12 +6733,12 @@ function create_each_block_12(key_1, ctx) {
           span2,
           "active",
           /*task*/
-          ctx[55].starred
+          ctx[63].starred
         );
       }
       if (dirty[0] & /*incompleteTasks*/
       8 && div2_id_value !== (div2_id_value = "task-" + /*task*/
-      ctx[55].id)) {
+      ctx[63].id)) {
         attr(div2, "id", div2_id_value);
       }
       if (dirty[0] & /*selectedTaskId, incompleteTasks*/
@@ -6748,7 +6748,7 @@ function create_each_block_12(key_1, ctx) {
           "selected",
           /*selectedTaskId*/
           ctx[7] === /*task*/
-          ctx[55].id
+          ctx[63].id
         );
       }
     },
@@ -6910,7 +6910,7 @@ function create_if_block_22(ctx) {
   );
   const get_key = (ctx2) => (
     /*task*/
-    ctx2[55].id
+    ctx2[63].id
   );
   for (let i = 0; i < each_value.length; i += 1) {
     let child_ctx = get_each_context2(ctx, each_value, i);
@@ -7001,11 +7001,11 @@ function create_if_block_32(ctx) {
   let t;
   let if_block0 = (
     /*task*/
-    ctx[55].dueDate && create_if_block_5(ctx)
+    ctx[63].dueDate && create_if_block_5(ctx)
   );
   let if_block1 = (
     /*task*/
-    ctx[55].recurrence && create_if_block_4(ctx)
+    ctx[63].recurrence && create_if_block_4(ctx)
   );
   return {
     c() {
@@ -7028,7 +7028,7 @@ function create_if_block_32(ctx) {
     p(ctx2, dirty) {
       if (
         /*task*/
-        ctx2[55].dueDate
+        ctx2[63].dueDate
       ) {
         if (if_block0) {
           if_block0.p(ctx2, dirty);
@@ -7043,7 +7043,7 @@ function create_if_block_32(ctx) {
       }
       if (
         /*task*/
-        ctx2[55].recurrence
+        ctx2[63].recurrence
       ) {
         if (if_block1) {
         } else {
@@ -7071,7 +7071,7 @@ function create_if_block_5(ctx) {
   let span;
   let t_value = (
     /*task*/
-    ctx[55].dueDate + ""
+    ctx[63].dueDate + ""
   );
   let t;
   return {
@@ -7087,7 +7087,7 @@ function create_if_block_5(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*completedTasks*/
       16 && t_value !== (t_value = /*task*/
-      ctx2[55].dueDate + ""))
+      ctx2[63].dueDate + ""))
         set_data(t, t_value);
     },
     d(detaching) {
@@ -7123,7 +7123,7 @@ function create_each_block2(key_1, ctx) {
   let span1;
   let t1_value = (
     /*task*/
-    ctx[55].title + ""
+    ctx[63].title + ""
   );
   let t1;
   let t2;
@@ -7143,7 +7143,7 @@ function create_each_block2(key_1, ctx) {
       /*click_handler_4*/
       ctx[37](
         /*task*/
-        ctx[55]
+        ctx[63]
       )
     );
   }
@@ -7152,22 +7152,22 @@ function create_each_block2(key_1, ctx) {
       /*keydown_handler_6*/
       ctx[38](
         /*task*/
-        ctx[55],
+        ctx[63],
         ...args
       )
     );
   }
   let if_block = (
     /*task*/
-    (ctx[55].dueDate || /*task*/
-    ctx[55].recurrence) && create_if_block_32(ctx)
+    (ctx[63].dueDate || /*task*/
+    ctx[63].recurrence) && create_if_block_32(ctx)
   );
   function click_handler_5() {
     return (
       /*click_handler_5*/
       ctx[39](
         /*task*/
-        ctx[55]
+        ctx[63]
       )
     );
   }
@@ -7176,7 +7176,7 @@ function create_each_block2(key_1, ctx) {
       /*keydown_handler_7*/
       ctx[40](
         /*task*/
-        ctx[55],
+        ctx[63],
         ...args
       )
     );
@@ -7186,7 +7186,7 @@ function create_each_block2(key_1, ctx) {
       /*pointerdown_handler_1*/
       ctx[41](
         /*task*/
-        ctx[55]
+        ctx[63]
       )
     );
   }
@@ -7195,7 +7195,7 @@ function create_each_block2(key_1, ctx) {
       /*click_handler_6*/
       ctx[42](
         /*task*/
-        ctx[55]
+        ctx[63]
       )
     );
   }
@@ -7204,7 +7204,7 @@ function create_each_block2(key_1, ctx) {
       /*contextmenu_handler_1*/
       ctx[43](
         /*task*/
-        ctx[55],
+        ctx[63],
         ...args
       )
     );
@@ -7214,7 +7214,7 @@ function create_each_block2(key_1, ctx) {
       /*keydown_handler_8*/
       ctx[44](
         /*task*/
-        ctx[55],
+        ctx[63],
         ...args
       )
     );
@@ -7249,7 +7249,7 @@ function create_each_block2(key_1, ctx) {
       attr(svg1, "height", "18");
       attr(svg1, "viewBox", "0 0 24 24");
       attr(svg1, "fill", svg1_fill_value = /*task*/
-      ctx[55].starred ? "currentColor" : "none");
+      ctx[63].starred ? "currentColor" : "none");
       attr(svg1, "stroke", "currentColor");
       attr(svg1, "stroke-width", "2");
       attr(span2, "class", "star");
@@ -7259,10 +7259,10 @@ function create_each_block2(key_1, ctx) {
         span2,
         "active",
         /*task*/
-        ctx[55].starred
+        ctx[63].starred
       );
       attr(div1, "id", div1_id_value = "task-" + /*task*/
-      ctx[55].id);
+      ctx[63].id);
       attr(div1, "class", "task-item completed");
       attr(div1, "tabindex", "0");
       attr(div1, "role", "button");
@@ -7271,7 +7271,7 @@ function create_each_block2(key_1, ctx) {
         "selected",
         /*selectedTaskId*/
         ctx[7] === /*task*/
-        ctx[55].id
+        ctx[63].id
       );
       this.first = div1;
     },
@@ -7308,12 +7308,12 @@ function create_each_block2(key_1, ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*completedTasks*/
       16 && t1_value !== (t1_value = /*task*/
-      ctx[55].title + ""))
+      ctx[63].title + ""))
         set_data(t1, t1_value);
       if (
         /*task*/
-        ctx[55].dueDate || /*task*/
-        ctx[55].recurrence
+        ctx[63].dueDate || /*task*/
+        ctx[63].recurrence
       ) {
         if (if_block) {
           if_block.p(ctx, dirty);
@@ -7328,7 +7328,7 @@ function create_each_block2(key_1, ctx) {
       }
       if (dirty[0] & /*completedTasks*/
       16 && svg1_fill_value !== (svg1_fill_value = /*task*/
-      ctx[55].starred ? "currentColor" : "none")) {
+      ctx[63].starred ? "currentColor" : "none")) {
         attr(svg1, "fill", svg1_fill_value);
       }
       if (dirty[0] & /*completedTasks*/
@@ -7337,12 +7337,12 @@ function create_each_block2(key_1, ctx) {
           span2,
           "active",
           /*task*/
-          ctx[55].starred
+          ctx[63].starred
         );
       }
       if (dirty[0] & /*completedTasks*/
       16 && div1_id_value !== (div1_id_value = "task-" + /*task*/
-      ctx[55].id)) {
+      ctx[63].id)) {
         attr(div1, "id", div1_id_value);
       }
       if (dirty[0] & /*selectedTaskId, completedTasks*/
@@ -7352,7 +7352,7 @@ function create_each_block2(key_1, ctx) {
           "selected",
           /*selectedTaskId*/
           ctx[7] === /*task*/
-          ctx[55].id
+          ctx[63].id
         );
       }
     },
@@ -7388,7 +7388,7 @@ function create_fragment2(ctx) {
       return create_if_block2;
     return create_else_block2;
   }
-  let current_block_type = select_block_type(ctx, [-1, -1]);
+  let current_block_type = select_block_type(ctx, [-1, -1, -1]);
   let if_block = current_block_type(ctx);
   return {
     c() {
@@ -7424,6 +7424,9 @@ function create_fragment2(ctx) {
   };
 }
 var DND_FLIP_DURATION = 200;
+var AUTO_SCROLL_EDGE_ZONE = 60;
+var AUTO_SCROLL_MAX_SPEED = 12;
+var AUTO_SCROLL_MIN_SPEED = 2;
 var func = (s) => s.done;
 function instance2($$self, $$props, $$invalidate) {
   var __awaiter = this && this.__awaiter || function(thisArg, _arguments, P, generator) {
@@ -7472,14 +7475,21 @@ function instance2($$self, $$props, $$invalidate) {
   let showCompleted = false;
   let selectedTaskId = "";
   let addTaskInputEl;
+  let scrollAnimId = null;
+  let scrollSpeed = 0;
+  let scrollContainerEl = null;
+  let isDndActive = false;
   onMount(() => {
     EventBus.on("category:selected" /* CATEGORY_SELECTED */, handleCategorySelected);
     EventBus.on("task:updated" /* TASK_UPDATED */, handleTaskUpdated);
     EventBus.on("task:moved" /* TASK_MOVED */, handleTaskMoved);
     EventBus.on("task:deleted" /* TASK_DELETED */, handleTaskDeleted);
     EventBus.on("task:navigate" /* TASK_NAVIGATE */, handleTaskNavigate);
+    window.addEventListener("pointermove", handleDragPointerMove);
   });
   onDestroy(() => {
+    stopAutoScroll();
+    window.removeEventListener("pointermove", handleDragPointerMove);
     EventBus.off("category:selected" /* CATEGORY_SELECTED */, handleCategorySelected);
     EventBus.off("task:updated" /* TASK_UPDATED */, handleTaskUpdated);
     EventBus.off("task:moved" /* TASK_MOVED */, handleTaskMoved);
@@ -7644,7 +7654,52 @@ function instance2($$self, $$props, $$invalidate) {
       }
     });
   }
+  function startAutoScroll() {
+    if (scrollAnimId !== null)
+      return;
+    const step = () => {
+      if (!scrollContainerEl || scrollSpeed === 0) {
+        scrollAnimId = null;
+        return;
+      }
+      scrollContainerEl.scrollTop += scrollSpeed;
+      scrollAnimId = requestAnimationFrame(step);
+    };
+    scrollAnimId = requestAnimationFrame(step);
+  }
+  function stopAutoScroll() {
+    if (scrollAnimId !== null) {
+      cancelAnimationFrame(scrollAnimId);
+      scrollAnimId = null;
+    }
+    scrollSpeed = 0;
+  }
+  function updateAutoScroll(clientY) {
+    if (!scrollContainerEl) {
+      scrollContainerEl = document.querySelector(".task-list");
+    }
+    if (!scrollContainerEl)
+      return;
+    const rect = scrollContainerEl.getBoundingClientRect();
+    if (clientY < rect.top + AUTO_SCROLL_EDGE_ZONE && scrollContainerEl.scrollTop > 0) {
+      const proximity = 1 - (clientY - rect.top) / AUTO_SCROLL_EDGE_ZONE;
+      scrollSpeed = -Math.max(AUTO_SCROLL_MIN_SPEED, Math.round(proximity * AUTO_SCROLL_MAX_SPEED));
+      startAutoScroll();
+    } else if (clientY > rect.bottom - AUTO_SCROLL_EDGE_ZONE) {
+      const proximity = 1 - (rect.bottom - clientY) / AUTO_SCROLL_EDGE_ZONE;
+      scrollSpeed = Math.max(AUTO_SCROLL_MIN_SPEED, Math.round(proximity * AUTO_SCROLL_MAX_SPEED));
+      startAutoScroll();
+    } else {
+      stopAutoScroll();
+    }
+  }
+  function handleDragPointerMove(e) {
+    if (!isDndActive)
+      return;
+    updateAutoScroll(e.clientY);
+  }
   function handleDndConsider(e, listType) {
+    isDndActive = true;
     if (listType === "incomplete")
       $$invalidate(3, incompleteTasks = e.detail.items);
     else
@@ -7660,6 +7715,8 @@ function instance2($$self, $$props, $$invalidate) {
   }
   function handleDndFinalize(e, listType) {
     return __awaiter(this, void 0, void 0, function* () {
+      isDndActive = false;
+      stopAutoScroll();
       if (e.detail.info.trigger === TRIGGERS.DROPPED_OUTSIDE_OF_ANY) {
         if (!window.__mstodo_drag_data) {
           const draggedId = e.detail.info.id;
@@ -7851,7 +7908,7 @@ var TaskMainView = class extends SvelteComponent {
         getCurrentCategory: 20
       },
       null,
-      [-1, -1]
+      [-1, -1, -1]
     );
   }
   get loadCategory() {

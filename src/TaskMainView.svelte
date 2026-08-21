@@ -45,6 +45,15 @@
     // DND requires items to have an `id` field — our TaskItem already has it
     const DND_FLIP_DURATION = 200;
 
+    // Custom auto-scroll state (replaces laggy built-in svelte-dnd-action scroller)
+    let scrollAnimId: number | null = null;
+    let scrollSpeed = 0;
+    let scrollContainerEl: HTMLElement | null = null;
+    let isDndActive = false;
+    const AUTO_SCROLL_EDGE_ZONE = 60;
+    const AUTO_SCROLL_MAX_SPEED = 12;
+    const AUTO_SCROLL_MIN_SPEED = 2;
+
     // =============================================
     // Lifecycle
     // =============================================
@@ -54,9 +63,12 @@
         EventBus.on(EventName.TASK_MOVED, handleTaskMoved);
         EventBus.on(EventName.TASK_DELETED, handleTaskDeleted);
         EventBus.on(EventName.TASK_NAVIGATE, handleTaskNavigate);
+        window.addEventListener('pointermove', handleDragPointerMove);
     });
 
     onDestroy(() => {
+        stopAutoScroll();
+        window.removeEventListener('pointermove', handleDragPointerMove);
         EventBus.off(EventName.CATEGORY_SELECTED, handleCategorySelected);
         EventBus.off(EventName.TASK_UPDATED, handleTaskUpdated);
         EventBus.off(EventName.TASK_MOVED, handleTaskMoved);
@@ -249,9 +261,61 @@
     }
 
     // =============================================
+    // Custom Auto-Scroll Engine for DnD
+    // =============================================
+    function startAutoScroll() {
+        if (scrollAnimId !== null) return;
+        const step = () => {
+            if (!scrollContainerEl || scrollSpeed === 0) {
+                scrollAnimId = null;
+                return;
+            }
+            scrollContainerEl.scrollTop += scrollSpeed;
+            scrollAnimId = requestAnimationFrame(step);
+        };
+        scrollAnimId = requestAnimationFrame(step);
+    }
+
+    function stopAutoScroll() {
+        if (scrollAnimId !== null) {
+            cancelAnimationFrame(scrollAnimId);
+            scrollAnimId = null;
+        }
+        scrollSpeed = 0;
+    }
+
+    function updateAutoScroll(clientY: number) {
+        if (!scrollContainerEl) {
+            scrollContainerEl = document.querySelector('.task-list') as HTMLElement;
+        }
+        if (!scrollContainerEl) return;
+
+        const rect = scrollContainerEl.getBoundingClientRect();
+
+        if (clientY < rect.top + AUTO_SCROLL_EDGE_ZONE && scrollContainerEl.scrollTop > 0) {
+            // Linear speed: closer to edge = faster, clamped to max
+            const proximity = 1 - ((clientY - rect.top) / AUTO_SCROLL_EDGE_ZONE);
+            scrollSpeed = -Math.max(AUTO_SCROLL_MIN_SPEED, Math.round(proximity * AUTO_SCROLL_MAX_SPEED));
+            startAutoScroll();
+        } else if (clientY > rect.bottom - AUTO_SCROLL_EDGE_ZONE) {
+            const proximity = 1 - ((rect.bottom - clientY) / AUTO_SCROLL_EDGE_ZONE);
+            scrollSpeed = Math.max(AUTO_SCROLL_MIN_SPEED, Math.round(proximity * AUTO_SCROLL_MAX_SPEED));
+            startAutoScroll();
+        } else {
+            stopAutoScroll();
+        }
+    }
+
+    function handleDragPointerMove(e: PointerEvent) {
+        if (!isDndActive) return;
+        updateAutoScroll(e.clientY);
+    }
+
+    // =============================================
     // Drag & Drop (In-list reordering & Cross-Pane)
     // =============================================
     function handleDndConsider(e: CustomEvent, listType: 'incomplete' | 'completed') {
+        isDndActive = true;
         if (listType === 'incomplete') incompleteTasks = e.detail.items;
         else completedTasks = e.detail.items;
 
@@ -267,6 +331,9 @@
     }
 
     async function handleDndFinalize(e: CustomEvent, listType: 'incomplete' | 'completed') {
+        isDndActive = false;
+        stopAutoScroll();
+
         if (e.detail.info.trigger === TRIGGERS.DROPPED_OUTSIDE_OF_ANY) {
             // Did the sidebar consume the drag data?
             if (!(window as any).__mstodo_drag_data) {
