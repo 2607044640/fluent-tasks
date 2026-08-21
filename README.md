@@ -26,6 +26,11 @@ Customize the primary accent color to match your personal theme preference.
 
 ![Custom Accent Color Demo](https://raw.githubusercontent.com/2607044640/fluent-tasks/main/docs/assets/custom_colors.gif)
 
+### 4. Due Dates, Reminders & Recurring Tasks
+Set due dates, custom repeat intervals (daily, weekly, weekdays, monthly, yearly), and schedule drawer toggles with automatic task rollover.
+
+![Recurring Tasks Demo](https://raw.githubusercontent.com/2607044640/fluent-tasks/main/docs/assets/recurring_tasks.gif)
+
 ---
 
 ## How to Use
