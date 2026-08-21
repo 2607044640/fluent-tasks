@@ -89,7 +89,7 @@
         if (popoverTimeout) clearTimeout(popoverTimeout);
     }
 
-    function handleNoteLinkHover(e: MouseEvent, noteLink: string) {
+    function handleNoteLinkHover(e: MouseEvent, noteLink?: string) {
         if (!noteLink || !plugin?.app) return;
         const cleanLink = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").trim();
         if (!cleanLink) return;
@@ -104,7 +104,7 @@
         });
     }
 
-    function handleNoteLinkClick(e: MouseEvent, noteLink: string) {
+    function handleNoteLinkClick(e: MouseEvent | KeyboardEvent, noteLink?: string) {
         e.stopPropagation();
         if (!noteLink || !plugin?.app) return;
         const cleanLink = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").trim();
