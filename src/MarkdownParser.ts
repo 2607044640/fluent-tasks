@@ -85,6 +85,7 @@ export class MarkdownParser {
                 ...(meta.why ? { why: meta.why } : {}),
                 ...(meta.svgs && meta.svgs.length > 0 ? { svgs: meta.svgs } : {}),
                 ...(meta.note_link ? { note_link: meta.note_link } : (meta as any).noteLink ? { note_link: (meta as any).noteLink } : {}),
+                ...(meta.customMeta && Object.keys(meta.customMeta).length > 0 ? { customMeta: meta.customMeta } : {}),
             });
         }
 
@@ -111,6 +112,7 @@ export class MarkdownParser {
             if (task.why) meta.why = task.why;
             if (task.svgs && task.svgs.length > 0) meta.svgs = task.svgs;
             if (task.note_link) meta.note_link = task.note_link;
+            if (task.customMeta && Object.keys(task.customMeta).length > 0) meta.customMeta = task.customMeta;
             return `- ${checkbox} ${task.title} %%${JSON.stringify(meta)}%%`;
         }).join("\n");
     }
