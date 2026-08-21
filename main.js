@@ -1138,12 +1138,6 @@ function onMount(fn) {
 function onDestroy(fn) {
   get_current_component().$$.on_destroy.push(fn);
 }
-function bubble(component, event) {
-  const callbacks = component.$$.callbacks[event.type];
-  if (callbacks) {
-    callbacks.slice().forEach((fn) => fn.call(this, event));
-  }
-}
 
 // node_modules/svelte/src/runtime/internal/scheduler.js
 var dirty_components = [];
@@ -9676,13 +9670,13 @@ function create_if_block3(ctx) {
             span0,
             "keydown",
             /*keydown_handler*/
-            ctx[38]
+            ctx[37]
           ),
           listen(
             input0,
             "input",
             /*input0_input_handler*/
-            ctx[39]
+            ctx[38]
           ),
           listen(
             input0,
@@ -9700,13 +9694,13 @@ function create_if_block3(ctx) {
             span1,
             "keydown",
             /*keydown_handler_1*/
-            ctx[40]
+            ctx[39]
           ),
           listen(
             input1,
             "input",
             /*input1_input_handler*/
-            ctx[46]
+            ctx[45]
           ),
           listen(
             input1,
@@ -9718,7 +9712,7 @@ function create_if_block3(ctx) {
             textarea0,
             "input",
             /*textarea0_input_handler*/
-            ctx[47]
+            ctx[46]
           ),
           listen(
             textarea0,
@@ -9730,7 +9724,7 @@ function create_if_block3(ctx) {
             textarea1,
             "input",
             /*textarea1_input_handler*/
-            ctx[48]
+            ctx[47]
           ),
           listen(
             textarea1,
@@ -9741,20 +9735,20 @@ function create_if_block3(ctx) {
           listen(
             span2,
             "click",
-            /*click_handler_4*/
-            ctx[52]
+            /*click_handler_3*/
+            ctx[51]
           ),
           listen(
             span2,
             "keydown",
             /*keydown_handler_5*/
-            ctx[53]
+            ctx[52]
           ),
           listen(
             input2,
             "input",
             /*input2_input_handler*/
-            ctx[54]
+            ctx[53]
           ),
           listen(
             input2,
@@ -9772,7 +9766,7 @@ function create_if_block3(ctx) {
             span3,
             "keydown",
             /*keydown_handler_11*/
-            ctx[69]
+            ctx[68]
           ),
           listen(
             span6,
@@ -9784,7 +9778,7 @@ function create_if_block3(ctx) {
             span6,
             "keydown",
             /*keydown_handler_12*/
-            ctx[70]
+            ctx[69]
           ),
           listen(
             span7,
@@ -9796,7 +9790,7 @@ function create_if_block3(ctx) {
             span7,
             "keydown",
             /*keydown_handler_13*/
-            ctx[71]
+            ctx[70]
           )
         ];
         mounted = true;
@@ -10200,10 +10194,10 @@ function create_each_block_32(key_1, ctx) {
   }
   let current_block_type = select_block_type_2(ctx, [-1, -1, -1, -1]);
   let if_block = current_block_type(ctx);
-  function click_handler_1() {
+  function click_handler() {
     return (
-      /*click_handler_1*/
-      ctx[41](
+      /*click_handler*/
+      ctx[40](
         /*i*/
         ctx[103]
       )
@@ -10212,7 +10206,7 @@ function create_each_block_32(key_1, ctx) {
   function keydown_handler_2(...args) {
     return (
       /*keydown_handler_2*/
-      ctx[42](
+      ctx[41](
         /*i*/
         ctx[103],
         ...args
@@ -10222,17 +10216,17 @@ function create_each_block_32(key_1, ctx) {
   function input_handler(...args) {
     return (
       /*input_handler*/
-      ctx[43](
+      ctx[42](
         /*i*/
         ctx[103],
         ...args
       )
     );
   }
-  function click_handler_2() {
+  function click_handler_1() {
     return (
-      /*click_handler_2*/
-      ctx[44](
+      /*click_handler_1*/
+      ctx[43](
         /*i*/
         ctx[103]
       )
@@ -10241,7 +10235,7 @@ function create_each_block_32(key_1, ctx) {
   function keydown_handler_3(...args) {
     return (
       /*keydown_handler_3*/
-      ctx[45](
+      ctx[44](
         /*i*/
         ctx[103],
         ...args
@@ -10292,10 +10286,10 @@ function create_each_block_32(key_1, ctx) {
       append(div, t2);
       if (!mounted) {
         dispose = [
-          listen(span0, "click", click_handler_1),
+          listen(span0, "click", click_handler),
           listen(span0, "keydown", keydown_handler_2),
           listen(input, "input", input_handler),
-          listen(span1, "click", click_handler_2),
+          listen(span1, "click", click_handler_1),
           listen(span1, "keydown", keydown_handler_3)
         ];
         mounted = true;
@@ -10448,17 +10442,17 @@ function create_each_block_22(ctx) {
   function input_handler_1(...args) {
     return (
       /*input_handler_1*/
-      ctx[49](
+      ctx[48](
         /*i*/
         ctx[103],
         ...args
       )
     );
   }
-  function click_handler_3() {
+  function click_handler_2() {
     return (
-      /*click_handler_3*/
-      ctx[50](
+      /*click_handler_2*/
+      ctx[49](
         /*i*/
         ctx[103]
       )
@@ -10467,7 +10461,7 @@ function create_each_block_22(ctx) {
   function keydown_handler_4(...args) {
     return (
       /*keydown_handler_4*/
-      ctx[51](
+      ctx[50](
         /*i*/
         ctx[103],
         ...args
@@ -10511,7 +10505,7 @@ function create_each_block_22(ctx) {
       if (!mounted) {
         dispose = [
           listen(input, "input", input_handler_1),
-          listen(span, "click", click_handler_3),
+          listen(span, "click", click_handler_2),
           listen(span, "keydown", keydown_handler_4)
         ];
         mounted = true;
@@ -10571,14 +10565,14 @@ function create_if_block_132(ctx) {
           listen(
             span,
             "click",
-            /*click_handler_5*/
-            ctx[55]
+            /*click_handler_4*/
+            ctx[54]
           ),
           listen(
             span,
             "keydown",
             /*keydown_handler_6*/
-            ctx[56]
+            ctx[55]
           )
         ];
         mounted = true;
@@ -10687,10 +10681,10 @@ function create_each_block_13(ctx) {
   let t6;
   let mounted;
   let dispose;
-  function click_handler_6() {
+  function click_handler_5() {
     return (
-      /*click_handler_6*/
-      ctx[57](
+      /*click_handler_5*/
+      ctx[56](
         /*k*/
         ctx[97]
       )
@@ -10699,7 +10693,7 @@ function create_each_block_13(ctx) {
   function keydown_handler_7(...args) {
     return (
       /*keydown_handler_7*/
-      ctx[58](
+      ctx[57](
         /*k*/
         ctx[97],
         ...args
@@ -10740,7 +10734,7 @@ function create_each_block_13(ctx) {
       append(div, t6);
       if (!mounted) {
         dispose = [
-          listen(span2, "click", click_handler_6),
+          listen(span2, "click", click_handler_5),
           listen(span2, "keydown", keydown_handler_7)
         ];
         mounted = true;
@@ -10893,19 +10887,19 @@ function create_if_block_82(ctx) {
             input,
             "change",
             /*change_handler*/
-            ctx[59]
+            ctx[58]
           ),
           listen(
             div5,
             "click",
-            /*click_handler_7*/
-            ctx[62]
+            /*click_handler_6*/
+            ctx[61]
           ),
           listen(
             div5,
             "keydown",
             /*keydown_handler_10*/
-            ctx[63]
+            ctx[62]
           )
         ];
         mounted = true;
@@ -11017,7 +11011,7 @@ function create_if_block_112(ctx) {
             span,
             "keydown",
             /*keydown_handler_8*/
-            ctx[60]
+            ctx[59]
           )
         ];
         mounted = true;
@@ -11056,7 +11050,7 @@ function create_if_block_102(ctx) {
           )),
           listen(span, "keydown", stop_propagation(
             /*keydown_handler_9*/
-            ctx[61]
+            ctx[60]
           ))
         ];
         mounted = true;
@@ -11192,26 +11186,26 @@ function create_if_block_92(ctx) {
           listen(
             button0,
             "click",
+            /*click_handler_7*/
+            ctx[63]
+          ),
+          listen(
+            button1,
+            "click",
             /*click_handler_8*/
             ctx[64]
           ),
           listen(
-            button1,
+            button2,
             "click",
             /*click_handler_9*/
             ctx[65]
           ),
           listen(
-            button2,
-            "click",
-            /*click_handler_10*/
-            ctx[66]
-          ),
-          listen(
             input,
             "change",
             /*change_handler_1*/
-            ctx[68]
+            ctx[67]
           )
         ];
         mounted = true;
@@ -11286,10 +11280,10 @@ function create_each_block3(ctx) {
   let button;
   let mounted;
   let dispose;
-  function click_handler_11() {
+  function click_handler_10() {
     return (
-      /*click_handler_11*/
-      ctx[67](
+      /*click_handler_10*/
+      ctx[66](
         /*day*/
         ctx[94]
       )
@@ -11319,7 +11313,7 @@ function create_each_block3(ctx) {
     m(target, anchor) {
       insert(target, button, anchor);
       if (!mounted) {
-        dispose = listen(button, "click", click_handler_11);
+        dispose = listen(button, "click", click_handler_10);
         mounted = true;
       }
     },
@@ -11603,6 +11597,7 @@ function create_if_block_111(ctx) {
       attr(div4, "class", "meta-modal-dialog");
       attr(div4, "role", "dialog");
       attr(div4, "aria-modal", "true");
+      attr(div4, "tabindex", "-1");
       attr(div5, "class", "meta-modal-backdrop");
       attr(div5, "role", "presentation");
     },
@@ -11643,31 +11638,31 @@ function create_if_block_111(ctx) {
             span1,
             "keydown",
             /*keydown_handler_14*/
-            ctx[72]
+            ctx[71]
           ),
           listen(
             button0,
+            "click",
+            /*click_handler_11*/
+            ctx[72]
+          ),
+          listen(
+            button1,
             "click",
             /*click_handler_12*/
             ctx[73]
           ),
           listen(
-            button1,
+            button2,
             "click",
             /*click_handler_13*/
             ctx[74]
           ),
           listen(
-            button2,
+            button3,
             "click",
             /*click_handler_14*/
             ctx[75]
-          ),
-          listen(
-            button3,
-            "click",
-            /*click_handler_15*/
-            ctx[76]
           ),
           listen(
             button4,
@@ -11681,15 +11676,11 @@ function create_if_block_111(ctx) {
             /*saveNewMetadata*/
             ctx[33]
           ),
-          listen(div4, "click", stop_propagation(
-            /*click_handler*/
-            ctx[37]
-          )),
           listen(
             div5,
             "click",
-            /*closeAddMetaModal*/
-            ctx[32]
+            /*click_handler_15*/
+            ctx[81]
           )
         ];
         mounted = true;
@@ -11791,7 +11782,7 @@ function create_if_block_52(ctx) {
           textarea,
           "input",
           /*textarea_input_handler_1*/
-          ctx[81]
+          ctx[80]
         );
         mounted = true;
       }
@@ -11850,7 +11841,7 @@ function create_if_block_42(ctx) {
           input,
           "input",
           /*input_input_handler*/
-          ctx[80]
+          ctx[79]
         );
         mounted = true;
       }
@@ -11910,7 +11901,7 @@ function create_if_block_33(ctx) {
           textarea,
           "input",
           /*textarea_input_handler*/
-          ctx[79]
+          ctx[78]
         );
         mounted = true;
       }
@@ -11996,13 +11987,13 @@ function create_if_block_23(ctx) {
             input0,
             "input",
             /*input0_input_handler_1*/
-            ctx[77]
+            ctx[76]
           ),
           listen(
             input1,
             "input",
             /*input1_input_handler_1*/
-            ctx[78]
+            ctx[77]
           )
         ];
         mounted = true;
@@ -12525,19 +12516,16 @@ function instance3($$self, $$props, $$invalidate) {
     $$invalidate(0, task);
     scheduleSave();
   }
-  function click_handler(event) {
-    bubble.call(this, $$self, event);
-  }
   const keydown_handler = (e) => e.key === "Enter" && toggleComplete();
   function input0_input_handler() {
     task.title = this.value;
     $$invalidate(0, task);
   }
   const keydown_handler_1 = (e) => e.key === "Enter" && toggleStar();
-  const click_handler_1 = (i) => toggleStepDone(i);
+  const click_handler = (i) => toggleStepDone(i);
   const keydown_handler_2 = (i, e) => e.key === "Enter" && toggleStepDone(i);
   const input_handler = (i, e) => updateStepText(i, e.currentTarget.value);
-  const click_handler_2 = (i) => deleteStep(i);
+  const click_handler_1 = (i) => deleteStep(i);
   const keydown_handler_3 = (i, e) => e.key === "Enter" && deleteStep(i);
   function input1_input_handler() {
     newStepText = this.value;
@@ -12560,7 +12548,7 @@ function instance3($$self, $$props, $$invalidate) {
       scheduleSave();
     }
   };
-  const click_handler_3 = (i) => {
+  const click_handler_2 = (i) => {
     if (task && task.svgs) {
       $$invalidate(0, task.svgs = task.svgs.filter((_, idx) => idx !== i), task);
       scheduleSave();
@@ -12572,7 +12560,7 @@ function instance3($$self, $$props, $$invalidate) {
       scheduleSave();
     }
   };
-  const click_handler_4 = () => {
+  const click_handler_3 = () => {
     if (task) {
       if (!task.svgs)
         $$invalidate(0, task.svgs = [], task);
@@ -12590,9 +12578,9 @@ function instance3($$self, $$props, $$invalidate) {
     task.note_link = this.value;
     $$invalidate(0, task);
   }
-  const click_handler_5 = () => openLinkedNote(task.note_link || "");
+  const click_handler_4 = () => openLinkedNote(task.note_link || "");
   const keydown_handler_6 = (e) => e.key === "Enter" && openLinkedNote(task.note_link || "");
-  const click_handler_6 = (k) => removeCustomMetaKey(k);
+  const click_handler_5 = (k) => removeCustomMetaKey(k);
   const keydown_handler_7 = (k, e) => e.key === "Enter" && removeCustomMetaKey(k);
   const change_handler = (e) => {
     if (task) {
@@ -12602,21 +12590,21 @@ function instance3($$self, $$props, $$invalidate) {
   };
   const keydown_handler_8 = (e) => e.key === "Enter" && clearDueDate();
   const keydown_handler_9 = (e) => e.key === "Enter" && clearRecurrence();
-  const click_handler_7 = () => $$invalidate(3, showRepeatPicker = !showRepeatPicker);
+  const click_handler_6 = () => $$invalidate(3, showRepeatPicker = !showRepeatPicker);
   const keydown_handler_10 = (e) => e.key === "Enter" && $$invalidate(3, showRepeatPicker = !showRepeatPicker);
-  const click_handler_8 = () => setRecurrencePreset("daily");
-  const click_handler_9 = () => setRecurrencePreset("weekdays");
-  const click_handler_10 = () => setRecurrencePreset("weekly");
-  const click_handler_11 = (day) => handleWeekdayClick(day);
+  const click_handler_7 = () => setRecurrencePreset("daily");
+  const click_handler_8 = () => setRecurrencePreset("weekdays");
+  const click_handler_9 = () => setRecurrencePreset("weekly");
+  const click_handler_10 = (day) => handleWeekdayClick(day);
   const change_handler_1 = (e) => setCustomInterval(parseInt(e.currentTarget.value) || 1);
   const keydown_handler_11 = (e) => e.key === "Enter" && toggleScheduleSection();
   const keydown_handler_12 = (e) => e.key === "Enter" && openAddMetaModal();
   const keydown_handler_13 = (e) => e.key === "Enter" && deleteTask();
   const keydown_handler_14 = (e) => e.key === "Enter" && closeAddMetaModal();
-  const click_handler_12 = () => $$invalidate(5, metaFormType = "custom");
-  const click_handler_13 = () => $$invalidate(5, metaFormType = "why");
-  const click_handler_14 = () => $$invalidate(5, metaFormType = "note_link");
-  const click_handler_15 = () => $$invalidate(5, metaFormType = "svg");
+  const click_handler_11 = () => $$invalidate(5, metaFormType = "custom");
+  const click_handler_12 = () => $$invalidate(5, metaFormType = "why");
+  const click_handler_13 = () => $$invalidate(5, metaFormType = "note_link");
+  const click_handler_14 = () => $$invalidate(5, metaFormType = "svg");
   function input0_input_handler_1() {
     metaCustomKey = this.value;
     $$invalidate(6, metaCustomKey);
@@ -12637,6 +12625,7 @@ function instance3($$self, $$props, $$invalidate) {
     metaSvgVal = this.value;
     $$invalidate(10, metaSvgVal);
   }
+  const click_handler_15 = (e) => e.target === e.currentTarget && closeAddMetaModal();
   $$self.$$set = ($$props2) => {
     if ("dataService" in $$props2)
       $$invalidate(35, dataService = $$props2.dataService);
@@ -12686,51 +12675,51 @@ function instance3($$self, $$props, $$invalidate) {
     removeCustomMetaKey,
     dataService,
     loadTask,
-    click_handler,
     keydown_handler,
     input0_input_handler,
     keydown_handler_1,
-    click_handler_1,
+    click_handler,
     keydown_handler_2,
     input_handler,
-    click_handler_2,
+    click_handler_1,
     keydown_handler_3,
     input1_input_handler,
     textarea0_input_handler,
     textarea1_input_handler,
     input_handler_1,
-    click_handler_3,
+    click_handler_2,
     keydown_handler_4,
-    click_handler_4,
+    click_handler_3,
     keydown_handler_5,
     input2_input_handler,
-    click_handler_5,
+    click_handler_4,
     keydown_handler_6,
-    click_handler_6,
+    click_handler_5,
     keydown_handler_7,
     change_handler,
     keydown_handler_8,
     keydown_handler_9,
-    click_handler_7,
+    click_handler_6,
     keydown_handler_10,
+    click_handler_7,
     click_handler_8,
     click_handler_9,
     click_handler_10,
-    click_handler_11,
     change_handler_1,
     keydown_handler_11,
     keydown_handler_12,
     keydown_handler_13,
     keydown_handler_14,
+    click_handler_11,
     click_handler_12,
     click_handler_13,
     click_handler_14,
-    click_handler_15,
     input0_input_handler_1,
     input1_input_handler_1,
     textarea_input_handler,
     input_input_handler,
-    textarea_input_handler_1
+    textarea_input_handler_1,
+    click_handler_15
   ];
 }
 var TaskDetailView = class extends SvelteComponent {

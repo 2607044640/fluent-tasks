@@ -899,8 +899,10 @@
 
         <!-- Add Metadata Modal Dialog -->
         {#if showAddMetaModal}
-            <div class="meta-modal-backdrop" on:click={closeAddMetaModal} role="presentation">
-                <div class="meta-modal-dialog" on:click|stopPropagation role="dialog" aria-modal="true">
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <div class="meta-modal-backdrop" on:click={(e) => e.target === e.currentTarget && closeAddMetaModal()} role="presentation">
+                <div class="meta-modal-dialog" role="dialog" aria-modal="true" tabindex="-1">
                     <div class="meta-modal-header">
                         <span>Add Metadata</span>
                         <span class="meta-modal-close" on:click={closeAddMetaModal}
