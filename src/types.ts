@@ -40,14 +40,8 @@ export interface TaskItem {
     msGraphId?: string;     // Microsoft Graph todoTask ID
     msGraphListId?: string; // Microsoft Graph todoTaskList ID
     recurrence?: RecurrenceRule;
-    /** Core reasoning / rationale behind this task or instruction */
-    why?: string;
-    /** Array of inline SVG code strings for visual metadata icons */
-    svgs?: string[];
-    /** Linked Obsidian note path or wikilink (e.g. [[Topic]] or OneNote/Domain/Topic.md) */
-    note_link?: string;
-    /** Arbitrary custom key-value metadata */
-    customMeta?: Record<string, any>;
+    /** Visual icon frames for memory anchoring. Up to 3 frames, each with up to 5 Lucide icon names. */
+    frames?: string[][];
 }
 
 export interface CategoryInfo {

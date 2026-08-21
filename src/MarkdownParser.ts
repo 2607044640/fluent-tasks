@@ -82,10 +82,7 @@ export class MarkdownParser {
                 ...(meta.msGraphId ? { msGraphId: meta.msGraphId } : {}),
                 ...(meta.msGraphListId ? { msGraphListId: meta.msGraphListId } : {}),
                 ...(meta.recurrence ? { recurrence: meta.recurrence } : {}),
-                ...(meta.why ? { why: meta.why } : {}),
-                ...(meta.svgs && meta.svgs.length > 0 ? { svgs: meta.svgs } : {}),
-                ...(meta.note_link ? { note_link: meta.note_link } : (meta as any).noteLink ? { note_link: (meta as any).noteLink } : {}),
-                ...(meta.customMeta && Object.keys(meta.customMeta).length > 0 ? { customMeta: meta.customMeta } : {}),
+                ...(meta.frames && meta.frames.length > 0 ? { frames: meta.frames } : {}),
             });
         }
 
@@ -109,10 +106,7 @@ export class MarkdownParser {
             if (task.msGraphId) meta.msGraphId = task.msGraphId;
             if (task.msGraphListId) meta.msGraphListId = task.msGraphListId;
             if (task.recurrence) meta.recurrence = task.recurrence;
-            if (task.why) meta.why = task.why;
-            if (task.svgs && task.svgs.length > 0) meta.svgs = task.svgs;
-            if (task.note_link) meta.note_link = task.note_link;
-            if (task.customMeta && Object.keys(task.customMeta).length > 0) meta.customMeta = task.customMeta;
+            if (task.frames && task.frames.length > 0) meta.frames = task.frames;
             return `- ${checkbox} ${task.title} %%${JSON.stringify(meta)}%%`;
         }).join("\n");
     }
