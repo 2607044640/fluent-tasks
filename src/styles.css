@@ -1050,7 +1050,7 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     color: var(--todo-accent);
 }
 
-/* Constrain user-supplied SVGs inside badges */
+/* Constrain user-supplied SVGs & image thumbnails inside badges */
 .meta-badge.svg-badge svg {
     width: 14px;
     height: 14px;
@@ -1058,19 +1058,29 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     max-height: 14px;
 }
 
+.meta-badge-thumb {
+    width: 14px;
+    height: 14px;
+    max-width: 14px;
+    max-height: 14px;
+    object-fit: contain;
+    border-radius: 2px;
+    display: block;
+}
+
 /* --- Hover Popover --- */
 .meta-popover {
     position: fixed;
     z-index: 9999;
     transform: translate(-50%, -100%) translateY(-8px);
-    min-width: 200px;
-    max-width: 320px;
-    max-height: 280px;
+    min-width: 220px;
+    max-width: 360px;
+    max-height: 380px;
     overflow-y: auto;
     background-color: var(--todo-item-bg);
     border: 1px solid var(--todo-border);
     border-radius: 8px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
     padding: 10px 14px;
     pointer-events: auto;
     animation: popover-fade-in 150ms ease-out;
@@ -1084,15 +1094,23 @@ body.is-dragging-ghost #dnd-action-dragged-el {
 .meta-popover-header {
     display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: space-between;
     font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     color: var(--todo-accent);
-    margin-bottom: 6px;
+    margin-bottom: 8px;
     padding-bottom: 6px;
     border-bottom: 1px solid var(--todo-border);
+}
+
+.meta-popover-hint {
+    font-size: 10px;
+    font-weight: 400;
+    text-transform: none;
+    color: var(--todo-text-muted);
+    opacity: 0.8;
 }
 
 .meta-popover-body {
@@ -1107,11 +1125,147 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 12px;
+    padding: 8px;
+    background: #02040a;
+    border-radius: 6px;
+    border: 1px solid var(--todo-border);
+    cursor: pointer;
+    overflow: hidden;
 }
 
-.meta-popover-svg-preview svg {
-    width: 64px;
-    height: 64px;
-    max-width: 100%;
+.meta-popover-svg-preview svg,
+.meta-popover-img {
+    width: 100%;
+    max-width: 280px;
+    height: auto;
+    max-height: 280px;
+    object-fit: contain;
+    display: block;
+    border-radius: 4px;
+    transition: transform 150ms ease;
 }
+
+.meta-popover-svg-preview:hover svg,
+.meta-popover-svg-preview:hover .meta-popover-img {
+    transform: scale(1.02);
+}
+
+/* --- SVG Lightbox Modal --- */
+.svg-lightbox-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: lightbox-fade 150ms ease-out;
+}
+
+@keyframes lightbox-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.svg-lightbox-modal {
+    width: 680px;
+    max-width: 88vw;
+    max-height: 88vh;
+    background: #030712;
+    border: 1px solid var(--todo-border);
+    border-radius: 12px;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: lightbox-pop 150ms ease-out;
+}
+
+@keyframes lightbox-pop {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.svg-lightbox-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--todo-border);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.svg-lightbox-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--todo-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.svg-lightbox-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.svg-lightbox-action-btn {
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--todo-accent);
+    background: var(--todo-hover-bg);
+    border: 1px solid var(--todo-border);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 120ms ease;
+}
+
+.svg-lightbox-action-btn:hover {
+    background: var(--todo-accent);
+    color: #ffffff;
+}
+
+.svg-lightbox-close {
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--todo-text-muted);
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.svg-lightbox-close:hover {
+    background: var(--todo-hover-bg);
+    color: var(--todo-text);
+}
+
+.svg-lightbox-body {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: auto;
+    flex: 1;
+    background: #000000;
+}
+
+.svg-lightbox-content,
+.svg-lightbox-content svg,
+.svg-lightbox-img {
+    width: 100%;
+    max-width: 580px;
+    height: auto;
+    max-height: 70vh;
+    object-fit: contain;
+    display: block;
+    border-radius: 6px;
+}
+

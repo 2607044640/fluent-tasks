@@ -65,6 +65,57 @@
     let popoverVisible: boolean = false;
     let popoverTimeout: any = null;
 
+    // Lightbox modal state for full-screen / zoom SVG view
+    let lightboxData: { isInline: boolean; content: string; srcUrl: string; title: string; cleanPath: string } | null = null;
+
+    function resolveSvgItem(svgStr: string): { isInline: boolean; content: string; srcUrl: string; cleanPath: string } {
+        if (!svgStr) return { isInline: false, content: "", srcUrl: "", cleanPath: "" };
+        const trimmed = svgStr.trim();
+        if (trimmed.startsWith("<svg") || trimmed.startsWith("<?xml") || trimmed.includes("</svg>")) {
+            return { isInline: true, content: trimmed, srcUrl: "", cleanPath: "" };
+        }
+        // It's a vault file path or wikilink (e.g. OneNote/.../assets/eye_of_knowledge_sea_circular.svg)
+        const cleanPath = trimmed.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
+        let file: any = null;
+        if (plugin?.app?.metadataCache) {
+            file = plugin.app.metadataCache.getFirstLinkpathDest(cleanPath, currentCategory?.filepath || "");
+        }
+        if (!file && plugin?.app?.vault) {
+            file = plugin.app.vault.getAbstractFileByPath(cleanPath);
+        }
+        const srcUrl = file && plugin?.app?.vault?.adapter ? plugin.app.vault.adapter.getResourcePath(file.path) : cleanPath;
+        return {
+            isInline: false,
+            content: trimmed,
+            srcUrl: srcUrl || cleanPath,
+            cleanPath: file?.path || cleanPath,
+        };
+    }
+
+    function openSvgLightbox(e: MouseEvent | KeyboardEvent, svgStr: string, title: string = "Visual Memory Aid") {
+        e.stopPropagation();
+        if (popoverTimeout) clearTimeout(popoverTimeout);
+        popoverVisible = false;
+        const res = resolveSvgItem(svgStr);
+        lightboxData = {
+            isInline: res.isInline,
+            content: res.content,
+            srcUrl: res.srcUrl,
+            title,
+            cleanPath: res.cleanPath,
+        };
+    }
+
+    function closeSvgLightbox() {
+        lightboxData = null;
+    }
+
+    function openSvgInVault(cleanPath: string) {
+        if (!cleanPath || !plugin?.app) return;
+        plugin.app.workspace.openLinkText(cleanPath, currentCategory?.filepath || "", false);
+        closeSvgLightbox();
+    }
+
     function showPopover(e: MouseEvent, task: TaskItem, type: 'why' | 'svg', svgIndex: number = 0) {
         if (popoverTimeout) clearTimeout(popoverTimeout);
         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -627,12 +678,19 @@
                     {#if task.svgs && task.svgs.length > 0}
                         {#each task.svgs as svgContent, i}
                             {#if svgContent}
+                                {@const resolved = resolveSvgItem(svgContent)}
                                 <span class="meta-badge svg-badge"
                                       on:mouseenter={(e) => showPopover(e, task, 'svg', i)}
                                       on:mouseleave={scheduleHidePopover}
+                                      on:click={(e) => openSvgLightbox(e, svgContent, task.title)}
+                                      on:keydown={(e) => e.key === "Enter" && openSvgLightbox(e, svgContent, task.title)}
                                       role="button" tabindex="0"
-                                      title="SVG icon metadata">
-                                    {@html svgContent}
+                                      title="Visual memory SVG: click to enlarge, hover to preview">
+                                    {#if resolved.isInline}
+                                        {@html resolved.content}
+                                    {:else}
+                                        <img src={resolved.srcUrl} alt="SVG" class="meta-badge-thumb" />
+                                    {/if}
                                 </span>
                             {/if}
                         {/each}
@@ -755,12 +813,19 @@
                                 {#if task.svgs && task.svgs.length > 0}
                                     {#each task.svgs as svgContent, i}
                                         {#if svgContent}
+                                            {@const resolved = resolveSvgItem(svgContent)}
                                             <span class="meta-badge svg-badge"
                                                   on:mouseenter={(e) => showPopover(e, task, 'svg', i)}
                                                   on:mouseleave={scheduleHidePopover}
+                                                  on:click={(e) => openSvgLightbox(e, svgContent, task.title)}
+                                                  on:keydown={(e) => e.key === "Enter" && openSvgLightbox(e, svgContent, task.title)}
                                                   role="button" tabindex="0"
-                                                  title="SVG icon metadata">
-                                                {@html svgContent}
+                                                  title="Visual memory SVG: click to enlarge, hover to preview">
+                                                {#if resolved.isInline}
+                                                    {@html resolved.content}
+                                                {:else}
+                                                    <img src={resolved.srcUrl} alt="SVG" class="meta-badge-thumb" />
+                                                {/if}
                                             </span>
                                         {/if}
                                     {/each}
@@ -814,23 +879,82 @@
              role="tooltip">
             {#if popoverType === 'why' && popoverTask.why}
                 <div class="meta-popover-header">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"/>
-                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                        <line x1="12" y1="17" x2="12.01" y2="17"/>
-                    </svg>
-                    <span>Why</span>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                        <span>Why</span>
+                    </div>
                 </div>
                 <div class="meta-popover-body">{popoverTask.why}</div>
             {:else if popoverType === 'svg' && popoverTask.svgs && popoverTask.svgs[popoverSvgIndex]}
+                {@const resolved = resolveSvgItem(popoverTask.svgs[popoverSvgIndex])}
                 <div class="meta-popover-header">
-                    <span>Icon Preview</span>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                        <span>Visual Memory Aid</span>
+                    </div>
+                    <span class="meta-popover-hint">Click to enlarge</span>
                 </div>
-                <div class="meta-popover-svg-preview">
-                    {@html popoverTask.svgs[popoverSvgIndex]}
+                <!-- svelte-ignore a11y-click-events-have-key-events -->
+                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                <div class="meta-popover-svg-preview"
+                     on:click={(e) => popoverTask && popoverTask.svgs && openSvgLightbox(e, popoverTask.svgs[popoverSvgIndex], popoverTask.title)}
+                     role="button" tabindex="0"
+                     title="Click to view full size">
+                    {#if resolved.isInline}
+                        {@html resolved.content}
+                    {:else}
+                        <img src={resolved.srcUrl} alt="Visual memory" class="meta-popover-img" />
+                    {/if}
                 </div>
             {/if}
+        </div>
+    {/if}
+
+    <!-- Global SVG Visual Memory Lightbox Modal -->
+    {#if lightboxData}
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <!-- svelte-ignore a11y-no-static-element-interactions -->
+        <div class="svg-lightbox-backdrop" on:click={(e) => e.target === e.currentTarget && closeSvgLightbox()} role="presentation">
+            <div class="svg-lightbox-modal" role="dialog" aria-modal="true" tabindex="-1">
+                <div class="svg-lightbox-header">
+                    <div class="svg-lightbox-title-row">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--todo-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                        <span class="svg-lightbox-title">{lightboxData.title || "Visual Memory Aid"}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        {#if lightboxData.cleanPath}
+                            <button type="button" class="svg-lightbox-action-btn" on:click={() => lightboxData && openSvgInVault(lightboxData.cleanPath)} title="Open note/file in Obsidian">
+                                Open in Tab
+                            </button>
+                        {/if}
+                        <span class="svg-lightbox-close" on:click={closeSvgLightbox}
+                              on:keydown={(e) => e.key === "Enter" && closeSvgLightbox()}
+                              role="button" tabindex="0">✕</span>
+                    </div>
+                </div>
+                <div class="svg-lightbox-body">
+                    {#if lightboxData.isInline}
+                        <div class="svg-lightbox-content">
+                            {@html lightboxData.content}
+                        </div>
+                    {:else}
+                        <img src={lightboxData.srcUrl} alt="Visual memory" class="svg-lightbox-img" />
+                    {/if}
+                </div>
+            </div>
         </div>
     {/if}
 </div>
