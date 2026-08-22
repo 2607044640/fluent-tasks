@@ -60,6 +60,8 @@ Data movement across views and persistent storage follows a strict 7-step sequen
 | `src/TaskSidebarView.svelte` | Presentational sidebar tree, drag-and-drop groups/categories | Direct `app.vault` file mutation |
 | `src/TaskMainView.svelte` | Presentational center task list, completion toggles, DND reorder | Raw file system reads |
 | `src/TaskDetailView.svelte` | Presentational right task detail panel (notes, subtask steps) | Direct file parsing logic |
+| `src/utils/domUtils.ts` | Svelte actions and DOM utilities (`portal` to `document.body`) | Business logic or state management |
+| `src/utils/timeUtils.ts` | Pure formatters (`formatExactTime`, `getRelativeTime`, `getRecurrenceLabel`) | DOM mutation or side-effects |
 </scope_boundaries>
 
 ## System Invariants & Rules
@@ -76,8 +78,10 @@ Data movement across views and persistent storage follows a strict 7-step sequen
 - **Microsoft To Do Sync Format Parity (CRITICAL)**: The companion plugin `A1MSTodoSync` writes directly to `TodoData/*.md` using the identical `%%{...}%%` format. Any modification to `MarkdownParser.serializeTasksToMarkdown` MUST be mirrored in `A1MSTodoSync/src/MarkdownBridge.ts`. (Why: format divergence causes silent data corruption during sync).
 - **Sync Field Backward Compatibility**: Optional fields `dueDate?`, `msGraphId?`, `msGraphListId?`, `why?`, `svgs?`, `note_link?`, `customMeta?` on `TaskItem` MUST remain optional and NEVER be required. (Why: existing users without sync must not be affected — these fields only appear in `%%{...}%%` metadata when populated).
 - **Sidebar Expansion Protocol**: Automatic sidebar expansion on view focus MUST verify `leftSplit.collapsed` prior to `expand()` and check `getLeavesOfType(VIEW_TYPE_SIDEBAR).length > 0` before invoking `workspace.revealLeaf()`. (Why: prevents runtime crashes or layout disruptions if the sidebar leaf is closed or not yet initialized).
-- **Meta Badges Viewport Escaping**: Hover Popovers for metadata MUST use `position: fixed` and `getBoundingClientRect()` coordinates. (Why: prevents popovers from being clipped or causing scrollbar overflow inside `.task-list`).
-- **Obsidian Native Page Preview Protocol**: Note link hover previews MUST invoke `app.workspace.trigger("hover-link", ...)` passing `event`, `source: "fluent-tasks"`, `hoverParent`, `targetEl`, and `sourcePath`. Note opening MUST invoke `app.workspace.openLinkText(cleanLink, sourcePath, false)`. (Why: reuses Obsidian core's robust link resolution and preview caching).
+- **Document Body Portaling for Popovers & Modals (CRITICAL)**: All hover popovers (`.meta-popover`), Lightbox modals, and dialog backdrops MUST mount directly to `document.body` via `use:portal` with `z-index: 100000`. (Why: prevents adjacent panes, sidebars, or parent container `overflow: hidden` from clipping popovers).
+- **Smart Viewport Auto-Flip Collision Avoidance**: Popover coordinate calculation MUST calculate `fitsAbove = rect.top >= estimatedHeight + 24` and flip to `placement-bottom` if space above is insufficient. (Why: guarantees popovers never overflow beyond the top window boundary).
+- **Obsidian Native Page Preview Protocol**: Note link hover previews MUST invoke `app.workspace.trigger("hover-link", ...)` passing a proxied `MouseEvent` (`ctrlKey: true`), `source: "fluent-tasks"`, `hoverParent`, `targetEl`, and `sourcePath`. (Why: allows seamless direct hover previews across both Reading and Live Preview modes while reuses Obsidian's native link caching).
+- **Instant Modal/Popover Dismissal**: Popovers and Lightbox modals MUST dismiss on global `contextmenu` (right-click) or backdrop left-click outside action buttons. (Why: provides zero-friction dismissal for rapid workflow navigation).
 </key_invariants>
 
 ## Key API Reference
