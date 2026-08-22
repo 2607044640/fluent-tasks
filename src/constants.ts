@@ -24,3 +24,6 @@ export const SAVE_DEBOUNCE_MS = 600;
 
 // Delay before dispatching rescue pointerup event for frozen DND state
 export const DND_RESCUE_DELAY_MS = 50;
+
+// Delay before hiding hover popover after mouseleave
+export const POPOVER_HIDE_DELAY_MS = 300;

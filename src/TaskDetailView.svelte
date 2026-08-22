@@ -4,6 +4,8 @@
     import { DataService } from "./DataService";
     import { EventName, type TaskItem, type TaskStep, type RecurrenceRule } from "./types";
     import { SAVE_DEBOUNCE_MS } from "./constants";
+    import { portal } from "./utils/domUtils";
+    import { DAY_LABELS, formatExactTime, getRelativeTime, getRecurrenceLabel } from "./utils/timeUtils";
 
     // =============================================
     // Props
@@ -19,8 +21,6 @@
     let newStepText: string = "";
     let showScheduleSection: boolean = false;
     let showRepeatPicker: boolean = false;
-
-    const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     function toggleScheduleSection() {
         showScheduleSection = !showScheduleSection;
@@ -328,44 +328,6 @@
         });
     }
 
-    // =============================================
-    // Helpers & Meta Modal State
-    // =============================================
-    function formatExactTime(iso: string): string {
-        try {
-            const d = new Date(iso);
-            if (isNaN(d.getTime())) return iso;
-            const pad = (n: number) => String(n).padStart(2, "0");
-            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-        } catch {
-            return iso;
-        }
-    }
-
-    function getRelativeTime(iso: string): string {
-        try {
-            const d = new Date(iso);
-            if (isNaN(d.getTime())) return "";
-            const now = Date.now();
-            const diffMs = now - d.getTime();
-            const diffSecs = Math.floor(diffMs / 1000);
-            const diffMins = Math.floor(diffSecs / 60);
-            const diffHours = Math.floor(diffMins / 60);
-            const diffDays = Math.floor(diffHours / 24);
-
-            if (diffSecs < 60) return "just now";
-            if (diffMins < 60) return `${diffMins}m ago`;
-            if (diffHours < 24) return `${diffHours}h ago`;
-            if (diffDays === 1) return "yesterday";
-            if (diffDays < 30) return `${diffDays}d ago`;
-            const diffMonths = Math.floor(diffDays / 30);
-            if (diffMonths < 12) return `${diffMonths}mo ago`;
-            return `${Math.floor(diffDays / 365)}y ago`;
-        } catch {
-            return "";
-        }
-    }
-
     let showAddMetaModal: boolean = false;
     let metaFormType: "why" | "note_link" | "svg" | "custom" = "why";
     let metaWhyVal: string = "";
@@ -450,17 +412,6 @@
                 categoryFilepath,
             });
         }
-    }
-
-    function portal(node: HTMLElement) {
-        document.body.appendChild(node);
-        return {
-            destroy() {
-                if (node.parentNode) {
-                    node.parentNode.removeChild(node);
-                }
-            }
-        };
     }
 </script>
 

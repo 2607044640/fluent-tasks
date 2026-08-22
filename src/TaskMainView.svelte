@@ -6,7 +6,9 @@
     import { DataService } from "./DataService";
     import { EventName, VIEW_TYPE_SIDEBAR, type CategoryInfo, type TaskItem } from "./types";
     import { killDndGhostElement, removeDndGhostShield, injectDndGhostShield } from "./utils/dndUtils";
-    import { DISK_SYNC_DELAY_MS, ANTI_FLICKER_DURATION_MS } from "./constants";
+    import { portal } from "./utils/domUtils";
+    import { getRelativeTime, getRecurrenceLabel } from "./utils/timeUtils";
+    import { DISK_SYNC_DELAY_MS, ANTI_FLICKER_DURATION_MS, POPOVER_HIDE_DELAY_MS } from "./constants";
     import { Menu, setIcon, type App } from "obsidian";
     import { TaskSearchModal } from "./TaskSearchModal";
     import { RecurrenceService } from "./services/RecurrenceService";
@@ -132,64 +134,6 @@
         closeSvgLightbox();
     }
 
-    function portal(node: HTMLElement) {
-        document.body.appendChild(node);
-        return {
-            destroy() {
-                if (node.parentNode) {
-                    node.parentNode.removeChild(node);
-                }
-            }
-        };
-    }
-
-    const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-    function getRelativeTime(iso: string): string {
-        try {
-            const d = new Date(iso);
-            if (isNaN(d.getTime())) return "";
-            const now = Date.now();
-            const diffMs = now - d.getTime();
-            const diffSecs = Math.floor(diffMs / 1000);
-            const diffMins = Math.floor(diffSecs / 60);
-            const diffHours = Math.floor(diffMins / 60);
-            const diffDays = Math.floor(diffHours / 24);
-
-            if (diffSecs < 60) return "just now";
-            if (diffMins < 60) return `${diffMins}m ago`;
-            if (diffHours < 24) return `${diffHours}h ago`;
-            if (diffDays === 1) return "yesterday";
-            if (diffDays < 30) return `${diffDays}d ago`;
-            const diffMonths = Math.floor(diffDays / 30);
-            if (diffMonths < 12) return `${diffMonths}mo ago`;
-            return `${Math.floor(diffDays / 365)}y ago`;
-        } catch {
-            return "";
-        }
-    }
-
-    function getRecurrenceLabel(rule: any): string {
-        if (!rule) return "";
-        switch (rule.type) {
-            case 'daily': return rule.interval === 1 ? "Every day" : `Every ${rule.interval} days`;
-            case 'weekdays': return "Weekdays (Mon–Fri)";
-            case 'weekly': {
-                const days = (rule.daysOfWeek || []).map((d: number) => DAY_LABELS[d]).join(', ');
-                const prefix = rule.interval === 1 ? "Every week" : `Every ${rule.interval} weeks`;
-                return days ? `${prefix} on ${days}` : prefix;
-            }
-            case 'custom': {
-                if (rule.daysOfWeek && rule.daysOfWeek.length > 0) {
-                    const days = rule.daysOfWeek.map((d: number) => DAY_LABELS[d]).join(', ');
-                    return `Every ${rule.interval} week(s) on ${days}`;
-                }
-                return `Every ${rule.interval} day(s)`;
-            }
-            default: return "";
-        }
-    }
-
     let popoverPlacement: 'top' | 'bottom' = 'top';
 
     function dismissPopover(e?: MouseEvent) {
@@ -244,7 +188,7 @@
             popoverVisible = false;
             popoverTask = null;
             popoverType = null;
-        }, 300);
+        }, POPOVER_HIDE_DELAY_MS);
     }
 
     function cancelHidePopover() {
