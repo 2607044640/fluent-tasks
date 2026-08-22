@@ -9000,20 +9000,20 @@ function create_if_block_4(ctx) {
   };
 }
 function create_if_block_17(ctx) {
-  let div8;
+  let div9;
   return {
     c() {
-      div8 = element("div");
-      div8.innerHTML = `<div class="meta-popover-header"><div style="display: flex; align-items: center; gap: 6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--todo-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> <span style="font-weight: 600;">Fluent Tasks Guide</span></div> <span class="meta-popover-hint">Click for full guide</span></div> <div class="meta-guide-items"><div class="meta-guide-item"><span class="guide-key">Ctrl + Hover Title</span> <span class="guide-desc">Quick peek full title, subtasks &amp; notes</span></div> <div class="meta-guide-item"><span class="guide-key">Direct Hover Badges</span> <span class="guide-desc">Preview Why (?), SVG (\u{1F5BC}\uFE0F), Note (\u{1F4C4}), Custom (\u{1F3F7}\uFE0F)</span></div> <div class="meta-guide-item"><span class="guide-key">Click Note Badge</span> <span class="guide-desc">Jump directly to linked note (supports block links)</span></div> <div class="meta-guide-item"><span class="guide-key">+ Meta Button</span> <span class="guide-desc">Manage all metadata at bottom of detail panel</span></div> <div class="meta-guide-item"><span class="guide-key">Right Click</span> <span class="guide-desc">Dismiss popover / close Lightbox instantly</span></div></div>`;
-      attr(div8, "class", "meta-popover-guide-card");
+      div9 = element("div");
+      div9.innerHTML = `<div class="meta-popover-header"><div style="display: flex; align-items: center; gap: 6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--todo-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> <span style="font-weight: 600;">Fluent Tasks Guide</span></div> <span class="meta-popover-hint">Click for full guide</span></div> <div class="meta-guide-items"><div class="meta-guide-item"><span class="guide-key">Ctrl + Hover Title</span> <span class="guide-desc">Quick peek full title, subtasks &amp; notes</span></div> <div class="meta-guide-item"><span class="guide-key">Drag &amp; Drop Tasks</span> <span class="guide-desc">Reorder in-list or drag across panes to sidebar lists</span></div> <div class="meta-guide-item"><span class="guide-key">Direct Hover Badges</span> <span class="guide-desc">Preview Why (?), SVG (\u{1F5BC}\uFE0F), Note (\u{1F4C4}), Custom (\u{1F3F7}\uFE0F)</span></div> <div class="meta-guide-item"><span class="guide-key">Click Note / SVG</span> <span class="guide-desc">Jump directly to note or open full SVG Lightbox</span></div> <div class="meta-guide-item"><span class="guide-key">Recurring &amp; Due Dates</span> <span class="guide-desc">Daily/weekly repeats with automatic next rollover</span></div> <div class="meta-guide-item"><span class="guide-key">Right Click</span> <span class="guide-desc">Dismiss popovers / context actions (Move &amp; Delete)</span></div></div>`;
+      attr(div9, "class", "meta-popover-guide-card");
     },
     m(target, anchor) {
-      insert(target, div8, anchor);
+      insert(target, div9, anchor);
     },
     p: noop,
     d(detaching) {
       if (detaching) {
-        detach(div8);
+        detach(div9);
       }
     }
   };
@@ -10211,24 +10211,24 @@ function create_if_block_210(ctx) {
   };
 }
 function create_if_block2(ctx) {
-  let div29;
-  let div28;
+  let div65;
+  let div64;
   let div1;
   let div0;
   let t2;
   let span1;
   let t4;
-  let div26;
-  let t49;
-  let div27;
+  let div62;
+  let t105;
+  let div63;
   let button;
   let portal_action;
   let mounted;
   let dispose;
   return {
     c() {
-      div29 = element("div");
-      div28 = element("div");
+      div65 = element("div");
+      div64 = element("div");
       div1 = element("div");
       div0 = element("div");
       div0.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--todo-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> <span>Fluent Tasks Features &amp; Shortcut Guide</span>`;
@@ -10236,10 +10236,10 @@ function create_if_block2(ctx) {
       span1 = element("span");
       span1.textContent = "\u2715";
       t4 = space();
-      div26 = element("div");
-      div26.innerHTML = `<div class="guide-section"><div class="guide-section-title">\u26A1 Interaction Shortcuts</div> <div class="guide-grid"><div class="guide-card"><div class="guide-card-header"><span class="guide-badge-pill">Ctrl + Hover</span> Task Title</div> <div class="guide-card-body">Hover over any task title while pressing <kbd>Ctrl</kbd> to quick-peek full title, subtasks checklist, notes, and due dates without opening the detail view.</div></div> <div class="guide-card"><div class="guide-card-header"><span class="guide-badge-pill">Direct Hover</span> Meta Badges</div> <div class="guide-card-body">Hovering over <span class="why-badge">?</span>, <span class="note-badge">\u{1F4C4}</span>, <span class="svg-badge">\u{1F5BC}\uFE0F</span>, or <span class="custom-badge">\u{1F3F7}\uFE0F</span> instantly previews rationale, notes, SVGs, or custom properties.</div></div> <div class="guide-card"><div class="guide-card-header"><span class="guide-badge-pill">Right Click</span> Instant Dismiss</div> <div class="guide-card-body">Right-click anywhere to immediately dismiss any open hover popover or full-screen SVG Lightbox.</div></div></div></div> <div class="guide-section"><div class="guide-section-title">\u{1F4C2} Organization &amp; Metadata System</div> <div class="guide-grid"><div class="guide-card"><div class="guide-card-header">\u{1F4C4} Linked Notes &amp; Block References</div> <div class="guide-card-body">Link Obsidian/OneNote notes (e.g. <code>[[Note#^blockid]]</code>). Hover for instant preview (no Ctrl needed), click badge to jump directly.</div></div> <div class="guide-card"><div class="guide-card-header">\u{1F5BC}\uFE0F Visual Memory SVGs &amp; Lightbox</div> <div class="guide-card-body">Attach vault SVG diagrams. Hover for 280px preview, click to open full-screen zoom lightbox with one-click &quot;Open in Tab&quot;.</div></div> <div class="guide-card"><div class="guide-card-header">\u2795 Custom Metadata Manager</div> <div class="guide-card-body">Click the <code>+</code> button next to Time at the bottom of the right detail view to add/manage custom properties, Why, and linked notes.</div></div></div></div>`;
-      t49 = space();
-      div27 = element("div");
+      div62 = element("div");
+      div62.innerHTML = `<div class="guide-section"><div class="guide-section-title">\u26A1 Interaction Shortcuts</div> <div class="guide-grid"><div class="guide-card"><div class="guide-card-header"><span class="guide-badge-pill">Ctrl + Hover</span> Task Title Quick Peek</div> <div class="guide-card-body">Hover over any task title while pressing <kbd>Ctrl</kbd> (or <kbd>Cmd</kbd> on macOS) to instantly pop up full title, subtasks checklist, notes, and due dates without opening the detail view.</div></div> <div class="guide-card"><div class="guide-card-header"><span class="guide-badge-pill">Direct Hover</span> Meta Badges</div> <div class="guide-card-body">Hovering over <span class="why-badge">?</span>, <span class="note-badge">\u{1F4C4}</span>, <span class="svg-badge">\u{1F5BC}\uFE0F</span>, or <span class="custom-badge">\u{1F3F7}\uFE0F</span> instantly previews rationale, notes, SVGs, or custom properties with zero modifier keys.</div></div> <div class="guide-card"><div class="guide-card-header"><span class="guide-badge-pill">Right Click</span> Instant Dismiss &amp; Context Actions</div> <div class="guide-card-body">Right-click anywhere to immediately dismiss any open hover popover or full-screen SVG Lightbox. Right-click tasks to open move/delete context menus.</div></div></div></div> <div class="guide-section"><div class="guide-section-title">\u{1F3AF} Physics Drag &amp; Drop System</div> <div class="guide-grid"><div class="guide-card"><div class="guide-card-header">\u2195\uFE0F In-List Task Reordering</div> <div class="guide-card-body">Grab and drag tasks up and down to reorder priorities with physics animations and uniform auto-scrolling when approaching the top or bottom edges.</div></div> <div class="guide-card"><div class="guide-card-header">\u{1F500} Cross-Pane Drag to Sidebar Lists</div> <div class="guide-card-body">Drag any task from the center task list directly across onto any list or group in the left sidebar to transfer it instantly to that category.</div></div> <div class="guide-card"><div class="guide-card-header">\u{1F4C1} Sidebar List &amp; Group Hierarchy</div> <div class="guide-card-body">Drag lists into groups to nest them, reorder groups in the sidebar, or pull nested lists back out to the root level.</div></div></div></div> <div class="guide-section"><div class="guide-section-title">\u{1F4C2} Organization &amp; Metadata System</div> <div class="guide-grid"><div class="guide-card"><div class="guide-card-header">\u2753 Why / Causal Methodology</div> <div class="guide-card-body">Attach development instructions, rationales, or agent methodologies to tasks. Displayed as a clean <span class="why-badge">?</span> badge with rich hover popover.</div></div> <div class="guide-card"><div class="guide-card-header">\u{1F4C4} Linked Notes &amp; Block References</div> <div class="guide-card-body">Link Obsidian notes (e.g. <code>[[Topic#^blockid]]</code>). Direct hover triggers native Page Preview in all view modes; click to jump straight to the note.</div></div> <div class="guide-card"><div class="guide-card-header">\u{1F5BC}\uFE0F Visual Memory SVGs &amp; Lightbox</div> <div class="guide-card-body">Attach vault SVG diagrams or inline icons. Hover for 280px preview, click for full-screen zoom lightbox with one-click &quot;Open in Tab&quot; navigation.</div></div> <div class="guide-card"><div class="guide-card-header">\u2795 Custom Metadata Manager</div> <div class="guide-card-body">Click the <code>+</code> button next to Time at the bottom of the right detail view to add/manage custom properties, Why rationale, and linked notes.</div></div></div></div> <div class="guide-section"><div class="guide-section-title">\u{1F501} Recurring Tasks &amp; Smart Due Dates</div> <div class="guide-grid"><div class="guide-card"><div class="guide-card-header">\u{1F501} Repeating Task Rules</div> <div class="guide-card-body">Set tasks to repeat Daily, Weekdays (Mon\u2013Fri), Weekly on chosen days, or Custom day/week intervals. Checking off a recurring task automatically advances to the next occurrence.</div></div> <div class="guide-card"><div class="guide-card-header">\u{1F4C5} Due Dates &amp; Overdue Badges</div> <div class="guide-card-body">Set due dates with smart color-coded badges (<code>Due Today</code>, <code>Overdue</code>, <code>Repeats</code>) displayed directly in task rows and quick peeks.</div></div> <div class="guide-card"><div class="guide-card-header">\u2B50 Priority Starring &amp; Completed Toggle</div> <div class="guide-card-body">Star priority tasks to keep them prominent. Collapse or expand completed tasks with a clean accordion toggle.</div></div></div></div> <div class="guide-section"><div class="guide-section-title">\u{1F50D} Search &amp; 100% Local Markdown Ownership</div> <div class="guide-grid"><div class="guide-card"><div class="guide-card-header">\u{1F50D} Instant Global Search</div> <div class="guide-card-body">Click <code>\u{1F50D}</code> in the category header or trigger Search Modal anytime to search through tasks across all lists in milliseconds.</div></div> <div class="guide-card"><div class="guide-card-header">\u{1F512} 100% Local Open Markdown Data</div> <div class="guide-card-body">All tasks are saved directly in your vault under <code>TodoData/*.md</code> as standard checklists with discrete JSON comments. Zero proprietary lock-in.</div></div></div></div>`;
+      t105 = space();
+      div63 = element("div");
       button = element("button");
       button.textContent = "Got it!";
       attr(div0, "class", "meta-modal-title");
@@ -10247,29 +10247,29 @@ function create_if_block2(ctx) {
       attr(span1, "role", "button");
       attr(span1, "tabindex", "0");
       attr(div1, "class", "meta-modal-header");
-      attr(div26, "class", "meta-modal-body guide-modal-body");
+      attr(div62, "class", "meta-modal-body guide-modal-body");
       attr(button, "type", "button");
       attr(button, "class", "meta-btn-primary");
-      attr(div27, "class", "meta-modal-footer");
-      attr(div28, "class", "meta-modal-dialog guide-modal-dialog");
-      attr(div28, "role", "dialog");
-      attr(div28, "aria-modal", "true");
-      attr(div28, "tabindex", "-1");
-      attr(div29, "class", "meta-modal-backdrop");
-      attr(div29, "role", "presentation");
+      attr(div63, "class", "meta-modal-footer");
+      attr(div64, "class", "meta-modal-dialog guide-modal-dialog");
+      attr(div64, "role", "dialog");
+      attr(div64, "aria-modal", "true");
+      attr(div64, "tabindex", "-1");
+      attr(div65, "class", "meta-modal-backdrop");
+      attr(div65, "role", "presentation");
     },
     m(target, anchor) {
-      insert(target, div29, anchor);
-      append(div29, div28);
-      append(div28, div1);
+      insert(target, div65, anchor);
+      append(div65, div64);
+      append(div64, div1);
       append(div1, div0);
       append(div1, t2);
       append(div1, span1);
-      append(div28, t4);
-      append(div28, div26);
-      append(div28, t49);
-      append(div28, div27);
-      append(div27, button);
+      append(div64, t4);
+      append(div64, div62);
+      append(div64, t105);
+      append(div64, div63);
+      append(div63, button);
       if (!mounted) {
         dispose = [
           listen(
@@ -10284,9 +10284,9 @@ function create_if_block2(ctx) {
             /*click_handler_14*/
             ctx[94]
           ),
-          action_destroyer(portal_action = portal.call(null, div29)),
+          action_destroyer(portal_action = portal.call(null, div65)),
           listen(
-            div29,
+            div65,
             "click",
             /*click_handler_15*/
             ctx[95]
@@ -10298,7 +10298,7 @@ function create_if_block2(ctx) {
     p: noop,
     d(detaching) {
       if (detaching) {
-        detach(div29);
+        detach(div65);
       }
       mounted = false;
       run_all(dispose);

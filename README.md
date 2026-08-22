@@ -16,20 +16,35 @@ Organize your task lists into drag-and-drop groups. Easily reorder lists, create
 
 ![Lists and Groups Demo](https://raw.githubusercontent.com/2607044640/fluent-tasks/main/docs/assets/lists_and_groups.gif)
 
-### 2. Task Details, Subtasks & Starring
-Add multi-step checklist subtasks, star/pin priority items, write notes, and mark tasks as complete with real-time UI updates.
+### 2. Physics-Based Drag & Drop System
+- **In-List Reordering**: Grab and drag tasks up and down with physics animations and uniform auto-scrolling when approaching list edges.
+- **Cross-Pane Task Transfer**: Drag any task from the center task list directly across onto any list or group in the left sidebar to move it instantly.
+- **Sidebar Hierarchy Organization**: Drag lists into groups to nest them, reorder groups, or pull nested lists back to the root level.
+
+### 3. Task Quick Peek & Metadata Badges
+- **Ctrl + Hover Quick Peek**: Press <kbd>Ctrl</kbd> (or <kbd>Cmd</kbd> on macOS) while hovering over any task title to instantly view full titles, subtasks checklist progress, notes, and due dates without opening the detail view.
+- **Why / Causal Rationale (`?`)**: Attach development instructions or causal reasoning to tasks with instant hover popovers.
+- **Visual Memory SVGs (`🖼️`)**: Attach vault or inline SVG diagrams. Hover for 280px preview, click for full-screen zoom lightbox with one-click "Open in Tab" navigation.
+- **Linked Notes (`📄`)**: Link Obsidian or OneNote notes (`[[Topic#^block]]`). Direct hover triggers native Page Preview without modifier keys; click to jump straight to the note.
+- **Custom Metadata Properties (`🏷️`)**: Add and manage arbitrary key-value tags with interactive popovers.
+
+### 4. Due Dates, Reminders & Recurring Tasks
+Set due dates, custom repeat intervals (daily, weekdays Mon–Fri, weekly on chosen days, or custom interval rollover), and schedule drawer toggles with automatic next occurrence advance upon completion.
+
+![Recurring Tasks Demo](https://raw.githubusercontent.com/2607044640/fluent-tasks/main/docs/assets/recurring_tasks.gif)
+
+### 5. Task Details, Subtasks & Priority Starring
+Add multi-step checklist subtasks, star/pin priority items, write rich markdown notes, and toggle completed tasks with a clean accordion view.
 
 ![Task Details Demo](https://raw.githubusercontent.com/2607044640/fluent-tasks/main/docs/assets/task_features.gif)
 
-### 3. Custom Accent Colors
+### 6. Instant Global Search
+Click `🔍` in the category header or trigger Search Modal anytime to search through tasks across all lists in milliseconds.
+
+### 7. Custom Accent Colors
 Customize the primary accent color to match your personal theme preference.
 
 ![Custom Accent Color Demo](https://raw.githubusercontent.com/2607044640/fluent-tasks/main/docs/assets/custom_colors.gif)
-
-### 4. Due Dates, Reminders & Recurring Tasks
-Set due dates, custom repeat intervals (daily, weekly, weekdays, monthly, yearly), and schedule drawer toggles with automatic task rollover.
-
-![Recurring Tasks Demo](https://raw.githubusercontent.com/2607044640/fluent-tasks/main/docs/assets/recurring_tasks.gif)
 
 ---
 
@@ -38,7 +53,9 @@ Set due dates, custom repeat intervals (daily, weekly, weekdays, monthly, yearly
 1. **Install & Enable**: Install Fluent Tasks from the Obsidian Community Store and enable it.
 2. **Open Sidebar**: The task sidebar is opened automatically on startup. You can also open it via the Command Palette (`Ctrl+P` -> `Fluent Tasks: Open Sidebar`).
 3. **Create Lists & Groups**: Create a new task list or group from the bottom of the sidebar.
-4. **Manage Tasks**: Click a list to view its tasks, drag them to reorder, or click a task to view and edit its details.
+4. **Manage & Drag Tasks**: Click a list to view its tasks, drag them to reorder or drag onto sidebar lists to move, or click a task to view and edit its details.
+5. **Quick Shortcuts**: Hover over task titles with <kbd>Ctrl</kbd> for quick peeks; hover badges for instant metadata previews; right-click anywhere to dismiss popovers.
+6. **Features & Shortcuts Guide**: Click the `?` icon in the pane header action bar (next to `⋮`) anytime to open the complete interactive guide.
 
 ---
 

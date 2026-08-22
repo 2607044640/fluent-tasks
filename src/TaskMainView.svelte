@@ -1113,20 +1113,24 @@
                             <span class="guide-desc">Quick peek full title, subtasks & notes</span>
                         </div>
                         <div class="meta-guide-item">
+                            <span class="guide-key">Drag & Drop Tasks</span>
+                            <span class="guide-desc">Reorder in-list or drag across panes to sidebar lists</span>
+                        </div>
+                        <div class="meta-guide-item">
                             <span class="guide-key">Direct Hover Badges</span>
                             <span class="guide-desc">Preview Why (?), SVG (🖼️), Note (📄), Custom (🏷️)</span>
                         </div>
                         <div class="meta-guide-item">
-                            <span class="guide-key">Click Note Badge</span>
-                            <span class="guide-desc">Jump directly to linked note (supports block links)</span>
+                            <span class="guide-key">Click Note / SVG</span>
+                            <span class="guide-desc">Jump directly to note or open full SVG Lightbox</span>
                         </div>
                         <div class="meta-guide-item">
-                            <span class="guide-key">+ Meta Button</span>
-                            <span class="guide-desc">Manage all metadata at bottom of detail panel</span>
+                            <span class="guide-key">Recurring & Due Dates</span>
+                            <span class="guide-desc">Daily/weekly repeats with automatic next rollover</span>
                         </div>
                         <div class="meta-guide-item">
                             <span class="guide-key">Right Click</span>
-                            <span class="guide-desc">Dismiss popover / close Lightbox instantly</span>
+                            <span class="guide-desc">Dismiss popovers / context actions (Move & Delete)</span>
                         </div>
                     </div>
                 </div>
@@ -1197,38 +1201,97 @@
                           role="button" tabindex="0">✕</span>
                 </div>
                 <div class="meta-modal-body guide-modal-body">
+                    <!-- 1. Shortcuts -->
                     <div class="guide-section">
                         <div class="guide-section-title">⚡ Interaction Shortcuts</div>
                         <div class="guide-grid">
                             <div class="guide-card">
-                                <div class="guide-card-header"><span class="guide-badge-pill">Ctrl + Hover</span> Task Title</div>
-                                <div class="guide-card-body">Hover over any task title while pressing <kbd>Ctrl</kbd> to quick-peek full title, subtasks checklist, notes, and due dates without opening the detail view.</div>
+                                <div class="guide-card-header"><span class="guide-badge-pill">Ctrl + Hover</span> Task Title Quick Peek</div>
+                                <div class="guide-card-body">Hover over any task title while pressing <kbd>Ctrl</kbd> (or <kbd>Cmd</kbd> on macOS) to instantly pop up full title, subtasks checklist, notes, and due dates without opening the detail view.</div>
                             </div>
                             <div class="guide-card">
                                 <div class="guide-card-header"><span class="guide-badge-pill">Direct Hover</span> Meta Badges</div>
-                                <div class="guide-card-body">Hovering over <span class="why-badge">?</span>, <span class="note-badge">📄</span>, <span class="svg-badge">🖼️</span>, or <span class="custom-badge">🏷️</span> instantly previews rationale, notes, SVGs, or custom properties.</div>
+                                <div class="guide-card-body">Hovering over <span class="why-badge">?</span>, <span class="note-badge">📄</span>, <span class="svg-badge">🖼️</span>, or <span class="custom-badge">🏷️</span> instantly previews rationale, notes, SVGs, or custom properties with zero modifier keys.</div>
                             </div>
                             <div class="guide-card">
-                                <div class="guide-card-header"><span class="guide-badge-pill">Right Click</span> Instant Dismiss</div>
-                                <div class="guide-card-body">Right-click anywhere to immediately dismiss any open hover popover or full-screen SVG Lightbox.</div>
+                                <div class="guide-card-header"><span class="guide-badge-pill">Right Click</span> Instant Dismiss & Context Actions</div>
+                                <div class="guide-card-body">Right-click anywhere to immediately dismiss any open hover popover or full-screen SVG Lightbox. Right-click tasks to open move/delete context menus.</div>
                             </div>
                         </div>
                     </div>
 
+                    <!-- 2. Drag & Drop -->
+                    <div class="guide-section">
+                        <div class="guide-section-title">🎯 Physics Drag & Drop System</div>
+                        <div class="guide-grid">
+                            <div class="guide-card">
+                                <div class="guide-card-header">↕️ In-List Task Reordering</div>
+                                <div class="guide-card-body">Grab and drag tasks up and down to reorder priorities with physics animations and uniform auto-scrolling when approaching the top or bottom edges.</div>
+                            </div>
+                            <div class="guide-card">
+                                <div class="guide-card-header">🔀 Cross-Pane Drag to Sidebar Lists</div>
+                                <div class="guide-card-body">Drag any task from the center task list directly across onto any list or group in the left sidebar to transfer it instantly to that category.</div>
+                            </div>
+                            <div class="guide-card">
+                                <div class="guide-card-header">📁 Sidebar List & Group Hierarchy</div>
+                                <div class="guide-card-body">Drag lists into groups to nest them, reorder groups in the sidebar, or pull nested lists back out to the root level.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Organization & Metadata -->
                     <div class="guide-section">
                         <div class="guide-section-title">📂 Organization & Metadata System</div>
                         <div class="guide-grid">
                             <div class="guide-card">
+                                <div class="guide-card-header">❓ Why / Causal Methodology</div>
+                                <div class="guide-card-body">Attach development instructions, rationales, or agent methodologies to tasks. Displayed as a clean <span class="why-badge">?</span> badge with rich hover popover.</div>
+                            </div>
+                            <div class="guide-card">
                                 <div class="guide-card-header">📄 Linked Notes & Block References</div>
-                                <div class="guide-card-body">Link Obsidian/OneNote notes (e.g. <code>[[Note#^blockid]]</code>). Hover for instant preview (no Ctrl needed), click badge to jump directly.</div>
+                                <div class="guide-card-body">Link Obsidian notes (e.g. <code>[[Topic#^blockid]]</code>). Direct hover triggers native Page Preview in all view modes; click to jump straight to the note.</div>
                             </div>
                             <div class="guide-card">
                                 <div class="guide-card-header">🖼️ Visual Memory SVGs & Lightbox</div>
-                                <div class="guide-card-body">Attach vault SVG diagrams. Hover for 280px preview, click to open full-screen zoom lightbox with one-click "Open in Tab".</div>
+                                <div class="guide-card-body">Attach vault SVG diagrams or inline icons. Hover for 280px preview, click for full-screen zoom lightbox with one-click "Open in Tab" navigation.</div>
                             </div>
                             <div class="guide-card">
                                 <div class="guide-card-header">➕ Custom Metadata Manager</div>
-                                <div class="guide-card-body">Click the <code>+</code> button next to Time at the bottom of the right detail view to add/manage custom properties, Why, and linked notes.</div>
+                                <div class="guide-card-body">Click the <code>+</code> button next to Time at the bottom of the right detail view to add/manage custom properties, Why rationale, and linked notes.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Scheduling & Recurrence -->
+                    <div class="guide-section">
+                        <div class="guide-section-title">🔁 Recurring Tasks & Smart Due Dates</div>
+                        <div class="guide-grid">
+                            <div class="guide-card">
+                                <div class="guide-card-header">🔁 Repeating Task Rules</div>
+                                <div class="guide-card-body">Set tasks to repeat Daily, Weekdays (Mon–Fri), Weekly on chosen days, or Custom day/week intervals. Checking off a recurring task automatically advances to the next occurrence.</div>
+                            </div>
+                            <div class="guide-card">
+                                <div class="guide-card-header">📅 Due Dates & Overdue Badges</div>
+                                <div class="guide-card-body">Set due dates with smart color-coded badges (<code>Due Today</code>, <code>Overdue</code>, <code>Repeats</code>) displayed directly in task rows and quick peeks.</div>
+                            </div>
+                            <div class="guide-card">
+                                <div class="guide-card-header">⭐ Priority Starring & Completed Toggle</div>
+                                <div class="guide-card-body">Star priority tasks to keep them prominent. Collapse or expand completed tasks with a clean accordion toggle.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 5. Search & Data Privacy -->
+                    <div class="guide-section">
+                        <div class="guide-section-title">🔍 Search & 100% Local Markdown Ownership</div>
+                        <div class="guide-grid">
+                            <div class="guide-card">
+                                <div class="guide-card-header">🔍 Instant Global Search</div>
+                                <div class="guide-card-body">Click <code>🔍</code> in the category header or trigger Search Modal anytime to search through tasks across all lists in milliseconds.</div>
+                            </div>
+                            <div class="guide-card">
+                                <div class="guide-card-header">🔒 100% Local Open Markdown Data</div>
+                                <div class="guide-card-body">All tasks are saved directly in your vault under <code>TodoData/*.md</code> as standard checklists with discrete JSON comments. Zero proprietary lock-in.</div>
                             </div>
                         </div>
                     </div>

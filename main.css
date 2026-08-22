@@ -1622,15 +1622,15 @@ body.is-dragging-ghost #dnd-action-dragged-el {
   line-height: 1.35;
 }
 .guide-modal-dialog {
-  max-width: 620px !important;
-  max-height: 85vh;
+  max-width: 660px !important;
+  max-height: 88vh;
 }
 .guide-modal-body {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
   padding: 16px 20px;
-  max-height: 60vh;
+  max-height: 68vh;
   overflow-y: auto;
 }
 .guide-section {
