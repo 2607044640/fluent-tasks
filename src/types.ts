@@ -47,7 +47,7 @@ export interface TaskItem {
     /** Linked Obsidian note path or wikilink (e.g. [[Topic]] or OneNote/Domain/Topic.md) */
     note_link?: string;
     /** Arbitrary custom key-value metadata */
-    customMeta?: Record<string, any>;
+    customMeta?: Record<string, unknown>;
 }
 
 export interface CategoryInfo {

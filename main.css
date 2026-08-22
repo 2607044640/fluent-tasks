@@ -704,6 +704,10 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     background-color: transparent;
   }
 }
+.fluent-tasks-search-modal .search-input-clear-button,
+.fluent-tasks-search-modal .prompt-input-clear-button {
+  display: none !important;
+}
 .sidebar-header {
   padding: 8px 10px;
   font-size: 13px;

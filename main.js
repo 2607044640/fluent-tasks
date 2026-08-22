@@ -32,7 +32,7 @@ __export(main_exports, {
   default: () => FluentTasksPlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian7 = require("obsidian");
+var import_obsidian8 = require("obsidian");
 
 // src/types.ts
 var VIEW_TYPE_SIDEBAR = "fluent-tasks-sidebar";
@@ -92,6 +92,7 @@ var EventBusImpl = class {
 var EventBus = new EventBusImpl();
 
 // src/Logger.ts
+var import_obsidian = require("obsidian");
 var Logger = class {
   static init(app) {
     this.app = app;
@@ -108,7 +109,7 @@ var Logger = class {
     try {
       const vault = this.app.vault;
       const file = vault.getAbstractFileByPath(this.LOG_PATH);
-      if (file) {
+      if (file instanceof import_obsidian.TFile) {
         await vault.append(file, line);
       } else {
         const folder = vault.getAbstractFileByPath(DATA_FOLDER);
@@ -126,7 +127,7 @@ var Logger = class {
       return;
     try {
       const file = this.app.vault.getAbstractFileByPath(this.LOG_PATH);
-      if (file) {
+      if (file instanceof import_obsidian.TFile) {
         await this.app.vault.modify(file, "");
       }
     } catch (e) {
@@ -137,7 +138,7 @@ var Logger = class {
 Logger.LOG_PATH = `${DATA_FOLDER}/debug.log`;
 
 // src/services/AtomicIOPipeline.ts
-var import_obsidian = require("obsidian");
+var import_obsidian2 = require("obsidian");
 var AtomicIOPipeline = class {
   constructor(app) {
     this.app = app;
@@ -153,7 +154,7 @@ var AtomicIOPipeline = class {
   /** Atomically process a file to prevent race conditions */
   async processFile(filepath, mutator) {
     const file = this.app.vault.getAbstractFileByPath(filepath);
-    if (!file || !(file instanceof import_obsidian.TFile)) {
+    if (!file || !(file instanceof import_obsidian2.TFile)) {
       Logger.log("ERROR: Cannot process, file not found:", filepath);
       return;
     }
@@ -162,14 +163,14 @@ var AtomicIOPipeline = class {
   /** Wrapper for standard file read */
   async readFile(filepath) {
     const file = this.app.vault.getAbstractFileByPath(filepath);
-    if (!file || !(file instanceof import_obsidian.TFile))
+    if (!file || !(file instanceof import_obsidian2.TFile))
       return "";
     return await this.app.vault.adapter.read(filepath);
   }
 };
 
 // src/services/CategoryService.ts
-var import_obsidian2 = require("obsidian");
+var import_obsidian3 = require("obsidian");
 var CategoryService = class {
   constructor(app, io) {
     this.app = app;
@@ -182,11 +183,11 @@ var CategoryService = class {
     var _a;
     await this.io.ensureDataFolder();
     const folder = this.app.vault.getAbstractFileByPath(DATA_FOLDER);
-    if (!folder || !(folder instanceof import_obsidian2.TFolder))
+    if (!folder || !(folder instanceof import_obsidian3.TFolder))
       return [];
     const fileMap = /* @__PURE__ */ new Map();
     for (const child of folder.children) {
-      if (child instanceof import_obsidian2.TFile && child.extension === "md" && !child.name.startsWith(".")) {
+      if (child instanceof import_obsidian3.TFile && child.extension === "md" && !child.name.startsWith(".")) {
         fileMap.set(child.basename, child);
       }
     }
@@ -313,7 +314,7 @@ var CategoryService = class {
   }
   async deleteCategory(filepath) {
     const file = this.app.vault.getAbstractFileByPath(filepath);
-    if (file && file instanceof import_obsidian2.TFile) {
+    if (file && file instanceof import_obsidian3.TFile) {
       await this.app.fileManager.trashFile(file);
       Logger.log("Moved category to trash:", filepath);
       const items = await this.getSidebarItems();
@@ -334,7 +335,7 @@ var CategoryService = class {
   }
   async renameCategory(filepath, newName) {
     const file = this.app.vault.getAbstractFileByPath(filepath);
-    if (!file || !(file instanceof import_obsidian2.TFile)) {
+    if (!file || !(file instanceof import_obsidian3.TFile)) {
       throw new Error(`Category file not found: ${filepath}`);
     }
     const oldName = file.basename;
@@ -383,7 +384,6 @@ var MarkdownParser = class {
    * Parse raw markdown content into a TaskItem array.
    */
   static parseTasksFromMarkdown(content) {
-    var _a, _b, _c;
     const tasks2 = [];
     const lines = content.split("\n");
     for (const line of lines) {
@@ -398,29 +398,32 @@ var MarkdownParser = class {
       let title = rawContent;
       if (metaMatch) {
         try {
-          meta = JSON.parse(metaMatch[1]);
+          const parsed = JSON.parse(metaMatch[1]);
+          if (parsed && typeof parsed === "object") {
+            meta = parsed;
+          }
         } catch (e) {
         }
         title = rawContent.replace(/\s*%%\{.*?\}%%/, "").trim();
       }
-      const createdAt = meta.createdAt || (/* @__PURE__ */ new Date()).toISOString();
-      const id = meta.id || generateStableId(title, createdAt);
+      const createdAt = typeof meta.createdAt === "string" ? meta.createdAt : (/* @__PURE__ */ new Date()).toISOString();
+      const id = typeof meta.id === "string" ? meta.id : generateStableId(title, createdAt);
       tasks2.push({
         id,
         title,
         completed,
-        starred: (_a = meta.starred) != null ? _a : false,
-        steps: (_b = meta.steps) != null ? _b : [],
-        note: (_c = meta.note) != null ? _c : "",
+        starred: typeof meta.starred === "boolean" ? meta.starred : false,
+        steps: Array.isArray(meta.steps) ? meta.steps : [],
+        note: typeof meta.note === "string" ? meta.note : "",
         createdAt,
-        ...meta.dueDate ? { dueDate: meta.dueDate } : {},
-        ...meta.msGraphId ? { msGraphId: meta.msGraphId } : {},
-        ...meta.msGraphListId ? { msGraphListId: meta.msGraphListId } : {},
-        ...meta.recurrence ? { recurrence: meta.recurrence } : {},
-        ...meta.why ? { why: meta.why } : {},
-        ...meta.svgs && meta.svgs.length > 0 ? { svgs: meta.svgs } : {},
-        ...meta.note_link ? { note_link: meta.note_link } : meta.noteLink ? { note_link: meta.noteLink } : {},
-        ...meta.customMeta && Object.keys(meta.customMeta).length > 0 ? { customMeta: meta.customMeta } : {}
+        ...typeof meta.dueDate === "string" ? { dueDate: meta.dueDate } : {},
+        ...typeof meta.msGraphId === "string" ? { msGraphId: meta.msGraphId } : {},
+        ...typeof meta.msGraphListId === "string" ? { msGraphListId: meta.msGraphListId } : {},
+        ...meta.recurrence && typeof meta.recurrence === "object" ? { recurrence: meta.recurrence } : {},
+        ...typeof meta.why === "string" ? { why: meta.why } : {},
+        ...Array.isArray(meta.svgs) && meta.svgs.length > 0 ? { svgs: meta.svgs } : {},
+        ...typeof meta.note_link === "string" ? { note_link: meta.note_link } : typeof meta.noteLink === "string" ? { note_link: meta.noteLink } : {},
+        ...meta.customMeta && typeof meta.customMeta === "object" && Object.keys(meta.customMeta).length > 0 ? { customMeta: meta.customMeta } : {}
       });
     }
     return tasks2;
@@ -1745,11 +1748,11 @@ var DND_RESCUE_DELAY_MS = 50;
 var POPOVER_HIDE_DELAY_MS = 300;
 
 // src/TaskSidebarView.svelte
-var import_obsidian4 = require("obsidian");
+var import_obsidian5 = require("obsidian");
 
 // src/TaskSearchModal.ts
-var import_obsidian3 = require("obsidian");
-var TaskSearchModal = class extends import_obsidian3.SuggestModal {
+var import_obsidian4 = require("obsidian");
+var TaskSearchModal = class extends import_obsidian4.SuggestModal {
   constructor(app, plugin, dataService, scopeFilepath) {
     super(app);
     this.toggleEl = null;
@@ -1766,9 +1769,6 @@ var TaskSearchModal = class extends import_obsidian3.SuggestModal {
     this.modalEl.addClass("fluent-tasks-search-modal");
     const promptEl = this.modalEl.querySelector(".prompt-input-container");
     if (promptEl) {
-      const clearBtn = promptEl.querySelector(".search-input-clear-button, .prompt-input-clear-button");
-      if (clearBtn)
-        clearBtn.setCssStyles({ display: "none" });
       this.toggleEl = promptEl.createEl("button", {
         cls: "todo-search-filter-btn",
         attr: { "aria-label": "Toggle completed tasks filter" }
@@ -3246,7 +3246,7 @@ function instance($$self, $$props, $$invalidate) {
   }
   async function handleCategoryContextMenu(e, cat) {
     e.preventDefault();
-    const menu = new import_obsidian4.Menu();
+    const menu = new import_obsidian5.Menu();
     menu.addItem((item) => {
       item.setTitle("Delete List").setIcon("trash").onClick(async () => {
         await dataService.deleteCategory(cat.filepath);
@@ -3271,7 +3271,7 @@ function instance($$self, $$props, $$invalidate) {
     if (group.type !== "group")
       return;
     e.preventDefault();
-    const menu = new import_obsidian4.Menu();
+    const menu = new import_obsidian5.Menu();
     menu.addItem((item) => {
       item.setTitle("Delete Group").setIcon("trash").onClick(async () => {
         await deleteGroup(group.id);
@@ -6154,7 +6154,7 @@ function getRecurrenceLabel(rule) {
 }
 
 // src/TaskMainView.svelte
-var import_obsidian5 = require("obsidian");
+var import_obsidian6 = require("obsidian");
 
 // src/services/RecurrenceService.ts
 var RecurrenceService = class _RecurrenceService {
@@ -10908,7 +10908,7 @@ function instance2($$self, $$props, $$invalidate) {
     e.preventDefault();
     if (!currentCategory)
       return;
-    const menu = new import_obsidian5.Menu();
+    const menu = new import_obsidian6.Menu();
     const categories = await dataService.getCategories();
     for (const cat of categories) {
       if (cat.filepath === currentCategory.filepath)
@@ -14878,14 +14878,14 @@ var TaskDetailView = class extends SvelteComponent {
 var TaskDetailView_default = TaskDetailView;
 
 // src/settings.ts
-var import_obsidian6 = require("obsidian");
+var import_obsidian7 = require("obsidian");
 var DEFAULT_SETTINGS = {
   accentColor: "#8b5cf6",
   autoExpandSidebar: true,
   searchHideCompleted: true,
   hideRibbonIcon: false
 };
-var FluentTasksSettingTab = class extends import_obsidian6.PluginSettingTab {
+var FluentTasksSettingTab = class extends import_obsidian7.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
     this.plugin = plugin;
@@ -14893,7 +14893,7 @@ var FluentTasksSettingTab = class extends import_obsidian6.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    const colorSetting = new import_obsidian6.Setting(containerEl).setName("Accent Color").setDesc("Choose the primary accent color for the plugin (e.g., active borders, stars).").addColorPicker((color) => color.setValue(this.plugin.settings.accentColor).onChange(async (value) => {
+    const colorSetting = new import_obsidian7.Setting(containerEl).setName("Accent Color").setDesc("Choose the primary accent color for the plugin (e.g., active borders, stars).").addColorPicker((color) => color.setValue(this.plugin.settings.accentColor).onChange(async (value) => {
       this.plugin.settings.accentColor = value;
       await this.plugin.saveSettings();
       this.plugin.applySettings();
@@ -14907,15 +14907,15 @@ var FluentTasksSettingTab = class extends import_obsidian6.PluginSettingTab {
         this.plugin.applySettings();
       });
     }
-    new import_obsidian6.Setting(containerEl).setName("Auto-Expand Sidebar on Focus").setDesc("Automatically expand the left sidebar list panel when switching to Fluent Tasks tab (via Ctrl+Tab, Ctrl+Shift+Tab, or clicking the tab).").addToggle((toggle) => toggle.setValue(this.plugin.settings.autoExpandSidebar).onChange(async (value) => {
+    new import_obsidian7.Setting(containerEl).setName("Auto-Expand Sidebar on Focus").setDesc("Automatically expand the left sidebar list panel when switching to Fluent Tasks tab (via Ctrl+Tab, Ctrl+Shift+Tab, or clicking the tab).").addToggle((toggle) => toggle.setValue(this.plugin.settings.autoExpandSidebar).onChange(async (value) => {
       this.plugin.settings.autoExpandSidebar = value;
       await this.plugin.saveSettings();
     }));
-    new import_obsidian6.Setting(containerEl).setName("Search: Hide Completed Tasks").setDesc("When searching, hide completed tasks by default. Can also be toggled directly in the search modal.").addToggle((toggle) => toggle.setValue(this.plugin.settings.searchHideCompleted).onChange(async (value) => {
+    new import_obsidian7.Setting(containerEl).setName("Search: Hide Completed Tasks").setDesc("When searching, hide completed tasks by default. Can also be toggled directly in the search modal.").addToggle((toggle) => toggle.setValue(this.plugin.settings.searchHideCompleted).onChange(async (value) => {
       this.plugin.settings.searchHideCompleted = value;
       await this.plugin.saveSettings();
     }));
-    new import_obsidian6.Setting(containerEl).setName("Hide Ribbon Icon").setDesc("Hide the Fluent Tasks icon in the left ribbon.").addToggle((toggle) => {
+    new import_obsidian7.Setting(containerEl).setName("Hide Ribbon Icon").setDesc("Hide the Fluent Tasks icon in the left ribbon.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.hideRibbonIcon) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.hideRibbonIcon = value;
@@ -14927,7 +14927,7 @@ var FluentTasksSettingTab = class extends import_obsidian6.PluginSettingTab {
 };
 
 // src/main.ts
-var TaskSidebarViewWrapper = class extends import_obsidian7.ItemView {
+var TaskSidebarViewWrapper = class extends import_obsidian8.ItemView {
   constructor(leaf, dataService, plugin) {
     super(leaf);
     this.component = null;
@@ -14958,7 +14958,7 @@ var TaskSidebarViewWrapper = class extends import_obsidian7.ItemView {
     }
   }
 };
-var TaskMainViewWrapper = class extends import_obsidian7.ItemView {
+var TaskMainViewWrapper = class extends import_obsidian8.ItemView {
   constructor(leaf, dataService, plugin) {
     super(leaf);
     this.component = null;
@@ -14976,16 +14976,16 @@ var TaskMainViewWrapper = class extends import_obsidian7.ItemView {
   }
   async onOpen() {
     const guideAction = this.addAction("help-circle", "Features & shortcuts guide", () => {
-      var _a;
-      (_a = this.component) == null ? void 0 : _a.openHintsModal();
+      const comp = this.component;
+      comp == null ? void 0 : comp.openHintsModal();
     });
     guideAction.addEventListener("mouseenter", (e) => {
-      var _a;
-      (_a = this.component) == null ? void 0 : _a.showGuidePopover(e);
+      const comp = this.component;
+      comp == null ? void 0 : comp.showGuidePopover(e);
     });
     guideAction.addEventListener("mouseleave", () => {
-      var _a;
-      (_a = this.component) == null ? void 0 : _a.scheduleHidePopover();
+      const comp = this.component;
+      comp == null ? void 0 : comp.scheduleHidePopover();
     });
     const container = this.containerEl.children[1];
     container.empty();
@@ -15009,13 +15009,13 @@ var TaskMainViewWrapper = class extends import_obsidian7.ItemView {
     const cat = (_a = this.component) == null ? void 0 : _a.getCurrentCategory();
     if (cat && cat.filepath) {
       const f = this.app.vault.getAbstractFileByPath(cat.filepath);
-      if (f instanceof import_obsidian7.TFile)
+      if (f instanceof import_obsidian8.TFile)
         return f;
     }
     return null;
   }
 };
-var TaskDetailViewWrapper = class extends import_obsidian7.ItemView {
+var TaskDetailViewWrapper = class extends import_obsidian8.ItemView {
   constructor(leaf, dataService, plugin) {
     super(leaf);
     this.component = null;
@@ -15049,7 +15049,7 @@ var TaskDetailViewWrapper = class extends import_obsidian7.ItemView {
     return this.component;
   }
 };
-var FluentTasksPlugin = class extends import_obsidian7.Plugin {
+var FluentTasksPlugin = class extends import_obsidian8.Plugin {
   constructor() {
     super(...arguments);
     this.ribbonIconEl = null;
@@ -15122,7 +15122,7 @@ var FluentTasksPlugin = class extends import_obsidian7.Plugin {
         await this.dataService.ensureDataFolder();
         await this.loadSettings();
         this.applySettings();
-        let lastActiveViewType = ((_a = this.app.workspace.getActiveViewOfType(import_obsidian7.ItemView)) == null ? void 0 : _a.getViewType()) || "";
+        let lastActiveViewType = ((_a = this.app.workspace.getActiveViewOfType(import_obsidian8.ItemView)) == null ? void 0 : _a.getViewType()) || "";
         this.registerEvent(
           this.app.workspace.on("active-leaf-change", (leaf) => {
             if (!leaf || !leaf.view)
@@ -15140,17 +15140,21 @@ var FluentTasksPlugin = class extends import_obsidian7.Plugin {
           this.app.workspace.detachLeavesOfType(VIEW_TYPE_DETAIL);
         });
         EventBus.on("category:selected" /* CATEGORY_SELECTED */, (payload) => {
-          if (payload && payload.category) {
+          const p = payload;
+          if (p && p.category) {
             void this.activateView(VIEW_TYPE_MAIN, "center");
           }
         });
         EventBus.on("task:selected" /* TASK_SELECTED */, (payload) => {
+          const p = payload;
+          if (!p)
+            return;
           void (async () => {
             const leaf = await this.activateView(VIEW_TYPE_DETAIL, "right");
             if (leaf && leaf.view instanceof TaskDetailViewWrapper) {
               const comp = leaf.view.getComponent();
               if (comp) {
-                comp.loadTask(payload.task, payload.categoryFilepath);
+                comp.loadTask(p.task, p.categoryFilepath);
               }
             }
           })();
@@ -15212,7 +15216,7 @@ var FluentTasksPlugin = class extends import_obsidian7.Plugin {
    */
   expandSidebarToList() {
     const leftSplit = this.app.workspace.leftSplit;
-    if (leftSplit.collapsed) {
+    if (leftSplit == null ? void 0 : leftSplit.collapsed) {
       leftSplit.expand();
     }
     const sidebarLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR);

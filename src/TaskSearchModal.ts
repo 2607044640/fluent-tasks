@@ -38,10 +38,6 @@ export class TaskSearchModal extends SuggestModal<TaskSearchResult> {
         // Inject filter toggle button next to the input
         const promptEl = this.modalEl.querySelector(".prompt-input-container");
         if (promptEl) {
-            // Hide native clear button if present
-            const clearBtn = promptEl.querySelector<HTMLElement>(".search-input-clear-button, .prompt-input-clear-button");
-            if (clearBtn) clearBtn.setCssStyles({ display: "none" });
-
             this.toggleEl = promptEl.createEl("button", {
                 cls: "todo-search-filter-btn",
                 attr: { "aria-label": "Toggle completed tasks filter" },

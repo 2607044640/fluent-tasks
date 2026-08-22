@@ -57,35 +57,38 @@ export class MarkdownParser {
 
             // Extract metadata JSON from %%{...}%%
             const metaMatch = trimmed.match(META_REGEX);
-            let meta: Partial<TaskItem> = {};
+            let meta: Record<string, unknown> = {};
             let title = rawContent;
 
             if (metaMatch) {
                 try {
-                    meta = JSON.parse(metaMatch[1]);
+                    const parsed = JSON.parse(metaMatch[1]);
+                    if (parsed && typeof parsed === "object") {
+                        meta = parsed as Record<string, unknown>;
+                    }
                 } catch { /* swallow parse errors gracefully */ }
                 title = rawContent.replace(/\s*%%\{.*?\}%%/, "").trim();
             }
 
-            const createdAt = meta.createdAt || new Date().toISOString();
-            const id = meta.id || generateStableId(title, createdAt);
+            const createdAt = typeof meta.createdAt === "string" ? meta.createdAt : new Date().toISOString();
+            const id = typeof meta.id === "string" ? meta.id : generateStableId(title, createdAt);
 
             tasks.push({
                 id,
                 title,
                 completed,
-                starred: meta.starred ?? false,
-                steps: meta.steps ?? [],
-                note: meta.note ?? "",
+                starred: typeof meta.starred === "boolean" ? meta.starred : false,
+                steps: Array.isArray(meta.steps) ? (meta.steps as TaskStep[]) : [],
+                note: typeof meta.note === "string" ? meta.note : "",
                 createdAt,
-                ...(meta.dueDate ? { dueDate: meta.dueDate } : {}),
-                ...(meta.msGraphId ? { msGraphId: meta.msGraphId } : {}),
-                ...(meta.msGraphListId ? { msGraphListId: meta.msGraphListId } : {}),
-                ...(meta.recurrence ? { recurrence: meta.recurrence } : {}),
-                ...(meta.why ? { why: meta.why } : {}),
-                ...(meta.svgs && meta.svgs.length > 0 ? { svgs: meta.svgs } : {}),
-                ...(meta.note_link ? { note_link: meta.note_link } : (meta as any).noteLink ? { note_link: (meta as any).noteLink } : {}),
-                ...(meta.customMeta && Object.keys(meta.customMeta).length > 0 ? { customMeta: meta.customMeta } : {}),
+                ...(typeof meta.dueDate === "string" ? { dueDate: meta.dueDate } : {}),
+                ...(typeof meta.msGraphId === "string" ? { msGraphId: meta.msGraphId } : {}),
+                ...(typeof meta.msGraphListId === "string" ? { msGraphListId: meta.msGraphListId } : {}),
+                ...(meta.recurrence && typeof meta.recurrence === "object" ? { recurrence: meta.recurrence as RecurrenceRule } : {}),
+                ...(typeof meta.why === "string" ? { why: meta.why } : {}),
+                ...(Array.isArray(meta.svgs) && meta.svgs.length > 0 ? { svgs: meta.svgs as string[] } : {}),
+                ...(typeof meta.note_link === "string" ? { note_link: meta.note_link } : typeof meta.noteLink === "string" ? { note_link: meta.noteLink } : {}),
+                ...(meta.customMeta && typeof meta.customMeta === "object" && Object.keys(meta.customMeta).length > 0 ? { customMeta: meta.customMeta as Record<string, unknown> } : {}),
             });
         }
 
@@ -98,7 +101,7 @@ export class MarkdownParser {
     static serializeTasksToMarkdown(tasks: TaskItem[]): string {
         return tasks.map(task => {
             const checkbox = task.completed ? "[x]" : "[ ]";
-            const meta: Record<string, any> = {
+            const meta: Record<string, unknown> = {
                 id: task.id,
                 starred: task.starred,
                 steps: task.steps,

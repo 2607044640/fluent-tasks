@@ -829,7 +829,7 @@ body.is-dragging-ghost #dnd-action-dragged-el {
 }
 
 /* =============================================
-   Task Navigate Highlight
+   Task Navigate Highlight & Search Modal
    ============================================= */
 .task-item.navigate-highlight {
     animation: navigate-pulse 1.5s ease-out;
@@ -837,6 +837,11 @@ body.is-dragging-ghost #dnd-action-dragged-el {
 @keyframes navigate-pulse {
     0% { background-color: var(--todo-accent-light); }
     100% { background-color: transparent; }
+}
+
+.fluent-tasks-search-modal .search-input-clear-button,
+.fluent-tasks-search-modal .prompt-input-clear-button {
+    display: none !important;
 }
 
 /* =============================================

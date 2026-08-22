@@ -46,7 +46,7 @@ class EventBusImpl {
     /**
      * Emit an event with a payload. All registered handlers are invoked synchronously.
      */
-    emit(event: string, payload?: any): void {
+    emit(event: string, payload?: unknown): void {
         const handlers = this.listeners.get(event);
         if (handlers) {
             handlers.forEach(handler => {

@@ -60,6 +60,13 @@ class TaskSidebarViewWrapper extends ItemView {
     }
 }
 
+interface TaskMainViewComponent extends TaskMainView {
+    openHintsModal: () => void;
+    showGuidePopover: (e: MouseEvent) => void;
+    scheduleHidePopover: () => void;
+    getCurrentCategory: () => CategoryInfo | null;
+}
+
 class TaskMainViewWrapper extends ItemView {
     private component: TaskMainView | null = null;
     private dataService: DataService;
@@ -77,14 +84,17 @@ class TaskMainViewWrapper extends ItemView {
 
     async onOpen(): Promise<void> {
         const guideAction = this.addAction("help-circle", "Features & shortcuts guide", () => {
-            (this.component as any)?.openHintsModal();
+            const comp = this.component as unknown as TaskMainViewComponent | null;
+            comp?.openHintsModal();
         });
 
         guideAction.addEventListener("mouseenter", (e: MouseEvent) => {
-            (this.component as any)?.showGuidePopover(e);
+            const comp = this.component as unknown as TaskMainViewComponent | null;
+            comp?.showGuidePopover(e);
         });
         guideAction.addEventListener("mouseleave", () => {
-            (this.component as any)?.scheduleHidePopover();
+            const comp = this.component as unknown as TaskMainViewComponent | null;
+            comp?.scheduleHidePopover();
         });
 
         const container = this.containerEl.children[1] as HTMLElement;
@@ -267,19 +277,22 @@ export default class FluentTasksPlugin extends Plugin {
                 this.app.workspace.detachLeavesOfType(VIEW_TYPE_DETAIL);
             });
 
-            EventBus.on(EventName.CATEGORY_SELECTED, (payload: any) => {
-                if (payload && payload.category) {
+            EventBus.on(EventName.CATEGORY_SELECTED, (payload: unknown) => {
+                const p = payload as { category?: CategoryInfo } | null;
+                if (p && p.category) {
                     void this.activateView(VIEW_TYPE_MAIN, "center");
                 }
             });
 
-            EventBus.on(EventName.TASK_SELECTED, (payload: any) => {
+            EventBus.on(EventName.TASK_SELECTED, (payload: unknown) => {
+                const p = payload as { task: TaskItem; categoryFilepath: string } | null;
+                if (!p) return;
                 void (async () => {
                     const leaf = await this.activateView(VIEW_TYPE_DETAIL, "right");
                     if (leaf && leaf.view instanceof TaskDetailViewWrapper) {
                         const comp = leaf.view.getComponent();
                         if (comp) {
-                            comp.loadTask(payload.task, payload.categoryFilepath);
+                            comp.loadTask(p.task, p.categoryFilepath);
                         }
                     }
                 })();
@@ -357,8 +370,8 @@ export default class FluentTasksPlugin extends Plugin {
      * Expand the left sidebar and reveal the Fluent Tasks sidebar list tab.
      */
     expandSidebarToList(): void {
-        const leftSplit = this.app.workspace.leftSplit as { collapsed?: boolean; expand: () => void };
-        if (leftSplit.collapsed) {
+        const leftSplit = this.app.workspace.leftSplit as { collapsed?: boolean; expand: () => void } | null;
+        if (leftSplit?.collapsed) {
             leftSplit.expand();
         }
         const sidebarLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR);
