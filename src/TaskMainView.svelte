@@ -622,6 +622,16 @@
 
         menu.showAtMouseEvent(e);
     }
+
+    export function openHintsModal() {
+        showHintsModal = true;
+    }
+
+    export function showGuidePopover(e: MouseEvent) {
+        showPopover(e, null, 'guide');
+    }
+
+    export { scheduleHidePopover };
 </script>
 
 <svelte:window on:contextmenu={() => { if (popoverVisible) dismissPopover(); }} />
@@ -630,7 +640,7 @@
     {#if currentCategory}
         <!-- Header -->
         <div class="main-header">
-            <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
                 <span class="icon-btn" on:click|stopPropagation={expandSidebar}
                       role="button" tabindex="0" aria-label="Show sidebar list" title="Show sidebar list"
                       on:keydown|stopPropagation={(e) => e.key === "Enter" && expandSidebar()}>
@@ -641,19 +651,6 @@
                     </svg>
                 </span>
                 <h1 class="category-title">{currentCategory.name}</h1>
-                <span class="icon-btn hint-btn"
-                      on:mouseenter={(e) => showPopover(e, null, 'guide')}
-                      on:mouseleave={scheduleHidePopover}
-                      on:click|stopPropagation={() => showHintsModal = true}
-                      on:keydown|stopPropagation={(e) => e.key === "Enter" && (showHintsModal = true)}
-                      role="button" tabindex="0" aria-label="Features & Shortcuts Guide" title="Features & Shortcuts Guide">
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"/>
-                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                        <line x1="12" y1="17" x2="12.01" y2="17"/>
-                    </svg>
-                </span>
                 <span class="icon-btn" on:click|stopPropagation={() => new TaskSearchModal(plugin.app, plugin, dataService, currentCategory?.filepath).open()}
                       role="button" tabindex="0" aria-label="Search this list" title="Search this list"
                       on:keydown|stopPropagation={(e) => e.key === "Enter" && new TaskSearchModal(plugin.app, plugin, dataService, currentCategory?.filepath).open()}>

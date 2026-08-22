@@ -76,6 +76,17 @@ class TaskMainViewWrapper extends ItemView {
     getIcon(): string { return "check-square"; }
 
     async onOpen(): Promise<void> {
+        const guideAction = this.addAction("help-circle", "Features & shortcuts guide", () => {
+            (this.component as any)?.openHintsModal();
+        });
+
+        guideAction.addEventListener("mouseenter", (e: MouseEvent) => {
+            (this.component as any)?.showGuidePopover(e);
+        });
+        guideAction.addEventListener("mouseleave", () => {
+            (this.component as any)?.scheduleHidePopover();
+        });
+
         const container = this.containerEl.children[1] as HTMLElement;
         container.empty();
         this.component = new TaskMainView({
