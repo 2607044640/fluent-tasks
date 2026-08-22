@@ -818,6 +818,7 @@
             </span>
         {:else}
             <div class="add-list-btn" on:click={startAddingList} role="button" tabindex="0"
+                 aria-label="Add new list" title="Add new list"
                  on:keydown={(e) => e.key === "Enter" && startAddingList()}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="12" y1="5" x2="12" y2="19"/>
@@ -827,8 +828,9 @@
             </div>
             
             <div class="add-group-btn" on:click={startAddingGroup} role="button" tabindex="0"
+                 aria-label="Add new group" title="Add new group"
                  on:keydown={(e) => e.key === "Enter" && startAddingGroup()}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" title="New group">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
                     <line x1="12" y1="11" x2="12" y2="17"/>
                     <line x1="9" y1="14" x2="15" y2="14"/>

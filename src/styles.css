@@ -674,6 +674,52 @@
     text-align: center;
 }
 
+.footer-meta-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.time-badge-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--todo-text-muted);
+    padding: 4px 8px;
+    border-radius: var(--todo-radius);
+    border: 1px solid transparent;
+    cursor: default;
+    transition: color var(--todo-transition), border-color var(--todo-transition), background-color var(--todo-transition);
+}
+
+.time-badge-btn:hover {
+    background-color: var(--todo-item-bg);
+    border-color: var(--todo-border);
+    color: var(--todo-text-main);
+}
+
+.time-badge-text {
+    font-weight: 500;
+    letter-spacing: 0.2px;
+}
+
+.add-meta-btn {
+    padding: 4px 6px;
+    border-radius: var(--todo-radius);
+    border: 1px dashed var(--todo-border);
+    color: var(--todo-accent);
+    background: transparent;
+    cursor: pointer;
+    transition: background-color var(--todo-transition), border-color var(--todo-transition), transform var(--todo-transition);
+}
+
+.add-meta-btn:hover {
+    background-color: var(--todo-accent-light);
+    border-color: var(--todo-accent);
+    transform: scale(1.05);
+}
+
 .footer-btn {
     cursor: pointer;
     padding: 6px;
@@ -1050,6 +1096,19 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     color: var(--todo-accent);
 }
 
+.meta-badge.custom-badge {
+    color: #f59e0b; /* Amber / gold for custom tags */
+}
+.meta-badge.custom-badge:hover {
+    background-color: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+}
+
+/* Prevent child elements inside badge from triggering mouseleave */
+.meta-badge > * {
+    pointer-events: none !important;
+}
+
 /* Constrain user-supplied SVGs & image thumbnails inside badges */
 .meta-badge.svg-badge svg {
     width: 14px;
@@ -1071,24 +1130,58 @@ body.is-dragging-ghost #dnd-action-dragged-el {
 /* --- Hover Popover --- */
 .meta-popover {
     position: fixed;
-    z-index: 9999;
-    transform: translate(-50%, -100%) translateY(-8px);
+    z-index: 100000;
     min-width: 220px;
     max-width: 360px;
     max-height: 380px;
     overflow-y: auto;
-    background-color: var(--todo-item-bg);
-    border: 1px solid var(--todo-border);
+    background-color: var(--todo-item-bg, var(--background-primary-alt, #1e1e2e));
+    border: 1px solid var(--todo-border, var(--background-modifier-border-hover, #444));
     border-radius: 8px;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
     padding: 10px 14px;
     pointer-events: auto;
-    animation: popover-fade-in 150ms ease-out;
+    user-select: text;
 }
 
-@keyframes popover-fade-in {
-    from { opacity: 0; transform: translate(-50%, -100%) translateY(-4px); }
-    to   { opacity: 1; transform: translate(-50%, -100%) translateY(-8px); }
+.meta-popover.placement-top {
+    transform: translate(-50%, -100%);
+    animation: popover-fade-top 150ms ease-out;
+}
+
+.meta-popover.placement-top::after {
+    content: "";
+    position: absolute;
+    bottom: -10px;
+    left: 0;
+    width: 100%;
+    height: 10px;
+    background: transparent;
+}
+
+.meta-popover.placement-bottom {
+    transform: translate(-50%, 0);
+    animation: popover-fade-bottom 150ms ease-out;
+}
+
+.meta-popover.placement-bottom::before {
+    content: "";
+    position: absolute;
+    top: -10px;
+    left: 0;
+    width: 100%;
+    height: 10px;
+    background: transparent;
+}
+
+@keyframes popover-fade-top {
+    from { opacity: 0; transform: translate(-50%, -100%) translateY(4px); }
+    to   { opacity: 1; transform: translate(-50%, -100%) translateY(0); }
+}
+
+@keyframes popover-fade-bottom {
+    from { opacity: 0; transform: translate(-50%, 0) translateY(-4px); }
+    to   { opacity: 1; transform: translate(-50%, 0) translateY(0); }
 }
 
 .meta-popover-header {
@@ -1267,5 +1360,601 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     object-fit: contain;
     display: block;
     border-radius: 6px;
+}
+
+/* =============================================
+   Task Metadata Modal Dialog
+   ============================================= */
+.meta-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: meta-backdrop-fade 150ms ease-out;
+}
+
+@keyframes meta-backdrop-fade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.meta-modal-dialog {
+    width: 440px;
+    max-width: 90vw;
+    background-color: var(--todo-panel-bg, var(--background-secondary, #222));
+    border: 1px solid var(--todo-border, var(--background-modifier-border, #333));
+    border-radius: 10px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: meta-modal-scale 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes meta-modal-scale {
+    from { transform: scale(0.94); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+}
+
+.meta-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--todo-border);
+}
+
+.meta-modal-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--todo-text-main);
+}
+
+.meta-modal-close {
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--todo-text-muted);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.meta-modal-close:hover {
+    color: var(--todo-text-main);
+    background-color: var(--todo-hover-bg);
+}
+
+.meta-modal-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 8px 18px 0;
+    border-bottom: 1px solid var(--todo-border);
+    background-color: var(--todo-bg-dark, var(--background-primary, #1a1a1a));
+}
+
+.meta-modal-tab {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--todo-text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: color var(--todo-transition), border-color var(--todo-transition);
+}
+
+.meta-modal-tab:hover {
+    color: var(--todo-text-main);
+}
+
+.meta-modal-tab.active {
+    color: var(--todo-accent);
+    border-bottom-color: var(--todo-accent);
+    font-weight: 600;
+}
+
+.meta-modal-body {
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.meta-form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.meta-field-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--todo-text-muted);
+}
+
+.meta-form-input, .meta-form-textarea {
+    background-color: var(--todo-item-bg, var(--background-primary-alt, #282828));
+    border: 1px solid var(--todo-border, var(--background-modifier-border, #444));
+    border-radius: 6px;
+    color: var(--todo-text-main);
+    font-size: 13px;
+    padding: 8px 10px;
+    outline: none;
+    font-family: var(--todo-font);
+    transition: border-color var(--todo-transition);
+}
+
+.meta-form-textarea.monospace {
+    font-family: var(--font-monospace, monospace);
+    font-size: 12px;
+}
+
+.meta-form-input:focus, .meta-form-textarea:focus {
+    border-color: var(--todo-accent);
+}
+
+.meta-form-hint {
+    font-size: 11px;
+    color: var(--todo-text-muted);
+    line-height: 1.4;
+}
+
+.meta-modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 12px 18px;
+    border-top: 1px solid var(--todo-border);
+    background-color: var(--todo-bg-dark, var(--background-primary, #1a1a1a));
+}
+
+.meta-btn-secondary {
+    background: transparent;
+    border: 1px solid var(--todo-border);
+    color: var(--todo-text-muted);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.meta-btn-secondary:hover {
+    background-color: var(--todo-hover-bg);
+    color: var(--todo-text-main);
+}
+
+.meta-btn-primary {
+    background-color: var(--todo-accent);
+    border: 1px solid var(--todo-accent);
+    color: #ffffff;
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity var(--todo-transition);
+}
+
+.meta-btn-primary:hover {
+    opacity: 0.9;
+}
+
+/* =============================================
+   Detail View: Active Metadata Chips Section
+   ============================================= */
+.detail-meta-chips-section {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 2px 0;
+}
+
+.meta-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: var(--todo-panel-bg, var(--background-secondary, #222));
+    border: 1px solid var(--todo-border, var(--background-modifier-border, #333));
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 11px;
+    cursor: pointer;
+    max-width: 100%;
+    transition: all 120ms ease;
+    user-select: none;
+}
+
+.meta-chip:hover {
+    border-color: var(--todo-accent);
+    background-color: var(--todo-hover-bg);
+}
+
+.meta-chip .chip-label {
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 9px;
+    letter-spacing: 0.5px;
+    opacity: 0.75;
+}
+
+.meta-chip.why-chip .chip-label { color: var(--todo-accent); }
+.meta-chip.note-chip .chip-label { color: #06b6d4; }
+.meta-chip.svg-chip .chip-label { color: #ec4899; }
+.meta-chip.custom-chip .chip-label { color: #f59e0b; }
+
+.meta-chip .chip-val {
+    color: var(--todo-text-main);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 180px;
+}
+
+.meta-chip .chip-delete {
+    font-size: 10px;
+    color: var(--todo-text-muted);
+    padding: 0 2px;
+    border-radius: 2px;
+    transition: color 100ms ease, background-color 100ms ease;
+}
+
+.meta-chip .chip-delete:hover {
+    color: var(--todo-red, #ef4444);
+    background-color: rgba(239, 68, 68, 0.15);
+}
+
+/* =============================================
+   Modal Custom Tab: Existing Properties Box
+   ============================================= */
+.meta-existing-custom-box {
+    background-color: var(--todo-bg-dark, var(--background-primary, #1a1a1a));
+    border: 1px solid var(--todo-border, var(--background-modifier-border, #333));
+    border-radius: 6px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 140px;
+    overflow-y: auto;
+}
+
+.custom-chips-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.custom-prop-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--todo-item-bg, var(--background-primary-alt, #282828));
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.custom-prop-key {
+    font-weight: 600;
+    color: #f59e0b;
+    margin-right: 6px;
+}
+
+.custom-prop-val {
+    flex-grow: 1;
+    color: var(--todo-text-main);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.custom-prop-del {
+    cursor: pointer;
+    font-size: 11px;
+    color: var(--todo-text-muted);
+    padding: 0 4px;
+    border-radius: 2px;
+}
+
+.custom-prop-del:hover {
+    color: var(--todo-red, #ef4444);
+    background-color: rgba(239, 68, 68, 0.15);
+}
+
+/* =============================================
+   Popover Custom Grid
+   ============================================= */
+.meta-popover-custom-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.meta-popover-custom-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-size: 12px;
+}
+
+.custom-row-key {
+    font-weight: 600;
+    color: #f59e0b;
+    font-size: 11px;
+    flex-shrink: 0;
+}
+
+.custom-row-val {
+    color: var(--todo-text-main);
+    word-break: break-word;
+}
+
+/* =============================================
+   Popover Title & Mini Detail Card
+   ============================================= */
+.meta-popover-title-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 360px;
+    max-height: 420px;
+    overflow-y: auto;
+}
+
+.meta-popover-full-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--todo-text-main);
+    line-height: 1.45;
+    word-break: break-word;
+    white-space: pre-wrap;
+    padding-bottom: 2px;
+}
+
+.meta-popover-detail-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background-color: var(--todo-item-bg, var(--background-primary-alt, #282828));
+    border-radius: 6px;
+    padding: 6px 8px;
+    border: 1px solid var(--todo-border, var(--background-modifier-border, #333));
+}
+
+.popover-detail-label {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--todo-text-muted);
+}
+
+.popover-steps-list {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.popover-step-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    font-size: 11.5px;
+    line-height: 1.35;
+    color: var(--todo-text-main);
+}
+
+.popover-step-item.done {
+    color: var(--todo-text-muted);
+    text-decoration: line-through;
+}
+
+.popover-step-item .step-bullet {
+    font-size: 11px;
+    color: var(--todo-accent);
+    flex-shrink: 0;
+}
+
+.popover-step-item.done .step-bullet {
+    color: var(--todo-text-muted);
+}
+
+.popover-note-box {
+    font-size: 11.5px;
+    line-height: 1.4;
+    color: var(--todo-text-main);
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+.popover-why-box {
+    font-size: 11.5px;
+    line-height: 1.4;
+    color: var(--todo-text-main);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.meta-popover-footer-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 2px;
+}
+
+.popover-tag {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background-color: var(--todo-panel-bg);
+    border: 1px solid var(--todo-border);
+    color: var(--todo-text-muted);
+}
+
+.popover-tag.due-tag {
+    color: #38bdf8;
+    border-color: rgba(56, 189, 248, 0.3);
+}
+
+.popover-tag.repeat-tag {
+    color: var(--todo-accent);
+    border-color: rgba(139, 92, 246, 0.3);
+}
+
+/* =============================================
+   Category Header Hint Button & Guide Popover
+   ============================================= */
+.hint-btn {
+    color: var(--todo-text-muted);
+    transition: color 120ms ease, background-color 120ms ease;
+}
+
+.hint-btn:hover {
+    color: var(--todo-accent);
+    background-color: var(--todo-hover-bg);
+}
+
+.meta-popover-guide-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 270px;
+    max-width: 340px;
+}
+
+.meta-guide-items {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.meta-guide-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background-color: var(--todo-item-bg, var(--background-primary-alt, #282828));
+    border-radius: 5px;
+    padding: 5px 8px;
+    border: 1px solid var(--todo-border, var(--background-modifier-border, #333));
+}
+
+.guide-key {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--todo-accent);
+}
+
+.guide-desc {
+    font-size: 11px;
+    color: var(--todo-text-muted);
+    line-height: 1.35;
+}
+
+/* =============================================
+   Full Features & Shortcuts Guide Modal
+   ============================================= */
+.guide-modal-dialog {
+    max-width: 620px !important;
+    max-height: 85vh;
+}
+
+.guide-modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px 20px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.guide-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.guide-section-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--todo-accent);
+    border-bottom: 1px solid var(--todo-border);
+    padding-bottom: 4px;
+}
+
+.guide-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+}
+
+.guide-card {
+    background-color: var(--todo-item-bg, var(--background-primary-alt, #252525));
+    border: 1px solid var(--todo-border, var(--background-modifier-border, #333));
+    border-radius: 6px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.guide-card-header {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--todo-text-main);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.guide-badge-pill {
+    font-size: 10px;
+    font-weight: 700;
+    background-color: var(--todo-accent-light, rgba(139, 92, 246, 0.15));
+    color: var(--todo-accent);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    padding: 1px 6px;
+    border-radius: 4px;
+}
+
+.guide-card-body {
+    font-size: 12px;
+    color: var(--todo-text-muted);
+    line-height: 1.45;
+}
+
+.guide-card-body kbd {
+    background-color: var(--todo-panel-bg, #222);
+    border: 1px solid var(--todo-border, #444);
+    border-radius: 3px;
+    padding: 1px 4px;
+    font-size: 10.5px;
+    font-family: monospace;
+    color: var(--todo-text-main);
+}
+
+.guide-card-body code {
+    background-color: var(--todo-panel-bg, #222);
+    border-radius: 3px;
+    padding: 1px 4px;
+    font-size: 11px;
+    color: #38bdf8;
 }
 

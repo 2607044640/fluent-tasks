@@ -58,21 +58,28 @@
     // Meta Badge Hover Popover
     // =============================================
     let popoverTask: TaskItem | null = null;
-    let popoverType: 'why' | 'svg' | null = null;
+    let popoverType: 'why' | 'svg' | 'custom' | 'title' | 'guide' | null = null;
     let popoverSvgIndex: number = 0;
     let popoverX: number = 0;
     let popoverY: number = 0;
     let popoverVisible: boolean = false;
     let popoverTimeout: any = null;
+    let showHintsModal: boolean = false;
 
     // Lightbox modal state for full-screen / zoom SVG view
     let lightboxData: { isInline: boolean; content: string; srcUrl: string; title: string; cleanPath: string } | null = null;
+    const svgResolveCache = new Map<string, { isInline: boolean; content: string; srcUrl: string; cleanPath: string }>();
 
     function resolveSvgItem(svgStr: string): { isInline: boolean; content: string; srcUrl: string; cleanPath: string } {
         if (!svgStr) return { isInline: false, content: "", srcUrl: "", cleanPath: "" };
+        const cached = svgResolveCache.get(svgStr);
+        if (cached) return cached;
+
         const trimmed = svgStr.trim();
         if (trimmed.startsWith("<svg") || trimmed.startsWith("<?xml") || trimmed.includes("</svg>")) {
-            return { isInline: true, content: trimmed, srcUrl: "", cleanPath: "" };
+            const res = { isInline: true, content: trimmed, srcUrl: "", cleanPath: "" };
+            svgResolveCache.set(svgStr, res);
+            return res;
         }
         // It's a vault file path or wikilink (e.g. OneNote/.../assets/eye_of_knowledge_sea_circular.svg)
         const cleanPath = trimmed.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
@@ -84,12 +91,14 @@
             file = plugin.app.vault.getAbstractFileByPath(cleanPath);
         }
         const srcUrl = file && plugin?.app?.vault?.adapter ? plugin.app.vault.adapter.getResourcePath(file.path) : cleanPath;
-        return {
+        const res = {
             isInline: false,
             content: trimmed,
             srcUrl: srcUrl || cleanPath,
             cleanPath: file?.path || cleanPath,
         };
+        svgResolveCache.set(svgStr, res);
+        return res;
     }
 
     function openSvgLightbox(e: MouseEvent | KeyboardEvent, svgStr: string, title: string = "Visual Memory Aid") {
@@ -110,21 +119,123 @@
         lightboxData = null;
     }
 
+    function handleLightboxClick(e: MouseEvent) {
+        const target = e.target as HTMLElement | null;
+        if (!target?.closest('.svg-lightbox-action-btn')) {
+            closeSvgLightbox();
+        }
+    }
+
     function openSvgInVault(cleanPath: string) {
         if (!cleanPath || !plugin?.app) return;
         plugin.app.workspace.openLinkText(cleanPath, currentCategory?.filepath || "", false);
         closeSvgLightbox();
     }
 
-    function showPopover(e: MouseEvent, task: TaskItem, type: 'why' | 'svg', svgIndex: number = 0) {
+    function portal(node: HTMLElement) {
+        document.body.appendChild(node);
+        return {
+            destroy() {
+                if (node.parentNode) {
+                    node.parentNode.removeChild(node);
+                }
+            }
+        };
+    }
+
+    const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    function getRelativeTime(iso: string): string {
+        try {
+            const d = new Date(iso);
+            if (isNaN(d.getTime())) return "";
+            const now = Date.now();
+            const diffMs = now - d.getTime();
+            const diffSecs = Math.floor(diffMs / 1000);
+            const diffMins = Math.floor(diffSecs / 60);
+            const diffHours = Math.floor(diffMins / 60);
+            const diffDays = Math.floor(diffHours / 24);
+
+            if (diffSecs < 60) return "just now";
+            if (diffMins < 60) return `${diffMins}m ago`;
+            if (diffHours < 24) return `${diffHours}h ago`;
+            if (diffDays === 1) return "yesterday";
+            if (diffDays < 30) return `${diffDays}d ago`;
+            const diffMonths = Math.floor(diffDays / 30);
+            if (diffMonths < 12) return `${diffMonths}mo ago`;
+            return `${Math.floor(diffDays / 365)}y ago`;
+        } catch {
+            return "";
+        }
+    }
+
+    function getRecurrenceLabel(rule: any): string {
+        if (!rule) return "";
+        switch (rule.type) {
+            case 'daily': return rule.interval === 1 ? "Every day" : `Every ${rule.interval} days`;
+            case 'weekdays': return "Weekdays (Mon–Fri)";
+            case 'weekly': {
+                const days = (rule.daysOfWeek || []).map((d: number) => DAY_LABELS[d]).join(', ');
+                const prefix = rule.interval === 1 ? "Every week" : `Every ${rule.interval} weeks`;
+                return days ? `${prefix} on ${days}` : prefix;
+            }
+            case 'custom': {
+                if (rule.daysOfWeek && rule.daysOfWeek.length > 0) {
+                    const days = rule.daysOfWeek.map((d: number) => DAY_LABELS[d]).join(', ');
+                    return `Every ${rule.interval} week(s) on ${days}`;
+                }
+                return `Every ${rule.interval} day(s)`;
+            }
+            default: return "";
+        }
+    }
+
+    let popoverPlacement: 'top' | 'bottom' = 'top';
+
+    function dismissPopover(e?: MouseEvent) {
+        if (e) e.preventDefault();
         if (popoverTimeout) clearTimeout(popoverTimeout);
-        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-        popoverX = rect.left + rect.width / 2;
-        popoverY = rect.top;
+        popoverVisible = false;
+        popoverTask = null;
+        popoverType = null;
+    }
+
+    function showPopover(e: MouseEvent, task: TaskItem | null, type: 'why' | 'svg' | 'custom' | 'title' | 'guide', svgIndex: number = 0) {
+        if (popoverTimeout) clearTimeout(popoverTimeout);
+        const target = e.currentTarget as HTMLElement;
+        const rect = target.getBoundingClientRect();
+
+        // Dynamic height & width calculation based on popover content
+        const estimatedHeight = type === 'svg' ? 320 : type === 'guide' ? 280 : type === 'title' ? 240 : type === 'custom' ? 180 : 140;
+        const estimatedHalfWidth = type === 'svg' ? 150 : type === 'guide' ? 170 : type === 'title' ? 170 : 140;
+
+        // Smart Auto-Flip: if element is near the top of screen (< 24px margin), flip to bottom
+        const fitsAbove = rect.top >= estimatedHeight + 24;
+        popoverPlacement = fitsAbove ? 'top' : 'bottom';
+
+        // Clamp X within viewport so it never overflows left or right window borders
+        const centerX = rect.left + rect.width / 2;
+        popoverX = Math.max(estimatedHalfWidth + 16, Math.min(window.innerWidth - estimatedHalfWidth - 16, centerX));
+        popoverY = fitsAbove ? (rect.top - 8) : (rect.bottom + 8);
+
         popoverTask = task;
         popoverType = type;
         popoverSvgIndex = svgIndex;
         popoverVisible = true;
+    }
+
+    function handleTitleHover(e: MouseEvent, task: TaskItem) {
+        if (e.ctrlKey || e.metaKey) {
+            showPopover(e, task, 'title');
+        }
+    }
+
+    function handleTitleMouseMove(e: MouseEvent, task: TaskItem) {
+        if ((e.ctrlKey || e.metaKey) && (!popoverVisible || popoverTask?.id !== task.id || popoverType !== 'title')) {
+            showPopover(e, task, 'title');
+        } else if (!e.ctrlKey && !e.metaKey && popoverType === 'title' && popoverVisible) {
+            dismissPopover();
+        }
     }
 
     function scheduleHidePopover() {
@@ -133,7 +244,7 @@
             popoverVisible = false;
             popoverTask = null;
             popoverType = null;
-        }, 200);
+        }, 300);
     }
 
     function cancelHidePopover() {
@@ -142,11 +253,22 @@
 
     function handleNoteLinkHover(e: MouseEvent, noteLink?: string) {
         if (!noteLink || !plugin?.app) return;
-        const cleanLink = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").trim();
+        // Strip wikilink brackets and aliases (e.g. [[Note#^block|alias]] -> Note#^block)
+        const cleanLink = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
         if (!cleanLink) return;
 
+        // Create a proxied MouseEvent where ctrlKey / metaKey always returns true
+        // This guarantees Obsidian's Page Preview triggers directly on hover in all view modes (Reading & Live Preview)
+        const proxiedEvent = new Proxy(e, {
+            get(target, prop) {
+                if (prop === "ctrlKey" || prop === "metaKey") return true;
+                const val = (target as any)[prop];
+                return typeof val === "function" ? val.bind(target) : val;
+            }
+        });
+
         plugin.app.workspace.trigger("hover-link", {
-            event: e,
+            event: proxiedEvent,
             source: "fluent-tasks",
             hoverParent: e.currentTarget as HTMLElement,
             targetEl: e.currentTarget as HTMLElement,
@@ -158,7 +280,7 @@
     function handleNoteLinkClick(e: MouseEvent | KeyboardEvent, noteLink?: string) {
         e.stopPropagation();
         if (!noteLink || !plugin?.app) return;
-        const cleanLink = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").trim();
+        const cleanLink = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
         if (!cleanLink) return;
 
         plugin.app.workspace.openLinkText(
@@ -558,11 +680,13 @@
     }
 </script>
 
+<svelte:window on:contextmenu={() => { if (popoverVisible) dismissPopover(); }} />
+
 <div class="main-container" role="application">
     {#if currentCategory}
         <!-- Header -->
         <div class="main-header">
-            <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
                 <span class="icon-btn" on:click|stopPropagation={expandSidebar}
                       role="button" tabindex="0" aria-label="Show sidebar list" title="Show sidebar list"
                       on:keydown|stopPropagation={(e) => e.key === "Enter" && expandSidebar()}>
@@ -573,6 +697,19 @@
                     </svg>
                 </span>
                 <h1 class="category-title">{currentCategory.name}</h1>
+                <span class="icon-btn hint-btn"
+                      on:mouseenter={(e) => showPopover(e, null, 'guide')}
+                      on:mouseleave={scheduleHidePopover}
+                      on:click|stopPropagation={() => showHintsModal = true}
+                      on:keydown|stopPropagation={(e) => e.key === "Enter" && (showHintsModal = true)}
+                      role="button" tabindex="0" aria-label="Features & Shortcuts Guide" title="Features & Shortcuts Guide">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                </span>
                 <span class="icon-btn" on:click|stopPropagation={() => new TaskSearchModal(plugin.app, plugin, dataService, currentCategory?.filepath).open()}
                       role="button" tabindex="0" aria-label="Search this list" title="Search this list"
                       on:keydown|stopPropagation={(e) => e.key === "Enter" && new TaskSearchModal(plugin.app, plugin, dataService, currentCategory?.filepath).open()}>
@@ -634,7 +771,13 @@
                     </span>
 
                     <div class="task-content">
-                        <span class="task-title">{task.title}</span>
+                        <!-- svelte-ignore a11y-no-static-element-interactions -->
+                        <span class="task-title"
+                              on:mouseenter={(e) => handleTitleHover(e, task)}
+                              on:mousemove={(e) => handleTitleMouseMove(e, task)}
+                              on:mouseleave={scheduleHidePopover}>
+                            {task.title}
+                        </span>
                         <div class="task-meta-row">
                             {#if task.steps.length > 0}
                                 <span class="task-meta">
@@ -689,7 +832,11 @@
                                     {#if resolved.isInline}
                                         {@html resolved.content}
                                     {:else}
-                                        <img src={resolved.srcUrl} alt="SVG" class="meta-badge-thumb" />
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                                            <polyline points="21 15 16 10 5 21"/>
+                                        </svg>
                                     {/if}
                                 </span>
                             {/if}
@@ -709,6 +856,18 @@
                                 <line x1="16" y1="13" x2="8" y2="13"/>
                                 <line x1="16" y1="17" x2="8" y2="17"/>
                                 <polyline points="10 9 9 9 8 9"/>
+                            </svg>
+                        </span>
+                    {/if}
+                    {#if task.customMeta && Object.keys(task.customMeta).length > 0}
+                        <span class="meta-badge custom-badge"
+                              on:mouseenter={(e) => showPopover(e, task, 'custom')}
+                              on:mouseleave={scheduleHidePopover}
+                              role="button" tabindex="0"
+                              title="Custom properties">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                                <line x1="7" y1="7" x2="7.01" y2="7"/>
                             </svg>
                         </span>
                     {/if}
@@ -774,7 +933,13 @@
                                 </span>
 
                                 <div class="task-content">
-                                    <span class="task-title">{task.title}</span>
+                                    <!-- svelte-ignore a11y-no-static-element-interactions -->
+                                    <span class="task-title"
+                                          on:mouseenter={(e) => handleTitleHover(e, task)}
+                                          on:mousemove={(e) => handleTitleMouseMove(e, task)}
+                                          on:mouseleave={scheduleHidePopover}>
+                                        {task.title}
+                                    </span>
                                     {#if task.dueDate || task.recurrence}
                                         <div class="task-meta-row">
                                             {#if task.dueDate}
@@ -824,7 +989,11 @@
                                                 {#if resolved.isInline}
                                                     {@html resolved.content}
                                                 {:else}
-                                                    <img src={resolved.srcUrl} alt="SVG" class="meta-badge-thumb" />
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                                                        <polyline points="21 15 16 10 5 21"/>
+                                                    </svg>
                                                 {/if}
                                             </span>
                                         {/if}
@@ -844,6 +1013,18 @@
                                             <line x1="16" y1="13" x2="8" y2="13"/>
                                             <line x1="16" y1="17" x2="8" y2="17"/>
                                             <polyline points="10 9 9 9 8 9"/>
+                                        </svg>
+                                    </span>
+                                {/if}
+                                {#if task.customMeta && Object.keys(task.customMeta).length > 0}
+                                    <span class="meta-badge custom-badge"
+                                          on:mouseenter={(e) => showPopover(e, task, 'custom')}
+                                          on:mouseleave={scheduleHidePopover}
+                                          role="button" tabindex="0"
+                                          title="Custom properties">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                                            <line x1="7" y1="7" x2="7.01" y2="7"/>
                                         </svg>
                                     </span>
                                 {/if}
@@ -870,14 +1051,16 @@
         </div>
     {/if}
 
-    <!-- Global Meta Badge Popover -->
-    {#if popoverVisible && popoverTask}
-        <div class="meta-popover"
+    <!-- Global Meta Badge Popover (Portaled to document.body to prevent sidebar clipping) -->
+    {#if popoverVisible && (popoverTask || popoverType === 'guide')}
+        <div use:portal
+             class="meta-popover placement-{popoverPlacement}"
              style="left: {popoverX}px; top: {popoverY}px;"
              on:mouseenter={cancelHidePopover}
              on:mouseleave={scheduleHidePopover}
+             on:contextmenu|preventDefault={dismissPopover}
              role="tooltip">
-            {#if popoverType === 'why' && popoverTask.why}
+            {#if popoverType === 'why' && popoverTask && popoverTask.why}
                 <div class="meta-popover-header">
                     <div style="display: flex; align-items: center; gap: 6px;">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
@@ -890,7 +1073,7 @@
                     </div>
                 </div>
                 <div class="meta-popover-body">{popoverTask.why}</div>
-            {:else if popoverType === 'svg' && popoverTask.svgs && popoverTask.svgs[popoverSvgIndex]}
+            {:else if popoverType === 'svg' && popoverTask && popoverTask.svgs && popoverTask.svgs[popoverSvgIndex]}
                 {@const resolved = resolveSvgItem(popoverTask.svgs[popoverSvgIndex])}
                 <div class="meta-popover-header">
                     <div style="display: flex; align-items: center; gap: 6px;">
@@ -915,15 +1098,133 @@
                         <img src={resolved.srcUrl} alt="Visual memory" class="meta-popover-img" />
                     {/if}
                 </div>
+            {:else if popoverType === 'custom' && popoverTask && popoverTask.customMeta}
+                <div class="meta-popover-header">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                            <line x1="7" y1="7" x2="7.01" y2="7"/>
+                        </svg>
+                        <span>Custom Properties</span>
+                    </div>
+                </div>
+                <div class="meta-popover-custom-grid">
+                    {#each Object.entries(popoverTask.customMeta) as [k, v]}
+                        <div class="meta-popover-custom-row">
+                            <span class="custom-row-key">{k}:</span>
+                            <span class="custom-row-val">{v}</span>
+                        </div>
+                    {/each}
+                </div>
+            {:else if popoverType === 'title' && popoverTask}
+                <div class="meta-popover-title-card">
+                    <div class="meta-popover-header">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--todo-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                            </svg>
+                            <span>Task Quick Peek</span>
+                        </div>
+                        {#if popoverTask.createdAt}
+                            <span class="meta-popover-hint">{getRelativeTime(popoverTask.createdAt)}</span>
+                        {/if}
+                    </div>
+
+                    <!-- Full Unclipped Title -->
+                    <div class="meta-popover-full-title">{popoverTask.title}</div>
+
+                    <!-- Mini Details Section -->
+                    {#if popoverTask.steps && popoverTask.steps.length > 0}
+                        <div class="meta-popover-detail-section">
+                            <div class="popover-detail-label">
+                                Steps ({popoverTask.steps.filter(s => s.done).length}/{popoverTask.steps.length})
+                            </div>
+                            <div class="popover-steps-list">
+                                {#each popoverTask.steps as step}
+                                    <div class="popover-step-item" class:done={step.done}>
+                                        <span class="step-bullet">{step.done ? "✓" : "○"}</span>
+                                        <span class="step-text">{step.text}</span>
+                                    </div>
+                                {/each}
+                            </div>
+                        </div>
+                    {/if}
+
+                    {#if popoverTask.note}
+                        <div class="meta-popover-detail-section">
+                            <div class="popover-detail-label">Note</div>
+                            <div class="popover-note-box">{popoverTask.note}</div>
+                        </div>
+                    {/if}
+
+                    {#if popoverTask.why}
+                        <div class="meta-popover-detail-section">
+                            <div class="popover-detail-label">Why / Rationale</div>
+                            <div class="popover-why-box">{popoverTask.why}</div>
+                        </div>
+                    {/if}
+
+                    {#if popoverTask.dueDate || popoverTask.recurrence}
+                        <div class="meta-popover-footer-tags">
+                            {#if popoverTask.dueDate}
+                                <span class="popover-tag due-tag">📅 {popoverTask.dueDate}</span>
+                            {/if}
+                            {#if popoverTask.recurrence}
+                                <span class="popover-tag repeat-tag">🔁 {getRecurrenceLabel(popoverTask.recurrence)}</span>
+                            {/if}
+                        </div>
+                    {/if}
+                </div>
+            {:else if popoverType === 'guide'}
+                <div class="meta-popover-guide-card">
+                    <div class="meta-popover-header">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--todo-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                                <line x1="12" y1="17" x2="12.01" y2="17"/>
+                            </svg>
+                            <span style="font-weight: 600;">Fluent Tasks Guide</span>
+                        </div>
+                        <span class="meta-popover-hint">Click for full guide</span>
+                    </div>
+                    <div class="meta-guide-items">
+                        <div class="meta-guide-item">
+                            <span class="guide-key">Ctrl + Hover Title</span>
+                            <span class="guide-desc">Quick peek full title, subtasks & notes</span>
+                        </div>
+                        <div class="meta-guide-item">
+                            <span class="guide-key">Direct Hover Badges</span>
+                            <span class="guide-desc">Preview Why (?), SVG (🖼️), Note (📄), Custom (🏷️)</span>
+                        </div>
+                        <div class="meta-guide-item">
+                            <span class="guide-key">Click Note Badge</span>
+                            <span class="guide-desc">Jump directly to linked note (supports block links)</span>
+                        </div>
+                        <div class="meta-guide-item">
+                            <span class="guide-key">+ Meta Button</span>
+                            <span class="guide-desc">Manage all metadata at bottom of detail panel</span>
+                        </div>
+                        <div class="meta-guide-item">
+                            <span class="guide-key">Right Click</span>
+                            <span class="guide-desc">Dismiss popover / close Lightbox instantly</span>
+                        </div>
+                    </div>
+                </div>
             {/if}
         </div>
     {/if}
 
-    <!-- Global SVG Visual Memory Lightbox Modal -->
+    <!-- Global SVG Visual Memory Lightbox Modal (Portaled to document.body) -->
     {#if lightboxData}
         <!-- svelte-ignore a11y-click-events-have-key-events -->
         <!-- svelte-ignore a11y-no-static-element-interactions -->
-        <div class="svg-lightbox-backdrop" on:click={(e) => e.target === e.currentTarget && closeSvgLightbox()} role="presentation">
+        <div use:portal
+             class="svg-lightbox-backdrop"
+             on:click={handleLightboxClick}
+             on:contextmenu|preventDefault={closeSvgLightbox}
+             role="presentation">
             <div class="svg-lightbox-modal" role="dialog" aria-modal="true" tabindex="-1">
                 <div class="svg-lightbox-header">
                     <div class="svg-lightbox-title-row">
@@ -936,7 +1237,7 @@
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
                         {#if lightboxData.cleanPath}
-                            <button type="button" class="svg-lightbox-action-btn" on:click={() => lightboxData && openSvgInVault(lightboxData.cleanPath)} title="Open note/file in Obsidian">
+                            <button type="button" class="svg-lightbox-action-btn" on:click|stopPropagation={() => lightboxData && openSvgInVault(lightboxData.cleanPath)} title="Open note/file in Obsidian">
                                 Open in Tab
                             </button>
                         {/if}
@@ -953,6 +1254,69 @@
                     {:else}
                         <img src={lightboxData.srcUrl} alt="Visual memory" class="svg-lightbox-img" />
                     {/if}
+                </div>
+            </div>
+        </div>
+    {/if}
+
+    <!-- Features & Shortcuts Guide Modal (Portaled to document.body) -->
+    {#if showHintsModal}
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <!-- svelte-ignore a11y-no-static-element-interactions -->
+        <div use:portal
+             class="meta-modal-backdrop" on:click={(e) => e.target === e.currentTarget && (showHintsModal = false)} role="presentation">
+            <div class="meta-modal-dialog guide-modal-dialog" role="dialog" aria-modal="true" tabindex="-1">
+                <div class="meta-modal-header">
+                    <div class="meta-modal-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--todo-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                        <span>Fluent Tasks Features & Shortcut Guide</span>
+                    </div>
+                    <span class="meta-modal-close" on:click={() => showHintsModal = false}
+                          role="button" tabindex="0">✕</span>
+                </div>
+                <div class="meta-modal-body guide-modal-body">
+                    <div class="guide-section">
+                        <div class="guide-section-title">⚡ Interaction Shortcuts</div>
+                        <div class="guide-grid">
+                            <div class="guide-card">
+                                <div class="guide-card-header"><span class="guide-badge-pill">Ctrl + Hover</span> Task Title</div>
+                                <div class="guide-card-body">Hover over any task title while pressing <kbd>Ctrl</kbd> to quick-peek full title, subtasks checklist, notes, and due dates without opening the detail view.</div>
+                            </div>
+                            <div class="guide-card">
+                                <div class="guide-card-header"><span class="guide-badge-pill">Direct Hover</span> Meta Badges</div>
+                                <div class="guide-card-body">Hovering over <span class="why-badge">?</span>, <span class="note-badge">📄</span>, <span class="svg-badge">🖼️</span>, or <span class="custom-badge">🏷️</span> instantly previews rationale, notes, SVGs, or custom properties.</div>
+                            </div>
+                            <div class="guide-card">
+                                <div class="guide-card-header"><span class="guide-badge-pill">Right Click</span> Instant Dismiss</div>
+                                <div class="guide-card-body">Right-click anywhere to immediately dismiss any open hover popover or full-screen SVG Lightbox.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="guide-section">
+                        <div class="guide-section-title">📂 Organization & Metadata System</div>
+                        <div class="guide-grid">
+                            <div class="guide-card">
+                                <div class="guide-card-header">📄 Linked Notes & Block References</div>
+                                <div class="guide-card-body">Link Obsidian/OneNote notes (e.g. <code>[[Note#^blockid]]</code>). Hover for instant preview (no Ctrl needed), click badge to jump directly.</div>
+                            </div>
+                            <div class="guide-card">
+                                <div class="guide-card-header">🖼️ Visual Memory SVGs & Lightbox</div>
+                                <div class="guide-card-body">Attach vault SVG diagrams. Hover for 280px preview, click to open full-screen zoom lightbox with one-click "Open in Tab".</div>
+                            </div>
+                            <div class="guide-card">
+                                <div class="guide-card-header">➕ Custom Metadata Manager</div>
+                                <div class="guide-card-body">Click the <code>+</code> button next to Time at the bottom of the right detail view to add/manage custom properties, Why, and linked notes.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="meta-modal-footer">
+                    <button type="button" class="meta-btn-primary" on:click={() => showHintsModal = false}>Got it!</button>
                 </div>
             </div>
         </div>

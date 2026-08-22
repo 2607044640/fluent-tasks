@@ -9,6 +9,7 @@
     // Props
     // =============================================
     export let dataService: DataService;
+    export let plugin: any = undefined;
 
     // =============================================
     // State
@@ -328,20 +329,138 @@
     }
 
     // =============================================
-    // Helpers
+    // Helpers & Meta Modal State
     // =============================================
-    function formatDate(iso: string): string {
+    function formatExactTime(iso: string): string {
         try {
             const d = new Date(iso);
-            return d.toLocaleDateString("en-US", {
-                weekday: "short",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-            });
+            if (isNaN(d.getTime())) return iso;
+            const pad = (n: number) => String(n).padStart(2, "0");
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
         } catch {
             return iso;
         }
+    }
+
+    function getRelativeTime(iso: string): string {
+        try {
+            const d = new Date(iso);
+            if (isNaN(d.getTime())) return "";
+            const now = Date.now();
+            const diffMs = now - d.getTime();
+            const diffSecs = Math.floor(diffMs / 1000);
+            const diffMins = Math.floor(diffSecs / 60);
+            const diffHours = Math.floor(diffMins / 60);
+            const diffDays = Math.floor(diffHours / 24);
+
+            if (diffSecs < 60) return "just now";
+            if (diffMins < 60) return `${diffMins}m ago`;
+            if (diffHours < 24) return `${diffHours}h ago`;
+            if (diffDays === 1) return "yesterday";
+            if (diffDays < 30) return `${diffDays}d ago`;
+            const diffMonths = Math.floor(diffDays / 30);
+            if (diffMonths < 12) return `${diffMonths}mo ago`;
+            return `${Math.floor(diffDays / 365)}y ago`;
+        } catch {
+            return "";
+        }
+    }
+
+    let showAddMetaModal: boolean = false;
+    let metaFormType: "why" | "note_link" | "svg" | "custom" = "why";
+    let metaWhyVal: string = "";
+    let metaNoteLinkVal: string = "";
+    let metaSvgVal: string = "";
+    let metaCustomKey: string = "";
+    let metaCustomVal: string = "";
+
+    function openAddMetaModal() {
+        if (!task) return;
+        metaWhyVal = task.why || "";
+        metaNoteLinkVal = task.note_link || "";
+        metaSvgVal = task.svgs && task.svgs.length > 0 ? task.svgs[0] : "";
+        metaCustomKey = "";
+        metaCustomVal = "";
+        showAddMetaModal = true;
+    }
+
+    function closeAddMetaModal() {
+        showAddMetaModal = false;
+    }
+
+    async function saveMetadata() {
+        if (!task) return;
+        if (metaFormType === "why") {
+            const val = metaWhyVal.trim();
+            if (val) task.why = val;
+            else delete task.why;
+        } else if (metaFormType === "note_link") {
+            const val = metaNoteLinkVal.trim();
+            if (val) task.note_link = val;
+            else delete task.note_link;
+        } else if (metaFormType === "svg") {
+            const val = metaSvgVal.trim();
+            if (val) task.svgs = [val];
+            else delete task.svgs;
+        } else if (metaFormType === "custom") {
+            const key = metaCustomKey.trim();
+            const val = metaCustomVal.trim();
+            if (key) {
+                if (!task.customMeta) task.customMeta = {};
+                task.customMeta[key] = val;
+            }
+        }
+        task = { ...task };
+        if (categoryFilepath) {
+            await dataService.updateTask(categoryFilepath, task);
+            EventBus.emit(EventName.TASK_UPDATED, {
+                task,
+                categoryFilepath,
+            });
+        }
+        closeAddMetaModal();
+    }
+
+    async function deleteCustomKey(key: string) {
+        if (!task || !task.customMeta) return;
+        delete task.customMeta[key];
+        if (Object.keys(task.customMeta).length === 0) {
+            delete task.customMeta;
+        }
+        task = { ...task };
+        if (categoryFilepath) {
+            await dataService.updateTask(categoryFilepath, task);
+            EventBus.emit(EventName.TASK_UPDATED, {
+                task,
+                categoryFilepath,
+            });
+        }
+    }
+
+    async function deleteMetaProp(prop: 'why' | 'note_link' | 'svg') {
+        if (!task) return;
+        if (prop === 'why') delete task.why;
+        else if (prop === 'note_link') delete task.note_link;
+        else if (prop === 'svg') delete task.svgs;
+        task = { ...task };
+        if (categoryFilepath) {
+            await dataService.updateTask(categoryFilepath, task);
+            EventBus.emit(EventName.TASK_UPDATED, {
+                task,
+                categoryFilepath,
+            });
+        }
+    }
+
+    function portal(node: HTMLElement) {
+        document.body.appendChild(node);
+        return {
+            destroy() {
+                if (node.parentNode) {
+                    node.parentNode.removeChild(node);
+                }
+            }
+        };
     }
 </script>
 
@@ -455,7 +574,169 @@
             ></textarea>
         </div>
 
-        <!-- Footer: Schedule Drawer Toggle | Created on | Delete -->
+        <!-- Active Metadata Chips (Why, Note Link, SVG, Custom) -->
+        {#if task.why || task.note_link || (task.svgs && task.svgs.length > 0) || (task.customMeta && Object.keys(task.customMeta).length > 0)}
+            <div class="detail-meta-chips-section">
+                {#if task.why}
+                    <!-- svelte-ignore a11y-click-events-have-key-events -->
+                    <!-- svelte-ignore a11y-no-static-element-interactions -->
+                    <div class="meta-chip why-chip" title={task.why}
+                         on:click={() => { metaFormType = 'why'; openAddMetaModal(); }}
+                         role="button" tabindex="0">
+                        <span class="chip-label">Why</span>
+                        <span class="chip-val">{task.why}</span>
+                        <span class="chip-delete" on:click|stopPropagation={() => deleteMetaProp('why')}
+                              role="button" tabindex="0" title="Remove why">✕</span>
+                    </div>
+                {/if}
+                {#if task.note_link}
+                    <!-- svelte-ignore a11y-click-events-have-key-events -->
+                    <!-- svelte-ignore a11y-no-static-element-interactions -->
+                    <div class="meta-chip note-chip" title={task.note_link}
+                         on:click={() => { metaFormType = 'note_link'; openAddMetaModal(); }}
+                         role="button" tabindex="0">
+                        <span class="chip-label">Note</span>
+                        <span class="chip-val">{task.note_link}</span>
+                        <span class="chip-delete" on:click|stopPropagation={() => deleteMetaProp('note_link')}
+                              role="button" tabindex="0" title="Remove note link">✕</span>
+                    </div>
+                {/if}
+                {#if task.svgs && task.svgs.length > 0}
+                    <!-- svelte-ignore a11y-click-events-have-key-events -->
+                    <!-- svelte-ignore a11y-no-static-element-interactions -->
+                    <div class="meta-chip svg-chip" title={task.svgs[0]}
+                         on:click={() => { metaFormType = 'svg'; openAddMetaModal(); }}
+                         role="button" tabindex="0">
+                        <span class="chip-label">SVG</span>
+                        <span class="chip-val">{task.svgs[0].length > 30 ? task.svgs[0].slice(0, 30) + '...' : task.svgs[0]}</span>
+                        <span class="chip-delete" on:click|stopPropagation={() => deleteMetaProp('svg')}
+                              role="button" tabindex="0" title="Remove SVG">✕</span>
+                    </div>
+                {/if}
+                {#if task.customMeta}
+                    {#each Object.entries(task.customMeta) as [k, v]}
+                        <!-- svelte-ignore a11y-click-events-have-key-events -->
+                        <!-- svelte-ignore a11y-no-static-element-interactions -->
+                        <div class="meta-chip custom-chip" title={`${k}: ${v}`}>
+                            <span class="chip-label">{k}</span>
+                            <span class="chip-val">{v}</span>
+                            <span class="chip-delete" on:click|stopPropagation={() => deleteCustomKey(k)}
+                                  role="button" tabindex="0" title={`Remove ${k}`}>✕</span>
+                        </div>
+                    {/each}
+                {/if}
+            </div>
+        {/if}
+
+        <!-- Due Date & Repeat Section (Collapsible Drawer) -->
+        {#if showScheduleSection}
+            <div class="detail-schedule-section">
+                <!-- Due Date Row -->
+                <div class="schedule-row">
+                    <div class="schedule-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                    </div>
+                    <div class="schedule-content">
+                        <span class="schedule-label">Due date</span>
+                        <input
+                            type="date"
+                            class="due-date-input"
+                            value={task.dueDate || ''}
+                            on:change={(e) => {
+                                if (task) {
+                                    task.dueDate = e.currentTarget.value || undefined;
+                                    scheduleSave();
+                                }
+                            }}
+                        />
+                    </div>
+                    {#if task.dueDate}
+                        <span class="schedule-clear-btn" on:click={clearDueDate}
+                              role="button" tabindex="0" title="Clear due date"
+                              on:keydown={(e) => e.key === "Enter" && clearDueDate()}>
+                            ✕
+                        </span>
+                    {/if}
+                </div>
+
+                <!-- Repeat Row -->
+                <div class="schedule-row clickable" on:click={() => showRepeatPicker = !showRepeatPicker}
+                     role="button" tabindex="0"
+                     on:keydown={(e) => e.key === "Enter" && (showRepeatPicker = !showRepeatPicker)}>
+                    <div class="schedule-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="17 1 21 5 17 9"/>
+                            <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+                            <polyline points="7 23 3 19 7 15"/>
+                            <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+                        </svg>
+                    </div>
+                    <div class="schedule-content">
+                        <span class="schedule-label">Repeat</span>
+                        <span class="schedule-value" class:active={!!task.recurrence}>
+                            {getRecurrenceLabel(task.recurrence)}
+                        </span>
+                    </div>
+                    {#if task.recurrence}
+                        <span class="schedule-clear-btn" on:click|stopPropagation={clearRecurrence}
+                              role="button" tabindex="0" title="Remove recurrence"
+                              on:keydown|stopPropagation={(e) => e.key === "Enter" && clearRecurrence()}>
+                            ✕
+                        </span>
+                    {/if}
+                </div>
+
+                <!-- Repeat Picker Panel -->
+                {#if showRepeatPicker}
+                    <div class="repeat-picker-panel">
+                        <div class="repeat-presets">
+                            <button type="button" class="preset-btn" class:active={task.recurrence?.type === 'daily' && task.recurrence?.interval === 1}
+                                    on:click={() => setRecurrencePreset('daily')}>Daily</button>
+                            <button type="button" class="preset-btn" class:active={task.recurrence?.type === 'weekdays'}
+                                    on:click={() => setRecurrencePreset('weekdays')}>Weekdays</button>
+                            <button type="button" class="preset-btn" class:active={task.recurrence?.type === 'weekly' && task.recurrence?.interval === 1}
+                                    on:click={() => setRecurrencePreset('weekly')}>Weekly</button>
+                        </div>
+
+                        <!-- Custom / Weekday selector -->
+                        <div class="custom-repeat-section">
+                            <div class="repeat-days-grid">
+                                {#each [1, 2, 3, 4, 5, 6, 0] as day}
+                                    <button
+                                        type="button"
+                                        class="weekday-chip"
+                                        class:active={task.recurrence?.daysOfWeek?.includes(day)}
+                                        on:click={() => handleWeekdayClick(day)}
+                                    >
+                                        {DAY_LABELS[day]}
+                                    </button>
+                                {/each}
+                            </div>
+
+                            <div class="custom-interval-row">
+                                <span>Every</span>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="99"
+                                    class="interval-input"
+                                    value={task.recurrence?.interval || 1}
+                                    on:change={(e) => setCustomInterval(parseInt(e.currentTarget.value) || 1)}
+                                />
+                                <span>day(s)</span>
+                            </div>
+                        </div>
+                    </div>
+                {/if}
+            </div>
+        {/if}
+
+        <!-- Footer: Schedule Drawer Toggle | Time Badge & Add Meta | Delete -->
         <div class="detail-footer">
             <!-- Schedule / Repeat Drawer Toggle -->
             <span class="footer-btn schedule-toggle-btn"
@@ -486,7 +767,30 @@
                 {/if}
             </span>
 
-            <span class="created-date">Created on {formatDate(task.createdAt)}</span>
+            <!-- Center: Time Badge + Add Meta Button -->
+            <div class="footer-meta-tools">
+                <span class="footer-btn time-badge-btn"
+                      role="button" tabindex="0"
+                      title={`Created: ${formatExactTime(task.createdAt)} (${getRelativeTime(task.createdAt)})`}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    <span class="time-badge-text">{getRelativeTime(task.createdAt)}</span>
+                </span>
+
+                <span class="footer-btn add-meta-btn"
+                      on:click={openAddMetaModal}
+                      on:keydown={(e) => e.key === "Enter" && openAddMetaModal()}
+                      role="button" tabindex="0" title="Add / Edit metadata (Why, Note Link, SVG, Custom)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                </span>
+            </div>
 
             <!-- Delete -->
             <span class="footer-btn danger" on:click={deleteTask}
@@ -499,6 +803,104 @@
                 </svg>
             </span>
         </div>
+
+        <!-- Add / Manage Metadata Modal Dialog (Portaled to document.body) -->
+        {#if showAddMetaModal}
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <div use:portal
+                 class="meta-modal-backdrop" on:click={(e) => e.target === e.currentTarget && closeAddMetaModal()} role="presentation">
+                <div class="meta-modal-dialog" role="dialog" aria-modal="true" tabindex="-1">
+                    <div class="meta-modal-header">
+                        <div class="meta-modal-title">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--todo-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="3"/>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                            </svg>
+                            <span>Task Metadata</span>
+                        </div>
+                        <span class="meta-modal-close" on:click={closeAddMetaModal}
+                              on:keydown={(e) => e.key === "Enter" && closeAddMetaModal()}
+                              role="button" tabindex="0">✕</span>
+                    </div>
+
+                    <div class="meta-modal-tabs">
+                        <button type="button" class="meta-modal-tab" class:active={metaFormType === 'why'}
+                                on:click={() => metaFormType = 'why'}>Why</button>
+                        <button type="button" class="meta-modal-tab" class:active={metaFormType === 'note_link'}
+                                on:click={() => metaFormType = 'note_link'}>Note Link</button>
+                        <button type="button" class="meta-modal-tab" class:active={metaFormType === 'svg'}
+                                on:click={() => metaFormType = 'svg'}>Visual SVG</button>
+                        <button type="button" class="meta-modal-tab" class:active={metaFormType === 'custom'}
+                                on:click={() => metaFormType = 'custom'}>Custom</button>
+                    </div>
+
+                    <div class="meta-modal-body">
+                        {#if metaFormType === 'why'}
+                            <div class="meta-form-field">
+                                <span class="meta-field-label">Why / Methodology Rationale</span>
+                                <textarea class="meta-form-textarea" placeholder="Core rationale or mental model behind this instruction..."
+                                          bind:value={metaWhyVal} rows="4"></textarea>
+                            </div>
+                        {:else if metaFormType === 'note_link'}
+                            <div class="meta-form-field">
+                                <span class="meta-field-label">Linked Obsidian / OneNote Note</span>
+                                <input class="meta-form-input" type="text" placeholder="e.g. [[My Note]] or OneNote/Domain/Section/Topic.md"
+                                       bind:value={metaNoteLinkVal} />
+                                <span class="meta-form-hint">Hovering badge in main view will preview this note. Clicking will open it.</span>
+                                {#if metaNoteLinkVal && plugin?.app}
+                                    <button type="button" class="meta-btn-secondary" style="align-self: flex-start; margin-top: 4px; font-size: 11px; padding: 3px 8px;"
+                                            on:click={() => {
+                                                const clean = metaNoteLinkVal.replace(/^\[\[/, "").replace(/\]\]$/, "").trim();
+                                                if (clean) plugin.app.workspace.openLinkText(clean, categoryFilepath, false);
+                                            }}>
+                                        🔗 Test Open Note
+                                    </button>
+                                {/if}
+                            </div>
+                        {:else if metaFormType === 'svg'}
+                            <div class="meta-form-field">
+                                <span class="meta-field-label">Visual Memory SVG (Path or Code)</span>
+                                <textarea class="meta-form-textarea monospace" placeholder="OneNote/Original Game/AI Draw/assets/name.svg or <svg...>...</svg>"
+                                          bind:value={metaSvgVal} rows="3"></textarea>
+                                <span class="meta-form-hint">Path to .svg asset in vault, or raw &lt;svg&gt; XML markup.</span>
+                            </div>
+                        {:else if metaFormType === 'custom'}
+                            {#if task.customMeta && Object.keys(task.customMeta).length > 0}
+                                <div class="meta-existing-custom-box">
+                                    <span class="meta-field-label">Current Properties ({Object.keys(task.customMeta).length})</span>
+                                    <div class="custom-chips-grid">
+                                        {#each Object.entries(task.customMeta) as [k, v]}
+                                            <div class="custom-prop-row">
+                                                <span class="custom-prop-key">{k}:</span>
+                                                <span class="custom-prop-val">{v}</span>
+                                                <span class="custom-prop-del" on:click={() => deleteCustomKey(k)}
+                                                      role="button" tabindex="0" title="Delete property">✕</span>
+                                            </div>
+                                        {/each}
+                                    </div>
+                                </div>
+                            {/if}
+                            <div class="meta-form-field">
+                                <span class="meta-field-label">Property Key</span>
+                                <input class="meta-form-input" type="text" placeholder="e.g. priority, author, tags, domain"
+                                       bind:value={metaCustomKey} />
+                            </div>
+                            <div class="meta-form-field">
+                                <span class="meta-field-label">Property Value</span>
+                                <input class="meta-form-input" type="text" placeholder="e.g. high, Opus, #review, AI"
+                                       bind:value={metaCustomVal} />
+                            </div>
+                        {/if}
+                    </div>
+
+                    <div class="meta-modal-footer">
+                        <button type="button" class="meta-btn-secondary" on:click={closeAddMetaModal}>Cancel</button>
+                        <button type="button" class="meta-btn-primary" on:click={saveMetadata}>Save Metadata</button>
+                    </div>
+                </div>
+            </div>
+        {/if}
     {:else}
         <div class="detail-empty">
             Click a task to view details.
