@@ -32,6 +32,7 @@ if (mainLeaf && mainLeaf.view && mainLeaf.view.file) {
 Fluent Tasks uses a lightweight Meta Badge and Quick Peek system to keep task cards clean while surfacing rich human-agent instructions, memory aids, and linked knowledge on demand:
 
 ### Interaction Patterns
+- **Multi-line Title Wrapping (`wrapTaskTitles`)**: Enabled by default (`true`). Long task titles automatically wrap onto multiple lines in the center list without truncating or requiring the right detail sidebar to be opened. Can be toggled in plugin settings.
 - **Ctrl + Hover Title (Task Quick Peek)**: Pressing <kbd>Ctrl</kbd> (or <kbd>Cmd</kbd> on macOS) while hovering over any task title displays a rich Quick Peek card containing the full unclipped title, subtasks checklist progress, notes, and due dates.
 - **Direct Hover Badges (Zero-Ctrl Required)**:
   - **Why Rationale (`why`)**: Displayed as a `?` badge. Hovering reveals the causal rationale/methodology behind the task.
