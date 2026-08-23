@@ -13,7 +13,7 @@
  */
 
 import { Plugin, ItemView, WorkspaceLeaf, TFile } from "obsidian";
-import { VIEW_TYPE_SIDEBAR, VIEW_TYPE_MAIN, VIEW_TYPE_DETAIL, EventName } from "./types";
+import { VIEW_TYPE_SIDEBAR, VIEW_TYPE_MAIN, VIEW_TYPE_DETAIL, EventName, type CategoryInfo, type TaskItem } from "./types";
 import { EventBus } from "./EventBus";
 import { Logger } from "./Logger";
 import { DataService } from "./DataService";
@@ -352,6 +352,7 @@ export default class FluentTasksPlugin extends Plugin {
 
     async saveSettings() {
         await this.saveData(this.settings);
+        EventBus.emit(EventName.SETTINGS_CHANGED, { settings: this.settings });
     }
 
     applySettings() {

@@ -6,13 +6,15 @@ export interface FluentTasksSettings {
     autoExpandSidebar: boolean;
     searchHideCompleted: boolean;
     hideRibbonIcon: boolean;
+    wrapTaskTitles: boolean;
 }
 
 export const DEFAULT_SETTINGS: FluentTasksSettings = {
     accentColor: "#8b5cf6",
     autoExpandSidebar: true,
     searchHideCompleted: true,
-    hideRibbonIcon: false
+    hideRibbonIcon: false,
+    wrapTaskTitles: true,
 }
 
 export class FluentTasksSettingTab extends PluginSettingTab {
@@ -51,6 +53,16 @@ export class FluentTasksSettingTab extends PluginSettingTab {
         }
 
 
+
+        new Setting(containerEl)
+            .setName("Wrap Task Titles")
+            .setDesc("Wrap long task titles across multiple lines in the task list instead of truncating with ellipsis.")
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.wrapTaskTitles ?? true)
+                .onChange(async (value) => {
+                    this.plugin.settings.wrapTaskTitles = value;
+                    await this.plugin.saveSettings();
+                }));
 
         new Setting(containerEl)
             .setName("Auto-Expand Sidebar on Focus")

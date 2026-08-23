@@ -362,9 +362,17 @@
 .task-title {
   font-size: 14px;
   color: var(--todo-text-main);
+  line-height: 1.4;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.wrap-titles .task-title {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  text-overflow: clip;
+  overflow: visible;
 }
 .task-meta {
   font-size: 12px;

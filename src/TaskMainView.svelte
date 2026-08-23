@@ -29,6 +29,7 @@
     let showCompleted: boolean = false;
     let selectedTaskId: string = "";
     let addTaskInputEl: HTMLInputElement;
+    let wrapTaskTitles: boolean = plugin?.settings?.wrapTaskTitles ?? true;
 
     // DND requires items to have an `id` field — our TaskItem already has it
     const DND_FLIP_DURATION = 200;
@@ -220,6 +221,10 @@
         );
     }
 
+    function handleSettingsChanged() {
+        wrapTaskTitles = plugin?.settings?.wrapTaskTitles ?? true;
+    }
+
     // =============================================
     // Lifecycle
     // =============================================
@@ -229,6 +234,7 @@
         EventBus.on(EventName.TASK_MOVED, handleTaskMoved);
         EventBus.on(EventName.TASK_DELETED, handleTaskDeleted);
         EventBus.on(EventName.TASK_NAVIGATE, handleTaskNavigate);
+        EventBus.on(EventName.SETTINGS_CHANGED, handleSettingsChanged);
         window.addEventListener('pointermove', handleDragPointerMove);
     });
 
@@ -241,6 +247,7 @@
         EventBus.off(EventName.TASK_MOVED, handleTaskMoved);
         EventBus.off(EventName.TASK_DELETED, handleTaskDeleted);
         EventBus.off(EventName.TASK_NAVIGATE, handleTaskNavigate);
+        EventBus.off(EventName.SETTINGS_CHANGED, handleSettingsChanged);
     });
 
     // =============================================
@@ -622,7 +629,7 @@
 
 <svelte:window on:contextmenu={() => { if (popoverVisible) dismissPopover(); }} />
 
-<div class="main-container" role="application">
+<div class="main-container" class:wrap-titles={wrapTaskTitles} role="application">
     {#if currentCategory}
         <!-- Header -->
         <div class="main-header">
