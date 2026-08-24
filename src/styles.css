@@ -453,8 +453,21 @@
     font-size: 12px;
     color: var(--todo-text-muted);
     margin-top: 3px;
-    display: flex;
+    display: inline-flex;
+    align-items: center;
     gap: 8px;
+}
+
+.task-meta.steps-badge {
+    cursor: pointer;
+    transition: color var(--todo-transition);
+    border-radius: 3px;
+    padding: 0 2px;
+}
+
+.task-meta.steps-badge:hover {
+    color: var(--todo-accent);
+    background-color: var(--todo-hover-bg);
 }
 
 .star {
@@ -1772,6 +1785,19 @@ body.is-dragging-ghost #dnd-action-dragged-el {
 .custom-row-val {
     color: var(--todo-text-main);
     word-break: break-word;
+}
+
+/* =============================================
+   Popover Steps Checklist Card
+   ============================================= */
+.meta-popover-steps-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 220px;
+    max-width: 340px;
+    max-height: 380px;
+    overflow-y: auto;
 }
 
 /* =============================================

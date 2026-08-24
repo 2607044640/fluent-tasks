@@ -142,14 +142,14 @@
         popoverType = null;
     }
 
-    function showPopover(e: MouseEvent, task: TaskItem | null, type: 'why' | 'svg' | 'custom' | 'title' | 'guide', svgIndex: number = 0) {
+    function showPopover(e: MouseEvent, task: TaskItem | null, type: 'why' | 'svg' | 'custom' | 'title' | 'guide' | 'steps', svgIndex: number = 0) {
         if (popoverTimeout) clearTimeout(popoverTimeout);
         const target = e.currentTarget as HTMLElement;
         const rect = target.getBoundingClientRect();
 
         // Dynamic height & width calculation based on popover content
-        const estimatedHeight = type === 'svg' ? 320 : type === 'guide' ? 280 : type === 'title' ? 240 : type === 'custom' ? 180 : 140;
-        const estimatedHalfWidth = type === 'svg' ? 150 : type === 'guide' ? 170 : type === 'title' ? 170 : 140;
+        const estimatedHeight = type === 'svg' ? 320 : type === 'guide' ? 280 : type === 'title' ? 240 : type === 'steps' ? 200 : type === 'custom' ? 180 : 140;
+        const estimatedHalfWidth = type === 'svg' ? 150 : type === 'guide' ? 170 : type === 'title' ? 170 : type === 'steps' ? 150 : 140;
 
         // Smart Auto-Flip: if element is near the top of screen (< 24px margin), flip to bottom
         const fitsAbove = rect.top >= estimatedHeight + 24;
@@ -721,7 +721,11 @@
                         </span>
                         <div class="task-meta-row">
                             {#if task.steps.length > 0}
-                                <span class="task-meta">
+                                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                                <span class="task-meta steps-badge"
+                                      on:mouseenter={(e) => showPopover(e, task, 'steps')}
+                                      on:mouseleave={scheduleHidePopover}
+                                      title="Hover to preview subtasks">
                                     {task.steps.filter(s => s.done).length}/{task.steps.length} steps
                                 </span>
                             {/if}
@@ -881,8 +885,17 @@
                                           on:mouseleave={scheduleHidePopover}>
                                         {task.title}
                                     </span>
-                                    {#if task.dueDate || task.recurrence}
+                                    {#if (task.steps && task.steps.length > 0) || task.dueDate || task.recurrence}
                                         <div class="task-meta-row">
+                                            {#if task.steps && task.steps.length > 0}
+                                                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                                                <span class="task-meta steps-badge"
+                                                      on:mouseenter={(e) => showPopover(e, task, 'steps')}
+                                                      on:mouseleave={scheduleHidePopover}
+                                                      title="Hover to preview subtasks">
+                                                    {task.steps.filter(s => s.done).length}/{task.steps.length} steps
+                                                </span>
+                                            {/if}
                                             {#if task.dueDate}
                                                 <span class="task-meta due-date">{task.dueDate}</span>
                                             {/if}
@@ -1056,6 +1069,27 @@
                             <span class="custom-row-val">{v}</span>
                         </div>
                     {/each}
+                </div>
+            {:else if popoverType === 'steps' && popoverTask && popoverTask.steps && popoverTask.steps.length > 0}
+                <div class="meta-popover-steps-card">
+                    <div class="meta-popover-header">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--todo-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 11 12 14 22 4"/>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                            </svg>
+                            <span style="font-weight: 600;">Subtasks Checklist</span>
+                        </div>
+                        <span class="meta-popover-hint">{popoverTask.steps.filter(s => s.done).length}/{popoverTask.steps.length} done</span>
+                    </div>
+                    <div class="popover-steps-list" style="margin-top: 6px;">
+                        {#each popoverTask.steps as step}
+                            <div class="popover-step-item" class:done={step.done}>
+                                <span class="step-bullet">{step.done ? "✓" : "○"}</span>
+                                <span class="step-text">{step.text}</span>
+                            </div>
+                        {/each}
+                    </div>
                 </div>
             {:else if popoverType === 'title' && popoverTask}
                 <div class="meta-popover-title-card">
