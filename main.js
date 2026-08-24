@@ -10512,9 +10512,19 @@ function instance2($$self, $$props, $$invalidate) {
       return cached;
     const trimmed = svgStr.trim();
     if (trimmed.startsWith("<svg") || trimmed.startsWith("<?xml") || trimmed.includes("</svg>")) {
+      let processed = trimmed;
+      if (!processed.includes("viewBox") && !processed.includes("viewbox")) {
+        const widthMatch = processed.match(/width=["']?(\d+(?:\.\d+)?)px?["']?/i);
+        const heightMatch = processed.match(/height=["']?(\d+(?:\.\d+)?)px?["']?/i);
+        if (widthMatch && heightMatch) {
+          const w = widthMatch[1];
+          const h = heightMatch[1];
+          processed = processed.replace(/<svg\b/i, `<svg viewBox="0 0 ${w} ${h}"`);
+        }
+      }
       const res2 = {
         isInline: true,
-        content: trimmed,
+        content: processed,
         srcUrl: "",
         cleanPath: ""
       };

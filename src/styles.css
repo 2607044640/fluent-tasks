@@ -1264,12 +1264,13 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.75);
-    backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(6px);
     z-index: 99999;
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 16px;
     animation: lightbox-fade 150ms ease-out;
 }
 
@@ -1279,13 +1280,14 @@ body.is-dragging-ghost #dnd-action-dragged-el {
 }
 
 .svg-lightbox-modal {
-    width: 680px;
-    max-width: 88vw;
-    max-height: 88vh;
+    width: 96vw;
+    height: 94vh;
+    max-width: 96vw;
+    max-height: 94vh;
     background: #030712;
     border: 1px solid var(--todo-border);
     border-radius: 12px;
-    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.85);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -1293,7 +1295,7 @@ body.is-dragging-ghost #dnd-action-dragged-el {
 }
 
 @keyframes lightbox-pop {
-    from { opacity: 0; transform: scale(0.96); }
+    from { opacity: 0; transform: scale(0.98); }
     to { opacity: 1; transform: scale(1); }
 }
 
@@ -1301,21 +1303,23 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 18px;
+    padding: 12px 20px;
     border-bottom: 1px solid var(--todo-border);
     background: rgba(255, 255, 255, 0.03);
+    flex-shrink: 0;
 }
 
 .svg-lightbox-title-row {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     font-size: 14px;
     font-weight: 600;
     color: var(--todo-text);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    max-width: 80%;
 }
 
 .svg-lightbox-title {
@@ -1325,13 +1329,13 @@ body.is-dragging-ghost #dnd-action-dragged-el {
 }
 
 .svg-lightbox-action-btn {
-    padding: 4px 10px;
-    font-size: 11px;
+    padding: 5px 12px;
+    font-size: 12px;
     font-weight: 500;
     color: var(--todo-accent);
     background: var(--todo-hover-bg);
     border: 1px solid var(--todo-border);
-    border-radius: 4px;
+    border-radius: 5px;
     cursor: pointer;
     transition: all 120ms ease;
 }
@@ -1343,7 +1347,7 @@ body.is-dragging-ghost #dnd-action-dragged-el {
 
 .svg-lightbox-close {
     cursor: pointer;
-    font-size: 14px;
+    font-size: 16px;
     color: var(--todo-text-muted);
     padding: 4px 8px;
     border-radius: 4px;
@@ -1355,25 +1359,36 @@ body.is-dragging-ghost #dnd-action-dragged-el {
 }
 
 .svg-lightbox-body {
-    padding: 16px;
+    padding: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: auto;
+    overflow: hidden;
     flex: 1;
+    min-height: 0;
+    min-width: 0;
     background: #000000;
 }
 
-.svg-lightbox-content,
+.svg-lightbox-content {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
 .svg-lightbox-content svg,
 .svg-lightbox-img {
-    width: 100%;
-    max-width: 580px;
-    height: auto;
-    max-height: 70vh;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
     object-fit: contain;
     display: block;
-    border-radius: 6px;
 }
 
 /* =============================================
