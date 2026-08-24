@@ -60,7 +60,7 @@ Data movement across views and persistent storage follows a strict 7-step sequen
 | `src/TaskSidebarView.svelte` | Presentational sidebar tree, drag-and-drop groups/categories | Direct `app.vault` file mutation |
 | `src/TaskMainView.svelte` | Presentational center task list, completion toggles, DND reorder | Raw file system reads |
 | `src/TaskDetailView.svelte` | Presentational right task detail panel (notes, subtask steps) | Direct file parsing logic |
-| `src/utils/domUtils.ts` | Svelte actions and DOM utilities (`portal` to `document.body`) | Business logic or state management |
+| `src/utils/domUtils.ts` | Svelte actions and DOM utilities (`portal` to `document.body`, `autosize` auto-resizing textareas) | Business logic or state management |
 | `src/utils/timeUtils.ts` | Pure formatters (`formatExactTime`, `getRelativeTime`, `getRecurrenceLabel`) | DOM mutation or side-effects |
 </scope_boundaries>
 
@@ -82,6 +82,7 @@ Data movement across views and persistent storage follows a strict 7-step sequen
 - **Smart Viewport Auto-Flip Collision Avoidance**: Popover coordinate calculation MUST calculate `fitsAbove = rect.top >= estimatedHeight + 24` and flip to `placement-bottom` if space above is insufficient. (Why: guarantees popovers never overflow beyond the top window boundary).
 - **Obsidian Native Page Preview Protocol**: Note link hover previews MUST invoke `app.workspace.trigger("hover-link", ...)` passing a proxied `MouseEvent` (`ctrlKey: true`), `source: "fluent-tasks"`, `hoverParent`, `targetEl`, and `sourcePath`. (Why: allows seamless direct hover previews across both Reading and Live Preview modes while reuses Obsidian's native link caching).
 - **Instant Modal/Popover Dismissal**: Popovers and Lightbox modals MUST dismiss on global `contextmenu` (right-click) or backdrop left-click outside action buttons. (Why: provides zero-friction dismissal for rapid workflow navigation).
+- **Auto-Resizing Multi-line Textareas (`use:autosize`)**: Multi-line task title and subtask inputs MUST use `<textarea use:autosize rows="1">` with `white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere;`. (Why: ensures long titles never clip horizontally into single-line inputs and automatically expand vertically to show the entire text).
 </key_invariants>
 
 ## Key API Reference
