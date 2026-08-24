@@ -173,14 +173,19 @@
     }
 
     function handleTitleMouseMove(e: MouseEvent, task: TaskItem) {
-        if ((e.ctrlKey || e.metaKey) && (!popoverVisible || popoverTask?.id !== task.id || popoverType !== 'title')) {
-            showPopover(e, task, 'title');
-        } else if (!e.ctrlKey && !e.metaKey && popoverType === 'title' && popoverVisible) {
-            dismissPopover();
+        if (e.ctrlKey || e.metaKey) {
+            if (!popoverVisible || popoverTask?.id !== task.id || popoverType !== 'title') {
+                showPopover(e, task, 'title');
+            }
         }
+        // Sticky Task Quick Peek: do NOT dismiss when Ctrl is released.
+        // The popover remains floating until the user right-clicks anywhere or Ctrl-hovers another task.
     }
 
     function scheduleHidePopover() {
+        // Sticky Task Quick Peek: do not auto-hide on mouseleave when popoverType is 'title'
+        if (popoverType === 'title') return;
+
         if (popoverTimeout) clearTimeout(popoverTimeout);
         popoverTimeout = setTimeout(() => {
             popoverVisible = false;

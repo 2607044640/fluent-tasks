@@ -10627,13 +10627,15 @@ function instance2($$self, $$props, $$invalidate) {
     }
   }
   function handleTitleMouseMove(e, task) {
-    if ((e.ctrlKey || e.metaKey) && (!popoverVisible || (popoverTask == null ? void 0 : popoverTask.id) !== task.id || popoverType !== "title")) {
-      showPopover(e, task, "title");
-    } else if (!e.ctrlKey && !e.metaKey && popoverType === "title" && popoverVisible) {
-      dismissPopover();
+    if (e.ctrlKey || e.metaKey) {
+      if (!popoverVisible || (popoverTask == null ? void 0 : popoverTask.id) !== task.id || popoverType !== "title") {
+        showPopover(e, task, "title");
+      }
     }
   }
   function scheduleHidePopover() {
+    if (popoverType === "title")
+      return;
     if (popoverTimeout)
       clearTimeout(popoverTimeout);
     popoverTimeout = setTimeout(
