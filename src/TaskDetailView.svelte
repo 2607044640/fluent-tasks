@@ -4,7 +4,7 @@
     import { DataService } from "./DataService";
     import { EventName, type TaskItem, type TaskStep, type RecurrenceRule } from "./types";
     import { SAVE_DEBOUNCE_MS } from "./constants";
-    import { portal } from "./utils/domUtils";
+    import { portal, autosize } from "./utils/domUtils";
     import { DAY_LABELS, formatExactTime, getRelativeTime, getRecurrenceLabel } from "./utils/timeUtils";
 
     // =============================================
@@ -104,26 +104,48 @@
                 task.recurrence = { type: 'weekdays', interval: 1 };
                 break;
             case 'weekly':
-                task.recurrence = { type: 'weekly', interval: 1, daysOfWeek: [new Date(task.dueDate + "T00:00:00").getDay()] };
+                task.recurrence = { type: 'weekly', interval: 1, daysOfWeek: [new Date().getDay()] };
+                break;
+            case 'custom':
+                task.recurrence = { type: 'daily', interval: 1 };
+                showRepeatPicker = true;
                 break;
         }
+        task = task;
+        immediateSave();
+    }
+
+    function clearRecurrence() {
+        if (!task) return;
+        task.recurrence = undefined;
+        task = task;
         showRepeatPicker = false;
-        scheduleSave();
+        immediateSave();
+    }
+
+    function setDueDatePreset(preset: 'today' | 'tomorrow' | 'next-week') {
+        if (!task) return;
+        const d = new Date();
+        if (preset === 'tomorrow') {
+            d.setDate(d.getDate() + 1);
+        } else if (preset === 'next-week') {
+            // Next Monday
+            const day = d.getDay();
+            const diff = day === 0 ? 1 : 8 - day;
+            d.setDate(d.getDate() + diff);
+        }
+        task.dueDate = d.toISOString().slice(0, 10);
+        task = task;
+        immediateSave();
     }
 
     function clearDueDate() {
         if (!task) return;
         task.dueDate = undefined;
         task.recurrence = undefined;
+        task = task;
         showRepeatPicker = false;
-        scheduleSave();
-    }
-
-    function clearRecurrence() {
-        if (!task) return;
-        task.recurrence = undefined;
-        showRepeatPicker = false;
-        scheduleSave();
+        immediateSave();
     }
 
     function toggleWeekday(day: number) {
@@ -161,21 +183,19 @@
     }
 
     // Debounce timer for auto-saving on input changes
-    let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+    let saveTimeout: any = null;
 
     // =============================================
     // Lifecycle
     // =============================================
     onMount(() => {
         EventBus.on(EventName.TASK_SELECTED, handleTaskSelected);
-        EventBus.on(EventName.DETAIL_CLOSE, handleClose);
         EventBus.on(EventName.TASK_DELETED, handleTaskDeleted);
         EventBus.on(EventName.TASK_UPDATED, handleExternalTaskUpdate);
     });
 
     onDestroy(() => {
         EventBus.off(EventName.TASK_SELECTED, handleTaskSelected);
-        EventBus.off(EventName.DETAIL_CLOSE, handleClose);
         EventBus.off(EventName.TASK_DELETED, handleTaskDeleted);
         EventBus.off(EventName.TASK_UPDATED, handleExternalTaskUpdate);
         if (saveTimeout) clearTimeout(saveTimeout);
@@ -236,6 +256,13 @@
     // =============================================
     function handleTitleInput() {
         scheduleSave();
+    }
+
+    function handleTitleKeydown(e: KeyboardEvent) {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            (e.currentTarget as HTMLElement).blur();
+        }
     }
 
     async function toggleComplete() {
@@ -438,12 +465,14 @@
                     {/if}
                 </span>
 
-                <!-- Title input -->
-                <input
+                <!-- Title input (auto-resizing textarea for full multi-line title wrapping) -->
+                <textarea
+                    use:autosize
                     class="detail-title-input"
-                    type="text"
+                    rows="1"
                     bind:value={task.title}
                     on:input={handleTitleInput}
+                    on:keydown={handleTitleKeydown}
                     placeholder="Task title"
                 />
 
@@ -479,11 +508,19 @@
                                 </svg>
                             {/if}
                         </span>
-                        <input
-                            type="text"
+                        <textarea
+                            use:autosize
+                            rows="1"
                             value={step.text}
                             class:completed={step.done}
                             on:input={(e) => updateStepText(i, e.currentTarget.value)}
+                            on:keydown={(e) => {
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                    e.preventDefault();
+                                    e.currentTarget.blur();
+                                }
+                            }}
+                            placeholder="Step text"
                         />
                         <span class="delete-step" on:click={() => deleteStep(i)}
                               role="button" tabindex="0"

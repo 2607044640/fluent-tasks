@@ -17,3 +17,25 @@ export function portal(node: HTMLElement) {
         }
     };
 }
+
+/**
+ * Svelte Action: Automatically resize a textarea height to match its scrollHeight.
+ * Ensures multi-line text wraps and displays completely without vertical scrollbars.
+ */
+export function autosize(node: HTMLTextAreaElement) {
+    function resize() {
+        node.setCssStyles({ height: "auto" });
+        node.setCssStyles({ height: `${node.scrollHeight}px` });
+    }
+    node.addEventListener("input", resize);
+    requestAnimationFrame(resize);
+
+    return {
+        update() {
+            resize();
+        },
+        destroy() {
+            node.removeEventListener("input", resize);
+        }
+    };
+}

@@ -546,8 +546,18 @@
 
 .title-row {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 12px;
+}
+
+.title-row .checkbox {
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.title-row .star {
+    margin-top: 1px;
+    flex-shrink: 0;
 }
 
 .detail-title-input {
@@ -555,9 +565,24 @@
     background: transparent;
     border: none;
     color: var(--todo-text-main);
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 600;
+    line-height: 1.45;
     outline: none;
+    resize: none;
+    overflow-y: hidden;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    font-family: inherit;
+    padding: 0;
+    margin: 0;
+    min-height: 24px;
+}
+
+.detail-title-input:focus {
+    box-shadow: none;
+    border: none;
 }
 
 .detail-title-input::placeholder {
@@ -571,11 +596,17 @@
 
 .step-item {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     margin-bottom: 8px;
     gap: 10px;
 }
 
+.step-item .checkbox {
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.step-item textarea,
 .step-item input[type="text"] {
     flex-grow: 1;
     background: transparent;
@@ -584,14 +615,23 @@
     color: var(--todo-text-main);
     outline: none;
     font-size: 13px;
-    padding: 4px 0;
+    line-height: 1.4;
+    resize: none;
+    overflow-y: hidden;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    font-family: inherit;
+    padding: 2px 0;
     transition: border-color var(--todo-transition);
 }
 
+.step-item textarea:focus,
 .step-item input[type="text"]:focus {
     border-bottom-color: var(--todo-accent);
 }
 
+.step-item textarea.completed,
 .step-item input[type="text"].completed {
     text-decoration: line-through;
     opacity: 0.5;
@@ -604,6 +644,8 @@
     display: flex;
     align-items: center;
     color: var(--todo-text-muted);
+    margin-top: 2px;
+    flex-shrink: 0;
 }
 
 .step-item:hover .delete-step {
