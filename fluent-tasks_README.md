@@ -33,11 +33,12 @@ Fluent Tasks uses a lightweight Meta Badge and Quick Peek system to keep task ca
 
 ### Interaction Patterns
 - **Multi-line Title Wrapping (`wrapTaskTitles`)**: Enabled by default (`true`). Long task titles automatically wrap onto multiple lines in the center list without truncating or requiring the right detail sidebar to be opened. Can be toggled in plugin settings.
-- **Ctrl + Hover Title (Task Quick Peek)**: Pressing <kbd>Ctrl</kbd> (or <kbd>Cmd</kbd> on macOS) while hovering over any task title displays a rich Quick Peek card containing the full unclipped title, subtasks checklist progress, notes, and due dates.
+- **Dual-Layer Auto-Growing Title Editing**: The right-panel task title and subtask inputs utilize modern CSS `field-sizing: content` combined with the hardened `use:autosize` Svelte action (`scrollTop = 0` zero-clipping invariant) to ensure zero layout shift, seamless multi-line typing, and complete visibility from the first to last line.
+- **Sticky Ctrl + Hover Title (Task Quick Peek)**: Pressing <kbd>Ctrl</kbd> (or <kbd>Cmd</kbd> on macOS) while hovering over any task title displays a rich Quick Peek card containing the full unclipped title, subtasks checklist progress, notes, and due dates. Releasing Ctrl leaves the preview pinned in place until you right-click or preview another task.
 - **Direct Hover Badges (Zero-Ctrl Required)**:
   - **Subtasks Checklist (`0/x steps`)**: Displayed on any task with sub-steps. Direct hover reveals a clean checklist popover showing all step items, check status (`✓` / `○`), and completion stats.
   - **Why Rationale (`why`)**: Displayed as a `?` badge. Hovering reveals the causal rationale/methodology behind the task.
-  - **Visual Memory Aid (`svgs`)**: Inline or vault SVG diagrams. Hovering provides an instant preview; clicking opens a full-screen zoom lightbox with one-click "Open in Tab" navigation.
+  - **Visual Memory Aid (`svgs`)**: Inline or vault SVG diagrams. Hovering provides an instant preview; clicking opens a full-screen zoom lightbox (`96vw × 94vh`) with auto-scaling vector graphics and one-click "Open in Tab" navigation.
   - **Linked Note (`note_link`)**: Note wikilinks (e.g. `[[Topic#^block]]`). Hovering triggers Obsidian's native `Page Preview` popover in both Reading and Live Preview modes; clicking navigates directly to the note.
   - **Custom Properties (`customMeta`)**: Key-value pairs displayed as interactive `🏷️` tag chips with hover popovers and delete buttons.
 - **Features & Shortcuts Guide**: Accessible anytime via the `?` icon in the pane header action bar (next to `⋮`) or through the full Shortcuts Guide Modal.

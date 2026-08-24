@@ -21,12 +21,15 @@ Organize your task lists into drag-and-drop groups. Easily reorder lists, create
 - **Cross-Pane Task Transfer**: Drag any task from the center task list directly across onto any list or group in the left sidebar to move it instantly.
 - **Sidebar Hierarchy Organization**: Drag lists into groups to nest them, reorder groups, or pull nested lists back to the root level.
 
-### 3. Task Quick Peek & Metadata Badges
-- **Ctrl + Hover Quick Peek**: Press <kbd>Ctrl</kbd> (or <kbd>Cmd</kbd> on macOS) while hovering over any task title to instantly view full titles, subtasks checklist progress, notes, and due dates without opening the detail view.
-- **Why / Causal Rationale (`?`)**: Attach development instructions or causal reasoning to tasks with instant hover popovers.
-- **Visual Memory SVGs (`🖼️`)**: Attach vault or inline SVG diagrams. Hover for 280px preview, click for full-screen zoom lightbox with one-click "Open in Tab" navigation.
-- **Linked Notes (`📄`)**: Link Obsidian or OneNote notes (`[[Topic#^block]]`). Direct hover triggers native Page Preview without modifier keys; click to jump straight to the note.
-- **Custom Metadata Properties (`🏷️`)**: Add and manage arbitrary key-value tags with interactive popovers.
+### 3. Task Quick Peek, Subtask Badges & Full-Screen Visuals
+- **Multi-line Title Wrapping (`wrapTaskTitles`)**: Enabled by default (`true`). Long task titles automatically wrap onto multiple lines in the center list without truncating or requiring the right detail sidebar to be opened.
+- **Sticky Ctrl + Hover Quick Peek**: Pressing <kbd>Ctrl</kbd> (or <kbd>Cmd</kbd> on macOS) while hovering over any task title displays a rich Quick Peek card containing full unclipped titles, subtasks checklist progress, notes, and due dates. Releasing Ctrl keeps the card pinned until you right-click or preview another task.
+- **Direct Hover Badges (Zero-Ctrl Required)**:
+  - **Subtasks Checklist (`0/x steps`)**: Direct hover over the step counter on any task reveals an interactive checklist popover showing all step items, check status (`✓` / `○`), and completion stats.
+  - **Why Rationale (`?`)**: Attach development instructions or causal reasoning to tasks with instant hover popovers.
+  - **Visual Memory SVGs (`🖼️`)**: Attach vault or inline SVG diagrams. Hover for instant preview; click for an immersive full-screen (`96vw × 94vh`) zoom lightbox with auto-scaling vector diagrams and one-click "Open in Tab" navigation.
+  - **Linked Notes (`📄`)**: Link Obsidian or OneNote notes (`[[Topic#^block]]`). Direct hover triggers native Page Preview without modifier keys; click to jump straight to the note.
+  - **Custom Metadata Properties (`🏷️`)**: Add and manage arbitrary key-value tags with interactive popovers.
 
 ### 4. Due Dates, Reminders & Recurring Tasks
 Set due dates, custom repeat intervals (daily, weekdays Mon–Fri, weekly on chosen days, or custom interval rollover), and schedule drawer toggles with automatic next occurrence advance upon completion.
