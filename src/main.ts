@@ -238,6 +238,14 @@ export default class FluentTasksPlugin extends Plugin {
             },
         });
 
+        this.addCommand({
+            id: "rename-hovered-list-or-group",
+            name: "Rename hovered list or group",
+            callback: () => {
+                EventBus.emit(EventName.TRIGGER_SIDEBAR_RENAME, {});
+            },
+        });
+
         // FIX: All workspace/vault operations MUST wait until layout is ready.
         // Running them before this causes silent startup crashes on Obsidian boot.
         this.app.workspace.onLayoutReady(() => {

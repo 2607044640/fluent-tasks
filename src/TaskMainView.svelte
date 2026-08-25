@@ -9,7 +9,7 @@
     import { portal } from "./utils/domUtils";
     import { getRelativeTime, getRecurrenceLabel } from "./utils/timeUtils";
     import { DISK_SYNC_DELAY_MS, ANTI_FLICKER_DURATION_MS, POPOVER_HIDE_DELAY_MS } from "./constants";
-    import { Menu, setIcon, type App } from "obsidian";
+    import { Menu, setIcon, Platform, type App } from "obsidian";
     import { TaskSearchModal } from "./TaskSearchModal";
     import { RecurrenceService } from "./services/RecurrenceService";
 
@@ -166,14 +166,23 @@
         popoverVisible = true;
     }
 
+    function isQuickPeekModifierPressed(e: MouseEvent): boolean {
+        if (Platform.isMacOS) {
+            return (e.metaKey || e.ctrlKey) && !e.altKey;
+        }
+        // On Windows and Linux: e.metaKey is the Windows (Super) key!
+        // Never allow Win key combinations (Win+4, Win+Tab, Win+D, etc.) to falsely trigger Ctrl-hover Quick Peek.
+        return e.ctrlKey && !e.metaKey && !e.altKey;
+    }
+
     function handleTitleHover(e: MouseEvent, task: TaskItem) {
-        if (e.ctrlKey || e.metaKey) {
+        if (isQuickPeekModifierPressed(e)) {
             showPopover(e, task, 'title');
         }
     }
 
     function handleTitleMouseMove(e: MouseEvent, task: TaskItem) {
-        if (e.ctrlKey || e.metaKey) {
+        if (isQuickPeekModifierPressed(e)) {
             if (!popoverVisible || popoverTask?.id !== task.id || popoverType !== 'title') {
                 showPopover(e, task, 'title');
             }

@@ -68,13 +68,17 @@
 
         // Sync visual selection when category is selected externally (e.g. jump commands, search)
         EventBus.on(EventName.CATEGORY_SELECTED, handleExternalCategorySelected);
+        EventBus.on(EventName.TRIGGER_SIDEBAR_RENAME, handleTriggerRename);
 
         window.addEventListener("pointermove", handleGlobalPointerMove, true);
+        window.addEventListener("keydown", handleWindowKeydown, true);
     });
 
     onDestroy(() => {
         window.removeEventListener("pointermove", handleGlobalPointerMove, true);
+        window.removeEventListener("keydown", handleWindowKeydown, true);
         EventBus.off(EventName.CATEGORY_SELECTED, handleExternalCategorySelected);
+        EventBus.off(EventName.TRIGGER_SIDEBAR_RENAME, handleTriggerRename);
         vaultEventRefs.forEach(ref => app.vault.offref(ref));
     });
 
@@ -121,6 +125,9 @@
     // =============================================
     // Renaming Logic (F2 on Hover)
     // =============================================
+    let lastMouseX: number = 0;
+    let lastMouseY: number = 0;
+
     function setHoveredCategory(cat: CategoryInfo) {
         hoveredItem = { type: "category", id: cat.id, name: cat.name, filepath: cat.filepath };
     }
@@ -135,6 +142,50 @@
         }
     }
 
+    function getHoveredItemTarget(): { type: "category" | "group"; id: string; name: string; filepath?: string } | null {
+        if (hoveredItem) return hoveredItem;
+
+        // Fallback: check DOM elements under cursor
+        const elUnderCursor = document.elementFromPoint(lastMouseX, lastMouseY);
+        if (!elUnderCursor) return null;
+
+        const catEl = elUnderCursor.closest(".category-item") as HTMLElement | null;
+        if (catEl) {
+            const filepath = catEl.dataset.filepath;
+            const itemid = catEl.dataset.itemid;
+            for (const item of sidebarItems) {
+                if (item.id === itemid || (item.type === "category" && item.filepath === filepath)) {
+                    return { type: "category", id: item.id, name: item.name, filepath: (item as CategoryInfo).filepath };
+                }
+                if (item.type === "group") {
+                    const child = item.items.find(c => c.id === itemid || c.filepath === filepath);
+                    if (child) {
+                        return { type: "category", id: child.id, name: child.name, filepath: child.filepath };
+                    }
+                }
+            }
+        }
+
+        const groupEl = elUnderCursor.closest(".group-header, .group-container") as HTMLElement | null;
+        if (groupEl) {
+            const groupid = groupEl.dataset.groupid || groupEl.dataset.itemid;
+            const group = sidebarItems.find(i => i.id === groupid && i.type === "group");
+            if (group) {
+                return { type: "group", id: group.id, name: group.name };
+            }
+        }
+
+        return null;
+    }
+
+    function handleTriggerRename() {
+        if (editingItemId || isAddingList || isAddingGroup) return;
+        const target = getHoveredItemTarget();
+        if (target) {
+            startRenaming(target);
+        }
+    }
+
     function startRenaming(target: any) {
         editingItemId = target.id;
         editingItemType = target.type;
@@ -144,8 +195,14 @@
             if (renameInputEl) {
                 renameInputEl.focus();
                 renameInputEl.select();
+            } else {
+                const el = document.querySelector(".sidebar-rename-input") as HTMLInputElement | null;
+                if (el) {
+                    el.focus();
+                    el.select();
+                }
             }
-        }, 20);
+        }, 30);
     }
 
     function cancelRename() {
@@ -217,9 +274,12 @@
 
     function handleWindowKeydown(e: KeyboardEvent) {
         if (e.key === "F2") {
-            if (hoveredItem && !editingItemId && !isAddingList && !isAddingGroup) {
+            if (editingItemId || isAddingList || isAddingGroup) return;
+            const target = getHoveredItemTarget();
+            if (target) {
                 e.preventDefault();
-                startRenaming(hoveredItem);
+                e.stopPropagation();
+                startRenaming(target);
             }
         }
     }
@@ -702,6 +762,9 @@
     // Cross-Pane Drag Radar (Physics Collision)
     // =============================================
     function handleGlobalPointerMove(e: PointerEvent) {
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+
         const ghost = document.getElementById('dnd-action-dragged-el') as HTMLElement;
         if (ghost) {
             const overModal = document.elementFromPoint(e.clientX, e.clientY)?.closest('.modal-container, .workspace-ribbon');
@@ -859,7 +922,7 @@
                         <span class="cat-name drag-handle">{item.name}</span>
                     {/if}
                 </div>
-            {:else}
+            {:else if item.type === 'group'}
                 <div
                     draggable={editingItemId !== item.id}
                     data-itemid={item.id}

@@ -124,4 +124,5 @@ export enum EventName {
     DETAIL_CLOSE = "detail:close",
     TASK_NAVIGATE = "task:navigate",
     SETTINGS_CHANGED = "settings:changed",
+    TRIGGER_SIDEBAR_RENAME = "sidebar:trigger-rename",
 }
