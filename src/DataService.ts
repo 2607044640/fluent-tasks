@@ -33,6 +33,9 @@ export class DataService {
     async createGroup(name: string): Promise<GroupInfo> {
         return this.categorySvc.createGroup(name);
     }
+    async renameGroup(groupId: string, newName: string): Promise<void> {
+        return this.categorySvc.renameGroup(groupId, newName);
+    }
 
     async getCategories(): Promise<CategoryInfo[]> {
         const items = await this.categorySvc.getSidebarItems();

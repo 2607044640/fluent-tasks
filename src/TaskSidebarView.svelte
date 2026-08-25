@@ -31,6 +31,14 @@
     let isAddingGroup: boolean = false;
     let newGroupName: string = "";
 
+    // Renaming state
+    let hoveredItem: { type: "category" | "group"; id: string; name: string; filepath?: string } | null = null;
+    let editingItemId: string | null = null;
+    let editingItemType: "category" | "group" | null = null;
+    let editingName: string = "";
+    let editingOriginalName: string = "";
+    let renameInputEl: HTMLInputElement | null = null;
+
     let vaultEventRefs: EventRef[] = [];
 
     // =============================================
@@ -110,9 +118,123 @@
         }
     }
 
+    // =============================================
+    // Renaming Logic (F2 on Hover)
+    // =============================================
+    function setHoveredCategory(cat: CategoryInfo) {
+        hoveredItem = { type: "category", id: cat.id, name: cat.name, filepath: cat.filepath };
+    }
+
+    function setHoveredGroup(group: SidebarItem) {
+        hoveredItem = { type: "group", id: group.id, name: group.name };
+    }
+
+    function clearHoveredItem(id: string) {
+        if (hoveredItem && hoveredItem.id === id) {
+            hoveredItem = null;
+        }
+    }
+
+    function startRenaming(target: any) {
+        editingItemId = target.id;
+        editingItemType = target.type;
+        editingName = target.name;
+        editingOriginalName = target.name;
+        setTimeout(() => {
+            if (renameInputEl) {
+                renameInputEl.focus();
+                renameInputEl.select();
+            }
+        }, 20);
+    }
+
+    function cancelRename() {
+        editingItemId = null;
+        editingItemType = null;
+    }
+
+    async function confirmRename() {
+        if (!editingItemId) return;
+        const newName = editingName.trim();
+        const targetId = editingItemId;
+        const targetType = editingItemType;
+        const oldName = editingOriginalName;
+
+        editingItemId = null;
+        editingItemType = null;
+
+        if (!newName || newName === oldName) {
+            return;
+        }
+
+        if (targetType === "category") {
+            let catFilepath = "";
+            for (const item of sidebarItems) {
+                if (item.id === targetId && item.type === "category") {
+                    catFilepath = item.filepath;
+                    break;
+                } else if (item.type === "group") {
+                    const child = item.items.find(c => c.id === targetId);
+                    if (child) {
+                        catFilepath = child.filepath;
+                        break;
+                    }
+                }
+            }
+            if (catFilepath) {
+                try {
+                    const updatedCat = await dataService.renameCategory(catFilepath, newName);
+                    if (activeCategoryPath === catFilepath) {
+                        activeCategoryPath = updatedCat.filepath;
+                        EventBus.emit(EventName.CATEGORY_SELECTED, { category: updatedCat });
+                    }
+                    await loadSidebarItems();
+                } catch (err: any) {
+                    console.error("[Fluent Tasks] Failed to rename category:", err);
+                }
+            }
+        } else if (targetType === "group") {
+            try {
+                await dataService.renameGroup(targetId, newName);
+                await loadSidebarItems();
+            } catch (err: any) {
+                console.error("[Fluent Tasks] Failed to rename group:", err);
+            }
+        }
+    }
+
+    function handleRenameKeydown(e: KeyboardEvent) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            e.stopPropagation();
+            void confirmRename();
+        } else if (e.key === "Escape") {
+            e.preventDefault();
+            e.stopPropagation();
+            cancelRename();
+        }
+    }
+
+    function handleWindowKeydown(e: KeyboardEvent) {
+        if (e.key === "F2") {
+            if (hoveredItem && !editingItemId && !isAddingList && !isAddingGroup) {
+                e.preventDefault();
+                startRenaming(hoveredItem);
+            }
+        }
+    }
+
     async function handleCategoryContextMenu(e: MouseEvent, cat: CategoryInfo) {
         e.preventDefault();
         const menu = new Menu();
+
+        menu.addItem((item: any) => {
+            item.setTitle("Rename List (F2)")
+                .setIcon("edit")
+                .onClick(() => {
+                    startRenaming({ type: "category", id: cat.id, name: cat.name, filepath: cat.filepath });
+                });
+        });
 
         menu.addItem((item: any) => {
             item.setTitle("Delete List")
@@ -149,6 +271,14 @@
         if (group.type !== "group") return;
         e.preventDefault();
         const menu = new Menu();
+
+        menu.addItem((item: any) => {
+            item.setTitle("Rename Group (F2)")
+                .setIcon("edit")
+                .onClick(() => {
+                    startRenaming({ type: "group", id: group.id, name: group.name });
+                });
+        });
 
         menu.addItem((item: any) => {
             item.setTitle("Delete Group")
@@ -661,6 +791,7 @@
 <svelte:window 
     on:pointerup|capture={handleGlobalPointerUp} 
     on:pointerup|capture={handleRescuePointerUp} 
+    on:keydown={handleWindowKeydown}
 />
 
 <div class="sidebar-container">
@@ -686,8 +817,10 @@
         {#each sidebarItems as item (item.id)}
             {#if item.type === 'category'}
                 <div
-                    draggable="true"
+                    draggable={editingItemId !== item.id}
                     data-itemid={item.id}
+                    on:mouseenter={() => { hoveredItem = { type: 'category', id: item.id, name: item.name, filepath: item.filepath }; }}
+                    on:mouseleave={() => { if (hoveredItem?.id === item.id) hoveredItem = null; }}
                     on:dragstart={(e) => handleDragStart(e, item)}
                     on:dragover|stopPropagation={(e) => handleDragOver(e, item)}
                     on:dragleave={handleDragLeave}
@@ -699,9 +832,9 @@
                     class:drag-over-top={dragOverId === item.id && dragPosition === 'top'}
                     class:drag-over-bottom={dragOverId === item.id && dragPosition === 'bottom'}
                     data-filepath={item.filepath}
-                    on:click={() => selectCategory(item)}
+                    on:click={() => { if (editingItemId !== item.id) selectCategory(item); }}
                     on:contextmenu={(e) => handleCategoryContextMenu(e, item)}
-                    on:keydown={(e) => e.key === "Enter" && selectCategory(item)}
+                    on:keydown={(e) => e.key === "Enter" && editingItemId !== item.id && selectCategory(item)}
                     tabindex="0"
                     role="button"
                 >
@@ -710,11 +843,25 @@
                             <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
                         </svg>
                     </span>
-                    <span class="cat-name drag-handle">{item.name}</span>
+                    {#if editingItemId === item.id}
+                        <!-- svelte-ignore a11y-autofocus -->
+                        <input
+                            class="sidebar-rename-input"
+                            type="text"
+                            bind:value={editingName}
+                            bind:this={renameInputEl}
+                            on:keydown={handleRenameKeydown}
+                            on:blur={confirmRename}
+                            on:click|stopPropagation={() => {}}
+                            autofocus
+                        />
+                    {:else}
+                        <span class="cat-name drag-handle">{item.name}</span>
+                    {/if}
                 </div>
             {:else}
                 <div
-                    draggable="true"
+                    draggable={editingItemId !== item.id}
                     data-itemid={item.id}
                     on:dragstart={(e) => handleDragStart(e, item)}
                     on:dragend={handleDragEnd}
@@ -727,14 +874,30 @@
                     <div class="group-header"
                          data-itemid={item.id}
                          data-groupid={item.id}
+                         on:mouseenter={() => { hoveredItem = { type: 'group', id: item.id, name: item.name }; }}
+                         on:mouseleave={() => { if (hoveredItem?.id === item.id) hoveredItem = null; }}
                          on:dragover|stopPropagation={(e) => handleDragOver(e, item)}
                          on:dragleave={handleDragLeave}
                          on:drop|stopPropagation={(e) => handleDrop(e, item)}
-                         on:click|stopPropagation={() => toggleGroup(item)}
+                         on:click|stopPropagation={() => { if (editingItemId !== item.id) toggleGroup(item); }}
                          on:contextmenu|stopPropagation={(e) => handleGroupContextMenu(e, item)}
                          role="button" tabindex="0"
-                         on:keydown={(e) => e.key === "Enter" && toggleGroup(item)}>
-                        <span class="group-name">{item.name}</span>
+                         on:keydown={(e) => e.key === "Enter" && editingItemId !== item.id && toggleGroup(item)}>
+                        {#if editingItemId === item.id}
+                            <!-- svelte-ignore a11y-autofocus -->
+                            <input
+                                class="sidebar-rename-input"
+                                type="text"
+                                bind:value={editingName}
+                                bind:this={renameInputEl}
+                                on:keydown={handleRenameKeydown}
+                                on:blur={confirmRename}
+                                on:click|stopPropagation={() => {}}
+                                autofocus
+                            />
+                        {:else}
+                            <span class="group-name">{item.name}</span>
+                        {/if}
                         <svg class="chevron {item.isExpanded ? 'expanded' : ''}" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="9 18 15 12 9 6"></polyline>
                         </svg>
@@ -749,12 +912,14 @@
                              role="list">
                             {#each item.items as cat (cat.id)}
                                 <div
-                                    draggable="true"
+                                    draggable={editingItemId !== cat.id}
                                     data-itemid={cat.id}
+                                    on:mouseenter={() => { hoveredItem = { type: 'category', id: cat.id, name: cat.name, filepath: cat.filepath }; }}
+                                    on:mouseleave={() => { if (hoveredItem?.id === cat.id) hoveredItem = null; }}
                                     on:dragstart|stopPropagation={(e) => handleDragStart(e, cat)}
-                                    on:dragover|stopPropagation={(e) => handleDragOver(e, cat, item)}
+                                    on:dragover|stopPropagation={(e) => handleDragOver(e, cat, item as GroupInfo)}
                                     on:dragleave={handleDragLeave}
-                                    on:drop|stopPropagation={(e) => handleDrop(e, cat, item)}
+                                    on:drop|stopPropagation={(e) => handleDrop(e, cat, item as GroupInfo)}
                                     on:dragend|stopPropagation={handleDragEnd}
                                     class="category-item"
                                     class:active={activeCategoryPath === cat.filepath}
@@ -762,9 +927,9 @@
                                     class:drag-over-top={dragOverId === cat.id && dragPosition === 'top'}
                                     class:drag-over-bottom={dragOverId === cat.id && dragPosition === 'bottom'}
                                     data-filepath={cat.filepath}
-                                    on:click={() => selectCategory(cat)}
+                                    on:click={() => { if (editingItemId !== cat.id) selectCategory(cat); }}
                                     on:contextmenu={(e) => handleCategoryContextMenu(e, cat)}
-                                    on:keydown={(e) => e.key === "Enter" && selectCategory(cat)}
+                                    on:keydown={(e) => e.key === "Enter" && editingItemId !== cat.id && selectCategory(cat)}
                                     tabindex="0"
                                     role="button"
                                 >
@@ -773,7 +938,21 @@
                                             <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
                                         </svg>
                                     </span>
-                                    <span class="cat-name">{cat.name}</span>
+                                    {#if editingItemId === cat.id}
+                                        <!-- svelte-ignore a11y-autofocus -->
+                                        <input
+                                            class="sidebar-rename-input"
+                                            type="text"
+                                            bind:value={editingName}
+                                            bind:this={renameInputEl}
+                                            on:keydown={handleRenameKeydown}
+                                            on:blur={confirmRename}
+                                            on:click|stopPropagation={() => {}}
+                                            autofocus
+                                        />
+                                    {:else}
+                                        <span class="cat-name">{cat.name}</span>
+                                    {/if}
                                 </div>
                             {/each}
                         </div>

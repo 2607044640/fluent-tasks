@@ -140,6 +140,28 @@
     text-overflow: ellipsis;
 }
 
+.sidebar-rename-input {
+    pointer-events: auto !important;
+    flex-grow: 1;
+    background: var(--background-primary);
+    border: 1px solid var(--todo-accent);
+    border-radius: var(--todo-radius);
+    color: var(--todo-text-main);
+    font-size: 13px;
+    font-family: inherit;
+    font-weight: 500;
+    padding: 1px 6px;
+    outline: none;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.sidebar-rename-input:focus {
+    border-color: var(--todo-accent);
+    box-shadow: 0 0 0 1px var(--todo-accent);
+}
+
 .cat-count {
     font-size: 12px;
     color: var(--todo-text-muted);

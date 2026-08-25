@@ -169,6 +169,18 @@ export class CategoryService {
         return newGroup;
     }
 
+    async renameGroup(groupId: string, newName: string): Promise<void> {
+        const items = await this.getSidebarItems();
+        for (const item of items) {
+            if (item.type === "group" && item.id === groupId) {
+                item.name = newName;
+                break;
+            }
+        }
+        await this.saveSidebarState(items);
+        void Logger.log("Renamed group:", groupId, "->", newName);
+    }
+
     async deleteCategory(filepath: string): Promise<void> {
         const file = this.app.vault.getAbstractFileByPath(filepath);
         if (file && file instanceof TFile) {

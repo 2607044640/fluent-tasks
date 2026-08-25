@@ -47,7 +47,7 @@
     // Meta Badge Hover Popover
     // =============================================
     let popoverTask: TaskItem | null = null;
-    let popoverType: 'why' | 'svg' | 'custom' | 'title' | 'guide' | null = null;
+    let popoverType: 'why' | 'svg' | 'custom' | 'title' | 'guide' | 'steps' | null = null;
     let popoverSvgIndex: number = 0;
     let popoverX: number = 0;
     let popoverY: number = 0;
