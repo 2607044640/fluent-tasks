@@ -84,6 +84,7 @@ Data movement across views and persistent storage follows a strict 7-step sequen
 - **Instant Modal/Popover Dismissal**: Popovers and Lightbox modals MUST dismiss on global `contextmenu` (right-click) or backdrop left-click outside action buttons. (Why: provides zero-friction dismissal for rapid workflow navigation).
 - **Sticky Quick Peek Popover Invariant**: `scheduleHidePopover` MUST skip auto-hiding when `popoverType === 'title'`. (Why: allows users to release Ctrl and comfortably read complex multi-line steps, notes, and rationales without accidental dismissal).
 - **Dual-Layer Auto-Growing Textarea Invariant (`field-sizing` + `use:autosize`)**: Multi-line task title and subtask inputs MUST use `field-sizing: content; width: 100%; min-width: 0; box-sizing: border-box;` combined with `use:autosize` explicitly setting `scrollTop = 0`. (Why: eliminates the layout shift trap where `height: auto` causes internal textarea scrolling and permanently clips the top half of long titles).
+- **F2 Hover Renaming Protocol**: Hover tracking on lists/groups MUST set `hoveredItem` via `setHoveredCategory` and `setHoveredGroup`. F2 keydown triggers inline rename with autofocus, Enter/blur commits via `renameCategory`/`renameGroup`, and Esc cleanly cancels.
 </key_invariants>
 
 ## Key API Reference
@@ -94,6 +95,8 @@ Data movement across views and persistent storage follows a strict 7-step sequen
 | `DataService` | `getSidebarItems` | `Promise<SidebarItem[]>` | Reads `DATA_FOLDER` files and `.metadata.json` |
 | `DataService` | `saveSidebarState` | `(items: SidebarItem[]) => Promise<void>` | Writes to `.metadata.json` via adapter |
 | `DataService` | `createCategory` | `(name: string) => Promise<CategoryInfo>` | Creates new `.md` file in `TodoData/` |
+| `DataService` | `renameCategory` | `(filepath: string, newName: string) => Promise<CategoryInfo>` | Renames file and updates `.metadata.json` |
+| `DataService` | `renameGroup` | `(groupId: string, newName: string) => Promise<void>` | Renames group in `.metadata.json` |
 | `DataService` | `deleteCategory` | `(filepath: string) => Promise<void>` | Trashes `.md` file via `trashFile` |
 | `DataService` | `getTasks` | `(filepath: string) => Promise<TaskItem[]>` | Reads file, deduplicates IDs |
 | `DataService` | `addTask` | `(filepath: string, title: string) => Promise<TaskItem>` | Atomically appends task via `processFile` |

@@ -1171,12 +1171,6 @@ function onMount(fn) {
 function onDestroy(fn) {
   get_current_component().$$.on_destroy.push(fn);
 }
-function bubble(component, event) {
-  const callbacks = component.$$.callbacks[event.type];
-  if (callbacks) {
-    callbacks.slice().forEach((fn) => fn.call(this, event));
-  }
-}
 
 // node_modules/svelte/src/runtime/internal/scheduler.js
 var dirty_components = [];
@@ -1874,7 +1868,7 @@ function create_else_block_2(ctx) {
   function select_block_type_2(ctx2, dirty) {
     if (
       /*editingItemId*/
-      ctx2[10] === /*item*/
+      ctx2[9] === /*item*/
       ctx2[97].id
     )
       return create_if_block_6;
@@ -1885,7 +1879,7 @@ function create_else_block_2(ctx) {
   function mouseenter_handler_1() {
     return (
       /*mouseenter_handler_1*/
-      ctx[57](
+      ctx[56](
         /*item*/
         ctx[97]
       )
@@ -1894,7 +1888,7 @@ function create_else_block_2(ctx) {
   function mouseleave_handler_1() {
     return (
       /*mouseleave_handler_1*/
-      ctx[58](
+      ctx[57](
         /*item*/
         ctx[97]
       )
@@ -1903,7 +1897,7 @@ function create_else_block_2(ctx) {
   function dragover_handler_1(...args) {
     return (
       /*dragover_handler_1*/
-      ctx[59](
+      ctx[58](
         /*item*/
         ctx[97],
         ...args
@@ -1913,17 +1907,17 @@ function create_else_block_2(ctx) {
   function drop_handler_1(...args) {
     return (
       /*drop_handler_1*/
-      ctx[60](
+      ctx[59](
         /*item*/
         ctx[97],
         ...args
       )
     );
   }
-  function click_handler_4() {
+  function click_handler_3() {
     return (
-      /*click_handler_4*/
-      ctx[61](
+      /*click_handler_3*/
+      ctx[60](
         /*item*/
         ctx[97]
       )
@@ -1932,7 +1926,7 @@ function create_else_block_2(ctx) {
   function contextmenu_handler_1(...args) {
     return (
       /*contextmenu_handler_1*/
-      ctx[62](
+      ctx[61](
         /*item*/
         ctx[97],
         ...args
@@ -1942,7 +1936,7 @@ function create_else_block_2(ctx) {
   function keydown_handler_2(...args) {
     return (
       /*keydown_handler_2*/
-      ctx[63](
+      ctx[62](
         /*item*/
         ctx[97],
         ...args
@@ -1956,7 +1950,7 @@ function create_else_block_2(ctx) {
   function dragstart_handler_2(...args) {
     return (
       /*dragstart_handler_2*/
-      ctx[76](
+      ctx[75](
         /*item*/
         ctx[97],
         ...args
@@ -1992,7 +1986,7 @@ function create_else_block_2(ctx) {
       attr(div0, "role", "button");
       attr(div0, "tabindex", "0");
       attr(div1, "draggable", div1_draggable_value = /*editingItemId*/
-      ctx[10] !== /*item*/
+      ctx[9] !== /*item*/
       ctx[97].id);
       attr(div1, "data-itemid", div1_data_itemid_value = /*item*/
       ctx[97].id);
@@ -2043,10 +2037,10 @@ function create_else_block_2(ctx) {
             div0,
             "dragleave",
             /*handleDragLeave*/
-            ctx[21]
+            ctx[23]
           ),
           listen(div0, "drop", stop_propagation(drop_handler_1)),
-          listen(div0, "click", stop_propagation(click_handler_4)),
+          listen(div0, "click", stop_propagation(click_handler_3)),
           listen(div0, "contextmenu", stop_propagation(contextmenu_handler_1)),
           listen(div0, "keydown", keydown_handler_2),
           listen(div1, "dragstart", dragstart_handler_2),
@@ -2054,7 +2048,7 @@ function create_else_block_2(ctx) {
             div1,
             "dragend",
             /*handleDragEnd*/
-            ctx[23]
+            ctx[25]
           )
         ];
         mounted = true;
@@ -2103,8 +2097,8 @@ function create_else_block_2(ctx) {
         if_block1 = null;
       }
       if (dirty[0] & /*editingItemId, sidebarItems*/
-      1025 && div1_draggable_value !== (div1_draggable_value = /*editingItemId*/
-      ctx[10] !== /*item*/
+      513 && div1_draggable_value !== (div1_draggable_value = /*editingItemId*/
+      ctx[9] !== /*item*/
       ctx[97].id)) {
         attr(div1, "draggable", div1_draggable_value);
       }
@@ -2172,7 +2166,7 @@ function create_if_block_2(ctx) {
   function select_block_type_1(ctx2, dirty) {
     if (
       /*editingItemId*/
-      ctx2[10] === /*item*/
+      ctx2[9] === /*item*/
       ctx2[97].id
     )
       return create_if_block_3;
@@ -2183,7 +2177,7 @@ function create_if_block_2(ctx) {
   function mouseenter_handler() {
     return (
       /*mouseenter_handler*/
-      ctx[47](
+      ctx[46](
         /*item*/
         ctx[97]
       )
@@ -2192,7 +2186,7 @@ function create_if_block_2(ctx) {
   function mouseleave_handler() {
     return (
       /*mouseleave_handler*/
-      ctx[48](
+      ctx[47](
         /*item*/
         ctx[97]
       )
@@ -2201,7 +2195,7 @@ function create_if_block_2(ctx) {
   function dragstart_handler(...args) {
     return (
       /*dragstart_handler*/
-      ctx[49](
+      ctx[48](
         /*item*/
         ctx[97],
         ...args
@@ -2211,7 +2205,7 @@ function create_if_block_2(ctx) {
   function dragover_handler(...args) {
     return (
       /*dragover_handler*/
-      ctx[50](
+      ctx[49](
         /*item*/
         ctx[97],
         ...args
@@ -2221,17 +2215,17 @@ function create_if_block_2(ctx) {
   function drop_handler(...args) {
     return (
       /*drop_handler*/
-      ctx[51](
+      ctx[50](
         /*item*/
         ctx[97],
         ...args
       )
     );
   }
-  function click_handler_3() {
+  function click_handler_1() {
     return (
-      /*click_handler_3*/
-      ctx[52](
+      /*click_handler_1*/
+      ctx[51](
         /*item*/
         ctx[97]
       )
@@ -2240,7 +2234,7 @@ function create_if_block_2(ctx) {
   function contextmenu_handler(...args) {
     return (
       /*contextmenu_handler*/
-      ctx[53](
+      ctx[52](
         /*item*/
         ctx[97],
         ...args
@@ -2250,7 +2244,7 @@ function create_if_block_2(ctx) {
   function keydown_handler_1(...args) {
     return (
       /*keydown_handler_1*/
-      ctx[54](
+      ctx[53](
         /*item*/
         ctx[97],
         ...args
@@ -2267,7 +2261,7 @@ function create_if_block_2(ctx) {
       t1 = space();
       attr(span, "class", "cat-icon drag-handle");
       attr(div, "draggable", div_draggable_value = /*editingItemId*/
-      ctx[10] !== /*item*/
+      ctx[9] !== /*item*/
       ctx[97].id);
       attr(div, "data-itemid", div_data_itemid_value = /*item*/
       ctx[97].id);
@@ -2326,16 +2320,16 @@ function create_if_block_2(ctx) {
             div,
             "dragleave",
             /*handleDragLeave*/
-            ctx[21]
+            ctx[23]
           ),
           listen(div, "drop", stop_propagation(drop_handler)),
           listen(
             div,
             "dragend",
             /*handleDragEnd*/
-            ctx[23]
+            ctx[25]
           ),
-          listen(div, "click", click_handler_3),
+          listen(div, "click", click_handler_1),
           listen(div, "contextmenu", contextmenu_handler),
           listen(div, "keydown", keydown_handler_1)
         ];
@@ -2355,8 +2349,8 @@ function create_if_block_2(ctx) {
         }
       }
       if (dirty[0] & /*editingItemId, sidebarItems*/
-      1025 && div_draggable_value !== (div_draggable_value = /*editingItemId*/
-      ctx[10] !== /*item*/
+      513 && div_draggable_value !== (div_draggable_value = /*editingItemId*/
+      ctx[9] !== /*item*/
       ctx[97].id)) {
         attr(div, "draggable", div_draggable_value);
       }
@@ -2472,9 +2466,9 @@ function create_if_block_6(ctx) {
       set_input_value(
         input,
         /*editingName*/
-        ctx[11]
+        ctx[10]
       );
-      ctx[56](input);
+      ctx[55](input);
       input.focus();
       if (!mounted) {
         dispose = [
@@ -2482,36 +2476,33 @@ function create_if_block_6(ctx) {
             input,
             "input",
             /*input_input_handler_1*/
-            ctx[55]
+            ctx[54]
           ),
           listen(
             input,
             "keydown",
             /*handleRenameKeydown*/
-            ctx[16]
+            ctx[18]
           ),
           listen(
             input,
             "blur",
             /*confirmRename*/
-            ctx[15]
+            ctx[17]
           ),
-          listen(input, "click", stop_propagation(
-            /*click_handler_1*/
-            ctx[43]
-          ))
+          listen(input, "click", stop_propagation(click_handler_2))
         ];
         mounted = true;
       }
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*editingName*/
-      2048 && input.value !== /*editingName*/
-      ctx2[11]) {
+      1024 && input.value !== /*editingName*/
+      ctx2[10]) {
         set_input_value(
           input,
           /*editingName*/
-          ctx2[11]
+          ctx2[10]
         );
       }
     },
@@ -2519,7 +2510,7 @@ function create_if_block_6(ctx) {
       if (detaching) {
         detach(input);
       }
-      ctx[56](null);
+      ctx[55](null);
       mounted = false;
       run_all(dispose);
     }
@@ -2548,7 +2539,7 @@ function create_if_block_4(ctx) {
   function dragover_handler_3(...args) {
     return (
       /*dragover_handler_3*/
-      ctx[74](
+      ctx[73](
         /*item*/
         ctx[97],
         ...args
@@ -2558,7 +2549,7 @@ function create_if_block_4(ctx) {
   function drop_handler_3(...args) {
     return (
       /*drop_handler_3*/
-      ctx[75](
+      ctx[74](
         /*item*/
         ctx[97],
         ...args
@@ -2607,8 +2598,8 @@ function create_if_block_4(ctx) {
     },
     p(new_ctx, dirty) {
       ctx = new_ctx;
-      if (dirty[0] & /*editingItemId, sidebarItems, activeCategoryPath, dragOverPath, dragOverId, dragPosition, hoveredItem, handleDragStart, handleDragOver, handleDragLeave, handleDrop, handleDragEnd, selectCategory, handleCategoryContextMenu, editingName, renameInputEl, handleRenameKeydown, confirmRename*/
-      32882207) {
+      if (dirty[0] & /*editingItemId, sidebarItems, activeCategoryPath, dragOverPath, dragOverId, dragPosition, setHoveredCategory, clearHoveredItem, handleDragStart, handleDragOver, handleDragLeave, handleDrop, handleDragEnd, selectCategory, handleCategoryContextMenu, editingName, renameInputEl, handleRenameKeydown, confirmRename*/
+      131554847) {
         each_value_1 = ensure_array_like(
           /*item*/
           ctx[97].items
@@ -2699,9 +2690,9 @@ function create_if_block_5(ctx) {
       set_input_value(
         input,
         /*editingName*/
-        ctx[11]
+        ctx[10]
       );
-      ctx[65](input);
+      ctx[64](input);
       input.focus();
       if (!mounted) {
         dispose = [
@@ -2709,36 +2700,33 @@ function create_if_block_5(ctx) {
             input,
             "input",
             /*input_input_handler_2*/
-            ctx[64]
+            ctx[63]
           ),
           listen(
             input,
             "keydown",
             /*handleRenameKeydown*/
-            ctx[16]
+            ctx[18]
           ),
           listen(
             input,
             "blur",
             /*confirmRename*/
-            ctx[15]
+            ctx[17]
           ),
-          listen(input, "click", stop_propagation(
-            /*click_handler_2*/
-            ctx[42]
-          ))
+          listen(input, "click", stop_propagation(click_handler_4))
         ];
         mounted = true;
       }
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*editingName*/
-      2048 && input.value !== /*editingName*/
-      ctx2[11]) {
+      1024 && input.value !== /*editingName*/
+      ctx2[10]) {
         set_input_value(
           input,
           /*editingName*/
-          ctx2[11]
+          ctx2[10]
         );
       }
     },
@@ -2746,7 +2734,7 @@ function create_if_block_5(ctx) {
       if (detaching) {
         detach(input);
       }
-      ctx[65](null);
+      ctx[64](null);
       mounted = false;
       run_all(dispose);
     }
@@ -2765,7 +2753,7 @@ function create_each_block_1(key_1, ctx) {
   function select_block_type_3(ctx2, dirty) {
     if (
       /*editingItemId*/
-      ctx2[10] === /*cat*/
+      ctx2[9] === /*cat*/
       ctx2[100].id
     )
       return create_if_block_5;
@@ -2776,7 +2764,7 @@ function create_each_block_1(key_1, ctx) {
   function mouseenter_handler_2() {
     return (
       /*mouseenter_handler_2*/
-      ctx[66](
+      ctx[65](
         /*cat*/
         ctx[100]
       )
@@ -2785,7 +2773,7 @@ function create_each_block_1(key_1, ctx) {
   function mouseleave_handler_2() {
     return (
       /*mouseleave_handler_2*/
-      ctx[67](
+      ctx[66](
         /*cat*/
         ctx[100]
       )
@@ -2794,7 +2782,7 @@ function create_each_block_1(key_1, ctx) {
   function dragstart_handler_1(...args) {
     return (
       /*dragstart_handler_1*/
-      ctx[68](
+      ctx[67](
         /*cat*/
         ctx[100],
         ...args
@@ -2804,7 +2792,7 @@ function create_each_block_1(key_1, ctx) {
   function dragover_handler_2(...args) {
     return (
       /*dragover_handler_2*/
-      ctx[69](
+      ctx[68](
         /*cat*/
         ctx[100],
         /*item*/
@@ -2816,7 +2804,7 @@ function create_each_block_1(key_1, ctx) {
   function drop_handler_2(...args) {
     return (
       /*drop_handler_2*/
-      ctx[70](
+      ctx[69](
         /*cat*/
         ctx[100],
         /*item*/
@@ -2828,7 +2816,7 @@ function create_each_block_1(key_1, ctx) {
   function click_handler_5() {
     return (
       /*click_handler_5*/
-      ctx[71](
+      ctx[70](
         /*cat*/
         ctx[100]
       )
@@ -2837,7 +2825,7 @@ function create_each_block_1(key_1, ctx) {
   function contextmenu_handler_2(...args) {
     return (
       /*contextmenu_handler_2*/
-      ctx[72](
+      ctx[71](
         /*cat*/
         ctx[100],
         ...args
@@ -2847,7 +2835,7 @@ function create_each_block_1(key_1, ctx) {
   function keydown_handler_32(...args) {
     return (
       /*keydown_handler_3*/
-      ctx[73](
+      ctx[72](
         /*cat*/
         ctx[100],
         ...args
@@ -2866,7 +2854,7 @@ function create_each_block_1(key_1, ctx) {
       t1 = space();
       attr(span, "class", "cat-icon");
       attr(div, "draggable", div_draggable_value = /*editingItemId*/
-      ctx[10] !== /*cat*/
+      ctx[9] !== /*cat*/
       ctx[100].id);
       attr(div, "data-itemid", div_data_itemid_value = /*cat*/
       ctx[100].id);
@@ -2923,12 +2911,12 @@ function create_each_block_1(key_1, ctx) {
             div,
             "dragleave",
             /*handleDragLeave*/
-            ctx[21]
+            ctx[23]
           ),
           listen(div, "drop", stop_propagation(drop_handler_2)),
           listen(div, "dragend", stop_propagation(
             /*handleDragEnd*/
-            ctx[23]
+            ctx[25]
           )),
           listen(div, "click", click_handler_5),
           listen(div, "contextmenu", contextmenu_handler_2),
@@ -2950,8 +2938,8 @@ function create_each_block_1(key_1, ctx) {
         }
       }
       if (dirty[0] & /*editingItemId, sidebarItems*/
-      1025 && div_draggable_value !== (div_draggable_value = /*editingItemId*/
-      ctx[10] !== /*cat*/
+      513 && div_draggable_value !== (div_draggable_value = /*editingItemId*/
+      ctx[9] !== /*cat*/
       ctx[100].id)) {
         attr(div, "draggable", div_draggable_value);
       }
@@ -3064,9 +3052,9 @@ function create_if_block_3(ctx) {
       set_input_value(
         input,
         /*editingName*/
-        ctx[11]
+        ctx[10]
       );
-      ctx[46](input);
+      ctx[45](input);
       input.focus();
       if (!mounted) {
         dispose = [
@@ -3074,36 +3062,33 @@ function create_if_block_3(ctx) {
             input,
             "input",
             /*input_input_handler*/
-            ctx[45]
+            ctx[44]
           ),
           listen(
             input,
             "keydown",
             /*handleRenameKeydown*/
-            ctx[16]
+            ctx[18]
           ),
           listen(
             input,
             "blur",
             /*confirmRename*/
-            ctx[15]
+            ctx[17]
           ),
-          listen(input, "click", stop_propagation(
-            /*click_handler*/
-            ctx[41]
-          ))
+          listen(input, "click", stop_propagation(click_handler))
         ];
         mounted = true;
       }
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*editingName*/
-      2048 && input.value !== /*editingName*/
-      ctx2[11]) {
+      1024 && input.value !== /*editingName*/
+      ctx2[10]) {
         set_input_value(
           input,
           /*editingName*/
-          ctx2[11]
+          ctx2[10]
         );
       }
     },
@@ -3111,7 +3096,7 @@ function create_if_block_3(ctx) {
       if (detaching) {
         detach(input);
       }
-      ctx[46](null);
+      ctx[45](null);
       mounted = false;
       run_all(dispose);
     }
@@ -3200,25 +3185,25 @@ function create_else_block(ctx) {
             div0,
             "click",
             /*startAddingList*/
-            ctx[27]
+            ctx[29]
           ),
           listen(
             div0,
             "keydown",
             /*keydown_handler_6*/
-            ctx[81]
+            ctx[80]
           ),
           listen(
             div1,
             "click",
             /*startAddingGroup*/
-            ctx[31]
+            ctx[33]
           ),
           listen(
             div1,
             "keydown",
             /*keydown_handler_7*/
-            ctx[82]
+            ctx[81]
           )
         ];
         mounted = true;
@@ -3270,31 +3255,31 @@ function create_if_block_1(ctx) {
             input,
             "input",
             /*input_input_handler_4*/
-            ctx[79]
+            ctx[78]
           ),
           listen(
             input,
             "keydown",
             /*handleNewGroupKeydown*/
-            ctx[33]
+            ctx[35]
           ),
           listen(
             input,
             "blur",
             /*handleNewGroupBlur*/
-            ctx[34]
+            ctx[36]
           ),
           listen(
             span,
             "click",
             /*confirmAddGroup*/
-            ctx[32]
+            ctx[34]
           ),
           listen(
             span,
             "keydown",
             /*keydown_handler_5*/
-            ctx[80]
+            ctx[79]
           )
         ];
         mounted = true;
@@ -3356,31 +3341,31 @@ function create_if_block(ctx) {
             input,
             "input",
             /*input_input_handler_3*/
-            ctx[77]
+            ctx[76]
           ),
           listen(
             input,
             "keydown",
             /*handleNewListKeydown*/
-            ctx[29]
+            ctx[31]
           ),
           listen(
             input,
             "blur",
             /*handleNewListBlur*/
-            ctx[30]
+            ctx[32]
           ),
           listen(
             span,
             "click",
             /*confirmAddList*/
-            ctx[28]
+            ctx[30]
           ),
           listen(
             span,
             "keydown",
             /*keydown_handler_4*/
-            ctx[78]
+            ctx[77]
           )
         ];
         mounted = true;
@@ -3510,53 +3495,53 @@ function create_fragment(ctx) {
             window_1,
             "pointerup",
             /*handleGlobalPointerUp*/
-            ctx[35],
+            ctx[37],
             true
           ),
           listen(
             window_1,
             "pointerup",
             /*handleRescuePointerUp*/
-            ctx[36],
+            ctx[38],
             true
           ),
           listen(
             window_1,
             "keydown",
             /*handleWindowKeydown*/
-            ctx[17]
+            ctx[19]
           ),
           listen(
             span1,
             "click",
             /*openGlobalSearch*/
-            ctx[37]
+            ctx[39]
           ),
           listen(
             span1,
             "keydown",
             /*keydown_handler*/
-            ctx[44]
+            ctx[43]
           ),
           listen(
             div1,
             "dragover",
             /*handleRootDragOver*/
-            ctx[25]
+            ctx[27]
           ),
           listen(
             div1,
             "drop",
             /*handleRootDrop*/
-            ctx[26]
+            ctx[28]
           )
         ];
         mounted = true;
       }
     },
     p(ctx2, dirty) {
-      if (dirty[0] & /*editingItemId, sidebarItems, activeCategoryPath, dragOverId, dragPosition, dragOverPath, hoveredItem, handleDragStart, handleDragOver, handleDragLeave, handleDrop, handleDragEnd, selectCategory, handleCategoryContextMenu, editingName, renameInputEl, handleRenameKeydown, confirmRename, toggleGroup, handleGroupContextMenu*/
-      33422879) {
+      if (dirty[0] & /*editingItemId, sidebarItems, activeCategoryPath, dragOverId, dragPosition, dragOverPath, setHoveredCategory, clearHoveredItem, handleDragStart, handleDragOver, handleDragLeave, handleDrop, handleDragEnd, selectCategory, handleCategoryContextMenu, editingName, renameInputEl, handleRenameKeydown, confirmRename, setHoveredGroup, toggleGroup, handleGroupContextMenu*/
+      133692959) {
         each_value = ensure_array_like(
           /*sidebarItems*/
           ctx2[0]
@@ -3612,6 +3597,12 @@ function checkAutoScroll(e) {
     container.scrollTop += speed;
   }
 }
+var click_handler = () => {
+};
+var click_handler_2 = () => {
+};
+var click_handler_4 = () => {
+};
 function instance($$self, $$props, $$invalidate) {
   let { app } = $$props;
   let { dataService } = $$props;
@@ -3687,10 +3678,30 @@ function instance($$self, $$props, $$invalidate) {
       saveAndSyncSidebarState(nextItems);
     }
   }
+  function setHoveredCategory(cat) {
+    hoveredItem = {
+      type: "category",
+      id: cat.id,
+      name: cat.name,
+      filepath: cat.filepath
+    };
+  }
+  function setHoveredGroup(group) {
+    hoveredItem = {
+      type: "group",
+      id: group.id,
+      name: group.name
+    };
+  }
+  function clearHoveredItem(id) {
+    if (hoveredItem && hoveredItem.id === id) {
+      hoveredItem = null;
+    }
+  }
   function startRenaming(target) {
-    $$invalidate(10, editingItemId = target.id);
+    $$invalidate(9, editingItemId = target.id);
     editingItemType = target.type;
-    $$invalidate(11, editingName = target.name);
+    $$invalidate(10, editingName = target.name);
     editingOriginalName = target.name;
     setTimeout(
       () => {
@@ -3703,7 +3714,7 @@ function instance($$self, $$props, $$invalidate) {
     );
   }
   function cancelRename() {
-    $$invalidate(10, editingItemId = null);
+    $$invalidate(9, editingItemId = null);
     editingItemType = null;
   }
   async function confirmRename() {
@@ -3713,7 +3724,7 @@ function instance($$self, $$props, $$invalidate) {
     const targetId = editingItemId;
     const targetType = editingItemType;
     const oldName = editingOriginalName;
-    $$invalidate(10, editingItemId = null);
+    $$invalidate(9, editingItemId = null);
     editingItemType = null;
     if (!newName || newName === oldName) {
       return;
@@ -4269,42 +4280,23 @@ function instance($$self, $$props, $$invalidate) {
   function openGlobalSearch() {
     new TaskSearchModal(app, plugin, dataService).open();
   }
-  function click_handler(event) {
-    bubble.call(this, $$self, event);
-  }
-  function click_handler_2(event) {
-    bubble.call(this, $$self, event);
-  }
-  function click_handler_1(event) {
-    bubble.call(this, $$self, event);
-  }
   const keydown_handler = (e) => e.key === "Enter" && openGlobalSearch();
   function input_input_handler() {
     editingName = this.value;
-    $$invalidate(11, editingName);
+    $$invalidate(10, editingName);
   }
   function input_binding($$value) {
     binding_callbacks[$$value ? "unshift" : "push"](() => {
       renameInputEl = $$value;
-      $$invalidate(12, renameInputEl);
+      $$invalidate(11, renameInputEl);
     });
   }
-  const mouseenter_handler = (item) => {
-    $$invalidate(9, hoveredItem = {
-      type: "category",
-      id: item.id,
-      name: item.name,
-      filepath: item.filepath
-    });
-  };
-  const mouseleave_handler = (item) => {
-    if ((hoveredItem == null ? void 0 : hoveredItem.id) === item.id)
-      $$invalidate(9, hoveredItem = null);
-  };
+  const mouseenter_handler = (item) => setHoveredCategory(item);
+  const mouseleave_handler = (item) => clearHoveredItem(item.id);
   const dragstart_handler = (item, e) => handleDragStart(e, item);
   const dragover_handler = (item, e) => handleDragOver(e, item);
   const drop_handler = (item, e) => handleDrop2(e, item);
-  const click_handler_3 = (item) => {
+  const click_handler_1 = (item) => {
     if (editingItemId !== item.id)
       selectCategory(item);
   };
@@ -4312,28 +4304,19 @@ function instance($$self, $$props, $$invalidate) {
   const keydown_handler_1 = (item, e) => e.key === "Enter" && editingItemId !== item.id && selectCategory(item);
   function input_input_handler_1() {
     editingName = this.value;
-    $$invalidate(11, editingName);
+    $$invalidate(10, editingName);
   }
   function input_binding_1($$value) {
     binding_callbacks[$$value ? "unshift" : "push"](() => {
       renameInputEl = $$value;
-      $$invalidate(12, renameInputEl);
+      $$invalidate(11, renameInputEl);
     });
   }
-  const mouseenter_handler_1 = (item) => {
-    $$invalidate(9, hoveredItem = {
-      type: "group",
-      id: item.id,
-      name: item.name
-    });
-  };
-  const mouseleave_handler_1 = (item) => {
-    if ((hoveredItem == null ? void 0 : hoveredItem.id) === item.id)
-      $$invalidate(9, hoveredItem = null);
-  };
+  const mouseenter_handler_1 = (item) => setHoveredGroup(item);
+  const mouseleave_handler_1 = (item) => clearHoveredItem(item.id);
   const dragover_handler_1 = (item, e) => handleDragOver(e, item);
   const drop_handler_1 = (item, e) => handleDrop2(e, item);
-  const click_handler_4 = (item) => {
+  const click_handler_3 = (item) => {
     if (editingItemId !== item.id)
       toggleGroup(item);
   };
@@ -4341,26 +4324,16 @@ function instance($$self, $$props, $$invalidate) {
   const keydown_handler_2 = (item, e) => e.key === "Enter" && editingItemId !== item.id && toggleGroup(item);
   function input_input_handler_2() {
     editingName = this.value;
-    $$invalidate(11, editingName);
+    $$invalidate(10, editingName);
   }
   function input_binding_2($$value) {
     binding_callbacks[$$value ? "unshift" : "push"](() => {
       renameInputEl = $$value;
-      $$invalidate(12, renameInputEl);
+      $$invalidate(11, renameInputEl);
     });
   }
-  const mouseenter_handler_2 = (cat) => {
-    $$invalidate(9, hoveredItem = {
-      type: "category",
-      id: cat.id,
-      name: cat.name,
-      filepath: cat.filepath
-    });
-  };
-  const mouseleave_handler_2 = (cat) => {
-    if ((hoveredItem == null ? void 0 : hoveredItem.id) === cat.id)
-      $$invalidate(9, hoveredItem = null);
-  };
+  const mouseenter_handler_2 = (cat) => setHoveredCategory(cat);
+  const mouseleave_handler_2 = (cat) => clearHoveredItem(cat.id);
   const dragstart_handler_1 = (cat, e) => handleDragStart(e, cat);
   const dragover_handler_2 = (cat, item, e) => handleDragOver(e, cat, item);
   const drop_handler_2 = (cat, item, e) => handleDrop2(e, cat, item);
@@ -4387,11 +4360,11 @@ function instance($$self, $$props, $$invalidate) {
   const keydown_handler_7 = (e) => e.key === "Enter" && startAddingGroup();
   $$self.$$set = ($$props2) => {
     if ("app" in $$props2)
-      $$invalidate(38, app = $$props2.app);
+      $$invalidate(40, app = $$props2.app);
     if ("dataService" in $$props2)
-      $$invalidate(39, dataService = $$props2.dataService);
+      $$invalidate(41, dataService = $$props2.dataService);
     if ("plugin" in $$props2)
-      $$invalidate(40, plugin = $$props2.plugin);
+      $$invalidate(42, plugin = $$props2.plugin);
   };
   return [
     sidebarItems,
@@ -4403,12 +4376,14 @@ function instance($$self, $$props, $$invalidate) {
     newListName,
     isAddingGroup,
     newGroupName,
-    hoveredItem,
     editingItemId,
     editingName,
     renameInputEl,
     selectCategory,
     toggleGroup,
+    setHoveredCategory,
+    setHoveredGroup,
+    clearHoveredItem,
     confirmRename,
     handleRenameKeydown,
     handleWindowKeydown,
@@ -4435,9 +4410,6 @@ function instance($$self, $$props, $$invalidate) {
     app,
     dataService,
     plugin,
-    click_handler,
-    click_handler_2,
-    click_handler_1,
     keydown_handler,
     input_input_handler,
     input_binding,
@@ -4446,7 +4418,7 @@ function instance($$self, $$props, $$invalidate) {
     dragstart_handler,
     dragover_handler,
     drop_handler,
-    click_handler_3,
+    click_handler_1,
     contextmenu_handler,
     keydown_handler_1,
     input_input_handler_1,
@@ -4455,7 +4427,7 @@ function instance($$self, $$props, $$invalidate) {
     mouseleave_handler_1,
     dragover_handler_1,
     drop_handler_1,
-    click_handler_4,
+    click_handler_3,
     contextmenu_handler_1,
     keydown_handler_2,
     input_input_handler_2,
@@ -4482,7 +4454,7 @@ function instance($$self, $$props, $$invalidate) {
 var TaskSidebarView = class extends SvelteComponent {
   constructor(options) {
     super();
-    init(this, options, instance, create_fragment, safe_not_equal, { app: 38, dataService: 39, plugin: 40 }, null, [-1, -1, -1, -1]);
+    init(this, options, instance, create_fragment, safe_not_equal, { app: 40, dataService: 41, plugin: 42 }, null, [-1, -1, -1, -1]);
   }
 };
 var TaskSidebarView_default = TaskSidebarView;
@@ -7503,7 +7475,7 @@ function create_if_block_35(ctx) {
       )
     );
   }
-  function click_handler_2(...args) {
+  function click_handler_22(...args) {
     return (
       /*click_handler_2*/
       ctx[57](
@@ -7550,7 +7522,7 @@ function create_if_block_35(ctx) {
             /*scheduleHidePopover*/
             ctx[2]
           ),
-          listen(span, "click", click_handler_2),
+          listen(span, "click", click_handler_22),
           listen(span, "keydown", keydown_handler_2)
         ];
         mounted = true;
@@ -7958,7 +7930,7 @@ function create_each_block_5(key_1, ctx) {
     ctx[127].note_link && create_if_block_33(ctx)
   );
   let if_block6 = show_if && create_if_block_32(ctx);
-  function click_handler_4() {
+  function click_handler_42() {
     return (
       /*click_handler_4*/
       ctx[63](
@@ -8137,7 +8109,7 @@ function create_each_block_5(key_1, ctx) {
             /*scheduleHidePopover*/
             ctx[2]
           ),
-          listen(span2, "click", stop_propagation(click_handler_4)),
+          listen(span2, "click", stop_propagation(click_handler_42)),
           listen(span2, "keydown", stop_propagation(keydown_handler_4)),
           listen(div2, "pointerdown", pointerdown_handler),
           listen(div2, "click", click_handler_5),
@@ -12000,7 +11972,7 @@ function instance2($$self, $$props, $$invalidate) {
     if (popoverVisible)
       dismissPopover();
   };
-  const click_handler = () => new TaskSearchModal(plugin.app, plugin, dataService, currentCategory == null ? void 0 : currentCategory.filepath).open();
+  const click_handler2 = () => new TaskSearchModal(plugin.app, plugin, dataService, currentCategory == null ? void 0 : currentCategory.filepath).open();
   const keydown_handler = (e) => e.key === "Enter" && new TaskSearchModal(plugin.app, plugin, dataService, currentCategory == null ? void 0 : currentCategory.filepath).open();
   function input_input_handler() {
     newTaskTitle = this.value;
@@ -12019,13 +11991,13 @@ function instance2($$self, $$props, $$invalidate) {
   const mouseenter_handler_1 = (task, e) => showPopover(e, task, "steps");
   const mouseenter_handler_2 = (task, e) => showPopover(e, task, "why");
   const mouseenter_handler_3 = (task, i, e) => showPopover(e, task, "svg", i);
-  const click_handler_2 = (svgContent, task, e) => openSvgLightbox(e, svgContent, task.title);
+  const click_handler_22 = (svgContent, task, e) => openSvgLightbox(e, svgContent, task.title);
   const keydown_handler_2 = (svgContent, task, e) => e.key === "Enter" && openSvgLightbox(e, svgContent, task.title);
   const mouseenter_handler_4 = (task, e) => handleNoteLinkHover(e, task.note_link);
   const click_handler_3 = (task, e) => handleNoteLinkClick(e, task.note_link);
   const keydown_handler_32 = (task, e) => e.key === "Enter" && handleNoteLinkClick(e, task.note_link);
   const mouseenter_handler_5 = (task, e) => showPopover(e, task, "custom");
-  const click_handler_4 = (task) => toggleStar(task);
+  const click_handler_42 = (task) => toggleStar(task);
   const keydown_handler_4 = (task, e) => e.key === "Enter" && toggleStar(task);
   const pointerdown_handler = (task) => handleTaskPointerDown(task);
   const click_handler_5 = (task) => selectTask(task);
@@ -12114,7 +12086,7 @@ function instance2($$self, $$props, $$invalidate) {
     openHintsModal,
     showGuidePopover,
     contextmenu_handler,
-    click_handler,
+    click_handler2,
     keydown_handler,
     input_input_handler,
     input_binding,
@@ -12125,13 +12097,13 @@ function instance2($$self, $$props, $$invalidate) {
     mouseenter_handler_1,
     mouseenter_handler_2,
     mouseenter_handler_3,
-    click_handler_2,
+    click_handler_22,
     keydown_handler_2,
     mouseenter_handler_4,
     click_handler_3,
     keydown_handler_32,
     mouseenter_handler_5,
-    click_handler_4,
+    click_handler_42,
     keydown_handler_4,
     pointerdown_handler,
     click_handler_5,
@@ -13047,7 +13019,7 @@ function create_each_block_32(key_1, ctx) {
   }
   let current_block_type = select_block_type_2(ctx, [-1, -1, -1, -1]);
   let if_block = current_block_type(ctx);
-  function click_handler() {
+  function click_handler2() {
     return (
       /*click_handler*/
       ctx[41](
@@ -13140,7 +13112,7 @@ function create_each_block_32(key_1, ctx) {
       append(div, t2);
       if (!mounted) {
         dispose = [
-          listen(span0, "click", click_handler),
+          listen(span0, "click", click_handler2),
           listen(span0, "keydown", keydown_handler_2),
           action_destroyer(autosize_action = autosize.call(null, textarea)),
           listen(textarea, "input", input_handler),
@@ -15780,7 +15752,7 @@ function instance3($$self, $$props, $$invalidate) {
     $$invalidate(1, task);
   }
   const keydown_handler_1 = (e) => e.key === "Enter" && toggleStar();
-  const click_handler = (i) => toggleStepDone(i);
+  const click_handler2 = (i) => toggleStepDone(i);
   const keydown_handler_2 = (i, e) => e.key === "Enter" && toggleStepDone(i);
   const input_handler = (i, e) => updateStepText(i, e.currentTarget.value);
   const click_handler_1 = (i) => deleteStep(i);
@@ -15793,12 +15765,12 @@ function instance3($$self, $$props, $$invalidate) {
     task.note = this.value;
     $$invalidate(1, task);
   }
-  const click_handler_2 = () => deleteMetaProp("why");
+  const click_handler_22 = () => deleteMetaProp("why");
   const click_handler_3 = () => {
     $$invalidate(7, metaFormType = "why");
     openAddMetaModal();
   };
-  const click_handler_4 = () => deleteMetaProp("note_link");
+  const click_handler_42 = () => deleteMetaProp("note_link");
   const click_handler_5 = () => {
     $$invalidate(7, metaFormType = "note_link");
     openAddMetaModal();
@@ -15914,16 +15886,16 @@ function instance3($$self, $$props, $$invalidate) {
     keydown_handler,
     textarea0_input_handler,
     keydown_handler_1,
-    click_handler,
+    click_handler2,
     keydown_handler_2,
     input_handler,
     click_handler_1,
     keydown_handler_4,
     input_input_handler,
     textarea1_input_handler,
-    click_handler_2,
+    click_handler_22,
     click_handler_3,
-    click_handler_4,
+    click_handler_42,
     click_handler_5,
     click_handler_6,
     click_handler_7,

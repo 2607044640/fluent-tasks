@@ -41,6 +41,7 @@ Fluent Tasks uses a lightweight Meta Badge and Quick Peek system to keep task ca
   - **Visual Memory Aid (`svgs`)**: Inline or vault SVG diagrams. Hovering provides an instant preview; clicking opens a full-screen zoom lightbox (`96vw × 94vh`) with auto-scaling vector graphics and one-click "Open in Tab" navigation.
   - **Linked Note (`note_link`)**: Note wikilinks (e.g. `[[Topic#^block]]`). Hovering triggers Obsidian's native `Page Preview` popover in both Reading and Live Preview modes; clicking navigates directly to the note.
   - **Custom Properties (`customMeta`)**: Key-value pairs displayed as interactive `🏷️` tag chips with hover popovers and delete buttons.
+- **F2 Hover Rename & Context Menu**: Hovering over any task list or group in the left sidebar and pressing <kbd>F2</kbd> (or right-clicking -> `Rename List/Group (F2)`) opens an inline rename input. Press <kbd>Enter</kbd> or click outside to confirm; press <kbd>Esc</kbd> to cancel.
 - **Features & Shortcuts Guide**: Accessible anytime via the `?` icon in the pane header action bar (next to `⋮`) or through the full Shortcuts Guide Modal.
 - **Instant Dismiss**: Right-clicking anywhere or left-clicking outside instantly dismisses active hover popovers and lightbox modals.
 

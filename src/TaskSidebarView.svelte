@@ -400,7 +400,7 @@
         }
     }
 
-    function handleDragOver(e: DragEvent, target: SidebarItem | CategoryInfo, parentGroup?: GroupInfo) {
+    function handleDragOver(e: DragEvent, target: SidebarItem | CategoryInfo, parentGroup?: any) {
         e.preventDefault();
         if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
 
@@ -458,7 +458,7 @@
         (window as any).__mstodo_category_drag = false;
     }
 
-    async function handleDrop(e: DragEvent, target: SidebarItem | CategoryInfo, parentGroup?: GroupInfo) {
+    async function handleDrop(e: DragEvent, target: SidebarItem | CategoryInfo, parentGroup?: any) {
         e.preventDefault();
         
         const pos = dragPosition;
@@ -819,8 +819,8 @@
                 <div
                     draggable={editingItemId !== item.id}
                     data-itemid={item.id}
-                    on:mouseenter={() => { hoveredItem = { type: 'category', id: item.id, name: item.name, filepath: item.filepath }; }}
-                    on:mouseleave={() => { if (hoveredItem?.id === item.id) hoveredItem = null; }}
+                    on:mouseenter={() => setHoveredCategory(item)}
+                    on:mouseleave={() => clearHoveredItem(item.id)}
                     on:dragstart={(e) => handleDragStart(e, item)}
                     on:dragover|stopPropagation={(e) => handleDragOver(e, item)}
                     on:dragleave={handleDragLeave}
@@ -874,8 +874,8 @@
                     <div class="group-header"
                          data-itemid={item.id}
                          data-groupid={item.id}
-                         on:mouseenter={() => { hoveredItem = { type: 'group', id: item.id, name: item.name }; }}
-                         on:mouseleave={() => { if (hoveredItem?.id === item.id) hoveredItem = null; }}
+                         on:mouseenter={() => setHoveredGroup(item)}
+                         on:mouseleave={() => clearHoveredItem(item.id)}
                          on:dragover|stopPropagation={(e) => handleDragOver(e, item)}
                          on:dragleave={handleDragLeave}
                          on:drop|stopPropagation={(e) => handleDrop(e, item)}
@@ -914,12 +914,12 @@
                                 <div
                                     draggable={editingItemId !== cat.id}
                                     data-itemid={cat.id}
-                                    on:mouseenter={() => { hoveredItem = { type: 'category', id: cat.id, name: cat.name, filepath: cat.filepath }; }}
-                                    on:mouseleave={() => { if (hoveredItem?.id === cat.id) hoveredItem = null; }}
+                                    on:mouseenter={() => setHoveredCategory(cat)}
+                                    on:mouseleave={() => clearHoveredItem(cat.id)}
                                     on:dragstart|stopPropagation={(e) => handleDragStart(e, cat)}
-                                    on:dragover|stopPropagation={(e) => handleDragOver(e, cat, item as GroupInfo)}
+                                    on:dragover|stopPropagation={(e) => handleDragOver(e, cat, item)}
                                     on:dragleave={handleDragLeave}
-                                    on:drop|stopPropagation={(e) => handleDrop(e, cat, item as GroupInfo)}
+                                    on:drop|stopPropagation={(e) => handleDrop(e, cat, item)}
                                     on:dragend|stopPropagation={handleDragEnd}
                                     class="category-item"
                                     class:active={activeCategoryPath === cat.filepath}

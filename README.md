@@ -12,7 +12,8 @@ For underlying architecture modifications, data flow sequence, component boundar
 ## Features
 
 ### 1. Hierarchical Lists & Group Management
-Organize your task lists into drag-and-drop groups. Easily reorder lists, create groups, or drag lists out of groups in the sidebar.
+- **Lists & Groups**: Organize your task lists into drag-and-drop groups. Easily reorder lists, create groups, or drag lists out of groups in the sidebar.
+- **F2 Hover Rename & Context Menu**: Hover over any list or group and press <kbd>F2</kbd> (or right-click -> `Rename List/Group`) to rename it inline immediately without disrupting your workflow.
 
 ![Lists and Groups Demo](https://raw.githubusercontent.com/2607044640/fluent-tasks/main/docs/assets/lists_and_groups.gif)
 
