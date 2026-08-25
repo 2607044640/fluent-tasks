@@ -16145,6 +16145,7 @@ var TaskSidebarViewWrapper = class extends import_obsidian8.ItemView {
     this.component = null;
     this.dataService = dataService;
     this.plugin = plugin;
+    this.scope = new import_obsidian8.Scope(this.app.scope);
     this.scope.register([], "F2", (evt) => {
       var _a;
       if ((_a = this.component) == null ? void 0 : _a.triggerRenameHoveredOrActive()) {

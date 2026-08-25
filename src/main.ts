@@ -12,7 +12,7 @@
  * All data I/O flows through DataService.
  */
 
-import { Plugin, ItemView, WorkspaceLeaf, TFile } from "obsidian";
+import { Plugin, ItemView, WorkspaceLeaf, TFile, Scope } from "obsidian";
 import { VIEW_TYPE_SIDEBAR, VIEW_TYPE_MAIN, VIEW_TYPE_DETAIL, EventName, type CategoryInfo, type TaskItem } from "./types";
 import { EventBus } from "./EventBus";
 import { Logger } from "./Logger";
@@ -42,7 +42,8 @@ class TaskSidebarViewWrapper extends ItemView {
         this.dataService = dataService;
         this.plugin = plugin;
 
-        // Register F2 on this view's Scope with highest priority when the sidebar view is active
+        // Correctly instantiate Scope linked to app.scope
+        this.scope = new Scope(this.app.scope);
         this.scope.register([], "F2", (evt) => {
             if (this.component?.triggerRenameHoveredOrActive()) {
                 evt.preventDefault();
