@@ -211,30 +211,24 @@ export class CategoryService {
         }
         const oldName = file.basename;
         const newPath = `${DATA_FOLDER}/${newName}.md`;
-        await this.app.vault.rename(file, newPath);
-        Logger.log("Renamed category:", filepath, "->", newPath);
 
-        // Fix Bug: Update sidebar state with new name
-        const items = await this.getSidebarItems();
-        const updateName = (list: SidebarItem[]) => {
-            for (const item of list) {
-                if (item.type === "category" && item.name === oldName) {
-                    item.name = newName;
-                    item.id = newPath;
-                    item.filepath = newPath;
-                } else if (item.type === "group") {
-                    for (const child of item.items) {
-                        if (child.name === oldName) {
-                            child.name = newName;
-                            child.id = newPath;
-                            child.filepath = newPath;
-                        }
-                    }
-                }
+        // CRITICAL: Update persistent sidebar metadata BEFORE renaming the file on disk.
+        // If the file is renamed first, getSidebarItems() / loadSidebarState() during vault rename events
+        // will fail to find oldName.md, discard it from its group, and dump newName at the bottom as an orphan.
+        const state = await this.loadSidebarState();
+        for (const item of state) {
+            if (item.type === "category" && item.name === oldName) {
+                item.name = newName;
+            } else if (item.type === "group" && item.children) {
+                item.children = item.children.map(child => child === oldName ? newName : child);
             }
-        };
-        updateName(items);
-        await this.saveSidebarState(items);
+        }
+        const metadataPath = this.getMetadataPath();
+        await this.app.vault.adapter.write(metadataPath, JSON.stringify({ sidebar: state }, null, 2));
+
+        // Perform the physical file rename
+        await this.app.vault.rename(file, newPath);
+        void Logger.log("Renamed category:", filepath, "->", newPath);
 
         return { id: newPath, type: "category", name: newName, filepath: newPath };
     }

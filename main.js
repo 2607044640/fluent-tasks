@@ -351,28 +351,18 @@ var CategoryService = class {
     }
     const oldName = file.basename;
     const newPath = `${DATA_FOLDER}/${newName}.md`;
-    await this.app.vault.rename(file, newPath);
-    Logger.log("Renamed category:", filepath, "->", newPath);
-    const items = await this.getSidebarItems();
-    const updateName = (list) => {
-      for (const item of list) {
-        if (item.type === "category" && item.name === oldName) {
-          item.name = newName;
-          item.id = newPath;
-          item.filepath = newPath;
-        } else if (item.type === "group") {
-          for (const child of item.items) {
-            if (child.name === oldName) {
-              child.name = newName;
-              child.id = newPath;
-              child.filepath = newPath;
-            }
-          }
-        }
+    const state = await this.loadSidebarState();
+    for (const item of state) {
+      if (item.type === "category" && item.name === oldName) {
+        item.name = newName;
+      } else if (item.type === "group" && item.children) {
+        item.children = item.children.map((child) => child === oldName ? newName : child);
       }
-    };
-    updateName(items);
-    await this.saveSidebarState(items);
+    }
+    const metadataPath = this.getMetadataPath();
+    await this.app.vault.adapter.write(metadataPath, JSON.stringify({ sidebar: state }, null, 2));
+    await this.app.vault.rename(file, newPath);
+    void Logger.log("Renamed category:", filepath, "->", newPath);
     return { id: newPath, type: "category", name: newName, filepath: newPath };
   }
 };
