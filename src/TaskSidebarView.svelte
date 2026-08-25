@@ -142,14 +142,8 @@
         }
     }
 
-    function getHoveredItemTarget(): { type: "category" | "group"; id: string; name: string; filepath?: string } | null {
-        if (hoveredItem) return hoveredItem;
-
-        // Fallback: check DOM elements under cursor
-        const elUnderCursor = document.elementFromPoint(lastMouseX, lastMouseY);
-        if (!elUnderCursor) return null;
-
-        const catEl = elUnderCursor.closest(".category-item") as HTMLElement | null;
+    function getTargetFromElement(el: HTMLElement): { type: "category" | "group"; id: string; name: string; filepath?: string } | null {
+        const catEl = el.closest(".category-item") as HTMLElement | null;
         if (catEl) {
             const filepath = catEl.dataset.filepath;
             const itemid = catEl.dataset.itemid;
@@ -166,7 +160,7 @@
             }
         }
 
-        const groupEl = elUnderCursor.closest(".group-header, .group-container") as HTMLElement | null;
+        const groupEl = el.closest(".group-header, .group-container") as HTMLElement | null;
         if (groupEl) {
             const groupid = groupEl.dataset.groupid || groupEl.dataset.itemid;
             const group = sidebarItems.find(i => i.id === groupid && i.type === "group");
@@ -178,12 +172,58 @@
         return null;
     }
 
-    function handleTriggerRename() {
-        if (editingItemId || isAddingList || isAddingGroup) return;
-        const target = getHoveredItemTarget();
-        if (target) {
-            startRenaming(target);
+    function getHoveredItemTarget(): { type: "category" | "group"; id: string; name: string; filepath?: string } | null {
+        if (hoveredItem) return hoveredItem;
+
+        // Fallback: check DOM elements under cursor
+        const elUnderCursor = document.elementFromPoint(lastMouseX, lastMouseY);
+        if (!elUnderCursor) return null;
+
+        return getTargetFromElement(elUnderCursor as HTMLElement);
+    }
+
+    export function triggerRenameHoveredOrActive(): boolean {
+        if (editingItemId || isAddingList || isAddingGroup) return false;
+
+        // 1. Check hovered item
+        const hovered = getHoveredItemTarget();
+        if (hovered) {
+            startRenaming(hovered);
+            return true;
         }
+
+        // 2. Check active DOM element with focus
+        const activeEl = document.activeElement as HTMLElement | null;
+        if (activeEl) {
+            const target = getTargetFromElement(activeEl);
+            if (target) {
+                startRenaming(target);
+                return true;
+            }
+        }
+
+        // 3. Fallback to currently selected active category in the sidebar
+        if (activeCategoryPath) {
+            for (const item of sidebarItems) {
+                if (item.type === "category" && item.filepath === activeCategoryPath) {
+                    startRenaming({ type: "category", id: item.id, name: item.name, filepath: item.filepath });
+                    return true;
+                }
+                if (item.type === "group") {
+                    const child = item.items.find(c => c.filepath === activeCategoryPath);
+                    if (child) {
+                        startRenaming({ type: "category", id: child.id, name: child.name, filepath: child.filepath });
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    function handleTriggerRename() {
+        triggerRenameHoveredOrActive();
     }
 
     function startRenaming(target: any) {
@@ -274,12 +314,9 @@
 
     function handleWindowKeydown(e: KeyboardEvent) {
         if (e.key === "F2") {
-            if (editingItemId || isAddingList || isAddingGroup) return;
-            const target = getHoveredItemTarget();
-            if (target) {
+            if (triggerRenameHoveredOrActive()) {
                 e.preventDefault();
                 e.stopPropagation();
-                startRenaming(target);
             }
         }
     }

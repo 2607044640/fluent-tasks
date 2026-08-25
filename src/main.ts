@@ -28,8 +28,12 @@ import "./styles.css";
 // Svelte View Wrappers (Obsidian ItemView → Svelte)
 // =============================================
 
+interface TaskSidebarViewComponent extends TaskSidebarView {
+    triggerRenameHoveredOrActive: () => boolean;
+}
+
 class TaskSidebarViewWrapper extends ItemView {
-    private component: TaskSidebarView | null = null;
+    private component: TaskSidebarViewComponent | null = null;
     private dataService: DataService;
     private plugin: FluentTasksPlugin;
 
@@ -37,6 +41,14 @@ class TaskSidebarViewWrapper extends ItemView {
         super(leaf);
         this.dataService = dataService;
         this.plugin = plugin;
+
+        // Register F2 on this view's Scope with highest priority when the sidebar view is active
+        this.scope.register([], "F2", (evt) => {
+            if (this.component?.triggerRenameHoveredOrActive()) {
+                evt.preventDefault();
+                return false;
+            }
+        });
     }
 
     getViewType(): string { return VIEW_TYPE_SIDEBAR; }
@@ -46,10 +58,21 @@ class TaskSidebarViewWrapper extends ItemView {
     async onOpen(): Promise<void> {
         const container = this.containerEl.children[1] as HTMLElement;
         container.empty();
+
+        // Native capture-phase keydown listener on the sidebar view container element
+        this.containerEl.addEventListener("keydown", (evt: KeyboardEvent) => {
+            if (evt.key === "F2") {
+                if (this.component?.triggerRenameHoveredOrActive()) {
+                    evt.preventDefault();
+                    evt.stopPropagation();
+                }
+            }
+        }, true);
+
         this.component = new TaskSidebarView({
             target: container,
             props: { app: this.app, dataService: this.dataService, plugin: this.plugin },
-        });
+        }) as unknown as TaskSidebarViewComponent;
     }
 
     async onClose(): Promise<void> {
@@ -57,6 +80,10 @@ class TaskSidebarViewWrapper extends ItemView {
             this.component.$destroy();
             this.component = null;
         }
+    }
+
+    getComponent(): TaskSidebarViewComponent | null {
+        return this.component;
     }
 }
 
@@ -240,9 +267,14 @@ export default class FluentTasksPlugin extends Plugin {
 
         this.addCommand({
             id: "rename-hovered-list-or-group",
-            name: "Rename hovered list or group",
+            name: "Rename hovered or active list / group (F2)",
             callback: () => {
-                EventBus.emit(EventName.TRIGGER_SIDEBAR_RENAME, {});
+                const sidebarLeaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR)[0];
+                if (sidebarLeaf && sidebarLeaf.view instanceof TaskSidebarViewWrapper) {
+                    sidebarLeaf.view.getComponent()?.triggerRenameHoveredOrActive();
+                } else {
+                    EventBus.emit(EventName.TRIGGER_SIDEBAR_RENAME, {});
+                }
             },
         });
 
