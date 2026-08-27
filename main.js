@@ -465,12 +465,17 @@ var MarkdownParser = class {
    * Find a task's index using stable ID, falling back to content fingerprint.
    */
   static findTaskIndex(tasks2, target) {
+    if (!target)
+      return -1;
     const byId = tasks2.findIndex((t) => t.id === target.id);
     if (byId !== -1)
       return byId;
-    return tasks2.findIndex(
+    const byTitleAndCreated = tasks2.findIndex(
       (t) => t.title === target.title && t.createdAt === target.createdAt
     );
+    if (byTitleAndCreated !== -1)
+      return byTitleAndCreated;
+    return tasks2.findIndex((t) => t.title === target.title);
   }
   /**
    * Factory: create a new TaskItem with sensible defaults.
@@ -3643,10 +3648,12 @@ function instance($$self, $$props, $$invalidate) {
     EventBus.on("category:selected" /* CATEGORY_SELECTED */, handleExternalCategorySelected);
     EventBus.on("sidebar:trigger-rename" /* TRIGGER_SIDEBAR_RENAME */, handleTriggerRename);
     window.addEventListener("pointermove", handleGlobalPointerMove, true);
+    window.addEventListener("pointerup", handleGlobalPointerUp, true);
     window.addEventListener("keydown", handleWindowKeydown, true);
   });
   onDestroy(() => {
     window.removeEventListener("pointermove", handleGlobalPointerMove, true);
+    window.removeEventListener("pointerup", handleGlobalPointerUp, true);
     window.removeEventListener("keydown", handleWindowKeydown, true);
     EventBus.off("category:selected" /* CATEGORY_SELECTED */, handleExternalCategorySelected);
     EventBus.off("sidebar:trigger-rename" /* TRIGGER_SIDEBAR_RENAME */, handleTriggerRename);
@@ -3699,7 +3706,7 @@ function instance($$self, $$props, $$invalidate) {
     };
   }
   function clearHoveredItem(id) {
-    if (hoveredItem && hoveredItem.id === id) {
+    if (!id || hoveredItem && hoveredItem.id === id) {
       hoveredItem = null;
     }
   }
@@ -4341,13 +4348,14 @@ function instance($$self, $$props, $$invalidate) {
       return;
     const targetPath = dragOverPath;
     $$invalidate(2, dragOverPath = "");
-    window.__mstodo_drag_data = null;
-    killDndGhostElement();
-    if (!targetPath)
+    if (!targetPath || targetPath === dragData.sourceFilepath) {
+      window.__mstodo_drag_data = null;
+      killDndGhostElement();
       return;
+    }
+    dragData.movedToTarget = targetPath;
     const { task, sourceFilepath } = dragData;
-    if (sourceFilepath === targetPath)
-      return;
+    killDndGhostElement();
     injectDndGhostShield();
     try {
       await dataService.moveTask(task, sourceFilepath, targetPath);
@@ -12004,33 +12012,43 @@ function instance2($$self, $$props, $$invalidate) {
     const task = (listType === "incomplete" ? incompleteTasks : completedTasks).find((t) => t.id === draggedId);
     if (task && currentCategory) {
       window.__mstodo_drag_data = {
+        taskId: task.id,
         task,
-        sourceFilepath: currentCategory.filepath
+        sourceFilepath: currentCategory.filepath,
+        movedToTarget: null
       };
     }
   }
   async function handleDndFinalize(e, listType) {
     isDndActive = false;
     stopAutoScroll();
-    if (e.detail.info.trigger === TRIGGERS.DROPPED_OUTSIDE_OF_ANY) {
-      if (!window.__mstodo_drag_data) {
-        const draggedId = e.detail.info.id;
-        const domNode = document.getElementById("task-" + draggedId);
-        if (domNode)
-          domNode.style.display = "none";
-        killDndGhostElement();
-        if (listType === "incomplete") {
-          $$invalidate(4, incompleteTasks = e.detail.items.filter((t) => t.id !== draggedId));
-        } else {
-          $$invalidate(5, completedTasks = e.detail.items.filter((t) => t.id !== draggedId));
-        }
+    const dragData = window.__mstodo_drag_data;
+    const draggedId = e.detail.info.id;
+    if (dragData && dragData.movedToTarget && dragData.movedToTarget !== (currentCategory == null ? void 0 : currentCategory.filepath)) {
+      if (listType === "incomplete") {
+        $$invalidate(4, incompleteTasks = incompleteTasks.filter((t) => {
+          var _a2;
+          return t.id !== draggedId && t.id !== ((_a2 = dragData.task) == null ? void 0 : _a2.id);
+        }));
       } else {
-        if (listType === "incomplete")
-          $$invalidate(4, incompleteTasks = e.detail.items);
-        else
-          $$invalidate(5, completedTasks = e.detail.items);
-        window.__mstodo_drag_data = null;
+        $$invalidate(5, completedTasks = completedTasks.filter((t) => {
+          var _a2;
+          return t.id !== draggedId && t.id !== ((_a2 = dragData.task) == null ? void 0 : _a2.id);
+        }));
       }
+      const domNode = document.getElementById("task-" + draggedId);
+      if (domNode)
+        domNode.style.display = "none";
+      killDndGhostElement();
+      window.__mstodo_drag_data = null;
+      return;
+    }
+    window.__mstodo_drag_data = null;
+    if (e.detail.info.trigger === TRIGGERS.DROPPED_OUTSIDE_OF_ANY) {
+      if (listType === "incomplete")
+        $$invalidate(4, incompleteTasks = e.detail.items);
+      else
+        $$invalidate(5, completedTasks = e.detail.items);
       return;
     }
     const updatedItems = e.detail.items;
@@ -12042,7 +12060,6 @@ function instance2($$self, $$props, $$invalidate) {
       $$invalidate(4, incompleteTasks = updatedItems);
     else
       $$invalidate(5, completedTasks = updatedItems);
-    window.__mstodo_drag_data = null;
     if (!currentCategory)
       return;
     const allTasks = [...incompleteTasks, ...completedTasks];
@@ -12051,8 +12068,10 @@ function instance2($$self, $$props, $$invalidate) {
   function handleTaskPointerDown(task) {
     if (currentCategory) {
       window.__mstodo_drag_data = {
+        taskId: task.id,
         task,
-        sourceFilepath: currentCategory.filepath
+        sourceFilepath: currentCategory.filepath,
+        movedToTarget: null
       };
     }
   }

@@ -124,11 +124,14 @@ export class MarkdownParser {
      * Find a task's index using stable ID, falling back to content fingerprint.
      */
     static findTaskIndex(tasks: TaskItem[], target: TaskItem): number {
+        if (!target) return -1;
         const byId = tasks.findIndex(t => t.id === target.id);
         if (byId !== -1) return byId;
-        return tasks.findIndex(t =>
+        const byTitleAndCreated = tasks.findIndex(t =>
             t.title === target.title && t.createdAt === target.createdAt
         );
+        if (byTitleAndCreated !== -1) return byTitleAndCreated;
+        return tasks.findIndex(t => t.title === target.title);
     }
 
     /**

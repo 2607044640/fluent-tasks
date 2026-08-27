@@ -71,11 +71,13 @@
         EventBus.on(EventName.TRIGGER_SIDEBAR_RENAME, handleTriggerRename);
 
         window.addEventListener("pointermove", handleGlobalPointerMove, true);
+        window.addEventListener("pointerup", handleGlobalPointerUp, true);
         window.addEventListener("keydown", handleWindowKeydown, true);
     });
 
     onDestroy(() => {
         window.removeEventListener("pointermove", handleGlobalPointerMove, true);
+        window.removeEventListener("pointerup", handleGlobalPointerUp, true);
         window.removeEventListener("keydown", handleWindowKeydown, true);
         EventBus.off(EventName.CATEGORY_SELECTED, handleExternalCategorySelected);
         EventBus.off(EventName.TRIGGER_SIDEBAR_RENAME, handleTriggerRename);
@@ -136,8 +138,8 @@
         hoveredItem = { type: "group", id: group.id, name: group.name };
     }
 
-    function clearHoveredItem(id: string) {
-        if (hoveredItem && hoveredItem.id === id) {
+    function clearHoveredItem(id?: string) {
+        if (!id || (hoveredItem && hoveredItem.id === id)) {
             hoveredItem = null;
         }
     }
@@ -839,16 +841,18 @@
 
         const targetPath = dragOverPath;
         dragOverPath = "";
-        
-        // ALWAYS clear the drag state on pointerup, whether valid or not.
-        (window as any).__mstodo_drag_data = null;
-        killDndGhostElement();
 
-        if (!targetPath) return;
+        if (!targetPath || targetPath === dragData.sourceFilepath) {
+            (window as any).__mstodo_drag_data = null;
+            killDndGhostElement();
+            return;
+        }
 
+        // Mark that this task was moved cross-pane to targetPath
+        dragData.movedToTarget = targetPath;
         const { task, sourceFilepath } = dragData;
-        if (sourceFilepath === targetPath) return;
 
+        killDndGhostElement();
         injectDndGhostShield();
 
         try {

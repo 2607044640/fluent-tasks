@@ -523,8 +523,10 @@
         const task = (listType === 'incomplete' ? incompleteTasks : completedTasks).find(t => t.id === draggedId);
         if (task && currentCategory) {
             (window as any).__mstodo_drag_data = {
+                taskId: task.id,
                 task,
                 sourceFilepath: currentCategory.filepath,
+                movedToTarget: null,
             };
         }
     }
@@ -533,44 +535,43 @@
         isDndActive = false;
         stopAutoScroll();
 
-        if (e.detail.info.trigger === TRIGGERS.DROPPED_OUTSIDE_OF_ANY) {
-            // Did the sidebar consume the drag data?
-            if (!(window as any).__mstodo_drag_data) {
-                // The sidebar successfully processed the drop!
-                const draggedId = e.detail.info.id;
+        const dragData = (window as any).__mstodo_drag_data;
+        const draggedId = e.detail.info.id;
 
-                // Belt-and-suspenders ghost kill (primary kill already done in capture phase).
-                const domNode = document.getElementById('task-' + draggedId);
-                if (domNode) domNode.style.display = 'none';
-
-                killDndGhostElement();
-
-                if (listType === 'incomplete') {
-                    incompleteTasks = (e.detail.items as TaskItem[]).filter(t => t.id !== draggedId);
-                } else {
-                    completedTasks = (e.detail.items as TaskItem[]).filter(t => t.id !== draggedId);
-                }
+        // If the task was moved cross-pane to another category by sidebar radar
+        if (dragData && dragData.movedToTarget && dragData.movedToTarget !== currentCategory?.filepath) {
+            // Task was successfully moved cross-pane!
+            // CRITICAL: Filter out from local state and DO NOT call saveTasks() on currentCategory
+            // because moveTask has already removed it from disk.
+            if (listType === 'incomplete') {
+                incompleteTasks = incompleteTasks.filter(t => t.id !== draggedId && t.id !== dragData.task?.id);
             } else {
-                // Dropped in empty space. Restore DND items and clean up drag data.
-                if (listType === 'incomplete') incompleteTasks = e.detail.items;
-                else completedTasks = e.detail.items;
-                (window as any).__mstodo_drag_data = null;
+                completedTasks = completedTasks.filter(t => t.id !== draggedId && t.id !== dragData.task?.id);
             }
+
+            const domNode = document.getElementById('task-' + draggedId);
+            if (domNode) domNode.style.display = 'none';
+            killDndGhostElement();
+            (window as any).__mstodo_drag_data = null;
             return;
         }
 
-        // Normal drop (internal or cross-list)
+        (window as any).__mstodo_drag_data = null;
+
+        if (e.detail.info.trigger === TRIGGERS.DROPPED_OUTSIDE_OF_ANY) {
+            // Dropped in empty space (cancelled drag)
+            if (listType === 'incomplete') incompleteTasks = e.detail.items;
+            else completedTasks = e.detail.items;
+            return;
+        }
+
+        // Normal drop (internal reordering within same list)
         const updatedItems = e.detail.items as TaskItem[];
-        
-        // Force the 'completed' flag to match the destination list
         const isCompletedList = listType === 'completed';
         updatedItems.forEach(t => { t.completed = isCompletedList; });
 
         if (listType === 'incomplete') incompleteTasks = updatedItems;
         else completedTasks = updatedItems;
-
-        // Clean up global drag state gracefully for valid internal drops
-        (window as any).__mstodo_drag_data = null;
 
         if (!currentCategory) return;
         // Persist the new order
@@ -581,8 +582,10 @@
     function handleTaskPointerDown(task: TaskItem) {
         if (currentCategory) {
             (window as any).__mstodo_drag_data = {
+                taskId: task.id,
                 task,
                 sourceFilepath: currentCategory.filepath,
+                movedToTarget: null,
             };
         }
     }
