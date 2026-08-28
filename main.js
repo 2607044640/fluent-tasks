@@ -1754,7 +1754,7 @@ var DISK_SYNC_DELAY_MS = 800;
 var ANTI_FLICKER_DURATION_MS = 250;
 var SAVE_DEBOUNCE_MS = 600;
 var DND_RESCUE_DELAY_MS = 50;
-var POPOVER_HIDE_DELAY_MS = 300;
+var POPOVER_HIDE_DELAY_MS = 150;
 
 // src/TaskSidebarView.svelte
 var import_obsidian5 = require("obsidian");
