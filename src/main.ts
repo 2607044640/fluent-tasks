@@ -12,7 +12,7 @@
  * All data I/O flows through DataService.
  */
 
-import { Plugin, ItemView, WorkspaceLeaf, TFile, Scope } from "obsidian";
+import { Plugin, ItemView, WorkspaceLeaf, TFile, Scope, App } from "obsidian";
 import { VIEW_TYPE_SIDEBAR, VIEW_TYPE_MAIN, VIEW_TYPE_DETAIL, DATA_FOLDER, EventName, type CategoryInfo, type TaskItem } from "./types";
 import { EventBus } from "./EventBus";
 import { Logger } from "./Logger";
@@ -338,6 +338,16 @@ export default class FluentTasksPlugin extends Plugin {
                 })
             );
 
+            // Listen for category creation, deletion, and renaming to update commands in real-time
+            const handleCategoryVaultChange = (file: any) => {
+                if (file && file.path && file.path.startsWith(DATA_FOLDER + "/") && file.path.endsWith(".md")) {
+                    void this.registerCategoryCommands();
+                }
+            };
+            this.registerEvent(this.app.vault.on("create", handleCategoryVaultChange));
+            this.registerEvent(this.app.vault.on("delete", handleCategoryVaultChange));
+            this.registerEvent(this.app.vault.on("rename", handleCategoryVaultChange));
+
             // Manage dynamic opening/closing of the detail view
             EventBus.on(EventName.DETAIL_CLOSE, () => {
                 this.app.workspace.detachLeavesOfType(VIEW_TYPE_DETAIL);
@@ -449,16 +459,59 @@ export default class FluentTasksPlugin extends Plugin {
 
     private registeredCategoryCommandIds: Set<string> = new Set();
 
-    /** Register a jump command for each category list */
+    private getCategoryCommandId(cat: CategoryInfo): string {
+        let hash = 0;
+        const str = cat.filepath;
+        for (let i = 0; i < str.length; i++) {
+            hash = ((hash << 5) - hash) + str.charCodeAt(i);
+            hash |= 0;
+        }
+        return `z-jump-to-list-${Math.abs(hash).toString(36)}`;
+    }
+
+    /** Register or refresh a jump command for each category list */
     async registerCategoryCommands(): Promise<void> {
         const categories = await this.dataService.getCategories();
+        const activeCommandIds = new Set<string>();
+        interface AppWithCommands extends App {
+            commands?: {
+                commands?: Record<string, { name: string }>;
+                removeCommand?: (id: string) => void;
+            };
+        }
+        const appCommands = (this.app as unknown as AppWithCommands).commands;
+
+        // 1. Clean up legacy commands (e.g. old "jump-to-list-*" without z- prefix)
+        if (appCommands?.commands) {
+            for (const key of Object.keys(appCommands.commands)) {
+                if (key.startsWith(`${this.manifest.id}:jump-to-list-`)) {
+                    if (appCommands.removeCommand) {
+                        appCommands.removeCommand(key);
+                    } else {
+                        delete appCommands.commands[key];
+                    }
+                }
+            }
+        }
+
+        // 2. Register/update commands for all active lists
         for (const cat of categories) {
-            const commandId = `jump-to-list-${cat.name.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase()}`;
-            if (this.registeredCategoryCommandIds.has(commandId)) continue;
+            const commandId = this.getCategoryCommandId(cat);
+            activeCommandIds.add(commandId);
+            const fullCommandId = `${this.manifest.id}:${commandId}`;
+
+            if (this.registeredCategoryCommandIds.has(commandId)) {
+                // Keep the display name in sync if renamed via F2
+                if (appCommands?.commands?.[fullCommandId]) {
+                    appCommands.commands[fullCommandId].name = `Z-Jump to list: ${cat.name}`;
+                }
+                continue;
+            }
+
             this.registeredCategoryCommandIds.add(commandId);
             this.addCommand({
                 id: commandId,
-                name: `Jump to list: ${cat.name}`,
+                name: `Z-Jump to list: ${cat.name}`,
                 callback: () => {
                     void (async () => {
                         await this.activateView(VIEW_TYPE_MAIN, "center");
@@ -469,6 +522,19 @@ export default class FluentTasksPlugin extends Plugin {
                     })();
                 },
             });
+        }
+
+        // 3. Remove obsolete commands for deleted or renamed lists
+        for (const oldId of Array.from(this.registeredCategoryCommandIds)) {
+            if (!activeCommandIds.has(oldId)) {
+                const fullId = `${this.manifest.id}:${oldId}`;
+                if (appCommands?.removeCommand) {
+                    appCommands.removeCommand(fullId);
+                } else if (appCommands?.commands) {
+                    delete appCommands.commands[fullId];
+                }
+                this.registeredCategoryCommandIds.delete(oldId);
+            }
         }
     }
 

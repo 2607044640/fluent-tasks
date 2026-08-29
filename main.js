@@ -313,6 +313,7 @@ var CategoryService = class {
     const items = await this.getSidebarItems();
     items.unshift(newCat);
     await this.saveSidebarState(items);
+    EventBus.emit("category:list-changed" /* CATEGORY_LIST_CHANGED */, { sidebarItems: items });
     return newCat;
   }
   async createGroup(name) {
@@ -327,6 +328,7 @@ var CategoryService = class {
     items.unshift(newGroup);
     await this.saveSidebarState(items);
     void Logger.log("Created group:", name);
+    EventBus.emit("category:list-changed" /* CATEGORY_LIST_CHANGED */, { sidebarItems: items });
     return newGroup;
   }
   async renameGroup(groupId, newName) {
@@ -339,6 +341,7 @@ var CategoryService = class {
     }
     await this.saveSidebarState(items);
     void Logger.log("Renamed group:", groupId, "->", newName);
+    EventBus.emit("category:list-changed" /* CATEGORY_LIST_CHANGED */, { sidebarItems: items });
   }
   async deleteCategory(filepath) {
     const file = this.app.vault.getAbstractFileByPath(filepath);
@@ -359,6 +362,7 @@ var CategoryService = class {
       };
       cleanup(items);
       await this.saveSidebarState(items);
+      EventBus.emit("category:list-changed" /* CATEGORY_LIST_CHANGED */, { sidebarItems: items });
     }
   }
   async renameCategory(filepath, newName) {
@@ -380,7 +384,9 @@ var CategoryService = class {
     await this.app.vault.adapter.write(metadataPath, JSON.stringify({ sidebar: state }, null, 2));
     await this.app.vault.rename(file, newPath);
     void Logger.log("Renamed category:", filepath, "->", newPath);
-    return { id: newPath, type: "category", name: newName, filepath: newPath };
+    const newCat = { id: newPath, type: "category", name: newName, filepath: newPath };
+    EventBus.emit("category:list-changed" /* CATEGORY_LIST_CHANGED */, {});
+    return newCat;
   }
 };
 
@@ -3667,6 +3673,7 @@ function instance($$self, $$props, $$invalidate) {
             $$invalidate(1, activeCategoryPath = "");
             EventBus.emit("category:selected" /* CATEGORY_SELECTED */, { category: null });
           }
+          EventBus.emit("category:list-changed" /* CATEGORY_LIST_CHANGED */, {});
         }
       };
       vaultEventRefs.push(app.vault.on("create", handleVaultChange));
@@ -18253,6 +18260,14 @@ var FluentTasksPlugin = class extends import_obsidian9.Plugin {
             }
           })
         );
+        const handleCategoryVaultChange = (file) => {
+          if (file && file.path && file.path.startsWith(DATA_FOLDER + "/") && file.path.endsWith(".md")) {
+            void this.registerCategoryCommands();
+          }
+        };
+        this.registerEvent(this.app.vault.on("create", handleCategoryVaultChange));
+        this.registerEvent(this.app.vault.on("delete", handleCategoryVaultChange));
+        this.registerEvent(this.app.vault.on("rename", handleCategoryVaultChange));
         EventBus.on("detail:close" /* DETAIL_CLOSE */, () => {
           this.app.workspace.detachLeavesOfType(VIEW_TYPE_DETAIL);
         });
@@ -18342,17 +18357,46 @@ var FluentTasksPlugin = class extends import_obsidian9.Plugin {
       void this.app.workspace.revealLeaf(sidebarLeaves[0]);
     }
   }
-  /** Register a jump command for each category list */
+  getCategoryCommandId(cat) {
+    let hash2 = 0;
+    const str = cat.filepath;
+    for (let i = 0; i < str.length; i++) {
+      hash2 = (hash2 << 5) - hash2 + str.charCodeAt(i);
+      hash2 |= 0;
+    }
+    return `z-jump-to-list-${Math.abs(hash2).toString(36)}`;
+  }
+  /** Register or refresh a jump command for each category list */
   async registerCategoryCommands() {
+    var _a;
     const categories = await this.dataService.getCategories();
+    const activeCommandIds = /* @__PURE__ */ new Set();
+    const appCommands = this.app.commands;
+    if (appCommands == null ? void 0 : appCommands.commands) {
+      for (const key of Object.keys(appCommands.commands)) {
+        if (key.startsWith(`${this.manifest.id}:jump-to-list-`)) {
+          if (appCommands.removeCommand) {
+            appCommands.removeCommand(key);
+          } else {
+            delete appCommands.commands[key];
+          }
+        }
+      }
+    }
     for (const cat of categories) {
-      const commandId = `jump-to-list-${cat.name.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase()}`;
-      if (this.registeredCategoryCommandIds.has(commandId))
+      const commandId = this.getCategoryCommandId(cat);
+      activeCommandIds.add(commandId);
+      const fullCommandId = `${this.manifest.id}:${commandId}`;
+      if (this.registeredCategoryCommandIds.has(commandId)) {
+        if ((_a = appCommands == null ? void 0 : appCommands.commands) == null ? void 0 : _a[fullCommandId]) {
+          appCommands.commands[fullCommandId].name = `Z-Jump to list: ${cat.name}`;
+        }
         continue;
+      }
       this.registeredCategoryCommandIds.add(commandId);
       this.addCommand({
         id: commandId,
-        name: `Jump to list: ${cat.name}`,
+        name: `Z-Jump to list: ${cat.name}`,
         callback: () => {
           void (async () => {
             await this.activateView(VIEW_TYPE_MAIN, "center");
@@ -18363,6 +18407,17 @@ var FluentTasksPlugin = class extends import_obsidian9.Plugin {
           })();
         }
       });
+    }
+    for (const oldId of Array.from(this.registeredCategoryCommandIds)) {
+      if (!activeCommandIds.has(oldId)) {
+        const fullId = `${this.manifest.id}:${oldId}`;
+        if (appCommands == null ? void 0 : appCommands.removeCommand) {
+          appCommands.removeCommand(fullId);
+        } else if (appCommands == null ? void 0 : appCommands.commands) {
+          delete appCommands.commands[fullId];
+        }
+        this.registeredCategoryCommandIds.delete(oldId);
+      }
     }
   }
   // =============================================

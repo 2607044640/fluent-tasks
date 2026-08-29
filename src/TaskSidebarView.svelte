@@ -58,6 +58,7 @@
                         activeCategoryPath = "";
                         EventBus.emit(EventName.CATEGORY_SELECTED, { category: null });
                     }
+                    EventBus.emit(EventName.CATEGORY_LIST_CHANGED, {});
                 }
             };
 

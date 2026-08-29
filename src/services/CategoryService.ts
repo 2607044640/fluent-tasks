@@ -1,6 +1,7 @@
 import { App, TFile, TFolder } from "obsidian";
 import { Logger } from "../Logger";
-import { CategoryInfo, DATA_FOLDER, SidebarItem, SidebarItemState, GroupInfo } from "../types";
+import { CategoryInfo, DATA_FOLDER, SidebarItem, SidebarItemState, GroupInfo, EventName } from "../types";
+import { EventBus } from "../EventBus";
 import { AtomicIOPipeline } from "./AtomicIOPipeline";
 
 export class CategoryService {
@@ -151,6 +152,7 @@ export class CategoryService {
         items.unshift(newCat);
         await this.saveSidebarState(items);
 
+        EventBus.emit(EventName.CATEGORY_LIST_CHANGED, { sidebarItems: items });
         return newCat;
     }
 
@@ -166,6 +168,7 @@ export class CategoryService {
         items.unshift(newGroup);
         await this.saveSidebarState(items);
         void Logger.log("Created group:", name);
+        EventBus.emit(EventName.CATEGORY_LIST_CHANGED, { sidebarItems: items });
         return newGroup;
     }
 
@@ -179,6 +182,7 @@ export class CategoryService {
         }
         await this.saveSidebarState(items);
         void Logger.log("Renamed group:", groupId, "->", newName);
+        EventBus.emit(EventName.CATEGORY_LIST_CHANGED, { sidebarItems: items });
     }
 
     async deleteCategory(filepath: string): Promise<void> {
@@ -201,6 +205,7 @@ export class CategoryService {
             };
             cleanup(items);
             await this.saveSidebarState(items);
+            EventBus.emit(EventName.CATEGORY_LIST_CHANGED, { sidebarItems: items });
         }
     }
 
@@ -230,6 +235,8 @@ export class CategoryService {
         await this.app.vault.rename(file, newPath);
         void Logger.log("Renamed category:", filepath, "->", newPath);
 
-        return { id: newPath, type: "category", name: newName, filepath: newPath };
+        const newCat: CategoryInfo = { id: newPath, type: "category", name: newName, filepath: newPath };
+        EventBus.emit(EventName.CATEGORY_LIST_CHANGED, {});
+        return newCat;
     }
 }
