@@ -142,9 +142,10 @@
         popoverType = null;
     }
 
-    function showPopover(e: MouseEvent, task: TaskItem | null, type: 'why' | 'svg' | 'custom' | 'title' | 'guide' | 'steps', svgIndex: number = 0) {
+    function showPopover(e: MouseEvent | { currentTarget: HTMLElement }, task: TaskItem | null, type: 'why' | 'svg' | 'custom' | 'title' | 'guide' | 'steps', svgIndex: number = 0) {
         if (popoverTimeout) clearTimeout(popoverTimeout);
         const target = e.currentTarget as HTMLElement;
+        if (!target) return;
         const rect = target.getBoundingClientRect();
 
         // Dynamic height & width calculation based on popover content
@@ -166,22 +167,71 @@
         popoverVisible = true;
     }
 
+    // Dedicated keyboard state tracking to ensure Quick Peek activates ONLY on standalone Ctrl
+    let isCtrlPressed = false;
+    let hasComboModifierOrKey = false;
+    let hoveredTitleTarget: { element: HTMLElement; task: TaskItem } | null = null;
+
+    function isControlKey(e: KeyboardEvent): boolean {
+        return Platform.isMacOS ? (e.key === "Meta" || e.key === "Control") : (e.key === "Control");
+    }
+
     function isQuickPeekModifierPressed(e: MouseEvent): boolean {
+        // Reject if any combo key (like C in Ctrl+C, Shift, Alt, etc.) is active
+        if (hasComboModifierOrKey || e.shiftKey || e.altKey) {
+            return false;
+        }
         if (Platform.isMacOS) {
-            return (e.metaKey || e.ctrlKey) && !e.altKey;
+            return (e.metaKey || e.ctrlKey);
         }
         // On Windows and Linux: e.metaKey is the Windows (Super) key!
         // Never allow Win key combinations (Win+4, Win+Tab, Win+D, etc.) to falsely trigger Ctrl-hover Quick Peek.
-        return e.ctrlKey && !e.metaKey && !e.altKey;
+        return e.ctrlKey && !e.metaKey;
+    }
+
+    function handleGlobalKeyDown(e: KeyboardEvent) {
+        if (isControlKey(e)) {
+            isCtrlPressed = true;
+            // If standalone Ctrl was pressed while cursor is currently hovering over a task title
+            if (!hasComboModifierOrKey && !e.shiftKey && !e.altKey && !e.repeat && hoveredTitleTarget) {
+                showPopover({ currentTarget: hoveredTitleTarget.element }, hoveredTitleTarget.task, 'title');
+            }
+        } else {
+            // Any other key pressed (e.g. C, V, X, A, Shift, Alt, etc.)
+            hasComboModifierOrKey = true;
+            // Immediately dismiss Quick Peek popover to prevent shortcut interference
+            if (popoverType === 'title') {
+                dismissPopover();
+            }
+        }
+    }
+
+    function handleGlobalKeyUp(e: KeyboardEvent) {
+        if (isControlKey(e)) {
+            isCtrlPressed = false;
+            hasComboModifierOrKey = false;
+        } else {
+            if (!e.ctrlKey && !e.metaKey) {
+                hasComboModifierOrKey = false;
+            }
+        }
+    }
+
+    function handleWindowBlur() {
+        isCtrlPressed = false;
+        hasComboModifierOrKey = false;
+        hoveredTitleTarget = null;
     }
 
     function handleTitleHover(e: MouseEvent, task: TaskItem) {
+        hoveredTitleTarget = { element: e.currentTarget as HTMLElement, task };
         if (isQuickPeekModifierPressed(e)) {
             showPopover(e, task, 'title');
         }
     }
 
     function handleTitleMouseMove(e: MouseEvent, task: TaskItem) {
+        hoveredTitleTarget = { element: e.currentTarget as HTMLElement, task };
         if (isQuickPeekModifierPressed(e)) {
             if (!popoverVisible || popoverTask?.id !== task.id || popoverType !== 'title') {
                 showPopover(e, task, 'title');
@@ -189,6 +239,11 @@
         }
         // Sticky Task Quick Peek: do NOT dismiss when Ctrl is released.
         // The popover remains floating until the user right-clicks anywhere or Ctrl-hovers another task.
+    }
+
+    function handleTitleMouseLeave() {
+        hoveredTitleTarget = null;
+        scheduleHidePopover();
     }
 
     function scheduleHidePopover() {
@@ -261,12 +316,18 @@
         EventBus.on(EventName.TASK_NAVIGATE, handleTaskNavigate);
         EventBus.on(EventName.SETTINGS_CHANGED, handleSettingsChanged);
         window.addEventListener('pointermove', handleDragPointerMove);
+        window.addEventListener('keydown', handleGlobalKeyDown, true);
+        window.addEventListener('keyup', handleGlobalKeyUp, true);
+        window.addEventListener('blur', handleWindowBlur);
     });
 
     onDestroy(() => {
         stopAutoScroll();
         if (popoverTimeout) clearTimeout(popoverTimeout);
         window.removeEventListener('pointermove', handleDragPointerMove);
+        window.removeEventListener('keydown', handleGlobalKeyDown, true);
+        window.removeEventListener('keyup', handleGlobalKeyUp, true);
+        window.removeEventListener('blur', handleWindowBlur);
         EventBus.off(EventName.CATEGORY_SELECTED, handleCategorySelected);
         EventBus.off(EventName.TASK_UPDATED, handleTaskUpdated);
         EventBus.off(EventName.TASK_MOVED, handleTaskMoved);
@@ -737,7 +798,7 @@
                         <span class="task-title"
                               on:mouseenter={(e) => handleTitleHover(e, task)}
                               on:mousemove={(e) => handleTitleMouseMove(e, task)}
-                              on:mouseleave={scheduleHidePopover}>
+                              on:mouseleave={handleTitleMouseLeave}>
                             {task.title}
                         </span>
                         <div class="task-meta-row">
@@ -903,7 +964,7 @@
                                     <span class="task-title"
                                           on:mouseenter={(e) => handleTitleHover(e, task)}
                                           on:mousemove={(e) => handleTitleMouseMove(e, task)}
-                                          on:mouseleave={scheduleHidePopover}>
+                                          on:mouseleave={handleTitleMouseLeave}>
                                         {task.title}
                                     </span>
                                     {#if (task.steps && task.steps.length > 0) || task.dueDate || task.recurrence}
