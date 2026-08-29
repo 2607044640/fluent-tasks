@@ -34,12 +34,25 @@ export class CategoryService {
         const state = await this.loadSidebarState();
         const sidebarItems: SidebarItem[] = [];
         const usedFiles = new Set<string>();
+        const seenGroupIds = new Set<string>();
+        let hasDuplicateMetadata = false;
 
-        // 3. Reconstruct tree
+        // 3. Reconstruct tree with strict deduplication guards
         for (const itemState of state) {
             if (itemState.type === "group") {
+                const groupId = itemState.id || Date.now().toString() + Math.random().toString(36).substring(2, 7);
+                if (seenGroupIds.has(groupId)) {
+                    hasDuplicateMetadata = true;
+                    continue;
+                }
+                seenGroupIds.add(groupId);
+
                 const groupItems: CategoryInfo[] = [];
                 for (const childName of itemState.children || []) {
+                    if (usedFiles.has(childName)) {
+                        hasDuplicateMetadata = true;
+                        continue;
+                    }
                     const file = fileMap.get(childName);
                     if (file) {
                         groupItems.push({
@@ -52,13 +65,17 @@ export class CategoryService {
                     }
                 }
                 sidebarItems.push({
-                    id: itemState.id || Date.now().toString() + Math.random().toString(36).substring(2, 7),
+                    id: groupId,
                     type: "group",
                     name: itemState.name,
                     items: groupItems,
                     isExpanded: itemState.isExpanded ?? true
                 });
             } else if (itemState.type === "category") {
+                if (usedFiles.has(itemState.name)) {
+                    hasDuplicateMetadata = true;
+                    continue;
+                }
                 const file = fileMap.get(itemState.name);
                 if (file) {
                     sidebarItems.push({
@@ -81,7 +98,13 @@ export class CategoryService {
                     name: basename,
                     filepath: file.path
                 });
+                usedFiles.add(basename);
             }
+        }
+
+        // Auto-heal: if corrupt duplicate entries existed in .metadata.json, clean them up
+        if (hasDuplicateMetadata) {
+            void this.saveSidebarState(sidebarItems);
         }
 
         return sidebarItems;
@@ -113,27 +136,45 @@ export class CategoryService {
         await this.io.ensureDataFolder();
         const path = this.getMetadataPath();
         
-        // Convert UI model back to persistent model
-        const state: SidebarItemState[] = items.map(item => {
+        const seenCategories = new Set<string>();
+        const seenGroupIds = new Set<string>();
+        const state: SidebarItemState[] = [];
+
+        // Convert UI model back to persistent model with strict deduplication
+        for (const item of items) {
             if (item.type === "group") {
-                return {
+                if (seenGroupIds.has(item.id)) continue;
+                seenGroupIds.add(item.id);
+
+                const children: string[] = [];
+                for (const child of item.items || []) {
+                    if (!seenCategories.has(child.name)) {
+                        seenCategories.add(child.name);
+                        children.push(child.name);
+                    }
+                }
+                state.push({
                     type: "group",
                     id: item.id,
                     name: item.name,
                     isExpanded: item.isExpanded,
-                    children: item.items.map(child => child.name)
-                };
-            } else {
-                return {
-                    type: "category",
-                    name: item.name
-                };
+                    children
+                });
+            } else if (item.type === "category") {
+                if (!seenCategories.has(item.name)) {
+                    seenCategories.add(item.name);
+                    state.push({
+                        type: "category",
+                        name: item.name
+                    });
+                }
             }
-        });
+        }
 
         const content = JSON.stringify({ sidebar: state }, null, 2);
         
         // CRITICAL: Use adapter.write (raw FS) because Obsidian's Vault API ignores dotfiles
+        this.io.markInternalWrite(path);
         await this.app.vault.adapter.write(path, content);
     }
 
@@ -143,21 +184,29 @@ export class CategoryService {
         if (this.app.vault.getAbstractFileByPath(filepath)) {
             throw new Error(`Category "${name}" already exists.`);
         }
+
+        // 1. Update metadata state FIRST to place new category at the top
+        const state = await this.loadSidebarState();
+        const filteredState = state.filter(s => !(s.type === "category" && s.name === name));
+        filteredState.unshift({ type: "category", name });
+
+        const metadataPath = this.getMetadataPath();
+        this.io.markInternalWrite(metadataPath);
+        await this.app.vault.adapter.write(metadataPath, JSON.stringify({ sidebar: filteredState }, null, 2));
+
+        // 2. Create the file on disk
+        this.io.markInternalWrite(filepath);
         await this.app.vault.create(filepath, "");
         void Logger.log("Created category:", name);
 
-        // Prepend new category to the top of sidebar state
         const newCat: CategoryInfo = { id: filepath, type: "category", name, filepath };
         const items = await this.getSidebarItems();
-        items.unshift(newCat);
-        await this.saveSidebarState(items);
 
         EventBus.emit(EventName.CATEGORY_LIST_CHANGED, { sidebarItems: items });
         return newCat;
     }
 
     async createGroup(name: string): Promise<GroupInfo> {
-        const items = await this.getSidebarItems();
         const newGroup: GroupInfo = {
             id: Date.now().toString() + Math.random().toString(36).substring(2, 7),
             type: "group",
@@ -165,6 +214,7 @@ export class CategoryService {
             items: [],
             isExpanded: true
         };
+        const items = await this.getSidebarItems();
         items.unshift(newGroup);
         await this.saveSidebarState(items);
         void Logger.log("Created group:", name);
@@ -187,12 +237,17 @@ export class CategoryService {
 
     async deleteCategory(filepath: string): Promise<void> {
         const file = this.app.vault.getAbstractFileByPath(filepath);
+        const basename = filepath.split("/").pop()?.replace(/\.md$/, "") || "";
+
         if (file && file instanceof TFile) {
+            this.io.markInternalWrite(filepath);
             await this.app.fileManager.trashFile(file);
             Logger.log("Moved category to trash:", filepath);
-            // Optimization: Remove from sidebar state
+        }
+
+        // Always clean up from sidebar state, even if file on disk was already missing/trashed
+        if (basename) {
             const items = await this.getSidebarItems();
-            const basename = file.basename;
             const cleanup = (list: SidebarItem[]) => {
                 for (let i = list.length - 1; i >= 0; i--) {
                     const item = list[i];

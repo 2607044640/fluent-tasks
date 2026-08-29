@@ -735,21 +735,27 @@
         }, INPUT_FOCUS_DELAY_MS);
     }
 
+    let isCreatingList = false;
+
     async function confirmAddList() {
+        if (isCreatingList) return;
         const name = newListName.trim();
         if (!name) {
             isAddingList = false;
             return;
         }
+        isCreatingList = true;
         try {
             const newCat = await dataService.createCategory(name);
             await loadSidebarItems();
             selectCategory(newCat);
         } catch (e) {
-            console.error("[MStodo Sidebar] Failed to create list:", e);
+            console.error("[Fluent Tasks] Failed to create list:", e);
+        } finally {
+            isCreatingList = false;
+            isAddingList = false;
+            newListName = "";
         }
-        isAddingList = false;
-        newListName = "";
     }
 
     function handleNewListKeydown(e: KeyboardEvent) {
@@ -758,7 +764,7 @@
     }
 
     function handleNewListBlur() {
-        setTimeout(() => { if (isAddingList) confirmAddList(); }, BLUR_CONFIRM_DELAY_MS);
+        setTimeout(() => { if (isAddingList && !isCreatingList) confirmAddList(); }, BLUR_CONFIRM_DELAY_MS);
     }
 
     // --- Add Group ---
@@ -772,21 +778,26 @@
         }, INPUT_FOCUS_DELAY_MS);
     }
 
+    let isCreatingGroup = false;
+
     async function confirmAddGroup() {
+        if (isCreatingGroup) return;
         const name = newGroupName.trim();
         if (!name) {
             isAddingGroup = false;
             return;
         }
+        isCreatingGroup = true;
         try {
-            const newGroup = await dataService.createGroup(name);
-            // Optimistic UI: Immediately inject the new group to prevent Obsidian cache race condition
-            sidebarItems = [newGroup, ...sidebarItems];
+            await dataService.createGroup(name);
+            await loadSidebarItems();
         } catch (e) {
-            console.error("[MStodo Sidebar] Failed to create group:", e);
+            console.error("[Fluent Tasks] Failed to create group:", e);
+        } finally {
+            isCreatingGroup = false;
+            isAddingGroup = false;
+            newGroupName = "";
         }
-        isAddingGroup = false;
-        newGroupName = "";
     }
 
     function handleNewGroupKeydown(e: KeyboardEvent) {
@@ -795,7 +806,7 @@
     }
 
     function handleNewGroupBlur() {
-        setTimeout(() => { if (isAddingGroup) confirmAddGroup(); }, BLUR_CONFIRM_DELAY_MS);
+        setTimeout(() => { if (isAddingGroup && !isCreatingGroup) confirmAddGroup(); }, BLUR_CONFIRM_DELAY_MS);
     }
 
     // =============================================
