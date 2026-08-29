@@ -37,7 +37,6 @@ export class QuickTaskModal extends Modal {
         this.component = new QuickTaskModalView({
             target: contentEl,
             props: {
-                app: this.app,
                 plugin: this.plugin,
                 dataService: this.dataService,
                 showTip,

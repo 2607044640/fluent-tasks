@@ -9,7 +9,6 @@
     // =============================================
     // Props
     // =============================================
-    export let app: App;
     export let plugin: any = null;
     export let dataService: DataService;
     export let showTip: boolean = false;
@@ -441,6 +440,7 @@
     }
 </script>
 
+<!-- svelte-ignore a11y-no-noninteractive-element-interactions a11y-no-noninteractive-tabindex a11y-click-events-have-key-events -->
 <div 
     class="quick-modal-container"
     bind:this={modalContainerEl}
@@ -487,6 +487,8 @@
                         class="quick-modal-list-item"
                         class:is-selected={selectedCategory?.filepath === cat.filepath}
                         class:is-focused={focusPane === 'lists' && focusedCategoryIndex === index}
+                        role="button"
+                        tabindex="0"
                         on:click={() => selectCategory(cat)}
                     >
                         <span class="quick-modal-list-icon">📁</span>
@@ -536,6 +538,8 @@
                             class="quick-modal-task-item"
                             class:is-completed={task.completed}
                             class:is-focused={focusPane === 'tasks' && focusedTaskIndex === index}
+                            role="button"
+                            tabindex="0"
                             on:click={() => toggleTaskCompletion(task)}
                         >
                             <input 
@@ -551,7 +555,7 @@
 
                             {#if task.steps && task.steps.length > 0}
                                 <span class="quick-modal-steps-badge">
-                                    {task.steps.filter(s => s.completed).length}/{task.steps.length}
+                                    {task.steps.filter(s => s.done).length}/{task.steps.length}
                                 </span>
                             {/if}
 
@@ -563,6 +567,8 @@
                             <span 
                                 class="quick-modal-star-btn"
                                 class:is-starred={task.starred}
+                                role="button"
+                                tabindex="-1"
                                 on:click|stopPropagation={() => toggleTaskStar(task)}
                             >
                                 {task.starred ? "★" : "☆"}

@@ -75,8 +75,8 @@ export class FluentTasksSettingTab extends PluginSettingTab {
                 .addOption("direct", "Direct In-Modal Management (Toggle & Add in popup)")
                 .addOption("navigate", "Navigate Workspace (Open list & details in workspace)")
                 .setValue(this.plugin.settings.quickModalAction ?? "direct")
-                .onChange(async (value: "direct" | "navigate") => {
-                    this.plugin.settings.quickModalAction = value;
+                .onChange(async (value: string) => {
+                    this.plugin.settings.quickModalAction = value as "direct" | "navigate";
                     await this.plugin.saveSettings();
                 }));
 

@@ -16307,14 +16307,14 @@ var import_obsidian8 = require("obsidian");
 // src/modals/QuickTaskModalView.svelte
 function get_each_context4(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[49] = list[i];
-  child_ctx[51] = i;
+  child_ctx[48] = list[i];
+  child_ctx[50] = i;
   return child_ctx;
 }
 function get_each_context_14(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[52] = list[i];
-  child_ctx[51] = i;
+  child_ctx[51] = list[i];
+  child_ctx[50] = i;
   return child_ctx;
 }
 function create_if_block_74(ctx) {
@@ -16407,7 +16407,7 @@ function create_if_block_54(ctx) {
     /*taskCounts*/
     ctx[6][
       /*cat*/
-      ctx[52].filepath
+      ctx[51].filepath
     ] + ""
   );
   let t;
@@ -16426,7 +16426,7 @@ function create_if_block_54(ctx) {
       131136 && t_value !== (t_value = /*taskCounts*/
       ctx2[6][
         /*cat*/
-        ctx2[52].filepath
+        ctx2[51].filepath
       ] + ""))
         set_data(t, t_value);
     },
@@ -16445,7 +16445,7 @@ function create_each_block_14(key_1, ctx) {
   let span1;
   let t2_value = (
     /*cat*/
-    ctx[52].name + ""
+    ctx[51].name + ""
   );
   let t2;
   let t3;
@@ -16456,15 +16456,15 @@ function create_each_block_14(key_1, ctx) {
     /*taskCounts*/
     ((_a = ctx[6][
       /*cat*/
-      ctx[52].filepath
+      ctx[51].filepath
     ]) != null ? _a : 0) > 0 && create_if_block_54(ctx)
   );
   function click_handler2() {
     return (
       /*click_handler*/
-      ctx[32](
+      ctx[31](
         /*cat*/
-        ctx[52]
+        ctx[51]
       )
     );
   }
@@ -16486,12 +16486,14 @@ function create_each_block_14(key_1, ctx) {
       attr(span0, "class", "quick-modal-list-icon");
       attr(span1, "class", "quick-modal-list-name");
       attr(div, "class", "quick-modal-list-item");
+      attr(div, "role", "button");
+      attr(div, "tabindex", "0");
       toggle_class(
         div,
         "is-selected",
         /*selectedCategory*/
         ((_a2 = ctx[5]) == null ? void 0 : _a2.filepath) === /*cat*/
-        ctx[52].filepath
+        ctx[51].filepath
       );
       toggle_class(
         div,
@@ -16499,7 +16501,7 @@ function create_each_block_14(key_1, ctx) {
         /*focusPane*/
         ctx[8] === "lists" && /*focusedCategoryIndex*/
         ctx[9] === /*index*/
-        ctx[51]
+        ctx[50]
       );
       this.first = div;
     },
@@ -16523,13 +16525,13 @@ function create_each_block_14(key_1, ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*flatCategories*/
       131072 && t2_value !== (t2_value = /*cat*/
-      ctx[52].name + ""))
+      ctx[51].name + ""))
         set_data(t2, t2_value);
       if (
         /*taskCounts*/
         ((_a2 = ctx[6][
           /*cat*/
-          ctx[52].filepath
+          ctx[51].filepath
         ]) != null ? _a2 : 0) > 0
       ) {
         if (if_block) {
@@ -16550,7 +16552,7 @@ function create_each_block_14(key_1, ctx) {
           "is-selected",
           /*selectedCategory*/
           ((_b = ctx[5]) == null ? void 0 : _b.filepath) === /*cat*/
-          ctx[52].filepath
+          ctx[51].filepath
         );
       }
       if (dirty[0] & /*focusPane, focusedCategoryIndex, flatCategories*/
@@ -16561,7 +16563,7 @@ function create_each_block_14(key_1, ctx) {
           /*focusPane*/
           ctx[8] === "lists" && /*focusedCategoryIndex*/
           ctx[9] === /*index*/
-          ctx[51]
+          ctx[50]
         );
       }
     },
@@ -16630,13 +16632,13 @@ function create_if_block_312(ctx) {
         /*newTaskTitle*/
         ctx[12]
       );
-      ctx[34](input);
+      ctx[33](input);
       if (!mounted) {
         dispose = listen(
           input,
           "input",
           /*input_input_handler_1*/
-          ctx[33]
+          ctx[32]
         );
         mounted = true;
       }
@@ -16656,7 +16658,7 @@ function create_if_block_312(ctx) {
       if (detaching) {
         detach(div);
       }
-      ctx[34](null);
+      ctx[33](null);
       mounted = false;
       dispose();
     }
@@ -16672,7 +16674,7 @@ function create_else_block4(ctx) {
   );
   const get_key = (ctx2) => (
     /*task*/
-    ctx2[49].id
+    ctx2[48].id
   );
   for (let i = 0; i < each_value.length; i += 1) {
     let child_ctx = get_each_context4(ctx, each_value, i);
@@ -16748,13 +16750,13 @@ function create_if_block_212(ctx) {
   let span;
   let t0_value = (
     /*task*/
-    ctx[49].steps.filter(func2).length + ""
+    ctx[48].steps.filter(func2).length + ""
   );
   let t0;
   let t1;
   let t2_value = (
     /*task*/
-    ctx[49].steps.length + ""
+    ctx[48].steps.length + ""
   );
   let t2;
   return {
@@ -16774,11 +16776,11 @@ function create_if_block_212(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*displayedTasks*/
       65536 && t0_value !== (t0_value = /*task*/
-      ctx2[49].steps.filter(func2).length + ""))
+      ctx2[48].steps.filter(func2).length + ""))
         set_data(t0, t0_value);
       if (dirty[0] & /*displayedTasks*/
       65536 && t2_value !== (t2_value = /*task*/
-      ctx2[49].steps.length + ""))
+      ctx2[48].steps.length + ""))
         set_data(t2, t2_value);
     },
     d(detaching) {
@@ -16798,7 +16800,7 @@ function create_if_block_113(ctx) {
       t = text("?");
       attr(span, "class", "quick-modal-why-badge");
       attr(span, "title", span_title_value = /*task*/
-      ctx[49].why);
+      ctx[48].why);
     },
     m(target, anchor) {
       insert(target, span, anchor);
@@ -16807,7 +16809,7 @@ function create_if_block_113(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*displayedTasks*/
       65536 && span_title_value !== (span_title_value = /*task*/
-      ctx2[49].why)) {
+      ctx2[48].why)) {
         attr(span, "title", span_title_value);
       }
     },
@@ -16826,7 +16828,7 @@ function create_each_block4(key_1, ctx) {
   let span0;
   let t1_value = (
     /*task*/
-    ctx[49].title + ""
+    ctx[48].title + ""
   );
   let t1;
   let t2;
@@ -16835,7 +16837,7 @@ function create_each_block4(key_1, ctx) {
   let span1;
   let t5_value = (
     /*task*/
-    ctx[49].starred ? "\u2605" : "\u2606"
+    ctx[48].starred ? "\u2605" : "\u2606"
   );
   let t5;
   let t6;
@@ -16844,36 +16846,36 @@ function create_each_block4(key_1, ctx) {
   function click_handler_1() {
     return (
       /*click_handler_1*/
-      ctx[35](
+      ctx[34](
         /*task*/
-        ctx[49]
+        ctx[48]
       )
     );
   }
   let if_block0 = (
     /*task*/
-    ctx[49].steps && /*task*/
-    ctx[49].steps.length > 0 && create_if_block_212(ctx)
+    ctx[48].steps && /*task*/
+    ctx[48].steps.length > 0 && create_if_block_212(ctx)
   );
   let if_block1 = (
     /*task*/
-    ctx[49].why && create_if_block_113(ctx)
+    ctx[48].why && create_if_block_113(ctx)
   );
   function click_handler_22() {
     return (
       /*click_handler_2*/
-      ctx[36](
+      ctx[35](
         /*task*/
-        ctx[49]
+        ctx[48]
       )
     );
   }
   function click_handler_3() {
     return (
       /*click_handler_3*/
-      ctx[37](
+      ctx[36](
         /*task*/
-        ctx[49]
+        ctx[48]
       )
     );
   }
@@ -16899,27 +16901,31 @@ function create_each_block4(key_1, ctx) {
       attr(input, "type", "checkbox");
       attr(input, "class", "quick-modal-checkbox");
       input.checked = input_checked_value = /*task*/
-      ctx[49].completed;
+      ctx[48].completed;
       attr(span0, "class", "quick-modal-task-title");
       toggle_class(
         span0,
         "is-done",
         /*task*/
-        ctx[49].completed
+        ctx[48].completed
       );
       attr(span1, "class", "quick-modal-star-btn");
+      attr(span1, "role", "button");
+      attr(span1, "tabindex", "-1");
       toggle_class(
         span1,
         "is-starred",
         /*task*/
-        ctx[49].starred
+        ctx[48].starred
       );
       attr(div, "class", "quick-modal-task-item");
+      attr(div, "role", "button");
+      attr(div, "tabindex", "0");
       toggle_class(
         div,
         "is-completed",
         /*task*/
-        ctx[49].completed
+        ctx[48].completed
       );
       toggle_class(
         div,
@@ -16927,7 +16933,7 @@ function create_each_block4(key_1, ctx) {
         /*focusPane*/
         ctx[8] === "tasks" && /*focusedTaskIndex*/
         ctx[10] === /*index*/
-        ctx[51]
+        ctx[50]
       );
       this.first = div;
     },
@@ -16960,12 +16966,12 @@ function create_each_block4(key_1, ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*displayedTasks*/
       65536 && input_checked_value !== (input_checked_value = /*task*/
-      ctx[49].completed)) {
+      ctx[48].completed)) {
         input.checked = input_checked_value;
       }
       if (dirty[0] & /*displayedTasks*/
       65536 && t1_value !== (t1_value = /*task*/
-      ctx[49].title + ""))
+      ctx[48].title + ""))
         set_data(t1, t1_value);
       if (dirty[0] & /*displayedTasks*/
       65536) {
@@ -16973,13 +16979,13 @@ function create_each_block4(key_1, ctx) {
           span0,
           "is-done",
           /*task*/
-          ctx[49].completed
+          ctx[48].completed
         );
       }
       if (
         /*task*/
-        ctx[49].steps && /*task*/
-        ctx[49].steps.length > 0
+        ctx[48].steps && /*task*/
+        ctx[48].steps.length > 0
       ) {
         if (if_block0) {
           if_block0.p(ctx, dirty);
@@ -16994,7 +17000,7 @@ function create_each_block4(key_1, ctx) {
       }
       if (
         /*task*/
-        ctx[49].why
+        ctx[48].why
       ) {
         if (if_block1) {
           if_block1.p(ctx, dirty);
@@ -17009,7 +17015,7 @@ function create_each_block4(key_1, ctx) {
       }
       if (dirty[0] & /*displayedTasks*/
       65536 && t5_value !== (t5_value = /*task*/
-      ctx[49].starred ? "\u2605" : "\u2606"))
+      ctx[48].starred ? "\u2605" : "\u2606"))
         set_data(t5, t5_value);
       if (dirty[0] & /*displayedTasks*/
       65536) {
@@ -17017,7 +17023,7 @@ function create_each_block4(key_1, ctx) {
           span1,
           "is-starred",
           /*task*/
-          ctx[49].starred
+          ctx[48].starred
         );
       }
       if (dirty[0] & /*displayedTasks*/
@@ -17026,7 +17032,7 @@ function create_each_block4(key_1, ctx) {
           div,
           "is-completed",
           /*task*/
-          ctx[49].completed
+          ctx[48].completed
         );
       }
       if (dirty[0] & /*focusPane, focusedTaskIndex, displayedTasks*/
@@ -17037,7 +17043,7 @@ function create_each_block4(key_1, ctx) {
           /*focusPane*/
           ctx[8] === "tasks" && /*focusedTaskIndex*/
           ctx[10] === /*index*/
-          ctx[51]
+          ctx[50]
         );
       }
     },
@@ -17127,7 +17133,7 @@ function create_fragment4(ctx) {
   );
   const get_key = (ctx2) => (
     /*cat*/
-    ctx2[52].filepath
+    ctx2[51].filepath
   );
   for (let i = 0; i < each_value_1.length; i += 1) {
     let child_ctx = get_each_context_14(ctx, each_value_1, i);
@@ -17247,7 +17253,7 @@ function create_fragment4(ctx) {
         /*searchQuery*/
         ctx[7]
       );
-      ctx[31](input);
+      ctx[30](input);
       append(div0, t2);
       if (if_block1)
         if_block1.m(div0, null);
@@ -17294,14 +17300,14 @@ function create_fragment4(ctx) {
       append(span7, t29);
       append(div8, t30);
       append(div8, span8);
-      ctx[38](div9);
+      ctx[37](div9);
       if (!mounted) {
         dispose = [
           listen(
             input,
             "input",
             /*input_input_handler*/
-            ctx[30]
+            ctx[29]
           ),
           listen(
             input,
@@ -17433,7 +17439,7 @@ function create_fragment4(ctx) {
       }
       if (if_block0)
         if_block0.d();
-      ctx[31](null);
+      ctx[30](null);
       if (if_block1)
         if_block1.d();
       for (let i = 0; i < each_blocks.length; i += 1) {
@@ -17444,7 +17450,7 @@ function create_fragment4(ctx) {
       if (if_block3)
         if_block3.d();
       if_block4.d();
-      ctx[38](null);
+      ctx[37](null);
       mounted = false;
       run_all(dispose);
     }
@@ -17463,11 +17469,10 @@ function getFlatCategories(items) {
   }
   return result;
 }
-var func2 = (s) => s.completed;
+var func2 = (s) => s.done;
 function instance4($$self, $$props, $$invalidate) {
   let flatCategories;
   let displayedTasks;
-  let { app } = $$props;
   let { plugin = null } = $$props;
   let { dataService } = $$props;
   let { showTip = false } = $$props;
@@ -17504,7 +17509,7 @@ function instance4($$self, $$props, $$invalidate) {
     );
   });
   async function loadData() {
-    $$invalidate(28, sidebarItems = await dataService.getSidebarItems());
+    $$invalidate(27, sidebarItems = await dataService.getSidebarItems());
     categories = await dataService.getCategories();
     $$invalidate(17, flatCategories = getFlatCategories(sidebarItems));
     const countPromises = categories.map(async (cat) => {
@@ -17532,7 +17537,7 @@ function instance4($$self, $$props, $$invalidate) {
     $$invalidate(10, focusedTaskIndex = 0);
   }
   async function loadTasksForCategory(cat) {
-    $$invalidate(29, tasks2 = await dataService.getTasks(cat.filepath));
+    $$invalidate(28, tasks2 = await dataService.getTasks(cat.filepath));
   }
   async function handleSearchInput() {
     const query = searchQuery.trim();
@@ -17583,7 +17588,7 @@ function instance4($$self, $$props, $$invalidate) {
     if (isSearching)
       $$invalidate(4, searchResults = [...searchResults]);
     else
-      $$invalidate(29, tasks2 = [...tasks2]);
+      $$invalidate(28, tasks2 = [...tasks2]);
   }
   async function deleteTaskSafely(task) {
     var _a;
@@ -17853,27 +17858,25 @@ function instance4($$self, $$props, $$invalidate) {
     });
   }
   $$self.$$set = ($$props2) => {
-    if ("app" in $$props2)
-      $$invalidate(25, app = $$props2.app);
     if ("plugin" in $$props2)
       $$invalidate(0, plugin = $$props2.plugin);
     if ("dataService" in $$props2)
-      $$invalidate(26, dataService = $$props2.dataService);
+      $$invalidate(25, dataService = $$props2.dataService);
     if ("showTip" in $$props2)
       $$invalidate(1, showTip = $$props2.showTip);
     if ("remainingTips" in $$props2)
       $$invalidate(2, remainingTips = $$props2.remainingTips);
     if ("closeModal" in $$props2)
-      $$invalidate(27, closeModal = $$props2.closeModal);
+      $$invalidate(26, closeModal = $$props2.closeModal);
   };
   $$self.$$.update = () => {
     if ($$self.$$.dirty[0] & /*sidebarItems*/
-    268435456) {
+    134217728) {
       $:
         $$invalidate(17, flatCategories = getFlatCategories(sidebarItems));
     }
     if ($$self.$$.dirty[0] & /*isSearching, searchResults, tasks*/
-    536870936) {
+    268435480) {
       $:
         $$invalidate(16, displayedTasks = isSearching ? searchResults.map((r) => r.task) : tasks2);
     }
@@ -17904,7 +17907,6 @@ function instance4($$self, $$props, $$invalidate) {
     toggleTaskStar,
     startInlineAddTask,
     handleKeydown,
-    app,
     dataService,
     closeModal,
     sidebarItems,
@@ -17930,12 +17932,11 @@ var QuickTaskModalView = class extends SvelteComponent {
       create_fragment4,
       safe_not_equal,
       {
-        app: 25,
         plugin: 0,
-        dataService: 26,
+        dataService: 25,
         showTip: 1,
         remainingTips: 2,
-        closeModal: 27
+        closeModal: 26
       },
       null,
       [-1, -1]
@@ -17967,7 +17968,6 @@ var QuickTaskModal = class extends import_obsidian8.Modal {
     this.component = new QuickTaskModalView_default({
       target: contentEl,
       props: {
-        app: this.app,
         plugin: this.plugin,
         dataService: this.dataService,
         showTip,
