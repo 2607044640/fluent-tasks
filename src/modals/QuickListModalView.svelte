@@ -1,8 +1,12 @@
 <script lang="ts">
-    import { onMount } from "svelte";
+    import { onMount, onDestroy } from "svelte";
     import { DataService } from "../DataService";
     import { EventBus } from "../EventBus";
-    import { EventName, VIEW_TYPE_MAIN, type CategoryInfo, type SidebarItem } from "../types";
+    import { EventName, VIEW_TYPE_MAIN } from "../types";
+    import type { CategoryInfo, SidebarItem, GroupInfo } from "../types";
+    import { moveSidebarItem, toggleGroupExpandedState } from "../utils/sidebarTreeUtils";
+    import { INPUT_FOCUS_DELAY_MS } from "../constants";
+    import { Menu, Notice } from "obsidian";
     import type { App } from "obsidian";
 
     // =============================================
@@ -23,25 +27,65 @@
     let searchQuery: string = "";
     let focusedIndex: number = 0;
 
+    // Inline Add List / Group State
+    let isAddingList: boolean = false;
+    let newListName: string = "";
+    let isAddingGroup: boolean = false;
+    let newGroupName: string = "";
+
+    // Inline Rename State
+    let editingItemId: string = "";
+    let editingItemType: "category" | "group" = "category";
+    let editingName: string = "";
+    let renameInputEl: HTMLInputElement;
+
+    // Drag & Drop reordering state
+    let draggedListId: string = "";
+    let dragOverListId: string = "";
+    let dragListPosition: "top" | "bottom" | "inside" | null = null;
+
+    // DOM Element Bindings
     let searchInputEl: HTMLInputElement;
     let modalContainerEl: HTMLElement;
+    let addListInputEl: HTMLInputElement;
+    let addGroupInputEl: HTMLInputElement;
 
-    $: flatCategories = getFilteredCategories(sidebarItems, searchQuery);
+    $: flatCategories = getFlatCategories(sidebarItems);
+    $: isFiltering = !!searchQuery.trim();
+    $: filteredItems = getFilteredTree(sidebarItems, searchQuery);
 
-    function getFilteredCategories(items: SidebarItem[], query: string): Array<{ item: CategoryInfo; groupName?: string }> {
-        const q = query.trim().toLowerCase();
-        const result: Array<{ item: CategoryInfo; groupName?: string }> = [];
-
+    function getFlatCategories(items: SidebarItem[]): CategoryInfo[] {
+        const result: CategoryInfo[] = [];
         for (const item of items) {
             if (item.type === "category") {
-                if (!q || item.name.toLowerCase().includes(q)) {
-                    result.push({ item });
-                }
+                result.push(item);
             } else if (item.type === "group" && Array.isArray(item.items)) {
                 for (const child of item.items) {
-                    if (!q || child.name.toLowerCase().includes(q) || item.name.toLowerCase().includes(q)) {
-                        result.push({ item: child, groupName: item.name });
-                    }
+                    result.push(child);
+                }
+            }
+        }
+        return result;
+    }
+
+    function getFilteredTree(items: SidebarItem[], query: string): SidebarItem[] {
+        const q = query.trim().toLowerCase();
+        if (!q) return items;
+
+        const result: SidebarItem[] = [];
+        for (const item of items) {
+            if (item.type === "category") {
+                if (item.name.toLowerCase().includes(q)) {
+                    result.push(item);
+                }
+            } else if (item.type === "group") {
+                const matchingChildren = (item.items || []).filter(c => c.name.toLowerCase().includes(q));
+                if (item.name.toLowerCase().includes(q) || matchingChildren.length > 0) {
+                    result.push({
+                        ...item,
+                        isExpanded: true,
+                        items: matchingChildren.length > 0 ? matchingChildren : item.items
+                    });
                 }
             }
         }
@@ -50,15 +94,35 @@
 
     onMount(async () => {
         await loadData();
+        EventBus.on(EventName.CATEGORY_LIST_CHANGED, handleExternalListChanged);
+        EventBus.on(EventName.TASK_UPDATED, handleExternalTaskUpdated);
+
         setTimeout(() => {
             searchInputEl?.focus();
         }, 50);
     });
 
+    onDestroy(() => {
+        EventBus.off(EventName.CATEGORY_LIST_CHANGED, handleExternalListChanged);
+        EventBus.off(EventName.TASK_UPDATED, handleExternalTaskUpdated);
+    });
+
+    function handleExternalListChanged() {
+        void loadData();
+    }
+
+    function handleExternalTaskUpdated() {
+        void refreshTaskCounts();
+    }
+
     async function loadData() {
         sidebarItems = await dataService.getSidebarItems();
         categories = await dataService.getCategories();
+        flatCategories = getFlatCategories(sidebarItems);
+        await refreshTaskCounts();
+    }
 
+    async function refreshTaskCounts() {
         const countPromises = categories.map(async (cat) => {
             try {
                 const catTasks = await dataService.getTasks(cat.filepath);
@@ -69,6 +133,11 @@
         });
         await Promise.all(countPromises);
         taskCounts = { ...taskCounts };
+    }
+
+    async function toggleGroup(group: GroupInfo) {
+        sidebarItems = toggleGroupExpandedState(sidebarItems, group.id);
+        await dataService.saveSidebarState(sidebarItems);
     }
 
     async function openCategoryInCenterOnly(cat: CategoryInfo) {
@@ -90,8 +159,219 @@
         closeModal();
     }
 
+    // =============================================
+    // Drag & Drop Lists / Groups (Tree Reordering)
+    // =============================================
+    function handleListDragStart(e: DragEvent, item: SidebarItem | CategoryInfo) {
+        draggedListId = item.id;
+        if (e.dataTransfer) {
+            e.dataTransfer.setData("text/plain", item.id);
+            e.dataTransfer.effectAllowed = "move";
+        }
+    }
+
+    function handleListDragOver(e: DragEvent, target: SidebarItem | CategoryInfo, isGroupHeader: boolean = false) {
+        e.preventDefault();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+
+        if (!draggedListId || target.id === draggedListId) {
+            dragOverListId = "";
+            dragListPosition = null;
+            return;
+        }
+
+        dragOverListId = target.id || "";
+        const el = e.currentTarget as HTMLElement;
+        const rect = el.getBoundingClientRect();
+        const relY = e.clientY - rect.top;
+
+        if (isGroupHeader) {
+            dragListPosition = relY < rect.height * 0.35 ? "top" : "inside";
+        } else {
+            dragListPosition = relY < rect.height * 0.5 ? "top" : "bottom";
+        }
+    }
+
+    function handleListDragLeave() {
+        dragOverListId = "";
+        dragListPosition = null;
+    }
+
+    async function handleListDrop(target: SidebarItem | CategoryInfo) {
+        if (!draggedListId || !dragOverListId || !dragListPosition) return;
+        const movedId = draggedListId;
+        const targetId = target.id || "";
+        const pos = dragListPosition;
+
+        draggedListId = "";
+        dragOverListId = "";
+        dragListPosition = null;
+
+        if (movedId === targetId) return;
+
+        sidebarItems = moveSidebarItem(sidebarItems, movedId, targetId, pos);
+        await dataService.saveSidebarState(sidebarItems);
+        EventBus.emit(EventName.CATEGORY_LIST_CHANGED, { sidebarItems });
+    }
+
+    // =============================================
+    // Inline Rename & Context Menus
+    // =============================================
+    function startRenameItem(item: { id: string; name: string; type: "category" | "group" }) {
+        editingItemId = item.id;
+        editingItemType = item.type;
+        editingName = item.name;
+        setTimeout(() => {
+            renameInputEl?.focus();
+            renameInputEl?.select();
+        }, 30);
+    }
+
+    async function commitRename() {
+        const newName = editingName.trim();
+        if (!newName || !editingItemId) {
+            cancelRename();
+            return;
+        }
+
+        try {
+            if (editingItemType === "category") {
+                const cat = categories.find(c => c.id === editingItemId || c.filepath === editingItemId);
+                if (cat && cat.name !== newName) {
+                    await dataService.renameCategory(cat.filepath, newName);
+                }
+            } else {
+                await dataService.renameGroup(editingItemId, newName);
+            }
+            await loadData();
+        } catch (e) {
+            console.error("[QuickListModal] Rename failed:", e);
+        }
+        cancelRename();
+    }
+
+    function cancelRename() {
+        editingItemId = "";
+        editingName = "";
+    }
+
+    function showItemContextMenu(e: MouseEvent, item: { id: string; name: string; type: "category" | "group"; filepath?: string }) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const menu = new Menu();
+        menu.addItem((i) => {
+            i.setTitle("Rename (F2)")
+             .setIcon("edit")
+             .onClick(() => startRenameItem(item));
+        });
+
+        menu.addItem((i) => {
+            i.setTitle("Delete")
+             .setIcon("trash")
+             .setWarning(true)
+             .onClick(async () => {
+                 if (item.type === "category" && item.filepath) {
+                     await dataService.deleteCategory(item.filepath);
+                 }
+                 await loadData();
+             });
+        });
+
+        menu.showAtMouseEvent(e);
+    }
+
+    // =============================================
+    // Inline Add List / Add Group
+    // =============================================
+    function startAddList() {
+        isAddingList = true;
+        newListName = "";
+        setTimeout(() => addListInputEl?.focus(), INPUT_FOCUS_DELAY_MS);
+    }
+
+    async function commitAddList() {
+        const name = newListName.trim();
+        if (!name) {
+            isAddingList = false;
+            return;
+        }
+        try {
+            const newCat = await dataService.createCategory(name);
+            await loadData();
+            await openCategoryInCenterOnly(newCat);
+        } catch (e) {
+            new Notice(`Failed to create list: ${e}`);
+        }
+        isAddingList = false;
+        newListName = "";
+    }
+
+    function startAddGroup() {
+        isAddingGroup = true;
+        newGroupName = "";
+        setTimeout(() => addGroupInputEl?.focus(), INPUT_FOCUS_DELAY_MS);
+    }
+
+    async function commitAddGroup() {
+        const name = newGroupName.trim();
+        if (!name) {
+            isAddingGroup = false;
+            return;
+        }
+        try {
+            await dataService.createGroup(name);
+            await loadData();
+        } catch (e) {
+            new Notice(`Failed to create group: ${e}`);
+        }
+        isAddingGroup = false;
+        newGroupName = "";
+    }
+
+    // =============================================
+    // Keyboard Physics
+    // =============================================
     function handleKeydown(e: KeyboardEvent) {
         if (e.isComposing || e.keyCode === 229) return;
+
+        if (e.key === "F2") {
+            e.preventDefault();
+            e.stopPropagation();
+            if (flatCategories[focusedIndex]) {
+                const cat = flatCategories[focusedIndex];
+                startRenameItem({ id: cat.id || "", name: cat.name, type: "category" });
+            }
+            return;
+        }
+
+        if (editingItemId) {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                e.stopPropagation();
+                void commitRename();
+            } else if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                cancelRename();
+            }
+            return;
+        }
+
+        if (isAddingList || isAddingGroup) {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                e.stopPropagation();
+                if (isAddingList) void commitAddList();
+                else void commitAddGroup();
+            } else if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                isAddingList = false;
+                isAddingGroup = false;
+            }
+            return;
+        }
 
         if (e.key === "ArrowDown") {
             e.preventDefault();
@@ -117,7 +397,7 @@
             e.preventDefault();
             e.stopPropagation();
             if (flatCategories.length > 0 && flatCategories[focusedIndex]) {
-                void openCategoryInCenterOnly(flatCategories[focusedIndex].item);
+                void openCategoryInCenterOnly(flatCategories[focusedIndex]);
             }
             return;
         }
@@ -136,7 +416,7 @@
 
     function scrollFocusedIntoView() {
         setTimeout(() => {
-            const el = modalContainerEl?.querySelector(".quick-list-item.is-focused") as HTMLElement | null;
+            const el = modalContainerEl?.querySelector(".quick-modal-list-item.is-focused") as HTMLElement | null;
             if (el) {
                 el.scrollIntoView({ block: "nearest", behavior: "auto" });
             }
@@ -169,7 +449,7 @@
         <input 
             type="text" 
             class="quick-modal-filter-input"
-            placeholder="Type to filter lists (↑↓ navigate, Enter to open)..."
+            placeholder="Type to filter lists (↑↓ navigate, F2 rename, Enter to open in center)..."
             bind:value={searchQuery}
             bind:this={searchInputEl}
         />
@@ -178,37 +458,166 @@
         {/if}
     </div>
 
-    <!-- Lists Grid / Scrollable -->
+    <!-- Hierarchical Tree Body -->
     <div class="quick-list-scrollable">
-        {#if flatCategories.length === 0}
-            <div class="quick-modal-empty">No matching lists found.</div>
+        {#if filteredItems.length === 0}
+            <div class="quick-modal-empty">No matching lists or groups found.</div>
         {:else}
-            {#each flatCategories as entry, index (entry.item.filepath)}
-                <div 
-                    class="quick-list-item"
-                    class:is-focused={focusedIndex === index}
-                    role="button"
-                    tabindex="0"
-                    on:click={() => openCategoryInCenterOnly(entry.item)}
-                >
-                    <span class="quick-list-icon">📁</span>
-                    <div class="quick-list-info">
-                        <span class="quick-list-title">{entry.item.name}</span>
-                        {#if entry.groupName}
-                            <span class="quick-list-group-tag">{entry.groupName}</span>
+            {#each filteredItems as item (item.id)}
+                {#if item.type === "group"}
+                    <!-- Group Header -->
+                    <div 
+                        class="quick-modal-group-container"
+                        class:drag-over-top={dragOverListId === item.id && dragListPosition === "top"}
+                        class:drag-over-bottom={dragOverListId === item.id && dragListPosition === "bottom"}
+                        class:drag-over-inside={dragOverListId === item.id && dragListPosition === "inside"}
+                    >
+                        <div 
+                            class="quick-modal-group-header"
+                            draggable="true"
+                            on:dragstart={(e) => handleListDragStart(e, item)}
+                            on:dragover={(e) => handleListDragOver(e, item, true)}
+                            on:dragleave={handleListDragLeave}
+                            on:drop|preventDefault={() => handleListDrop(item)}
+                            on:contextmenu={(e) => showItemContextMenu(e, { id: item.id, name: item.name, type: "group" })}
+                        >
+                            <!-- svelte-ignore a11y-click-events-have-key-events -->
+                            <span class="quick-modal-group-chevron" on:click|stopPropagation={() => toggleGroup(item)}>
+                                {item.isExpanded ? "▼" : "▶"}
+                            </span>
+
+                            {#if editingItemId === item.id}
+                                <input 
+                                    type="text" 
+                                    class="quick-modal-inline-rename-input"
+                                    bind:value={editingName}
+                                    bind:this={renameInputEl}
+                                    on:blur={commitRename}
+                                />
+                            {:else}
+                                <span class="quick-modal-group-title" on:click={() => toggleGroup(item)}>
+                                    {item.name}
+                                </span>
+                            {/if}
+                        </div>
+
+                        <!-- Nested Group Children -->
+                        {#if item.isExpanded && item.items}
+                            <div class="quick-modal-group-children">
+                                {#each item.items as child (child.id)}
+                                    <div 
+                                        class="quick-modal-list-item is-nested"
+                                        class:is-focused={flatCategories[focusedIndex]?.filepath === child.filepath}
+                                        class:drag-over-top={dragOverListId === child.id && dragListPosition === "top"}
+                                        class:drag-over-bottom={dragOverListId === child.id && dragListPosition === "bottom"}
+                                        role="button"
+                                        tabindex="0"
+                                        draggable="true"
+                                        on:dragstart={(e) => handleListDragStart(e, child)}
+                                        on:dragover={(e) => handleListDragOver(e, child, false)}
+                                        on:dragleave={handleListDragLeave}
+                                        on:drop|preventDefault={() => handleListDrop(child)}
+                                        on:click={() => openCategoryInCenterOnly(child)}
+                                        on:contextmenu={(e) => showItemContextMenu(e, { id: child.id || "", name: child.name, type: "category", filepath: child.filepath })}
+                                    >
+                                        <span class="quick-modal-list-icon">📁</span>
+                                        
+                                        {#if editingItemId === child.id}
+                                            <input 
+                                                type="text" 
+                                                class="quick-modal-inline-rename-input"
+                                                bind:value={editingName}
+                                                bind:this={renameInputEl}
+                                                on:blur={commitRename}
+                                            />
+                                        {:else}
+                                            <span class="quick-modal-list-name">{child.name}</span>
+                                        {/if}
+
+                                        {#if (taskCounts[child.filepath] ?? 0) > 0}
+                                            <span class="quick-modal-badge">{taskCounts[child.filepath]}</span>
+                                        {/if}
+                                    </div>
+                                {/each}
+                            </div>
                         {/if}
                     </div>
-                    {#if (taskCounts[entry.item.filepath] ?? 0) > 0}
-                        <span class="quick-modal-badge">{taskCounts[entry.item.filepath]}</span>
-                    {/if}
-                </div>
+                {:else}
+                    <!-- Root Category Item -->
+                    <div 
+                        class="quick-modal-list-item"
+                        class:is-focused={flatCategories[focusedIndex]?.filepath === item.filepath}
+                        class:drag-over-top={dragOverListId === item.id && dragListPosition === "top"}
+                        class:drag-over-bottom={dragOverListId === item.id && dragListPosition === "bottom"}
+                        role="button"
+                        tabindex="0"
+                        draggable="true"
+                        on:dragstart={(e) => handleListDragStart(e, item)}
+                        on:dragover={(e) => handleListDragOver(e, item, false)}
+                        on:dragleave={handleListDragLeave}
+                        on:drop|preventDefault={() => handleListDrop(item)}
+                        on:click={() => openCategoryInCenterOnly(item)}
+                        on:contextmenu={(e) => showItemContextMenu(e, { id: item.id || "", name: item.name, type: "category", filepath: item.filepath })}
+                    >
+                        <span class="quick-modal-list-icon">📁</span>
+                        
+                        {#if editingItemId === item.id}
+                            <input 
+                                type="text" 
+                                class="quick-modal-inline-rename-input"
+                                bind:value={editingName}
+                                bind:this={renameInputEl}
+                                on:blur={commitRename}
+                            />
+                        {:else}
+                            <span class="quick-modal-list-name">{item.name}</span>
+                        {/if}
+
+                        {#if (taskCounts[item.filepath] ?? 0) > 0}
+                            <span class="quick-modal-badge">{taskCounts[item.filepath]}</span>
+                        {/if}
+                    </div>
+                {/if}
             {/each}
+
+            <!-- Inline Add Inputs -->
+            {#if isAddingList}
+                <div class="quick-modal-add-form">
+                    <input 
+                        type="text" 
+                        class="quick-modal-inline-add-input"
+                        placeholder="New list name (Enter to save, Esc to cancel)..."
+                        bind:value={newListName}
+                        bind:this={addListInputEl}
+                        on:blur={commitAddList}
+                    />
+                </div>
+            {/if}
+
+            {#if isAddingGroup}
+                <div class="quick-modal-add-form">
+                    <input 
+                        type="text" 
+                        class="quick-modal-inline-add-input"
+                        placeholder="New group name (Enter to save, Esc to cancel)..."
+                        bind:value={newGroupName}
+                        bind:this={addGroupInputEl}
+                        on:blur={commitAddGroup}
+                    />
+                </div>
+            {/if}
         {/if}
     </div>
 
-    <!-- Status Bar Footer -->
+    <!-- Bottom Action Bar & Status Bar Footer -->
+    <div class="quick-modal-list-pane-footer">
+        <button class="quick-modal-bottom-btn" on:click={startAddList}>+ New list</button>
+        <button class="quick-modal-bottom-btn" on:click={startAddGroup}>+ New group</button>
+    </div>
+
     <div class="quick-modal-status-bar">
         <span><b>↑↓</b> Navigate</span>
+        <span><b>F2</b> Rename</span>
         <span><b>Enter</b> Open in Center View</span>
         <span><b>Esc</b> Close</span>
     </div>

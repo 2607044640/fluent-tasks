@@ -1,14 +1,13 @@
 <script lang="ts">
-    import { onMount, tick } from "svelte";
-    import { dndzone } from "svelte-dnd-action";
-    import { flip } from "svelte/animate";
+    import { onMount, onDestroy } from "svelte";
     import { DataService } from "../DataService";
     import { EventBus } from "../EventBus";
-    import { EventName, type CategoryInfo, type SidebarItem, type TaskItem } from "../types";
-    import { portal } from "../utils/domUtils";
-    import { calculatePopoverPosition, type PopoverContentType } from "../utils/popoverUtils";
+    import { EventName } from "../types";
+    import type { CategoryInfo, SidebarItem, TaskItem, GroupInfo } from "../types";
+    import { moveSidebarItem, toggleGroupExpandedState, getFlatCategories } from "../utils/sidebarTreeUtils";
+    import { calculatePopoverPosition } from "../utils/popoverUtils";
     import { INPUT_FOCUS_DELAY_MS, POPOVER_HIDE_DELAY_MS } from "../constants";
-    import { Platform } from "obsidian";
+    import { Menu, Notice } from "obsidian";
 
     // =============================================
     // Props
@@ -28,78 +27,98 @@
     let incompleteTasks: TaskItem[] = [];
     let completedTasks: TaskItem[] = [];
     let taskCounts: Record<string, number> = {};
-    let isDndActive = false;
 
+    // Search State
     let searchQuery: string = "";
     let isSearching: boolean = false;
-    let searchResults: Array<{ task: TaskItem; category: CategoryInfo; matchField: string }> = [];
+    let searchResults: any[] = [];
 
     // Focus & Navigation State
-    let focusPane: "lists" | "tasks" = "lists";
+    let focusPane: string = "lists";
     let focusedCategoryIndex: number = 0;
+    let focusedCategoryPath: string = "";
     let focusedTaskIndex: number = 0;
+    let focusedTaskId: string = "";
 
     // Inline Add Task State
     let isAddingTask: boolean = false;
     let newTaskTitle: string = "";
 
+    // Inline Add List / Group State
+    let isAddingList: boolean = false;
+    let newListName: string = "";
+    let isAddingGroup: boolean = false;
+    let newGroupName: string = "";
+
+    // Inline Rename State
+    let editingItemId: string = "";
+    let editingItemType: string = "category";
+    let editingName: string = "";
+    let renameInputEl: HTMLInputElement;
+
     // DOM Element Bindings
-    let modalContainerEl: HTMLElement;
     let searchInputEl: HTMLInputElement;
+    let modalContainerEl: HTMLElement;
     let addTaskInputEl: HTMLInputElement;
+    let addListInputEl: HTMLInputElement;
+    let addGroupInputEl: HTMLInputElement;
 
     // Popover State
     let popoverVisible: boolean = false;
     let popoverTask: TaskItem | null = null;
-    let popoverType: PopoverContentType | null = null;
-    let popoverSvgIndex: number = 0;
+    let popoverType: string | null = null;
     let popoverX: number = 0;
     let popoverY: number = 0;
-    let popoverPlacement: 'top' | 'bottom' = 'top';
+    let popoverPlacement: string = "top";
     let popoverTimeout: any = null;
 
-    // Drag-to-list hovering state
+    // Drag-to-list & reorder state
+    let draggedListId: string = "";
+    let dragOverListId: string = "";
+    let dragListPosition: string | null = null;
     let hoveredDropCategoryPath: string | null = null;
 
-    // Computed Flat Lists for indexing
     $: flatCategories = getFlatCategories(sidebarItems);
-    $: allDisplayedTasks = isSearching ? searchResults.map(r => r.task) : [...incompleteTasks, ...completedTasks];
 
-    function getFlatCategories(items: SidebarItem[]): CategoryInfo[] {
-        const result: CategoryInfo[] = [];
-        for (const item of items) {
-            if (item.type === "category") {
-                result.push(item);
-            } else if (item.type === "group" && Array.isArray(item.items)) {
-                for (const child of item.items) {
-                    result.push(child);
-                }
-            }
-        }
-        return result;
-    }
-
-    // =============================================
-    // Lifecycle & Loading
-    // =============================================
     onMount(async () => {
         await loadData();
+        EventBus.on(EventName.CATEGORY_LIST_CHANGED, handleExternalListChanged);
+        EventBus.on(EventName.TASK_UPDATED, handleExternalTaskUpdated);
 
         setTimeout(() => {
-            if (searchInputEl) {
-                searchInputEl.focus();
-            } else if (modalContainerEl) {
-                modalContainerEl.focus();
-            }
+            if (searchInputEl) searchInputEl.focus();
         }, 50);
     });
+
+    onDestroy(() => {
+        EventBus.off(EventName.CATEGORY_LIST_CHANGED, handleExternalListChanged);
+        EventBus.off(EventName.TASK_UPDATED, handleExternalTaskUpdated);
+    });
+
+    function handleExternalListChanged() {
+        void loadData();
+    }
+
+    function handleExternalTaskUpdated(payload: any) {
+        if (selectedCategory && payload && payload.categoryFilepath === selectedCategory.filepath) {
+            void loadTasksForCategory(selectedCategory);
+        }
+        void refreshTaskCounts();
+    }
 
     async function loadData() {
         sidebarItems = await dataService.getSidebarItems();
         categories = await dataService.getCategories();
-        flatCategories = getFlatCategories(sidebarItems);
+        await refreshTaskCounts();
 
-        // Load active uncompleted counts for all lists in parallel
+        if (!selectedCategory && flatCategories.length > 0) {
+            await selectCategory(flatCategories[0]);
+        } else if (selectedCategory) {
+            await loadTasksForCategory(selectedCategory);
+        }
+    }
+
+    async function refreshTaskCounts() {
         const countPromises = categories.map(async (cat) => {
             try {
                 const catTasks = await dataService.getTasks(cat.filepath);
@@ -110,16 +129,12 @@
         });
         await Promise.all(countPromises);
         taskCounts = { ...taskCounts };
-
-        if (!selectedCategory && flatCategories.length > 0) {
-            await selectCategory(flatCategories[0]);
-        } else if (selectedCategory) {
-            await loadTasksForCategory(selectedCategory);
-        }
     }
 
     async function selectCategory(cat: CategoryInfo) {
+        if (!cat) return;
         selectedCategory = cat;
+        focusedCategoryPath = cat.filepath;
         const idx = flatCategories.findIndex(c => c.filepath === cat.filepath);
         if (idx !== -1) focusedCategoryIndex = idx;
         await loadTasksForCategory(cat);
@@ -130,11 +145,20 @@
         const rawTasks = await dataService.getTasks(cat.filepath);
         incompleteTasks = rawTasks.filter(t => !t.completed);
         completedTasks = rawTasks.filter(t => t.completed);
+        const all = incompleteTasks.concat(completedTasks);
+        if (all.length > 0) {
+            if (focusedTaskIndex >= all.length) focusedTaskIndex = 0;
+            focusedTaskId = all[focusedTaskIndex]?.id || "";
+        } else {
+            focusedTaskId = "";
+        }
     }
 
-    // =============================================
-    // Search Handler
-    // =============================================
+    async function toggleGroup(group: GroupInfo) {
+        sidebarItems = toggleGroupExpandedState(sidebarItems, group.id);
+        await dataService.saveSidebarState(sidebarItems);
+    }
+
     async function handleSearchInput() {
         const query = searchQuery.trim();
         if (!query) {
@@ -148,21 +172,23 @@
         searchResults = await dataService.searchTasks(query);
         focusPane = "tasks";
         focusedTaskIndex = 0;
+        focusedTaskId = searchResults[0]?.task?.id || "";
     }
 
     function clearSearch() {
         searchQuery = "";
         isSearching = false;
         searchResults = [];
-        searchInputEl?.focus();
+        if (selectedCategory) void loadTasksForCategory(selectedCategory);
+        if (searchInputEl) searchInputEl.focus();
     }
 
     // =============================================
     // Popover Engine
     // =============================================
-    function showPopover(e: MouseEvent | { currentTarget: HTMLElement }, task: TaskItem | null, type: PopoverContentType, svgIndex: number = 0) {
+    function showPopover(e: any, taskItem: TaskItem | null, type: any) {
         if (popoverTimeout) clearTimeout(popoverTimeout);
-        const target = e.currentTarget as HTMLElement;
+        const target = e?.currentTarget as HTMLElement;
         if (!target) return;
 
         const pos = calculatePopoverPosition(target, type);
@@ -170,9 +196,8 @@
         popoverX = pos.x;
         popoverY = pos.y;
 
-        popoverTask = task;
+        popoverTask = taskItem;
         popoverType = type;
-        popoverSvgIndex = svgIndex;
         popoverVisible = true;
     }
 
@@ -180,8 +205,6 @@
         if (popoverTimeout) clearTimeout(popoverTimeout);
         popoverTimeout = setTimeout(() => {
             popoverVisible = false;
-            popoverTask = null;
-            popoverType = null;
         }, POPOVER_HIDE_DELAY_MS);
     }
 
@@ -192,12 +215,10 @@
     function dismissPopover() {
         if (popoverTimeout) clearTimeout(popoverTimeout);
         popoverVisible = false;
-        popoverTask = null;
-        popoverType = null;
     }
 
     function handleNoteLinkHover(e: MouseEvent, noteLink?: string) {
-        if (!noteLink || !plugin?.app) return;
+        if (!noteLink || !plugin || !plugin.app) return;
         const cleanLink = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
         if (!cleanLink) return;
         plugin.app.workspace.trigger("hover-link", {
@@ -211,7 +232,7 @@
     }
 
     function handleNoteLinkClick(e: MouseEvent, noteLink?: string) {
-        if (!noteLink || !plugin?.app) return;
+        if (!noteLink || !plugin || !plugin.app) return;
         const cleanLink = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
         if (!cleanLink) return;
         plugin.app.workspace.openLinkText(cleanLink, selectedCategory?.filepath || "", e.ctrlKey || e.metaKey);
@@ -221,32 +242,17 @@
     // =============================================
     // Drag & Drop Tasks
     // =============================================
-    function handleDndConsider(e: CustomEvent, listType: 'incomplete' | 'completed') {
-        isDndActive = true;
-        if (listType === 'incomplete') incompleteTasks = e.detail.items;
-        else completedTasks = e.detail.items;
-
-        const draggedId = e.detail.info?.id;
-        const task = (listType === 'incomplete' ? incompleteTasks : completedTasks).find(t => t.id === draggedId);
-        if (task && selectedCategory) {
-            (window as any).__mstodo_drag_data = {
-                taskId: task.id,
-                task,
-                sourceFilepath: selectedCategory.filepath,
-                movedToTarget: null,
-            };
-        }
-    }
-
-    async function handleDndFinalize(e: CustomEvent, listType: 'incomplete' | 'completed') {
-        isDndActive = false;
-        if (listType === 'incomplete') incompleteTasks = e.detail.items;
-        else completedTasks = e.detail.items;
-
+    function handleTaskDragStart(e: DragEvent, taskItem: TaskItem) {
         if (!selectedCategory) return;
-        const allTasks = [...incompleteTasks, ...completedTasks];
-        await dataService.saveTasks(selectedCategory.filepath, allTasks);
-        EventBus.emit(EventName.TASK_UPDATED, { categoryFilepath: selectedCategory.filepath });
+        (window as any).__mstodo_drag_data = {
+            taskId: taskItem.id,
+            task: taskItem,
+            sourceFilepath: selectedCategory.filepath,
+        };
+        if (e.dataTransfer) {
+            e.dataTransfer.setData("text/plain", taskItem.id);
+            e.dataTransfer.effectAllowed = "move";
+        }
     }
 
     async function handleTaskDropOnCategory(targetCat: CategoryInfo) {
@@ -260,26 +266,232 @@
             EventBus.emit(EventName.TASK_UPDATED, { categoryFilepath: dragData.sourceFilepath });
             EventBus.emit(EventName.TASK_UPDATED, { categoryFilepath: targetCat.filepath });
             await loadData();
+            new Notice(`Moved task to "${targetCat.name}"`);
         } catch (e) {
-            console.error("[QuickTaskModal] Failed to move task to list:", e);
+            console.error("[QuickTaskModal] Failed to move task:", e);
         }
     }
 
     // =============================================
-    // Task Operations (Direct in Modal)
+    // Sidebar Drag & Drop (Tree Reordering)
     // =============================================
-    async function toggleTaskCompletion(task: TaskItem) {
+    function handleListDragStart(e: DragEvent, item: SidebarItem | CategoryInfo) {
+        draggedListId = item.id;
+        if (e.dataTransfer) {
+            e.dataTransfer.setData("text/plain", item.id);
+            e.dataTransfer.effectAllowed = "move";
+        }
+    }
+
+    function handleListDragOver(e: DragEvent, target: SidebarItem | CategoryInfo, isGroupHeader: boolean = false) {
+        e.preventDefault();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+
+        if (!draggedListId || target.id === draggedListId) {
+            dragOverListId = "";
+            dragListPosition = null;
+            return;
+        }
+
+        dragOverListId = target.id;
+        const el = e.currentTarget as HTMLElement;
+        const rect = el.getBoundingClientRect();
+        const relY = e.clientY - rect.top;
+
+        if (isGroupHeader) {
+            dragListPosition = relY < rect.height * 0.35 ? "top" : "inside";
+        } else {
+            dragListPosition = relY < rect.height * 0.5 ? "top" : "bottom";
+        }
+    }
+
+    function handleListDragLeave() {
+        dragOverListId = "";
+        dragListPosition = null;
+    }
+
+    async function handleListDrop(target: SidebarItem | CategoryInfo) {
+        if (!draggedListId || !dragOverListId || !dragListPosition) return;
+        const movedId = draggedListId;
+        const targetId = target.id;
+        const pos = dragListPosition;
+
+        draggedListId = "";
+        dragOverListId = "";
+        dragListPosition = null;
+
+        if (movedId === targetId) return;
+
+        sidebarItems = moveSidebarItem(sidebarItems, movedId, targetId, pos);
+        await dataService.saveSidebarState(sidebarItems);
+        EventBus.emit(EventName.CATEGORY_LIST_CHANGED, { sidebarItems });
+    }
+
+    function isTaskDragging(): boolean {
+        return !!(window as any).__mstodo_drag_data;
+    }
+
+    function handleCategoryDragOver(e: DragEvent, cat: CategoryInfo) {
+        if (isTaskDragging()) {
+            hoveredDropCategoryPath = cat.filepath;
+        } else {
+            handleListDragOver(e, cat, false);
+        }
+    }
+
+    function handleCategoryDragLeave(cat: CategoryInfo) {
+        if (hoveredDropCategoryPath === cat.filepath) {
+            hoveredDropCategoryPath = null;
+        }
+        handleListDragLeave();
+    }
+
+    function handleCategoryDrop(cat: CategoryInfo) {
+        if (isTaskDragging()) {
+            void handleTaskDropOnCategory(cat);
+        } else {
+            void handleListDrop(cat);
+        }
+    }
+
+    // =============================================
+    // Inline Rename & Context Menus
+    // =============================================
+    function startRenameItem(item: { id: string; name: string; type: string }) {
+        editingItemId = item.id;
+        editingItemType = item.type;
+        editingName = item.name;
+        setTimeout(() => {
+            if (renameInputEl) {
+                renameInputEl.focus();
+                renameInputEl.select();
+            }
+        }, 30);
+    }
+
+    async function commitRename() {
+        const newName = editingName.trim();
+        if (!newName || !editingItemId) {
+            cancelRename();
+            return;
+        }
+
+        try {
+            if (editingItemType === "category") {
+                const cat = categories.find(c => c.id === editingItemId || c.filepath === editingItemId);
+                if (cat && cat.name !== newName) {
+                    await dataService.renameCategory(cat.filepath, newName);
+                }
+            } else {
+                await dataService.renameGroup(editingItemId, newName);
+            }
+            await loadData();
+        } catch (e) {
+            console.error("[QuickTaskModal] Rename failed:", e);
+        }
+        cancelRename();
+    }
+
+    function cancelRename() {
+        editingItemId = "";
+        editingName = "";
+    }
+
+    function showItemContextMenu(e: MouseEvent, item: { id: string; name: string; type: string; filepath?: string }) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const menu = new Menu();
+        menu.addItem((i) => {
+            i.setTitle("Rename (F2)")
+             .setIcon("edit")
+             .onClick(() => startRenameItem(item));
+        });
+
+        menu.addItem((i) => {
+            i.setTitle("Delete")
+             .setIcon("trash")
+             .setWarning(true)
+             .onClick(async () => {
+                 if (item.type === "category" && item.filepath) {
+                     await dataService.deleteCategory(item.filepath);
+                 } else if (item.type === "group") {
+                     await dataService.deleteGroup(item.id);
+                 }
+                 await loadData();
+             });
+        });
+
+        menu.showAtMouseEvent(e);
+    }
+
+    // =============================================
+    // Inline Add List / Add Group
+    // =============================================
+    function startAddList() {
+        isAddingList = true;
+        newListName = "";
+        setTimeout(() => {
+            if (addListInputEl) addListInputEl.focus();
+        }, INPUT_FOCUS_DELAY_MS);
+    }
+
+    async function commitAddList() {
+        const name = newListName.trim();
+        if (!name) {
+            isAddingList = false;
+            return;
+        }
+        try {
+            const newCat = await dataService.createCategory(name);
+            await loadData();
+            await selectCategory(newCat);
+        } catch (e) {
+            new Notice(`Failed to create list: ${e}`);
+        }
+        isAddingList = false;
+        newListName = "";
+    }
+
+    function startAddGroup() {
+        isAddingGroup = true;
+        newGroupName = "";
+        setTimeout(() => {
+            if (addGroupInputEl) addGroupInputEl.focus();
+        }, INPUT_FOCUS_DELAY_MS);
+    }
+
+    async function commitAddGroup() {
+        const name = newGroupName.trim();
+        if (!name) {
+            isAddingGroup = false;
+            return;
+        }
+        try {
+            await dataService.createGroup(name);
+            await loadData();
+        } catch (e) {
+            new Notice(`Failed to create group: ${e}`);
+        }
+        isAddingGroup = false;
+        newGroupName = "";
+    }
+
+    // =============================================
+    // Task Operations
+    // =============================================
+    async function toggleTaskCompletion(taskItem: TaskItem) {
         const catPath = isSearching 
-            ? searchResults.find(r => r.task.id === task.id)?.category.filepath 
+            ? searchResults.find(r => r.task.id === taskItem.id)?.category.filepath 
             : selectedCategory?.filepath;
         if (!catPath) return;
 
-        task.completed = !task.completed;
-        await dataService.updateTask(catPath, task);
-        EventBus.emit(EventName.TASK_UPDATED, { task, categoryFilepath: catPath });
+        taskItem.completed = !taskItem.completed;
+        await dataService.updateTask(catPath, taskItem);
+        EventBus.emit(EventName.TASK_UPDATED, { task: taskItem, categoryFilepath: catPath });
 
         if (taskCounts[catPath] !== undefined) {
-            taskCounts[catPath] = Math.max(0, taskCounts[catPath] + (task.completed ? -1 : 1));
+            taskCounts[catPath] = Math.max(0, taskCounts[catPath] + (taskItem.completed ? -1 : 1));
             taskCounts = { ...taskCounts };
         }
 
@@ -290,15 +502,15 @@
         }
     }
 
-    async function toggleTaskStar(task: TaskItem) {
+    async function toggleTaskStar(taskItem: TaskItem) {
         const catPath = isSearching 
-            ? searchResults.find(r => r.task.id === task.id)?.category.filepath 
+            ? searchResults.find(r => r.task.id === taskItem.id)?.category.filepath 
             : selectedCategory?.filepath;
         if (!catPath) return;
 
-        task.starred = !task.starred;
-        await dataService.updateTask(catPath, task);
-        EventBus.emit(EventName.TASK_UPDATED, { task, categoryFilepath: catPath });
+        taskItem.starred = !taskItem.starred;
+        await dataService.updateTask(catPath, taskItem);
+        EventBus.emit(EventName.TASK_UPDATED, { task: taskItem, categoryFilepath: catPath });
 
         if (isSearching) searchResults = [...searchResults];
         else {
@@ -307,22 +519,22 @@
         }
     }
 
-    async function deleteTaskSafely(task: TaskItem) {
+    async function deleteTaskSafely(taskItem: TaskItem) {
         const catPath = isSearching 
-            ? searchResults.find(r => r.task.id === task.id)?.category.filepath 
+            ? searchResults.find(r => r.task.id === taskItem.id)?.category.filepath 
             : selectedCategory?.filepath;
         if (!catPath) return;
 
-        await dataService.deleteTask(catPath, task);
-        EventBus.emit(EventName.TASK_DELETED, { task, categoryFilepath: catPath });
+        await dataService.deleteTask(catPath, taskItem);
+        EventBus.emit(EventName.TASK_DELETED, { task: taskItem, categoryFilepath: catPath });
 
-        if (!task.completed && taskCounts[catPath] !== undefined) {
+        if (!taskItem.completed && taskCounts[catPath] !== undefined) {
             taskCounts[catPath] = Math.max(0, taskCounts[catPath] - 1);
             taskCounts = { ...taskCounts };
         }
 
         if (isSearching) {
-            searchResults = searchResults.filter(r => r.task.id !== task.id);
+            searchResults = searchResults.filter(r => r.task.id !== taskItem.id);
         } else if (selectedCategory) {
             await loadTasksForCategory(selectedCategory);
         }
@@ -337,7 +549,7 @@
         isAddingTask = true;
         newTaskTitle = "";
         setTimeout(() => {
-            addTaskInputEl?.focus();
+            if (addTaskInputEl) addTaskInputEl.focus();
         }, INPUT_FOCUS_DELAY_MS);
     }
 
@@ -372,13 +584,12 @@
     }
 
     // =============================================
-    // Primary Action (Enter Key / Click)
+    // Primary Action
     // =============================================
     async function handlePrimaryAction() {
         const action = plugin?.settings?.quickModalAction ?? "direct";
 
         if (action === "navigate") {
-            // Workspace Navigation Mode
             if (focusPane === "lists" && selectedCategory) {
                 EventBus.emit(EventName.CATEGORY_SELECTED, { category: selectedCategory });
                 closeModal();
@@ -397,7 +608,6 @@
                 }
             }
         } else {
-            // Direct In-Modal Management Mode
             if (focusPane === "lists") {
                 focusPane = "tasks";
                 focusedTaskIndex = 0;
@@ -416,6 +626,16 @@
     function handleKeydown(e: KeyboardEvent) {
         if (e.isComposing || e.keyCode === 229) return;
 
+        if (e.key === "F2") {
+            e.preventDefault();
+            e.stopPropagation();
+            if (focusPane === "lists" && flatCategories[focusedCategoryIndex]) {
+                const cat = flatCategories[focusedCategoryIndex];
+                startRenameItem({ id: cat.id, name: cat.name, type: "category" });
+            }
+            return;
+        }
+
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "n") {
             e.preventDefault();
             e.stopPropagation();
@@ -432,6 +652,34 @@
                 e.preventDefault();
                 e.stopPropagation();
                 cancelAddTask();
+            }
+            return;
+        }
+
+        if (editingItemId) {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                e.stopPropagation();
+                void commitRename();
+            } else if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                cancelRename();
+            }
+            return;
+        }
+
+        if (isAddingList || isAddingGroup) {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                e.stopPropagation();
+                if (isAddingList) void commitAddList();
+                else void commitAddGroup();
+            } else if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                isAddingList = false;
+                isAddingGroup = false;
             }
             return;
         }
@@ -529,7 +777,7 @@
         }
 
         if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
-            searchInputEl?.focus();
+            if (searchInputEl) searchInputEl.focus();
         }
     }
 
@@ -541,16 +789,21 @@
             focusedCategoryIndex = Math.min(flatCategories.length - 1, focusedCategoryIndex + 1);
         }
         const cat = flatCategories[focusedCategoryIndex];
-        if (cat) void selectCategory(cat);
+        if (cat) {
+            focusedCategoryPath = cat.filepath;
+            void selectCategory(cat);
+        }
     }
 
     function handleTasksKeydown(key: string) {
-        if (allDisplayedTasks.length === 0) return;
+        const all = isSearching ? searchResults.map(r => r.task) : incompleteTasks.concat(completedTasks);
+        if (all.length === 0) return;
         if (key === "ArrowUp") {
             focusedTaskIndex = Math.max(0, focusedTaskIndex - 1);
         } else if (key === "ArrowDown") {
-            focusedTaskIndex = Math.min(allDisplayedTasks.length - 1, focusedTaskIndex + 1);
+            focusedTaskIndex = Math.min(all.length - 1, focusedTaskIndex + 1);
         }
+        focusedTaskId = all[focusedTaskIndex]?.id || "";
     }
 
     function scrollFocusedIntoView() {
@@ -562,7 +815,6 @@
     }
 </script>
 
-<!-- svelte-ignore a11y-no-noninteractive-element-interactions a11y-no-noninteractive-tabindex a11y-click-events-have-key-events -->
 <div 
     class="quick-modal-container"
     bind:this={modalContainerEl}
@@ -576,7 +828,6 @@
         </div>
     {/if}
 
-    <!-- Search & Filter Header -->
     <div class="quick-modal-filter-bar">
         <span class="quick-modal-filter-icon">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -597,58 +848,179 @@
         {/if}
     </div>
 
-    <!-- Dual Pane Body -->
     <div class="quick-modal-dual-pane">
-        <!-- Left Pane: Lists & Groups -->
         <div class="quick-modal-pane-lists">
-            <div class="quick-modal-pane-title">Lists</div>
+            <div class="quick-modal-pane-title">Lists & Groups</div>
             <div class="quick-modal-scrollable">
-                {#each flatCategories as cat, index (cat.filepath)}
-                    <!-- svelte-ignore a11y-click-events-have-key-events -->
-                    <div 
-                        class="quick-modal-list-item"
-                        class:is-selected={selectedCategory?.filepath === cat.filepath}
-                        class:is-focused={focusPane === 'lists' && focusedCategoryIndex === index}
-                        class:drop-hover={hoveredDropCategoryPath === cat.filepath}
-                        role="button"
-                        tabindex="0"
-                        on:click={() => selectCategory(cat)}
-                        on:dragover|preventDefault={() => { hoveredDropCategoryPath = cat.filepath; }}
-                        on:dragleave={() => { if (hoveredDropCategoryPath === cat.filepath) hoveredDropCategoryPath = null; }}
-                        on:drop|preventDefault={() => handleTaskDropOnCategory(cat)}
-                    >
-                        <span class="quick-modal-list-icon">📁</span>
-                        <span class="quick-modal-list-name">{cat.name}</span>
-                        {#if (taskCounts[cat.filepath] ?? 0) > 0}
-                            <span class="quick-modal-badge">{taskCounts[cat.filepath]}</span>
-                        {/if}
-                    </div>
+                {#each sidebarItems as item (item.id)}
+                    {#if item.type === "group"}
+                        <div 
+                            class="quick-modal-group-container"
+                            class:drag-over-top={dragOverListId === item.id && dragListPosition === "top"}
+                            class:drag-over-bottom={dragOverListId === item.id && dragListPosition === "bottom"}
+                            class:drag-over-inside={dragOverListId === item.id && dragListPosition === "inside"}
+                        >
+                            <div 
+                                class="quick-modal-group-header"
+                                draggable="true"
+                                on:dragstart={(e) => handleListDragStart(e, item)}
+                                on:dragover={(e) => handleListDragOver(e, item, true)}
+                                on:dragleave={handleListDragLeave}
+                                on:drop|preventDefault={() => handleListDrop(item)}
+                                on:contextmenu={(e) => showItemContextMenu(e, { id: item.id, name: item.name, type: "group" })}
+                            >
+                                <span class="quick-modal-group-chevron" on:click|stopPropagation={() => toggleGroup(item)}>
+                                    {item.isExpanded ? "▼" : "▶"}
+                                </span>
+                                {#if editingItemId === item.id}
+                                    <input 
+                                        type="text" 
+                                        class="quick-modal-inline-rename-input"
+                                        bind:value={editingName}
+                                        bind:this={renameInputEl}
+                                        on:blur={commitRename}
+                                    />
+                                {:else}
+                                    <span class="quick-modal-group-title" on:click={() => toggleGroup(item)}>
+                                        {item.name}
+                                    </span>
+                                {/if}
+                            </div>
+                            {#if item.isExpanded && item.items}
+                                <div class="quick-modal-group-children">
+                                    {#each item.items as child (child.id)}
+                                        <div 
+                                            class="quick-modal-list-item is-nested"
+                                            class:is-selected={selectedCategory?.filepath === child.filepath}
+                                            class:is-focused={focusPane === 'lists' && flatCategories[focusedCategoryIndex]?.filepath === child.filepath}
+                                            class:drop-hover={hoveredDropCategoryPath === child.filepath}
+                                            class:drag-over-top={dragOverListId === child.id && dragListPosition === "top"}
+                                            class:drag-over-bottom={dragOverListId === child.id && dragListPosition === "bottom"}
+                                            role="button"
+                                            tabindex="0"
+                                            draggable="true"
+                                            on:dragstart={(e) => handleListDragStart(e, child)}
+                                            on:dragover={(e) => handleCategoryDragOver(e, child)}
+                                            on:dragleave={() => handleCategoryDragLeave(child)}
+                                            on:drop|preventDefault={() => handleCategoryDrop(child)}
+                                            on:click={() => selectCategory(child)}
+                                            on:contextmenu={(e) => showItemContextMenu(e, { id: child.id, name: child.name, type: "category", filepath: child.filepath })}
+                                        >
+                                            <span class="quick-modal-list-icon">📁</span>
+                                            {#if editingItemId === child.id}
+                                                <input 
+                                                    type="text" 
+                                                    class="quick-modal-inline-rename-input"
+                                                    bind:value={editingName}
+                                                    bind:this={renameInputEl}
+                                                    on:blur={commitRename}
+                                                />
+                                            {:else}
+                                                <span class="quick-modal-list-name">{child.name}</span>
+                                            {/if}
+                                            {#if (taskCounts[child.filepath] ?? 0) > 0}
+                                                <span class="quick-modal-badge">{taskCounts[child.filepath]}</span>
+                                            {/if}
+                                        </div>
+                                    {/each}
+                                </div>
+                            {/if}
+                        </div>
+                    {:else}
+                        <div 
+                            class="quick-modal-list-item"
+                            class:is-selected={selectedCategory?.filepath === item.filepath}
+                            class:is-focused={focusPane === 'lists' && flatCategories[focusedCategoryIndex]?.filepath === item.filepath}
+                            class:drop-hover={hoveredDropCategoryPath === item.filepath}
+                            class:drag-over-top={dragOverListId === item.id && dragListPosition === "top"}
+                            class:drag-over-bottom={dragOverListId === item.id && dragListPosition === "bottom"}
+                            role="button"
+                            tabindex="0"
+                            draggable="true"
+                            on:dragstart={(e) => handleListDragStart(e, item)}
+                            on:dragover={(e) => handleCategoryDragOver(e, item)}
+                            on:dragleave={() => handleCategoryDragLeave(item)}
+                            on:drop|preventDefault={() => handleCategoryDrop(item)}
+                            on:click={() => selectCategory(item)}
+                            on:contextmenu={(e) => showItemContextMenu(e, { id: item.id, name: item.name, type: "category", filepath: item.filepath })}
+                        >
+                            <span class="quick-modal-list-icon">📁</span>
+                            {#if editingItemId === item.id}
+                                <input 
+                                    type="text" 
+                                    class="quick-modal-inline-rename-input"
+                                    bind:value={editingName}
+                                    bind:this={renameInputEl}
+                                    on:blur={commitRename}
+                                />
+                            {:else}
+                                <span class="quick-modal-list-name">{item.name}</span>
+                            {/if}
+                            {#if (taskCounts[item.filepath] ?? 0) > 0}
+                                <span class="quick-modal-badge">{taskCounts[item.filepath]}</span>
+                            {/if}
+                        </div>
+                    {/if}
                 {/each}
+            </div>
+
+            <div class="quick-modal-list-pane-footer">
+                {#if isAddingList}
+                    <div class="quick-modal-inline-add-row">
+                        <input 
+                            type="text" 
+                            class="quick-modal-inline-add-input" 
+                            placeholder="List name..."
+                            bind:value={newListName}
+                            bind:this={addListInputEl}
+                            on:blur={commitAddList}
+                        />
+                    </div>
+                {:else if isAddingGroup}
+                    <div class="quick-modal-inline-add-row">
+                        <input 
+                            type="text" 
+                            class="quick-modal-inline-add-input" 
+                            placeholder="Group name..."
+                            bind:value={newGroupName}
+                            bind:this={addGroupInputEl}
+                            on:blur={commitAddGroup}
+                        />
+                    </div>
+                {:else}
+                    <div class="quick-modal-footer-btn-row">
+                        <div class="quick-modal-bottom-btn" on:click={startAddList} role="button" tabindex="0">
+                            <span>+</span> New list
+                        </div>
+                        <div class="quick-modal-bottom-btn" on:click={startAddGroup} role="button" tabindex="0">
+                            <span>📁+</span> New group
+                        </div>
+                    </div>
+                {/if}
             </div>
         </div>
 
-        <!-- Right Pane: Tasks Checklist -->
         <div class="quick-modal-pane-tasks">
-            <div class="quick-modal-pane-header">
-                <span class="quick-modal-pane-title">
-                    {isSearching ? `Search Results (${searchResults.length})` : (selectedCategory?.name ?? "Tasks")}
-                </span>
-                {#if !isSearching && selectedCategory}
-                    <button class="quick-modal-add-btn" on:click={startInlineAddTask}>
-                        + Add Task (Ctrl+N)
-                    </button>
+            <div class="quick-modal-pane-title">
+                {#if isSearching}
+                    Search Results ({searchResults.length})
+                {:else if selectedCategory}
+                    {selectedCategory.name} ({incompleteTasks.length})
+                {:else}
+                    Tasks
                 {/if}
             </div>
 
             <div class="quick-modal-scrollable">
                 {#if isAddingTask}
-                    <div class="quick-modal-add-box">
+                    <div class="quick-modal-add-row">
                         <input 
                             type="text" 
-                            class="quick-modal-add-input"
-                            placeholder="Task title (Enter to save, Esc to cancel)..."
+                            class="quick-modal-add-input" 
+                            placeholder="What needs to be done? (Enter to add, Esc to cancel)"
                             bind:value={newTaskTitle}
                             bind:this={addTaskInputEl}
+                            on:blur={commitAddTask}
                         />
                     </div>
                 {/if}
@@ -657,75 +1029,36 @@
                     {#if searchResults.length === 0}
                         <div class="quick-modal-empty">No matching tasks found.</div>
                     {:else}
-                        <div class="quick-modal-tasks-dnd-zone">
-                            {#each searchResults as result, index (result.task.id)}
-                                {@const task = result.task}
-                                <!-- svelte-ignore a11y-click-events-have-key-events -->
+                        <div class="quick-modal-tasks-list">
+                            {#each searchResults as result (result.task.id)}
                                 <div 
                                     class="quick-modal-task-item"
-                                    class:is-completed={task.completed}
-                                    class:is-focused={focusPane === 'tasks' && focusedTaskIndex === index}
+                                    class:is-focused={focusPane === 'tasks' && focusedTaskId === result.task.id}
+                                    class:is-completed={result.task.completed}
                                     role="button"
                                     tabindex="0"
-                                    on:click={() => toggleTaskCompletion(task)}
+                                    on:click={() => toggleTaskCompletion(result.task)}
                                 >
                                     <input 
                                         type="checkbox" 
                                         class="quick-modal-checkbox"
-                                        checked={task.completed}
-                                        on:click|stopPropagation={() => toggleTaskCompletion(task)}
+                                        checked={result.task.completed}
+                                        on:click|stopPropagation={() => toggleTaskCompletion(result.task)}
                                     />
-                                    
-                                    <span class="quick-modal-task-title" class:is-done={task.completed}>
-                                        {task.title}
+                                    <span class="quick-modal-task-title" class:is-done={result.task.completed}>
+                                        {result.task.title}
                                     </span>
-
-                                    {#if task.steps && task.steps.length > 0}
-                                        <span 
-                                            class="quick-modal-steps-badge"
-                                            on:mouseenter={(e) => showPopover(e, task, 'steps')}
-                                            on:mouseleave={scheduleHidePopover}
-                                            role="button" tabindex="0"
-                                            title="Subtasks preview"
-                                        >
-                                            {task.steps.filter(s => s.done).length}/{task.steps.length}
-                                        </span>
-                                    {/if}
-
-                                    {#if task.why}
-                                        <span 
-                                            class="quick-modal-why-badge"
-                                            on:mouseenter={(e) => showPopover(e, task, 'why')}
-                                            on:mouseleave={scheduleHidePopover}
-                                            role="button" tabindex="0"
-                                            title="Why rationale"
-                                        >?</span>
-                                    {/if}
-
-                                    {#if task.note_link}
-                                        <span 
-                                            class="meta-badge note-badge"
-                                            on:mouseenter={(e) => handleNoteLinkHover(e, task.note_link)}
-                                            on:click|stopPropagation={(e) => handleNoteLinkClick(e, task.note_link)}
-                                            role="button" tabindex="0"
-                                            title={`Note link: ${task.note_link}`}
-                                        >
-                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                                <polyline points="14 2 14 8 20 8"/>
-                                            </svg>
-                                        </span>
-                                    {/if}
-
-                                    <!-- svelte-ignore a11y-click-events-have-key-events -->
+                                    <span class="quick-modal-search-category-badge">
+                                        {result.category.name}
+                                    </span>
                                     <span 
                                         class="quick-modal-star-btn"
-                                        class:is-starred={task.starred}
+                                        class:is-starred={result.task.starred}
                                         role="button"
                                         tabindex="-1"
-                                        on:click|stopPropagation={() => toggleTaskStar(task)}
+                                        on:click|stopPropagation={() => toggleTaskStar(result.task)}
                                     >
-                                        {task.starred ? "★" : "☆"}
+                                        {result.task.starred ? "★" : "☆"}
                                     </span>
                                 </div>
                             {/each}
@@ -735,18 +1068,14 @@
                     {#if incompleteTasks.length === 0 && completedTasks.length === 0}
                         <div class="quick-modal-empty">No tasks in this list. Press Ctrl+N to add one.</div>
                     {:else}
-                        <!-- Incomplete Tasks (DnD Zone) -->
-                        <div 
-                            class="quick-modal-tasks-dnd-zone"
-                            use:dndzone={{ items: incompleteTasks, flipDurationMs: 200, dropTargetStyle: {} }}
-                            on:consider={(e) => handleDndConsider(e, 'incomplete')}
-                            on:finalize={(e) => handleDndFinalize(e, 'incomplete')}
-                        >
-                            {#each incompleteTasks as task, index (task.id)}
+                        <div class="quick-modal-tasks-list">
+                            {#each incompleteTasks as task (task.id)}
                                 <div 
-                                    animate:flip={{ duration: 200 }}
+                                    id={'task-' + task.id}
+                                    draggable="true"
+                                    on:dragstart={(e) => handleTaskDragStart(e, task)}
                                     class="quick-modal-task-item"
-                                    class:is-focused={focusPane === 'tasks' && focusedTaskIndex === index}
+                                    class:is-focused={focusPane === 'tasks' && focusedTaskId === task.id}
                                     role="button"
                                     tabindex="0"
                                     on:click={() => toggleTaskCompletion(task)}
@@ -757,40 +1086,33 @@
                                         checked={task.completed}
                                         on:click|stopPropagation={() => toggleTaskCompletion(task)}
                                     />
-                                    
                                     <span class="quick-modal-task-title">
                                         {task.title}
                                     </span>
-
                                     {#if task.steps && task.steps.length > 0}
                                         <span 
                                             class="quick-modal-steps-badge"
                                             on:mouseenter={(e) => showPopover(e, task, 'steps')}
                                             on:mouseleave={scheduleHidePopover}
                                             role="button" tabindex="0"
-                                            title="Hover to preview subtasks"
                                         >
                                             {task.steps.filter(s => s.done).length}/{task.steps.length}
                                         </span>
                                     {/if}
-
                                     {#if task.why}
                                         <span 
                                             class="quick-modal-why-badge"
                                             on:mouseenter={(e) => showPopover(e, task, 'why')}
                                             on:mouseleave={scheduleHidePopover}
                                             role="button" tabindex="0"
-                                            title="Why rationale"
                                         >?</span>
                                     {/if}
-
                                     {#if task.note_link}
                                         <span 
                                             class="meta-badge note-badge"
                                             on:mouseenter={(e) => handleNoteLinkHover(e, task.note_link)}
                                             on:click|stopPropagation={(e) => handleNoteLinkClick(e, task.note_link)}
                                             role="button" tabindex="0"
-                                            title={`Note: ${task.note_link}`}
                                         >
                                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -798,8 +1120,6 @@
                                             </svg>
                                         </span>
                                     {/if}
-
-                                    <!-- svelte-ignore a11y-click-events-have-key-events -->
                                     <span 
                                         class="quick-modal-star-btn"
                                         class:is-starred={task.starred}
@@ -812,24 +1132,18 @@
                                 </div>
                             {/each}
                         </div>
-
-                        <!-- Completed Tasks Section -->
                         {#if completedTasks.length > 0}
                             <div class="quick-modal-completed-divider">
                                 Completed ({completedTasks.length})
                             </div>
-                            <div 
-                                class="quick-modal-tasks-dnd-zone"
-                                use:dndzone={{ items: completedTasks, flipDurationMs: 200, dropTargetStyle: {} }}
-                                on:consider={(e) => handleDndConsider(e, 'completed')}
-                                on:finalize={(e) => handleDndFinalize(e, 'completed')}
-                            >
-                                {#each completedTasks as task, index (task.id)}
-                                    {@const overallIndex = incompleteTasks.length + index}
+                            <div class="quick-modal-tasks-list">
+                                {#each completedTasks as task (task.id)}
                                     <div 
-                                        animate:flip={{ duration: 200 }}
+                                        id={'task-' + task.id}
+                                        draggable="true"
+                                        on:dragstart={(e) => handleTaskDragStart(e, task)}
                                         class="quick-modal-task-item is-completed"
-                                        class:is-focused={focusPane === 'tasks' && focusedTaskIndex === overallIndex}
+                                        class:is-focused={focusPane === 'tasks' && focusedTaskId === task.id}
                                         role="button"
                                         tabindex="0"
                                         on:click={() => toggleTaskCompletion(task)}
@@ -840,11 +1154,9 @@
                                             checked={task.completed}
                                             on:click|stopPropagation={() => toggleTaskCompletion(task)}
                                         />
-                                        
                                         <span class="quick-modal-task-title is-done">
                                             {task.title}
                                         </span>
-
                                         {#if task.steps && task.steps.length > 0}
                                             <span 
                                                 class="quick-modal-steps-badge"
@@ -855,7 +1167,6 @@
                                                 {task.steps.filter(s => s.done).length}/{task.steps.length}
                                             </span>
                                         {/if}
-
                                         {#if task.why}
                                             <span 
                                                 class="quick-modal-why-badge"
@@ -864,8 +1175,6 @@
                                                 role="button" tabindex="0"
                                             >?</span>
                                         {/if}
-
-                                        <!-- svelte-ignore a11y-click-events-have-key-events -->
                                         <span 
                                             class="quick-modal-star-btn"
                                             class:is-starred={task.starred}
@@ -885,23 +1194,21 @@
         </div>
     </div>
 
-    <!-- Status Bar Footer -->
     <div class="quick-modal-status-bar">
         <span><b>↑↓</b> Move</span>
         <span><b>←→</b> Switch Pane</span>
         <span><b>Space</b> Toggle Check</span>
+        <span><b>F2</b> Rename</span>
+        <span><b>Ctrl+N</b> Add Task</span>
         <span><b>Ctrl+Enter</b> Star</span>
-        <span><b>Ctrl+N</b> Add</span>
-        <span><b>Enter</b> {plugin?.settings?.quickModalAction === 'navigate' ? 'Open in Workspace' : 'Select'}</span>
+        <span><b>Enter</b> {plugin && plugin.settings && plugin.settings.quickModalAction === 'navigate' ? 'Open in Workspace' : 'Select'}</span>
         <span><b>Esc</b> Close</span>
     </div>
 </div>
 
-<!-- Portaled Meta Popover Tooltip -->
 {#if popoverVisible && popoverTask}
-    <div use:portal
-         class="meta-popover placement-{popoverPlacement}"
-         style="left: {popoverX}px; top: {popoverY}px;"
+    <div class="meta-popover placement-{popoverPlacement}"
+         style="position: fixed; left: {popoverX}px; top: {popoverY}px; z-index: 10000;"
          on:mouseenter={cancelHidePopover}
          on:mouseleave={scheduleHidePopover}
          on:contextmenu|preventDefault={dismissPopover}
