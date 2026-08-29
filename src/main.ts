@@ -23,6 +23,7 @@ import TaskDetailView from "./TaskDetailView.svelte";
 import { FluentTasksSettings, DEFAULT_SETTINGS, FluentTasksSettingTab } from "./settings";
 import { TaskSearchModal } from "./TaskSearchModal";
 import { QuickTaskModal } from "./modals/QuickTaskModal";
+import { QuickListModal } from "./modals/QuickListModal";
 import "./styles.css";
 
 // =============================================
@@ -285,6 +286,14 @@ export default class FluentTasksPlugin extends Plugin {
             name: "Open Quick Task Modal",
             callback: () => {
                 new QuickTaskModal(this.app, this, this.dataService).open();
+            },
+        });
+
+        this.addCommand({
+            id: "open-quick-list-modal",
+            name: "Open Quick List Modal (List only)",
+            callback: () => {
+                new QuickListModal(this.app, this, this.dataService).open();
             },
         });
 
