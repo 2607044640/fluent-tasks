@@ -32,7 +32,7 @@ __export(main_exports, {
   default: () => FluentTasksPlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian8 = require("obsidian");
+var import_obsidian9 = require("obsidian");
 
 // src/types.ts
 var VIEW_TYPE_SIDEBAR = "fluent-tasks-sidebar";
@@ -1295,7 +1295,7 @@ function fix_and_destroy_block(block, lookup) {
   block.f();
   destroy_block(block, lookup);
 }
-function update_keyed_each(old_blocks, dirty, get_key, dynamic, ctx, list, lookup, node, destroy, create_each_block4, next2, get_context) {
+function update_keyed_each(old_blocks, dirty, get_key, dynamic, ctx, list, lookup, node, destroy, create_each_block5, next2, get_context) {
   let o = old_blocks.length;
   let n = list.length;
   let i = o;
@@ -1312,7 +1312,7 @@ function update_keyed_each(old_blocks, dirty, get_key, dynamic, ctx, list, looku
     const key = get_key(child_ctx);
     let block = lookup.get(key);
     if (!block) {
-      block = create_each_block4(key, child_ctx);
+      block = create_each_block5(key, child_ctx);
       block.c();
     } else if (dynamic) {
       updates.push(() => block.p(child_ctx, dirty));
@@ -1431,7 +1431,7 @@ function make_dirty(component, i) {
   }
   component.$$.dirty[i / 31 | 0] |= 1 << i % 31;
 }
-function init(component, options, instance4, create_fragment4, not_equal, props, append_styles = null, dirty = [-1]) {
+function init(component, options, instance5, create_fragment5, not_equal, props, append_styles = null, dirty = [-1]) {
   const parent_component = current_component;
   set_current_component(component);
   const $$ = component.$$ = {
@@ -1457,7 +1457,7 @@ function init(component, options, instance4, create_fragment4, not_equal, props,
   };
   append_styles && append_styles($$.root);
   let ready = false;
-  $$.ctx = instance4 ? instance4(component, options.props || {}, (i, ret, ...rest) => {
+  $$.ctx = instance5 ? instance5(component, options.props || {}, (i, ret, ...rest) => {
     const value = rest.length ? rest[0] : ret;
     if ($$.ctx && not_equal($$.ctx[i], $$.ctx[i] = value)) {
       if (!$$.skip_bound && $$.bound[i])
@@ -1470,7 +1470,7 @@ function init(component, options, instance4, create_fragment4, not_equal, props,
   $$.update();
   ready = true;
   run_all($$.before_update);
-  $$.fragment = create_fragment4 ? create_fragment4($$.ctx) : false;
+  $$.fragment = create_fragment5 ? create_fragment5($$.ctx) : false;
   if (options.target) {
     if (options.hydrate) {
       start_hydrating();
@@ -16242,7 +16242,9 @@ var DEFAULT_SETTINGS = {
   autoExpandSidebar: true,
   searchHideCompleted: true,
   hideRibbonIcon: false,
-  wrapTaskTitles: true
+  wrapTaskTitles: true,
+  quickModalAction: "direct",
+  quickModalTipCount: 0
 };
 var FluentTasksSettingTab = class extends import_obsidian7.PluginSettingTab {
   constructor(app, plugin) {
@@ -16273,6 +16275,13 @@ var FluentTasksSettingTab = class extends import_obsidian7.PluginSettingTab {
         await this.plugin.saveSettings();
       });
     });
+    new import_obsidian7.Setting(containerEl).setName("Quick Task Modal Action").setDesc("Choose whether selecting a task/list in the Quick Task Modal manages it directly in the popup or navigates and reveals it in the main workspace.").addDropdown((dropdown) => {
+      var _a;
+      return dropdown.addOption("direct", "Direct In-Modal Management (Toggle & Add in popup)").addOption("navigate", "Navigate Workspace (Open list & details in workspace)").setValue((_a = this.plugin.settings.quickModalAction) != null ? _a : "direct").onChange(async (value) => {
+        this.plugin.settings.quickModalAction = value;
+        await this.plugin.saveSettings();
+      });
+    });
     new import_obsidian7.Setting(containerEl).setName("Auto-Expand Sidebar on Focus").setDesc("Automatically expand the left sidebar list panel when switching to Fluent Tasks tab (via Ctrl+Tab, Ctrl+Shift+Tab, or clicking the tab).").addToggle((toggle) => toggle.setValue(this.plugin.settings.autoExpandSidebar).onChange(async (value) => {
       this.plugin.settings.autoExpandSidebar = value;
       await this.plugin.saveSettings();
@@ -16292,14 +16301,1701 @@ var FluentTasksSettingTab = class extends import_obsidian7.PluginSettingTab {
   }
 };
 
+// src/modals/QuickTaskModal.ts
+var import_obsidian8 = require("obsidian");
+
+// src/modals/QuickTaskModalView.svelte
+function get_each_context4(ctx, list, i) {
+  const child_ctx = ctx.slice();
+  child_ctx[49] = list[i];
+  child_ctx[51] = i;
+  return child_ctx;
+}
+function get_each_context_14(ctx, list, i) {
+  const child_ctx = ctx.slice();
+  child_ctx[52] = list[i];
+  child_ctx[51] = i;
+  return child_ctx;
+}
+function create_if_block_74(ctx) {
+  let div;
+  let t0;
+  let b;
+  let t2;
+  let code;
+  let t4;
+  let t5;
+  let t6;
+  return {
+    c() {
+      div = element("div");
+      t0 = text("\u{1F4A1} \u63D0\u793A: \u5728 ");
+      b = element("b");
+      b.textContent = "\u8BBE\u7F6E \u2192 \u5FEB\u6377\u952E";
+      t2 = text(" \u4E2D\u4E3A ");
+      code = element("code");
+      code.textContent = "Fluent Tasks: Open Quick Task Modal";
+      t4 = text(" \u8BBE\u7F6E\u5FEB\u6377\u952E\u5373\u53EF\u79D2\u7EA7\u547C\u51FA (\u5269\u4F59 ");
+      t5 = text(
+        /*remainingTips*/
+        ctx[2]
+      );
+      t6 = text(" \u6B21\u63D0\u9192)");
+      attr(div, "class", "quick-modal-tip-banner");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      append(div, t0);
+      append(div, b);
+      append(div, t2);
+      append(div, code);
+      append(div, t4);
+      append(div, t5);
+      append(div, t6);
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*remainingTips*/
+      4)
+        set_data(
+          t5,
+          /*remainingTips*/
+          ctx2[2]
+        );
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+    }
+  };
+}
+function create_if_block_64(ctx) {
+  let button;
+  let mounted;
+  let dispose;
+  return {
+    c() {
+      button = element("button");
+      button.textContent = "\u2715";
+      attr(button, "class", "quick-modal-filter-clear");
+    },
+    m(target, anchor) {
+      insert(target, button, anchor);
+      if (!mounted) {
+        dispose = listen(
+          button,
+          "click",
+          /*clearSearch*/
+          ctx[20]
+        );
+        mounted = true;
+      }
+    },
+    p: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(button);
+      }
+      mounted = false;
+      dispose();
+    }
+  };
+}
+function create_if_block_54(ctx) {
+  let span;
+  let t_value = (
+    /*taskCounts*/
+    ctx[6][
+      /*cat*/
+      ctx[52].filepath
+    ] + ""
+  );
+  let t;
+  return {
+    c() {
+      span = element("span");
+      t = text(t_value);
+      attr(span, "class", "quick-modal-badge");
+    },
+    m(target, anchor) {
+      insert(target, span, anchor);
+      append(span, t);
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*taskCounts, flatCategories*/
+      131136 && t_value !== (t_value = /*taskCounts*/
+      ctx2[6][
+        /*cat*/
+        ctx2[52].filepath
+      ] + ""))
+        set_data(t, t_value);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(span);
+      }
+    }
+  };
+}
+function create_each_block_14(key_1, ctx) {
+  var _a;
+  let div;
+  let span0;
+  let t1;
+  let span1;
+  let t2_value = (
+    /*cat*/
+    ctx[52].name + ""
+  );
+  let t2;
+  let t3;
+  let t4;
+  let mounted;
+  let dispose;
+  let if_block = (
+    /*taskCounts*/
+    ((_a = ctx[6][
+      /*cat*/
+      ctx[52].filepath
+    ]) != null ? _a : 0) > 0 && create_if_block_54(ctx)
+  );
+  function click_handler2() {
+    return (
+      /*click_handler*/
+      ctx[32](
+        /*cat*/
+        ctx[52]
+      )
+    );
+  }
+  return {
+    key: key_1,
+    first: null,
+    c() {
+      var _a2;
+      div = element("div");
+      span0 = element("span");
+      span0.textContent = "\u{1F4C1}";
+      t1 = space();
+      span1 = element("span");
+      t2 = text(t2_value);
+      t3 = space();
+      if (if_block)
+        if_block.c();
+      t4 = space();
+      attr(span0, "class", "quick-modal-list-icon");
+      attr(span1, "class", "quick-modal-list-name");
+      attr(div, "class", "quick-modal-list-item");
+      toggle_class(
+        div,
+        "is-selected",
+        /*selectedCategory*/
+        ((_a2 = ctx[5]) == null ? void 0 : _a2.filepath) === /*cat*/
+        ctx[52].filepath
+      );
+      toggle_class(
+        div,
+        "is-focused",
+        /*focusPane*/
+        ctx[8] === "lists" && /*focusedCategoryIndex*/
+        ctx[9] === /*index*/
+        ctx[51]
+      );
+      this.first = div;
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      append(div, span0);
+      append(div, t1);
+      append(div, span1);
+      append(span1, t2);
+      append(div, t3);
+      if (if_block)
+        if_block.m(div, null);
+      append(div, t4);
+      if (!mounted) {
+        dispose = listen(div, "click", click_handler2);
+        mounted = true;
+      }
+    },
+    p(new_ctx, dirty) {
+      var _a2, _b;
+      ctx = new_ctx;
+      if (dirty[0] & /*flatCategories*/
+      131072 && t2_value !== (t2_value = /*cat*/
+      ctx[52].name + ""))
+        set_data(t2, t2_value);
+      if (
+        /*taskCounts*/
+        ((_a2 = ctx[6][
+          /*cat*/
+          ctx[52].filepath
+        ]) != null ? _a2 : 0) > 0
+      ) {
+        if (if_block) {
+          if_block.p(ctx, dirty);
+        } else {
+          if_block = create_if_block_54(ctx);
+          if_block.c();
+          if_block.m(div, t4);
+        }
+      } else if (if_block) {
+        if_block.d(1);
+        if_block = null;
+      }
+      if (dirty[0] & /*selectedCategory, flatCategories*/
+      131104) {
+        toggle_class(
+          div,
+          "is-selected",
+          /*selectedCategory*/
+          ((_b = ctx[5]) == null ? void 0 : _b.filepath) === /*cat*/
+          ctx[52].filepath
+        );
+      }
+      if (dirty[0] & /*focusPane, focusedCategoryIndex, flatCategories*/
+      131840) {
+        toggle_class(
+          div,
+          "is-focused",
+          /*focusPane*/
+          ctx[8] === "lists" && /*focusedCategoryIndex*/
+          ctx[9] === /*index*/
+          ctx[51]
+        );
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+      if (if_block)
+        if_block.d();
+      mounted = false;
+      dispose();
+    }
+  };
+}
+function create_if_block_44(ctx) {
+  let button;
+  let mounted;
+  let dispose;
+  return {
+    c() {
+      button = element("button");
+      button.textContent = "+ Add Task (Ctrl+N)";
+      attr(button, "class", "quick-modal-add-btn");
+    },
+    m(target, anchor) {
+      insert(target, button, anchor);
+      if (!mounted) {
+        dispose = listen(
+          button,
+          "click",
+          /*startInlineAddTask*/
+          ctx[23]
+        );
+        mounted = true;
+      }
+    },
+    p: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(button);
+      }
+      mounted = false;
+      dispose();
+    }
+  };
+}
+function create_if_block_312(ctx) {
+  let div;
+  let input;
+  let mounted;
+  let dispose;
+  return {
+    c() {
+      div = element("div");
+      input = element("input");
+      attr(input, "type", "text");
+      attr(input, "class", "quick-modal-add-input");
+      attr(input, "placeholder", "Task title (Enter to save, Esc to cancel)...");
+      attr(div, "class", "quick-modal-add-box");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      append(div, input);
+      set_input_value(
+        input,
+        /*newTaskTitle*/
+        ctx[12]
+      );
+      ctx[34](input);
+      if (!mounted) {
+        dispose = listen(
+          input,
+          "input",
+          /*input_input_handler_1*/
+          ctx[33]
+        );
+        mounted = true;
+      }
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*newTaskTitle*/
+      4096 && input.value !== /*newTaskTitle*/
+      ctx2[12]) {
+        set_input_value(
+          input,
+          /*newTaskTitle*/
+          ctx2[12]
+        );
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+      ctx[34](null);
+      mounted = false;
+      dispose();
+    }
+  };
+}
+function create_else_block4(ctx) {
+  let each_blocks = [];
+  let each_1_lookup = /* @__PURE__ */ new Map();
+  let each_1_anchor;
+  let each_value = ensure_array_like(
+    /*displayedTasks*/
+    ctx[16]
+  );
+  const get_key = (ctx2) => (
+    /*task*/
+    ctx2[49].id
+  );
+  for (let i = 0; i < each_value.length; i += 1) {
+    let child_ctx = get_each_context4(ctx, each_value, i);
+    let key = get_key(child_ctx);
+    each_1_lookup.set(key, each_blocks[i] = create_each_block4(key, child_ctx));
+  }
+  return {
+    c() {
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        each_blocks[i].c();
+      }
+      each_1_anchor = empty();
+    },
+    m(target, anchor) {
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        if (each_blocks[i]) {
+          each_blocks[i].m(target, anchor);
+        }
+      }
+      insert(target, each_1_anchor, anchor);
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*displayedTasks, focusPane, focusedTaskIndex, toggleTaskCompletion, toggleTaskStar*/
+      6358272) {
+        each_value = ensure_array_like(
+          /*displayedTasks*/
+          ctx2[16]
+        );
+        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value, each_1_lookup, each_1_anchor.parentNode, destroy_block, create_each_block4, each_1_anchor, get_each_context4);
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(each_1_anchor);
+      }
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        each_blocks[i].d(detaching);
+      }
+    }
+  };
+}
+function create_if_block4(ctx) {
+  let div;
+  let t_value = (
+    /*isSearching*/
+    ctx[3] ? "No matching tasks found." : "No tasks in this list. Press Ctrl+N to add one."
+  );
+  let t;
+  return {
+    c() {
+      div = element("div");
+      t = text(t_value);
+      attr(div, "class", "quick-modal-empty");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      append(div, t);
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*isSearching*/
+      8 && t_value !== (t_value = /*isSearching*/
+      ctx2[3] ? "No matching tasks found." : "No tasks in this list. Press Ctrl+N to add one."))
+        set_data(t, t_value);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+    }
+  };
+}
+function create_if_block_212(ctx) {
+  let span;
+  let t0_value = (
+    /*task*/
+    ctx[49].steps.filter(func2).length + ""
+  );
+  let t0;
+  let t1;
+  let t2_value = (
+    /*task*/
+    ctx[49].steps.length + ""
+  );
+  let t2;
+  return {
+    c() {
+      span = element("span");
+      t0 = text(t0_value);
+      t1 = text("/");
+      t2 = text(t2_value);
+      attr(span, "class", "quick-modal-steps-badge");
+    },
+    m(target, anchor) {
+      insert(target, span, anchor);
+      append(span, t0);
+      append(span, t1);
+      append(span, t2);
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*displayedTasks*/
+      65536 && t0_value !== (t0_value = /*task*/
+      ctx2[49].steps.filter(func2).length + ""))
+        set_data(t0, t0_value);
+      if (dirty[0] & /*displayedTasks*/
+      65536 && t2_value !== (t2_value = /*task*/
+      ctx2[49].steps.length + ""))
+        set_data(t2, t2_value);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(span);
+      }
+    }
+  };
+}
+function create_if_block_113(ctx) {
+  let span;
+  let t;
+  let span_title_value;
+  return {
+    c() {
+      span = element("span");
+      t = text("?");
+      attr(span, "class", "quick-modal-why-badge");
+      attr(span, "title", span_title_value = /*task*/
+      ctx[49].why);
+    },
+    m(target, anchor) {
+      insert(target, span, anchor);
+      append(span, t);
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*displayedTasks*/
+      65536 && span_title_value !== (span_title_value = /*task*/
+      ctx2[49].why)) {
+        attr(span, "title", span_title_value);
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(span);
+      }
+    }
+  };
+}
+function create_each_block4(key_1, ctx) {
+  let div;
+  let input;
+  let input_checked_value;
+  let t0;
+  let span0;
+  let t1_value = (
+    /*task*/
+    ctx[49].title + ""
+  );
+  let t1;
+  let t2;
+  let t3;
+  let t4;
+  let span1;
+  let t5_value = (
+    /*task*/
+    ctx[49].starred ? "\u2605" : "\u2606"
+  );
+  let t5;
+  let t6;
+  let mounted;
+  let dispose;
+  function click_handler_1() {
+    return (
+      /*click_handler_1*/
+      ctx[35](
+        /*task*/
+        ctx[49]
+      )
+    );
+  }
+  let if_block0 = (
+    /*task*/
+    ctx[49].steps && /*task*/
+    ctx[49].steps.length > 0 && create_if_block_212(ctx)
+  );
+  let if_block1 = (
+    /*task*/
+    ctx[49].why && create_if_block_113(ctx)
+  );
+  function click_handler_22() {
+    return (
+      /*click_handler_2*/
+      ctx[36](
+        /*task*/
+        ctx[49]
+      )
+    );
+  }
+  function click_handler_3() {
+    return (
+      /*click_handler_3*/
+      ctx[37](
+        /*task*/
+        ctx[49]
+      )
+    );
+  }
+  return {
+    key: key_1,
+    first: null,
+    c() {
+      div = element("div");
+      input = element("input");
+      t0 = space();
+      span0 = element("span");
+      t1 = text(t1_value);
+      t2 = space();
+      if (if_block0)
+        if_block0.c();
+      t3 = space();
+      if (if_block1)
+        if_block1.c();
+      t4 = space();
+      span1 = element("span");
+      t5 = text(t5_value);
+      t6 = space();
+      attr(input, "type", "checkbox");
+      attr(input, "class", "quick-modal-checkbox");
+      input.checked = input_checked_value = /*task*/
+      ctx[49].completed;
+      attr(span0, "class", "quick-modal-task-title");
+      toggle_class(
+        span0,
+        "is-done",
+        /*task*/
+        ctx[49].completed
+      );
+      attr(span1, "class", "quick-modal-star-btn");
+      toggle_class(
+        span1,
+        "is-starred",
+        /*task*/
+        ctx[49].starred
+      );
+      attr(div, "class", "quick-modal-task-item");
+      toggle_class(
+        div,
+        "is-completed",
+        /*task*/
+        ctx[49].completed
+      );
+      toggle_class(
+        div,
+        "is-focused",
+        /*focusPane*/
+        ctx[8] === "tasks" && /*focusedTaskIndex*/
+        ctx[10] === /*index*/
+        ctx[51]
+      );
+      this.first = div;
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      append(div, input);
+      append(div, t0);
+      append(div, span0);
+      append(span0, t1);
+      append(div, t2);
+      if (if_block0)
+        if_block0.m(div, null);
+      append(div, t3);
+      if (if_block1)
+        if_block1.m(div, null);
+      append(div, t4);
+      append(div, span1);
+      append(span1, t5);
+      append(div, t6);
+      if (!mounted) {
+        dispose = [
+          listen(input, "click", stop_propagation(click_handler_1)),
+          listen(span1, "click", stop_propagation(click_handler_22)),
+          listen(div, "click", click_handler_3)
+        ];
+        mounted = true;
+      }
+    },
+    p(new_ctx, dirty) {
+      ctx = new_ctx;
+      if (dirty[0] & /*displayedTasks*/
+      65536 && input_checked_value !== (input_checked_value = /*task*/
+      ctx[49].completed)) {
+        input.checked = input_checked_value;
+      }
+      if (dirty[0] & /*displayedTasks*/
+      65536 && t1_value !== (t1_value = /*task*/
+      ctx[49].title + ""))
+        set_data(t1, t1_value);
+      if (dirty[0] & /*displayedTasks*/
+      65536) {
+        toggle_class(
+          span0,
+          "is-done",
+          /*task*/
+          ctx[49].completed
+        );
+      }
+      if (
+        /*task*/
+        ctx[49].steps && /*task*/
+        ctx[49].steps.length > 0
+      ) {
+        if (if_block0) {
+          if_block0.p(ctx, dirty);
+        } else {
+          if_block0 = create_if_block_212(ctx);
+          if_block0.c();
+          if_block0.m(div, t3);
+        }
+      } else if (if_block0) {
+        if_block0.d(1);
+        if_block0 = null;
+      }
+      if (
+        /*task*/
+        ctx[49].why
+      ) {
+        if (if_block1) {
+          if_block1.p(ctx, dirty);
+        } else {
+          if_block1 = create_if_block_113(ctx);
+          if_block1.c();
+          if_block1.m(div, t4);
+        }
+      } else if (if_block1) {
+        if_block1.d(1);
+        if_block1 = null;
+      }
+      if (dirty[0] & /*displayedTasks*/
+      65536 && t5_value !== (t5_value = /*task*/
+      ctx[49].starred ? "\u2605" : "\u2606"))
+        set_data(t5, t5_value);
+      if (dirty[0] & /*displayedTasks*/
+      65536) {
+        toggle_class(
+          span1,
+          "is-starred",
+          /*task*/
+          ctx[49].starred
+        );
+      }
+      if (dirty[0] & /*displayedTasks*/
+      65536) {
+        toggle_class(
+          div,
+          "is-completed",
+          /*task*/
+          ctx[49].completed
+        );
+      }
+      if (dirty[0] & /*focusPane, focusedTaskIndex, displayedTasks*/
+      66816) {
+        toggle_class(
+          div,
+          "is-focused",
+          /*focusPane*/
+          ctx[8] === "tasks" && /*focusedTaskIndex*/
+          ctx[10] === /*index*/
+          ctx[51]
+        );
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+      if (if_block0)
+        if_block0.d();
+      if (if_block1)
+        if_block1.d();
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
+function create_fragment4(ctx) {
+  var _a, _b, _c, _d;
+  let div9;
+  let t0;
+  let div0;
+  let span0;
+  let t1;
+  let input;
+  let input_placeholder_value;
+  let t2;
+  let t3;
+  let div7;
+  let div3;
+  let div1;
+  let t5;
+  let div2;
+  let each_blocks = [];
+  let each_1_lookup = /* @__PURE__ */ new Map();
+  let t6;
+  let div6;
+  let div4;
+  let span1;
+  let t7_value = (
+    /*isSearching*/
+    (ctx[3] ? `Search Results (${/*searchResults*/
+    ctx[4].length})` : (
+      /*selectedCategory*/
+      (_b = (_a = ctx[5]) == null ? void 0 : _a.name) != null ? _b : "Tasks"
+    )) + ""
+  );
+  let t7;
+  let t8;
+  let t9;
+  let div5;
+  let t10;
+  let t11;
+  let div8;
+  let span2;
+  let t14;
+  let span3;
+  let t17;
+  let span4;
+  let t20;
+  let span5;
+  let t23;
+  let span6;
+  let t26;
+  let span7;
+  let b5;
+  let t28;
+  let t29_value = (
+    /*plugin*/
+    ((_d = (_c = ctx[0]) == null ? void 0 : _c.settings) == null ? void 0 : _d.quickModalAction) === "navigate" ? "Open in Workspace" : "Select"
+  );
+  let t29;
+  let t30;
+  let span8;
+  let mounted;
+  let dispose;
+  let if_block0 = (
+    /*showTip*/
+    ctx[1] && create_if_block_74(ctx)
+  );
+  let if_block1 = (
+    /*searchQuery*/
+    ctx[7] && create_if_block_64(ctx)
+  );
+  let each_value_1 = ensure_array_like(
+    /*flatCategories*/
+    ctx[17]
+  );
+  const get_key = (ctx2) => (
+    /*cat*/
+    ctx2[52].filepath
+  );
+  for (let i = 0; i < each_value_1.length; i += 1) {
+    let child_ctx = get_each_context_14(ctx, each_value_1, i);
+    let key = get_key(child_ctx);
+    each_1_lookup.set(key, each_blocks[i] = create_each_block_14(key, child_ctx));
+  }
+  let if_block2 = !/*isSearching*/
+  ctx[3] && /*selectedCategory*/
+  ctx[5] && create_if_block_44(ctx);
+  let if_block3 = (
+    /*isAddingTask*/
+    ctx[11] && create_if_block_312(ctx)
+  );
+  function select_block_type(ctx2, dirty) {
+    if (
+      /*displayedTasks*/
+      ctx2[16].length === 0
+    )
+      return create_if_block4;
+    return create_else_block4;
+  }
+  let current_block_type = select_block_type(ctx, [-1, -1]);
+  let if_block4 = current_block_type(ctx);
+  return {
+    c() {
+      div9 = element("div");
+      if (if_block0)
+        if_block0.c();
+      t0 = space();
+      div0 = element("div");
+      span0 = element("span");
+      span0.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>`;
+      t1 = space();
+      input = element("input");
+      t2 = space();
+      if (if_block1)
+        if_block1.c();
+      t3 = space();
+      div7 = element("div");
+      div3 = element("div");
+      div1 = element("div");
+      div1.textContent = "Lists";
+      t5 = space();
+      div2 = element("div");
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        each_blocks[i].c();
+      }
+      t6 = space();
+      div6 = element("div");
+      div4 = element("div");
+      span1 = element("span");
+      t7 = text(t7_value);
+      t8 = space();
+      if (if_block2)
+        if_block2.c();
+      t9 = space();
+      div5 = element("div");
+      if (if_block3)
+        if_block3.c();
+      t10 = space();
+      if_block4.c();
+      t11 = space();
+      div8 = element("div");
+      span2 = element("span");
+      span2.innerHTML = `<b>\u2191\u2193</b> Move`;
+      t14 = space();
+      span3 = element("span");
+      span3.innerHTML = `<b>\u2190\u2192</b> Switch Pane`;
+      t17 = space();
+      span4 = element("span");
+      span4.innerHTML = `<b>Space</b> Toggle Check`;
+      t20 = space();
+      span5 = element("span");
+      span5.innerHTML = `<b>Ctrl+Enter</b> Star`;
+      t23 = space();
+      span6 = element("span");
+      span6.innerHTML = `<b>Ctrl+N</b> Add`;
+      t26 = space();
+      span7 = element("span");
+      b5 = element("b");
+      b5.textContent = "Enter";
+      t28 = space();
+      t29 = text(t29_value);
+      t30 = space();
+      span8 = element("span");
+      span8.innerHTML = `<b>Esc</b> Close`;
+      attr(span0, "class", "quick-modal-filter-icon");
+      attr(input, "type", "text");
+      attr(input, "class", "quick-modal-filter-input");
+      attr(input, "placeholder", input_placeholder_value = /*isSearching*/
+      ctx[3] ? "Search all tasks..." : "Type to search, or Ctrl+N to add task...");
+      attr(div0, "class", "quick-modal-filter-bar");
+      attr(div1, "class", "quick-modal-pane-title");
+      attr(div2, "class", "quick-modal-scrollable");
+      attr(div3, "class", "quick-modal-pane-lists");
+      attr(span1, "class", "quick-modal-pane-title");
+      attr(div4, "class", "quick-modal-pane-header");
+      attr(div5, "class", "quick-modal-scrollable");
+      attr(div6, "class", "quick-modal-pane-tasks");
+      attr(div7, "class", "quick-modal-dual-pane");
+      attr(div8, "class", "quick-modal-status-bar");
+      attr(div9, "class", "quick-modal-container");
+      attr(div9, "tabindex", "0");
+      attr(div9, "role", "region");
+    },
+    m(target, anchor) {
+      insert(target, div9, anchor);
+      if (if_block0)
+        if_block0.m(div9, null);
+      append(div9, t0);
+      append(div9, div0);
+      append(div0, span0);
+      append(div0, t1);
+      append(div0, input);
+      set_input_value(
+        input,
+        /*searchQuery*/
+        ctx[7]
+      );
+      ctx[31](input);
+      append(div0, t2);
+      if (if_block1)
+        if_block1.m(div0, null);
+      append(div9, t3);
+      append(div9, div7);
+      append(div7, div3);
+      append(div3, div1);
+      append(div3, t5);
+      append(div3, div2);
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        if (each_blocks[i]) {
+          each_blocks[i].m(div2, null);
+        }
+      }
+      append(div7, t6);
+      append(div7, div6);
+      append(div6, div4);
+      append(div4, span1);
+      append(span1, t7);
+      append(div4, t8);
+      if (if_block2)
+        if_block2.m(div4, null);
+      append(div6, t9);
+      append(div6, div5);
+      if (if_block3)
+        if_block3.m(div5, null);
+      append(div5, t10);
+      if_block4.m(div5, null);
+      append(div9, t11);
+      append(div9, div8);
+      append(div8, span2);
+      append(div8, t14);
+      append(div8, span3);
+      append(div8, t17);
+      append(div8, span4);
+      append(div8, t20);
+      append(div8, span5);
+      append(div8, t23);
+      append(div8, span6);
+      append(div8, t26);
+      append(div8, span7);
+      append(span7, b5);
+      append(span7, t28);
+      append(span7, t29);
+      append(div8, t30);
+      append(div8, span8);
+      ctx[38](div9);
+      if (!mounted) {
+        dispose = [
+          listen(
+            input,
+            "input",
+            /*input_input_handler*/
+            ctx[30]
+          ),
+          listen(
+            input,
+            "input",
+            /*handleSearchInput*/
+            ctx[19]
+          ),
+          listen(
+            div9,
+            "keydown",
+            /*handleKeydown*/
+            ctx[24]
+          )
+        ];
+        mounted = true;
+      }
+    },
+    p(ctx2, dirty) {
+      var _a2, _b2, _c2, _d2;
+      if (
+        /*showTip*/
+        ctx2[1]
+      ) {
+        if (if_block0) {
+          if_block0.p(ctx2, dirty);
+        } else {
+          if_block0 = create_if_block_74(ctx2);
+          if_block0.c();
+          if_block0.m(div9, t0);
+        }
+      } else if (if_block0) {
+        if_block0.d(1);
+        if_block0 = null;
+      }
+      if (dirty[0] & /*isSearching*/
+      8 && input_placeholder_value !== (input_placeholder_value = /*isSearching*/
+      ctx2[3] ? "Search all tasks..." : "Type to search, or Ctrl+N to add task...")) {
+        attr(input, "placeholder", input_placeholder_value);
+      }
+      if (dirty[0] & /*searchQuery*/
+      128 && input.value !== /*searchQuery*/
+      ctx2[7]) {
+        set_input_value(
+          input,
+          /*searchQuery*/
+          ctx2[7]
+        );
+      }
+      if (
+        /*searchQuery*/
+        ctx2[7]
+      ) {
+        if (if_block1) {
+          if_block1.p(ctx2, dirty);
+        } else {
+          if_block1 = create_if_block_64(ctx2);
+          if_block1.c();
+          if_block1.m(div0, null);
+        }
+      } else if (if_block1) {
+        if_block1.d(1);
+        if_block1 = null;
+      }
+      if (dirty[0] & /*selectedCategory, flatCategories, focusPane, focusedCategoryIndex, selectCategory, taskCounts*/
+      394080) {
+        each_value_1 = ensure_array_like(
+          /*flatCategories*/
+          ctx2[17]
+        );
+        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_1, each_1_lookup, div2, destroy_block, create_each_block_14, null, get_each_context_14);
+      }
+      if (dirty[0] & /*isSearching, searchResults, selectedCategory*/
+      56 && t7_value !== (t7_value = /*isSearching*/
+      (ctx2[3] ? `Search Results (${/*searchResults*/
+      ctx2[4].length})` : (
+        /*selectedCategory*/
+        (_b2 = (_a2 = ctx2[5]) == null ? void 0 : _a2.name) != null ? _b2 : "Tasks"
+      )) + ""))
+        set_data(t7, t7_value);
+      if (!/*isSearching*/
+      ctx2[3] && /*selectedCategory*/
+      ctx2[5]) {
+        if (if_block2) {
+          if_block2.p(ctx2, dirty);
+        } else {
+          if_block2 = create_if_block_44(ctx2);
+          if_block2.c();
+          if_block2.m(div4, null);
+        }
+      } else if (if_block2) {
+        if_block2.d(1);
+        if_block2 = null;
+      }
+      if (
+        /*isAddingTask*/
+        ctx2[11]
+      ) {
+        if (if_block3) {
+          if_block3.p(ctx2, dirty);
+        } else {
+          if_block3 = create_if_block_312(ctx2);
+          if_block3.c();
+          if_block3.m(div5, t10);
+        }
+      } else if (if_block3) {
+        if_block3.d(1);
+        if_block3 = null;
+      }
+      if (current_block_type === (current_block_type = select_block_type(ctx2, dirty)) && if_block4) {
+        if_block4.p(ctx2, dirty);
+      } else {
+        if_block4.d(1);
+        if_block4 = current_block_type(ctx2);
+        if (if_block4) {
+          if_block4.c();
+          if_block4.m(div5, null);
+        }
+      }
+      if (dirty[0] & /*plugin*/
+      1 && t29_value !== (t29_value = /*plugin*/
+      ((_d2 = (_c2 = ctx2[0]) == null ? void 0 : _c2.settings) == null ? void 0 : _d2.quickModalAction) === "navigate" ? "Open in Workspace" : "Select"))
+        set_data(t29, t29_value);
+    },
+    i: noop,
+    o: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(div9);
+      }
+      if (if_block0)
+        if_block0.d();
+      ctx[31](null);
+      if (if_block1)
+        if_block1.d();
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        each_blocks[i].d();
+      }
+      if (if_block2)
+        if_block2.d();
+      if (if_block3)
+        if_block3.d();
+      if_block4.d();
+      ctx[38](null);
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
+function getFlatCategories(items) {
+  const result = [];
+  for (const item of items) {
+    if (item.type === "category") {
+      result.push(item);
+    } else if (item.type === "group" && Array.isArray(item.items)) {
+      for (const child of item.items) {
+        result.push(child);
+      }
+    }
+  }
+  return result;
+}
+var func2 = (s) => s.completed;
+function instance4($$self, $$props, $$invalidate) {
+  let flatCategories;
+  let displayedTasks;
+  let { app } = $$props;
+  let { plugin = null } = $$props;
+  let { dataService } = $$props;
+  let { showTip = false } = $$props;
+  let { remainingTips = 0 } = $$props;
+  let { closeModal = () => {
+  } } = $$props;
+  let sidebarItems = [];
+  let categories = [];
+  let selectedCategory = null;
+  let tasks2 = [];
+  let taskCounts = {};
+  let searchQuery = "";
+  let isSearching = false;
+  let searchResults = [];
+  let focusPane = "lists";
+  let focusedCategoryIndex = 0;
+  let focusedTaskIndex = 0;
+  let isAddingTask = false;
+  let newTaskTitle = "";
+  let modalContainerEl;
+  let searchInputEl;
+  let addTaskInputEl;
+  onMount(async () => {
+    await loadData();
+    setTimeout(
+      () => {
+        if (searchInputEl) {
+          searchInputEl.focus();
+        } else if (modalContainerEl) {
+          modalContainerEl.focus();
+        }
+      },
+      50
+    );
+  });
+  async function loadData() {
+    $$invalidate(28, sidebarItems = await dataService.getSidebarItems());
+    categories = await dataService.getCategories();
+    $$invalidate(17, flatCategories = getFlatCategories(sidebarItems));
+    const countPromises = categories.map(async (cat) => {
+      try {
+        const catTasks = await dataService.getTasks(cat.filepath);
+        $$invalidate(6, taskCounts[cat.filepath] = catTasks.filter((t) => !t.completed).length, taskCounts);
+      } catch (e) {
+        $$invalidate(6, taskCounts[cat.filepath] = 0, taskCounts);
+      }
+    });
+    await Promise.all(countPromises);
+    $$invalidate(6, taskCounts = { ...taskCounts });
+    if (!selectedCategory && flatCategories.length > 0) {
+      await selectCategory(flatCategories[0]);
+    } else if (selectedCategory) {
+      await loadTasksForCategory(selectedCategory);
+    }
+  }
+  async function selectCategory(cat) {
+    $$invalidate(5, selectedCategory = cat);
+    const idx = flatCategories.findIndex((c) => c.filepath === cat.filepath);
+    if (idx !== -1)
+      $$invalidate(9, focusedCategoryIndex = idx);
+    await loadTasksForCategory(cat);
+    $$invalidate(10, focusedTaskIndex = 0);
+  }
+  async function loadTasksForCategory(cat) {
+    $$invalidate(29, tasks2 = await dataService.getTasks(cat.filepath));
+  }
+  async function handleSearchInput() {
+    const query = searchQuery.trim();
+    if (!query) {
+      $$invalidate(3, isSearching = false);
+      $$invalidate(4, searchResults = []);
+      if (selectedCategory)
+        await loadTasksForCategory(selectedCategory);
+      return;
+    }
+    $$invalidate(3, isSearching = true);
+    $$invalidate(4, searchResults = await dataService.searchTasks(query));
+    $$invalidate(8, focusPane = "tasks");
+    $$invalidate(10, focusedTaskIndex = 0);
+  }
+  function clearSearch() {
+    $$invalidate(7, searchQuery = "");
+    $$invalidate(3, isSearching = false);
+    $$invalidate(4, searchResults = []);
+    searchInputEl == null ? void 0 : searchInputEl.focus();
+  }
+  async function toggleTaskCompletion(task) {
+    var _a;
+    const catPath = isSearching ? (_a = searchResults.find((r) => r.task.id === task.id)) == null ? void 0 : _a.category.filepath : selectedCategory == null ? void 0 : selectedCategory.filepath;
+    if (!catPath)
+      return;
+    task.completed = !task.completed;
+    await dataService.updateTask(catPath, task);
+    EventBus.emit("task:updated" /* TASK_UPDATED */, { task, categoryFilepath: catPath });
+    if (taskCounts[catPath] !== void 0) {
+      $$invalidate(6, taskCounts[catPath] = Math.max(0, taskCounts[catPath] + (task.completed ? -1 : 1)), taskCounts);
+      $$invalidate(6, taskCounts = { ...taskCounts });
+    }
+    if (isSearching) {
+      $$invalidate(4, searchResults = [...searchResults]);
+    } else if (selectedCategory) {
+      await loadTasksForCategory(selectedCategory);
+    }
+  }
+  async function toggleTaskStar(task) {
+    var _a;
+    const catPath = isSearching ? (_a = searchResults.find((r) => r.task.id === task.id)) == null ? void 0 : _a.category.filepath : selectedCategory == null ? void 0 : selectedCategory.filepath;
+    if (!catPath)
+      return;
+    task.starred = !task.starred;
+    await dataService.updateTask(catPath, task);
+    EventBus.emit("task:updated" /* TASK_UPDATED */, { task, categoryFilepath: catPath });
+    if (isSearching)
+      $$invalidate(4, searchResults = [...searchResults]);
+    else
+      $$invalidate(29, tasks2 = [...tasks2]);
+  }
+  async function deleteTaskSafely(task) {
+    var _a;
+    const catPath = isSearching ? (_a = searchResults.find((r) => r.task.id === task.id)) == null ? void 0 : _a.category.filepath : selectedCategory == null ? void 0 : selectedCategory.filepath;
+    if (!catPath)
+      return;
+    await dataService.deleteTask(catPath, task);
+    EventBus.emit("task:deleted" /* TASK_DELETED */, { task, categoryFilepath: catPath });
+    if (!task.completed && taskCounts[catPath] !== void 0) {
+      $$invalidate(6, taskCounts[catPath] = Math.max(0, taskCounts[catPath] - 1), taskCounts);
+      $$invalidate(6, taskCounts = { ...taskCounts });
+    }
+    if (isSearching) {
+      $$invalidate(4, searchResults = searchResults.filter((r) => r.task.id !== task.id));
+    } else if (selectedCategory) {
+      await loadTasksForCategory(selectedCategory);
+    }
+    $$invalidate(10, focusedTaskIndex = Math.max(0, Math.min(focusedTaskIndex, displayedTasks.length - 1)));
+  }
+  function startInlineAddTask() {
+    if (!selectedCategory)
+      return;
+    $$invalidate(11, isAddingTask = true);
+    $$invalidate(12, newTaskTitle = "");
+    setTimeout(
+      () => {
+        addTaskInputEl == null ? void 0 : addTaskInputEl.focus();
+      },
+      INPUT_FOCUS_DELAY_MS
+    );
+  }
+  async function commitAddTask() {
+    const title = newTaskTitle.trim();
+    if (!title || !selectedCategory) {
+      $$invalidate(11, isAddingTask = false);
+      $$invalidate(12, newTaskTitle = "");
+      return;
+    }
+    try {
+      const newTask = await dataService.addTask(selectedCategory.filepath, title);
+      EventBus.emit("task:updated" /* TASK_UPDATED */, {
+        task: newTask,
+        categoryFilepath: selectedCategory.filepath
+      });
+      if (taskCounts[selectedCategory.filepath] !== void 0) {
+        $$invalidate(6, taskCounts[selectedCategory.filepath]++, taskCounts);
+        $$invalidate(6, taskCounts = { ...taskCounts });
+      }
+      await loadTasksForCategory(selectedCategory);
+      $$invalidate(10, focusedTaskIndex = 0);
+      $$invalidate(8, focusPane = "tasks");
+    } catch (e) {
+      console.error("[QuickTaskModal] Failed to add task:", e);
+    }
+    $$invalidate(11, isAddingTask = false);
+    $$invalidate(12, newTaskTitle = "");
+  }
+  function cancelAddTask() {
+    $$invalidate(11, isAddingTask = false);
+    $$invalidate(12, newTaskTitle = "");
+  }
+  async function handlePrimaryAction() {
+    var _a, _b, _c;
+    const action = (_b = (_a = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _a.quickModalAction) != null ? _b : "direct";
+    if (action === "navigate") {
+      if (focusPane === "lists" && selectedCategory) {
+        EventBus.emit("category:selected" /* CATEGORY_SELECTED */, { category: selectedCategory });
+        closeModal();
+      } else if (focusPane === "tasks" && displayedTasks.length > 0) {
+        const currentTask = displayedTasks[focusedTaskIndex];
+        const catPath = isSearching ? (_c = searchResults[focusedTaskIndex]) == null ? void 0 : _c.category.filepath : selectedCategory == null ? void 0 : selectedCategory.filepath;
+        const cat = categories.find((c) => c.filepath === catPath) || selectedCategory;
+        if (cat && currentTask) {
+          EventBus.emit("category:selected" /* CATEGORY_SELECTED */, { category: cat });
+          EventBus.emit("task:selected" /* TASK_SELECTED */, {
+            task: currentTask,
+            categoryFilepath: cat.filepath
+          });
+          EventBus.emit("task:navigate" /* TASK_NAVIGATE */, {
+            taskId: currentTask.id,
+            isCompleted: currentTask.completed
+          });
+          closeModal();
+        }
+      }
+    } else {
+      if (focusPane === "lists") {
+        $$invalidate(8, focusPane = "tasks");
+        $$invalidate(10, focusedTaskIndex = 0);
+      } else if (focusPane === "tasks" && displayedTasks.length > 0) {
+        const currentTask = displayedTasks[focusedTaskIndex];
+        if (currentTask) {
+          await toggleTaskCompletion(currentTask);
+        }
+      }
+    }
+  }
+  function handleKeydown(e) {
+    if (e.isComposing || e.keyCode === 229)
+      return;
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "n") {
+      e.preventDefault();
+      e.stopPropagation();
+      startInlineAddTask();
+      return;
+    }
+    if (isAddingTask) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        e.stopPropagation();
+        void commitAddTask();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        cancelAddTask();
+      }
+      return;
+    }
+    if (document.activeElement === searchInputEl) {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        e.stopPropagation();
+        $$invalidate(8, focusPane = "tasks");
+        handleTasksKeydown(e.key);
+        setTimeout(scrollFocusedIntoView, 10);
+        return;
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        e.stopPropagation();
+        void handlePrimaryAction();
+        return;
+      } else if (e.key === "Escape") {
+        if (searchQuery) {
+          e.preventDefault();
+          e.stopPropagation();
+          clearSearch();
+          return;
+        }
+        return;
+      }
+      return;
+    }
+    if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+      e.preventDefault();
+      e.stopPropagation();
+      if (focusPane === "lists")
+        handleListsKeydown(e.key);
+      else
+        handleTasksKeydown(e.key);
+      setTimeout(scrollFocusedIntoView, 10);
+      return;
+    }
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      e.stopPropagation();
+      $$invalidate(8, focusPane = "lists");
+      setTimeout(scrollFocusedIntoView, 10);
+      return;
+    }
+    if (e.key === "ArrowRight") {
+      e.preventDefault();
+      e.stopPropagation();
+      $$invalidate(8, focusPane = "tasks");
+      setTimeout(scrollFocusedIntoView, 10);
+      return;
+    }
+    if (e.key === " ") {
+      if (focusPane === "tasks" && displayedTasks.length > 0) {
+        e.preventDefault();
+        e.stopPropagation();
+        const task = displayedTasks[focusedTaskIndex];
+        if (task)
+          void toggleTaskCompletion(task);
+      }
+      return;
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+      if (focusPane === "tasks" && displayedTasks.length > 0) {
+        e.preventDefault();
+        e.stopPropagation();
+        const task = displayedTasks[focusedTaskIndex];
+        if (task)
+          void toggleTaskStar(task);
+      }
+      return;
+    }
+    if (e.key === "Enter") {
+      e.preventDefault();
+      e.stopPropagation();
+      void handlePrimaryAction();
+      return;
+    }
+    if (e.key === "Delete" || e.key === "Backspace") {
+      if (focusPane === "tasks" && displayedTasks.length > 0) {
+        e.preventDefault();
+        e.stopPropagation();
+        const task = displayedTasks[focusedTaskIndex];
+        if (task)
+          void deleteTaskSafely(task);
+      }
+      return;
+    }
+    if (e.key === "Escape") {
+      closeModal();
+      return;
+    }
+    if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+      searchInputEl == null ? void 0 : searchInputEl.focus();
+    }
+  }
+  function handleListsKeydown(key) {
+    if (flatCategories.length === 0)
+      return;
+    if (key === "ArrowUp") {
+      $$invalidate(9, focusedCategoryIndex = Math.max(0, focusedCategoryIndex - 1));
+    } else if (key === "ArrowDown") {
+      $$invalidate(9, focusedCategoryIndex = Math.min(flatCategories.length - 1, focusedCategoryIndex + 1));
+    }
+    const cat = flatCategories[focusedCategoryIndex];
+    if (cat)
+      void selectCategory(cat);
+  }
+  function handleTasksKeydown(key) {
+    if (displayedTasks.length === 0)
+      return;
+    if (key === "ArrowUp") {
+      $$invalidate(10, focusedTaskIndex = Math.max(0, focusedTaskIndex - 1));
+    } else if (key === "ArrowDown") {
+      $$invalidate(10, focusedTaskIndex = Math.min(displayedTasks.length - 1, focusedTaskIndex + 1));
+    }
+  }
+  function scrollFocusedIntoView() {
+    const selector = focusPane === "lists" ? ".quick-modal-pane-lists .is-focused" : ".quick-modal-pane-tasks .is-focused";
+    const el = modalContainerEl == null ? void 0 : modalContainerEl.querySelector(selector);
+    if (el) {
+      el.scrollIntoView({ block: "nearest", behavior: "auto" });
+    }
+  }
+  function input_input_handler() {
+    searchQuery = this.value;
+    $$invalidate(7, searchQuery);
+  }
+  function input_binding($$value) {
+    binding_callbacks[$$value ? "unshift" : "push"](() => {
+      searchInputEl = $$value;
+      $$invalidate(14, searchInputEl);
+    });
+  }
+  const click_handler2 = (cat) => selectCategory(cat);
+  function input_input_handler_1() {
+    newTaskTitle = this.value;
+    $$invalidate(12, newTaskTitle);
+  }
+  function input_binding_1($$value) {
+    binding_callbacks[$$value ? "unshift" : "push"](() => {
+      addTaskInputEl = $$value;
+      $$invalidate(15, addTaskInputEl);
+    });
+  }
+  const click_handler_1 = (task) => toggleTaskCompletion(task);
+  const click_handler_22 = (task) => toggleTaskStar(task);
+  const click_handler_3 = (task) => toggleTaskCompletion(task);
+  function div9_binding($$value) {
+    binding_callbacks[$$value ? "unshift" : "push"](() => {
+      modalContainerEl = $$value;
+      $$invalidate(13, modalContainerEl);
+    });
+  }
+  $$self.$$set = ($$props2) => {
+    if ("app" in $$props2)
+      $$invalidate(25, app = $$props2.app);
+    if ("plugin" in $$props2)
+      $$invalidate(0, plugin = $$props2.plugin);
+    if ("dataService" in $$props2)
+      $$invalidate(26, dataService = $$props2.dataService);
+    if ("showTip" in $$props2)
+      $$invalidate(1, showTip = $$props2.showTip);
+    if ("remainingTips" in $$props2)
+      $$invalidate(2, remainingTips = $$props2.remainingTips);
+    if ("closeModal" in $$props2)
+      $$invalidate(27, closeModal = $$props2.closeModal);
+  };
+  $$self.$$.update = () => {
+    if ($$self.$$.dirty[0] & /*sidebarItems*/
+    268435456) {
+      $:
+        $$invalidate(17, flatCategories = getFlatCategories(sidebarItems));
+    }
+    if ($$self.$$.dirty[0] & /*isSearching, searchResults, tasks*/
+    536870936) {
+      $:
+        $$invalidate(16, displayedTasks = isSearching ? searchResults.map((r) => r.task) : tasks2);
+    }
+  };
+  return [
+    plugin,
+    showTip,
+    remainingTips,
+    isSearching,
+    searchResults,
+    selectedCategory,
+    taskCounts,
+    searchQuery,
+    focusPane,
+    focusedCategoryIndex,
+    focusedTaskIndex,
+    isAddingTask,
+    newTaskTitle,
+    modalContainerEl,
+    searchInputEl,
+    addTaskInputEl,
+    displayedTasks,
+    flatCategories,
+    selectCategory,
+    handleSearchInput,
+    clearSearch,
+    toggleTaskCompletion,
+    toggleTaskStar,
+    startInlineAddTask,
+    handleKeydown,
+    app,
+    dataService,
+    closeModal,
+    sidebarItems,
+    tasks2,
+    input_input_handler,
+    input_binding,
+    click_handler2,
+    input_input_handler_1,
+    input_binding_1,
+    click_handler_1,
+    click_handler_22,
+    click_handler_3,
+    div9_binding
+  ];
+}
+var QuickTaskModalView = class extends SvelteComponent {
+  constructor(options) {
+    super();
+    init(
+      this,
+      options,
+      instance4,
+      create_fragment4,
+      safe_not_equal,
+      {
+        app: 25,
+        plugin: 0,
+        dataService: 26,
+        showTip: 1,
+        remainingTips: 2,
+        closeModal: 27
+      },
+      null,
+      [-1, -1]
+    );
+  }
+};
+var QuickTaskModalView_default = QuickTaskModalView;
+
+// src/modals/QuickTaskModal.ts
+var MAX_TIP_COUNT = 5;
+var QuickTaskModal = class extends import_obsidian8.Modal {
+  constructor(app, plugin, dataService) {
+    super(app);
+    this.component = null;
+    this.plugin = plugin;
+    this.dataService = dataService;
+  }
+  onOpen() {
+    var _a, _b, _c;
+    const { contentEl, modalEl } = this;
+    contentEl.empty();
+    modalEl.addClass("task-quick-modal");
+    const commandId = "fluent-tasks:open-quick-task-modal";
+    const customHotkeys = (_b = (_a = this.app.hotkeyManager) == null ? void 0 : _a.customKeys) == null ? void 0 : _b[commandId];
+    const hotkeyAlreadySet = !!(customHotkeys && customHotkeys.length > 0);
+    const currentCount = (_c = this.plugin.settings.quickModalTipCount) != null ? _c : 0;
+    const showTip = !hotkeyAlreadySet && currentCount < MAX_TIP_COUNT;
+    const remainingTips = MAX_TIP_COUNT - currentCount;
+    this.component = new QuickTaskModalView_default({
+      target: contentEl,
+      props: {
+        app: this.app,
+        plugin: this.plugin,
+        dataService: this.dataService,
+        showTip,
+        remainingTips,
+        closeModal: () => this.close()
+      }
+    });
+    if (showTip) {
+      this.plugin.settings.quickModalTipCount = currentCount + 1;
+      void this.plugin.saveSettings();
+    }
+  }
+  onClose() {
+    if (this.component) {
+      this.component.$destroy();
+      this.component = null;
+    }
+  }
+};
+
 // src/main.ts
-var TaskSidebarViewWrapper = class extends import_obsidian8.ItemView {
+var TaskSidebarViewWrapper = class extends import_obsidian9.ItemView {
   constructor(leaf, dataService, plugin) {
     super(leaf);
     this.component = null;
     this.dataService = dataService;
     this.plugin = plugin;
-    this.scope = new import_obsidian8.Scope(this.app.scope);
+    this.scope = new import_obsidian9.Scope(this.app.scope);
     this.scope.register([], "F2", (evt) => {
       var _a;
       if ((_a = this.component) == null ? void 0 : _a.triggerRenameHoveredOrActive()) {
@@ -16344,7 +18040,7 @@ var TaskSidebarViewWrapper = class extends import_obsidian8.ItemView {
     return this.component;
   }
 };
-var TaskMainViewWrapper = class extends import_obsidian8.ItemView {
+var TaskMainViewWrapper = class extends import_obsidian9.ItemView {
   constructor(leaf, dataService, plugin) {
     super(leaf);
     this.component = null;
@@ -16395,13 +18091,13 @@ var TaskMainViewWrapper = class extends import_obsidian8.ItemView {
     const cat = (_a = this.component) == null ? void 0 : _a.getCurrentCategory();
     if (cat && cat.filepath) {
       const f = this.app.vault.getAbstractFileByPath(cat.filepath);
-      if (f instanceof import_obsidian8.TFile)
+      if (f instanceof import_obsidian9.TFile)
         return f;
     }
     return null;
   }
 };
-var TaskDetailViewWrapper = class extends import_obsidian8.ItemView {
+var TaskDetailViewWrapper = class extends import_obsidian9.ItemView {
   constructor(leaf, dataService, plugin) {
     super(leaf);
     this.component = null;
@@ -16435,7 +18131,7 @@ var TaskDetailViewWrapper = class extends import_obsidian8.ItemView {
     return this.component;
   }
 };
-var FluentTasksPlugin = class extends import_obsidian8.Plugin {
+var FluentTasksPlugin = class extends import_obsidian9.Plugin {
   constructor() {
     super(...arguments);
     this.ribbonIconEl = null;
@@ -16515,13 +18211,20 @@ var FluentTasksPlugin = class extends import_obsidian8.Plugin {
         }
       }
     });
+    this.addCommand({
+      id: "open-quick-task-modal",
+      name: "Open Quick Task Modal",
+      callback: () => {
+        new QuickTaskModal(this.app, this, this.dataService).open();
+      }
+    });
     this.app.workspace.onLayoutReady(() => {
       void (async () => {
         var _a;
         await this.dataService.ensureDataFolder();
         await this.loadSettings();
         this.applySettings();
-        let lastActiveViewType = ((_a = this.app.workspace.getActiveViewOfType(import_obsidian8.ItemView)) == null ? void 0 : _a.getViewType()) || "";
+        let lastActiveViewType = ((_a = this.app.workspace.getActiveViewOfType(import_obsidian9.ItemView)) == null ? void 0 : _a.getViewType()) || "";
         this.registerEvent(
           this.app.workspace.on("active-leaf-change", (leaf) => {
             if (!leaf || !leaf.view)
@@ -16537,7 +18240,7 @@ var FluentTasksPlugin = class extends import_obsidian8.Plugin {
         );
         this.registerEvent(
           this.app.vault.on("modify", (file) => {
-            if (!file || !(file instanceof import_obsidian8.TFile))
+            if (!file || !(file instanceof import_obsidian9.TFile))
               return;
             if (file.path.startsWith(DATA_FOLDER + "/") && file.path.endsWith(".md")) {
               if (this.dataService.isInternalWrite(file.path)) {
