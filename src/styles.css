@@ -2089,3 +2089,342 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     color: #38bdf8;
 }
 
+/* =============================================
+   Quick Task Modal Styles (极简 + 全键盘 Task 弹窗)
+   ============================================= */
+body .task-quick-modal {
+    width: var(--task-quick-modal-width, 680px) !important;
+    max-width: 92vw !important;
+    height: var(--task-quick-modal-height, 520px) !important;
+    max-height: 85vh !important;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+}
+
+body .task-quick-modal .modal-content {
+    height: 100%;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.quick-modal-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    background: var(--background-primary);
+    color: var(--text-normal);
+    font-family: var(--font-interface);
+    user-select: none;
+    outline: none;
+}
+
+.quick-modal-tip-banner {
+    padding: 7px 14px;
+    font-size: 11.5px;
+    color: #ffffff;
+    background: linear-gradient(135deg, var(--todo-accent, #8b5cf6), #6d28d9);
+    text-align: center;
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.quick-modal-tip-banner code {
+    background: rgba(0, 0, 0, 0.25);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 10.5px;
+}
+
+.quick-modal-filter-bar {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    background-color: var(--background-secondary);
+    border-bottom: 1px solid var(--background-modifier-border);
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.quick-modal-filter-icon {
+    display: flex;
+    align-items: center;
+    color: var(--text-muted);
+}
+
+.quick-modal-filter-input {
+    flex: 1;
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    font-size: 13px !important;
+    color: var(--text-normal) !important;
+    padding: 4px 0 !important;
+}
+
+.quick-modal-filter-input::placeholder {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.quick-modal-filter-clear {
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 2px 6px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quick-modal-filter-clear:hover {
+    color: var(--text-normal);
+    background-color: var(--background-modifier-hover);
+}
+
+.quick-modal-dual-pane {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    height: 100%;
+}
+
+.quick-modal-pane-lists {
+    flex: 5;
+    min-width: 150px;
+    max-width: 230px;
+    border-right: 1px solid var(--background-modifier-border);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background-color: var(--background-secondary);
+    opacity: 0.98;
+}
+
+.quick-modal-pane-tasks {
+    flex: 7;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background-color: var(--background-primary);
+    overflow: hidden;
+}
+
+.quick-modal-pane-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--todo-accent, #8b5cf6);
+    padding: 8px 12px;
+    flex-shrink: 0;
+}
+
+.quick-modal-pane-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--background-modifier-border);
+    padding-right: 10px;
+    flex-shrink: 0;
+}
+
+.quick-modal-scrollable {
+    flex: 1;
+    overflow-y: auto;
+    padding: 6px 8px;
+}
+
+.quick-modal-list-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    margin: 2px 0;
+    cursor: pointer;
+    font-size: 12.5px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.quick-modal-list-item:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.quick-modal-list-item.is-selected {
+    background-color: var(--todo-accent-light, rgba(139, 92, 246, 0.15));
+    color: var(--todo-accent, #8b5cf6);
+    font-weight: 600;
+}
+
+body .quick-modal-list-item.is-focused,
+body .quick-modal-task-item.is-focused {
+    outline: 2px solid var(--todo-accent, #8b5cf6) !important;
+    outline-offset: -2px;
+    background-color: var(--todo-accent-light, rgba(139, 92, 246, 0.18));
+}
+
+.quick-modal-list-icon {
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.quick-modal-list-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.quick-modal-badge {
+    margin-left: auto;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 10px;
+    background-color: var(--background-modifier-border);
+    color: var(--text-muted);
+}
+
+.quick-modal-task-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    margin: 2px 0;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background-color 0.15s ease;
+}
+
+.quick-modal-task-item:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.quick-modal-checkbox {
+    cursor: pointer;
+    width: 15px;
+    height: 15px;
+    accent-color: var(--todo-accent, #8b5cf6);
+    flex-shrink: 0;
+    margin: 0;
+}
+
+.quick-modal-task-title {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text-normal);
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.quick-modal-task-title.is-done {
+    text-decoration: line-through;
+    color: var(--text-muted);
+    opacity: 0.65;
+}
+
+.quick-modal-steps-badge {
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.quick-modal-why-badge {
+    font-size: 10px;
+    font-weight: 700;
+    width: 16px;
+    height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    flex-shrink: 0;
+}
+
+.quick-modal-star-btn {
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-muted);
+    padding: 0 4px;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.quick-modal-star-btn:hover,
+.quick-modal-star-btn.is-starred {
+    color: #eab308;
+}
+
+.quick-modal-add-btn {
+    background: transparent;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    font-size: 11px;
+    padding: 2px 8px;
+    color: var(--todo-accent, #8b5cf6);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.quick-modal-add-btn:hover {
+    background: var(--background-modifier-hover);
+    border-color: var(--todo-accent, #8b5cf6);
+}
+
+.quick-modal-add-box {
+    padding: 4px 0 8px 0;
+}
+
+.quick-modal-add-input {
+    width: 100%;
+    padding: 6px 10px;
+    font-size: 12.5px;
+    border-radius: 6px;
+    border: 1px solid var(--todo-accent, #8b5cf6) !important;
+    background: var(--background-primary) !important;
+    color: var(--text-normal) !important;
+    outline: none !important;
+}
+
+.quick-modal-empty {
+    padding: 24px 16px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.quick-modal-status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    padding: 6px 12px;
+    background-color: var(--background-secondary);
+    border-top: 1px solid var(--background-modifier-border);
+    font-size: 10px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.quick-modal-status-bar b {
+    color: var(--text-normal);
+    font-weight: 600;
+}
+

@@ -7,6 +7,8 @@ export interface FluentTasksSettings {
     searchHideCompleted: boolean;
     hideRibbonIcon: boolean;
     wrapTaskTitles: boolean;
+    quickModalAction: 'direct' | 'navigate';
+    quickModalTipCount: number;
 }
 
 export const DEFAULT_SETTINGS: FluentTasksSettings = {
@@ -15,6 +17,8 @@ export const DEFAULT_SETTINGS: FluentTasksSettings = {
     searchHideCompleted: true,
     hideRibbonIcon: false,
     wrapTaskTitles: true,
+    quickModalAction: 'direct',
+    quickModalTipCount: 0,
 }
 
 export class FluentTasksSettingTab extends PluginSettingTab {
@@ -61,6 +65,18 @@ export class FluentTasksSettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.wrapTaskTitles ?? true)
                 .onChange(async (value) => {
                     this.plugin.settings.wrapTaskTitles = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName("Quick Task Modal Action")
+            .setDesc("Choose whether selecting a task/list in the Quick Task Modal manages it directly in the popup or navigates and reveals it in the main workspace.")
+            .addDropdown(dropdown => dropdown
+                .addOption("direct", "Direct In-Modal Management (Toggle & Add in popup)")
+                .addOption("navigate", "Navigate Workspace (Open list & details in workspace)")
+                .setValue(this.plugin.settings.quickModalAction ?? "direct")
+                .onChange(async (value: "direct" | "navigate") => {
+                    this.plugin.settings.quickModalAction = value;
                     await this.plugin.saveSettings();
                 }));
 
