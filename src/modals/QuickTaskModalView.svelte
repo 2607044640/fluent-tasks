@@ -6,6 +6,7 @@
     import { EventBus } from "../EventBus";
     import { EventName, type CategoryInfo, type SidebarItem, type TaskItem } from "../types";
     import { portal } from "../utils/domUtils";
+    import { calculatePopoverPosition, type PopoverContentType } from "../utils/popoverUtils";
     import { INPUT_FOCUS_DELAY_MS, POPOVER_HIDE_DELAY_MS } from "../constants";
     import { Platform } from "obsidian";
 
@@ -50,7 +51,7 @@
     // Popover State
     let popoverVisible: boolean = false;
     let popoverTask: TaskItem | null = null;
-    let popoverType: 'why' | 'svg' | 'custom' | 'title' | 'steps' | null = null;
+    let popoverType: PopoverContentType | null = null;
     let popoverSvgIndex: number = 0;
     let popoverX: number = 0;
     let popoverY: number = 0;
@@ -159,21 +160,15 @@
     // =============================================
     // Popover Engine
     // =============================================
-    function showPopover(e: MouseEvent | { currentTarget: HTMLElement }, task: TaskItem | null, type: 'why' | 'svg' | 'custom' | 'title' | 'steps', svgIndex: number = 0) {
+    function showPopover(e: MouseEvent | { currentTarget: HTMLElement }, task: TaskItem | null, type: PopoverContentType, svgIndex: number = 0) {
         if (popoverTimeout) clearTimeout(popoverTimeout);
         const target = e.currentTarget as HTMLElement;
         if (!target) return;
-        const rect = target.getBoundingClientRect();
 
-        const estimatedHeight = type === 'svg' ? 320 : type === 'title' ? 240 : type === 'steps' ? 200 : type === 'custom' ? 180 : 140;
-        const estimatedHalfWidth = type === 'svg' ? 150 : type === 'title' ? 170 : type === 'steps' ? 150 : 140;
-
-        const fitsAbove = rect.top >= estimatedHeight + 24;
-        popoverPlacement = fitsAbove ? 'top' : 'bottom';
-
-        const centerX = rect.left + rect.width / 2;
-        popoverX = Math.max(estimatedHalfWidth + 16, Math.min(window.innerWidth - estimatedHalfWidth - 16, centerX));
-        popoverY = fitsAbove ? (rect.top - 8) : (rect.bottom + 8);
+        const pos = calculatePopoverPosition(target, type);
+        popoverPlacement = pos.placement;
+        popoverX = pos.x;
+        popoverY = pos.y;
 
         popoverTask = task;
         popoverType = type;

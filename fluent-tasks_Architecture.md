@@ -60,6 +60,12 @@ Data movement across views and persistent storage follows a strict 7-step sequen
 | `src/TaskSidebarView.svelte` | Presentational sidebar tree, drag-and-drop groups/categories | Direct `app.vault` file mutation |
 | `src/TaskMainView.svelte` | Presentational center task list, completion toggles, DND reorder | Raw file system reads |
 | `src/TaskDetailView.svelte` | Presentational right task detail panel (notes, subtask steps) | Direct file parsing logic |
+| `src/modals/QuickTaskModal.ts` | Obsidian Modal wrapper for standalone Quick Task Manager | Direct Svelte UI rendering logic |
+| `src/modals/QuickTaskModalView.svelte` | Dual-pane floating task manager, keyboard physics, DnD | Raw file system mutations |
+| `src/modals/QuickListModal.ts` | Obsidian Modal wrapper for list-only floating navigator | Direct Svelte UI rendering logic |
+| `src/modals/QuickListModalView.svelte` | List-only floating navigator, fuzzy filter, center view jump | Sidebar leaf state mutations |
+| `src/utils/hotkeyUtils.ts` | Custom hotkey detection and tip countdown management | UI rendering or modal lifecycle |
+| `src/utils/popoverUtils.ts` | Smart viewport auto-flip and coordinate positioning | State management or DOM mutation |
 | `src/utils/domUtils.ts` | Svelte actions and DOM utilities (`portal` to `document.body`, `autosize` auto-resizing textareas) | Business logic or state management |
 | `src/utils/timeUtils.ts` | Pure formatters (`formatExactTime`, `getRelativeTime`, `getRecurrenceLabel`) | DOM mutation or side-effects |
 </scope_boundaries>
@@ -79,7 +85,7 @@ Data movement across views and persistent storage follows a strict 7-step sequen
 - **Sync Field Backward Compatibility**: Optional fields `dueDate?`, `msGraphId?`, `msGraphListId?`, `why?`, `svgs?`, `note_link?`, `customMeta?` on `TaskItem` MUST remain optional and NEVER be required. (Why: existing users without sync must not be affected — these fields only appear in `%%{...}%%` metadata when populated).
 - **Sidebar Expansion Protocol**: Automatic sidebar expansion on view focus MUST verify `leftSplit.collapsed` prior to `expand()` and check `getLeavesOfType(VIEW_TYPE_SIDEBAR).length > 0` before invoking `workspace.revealLeaf()`. (Why: prevents runtime crashes or layout disruptions if the sidebar leaf is closed or not yet initialized).
 - **Document Body Portaling for Popovers & Modals (CRITICAL)**: All hover popovers (`.meta-popover`), Lightbox modals, and dialog backdrops MUST mount directly to `document.body` via `use:portal` with `z-index: 100000`. (Why: prevents adjacent panes, sidebars, or parent container `overflow: hidden` from clipping popovers).
-- **Smart Viewport Auto-Flip Collision Avoidance**: Popover coordinate calculation MUST calculate `fitsAbove = rect.top >= estimatedHeight + 24` and flip to `placement-bottom` if space above is insufficient. (Why: guarantees popovers never overflow beyond the top window boundary).
+- **Smart Viewport Auto-Flip Collision Avoidance**: Popover coordinate calculation MUST calculate `fitsAbove = rect.top >= estimatedHeight + 24` and flip to `placement-bottom` if space above is insufficient via `calculatePopoverPosition()`. (Why: guarantees popovers never overflow beyond the top window boundary).
 - **Obsidian Native Page Preview Protocol**: Note link hover previews MUST invoke `app.workspace.trigger("hover-link", ...)` passing a proxied `MouseEvent` (`ctrlKey: true`), `source: "fluent-tasks"`, `hoverParent`, `targetEl`, and `sourcePath`. (Why: allows seamless direct hover previews across both Reading and Live Preview modes while reuses Obsidian's native link caching).
 - **Instant Modal/Popover Dismissal**: Popovers and Lightbox modals MUST dismiss on global `contextmenu` (right-click) or backdrop left-click outside action buttons. (Why: provides zero-friction dismissal for rapid workflow navigation).
 - **Sticky Quick Peek Popover Invariant**: `scheduleHidePopover` MUST skip auto-hiding when `popoverType === 'title'`. (Why: allows users to release Ctrl and comfortably read complex multi-line steps, notes, and rationales without accidental dismissal).
@@ -89,7 +95,8 @@ Data movement across views and persistent storage follows a strict 7-step sequen
 - **Metadata-First Category Creation & Deduplication Auto-Healing (CRITICAL)**: `createCategory` MUST update `.metadata.json` BEFORE creating the `.md` file on disk. `getSidebarItems()` and `saveSidebarState()` MUST enforce `usedFiles` and `seenCategories` Set deduplication with automatic metadata self-healing. (Why: prevents newly created files from being detected as orphaned markdown files during vault create event races, eliminating double-insertion duplicates at both head and tail of the sidebar).
 - **Creation Form Mutex Invariant**: `confirmAddList` and `confirmAddGroup` MUST guard execution with mutex booleans (`isCreatingList`, `isCreatingGroup`). (Why: prevents simultaneous blur and Enter keydown events from firing concurrent duplicate creation calls).
 - **F2 Hover Renaming Protocol**: Hover tracking on lists/groups MUST set `hoveredItem` via `setHoveredCategory` and `setHoveredGroup`. F2 keydown triggers inline rename with autofocus, Enter/blur commits via `renameCategory`/`renameGroup`, and Esc cleanly cancels.
-</key_invariants>
+- **Dynamic Z-Jump Commands & Hotkey Sinking**: Category jump commands MUST be prefixed with `Z-Jump to list: ${cat.name}` and use UTF-8 path hashes for command IDs. On any category create, rename, or delete, `registerCategoryCommands()` MUST dynamically refresh commands in real time without requiring an Obsidian restart. (Why: guarantees non-ASCII list compatibility and keeps main plugin commands sorted cleanly at the top of Obsidian's Hotkeys settings).
+- **Quick List Navigation Isolation**: `QuickListModal` MUST activate/reveal ONLY `VIEW_TYPE_MAIN` in the center workspace without triggering `VIEW_TYPE_SIDEBAR` activation or split expansion. (Why: preserves clean, focused workspace layout when navigating lists from the floating popup).
 
 ## Key API Reference
 

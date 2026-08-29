@@ -42,10 +42,21 @@ Add multi-step checklist subtasks, star/pin priority items, write rich markdown 
 
 ![Task Details Demo](https://raw.githubusercontent.com/2607044640/fluent-tasks/main/docs/assets/task_features.gif)
 
-### 6. Instant Global Search
+### 6. Quick Task Modal (Keyboard-First Floating Manager)
+- **Maximized Dual-Pane View**: Press your custom shortcut (or `Ctrl+P` -> `Open Quick Task Modal`) to summon an expansive (`92vw × 86vh`) floating manager.
+- **Full Keyboard Navigation**: Navigate lists and tasks using <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd>, hit <kbd>Space</kbd> to toggle completion, press <kbd>Ctrl+N</kbd> to add tasks inline, and <kbd>Ctrl+Enter</kbd> to toggle priority star.
+- **In-Modal Drag & Drop**: Freely reorder tasks or drag them across onto target lists in the left pane.
+- **Hover Previews**: Direct hover previews for subtasks, why rationales, SVG memory aids, and note links.
+- **Dual Operating Modes**: Switch in settings between *Direct in-modal management* (popup checklist) and *Workspace navigation* (opens list & details in main view).
+
+### 7. Quick List Modal (List-Only Workspace Navigator)
+- **Sidebar-Free Navigation**: Trigger `Open Quick List Modal (List only)` to browse all lists with fuzzy search and uncompleted task counters.
+- **Clean Workspace Focus**: Selecting a list reveals it in the center task view **without opening or expanding the left sidebar**.
+
+### 8. Instant Global Search
 Click `🔍` in the category header or trigger Search Modal anytime to search through tasks across all lists in milliseconds.
 
-### 7. Custom Accent Colors
+### 9. Custom Accent Colors
 Customize the primary accent color to match your personal theme preference.
 
 ![Custom Accent Color Demo](https://raw.githubusercontent.com/2607044640/fluent-tasks/main/docs/assets/custom_colors.gif)
@@ -56,10 +67,11 @@ Customize the primary accent color to match your personal theme preference.
 
 1. **Install & Enable**: Install Fluent Tasks from the Obsidian Community Store and enable it.
 2. **Open Sidebar**: The task sidebar is opened automatically on startup. You can also open it via the Command Palette (`Ctrl+P` -> `Fluent Tasks: Open Sidebar`).
-3. **Create Lists & Groups**: Create a new task list or group from the bottom of the sidebar.
-4. **Manage & Drag Tasks**: Click a list to view its tasks, drag them to reorder or drag onto sidebar lists to move, or click a task to view and edit its details.
-5. **Quick Shortcuts**: Hover over task titles with <kbd>Ctrl</kbd> for quick peeks; hover badges for instant metadata previews; right-click anywhere to dismiss popovers.
-6. **Features & Shortcuts Guide**: Click the `?` icon in the pane header action bar (next to `⋮`) anytime to open the complete interactive guide.
+3. **Assign Quick Hotkeys**: Go to **Settings → Hotkeys** to bind shortcuts to `Fluent Tasks: Open Quick Task Modal` or `Fluent Tasks: Open Quick List Modal`.
+4. **Create Lists & Groups**: Create a new task list or group from the bottom of the sidebar.
+5. **Manage & Drag Tasks**: Click a list to view its tasks, drag them to reorder or drag onto sidebar lists to move, or click a task to view and edit its details.
+6. **Quick Shortcuts**: Hover over task titles with <kbd>Ctrl</kbd> for quick peeks; hover badges for instant metadata previews; right-click anywhere to dismiss popovers.
+7. **Features & Shortcuts Guide**: Click the `?` icon in the pane header action bar (next to `⋮`) anytime to open the complete interactive guide.
 
 ---
 

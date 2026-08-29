@@ -43,6 +43,9 @@ Fluent Tasks uses a lightweight Meta Badge and Quick Peek system to keep task ca
   - **Linked Note (`note_link`)**: Note wikilinks (e.g. `[[Topic#^block]]`). Hovering triggers Obsidian's native `Page Preview` popover in both Reading and Live Preview modes; clicking navigates directly to the note.
   - **Custom Properties (`customMeta`)**: Key-value pairs displayed as interactive `🏷️` tag chips with hover popovers and delete buttons.
 - **F2 Hover Rename & Context Menu**: Hovering over any task list or group in the left sidebar and pressing <kbd>F2</kbd> (or right-clicking -> `Rename List/Group (F2)`) opens an inline rename input. Press <kbd>Enter</kbd> or click outside to confirm; press <kbd>Esc</kbd> to cancel.
+- **Quick Task Modal (`open-quick-task-modal`)**: A standalone, maximized (`92vw × 86vh`) dual-pane floating popup for lightning-fast task management. Features full keyboard navigation (<kbd>↑↓</kbd> move, <kbd>←→</kbd> switch pane, <kbd>Space</kbd> toggle check, <kbd>Ctrl+N</kbd> inline add, <kbd>Ctrl+Enter</kbd> star), drag-and-drop reordering, and hover popover previews. Configurable in settings to either manage tasks directly in-modal or navigate and reveal them in the workspace.
+- **Quick List Modal (`open-quick-list-modal`)**: A dedicated list-only floating navigator. Selecting a list opens and activates the center task view immediately without opening or expanding the left sidebar.
+- **Z-Jump to List Commands**: Every list automatically registers a `Fluent Tasks: Z-Jump to list: [Name]` command with UTF-8 safe IDs and real-time live synchronization on create/rename/delete, sorted neatly at the bottom of Obsidian's Hotkeys settings.
 - **Features & Shortcuts Guide**: Accessible anytime via the `?` icon in the pane header action bar (next to `⋮`) or through the full Shortcuts Guide Modal.
 - **Instant Dismiss**: Right-clicking anywhere or left-clicking outside instantly dismisses active hover popovers and lightbox modals.
 

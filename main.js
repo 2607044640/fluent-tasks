@@ -6972,6 +6972,19 @@ function autosize(node, _value) {
   };
 }
 
+// src/utils/popoverUtils.ts
+function calculatePopoverPosition(targetEl, type) {
+  const rect = targetEl.getBoundingClientRect();
+  const estimatedHeight = type === "svg" ? 320 : type === "guide" ? 280 : type === "title" ? 240 : type === "steps" ? 200 : type === "custom" ? 180 : 140;
+  const estimatedHalfWidth = type === "svg" ? 150 : type === "guide" ? 170 : type === "title" ? 170 : type === "steps" ? 150 : 140;
+  const fitsAbove = rect.top >= estimatedHeight + 24;
+  const placement = fitsAbove ? "top" : "bottom";
+  const centerX = rect.left + rect.width / 2;
+  const x = Math.max(estimatedHalfWidth + 16, Math.min(window.innerWidth - estimatedHalfWidth - 16, centerX));
+  const y = fitsAbove ? rect.top - 8 : rect.bottom + 8;
+  return { placement, x, y };
+}
+
 // src/utils/timeUtils.ts
 var DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 function formatExactTime(iso) {
@@ -11818,14 +11831,10 @@ function instance2($$self, $$props, $$invalidate) {
     const target = e.currentTarget;
     if (!target)
       return;
-    const rect = target.getBoundingClientRect();
-    const estimatedHeight = type === "svg" ? 320 : type === "guide" ? 280 : type === "title" ? 240 : type === "steps" ? 200 : type === "custom" ? 180 : 140;
-    const estimatedHalfWidth = type === "svg" ? 150 : type === "guide" ? 170 : type === "title" ? 170 : type === "steps" ? 150 : 140;
-    const fitsAbove = rect.top >= estimatedHeight + 24;
-    $$invalidate(19, popoverPlacement = fitsAbove ? "top" : "bottom");
-    const centerX = rect.left + rect.width / 2;
-    $$invalidate(14, popoverX = Math.max(estimatedHalfWidth + 16, Math.min(window.innerWidth - estimatedHalfWidth - 16, centerX)));
-    $$invalidate(15, popoverY = fitsAbove ? rect.top - 8 : rect.bottom + 8);
+    const pos = calculatePopoverPosition(target, type);
+    $$invalidate(19, popoverPlacement = pos.placement);
+    $$invalidate(14, popoverX = pos.x);
+    $$invalidate(15, popoverY = pos.y);
     $$invalidate(11, popoverTask = task);
     $$invalidate(12, popoverType = type);
     $$invalidate(13, popoverSvgIndex = svgIndex);
@@ -19366,14 +19375,10 @@ function instance4($$self, $$props, $$invalidate) {
     const target = e.currentTarget;
     if (!target)
       return;
-    const rect = target.getBoundingClientRect();
-    const estimatedHeight = type === "svg" ? 320 : type === "title" ? 240 : type === "steps" ? 200 : type === "custom" ? 180 : 140;
-    const estimatedHalfWidth = type === "svg" ? 150 : type === "title" ? 170 : type === "steps" ? 150 : 140;
-    const fitsAbove = rect.top >= estimatedHeight + 24;
-    $$invalidate(23, popoverPlacement = fitsAbove ? "top" : "bottom");
-    const centerX = rect.left + rect.width / 2;
-    $$invalidate(21, popoverX = Math.max(estimatedHalfWidth + 16, Math.min(window.innerWidth - estimatedHalfWidth - 16, centerX)));
-    $$invalidate(22, popoverY = fitsAbove ? rect.top - 8 : rect.bottom + 8);
+    const pos = calculatePopoverPosition(target, type);
+    $$invalidate(23, popoverPlacement = pos.placement);
+    $$invalidate(21, popoverX = pos.x);
+    $$invalidate(22, popoverY = pos.y);
     $$invalidate(19, popoverTask = task);
     $$invalidate(20, popoverType = type);
     popoverSvgIndex = svgIndex;
@@ -19931,8 +19936,25 @@ var QuickTaskModalView = class extends SvelteComponent {
 };
 var QuickTaskModalView_default = QuickTaskModalView;
 
-// src/modals/QuickTaskModal.ts
+// src/utils/hotkeyUtils.ts
 var MAX_TIP_COUNT = 5;
+function getModalHotkeyTipInfo(app, plugin, commandId) {
+  var _a, _b, _c;
+  const customHotkeys = (_b = (_a = app.hotkeyManager) == null ? void 0 : _a.customKeys) == null ? void 0 : _b[commandId];
+  const hotkeyAlreadySet = !!(customHotkeys && customHotkeys.length > 0);
+  const currentCount = (_c = plugin.settings.quickModalTipCount) != null ? _c : 0;
+  const showTip = !hotkeyAlreadySet && currentCount < MAX_TIP_COUNT;
+  const remainingTips = MAX_TIP_COUNT - currentCount;
+  return { showTip, remainingTips };
+}
+function recordHotkeyTipShown(plugin) {
+  var _a;
+  const currentCount = (_a = plugin.settings.quickModalTipCount) != null ? _a : 0;
+  plugin.settings.quickModalTipCount = currentCount + 1;
+  void plugin.saveSettings();
+}
+
+// src/modals/QuickTaskModal.ts
 var QuickTaskModal = class extends import_obsidian8.Modal {
   constructor(app, plugin, dataService) {
     super(app);
@@ -19941,16 +19963,14 @@ var QuickTaskModal = class extends import_obsidian8.Modal {
     this.dataService = dataService;
   }
   onOpen() {
-    var _a, _b, _c;
     const { contentEl, modalEl } = this;
     contentEl.empty();
     modalEl.addClass("task-quick-modal");
-    const commandId = "fluent-tasks:open-quick-task-modal";
-    const customHotkeys = (_b = (_a = this.app.hotkeyManager) == null ? void 0 : _a.customKeys) == null ? void 0 : _b[commandId];
-    const hotkeyAlreadySet = !!(customHotkeys && customHotkeys.length > 0);
-    const currentCount = (_c = this.plugin.settings.quickModalTipCount) != null ? _c : 0;
-    const showTip = !hotkeyAlreadySet && currentCount < MAX_TIP_COUNT;
-    const remainingTips = MAX_TIP_COUNT - currentCount;
+    const { showTip, remainingTips } = getModalHotkeyTipInfo(
+      this.app,
+      this.plugin,
+      "fluent-tasks:open-quick-task-modal"
+    );
     this.component = new QuickTaskModalView_default({
       target: contentEl,
       props: {
@@ -19962,8 +19982,7 @@ var QuickTaskModal = class extends import_obsidian8.Modal {
       }
     });
     if (showTip) {
-      this.plugin.settings.quickModalTipCount = currentCount + 1;
-      void this.plugin.saveSettings();
+      recordHotkeyTipShown(this.plugin);
     }
   }
   onClose() {
@@ -20729,7 +20748,6 @@ var QuickListModalView = class extends SvelteComponent {
 var QuickListModalView_default = QuickListModalView;
 
 // src/modals/QuickListModal.ts
-var MAX_TIP_COUNT2 = 5;
 var QuickListModal = class extends import_obsidian9.Modal {
   constructor(app, plugin, dataService) {
     super(app);
@@ -20738,17 +20756,15 @@ var QuickListModal = class extends import_obsidian9.Modal {
     this.dataService = dataService;
   }
   onOpen() {
-    var _a, _b, _c;
     const { contentEl, modalEl } = this;
     contentEl.empty();
     modalEl.addClass("task-quick-modal");
     modalEl.addClass("task-quick-list-modal");
-    const commandId = "fluent-tasks:open-quick-list-modal";
-    const customHotkeys = (_b = (_a = this.app.hotkeyManager) == null ? void 0 : _a.customKeys) == null ? void 0 : _b[commandId];
-    const hotkeyAlreadySet = !!(customHotkeys && customHotkeys.length > 0);
-    const currentCount = (_c = this.plugin.settings.quickModalTipCount) != null ? _c : 0;
-    const showTip = !hotkeyAlreadySet && currentCount < MAX_TIP_COUNT2;
-    const remainingTips = MAX_TIP_COUNT2 - currentCount;
+    const { showTip, remainingTips } = getModalHotkeyTipInfo(
+      this.app,
+      this.plugin,
+      "fluent-tasks:open-quick-list-modal"
+    );
     this.component = new QuickListModalView_default({
       target: contentEl,
       props: {
@@ -20759,6 +20775,9 @@ var QuickListModal = class extends import_obsidian9.Modal {
         closeModal: () => this.close()
       }
     });
+    if (showTip) {
+      recordHotkeyTipShown(this.plugin);
+    }
   }
   onClose() {
     if (this.component) {
