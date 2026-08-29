@@ -4,9 +4,26 @@ import { DATA_FOLDER } from "../types";
 
 export class AtomicIOPipeline {
     private app: App;
+    private internalWritePaths: Map<string, number> = new Map();
 
     constructor(app: App) {
         this.app = app;
+    }
+
+    /** Record that an internal write is occurring to prevent echo reload loops */
+    markInternalWrite(filepath: string, windowMs: number = 800): void {
+        this.internalWritePaths.set(filepath, Date.now() + windowMs);
+    }
+
+    /** Check if a recent write was triggered internally by the plugin */
+    isInternalWrite(filepath: string): boolean {
+        const expiry = this.internalWritePaths.get(filepath);
+        if (!expiry) return false;
+        if (Date.now() > expiry) {
+            this.internalWritePaths.delete(filepath);
+            return false;
+        }
+        return true;
     }
 
     /** Ensure the TodoData root folder exists */
@@ -25,6 +42,7 @@ export class AtomicIOPipeline {
             Logger.log("ERROR: Cannot process, file not found:", filepath);
             return;
         }
+        this.markInternalWrite(filepath);
         // app.vault.process safely reads the latest data and applies the mutation
         await this.app.vault.process(file, mutator);
     }

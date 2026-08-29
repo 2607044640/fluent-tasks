@@ -21,20 +21,37 @@ export function portal(node: HTMLElement) {
 /**
  * Svelte Action: Bulletproof auto-resizing for textareas.
  * Uses native field-sizing where supported, with robust scrollHeight calculation
- * and scrollTop zeroing to eliminate cursor jumping and top-line clipping.
+ * and scrollTop zeroing to eliminate cursor jumping, top-line clipping, and residual height.
  */
-export function autosize(node: HTMLTextAreaElement) {
+export function autosize(node: HTMLTextAreaElement, _value?: string) {
+    const supportsFieldSizing = typeof CSS !== "undefined" && CSS.supports && CSS.supports("field-sizing", "content");
+
     function resize() {
         node.scrollTop = 0;
+        if (supportsFieldSizing) {
+            // Native Chromium field-sizing dynamically computes content height without layout shifts
+            // Reset inline height to auto so field-sizing: content can shrink/grow natively on value updates
+            node.setCssStyles({
+                boxSizing: "border-box",
+                height: "auto",
+                minHeight: "0px",
+            });
+            node.scrollTop = 0;
+            return;
+        }
+
+        // Fallback for environments without CSS field-sizing: content
         node.setCssStyles({
             boxSizing: "border-box",
             height: "auto",
             minHeight: "0px",
         });
-        const targetHeight = Math.max(node.scrollHeight, 24);
-        node.setCssStyles({
-            height: `${targetHeight}px`
-        });
+        const targetHeight = node.scrollHeight;
+        if (targetHeight > 0) {
+            node.setCssStyles({
+                height: `${targetHeight}px`
+            });
+        }
         node.scrollTop = 0;
     }
 
@@ -43,7 +60,7 @@ export function autosize(node: HTMLTextAreaElement) {
     requestAnimationFrame(resize);
 
     return {
-        update() {
+        update(_newValue?: string) {
             requestAnimationFrame(resize);
         },
         destroy() {

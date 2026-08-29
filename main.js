@@ -141,7 +141,23 @@ Logger.LOG_PATH = `${DATA_FOLDER}/debug.log`;
 var import_obsidian2 = require("obsidian");
 var AtomicIOPipeline = class {
   constructor(app) {
+    this.internalWritePaths = /* @__PURE__ */ new Map();
     this.app = app;
+  }
+  /** Record that an internal write is occurring to prevent echo reload loops */
+  markInternalWrite(filepath, windowMs = 800) {
+    this.internalWritePaths.set(filepath, Date.now() + windowMs);
+  }
+  /** Check if a recent write was triggered internally by the plugin */
+  isInternalWrite(filepath) {
+    const expiry = this.internalWritePaths.get(filepath);
+    if (!expiry)
+      return false;
+    if (Date.now() > expiry) {
+      this.internalWritePaths.delete(filepath);
+      return false;
+    }
+    return true;
   }
   /** Ensure the TodoData root folder exists */
   async ensureDataFolder() {
@@ -158,6 +174,7 @@ var AtomicIOPipeline = class {
       Logger.log("ERROR: Cannot process, file not found:", filepath);
       return;
     }
+    this.markInternalWrite(filepath);
     await this.app.vault.process(file, mutator);
   }
   /** Wrapper for standard file read */
@@ -408,13 +425,18 @@ var MarkdownParser = class {
         title = rawContent.replace(/\s*%%\{.*?\}%%/, "").trim();
       }
       const createdAt = typeof meta.createdAt === "string" ? meta.createdAt : (/* @__PURE__ */ new Date()).toISOString();
-      const id = typeof meta.id === "string" ? meta.id : generateStableId(title, createdAt);
+      const cleanTitle = typeof title === "string" ? title.trim() : "";
+      const id = typeof meta.id === "string" ? meta.id : generateStableId(cleanTitle, createdAt);
+      const cleanSteps = Array.isArray(meta.steps) ? meta.steps.filter((s) => !!s && typeof s === "object").map((s) => ({
+        text: typeof s.text === "string" ? s.text.trimEnd() : "",
+        done: Boolean(s.done)
+      })) : [];
       tasks2.push({
         id,
-        title,
+        title: cleanTitle,
         completed,
         starred: typeof meta.starred === "boolean" ? meta.starred : false,
-        steps: Array.isArray(meta.steps) ? meta.steps : [],
+        steps: cleanSteps,
         note: typeof meta.note === "string" ? meta.note : "",
         createdAt,
         ...typeof meta.dueDate === "string" ? { dueDate: meta.dueDate } : {},
@@ -605,6 +627,12 @@ var DataService = class {
   }
   async ensureDataFolder() {
     return this.io.ensureDataFolder();
+  }
+  isInternalWrite(filepath) {
+    return this.io.isInternalWrite(filepath);
+  }
+  markInternalWrite(filepath, windowMs) {
+    this.io.markInternalWrite(filepath, windowMs);
   }
   // Category Operations
   async getSidebarItems() {
@@ -6839,25 +6867,37 @@ function portal(node) {
     }
   };
 }
-function autosize(node) {
+function autosize(node, _value) {
+  const supportsFieldSizing = typeof CSS !== "undefined" && CSS.supports && CSS.supports("field-sizing", "content");
   function resize() {
     node.scrollTop = 0;
+    if (supportsFieldSizing) {
+      node.setCssStyles({
+        boxSizing: "border-box",
+        height: "auto",
+        minHeight: "0px"
+      });
+      node.scrollTop = 0;
+      return;
+    }
     node.setCssStyles({
       boxSizing: "border-box",
       height: "auto",
       minHeight: "0px"
     });
-    const targetHeight = Math.max(node.scrollHeight, 24);
-    node.setCssStyles({
-      height: `${targetHeight}px`
-    });
+    const targetHeight = node.scrollHeight;
+    if (targetHeight > 0) {
+      node.setCssStyles({
+        height: `${targetHeight}px`
+      });
+    }
     node.scrollTop = 0;
   }
   node.addEventListener("input", resize);
   node.addEventListener("focus", resize);
   requestAnimationFrame(resize);
   return {
-    update() {
+    update(_newValue) {
       requestAnimationFrame(resize);
     },
     destroy() {
@@ -11846,6 +11886,15 @@ function instance2($$self, $$props, $$invalidate) {
   async function handleTaskUpdated(payload) {
     if (payload.categoryFilepath === (currentCategory == null ? void 0 : currentCategory.filepath)) {
       await loadTasks();
+      if (payload.isExternal && selectedTaskId && currentCategory) {
+        const freshTask = incompleteTasks.find((t) => t.id === selectedTaskId) || completedTasks.find((t) => t.id === selectedTaskId);
+        if (freshTask) {
+          EventBus.emit("task:selected" /* TASK_SELECTED */, {
+            task: freshTask,
+            categoryFilepath: currentCategory.filepath
+          });
+        }
+      }
     }
   }
   async function handleTaskMoved(payload) {
@@ -12736,7 +12785,12 @@ function create_if_block3(ctx) {
             /*keydown_handler*/
             ctx[38]
           ),
-          action_destroyer(autosize_action = autosize.call(null, textarea0)),
+          action_destroyer(autosize_action = autosize.call(
+            null,
+            textarea0,
+            /*task*/
+            ctx[1].title
+          )),
           listen(
             textarea0,
             "input",
@@ -12840,6 +12894,13 @@ function create_if_block3(ctx) {
       ctx2[1].completed)) {
         attr(span0, "aria-checked", span0_aria_checked_value);
       }
+      if (autosize_action && is_function(autosize_action.update) && dirty[0] & /*task*/
+      2)
+        autosize_action.update.call(
+          null,
+          /*task*/
+          ctx2[1].title
+        );
       if (dirty[0] & /*task*/
       2) {
         set_input_value(
@@ -13265,7 +13326,12 @@ function create_each_block_32(key_1, ctx) {
         dispose = [
           listen(span0, "click", click_handler2),
           listen(span0, "keydown", keydown_handler_2),
-          action_destroyer(autosize_action = autosize.call(null, textarea)),
+          action_destroyer(autosize_action = autosize.call(
+            null,
+            textarea,
+            /*step*/
+            ctx[101].text
+          )),
           listen(textarea, "input", input_handler),
           listen(textarea, "keydown", keydown_handler_3),
           listen(span1, "click", click_handler_1),
@@ -13294,6 +13360,13 @@ function create_each_block_32(key_1, ctx) {
       ctx[101].text)) {
         textarea.value = textarea_value_value;
       }
+      if (autosize_action && is_function(autosize_action.update) && dirty[0] & /*task*/
+      2)
+        autosize_action.update.call(
+          null,
+          /*step*/
+          ctx[101].text
+        );
       if (dirty[0] & /*task*/
       2) {
         toggle_class(
@@ -15711,13 +15784,27 @@ function instance3($$self, $$props, $$invalidate) {
       handleClose();
     }
   }
-  function handleExternalTaskUpdate(payload) {
-    if (task && payload.task && payload.task.id === task.id) {
-      $$invalidate(1, task = {
-        ...payload.task,
-        steps: payload.task.steps.map((s) => ({ ...s }))
-      });
-      $$invalidate(2, categoryFilepath = payload.categoryFilepath || categoryFilepath);
+  async function handleExternalTaskUpdate(payload) {
+    if (!task || !categoryFilepath)
+      return;
+    if (payload.categoryFilepath === categoryFilepath) {
+      if (payload.task && payload.task.id === task.id) {
+        $$invalidate(1, task = {
+          ...payload.task,
+          steps: payload.task.steps.map((s) => ({ ...s }))
+        });
+        return;
+      }
+      if (payload.isExternal) {
+        const tasks2 = await dataService.getTasks(categoryFilepath);
+        const fresh = tasks2.find((t) => t.id === (task == null ? void 0 : task.id));
+        if (fresh) {
+          $$invalidate(1, task = {
+            ...fresh,
+            steps: fresh.steps.map((s) => ({ ...s }))
+          });
+        }
+      }
     }
   }
   function scheduleSave() {
@@ -16388,6 +16475,21 @@ var FluentTasksPlugin = class extends import_obsidian8.Plugin {
               this.expandSidebarToList();
             }
             lastActiveViewType = currentType;
+          })
+        );
+        this.registerEvent(
+          this.app.vault.on("modify", (file) => {
+            if (!file || !(file instanceof import_obsidian8.TFile))
+              return;
+            if (file.path.startsWith(DATA_FOLDER + "/") && file.path.endsWith(".md")) {
+              if (this.dataService.isInternalWrite(file.path)) {
+                return;
+              }
+              EventBus.emit("task:updated" /* TASK_UPDATED */, {
+                categoryFilepath: file.path,
+                isExternal: true
+              });
+            }
           })
         );
         EventBus.on("detail:close" /* DETAIL_CLOSE */, () => {

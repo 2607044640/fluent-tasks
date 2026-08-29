@@ -23,6 +23,14 @@ export class DataService {
         return this.io.ensureDataFolder();
     }
 
+    isInternalWrite(filepath: string): boolean {
+        return this.io.isInternalWrite(filepath);
+    }
+
+    markInternalWrite(filepath: string, windowMs?: number): void {
+        this.io.markInternalWrite(filepath, windowMs);
+    }
+
     // Category Operations
     async getSidebarItems(): Promise<SidebarItem[]> {
         return this.categorySvc.getSidebarItems();

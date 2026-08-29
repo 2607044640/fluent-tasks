@@ -313,6 +313,15 @@
     async function handleTaskUpdated(payload: any) {
         if (payload.categoryFilepath === currentCategory?.filepath) {
             await loadTasks();
+            if (payload.isExternal && selectedTaskId && currentCategory) {
+                const freshTask = incompleteTasks.find(t => t.id === selectedTaskId) || completedTasks.find(t => t.id === selectedTaskId);
+                if (freshTask) {
+                    EventBus.emit(EventName.TASK_SELECTED, {
+                        task: freshTask,
+                        categoryFilepath: currentCategory.filepath,
+                    });
+                }
+            }
         }
     }
 

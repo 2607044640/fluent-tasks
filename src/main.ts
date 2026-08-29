@@ -13,7 +13,7 @@
  */
 
 import { Plugin, ItemView, WorkspaceLeaf, TFile, Scope } from "obsidian";
-import { VIEW_TYPE_SIDEBAR, VIEW_TYPE_MAIN, VIEW_TYPE_DETAIL, EventName, type CategoryInfo, type TaskItem } from "./types";
+import { VIEW_TYPE_SIDEBAR, VIEW_TYPE_MAIN, VIEW_TYPE_DETAIL, DATA_FOLDER, EventName, type CategoryInfo, type TaskItem } from "./types";
 import { EventBus } from "./EventBus";
 import { Logger } from "./Logger";
 import { DataService } from "./DataService";
@@ -310,6 +310,22 @@ export default class FluentTasksPlugin extends Plugin {
                     }
 
                     lastActiveViewType = currentType;
+                })
+            );
+
+            // Listen for external file modifications (AI, sync, external editors)
+            this.registerEvent(
+                this.app.vault.on("modify", (file) => {
+                    if (!file || !(file instanceof TFile)) return;
+                    if (file.path.startsWith(DATA_FOLDER + "/") && file.path.endsWith(".md")) {
+                        if (this.dataService.isInternalWrite(file.path)) {
+                            return; // Skip self-generated optimistic writes
+                        }
+                        EventBus.emit(EventName.TASK_UPDATED, {
+                            categoryFilepath: file.path,
+                            isExternal: true,
+                        });
+                    }
                 })
             );
 

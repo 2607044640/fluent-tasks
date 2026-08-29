@@ -229,10 +229,21 @@
         }
     }
 
-    function handleExternalTaskUpdate(payload: any) {
-        if (task && payload.task && payload.task.id === task.id) {
-            task = { ...payload.task, steps: payload.task.steps.map((s: any) => ({ ...s })) };
-            categoryFilepath = payload.categoryFilepath || categoryFilepath;
+    async function handleExternalTaskUpdate(payload: any) {
+        if (!task || !categoryFilepath) return;
+        if (payload.categoryFilepath === categoryFilepath) {
+            if (payload.task && payload.task.id === task.id) {
+                task = { ...payload.task, steps: payload.task.steps.map((s: any) => ({ ...s })) };
+                return;
+            }
+            if (payload.isExternal) {
+                // External file write (AI, sync, external editor) — reload task from disk
+                const tasks = await dataService.getTasks(categoryFilepath);
+                const fresh = tasks.find(t => t.id === task?.id);
+                if (fresh) {
+                    task = { ...fresh, steps: fresh.steps.map((s: any) => ({ ...s })) };
+                }
+            }
         }
     }
 
@@ -467,7 +478,7 @@
 
                 <!-- Title input (auto-resizing textarea for full multi-line title wrapping) -->
                 <textarea
-                    use:autosize
+                    use:autosize={task.title}
                     class="detail-title-input"
                     rows="1"
                     bind:value={task.title}
@@ -509,7 +520,7 @@
                             {/if}
                         </span>
                         <textarea
-                            use:autosize
+                            use:autosize={step.text}
                             rows="1"
                             value={step.text}
                             class:completed={step.done}

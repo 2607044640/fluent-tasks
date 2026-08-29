@@ -71,14 +71,24 @@ export class MarkdownParser {
             }
 
             const createdAt = typeof meta.createdAt === "string" ? meta.createdAt : new Date().toISOString();
-            const id = typeof meta.id === "string" ? meta.id : generateStableId(title, createdAt);
+            const cleanTitle = typeof title === "string" ? title.trim() : "";
+            const id = typeof meta.id === "string" ? meta.id : generateStableId(cleanTitle, createdAt);
+
+            const cleanSteps: TaskStep[] = Array.isArray(meta.steps)
+                ? (meta.steps as unknown[])
+                    .filter((s): s is Record<string, unknown> => !!s && typeof s === "object")
+                    .map((s) => ({
+                        text: typeof s.text === "string" ? s.text.trimEnd() : "",
+                        done: Boolean(s.done),
+                    }))
+                : [];
 
             tasks.push({
                 id,
-                title,
+                title: cleanTitle,
                 completed,
                 starred: typeof meta.starred === "boolean" ? meta.starred : false,
-                steps: Array.isArray(meta.steps) ? (meta.steps as TaskStep[]) : [],
+                steps: cleanSteps,
                 note: typeof meta.note === "string" ? meta.note : "",
                 createdAt,
                 ...(typeof meta.dueDate === "string" ? { dueDate: meta.dueDate } : {}),
