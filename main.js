@@ -23941,17 +23941,17 @@ var FluentTasksPlugin = class extends import_obsidian12.Plugin {
       }
     });
     this.addCommand({
-      id: "open-quick-task-modal",
-      name: "Open Quick Task Modal",
+      id: "open-quick-list-modal",
+      name: "Open Quick List Modal (List only) (Recommended)",
       callback: () => {
-        new QuickTaskModal(this.app, this, this.dataService).open();
+        new QuickListModal(this.app, this, this.dataService).open();
       }
     });
     this.addCommand({
-      id: "open-quick-list-modal",
-      name: "Open Quick List Modal (List only)",
+      id: "open-quick-task-modal",
+      name: "Open Quick Task Modal (Experimental)",
       callback: () => {
-        new QuickListModal(this.app, this, this.dataService).open();
+        new QuickTaskModal(this.app, this, this.dataService).open();
       }
     });
     this.app.workspace.onLayoutReady(() => {
