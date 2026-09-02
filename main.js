@@ -23754,6 +23754,7 @@ var TaskMainViewWrapper = class extends import_obsidian12.ItemView {
     };
   }
   async setState(state, result) {
+    var _a, _b;
     await super.setState(state, result);
     if (state && state.categoryFilepath) {
       const file = this.app.vault.getAbstractFileByPath(state.categoryFilepath);
@@ -23767,6 +23768,7 @@ var TaskMainViewWrapper = class extends import_obsidian12.ItemView {
         if (this.component) {
           await this.component.loadCategory(cat);
         }
+        (_b = (_a = this.leaf).updateHeader) == null ? void 0 : _b.call(_a);
         EventBus.emit("category:selected" /* CATEGORY_SELECTED */, { category: cat, fromHistory: true });
       }
     }

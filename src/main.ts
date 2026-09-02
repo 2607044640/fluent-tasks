@@ -142,6 +142,7 @@ class TaskMainViewWrapper extends ItemView {
                 if (this.component) {
                     await this.component.loadCategory(cat);
                 }
+                (this.leaf as any).updateHeader?.();
                 // Notify sidebar to highlight restored list without creating recursive history loops
                 EventBus.emit(EventName.CATEGORY_SELECTED, { category: cat, fromHistory: true });
             }
