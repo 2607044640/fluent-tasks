@@ -16323,6 +16323,7 @@ var import_obsidian7 = require("obsidian");
 var DEFAULT_SETTINGS = {
   accentColor: "#8b5cf6",
   autoExpandSidebar: true,
+  autoCollapseSidebarOnSwitch: true,
   searchHideCompleted: true,
   hideRibbonIcon: false,
   wrapTaskTitles: true,
@@ -16369,6 +16370,13 @@ var FluentTasksSettingTab = class extends import_obsidian7.PluginSettingTab {
       this.plugin.settings.autoExpandSidebar = value;
       await this.plugin.saveSettings();
     }));
+    new import_obsidian7.Setting(containerEl).setName("Auto-Collapse Sidebar on Tab Switch").setDesc("Automatically collapse the sidebar when switching away to other tabs (notes, settings) if the sidebar is currently displaying Fluent Tasks.").addToggle((toggle) => {
+      var _a;
+      return toggle.setValue((_a = this.plugin.settings.autoCollapseSidebarOnSwitch) != null ? _a : true).onChange(async (value) => {
+        this.plugin.settings.autoCollapseSidebarOnSwitch = value;
+        await this.plugin.saveSettings();
+      });
+    });
     new import_obsidian7.Setting(containerEl).setName("Search: Hide Completed Tasks").setDesc("When searching, hide completed tasks by default. Can also be toggled directly in the search modal.").addToggle((toggle) => toggle.setValue(this.plugin.settings.searchHideCompleted).onChange(async (value) => {
       this.plugin.settings.searchHideCompleted = value;
       await this.plugin.saveSettings();
@@ -23968,6 +23976,7 @@ var FluentTasksPlugin = class extends import_obsidian12.Plugin {
         let lastActiveViewType = ((_a = this.app.workspace.getActiveViewOfType(import_obsidian12.ItemView)) == null ? void 0 : _a.getViewType()) || "";
         this.registerEvent(
           this.app.workspace.on("active-leaf-change", (leaf) => {
+            var _a2;
             if (!leaf || !leaf.view)
               return;
             const currentType = leaf.view.getViewType();
@@ -23977,6 +23986,9 @@ var FluentTasksPlugin = class extends import_obsidian12.Plugin {
               if (Date.now() > this.suppressAutoExpandSidebarUntil) {
                 this.expandSidebarToList();
               }
+            }
+            if (!isPluginView && wasPluginView && ((_a2 = this.settings.autoCollapseSidebarOnSwitch) != null ? _a2 : true)) {
+              this.collapseSidebars();
             }
             lastActiveViewType = currentType;
           })
@@ -24105,18 +24117,69 @@ var FluentTasksPlugin = class extends import_obsidian12.Plugin {
     this.suppressAutoExpandSidebarUntil = Date.now() + durationMs;
   }
   /**
-   * Collapse left and right sidebars to provide a clean, focused center task view,
-   * and suppress automatic sidebar expansion.
+   * Check if a specific viewType is currently the active/visible tab in the specified sidebar (left or right).
+   * Returns false if the sidebar is collapsed or if another tool (e.g. Search, File Explorer, Outline) is active.
    */
-  collapseSidebars(durationMs = 1200) {
+  isSidebarLeafActive(viewType, position) {
+    const split = position === "left" ? this.app.workspace.leftSplit : this.app.workspace.rightSplit;
+    if (!split || split.collapsed) {
+      return false;
+    }
+    const leaves = this.app.workspace.getLeavesOfType(viewType);
+    if (leaves.length === 0)
+      return false;
+    for (const leaf of leaves) {
+      const parent = leaf.parent;
+      if (parent && Array.isArray(parent.children) && typeof parent.currentTab === "number") {
+        if (parent.children[parent.currentTab] === leaf) {
+          return true;
+        }
+      }
+      const tabHeader = leaf.tabHeaderEl;
+      if (tabHeader) {
+        if (tabHeader.classList.contains("is-active") || tabHeader.getAttribute("aria-selected") === "true") {
+          return true;
+        }
+      }
+      const containerEl = leaf.containerEl;
+      if (containerEl && containerEl.offsetWidth > 0 && containerEl.offsetHeight > 0) {
+        const style = window.getComputedStyle(containerEl);
+        if (style.display !== "none" && style.visibility !== "hidden") {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+  /**
+   * Check if Fluent Tasks left sidebar view (VIEW_TYPE_SIDEBAR) is active and visible.
+   */
+  isPluginLeftSidebarActive() {
+    return this.isSidebarLeafActive(VIEW_TYPE_SIDEBAR, "left");
+  }
+  /**
+   * Check if Fluent Tasks right detail view (VIEW_TYPE_DETAIL) is active and visible.
+   */
+  isPluginRightSidebarActive() {
+    return this.isSidebarLeafActive(VIEW_TYPE_DETAIL, "right");
+  }
+  /**
+   * Collapse left and right sidebars IF they are currently displaying Fluent Tasks views,
+   * while preserving other tools (like search, file explorer, outline, etc.).
+   */
+  collapseSidebars(durationMs = 1200, force = false) {
     this.suppressAutoSidebarExpansion(durationMs);
     const leftSplit = this.app.workspace.leftSplit;
     if (leftSplit && !leftSplit.collapsed) {
-      leftSplit.collapse();
+      if (force || this.isPluginLeftSidebarActive()) {
+        leftSplit.collapse();
+      }
     }
     const rightSplit = this.app.workspace.rightSplit;
     if (rightSplit && !rightSplit.collapsed) {
-      rightSplit.collapse();
+      if (force || this.isPluginRightSidebarActive()) {
+        rightSplit.collapse();
+      }
     }
   }
   /**

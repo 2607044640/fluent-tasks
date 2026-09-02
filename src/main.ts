@@ -381,6 +381,11 @@ export default class FluentTasksPlugin extends Plugin {
                             }
                         }
 
+                        // When switching focus away from Fluent Tasks to an external tab (e.g. Markdown note, settings, etc.)
+                        if (!isPluginView && wasPluginView && (this.settings.autoCollapseSidebarOnSwitch ?? true)) {
+                            this.collapseSidebars();
+                        }
+
                         lastActiveViewType = currentType;
                     })
                 );
@@ -538,18 +543,83 @@ export default class FluentTasksPlugin extends Plugin {
     }
 
     /**
-     * Collapse left and right sidebars to provide a clean, focused center task view,
-     * and suppress automatic sidebar expansion.
+     * Check if a specific viewType is currently the active/visible tab in the specified sidebar (left or right).
+     * Returns false if the sidebar is collapsed or if another tool (e.g. Search, File Explorer, Outline) is active.
      */
-    collapseSidebars(durationMs = 1200): void {
+    isSidebarLeafActive(viewType: string, position: "left" | "right"): boolean {
+        const split = (position === "left" ? this.app.workspace.leftSplit : this.app.workspace.rightSplit) as {
+            collapsed?: boolean;
+            children?: any[];
+        } | null;
+
+        if (!split || split.collapsed) {
+            return false;
+        }
+
+        const leaves = this.app.workspace.getLeavesOfType(viewType);
+        if (leaves.length === 0) return false;
+
+        for (const leaf of leaves) {
+            // 1. Structural check via WorkspaceTabs parent and currentTab index
+            const parent = (leaf as any).parent;
+            if (parent && Array.isArray(parent.children) && typeof parent.currentTab === "number") {
+                if (parent.children[parent.currentTab] === leaf) {
+                    return true;
+                }
+            }
+
+            // 2. DOM-level fallback check for active tab header
+            const tabHeader = (leaf as any).tabHeaderEl as HTMLElement | undefined;
+            if (tabHeader) {
+                if (tabHeader.classList.contains("is-active") || tabHeader.getAttribute("aria-selected") === "true") {
+                    return true;
+                }
+            }
+
+            // 3. Container visibility check
+            const containerEl = (leaf as any).containerEl as HTMLElement | undefined;
+            if (containerEl && containerEl.offsetWidth > 0 && containerEl.offsetHeight > 0) {
+                const style = window.getComputedStyle(containerEl);
+                if (style.display !== "none" && style.visibility !== "hidden") {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if Fluent Tasks left sidebar view (VIEW_TYPE_SIDEBAR) is active and visible.
+     */
+    isPluginLeftSidebarActive(): boolean {
+        return this.isSidebarLeafActive(VIEW_TYPE_SIDEBAR, "left");
+    }
+
+    /**
+     * Check if Fluent Tasks right detail view (VIEW_TYPE_DETAIL) is active and visible.
+     */
+    isPluginRightSidebarActive(): boolean {
+        return this.isSidebarLeafActive(VIEW_TYPE_DETAIL, "right");
+    }
+
+    /**
+     * Collapse left and right sidebars IF they are currently displaying Fluent Tasks views,
+     * while preserving other tools (like search, file explorer, outline, etc.).
+     */
+    collapseSidebars(durationMs = 1200, force = false): void {
         this.suppressAutoSidebarExpansion(durationMs);
         const leftSplit = this.app.workspace.leftSplit as { collapsed?: boolean; collapse: () => void } | null;
         if (leftSplit && !leftSplit.collapsed) {
-            leftSplit.collapse();
+            if (force || this.isPluginLeftSidebarActive()) {
+                leftSplit.collapse();
+            }
         }
         const rightSplit = this.app.workspace.rightSplit as { collapsed?: boolean; collapse: () => void } | null;
         if (rightSplit && !rightSplit.collapsed) {
-            rightSplit.collapse();
+            if (force || this.isPluginRightSidebarActive()) {
+                rightSplit.collapse();
+            }
         }
     }
 

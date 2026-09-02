@@ -119,8 +119,10 @@ Data movement across views and persistent storage follows a strict 7-step sequen
 | `MarkdownParser` | `parseTasksFromMarkdown` | `(content: string) => TaskItem[]` | Pure query, zero side-effects |
 | `MarkdownParser` | `serializeTasksToMarkdown` | `(tasks: TaskItem[]) => string` | Pure query, zero side-effects |
 | `FluentTasksPlugin` | `expandSidebarToList` | `() => void` | Expands `leftSplit` and reveals `VIEW_TYPE_SIDEBAR` leaf |
-| `FluentTasksPlugin` | `collapseSidebars` | `(durationMs?: number) => void` | Collapses both `leftSplit` and `rightSplit` and sets auto-expansion suppression timeout |
+| `FluentTasksPlugin` | `collapseSidebars` | `(durationMs?: number, force?: boolean) => void` | Collapses `leftSplit` and `rightSplit` IF displaying Fluent Tasks views and sets suppression timeout |
 | `FluentTasksPlugin` | `suppressAutoSidebarExpansion` | `(durationMs?: number) => void` | Suppresses `active-leaf-change` sidebar auto-expansion |
+| `FluentTasksPlugin` | `isPluginLeftSidebarActive` | `() => boolean` | Checks if `VIEW_TYPE_SIDEBAR` is currently the active visible tab in `leftSplit` |
+| `FluentTasksPlugin` | `isPluginRightSidebarActive` | `() => boolean` | Checks if `VIEW_TYPE_DETAIL` is currently the active visible tab in `rightSplit` |
 </api_reference>
 
 ## Development Recipes for Contributors

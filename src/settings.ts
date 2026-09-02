@@ -4,6 +4,7 @@ import type FluentTasksPlugin from "./main";
 export interface FluentTasksSettings {
     accentColor: string;
     autoExpandSidebar: boolean;
+    autoCollapseSidebarOnSwitch: boolean;
     searchHideCompleted: boolean;
     hideRibbonIcon: boolean;
     wrapTaskTitles: boolean;
@@ -14,6 +15,7 @@ export interface FluentTasksSettings {
 export const DEFAULT_SETTINGS: FluentTasksSettings = {
     accentColor: "#8b5cf6",
     autoExpandSidebar: true,
+    autoCollapseSidebarOnSwitch: true,
     searchHideCompleted: true,
     hideRibbonIcon: false,
     wrapTaskTitles: true,
@@ -87,6 +89,16 @@ export class FluentTasksSettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.autoExpandSidebar)
                 .onChange(async (value) => {
                     this.plugin.settings.autoExpandSidebar = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName("Auto-Collapse Sidebar on Tab Switch")
+            .setDesc("Automatically collapse the sidebar when switching away to other tabs (notes, settings) if the sidebar is currently displaying Fluent Tasks.")
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.autoCollapseSidebarOnSwitch ?? true)
+                .onChange(async (value) => {
+                    this.plugin.settings.autoCollapseSidebarOnSwitch = value;
                     await this.plugin.saveSettings();
                 }));
 
