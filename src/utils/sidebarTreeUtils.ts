@@ -128,3 +128,32 @@ export function getFlatCategories(items: SidebarItem[]): CategoryInfo[] {
     }
     return result;
 }
+
+/**
+ * Filters a hierarchical SidebarItem tree by search query.
+ * When matching children in a group, returns the group with isExpanded=true and filtered children.
+ * If the group name matches, preserves all its children.
+ */
+export function filterSidebarTree(items: SidebarItem[], query: string): SidebarItem[] {
+    const q = query.trim().toLowerCase();
+    if (!q) return items;
+
+    const result: SidebarItem[] = [];
+    for (const item of items) {
+        if (item.type === "category") {
+            if (item.name.toLowerCase().includes(q)) {
+                result.push(item);
+            }
+        } else if (item.type === "group") {
+            const matchingChildren = (item.items || []).filter(c => c.name.toLowerCase().includes(q));
+            if (item.name.toLowerCase().includes(q) || matchingChildren.length > 0) {
+                result.push({
+                    ...item,
+                    isExpanded: true,
+                    items: matchingChildren.length > 0 ? matchingChildren : item.items
+                });
+            }
+        }
+    }
+    return result;
+}

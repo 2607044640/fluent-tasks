@@ -16498,6 +16498,29 @@ function getFlatCategories(items) {
   }
   return result;
 }
+function filterSidebarTree(items, query) {
+  const q = query.trim().toLowerCase();
+  if (!q)
+    return items;
+  const result = [];
+  for (const item of items) {
+    if (item.type === "category") {
+      if (item.name.toLowerCase().includes(q)) {
+        result.push(item);
+      }
+    } else if (item.type === "group") {
+      const matchingChildren = (item.items || []).filter((c) => c.name.toLowerCase().includes(q));
+      if (item.name.toLowerCase().includes(q) || matchingChildren.length > 0) {
+        result.push({
+          ...item,
+          isExpanded: true,
+          items: matchingChildren.length > 0 ? matchingChildren : item.items
+        });
+      }
+    }
+  }
+  return result;
+}
 
 // src/modals/QuickTaskModalView.svelte
 var import_obsidian8 = require("obsidian");
@@ -23047,42 +23070,6 @@ function create_fragment5(ctx) {
     }
   };
 }
-function getFlatCategories2(items) {
-  const result = [];
-  for (const item of items) {
-    if (item.type === "category") {
-      result.push(item);
-    } else if (item.type === "group" && Array.isArray(item.items)) {
-      for (const child of item.items) {
-        result.push(child);
-      }
-    }
-  }
-  return result;
-}
-function getFilteredTree(items, query) {
-  const q = query.trim().toLowerCase();
-  if (!q)
-    return items;
-  const result = [];
-  for (const item of items) {
-    if (item.type === "category") {
-      if (item.name.toLowerCase().includes(q)) {
-        result.push(item);
-      }
-    } else if (item.type === "group") {
-      const matchingChildren = (item.items || []).filter((c) => c.name.toLowerCase().includes(q));
-      if (item.name.toLowerCase().includes(q) || matchingChildren.length > 0) {
-        result.push({
-          ...item,
-          isExpanded: true,
-          items: matchingChildren.length > 0 ? matchingChildren : item.items
-        });
-      }
-    }
-  }
-  return result;
-}
 function instance5($$self, $$props, $$invalidate) {
   let flatCategories;
   let isFiltering;
@@ -23138,7 +23125,7 @@ function instance5($$self, $$props, $$invalidate) {
   async function loadData() {
     $$invalidate(37, sidebarItems = await dataService.getSidebarItems());
     categories = await dataService.getCategories();
-    $$invalidate(18, flatCategories = getFlatCategories2(sidebarItems));
+    $$invalidate(18, flatCategories = getFlatCategories(sidebarItems));
     await refreshTaskCounts();
   }
   async function refreshTaskCounts() {
@@ -23530,7 +23517,7 @@ function instance5($$self, $$props, $$invalidate) {
     if ($$self.$$.dirty[1] & /*sidebarItems*/
     64) {
       $:
-        $$invalidate(18, flatCategories = getFlatCategories2(sidebarItems));
+        $$invalidate(18, flatCategories = getFlatCategories(sidebarItems));
     }
     if ($$self.$$.dirty[0] & /*searchQuery*/
     4) {
@@ -23541,7 +23528,7 @@ function instance5($$self, $$props, $$invalidate) {
     4 | $$self.$$.dirty[1] & /*sidebarItems*/
     64) {
       $:
-        $$invalidate(19, filteredItems = getFilteredTree(sidebarItems, searchQuery));
+        $$invalidate(19, filteredItems = filterSidebarTree(sidebarItems, searchQuery));
     }
   };
   return [

@@ -4,7 +4,7 @@
     import { EventBus } from "../EventBus";
     import { EventName, VIEW_TYPE_MAIN } from "../types";
     import type { CategoryInfo, SidebarItem, GroupInfo } from "../types";
-    import { moveSidebarItem, toggleGroupExpandedState } from "../utils/sidebarTreeUtils";
+    import { moveSidebarItem, toggleGroupExpandedState, getFlatCategories, filterSidebarTree } from "../utils/sidebarTreeUtils";
     import { INPUT_FOCUS_DELAY_MS } from "../constants";
     import { Menu, Notice } from "obsidian";
     import type { App } from "obsidian";
@@ -53,45 +53,7 @@
 
     $: flatCategories = getFlatCategories(sidebarItems);
     $: isFiltering = !!searchQuery.trim();
-    $: filteredItems = getFilteredTree(sidebarItems, searchQuery);
-
-    function getFlatCategories(items: SidebarItem[]): CategoryInfo[] {
-        const result: CategoryInfo[] = [];
-        for (const item of items) {
-            if (item.type === "category") {
-                result.push(item);
-            } else if (item.type === "group" && Array.isArray(item.items)) {
-                for (const child of item.items) {
-                    result.push(child);
-                }
-            }
-        }
-        return result;
-    }
-
-    function getFilteredTree(items: SidebarItem[], query: string): SidebarItem[] {
-        const q = query.trim().toLowerCase();
-        if (!q) return items;
-
-        const result: SidebarItem[] = [];
-        for (const item of items) {
-            if (item.type === "category") {
-                if (item.name.toLowerCase().includes(q)) {
-                    result.push(item);
-                }
-            } else if (item.type === "group") {
-                const matchingChildren = (item.items || []).filter(c => c.name.toLowerCase().includes(q));
-                if (item.name.toLowerCase().includes(q) || matchingChildren.length > 0) {
-                    result.push({
-                        ...item,
-                        isExpanded: true,
-                        items: matchingChildren.length > 0 ? matchingChildren : item.items
-                    });
-                }
-            }
-        }
-        return result;
-    }
+    $: filteredItems = filterSidebarTree(sidebarItems, searchQuery);
 
     onMount(async () => {
         await loadData();
