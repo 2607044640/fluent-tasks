@@ -251,8 +251,6 @@ class TaskDetailViewWrapper extends ItemView {
 export default class FluentTasksPlugin extends Plugin {
     private dataService!: DataService;
     private ribbonIconEl: HTMLElement | null = null;
-    private mouseNavHandler: ((e: MouseEvent | PointerEvent) => void) | null = null;
-    private lastMouseNavTime = 0;
     settings: FluentTasksSettings = Object.assign({}, DEFAULT_SETTINGS);
 
     async onload(): Promise<void> {
@@ -269,37 +267,6 @@ export default class FluentTasksPlugin extends Plugin {
         this.registerView(VIEW_TYPE_SIDEBAR, (leaf) => new TaskSidebarViewWrapper(leaf, this.dataService, this));
         this.registerView(VIEW_TYPE_MAIN, (leaf) => new TaskMainViewWrapper(leaf, this.dataService, this));
         this.registerView(VIEW_TYPE_DETAIL, (leaf) => new TaskDetailViewWrapper(leaf, this.dataService, this));
-
-        // Global mouse side button navigation (Button 3 = Back, Button 4 = Forward)
-        this.mouseNavHandler = (e: MouseEvent | PointerEvent) => {
-            if (e.button === 3 || e.button === 4) {
-                const now = Date.now();
-                if (now - this.lastMouseNavTime < 250) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    return;
-                }
-                this.lastMouseNavTime = now;
-                e.preventDefault();
-                e.stopPropagation();
-
-                interface AppWithCommands extends App {
-                    commands?: {
-                        executeCommandById?: (id: string) => boolean;
-                    };
-                }
-                const appCommands = (this.app as unknown as AppWithCommands).commands;
-
-                if (e.button === 3) {
-                    appCommands?.executeCommandById?.("app:go-back");
-                } else if (e.button === 4) {
-                    appCommands?.executeCommandById?.("app:go-forward");
-                }
-            }
-        };
-
-        window.addEventListener("mouseup", this.mouseNavHandler, true);
-        window.addEventListener("pointerup", this.mouseNavHandler, true);
 
         // Ribbon icon (controlled by hideRibbonIcon setting)
         this.refreshRibbonIcon();
@@ -506,12 +473,6 @@ export default class FluentTasksPlugin extends Plugin {
     }
 
     onunload(): void {
-        if (this.mouseNavHandler) {
-            window.removeEventListener("mouseup", this.mouseNavHandler, true);
-            window.removeEventListener("pointerup", this.mouseNavHandler, true);
-            this.mouseNavHandler = null;
-        }
-
         if (this.ribbonIconEl) {
             this.ribbonIconEl.remove();
             this.ribbonIconEl = null;

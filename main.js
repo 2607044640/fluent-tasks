@@ -23844,8 +23844,6 @@ var FluentTasksPlugin = class extends import_obsidian12.Plugin {
   constructor() {
     super(...arguments);
     this.ribbonIconEl = null;
-    this.mouseNavHandler = null;
-    this.lastMouseNavTime = 0;
     this.settings = Object.assign({}, DEFAULT_SETTINGS);
     this.registeredCategoryCommandIds = /* @__PURE__ */ new Set();
   }
@@ -23858,28 +23856,6 @@ var FluentTasksPlugin = class extends import_obsidian12.Plugin {
     this.registerView(VIEW_TYPE_SIDEBAR, (leaf) => new TaskSidebarViewWrapper(leaf, this.dataService, this));
     this.registerView(VIEW_TYPE_MAIN, (leaf) => new TaskMainViewWrapper(leaf, this.dataService, this));
     this.registerView(VIEW_TYPE_DETAIL, (leaf) => new TaskDetailViewWrapper(leaf, this.dataService, this));
-    this.mouseNavHandler = (e) => {
-      var _a, _b;
-      if (e.button === 3 || e.button === 4) {
-        const now2 = Date.now();
-        if (now2 - this.lastMouseNavTime < 250) {
-          e.preventDefault();
-          e.stopPropagation();
-          return;
-        }
-        this.lastMouseNavTime = now2;
-        e.preventDefault();
-        e.stopPropagation();
-        const appCommands = this.app.commands;
-        if (e.button === 3) {
-          (_a = appCommands == null ? void 0 : appCommands.executeCommandById) == null ? void 0 : _a.call(appCommands, "app:go-back");
-        } else if (e.button === 4) {
-          (_b = appCommands == null ? void 0 : appCommands.executeCommandById) == null ? void 0 : _b.call(appCommands, "app:go-forward");
-        }
-      }
-    };
-    window.addEventListener("mouseup", this.mouseNavHandler, true);
-    window.addEventListener("pointerup", this.mouseNavHandler, true);
     this.refreshRibbonIcon();
     this.addCommand({
       id: "open-all-views",
@@ -24057,11 +24033,6 @@ var FluentTasksPlugin = class extends import_obsidian12.Plugin {
     });
   }
   onunload() {
-    if (this.mouseNavHandler) {
-      window.removeEventListener("mouseup", this.mouseNavHandler, true);
-      window.removeEventListener("pointerup", this.mouseNavHandler, true);
-      this.mouseNavHandler = null;
-    }
     if (this.ribbonIconEl) {
       this.ribbonIconEl.remove();
       this.ribbonIconEl = null;
