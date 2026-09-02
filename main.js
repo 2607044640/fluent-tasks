@@ -3743,6 +3743,15 @@ function instance($$self, $$props, $$invalidate) {
   function handleExternalCategorySelected(payload) {
     if (payload && payload.category) {
       $$invalidate(1, activeCategoryPath = payload.category.filepath);
+      if (payload.fromHistory) {
+        setTimeout(
+          () => {
+            const activeEl = document.querySelector(`.category-item[data-filepath="${CSS.escape(payload.category.filepath)}"]`);
+            activeEl == null ? void 0 : activeEl.scrollIntoView({ block: "nearest", behavior: "smooth" });
+          },
+          50
+        );
+      }
     } else {
       $$invalidate(1, activeCategoryPath = "");
     }
@@ -23697,9 +23706,12 @@ var TaskSidebarViewWrapper = class extends import_obsidian12.ItemView {
   }
 };
 var TaskMainViewWrapper = class extends import_obsidian12.ItemView {
+  // Enables Obsidian Leaf Navigation & History tracking
   constructor(leaf, dataService, plugin) {
     super(leaf);
     this.component = null;
+    this.navigation = true;
+    this.navigation = true;
     this.dataService = dataService;
     this.plugin = plugin;
   }
@@ -23707,10 +23719,38 @@ var TaskMainViewWrapper = class extends import_obsidian12.ItemView {
     return VIEW_TYPE_MAIN;
   }
   getDisplayText() {
-    return "Tasks";
+    var _a;
+    const cat = (_a = this.component) == null ? void 0 : _a.getCurrentCategory();
+    return (cat == null ? void 0 : cat.name) ? cat.name : "Tasks";
   }
   getIcon() {
     return "check-square";
+  }
+  getState() {
+    var _a;
+    const cat = (_a = this.component) == null ? void 0 : _a.getCurrentCategory();
+    return {
+      categoryFilepath: (cat == null ? void 0 : cat.filepath) || "",
+      categoryName: (cat == null ? void 0 : cat.name) || ""
+    };
+  }
+  async setState(state, result) {
+    await super.setState(state, result);
+    if (state && state.categoryFilepath) {
+      const file = this.app.vault.getAbstractFileByPath(state.categoryFilepath);
+      if (file && file instanceof import_obsidian12.TFile) {
+        const cat = {
+          id: state.categoryFilepath,
+          type: "category",
+          name: state.categoryName || file.basename,
+          filepath: state.categoryFilepath
+        };
+        if (this.component) {
+          await this.component.loadCategory(cat);
+        }
+        EventBus.emit("category:selected" /* CATEGORY_SELECTED */, { category: cat, fromHistory: true });
+      }
+    }
   }
   async onOpen() {
     const guideAction = this.addAction("help-circle", "Features & shortcuts guide", () => {
@@ -23731,6 +23771,19 @@ var TaskMainViewWrapper = class extends import_obsidian12.ItemView {
       target: container,
       props: { dataService: this.dataService, plugin: this.plugin }
     });
+    const state = this.getState();
+    if (state == null ? void 0 : state.categoryFilepath) {
+      const file = this.app.vault.getAbstractFileByPath(state.categoryFilepath);
+      if (file && file instanceof import_obsidian12.TFile) {
+        const cat = {
+          id: state.categoryFilepath,
+          type: "category",
+          name: state.categoryName || file.basename,
+          filepath: state.categoryFilepath
+        };
+        await this.component.loadCategory(cat);
+      }
+    }
   }
   async onClose() {
     if (this.component) {
@@ -23791,6 +23844,8 @@ var FluentTasksPlugin = class extends import_obsidian12.Plugin {
   constructor() {
     super(...arguments);
     this.ribbonIconEl = null;
+    this.mouseNavHandler = null;
+    this.lastMouseNavTime = 0;
     this.settings = Object.assign({}, DEFAULT_SETTINGS);
     this.registeredCategoryCommandIds = /* @__PURE__ */ new Set();
   }
@@ -23803,6 +23858,28 @@ var FluentTasksPlugin = class extends import_obsidian12.Plugin {
     this.registerView(VIEW_TYPE_SIDEBAR, (leaf) => new TaskSidebarViewWrapper(leaf, this.dataService, this));
     this.registerView(VIEW_TYPE_MAIN, (leaf) => new TaskMainViewWrapper(leaf, this.dataService, this));
     this.registerView(VIEW_TYPE_DETAIL, (leaf) => new TaskDetailViewWrapper(leaf, this.dataService, this));
+    this.mouseNavHandler = (e) => {
+      var _a, _b;
+      if (e.button === 3 || e.button === 4) {
+        const now2 = Date.now();
+        if (now2 - this.lastMouseNavTime < 250) {
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+        this.lastMouseNavTime = now2;
+        e.preventDefault();
+        e.stopPropagation();
+        const appCommands = this.app.commands;
+        if (e.button === 3) {
+          (_a = appCommands == null ? void 0 : appCommands.executeCommandById) == null ? void 0 : _a.call(appCommands, "app:go-back");
+        } else if (e.button === 4) {
+          (_b = appCommands == null ? void 0 : appCommands.executeCommandById) == null ? void 0 : _b.call(appCommands, "app:go-forward");
+        }
+      }
+    };
+    window.addEventListener("mouseup", this.mouseNavHandler, true);
+    window.addEventListener("pointerup", this.mouseNavHandler, true);
     this.refreshRibbonIcon();
     this.addCommand({
       id: "open-all-views",
@@ -23929,8 +24006,29 @@ var FluentTasksPlugin = class extends import_obsidian12.Plugin {
         });
         EventBus.on("category:selected" /* CATEGORY_SELECTED */, (payload) => {
           const p = payload;
-          if (p && p.category) {
-            void this.activateView(VIEW_TYPE_MAIN, "center");
+          const category = p == null ? void 0 : p.category;
+          if (category) {
+            void (async () => {
+              var _a2;
+              const mainLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MAIN);
+              let mainLeaf = (_a2 = mainLeaves[0]) != null ? _a2 : null;
+              if (!mainLeaf) {
+                mainLeaf = await this.activateView(VIEW_TYPE_MAIN, "center");
+              }
+              if (mainLeaf) {
+                if (!(p == null ? void 0 : p.fromHistory)) {
+                  await mainLeaf.setViewState({
+                    type: VIEW_TYPE_MAIN,
+                    state: {
+                      categoryFilepath: category.filepath,
+                      categoryName: category.name
+                    },
+                    active: true
+                  });
+                }
+                void this.app.workspace.revealLeaf(mainLeaf);
+              }
+            })();
           }
         });
         EventBus.on("task:selected" /* TASK_SELECTED */, (payload) => {
@@ -23959,6 +24057,11 @@ var FluentTasksPlugin = class extends import_obsidian12.Plugin {
     });
   }
   onunload() {
+    if (this.mouseNavHandler) {
+      window.removeEventListener("mouseup", this.mouseNavHandler, true);
+      window.removeEventListener("pointerup", this.mouseNavHandler, true);
+      this.mouseNavHandler = null;
+    }
     if (this.ribbonIconEl) {
       this.ribbonIconEl.remove();
       this.ribbonIconEl = null;

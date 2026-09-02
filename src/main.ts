@@ -12,7 +12,7 @@
  * All data I/O flows through DataService.
  */
 
-import { Plugin, ItemView, WorkspaceLeaf, TFile, Scope, App } from "obsidian";
+import { Plugin, ItemView, WorkspaceLeaf, TFile, Scope, App, ViewStateResult } from "obsidian";
 import { VIEW_TYPE_SIDEBAR, VIEW_TYPE_MAIN, VIEW_TYPE_DETAIL, DATA_FOLDER, EventName, type CategoryInfo, type TaskItem } from "./types";
 import { EventBus } from "./EventBus";
 import { Logger } from "./Logger";
@@ -95,35 +95,71 @@ interface TaskMainViewComponent extends TaskMainView {
     showGuidePopover: (e: MouseEvent) => void;
     scheduleHidePopover: () => void;
     getCurrentCategory: () => CategoryInfo | null;
+    loadCategory: (cat: CategoryInfo) => Promise<void>;
 }
 
 class TaskMainViewWrapper extends ItemView {
-    private component: TaskMainView | null = null;
+    private component: TaskMainViewComponent | null = null;
     private dataService: DataService;
     private plugin: FluentTasksPlugin;
+    public navigation = true; // Enables Obsidian Leaf Navigation & History tracking
 
     constructor(leaf: WorkspaceLeaf, dataService: DataService, plugin: FluentTasksPlugin) {
         super(leaf);
+        this.navigation = true;
         this.dataService = dataService;
         this.plugin = plugin;
     }
 
     getViewType(): string { return VIEW_TYPE_MAIN; }
-    getDisplayText(): string { return "Tasks"; }
+    
+    getDisplayText(): string {
+        const cat = this.component?.getCurrentCategory();
+        return cat?.name ? cat.name : "Tasks";
+    }
+
     getIcon(): string { return "check-square"; }
+
+    getState(): Record<string, any> {
+        const cat = this.component?.getCurrentCategory();
+        return {
+            categoryFilepath: cat?.filepath || "",
+            categoryName: cat?.name || "",
+        };
+    }
+
+    async setState(state: any, result: ViewStateResult): Promise<void> {
+        await super.setState(state, result);
+        if (state && state.categoryFilepath) {
+            const file = this.app.vault.getAbstractFileByPath(state.categoryFilepath);
+            if (file && file instanceof TFile) {
+                const cat: CategoryInfo = {
+                    id: state.categoryFilepath,
+                    type: "category",
+                    name: state.categoryName || file.basename,
+                    filepath: state.categoryFilepath
+                };
+                if (this.component) {
+                    await this.component.loadCategory(cat);
+                }
+                // Notify sidebar to highlight restored list without creating recursive history loops
+                EventBus.emit(EventName.CATEGORY_SELECTED, { category: cat, fromHistory: true });
+            }
+        }
+    }
 
     async onOpen(): Promise<void> {
         const guideAction = this.addAction("help-circle", "Features & shortcuts guide", () => {
-            const comp = this.component as unknown as TaskMainViewComponent | null;
+            const comp = this.component;
             comp?.openHintsModal();
         });
 
         guideAction.addEventListener("mouseenter", (e: MouseEvent) => {
-            const comp = this.component as unknown as TaskMainViewComponent | null;
+            const comp = this.component;
             comp?.showGuidePopover(e);
         });
         guideAction.addEventListener("mouseleave", () => {
-            const comp = this.component as unknown as TaskMainViewComponent | null;
+            const comp = this.component;
             comp?.scheduleHidePopover();
         });
 
@@ -132,7 +168,22 @@ class TaskMainViewWrapper extends ItemView {
         this.component = new TaskMainView({
             target: container,
             props: { dataService: this.dataService, plugin: this.plugin },
-        });
+        }) as unknown as TaskMainViewComponent;
+
+        // Restore initial state if available
+        const state = this.getState();
+        if (state?.categoryFilepath) {
+            const file = this.app.vault.getAbstractFileByPath(state.categoryFilepath);
+            if (file && file instanceof TFile) {
+                const cat: CategoryInfo = {
+                    id: state.categoryFilepath,
+                    type: "category",
+                    name: state.categoryName || file.basename,
+                    filepath: state.categoryFilepath
+                };
+                await this.component.loadCategory(cat);
+            }
+        }
     }
 
     async onClose(): Promise<void> {
@@ -143,7 +194,7 @@ class TaskMainViewWrapper extends ItemView {
     }
 
     /** Expose the inner Svelte component for direct method calls from the plugin */
-    getComponent(): TaskMainView | null {
+    getComponent(): TaskMainViewComponent | null {
         return this.component;
     }
 
@@ -200,6 +251,8 @@ class TaskDetailViewWrapper extends ItemView {
 export default class FluentTasksPlugin extends Plugin {
     private dataService!: DataService;
     private ribbonIconEl: HTMLElement | null = null;
+    private mouseNavHandler: ((e: MouseEvent | PointerEvent) => void) | null = null;
+    private lastMouseNavTime = 0;
     settings: FluentTasksSettings = Object.assign({}, DEFAULT_SETTINGS);
 
     async onload(): Promise<void> {
@@ -216,6 +269,37 @@ export default class FluentTasksPlugin extends Plugin {
         this.registerView(VIEW_TYPE_SIDEBAR, (leaf) => new TaskSidebarViewWrapper(leaf, this.dataService, this));
         this.registerView(VIEW_TYPE_MAIN, (leaf) => new TaskMainViewWrapper(leaf, this.dataService, this));
         this.registerView(VIEW_TYPE_DETAIL, (leaf) => new TaskDetailViewWrapper(leaf, this.dataService, this));
+
+        // Global mouse side button navigation (Button 3 = Back, Button 4 = Forward)
+        this.mouseNavHandler = (e: MouseEvent | PointerEvent) => {
+            if (e.button === 3 || e.button === 4) {
+                const now = Date.now();
+                if (now - this.lastMouseNavTime < 250) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                }
+                this.lastMouseNavTime = now;
+                e.preventDefault();
+                e.stopPropagation();
+
+                interface AppWithCommands extends App {
+                    commands?: {
+                        executeCommandById?: (id: string) => boolean;
+                    };
+                }
+                const appCommands = (this.app as unknown as AppWithCommands).commands;
+
+                if (e.button === 3) {
+                    appCommands?.executeCommandById?.("app:go-back");
+                } else if (e.button === 4) {
+                    appCommands?.executeCommandById?.("app:go-forward");
+                }
+            }
+        };
+
+        window.addEventListener("mouseup", this.mouseNavHandler, true);
+        window.addEventListener("pointerup", this.mouseNavHandler, true);
 
         // Ribbon icon (controlled by hideRibbonIcon setting)
         this.refreshRibbonIcon();
@@ -363,9 +447,31 @@ export default class FluentTasksPlugin extends Plugin {
             });
 
             EventBus.on(EventName.CATEGORY_SELECTED, (payload: unknown) => {
-                const p = payload as { category?: CategoryInfo } | null;
-                if (p && p.category) {
-                    void this.activateView(VIEW_TYPE_MAIN, "center");
+                const p = payload as { category?: CategoryInfo; fromHistory?: boolean } | null;
+                const category = p?.category;
+                if (category) {
+                    void (async () => {
+                        const mainLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MAIN);
+                        let mainLeaf: WorkspaceLeaf | null = mainLeaves[0] ?? null;
+
+                        if (!mainLeaf) {
+                            mainLeaf = await this.activateView(VIEW_TYPE_MAIN, "center");
+                        }
+
+                        if (mainLeaf) {
+                            if (!p?.fromHistory) {
+                                await mainLeaf.setViewState({
+                                    type: VIEW_TYPE_MAIN,
+                                    state: {
+                                        categoryFilepath: category.filepath,
+                                        categoryName: category.name,
+                                    },
+                                    active: true,
+                                });
+                            }
+                            void this.app.workspace.revealLeaf(mainLeaf);
+                        }
+                    })();
                 }
             });
 
@@ -400,6 +506,12 @@ export default class FluentTasksPlugin extends Plugin {
     }
 
     onunload(): void {
+        if (this.mouseNavHandler) {
+            window.removeEventListener("mouseup", this.mouseNavHandler, true);
+            window.removeEventListener("pointerup", this.mouseNavHandler, true);
+            this.mouseNavHandler = null;
+        }
+
         if (this.ribbonIconEl) {
             this.ribbonIconEl.remove();
             this.ribbonIconEl = null;

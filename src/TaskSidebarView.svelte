@@ -88,6 +88,12 @@
     function handleExternalCategorySelected(payload: any) {
         if (payload && payload.category) {
             activeCategoryPath = payload.category.filepath;
+            if (payload.fromHistory) {
+                setTimeout(() => {
+                    const activeEl = document.querySelector(`.category-item[data-filepath="${CSS.escape(payload.category.filepath)}"]`);
+                    activeEl?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+                }, 50);
+            }
         } else {
             activeCategoryPath = "";
         }
