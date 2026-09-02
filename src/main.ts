@@ -562,8 +562,12 @@ export default class FluentTasksPlugin extends Plugin {
         for (const leaf of leaves) {
             // 1. Structural check via WorkspaceTabs parent and currentTab index
             const parent = (leaf as any).parent;
-            if (parent && Array.isArray(parent.children) && typeof parent.currentTab === "number") {
-                if (parent.children[parent.currentTab] === leaf) {
+            if (parent && Array.isArray(parent.children)) {
+                if (parent.children.length === 1 && parent.children[0] === leaf) {
+                    return true;
+                }
+                const currentTabIdx = typeof parent.currentTab === "number" ? parent.currentTab : -1;
+                if (currentTabIdx >= 0 && parent.children[currentTabIdx] === leaf) {
                     return true;
                 }
             }
@@ -607,8 +611,10 @@ export default class FluentTasksPlugin extends Plugin {
      * Collapse left and right sidebars IF they are currently displaying Fluent Tasks views,
      * while preserving other tools (like search, file explorer, outline, etc.).
      */
-    collapseSidebars(durationMs = 1200, force = false): void {
-        this.suppressAutoSidebarExpansion(durationMs);
+    collapseSidebars(suppressAutoExpandDurationMs = 0, force = false): void {
+        if (suppressAutoExpandDurationMs > 0) {
+            this.suppressAutoSidebarExpansion(suppressAutoExpandDurationMs);
+        }
         const leftSplit = this.app.workspace.leftSplit as { collapsed?: boolean; collapse: () => void } | null;
         if (leftSplit && !leftSplit.collapsed) {
             if (force || this.isPluginLeftSidebarActive()) {
@@ -634,6 +640,8 @@ export default class FluentTasksPlugin extends Plugin {
         const sidebarLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR);
         if (sidebarLeaves.length > 0) {
             void this.app.workspace.revealLeaf(sidebarLeaves[0]);
+        } else {
+            void this.activateView(VIEW_TYPE_SIDEBAR, "left");
         }
     }
 

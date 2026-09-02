@@ -591,7 +591,7 @@
 
         if (action === "navigate") {
             if (plugin && typeof plugin.collapseSidebars === "function") {
-                plugin.collapseSidebars();
+                plugin.collapseSidebars(1200);
             }
             if (focusPane === "lists" && selectedCategory) {
                 EventBus.emit(EventName.CATEGORY_SELECTED, { category: selectedCategory });

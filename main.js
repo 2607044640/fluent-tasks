@@ -20793,7 +20793,7 @@ function instance4($$self, $$props, $$invalidate) {
     const action = (_b = (_a = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _a.quickModalAction) != null ? _b : "direct";
     if (action === "navigate") {
       if (plugin && typeof plugin.collapseSidebars === "function") {
-        plugin.collapseSidebars();
+        plugin.collapseSidebars(1200);
       }
       if (focusPane === "lists" && selectedCategory) {
         EventBus.emit("category:selected" /* CATEGORY_SELECTED */, { category: selectedCategory });
@@ -23161,7 +23161,7 @@ function instance5($$self, $$props, $$invalidate) {
     if (!cat)
       return;
     if (plugin && typeof plugin.collapseSidebars === "function") {
-      plugin.collapseSidebars();
+      plugin.collapseSidebars(1200);
     } else {
       const leftSplit = app.workspace.leftSplit;
       if (leftSplit && !leftSplit.collapsed)
@@ -24130,8 +24130,12 @@ var FluentTasksPlugin = class extends import_obsidian12.Plugin {
       return false;
     for (const leaf of leaves) {
       const parent = leaf.parent;
-      if (parent && Array.isArray(parent.children) && typeof parent.currentTab === "number") {
-        if (parent.children[parent.currentTab] === leaf) {
+      if (parent && Array.isArray(parent.children)) {
+        if (parent.children.length === 1 && parent.children[0] === leaf) {
+          return true;
+        }
+        const currentTabIdx = typeof parent.currentTab === "number" ? parent.currentTab : -1;
+        if (currentTabIdx >= 0 && parent.children[currentTabIdx] === leaf) {
           return true;
         }
       }
@@ -24167,8 +24171,10 @@ var FluentTasksPlugin = class extends import_obsidian12.Plugin {
    * Collapse left and right sidebars IF they are currently displaying Fluent Tasks views,
    * while preserving other tools (like search, file explorer, outline, etc.).
    */
-  collapseSidebars(durationMs = 1200, force = false) {
-    this.suppressAutoSidebarExpansion(durationMs);
+  collapseSidebars(suppressAutoExpandDurationMs = 0, force = false) {
+    if (suppressAutoExpandDurationMs > 0) {
+      this.suppressAutoSidebarExpansion(suppressAutoExpandDurationMs);
+    }
     const leftSplit = this.app.workspace.leftSplit;
     if (leftSplit && !leftSplit.collapsed) {
       if (force || this.isPluginLeftSidebarActive()) {
@@ -24193,6 +24199,8 @@ var FluentTasksPlugin = class extends import_obsidian12.Plugin {
     const sidebarLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR);
     if (sidebarLeaves.length > 0) {
       void this.app.workspace.revealLeaf(sidebarLeaves[0]);
+    } else {
+      void this.activateView(VIEW_TYPE_SIDEBAR, "left");
     }
   }
   getCategoryCommandId(cat) {

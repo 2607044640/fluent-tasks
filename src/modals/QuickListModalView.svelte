@@ -146,7 +146,7 @@
 
         // 1. Collapse left and right sidebars if open & suppress auto-expansion
         if (plugin && typeof plugin.collapseSidebars === "function") {
-            plugin.collapseSidebars();
+            plugin.collapseSidebars(1200);
         } else {
             const leftSplit = (app.workspace as any).leftSplit;
             if (leftSplit && !leftSplit.collapsed) leftSplit.collapse();
