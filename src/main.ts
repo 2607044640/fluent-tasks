@@ -363,24 +363,26 @@ export default class FluentTasksPlugin extends Plugin {
                 this.registerEvent(
                     this.app.workspace.on("active-leaf-change", (leaf) => {
                         if (!leaf || !leaf.view) return;
-                    const currentType = leaf.view.getViewType();
+                        const currentType = leaf.view.getViewType();
 
-                    const isPluginView = currentType === VIEW_TYPE_MAIN || 
-                                         currentType === VIEW_TYPE_SIDEBAR || 
-                                         currentType === VIEW_TYPE_DETAIL;
+                        const isPluginView = currentType === VIEW_TYPE_MAIN || 
+                                             currentType === VIEW_TYPE_SIDEBAR || 
+                                             currentType === VIEW_TYPE_DETAIL;
 
-                    const wasPluginView = lastActiveViewType === VIEW_TYPE_MAIN || 
-                                          lastActiveViewType === VIEW_TYPE_SIDEBAR || 
-                                          lastActiveViewType === VIEW_TYPE_DETAIL;
+                        const wasPluginView = lastActiveViewType === VIEW_TYPE_MAIN || 
+                                              lastActiveViewType === VIEW_TYPE_SIDEBAR || 
+                                              lastActiveViewType === VIEW_TYPE_DETAIL;
 
-                    // When switching focus from an external tab (e.g. Markdown note via Ctrl+Tab / Ctrl+Shift+Tab) to Fluent Tasks
-                    if (isPluginView && !wasPluginView && this.settings.autoExpandSidebar) {
-                        this.expandSidebarToList();
-                    }
+                        // When switching focus from an external tab (e.g. Markdown note via Ctrl+Tab / Ctrl+Shift+Tab) to Fluent Tasks
+                        if (isPluginView && !wasPluginView && this.settings.autoExpandSidebar) {
+                            if (Date.now() > this.suppressAutoExpandSidebarUntil) {
+                                this.expandSidebarToList();
+                            }
+                        }
 
-                    lastActiveViewType = currentType;
-                })
-            );
+                        lastActiveViewType = currentType;
+                    })
+                );
 
             // Listen for external file modifications (AI, sync, external editors)
             this.registerEvent(
@@ -522,8 +524,33 @@ export default class FluentTasksPlugin extends Plugin {
     }
 
     // =============================================
-    // Sidebar Auto-Expand
+    // Sidebar Auto-Expand & Collapse Management
     // =============================================
+
+    private suppressAutoExpandSidebarUntil = 0;
+
+    /**
+     * Suppress automatic sidebar expansion for a period of time (e.g. after jumping from quick modals).
+     */
+    suppressAutoSidebarExpansion(durationMs = 1200): void {
+        this.suppressAutoExpandSidebarUntil = Date.now() + durationMs;
+    }
+
+    /**
+     * Collapse left and right sidebars to provide a clean, focused center task view,
+     * and suppress automatic sidebar expansion.
+     */
+    collapseSidebars(durationMs = 1200): void {
+        this.suppressAutoSidebarExpansion(durationMs);
+        const leftSplit = this.app.workspace.leftSplit as { collapsed?: boolean; collapse: () => void } | null;
+        if (leftSplit && !leftSplit.collapsed) {
+            leftSplit.collapse();
+        }
+        const rightSplit = this.app.workspace.rightSplit as { collapsed?: boolean; collapse: () => void } | null;
+        if (rightSplit && !rightSplit.collapsed) {
+            rightSplit.collapse();
+        }
+    }
 
     /**
      * Expand the left sidebar and reveal the Fluent Tasks sidebar list tab.

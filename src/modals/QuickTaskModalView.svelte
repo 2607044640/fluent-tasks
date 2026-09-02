@@ -590,6 +590,9 @@
         const action = plugin?.settings?.quickModalAction ?? "direct";
 
         if (action === "navigate") {
+            if (plugin && typeof plugin.collapseSidebars === "function") {
+                plugin.collapseSidebars();
+            }
             if (focusPane === "lists" && selectedCategory) {
                 EventBus.emit(EventName.CATEGORY_SELECTED, { category: selectedCategory });
                 closeModal();

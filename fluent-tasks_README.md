@@ -12,6 +12,7 @@ For underlying architecture modifications, data flow, and troubleshooting, pleas
 | `TaskMainViewWrapper.file` | `get file(): TFile | null` | Pure getter. Returns the underlying markdown `TFile` of the currently active category (e.g. `TodoData/ag.md`). |
 | `TaskMainViewWrapper.component.getCurrentCategory()` | `() => CategoryInfo | null` | Pure getter. Returns the metadata of the currently selected category in the main Svelte view. |
 | `FluentTasksPlugin.expandSidebarToList()` | `() => void` | Expands the workspace left split and reveals the `fluent-tasks-sidebar` view leaf. |
+| `FluentTasksPlugin.collapseSidebars()` | `(durationMs?: number) => void` | Collapses both left and right sidebars for focused center viewing and suppresses auto-expansion. |
 </api_reference>
 
 <adding_new_item_recipe>
@@ -44,7 +45,7 @@ Fluent Tasks uses a lightweight Meta Badge and Quick Peek system to keep task ca
   - **Custom Properties (`customMeta`)**: Key-value pairs displayed as interactive `🏷️` tag chips with hover popovers and delete buttons.
 - **F2 Hover Rename & Context Menu**: Hovering over any task list or group in the left sidebar and pressing <kbd>F2</kbd> (or right-clicking -> `Rename List/Group (F2)`) opens an inline rename input. Press <kbd>Enter</kbd> or click outside to confirm; press <kbd>Esc</kbd> to cancel.
 - **Quick Task Modal (`open-quick-task-modal`)**: A standalone, maximized (`92vw × 86vh`) dual-pane floating popup for lightning-fast task management. Features full keyboard navigation (<kbd>↑↓</kbd> move, <kbd>←→</kbd> switch pane, <kbd>Space</kbd> toggle check, <kbd>Ctrl+N</kbd> inline add, <kbd>Ctrl+Enter</kbd> star), drag-and-drop reordering, and hover popover previews. Configurable in settings to either manage tasks directly in-modal or navigate and reveal them in the workspace.
-- **Quick List Modal (`open-quick-list-modal`)**: A dedicated list-only floating navigator. Selecting a list opens and activates the center task view immediately without opening or expanding the left sidebar.
+- **Quick List Modal (`open-quick-list-modal`)**: A dedicated list-only floating navigator with full collapsible group hierarchy and drag-and-drop reordering. Selecting a list reveals the center task view, collapses open sidebars for a distraction-free view, and suppresses sidebar auto-expansion.
 - **Z-Jump to List Commands**: Every list automatically registers a `Fluent Tasks: Z-Jump to list: [Name]` command with UTF-8 safe IDs and real-time live synchronization on create/rename/delete, sorted neatly at the bottom of Obsidian's Hotkeys settings.
 - **Features & Shortcuts Guide**: Accessible anytime via the `?` icon in the pane header action bar (next to `⋮`) or through the full Shortcuts Guide Modal.
 - **Instant Dismiss**: Right-clicking anywhere or left-clicking outside instantly dismisses active hover popovers and lightbox modals.

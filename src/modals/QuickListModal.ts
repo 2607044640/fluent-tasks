@@ -31,6 +31,7 @@ export class QuickListModal extends Modal {
             target: contentEl,
             props: {
                 app: this.app,
+                plugin: this.plugin,
                 dataService: this.dataService,
                 showTip,
                 remainingTips,

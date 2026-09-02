@@ -13,6 +13,7 @@
     // Props
     // =============================================
     export let app: App;
+    export let plugin: any = null;
     export let dataService: DataService;
     export let showTip: boolean = false;
     export let remainingTips: number = 0;
@@ -143,7 +144,17 @@
     async function openCategoryInCenterOnly(cat: CategoryInfo) {
         if (!cat) return;
 
-        // 1. Reveal/Activate TaskMainView in center ONLY (do not touch left sidebar)
+        // 1. Collapse left and right sidebars if open & suppress auto-expansion
+        if (plugin && typeof plugin.collapseSidebars === "function") {
+            plugin.collapseSidebars();
+        } else {
+            const leftSplit = (app.workspace as any).leftSplit;
+            if (leftSplit && !leftSplit.collapsed) leftSplit.collapse();
+            const rightSplit = (app.workspace as any).rightSplit;
+            if (rightSplit && !rightSplit.collapsed) rightSplit.collapse();
+        }
+
+        // 2. Reveal/Activate TaskMainView in center ONLY
         const leaves = app.workspace.getLeavesOfType(VIEW_TYPE_MAIN);
         let leaf = leaves[0];
         if (!leaf) {
@@ -152,10 +163,10 @@
         }
         await app.workspace.revealLeaf(leaf);
 
-        // 2. Select category in main view
+        // 3. Select category in main view
         EventBus.emit(EventName.CATEGORY_SELECTED, { category: cat, focusInput: false });
 
-        // 3. Close modal
+        // 4. Close modal
         closeModal();
     }
 

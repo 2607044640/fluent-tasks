@@ -96,7 +96,7 @@ Data movement across views and persistent storage follows a strict 7-step sequen
 - **Creation Form Mutex Invariant**: `confirmAddList` and `confirmAddGroup` MUST guard execution with mutex booleans (`isCreatingList`, `isCreatingGroup`). (Why: prevents simultaneous blur and Enter keydown events from firing concurrent duplicate creation calls).
 - **F2 Hover Renaming Protocol**: Hover tracking on lists/groups MUST set `hoveredItem` via `setHoveredCategory` and `setHoveredGroup`. F2 keydown triggers inline rename with autofocus, Enter/blur commits via `renameCategory`/`renameGroup`, and Esc cleanly cancels.
 - **Dynamic Z-Jump Commands & Hotkey Sinking**: Category jump commands MUST be prefixed with `Z-Jump to list: ${cat.name}` and use UTF-8 path hashes for command IDs. On any category create, rename, or delete, `registerCategoryCommands()` MUST dynamically refresh commands in real time without requiring an Obsidian restart. (Why: guarantees non-ASCII list compatibility and keeps main plugin commands sorted cleanly at the top of Obsidian's Hotkeys settings).
-- **Quick List Navigation Isolation**: `QuickListModal` MUST activate/reveal ONLY `VIEW_TYPE_MAIN` in the center workspace without triggering `VIEW_TYPE_SIDEBAR` activation or split expansion. (Why: preserves clean, focused workspace layout when navigating lists from the floating popup).
+- **Quick List Navigation & Sidebar Isolation (CRITICAL)**: `QuickListModal` and `QuickTaskModal` (in navigation mode) MUST reveal ONLY `VIEW_TYPE_MAIN` in the center workspace while invoking `plugin.collapseSidebars()`. This suppresses `active-leaf-change` auto-expansion and collapses both left and right sidebars if open. (Why: guarantees a distraction-free, focused center task view without unexpected sidebar popups when switching lists from floating modals).
 
 ## Key API Reference
 
@@ -119,6 +119,8 @@ Data movement across views and persistent storage follows a strict 7-step sequen
 | `MarkdownParser` | `parseTasksFromMarkdown` | `(content: string) => TaskItem[]` | Pure query, zero side-effects |
 | `MarkdownParser` | `serializeTasksToMarkdown` | `(tasks: TaskItem[]) => string` | Pure query, zero side-effects |
 | `FluentTasksPlugin` | `expandSidebarToList` | `() => void` | Expands `leftSplit` and reveals `VIEW_TYPE_SIDEBAR` leaf |
+| `FluentTasksPlugin` | `collapseSidebars` | `(durationMs?: number) => void` | Collapses both `leftSplit` and `rightSplit` and sets auto-expansion suppression timeout |
+| `FluentTasksPlugin` | `suppressAutoSidebarExpansion` | `(durationMs?: number) => void` | Suppresses `active-leaf-change` sidebar auto-expansion |
 </api_reference>
 
 ## Development Recipes for Contributors

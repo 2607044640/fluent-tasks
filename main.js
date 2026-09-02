@@ -20784,6 +20784,9 @@ function instance4($$self, $$props, $$invalidate) {
     var _a, _b, _c;
     const action = (_b = (_a = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _a.quickModalAction) != null ? _b : "direct";
     if (action === "navigate") {
+      if (plugin && typeof plugin.collapseSidebars === "function") {
+        plugin.collapseSidebars();
+      }
       if (focusPane === "lists" && selectedCategory) {
         EventBus.emit("category:selected" /* CATEGORY_SELECTED */, { category: selectedCategory });
         closeModal();
@@ -21356,12 +21359,12 @@ var import_obsidian11 = require("obsidian");
 var import_obsidian10 = require("obsidian");
 function get_each_context5(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[78] = list[i];
+  child_ctx[79] = list[i];
   return child_ctx;
 }
 function get_each_context_15(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[81] = list[i];
+  child_ctx[82] = list[i];
   return child_ctx;
 }
 function create_if_block_115(ctx) {
@@ -21433,7 +21436,7 @@ function create_if_block_104(ctx) {
           button,
           "click",
           /*click_handler*/
-          ctx[39]
+          ctx[40]
         );
         mounted = true;
       }
@@ -21460,7 +21463,7 @@ function create_else_block5(ctx) {
   );
   const get_key = (ctx2) => (
     /*item*/
-    ctx2[78].id
+    ctx2[79].id
   );
   for (let i = 0; i < each_value.length; i += 1) {
     let child_ctx = get_each_context5(ctx, each_value, i);
@@ -21590,7 +21593,7 @@ function create_else_block_35(ctx) {
     if (
       /*editingItemId*/
       ctx2[9] === /*item*/
-      ctx2[78].id
+      ctx2[79].id
     )
       return create_if_block_94;
     return create_else_block_43;
@@ -21601,15 +21604,15 @@ function create_else_block_35(ctx) {
     /*taskCounts*/
     ((_a = ctx[3][
       /*item*/
-      ctx[78].filepath
+      ctx[79].filepath
     ]) != null ? _a : 0) > 0 && create_if_block_84(ctx)
   );
   function dragstart_handler_2(...args) {
     return (
       /*dragstart_handler_2*/
-      ctx[57](
+      ctx[58](
         /*item*/
-        ctx[78],
+        ctx[79],
         ...args
       )
     );
@@ -21617,9 +21620,9 @@ function create_else_block_35(ctx) {
   function dragover_handler_2(...args) {
     return (
       /*dragover_handler_2*/
-      ctx[58](
+      ctx[59](
         /*item*/
-        ctx[78],
+        ctx[79],
         ...args
       )
     );
@@ -21627,27 +21630,27 @@ function create_else_block_35(ctx) {
   function drop_handler_2() {
     return (
       /*drop_handler_2*/
-      ctx[59](
+      ctx[60](
         /*item*/
-        ctx[78]
+        ctx[79]
       )
     );
   }
   function click_handler_42() {
     return (
       /*click_handler_4*/
-      ctx[60](
+      ctx[61](
         /*item*/
-        ctx[78]
+        ctx[79]
       )
     );
   }
   function contextmenu_handler_2(...args) {
     return (
       /*contextmenu_handler_2*/
-      ctx[61](
+      ctx[62](
         /*item*/
-        ctx[78],
+        ctx[79],
         ...args
       )
     );
@@ -21677,14 +21680,14 @@ function create_else_block_35(ctx) {
           /*focusedIndex*/
           ctx[4]
         ]) == null ? void 0 : _a2.filepath) === /*item*/
-        ctx[78].filepath
+        ctx[79].filepath
       );
       toggle_class(
         div,
         "drag-over-top",
         /*dragOverListId*/
         ctx[12] === /*item*/
-        ctx[78].id && /*dragListPosition*/
+        ctx[79].id && /*dragListPosition*/
         ctx[13] === "top"
       );
       toggle_class(
@@ -21692,7 +21695,7 @@ function create_else_block_35(ctx) {
         "drag-over-bottom",
         /*dragOverListId*/
         ctx[12] === /*item*/
-        ctx[78].id && /*dragListPosition*/
+        ctx[79].id && /*dragListPosition*/
         ctx[13] === "bottom"
       );
     },
@@ -21739,7 +21742,7 @@ function create_else_block_35(ctx) {
         /*taskCounts*/
         ((_a2 = ctx[3][
           /*item*/
-          ctx[78].filepath
+          ctx[79].filepath
         ]) != null ? _a2 : 0) > 0
       ) {
         if (if_block1) {
@@ -21763,7 +21766,7 @@ function create_else_block_35(ctx) {
             /*focusedIndex*/
             ctx[4]
           ]) == null ? void 0 : _b.filepath) === /*item*/
-          ctx[78].filepath
+          ctx[79].filepath
         );
       }
       if (dirty[0] & /*dragOverListId, filteredItems, dragListPosition*/
@@ -21773,7 +21776,7 @@ function create_else_block_35(ctx) {
           "drag-over-top",
           /*dragOverListId*/
           ctx[12] === /*item*/
-          ctx[78].id && /*dragListPosition*/
+          ctx[79].id && /*dragListPosition*/
           ctx[13] === "top"
         );
       }
@@ -21784,7 +21787,7 @@ function create_else_block_35(ctx) {
           "drag-over-bottom",
           /*dragOverListId*/
           ctx[12] === /*item*/
-          ctx[78].id && /*dragListPosition*/
+          ctx[79].id && /*dragListPosition*/
           ctx[13] === "bottom"
         );
       }
@@ -21807,7 +21810,7 @@ function create_if_block_313(ctx) {
   let span;
   let t0_value = (
     /*item*/
-    ctx[78].isExpanded ? "\u25BC" : "\u25B6"
+    ctx[79].isExpanded ? "\u25BC" : "\u25B6"
   );
   let t0;
   let t1;
@@ -21818,9 +21821,9 @@ function create_if_block_313(ctx) {
   function click_handler_1() {
     return (
       /*click_handler_1*/
-      ctx[40](
+      ctx[41](
         /*item*/
-        ctx[78]
+        ctx[79]
       )
     );
   }
@@ -21828,7 +21831,7 @@ function create_if_block_313(ctx) {
     if (
       /*editingItemId*/
       ctx2[9] === /*item*/
-      ctx2[78].id
+      ctx2[79].id
     )
       return create_if_block_75;
     return create_else_block_25;
@@ -21838,9 +21841,9 @@ function create_if_block_313(ctx) {
   function dragstart_handler(...args) {
     return (
       /*dragstart_handler*/
-      ctx[44](
+      ctx[45](
         /*item*/
-        ctx[78],
+        ctx[79],
         ...args
       )
     );
@@ -21848,9 +21851,9 @@ function create_if_block_313(ctx) {
   function dragover_handler(...args) {
     return (
       /*dragover_handler*/
-      ctx[45](
+      ctx[46](
         /*item*/
-        ctx[78],
+        ctx[79],
         ...args
       )
     );
@@ -21858,26 +21861,26 @@ function create_if_block_313(ctx) {
   function drop_handler() {
     return (
       /*drop_handler*/
-      ctx[46](
+      ctx[47](
         /*item*/
-        ctx[78]
+        ctx[79]
       )
     );
   }
   function contextmenu_handler(...args) {
     return (
       /*contextmenu_handler*/
-      ctx[47](
+      ctx[48](
         /*item*/
-        ctx[78],
+        ctx[79],
         ...args
       )
     );
   }
   let if_block1 = (
     /*item*/
-    ctx[78].isExpanded && /*item*/
-    ctx[78].items && create_if_block_45(ctx)
+    ctx[79].isExpanded && /*item*/
+    ctx[79].items && create_if_block_45(ctx)
   );
   return {
     c() {
@@ -21900,7 +21903,7 @@ function create_if_block_313(ctx) {
         "drag-over-top",
         /*dragOverListId*/
         ctx[12] === /*item*/
-        ctx[78].id && /*dragListPosition*/
+        ctx[79].id && /*dragListPosition*/
         ctx[13] === "top"
       );
       toggle_class(
@@ -21908,7 +21911,7 @@ function create_if_block_313(ctx) {
         "drag-over-bottom",
         /*dragOverListId*/
         ctx[12] === /*item*/
-        ctx[78].id && /*dragListPosition*/
+        ctx[79].id && /*dragListPosition*/
         ctx[13] === "bottom"
       );
       toggle_class(
@@ -21916,7 +21919,7 @@ function create_if_block_313(ctx) {
         "drag-over-inside",
         /*dragOverListId*/
         ctx[12] === /*item*/
-        ctx[78].id && /*dragListPosition*/
+        ctx[79].id && /*dragListPosition*/
         ctx[13] === "inside"
       );
     },
@@ -21952,7 +21955,7 @@ function create_if_block_313(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*filteredItems*/
       524288 && t0_value !== (t0_value = /*item*/
-      ctx[78].isExpanded ? "\u25BC" : "\u25B6"))
+      ctx[79].isExpanded ? "\u25BC" : "\u25B6"))
         set_data(t0, t0_value);
       if (current_block_type === (current_block_type = select_block_type_2(ctx, dirty)) && if_block0) {
         if_block0.p(ctx, dirty);
@@ -21966,8 +21969,8 @@ function create_if_block_313(ctx) {
       }
       if (
         /*item*/
-        ctx[78].isExpanded && /*item*/
-        ctx[78].items
+        ctx[79].isExpanded && /*item*/
+        ctx[79].items
       ) {
         if (if_block1) {
           if_block1.p(ctx, dirty);
@@ -21987,7 +21990,7 @@ function create_if_block_313(ctx) {
           "drag-over-top",
           /*dragOverListId*/
           ctx[12] === /*item*/
-          ctx[78].id && /*dragListPosition*/
+          ctx[79].id && /*dragListPosition*/
           ctx[13] === "top"
         );
       }
@@ -21998,7 +22001,7 @@ function create_if_block_313(ctx) {
           "drag-over-bottom",
           /*dragOverListId*/
           ctx[12] === /*item*/
-          ctx[78].id && /*dragListPosition*/
+          ctx[79].id && /*dragListPosition*/
           ctx[13] === "bottom"
         );
       }
@@ -22009,7 +22012,7 @@ function create_if_block_313(ctx) {
           "drag-over-inside",
           /*dragOverListId*/
           ctx[12] === /*item*/
-          ctx[78].id && /*dragListPosition*/
+          ctx[79].id && /*dragListPosition*/
           ctx[13] === "inside"
         );
       }
@@ -22030,7 +22033,7 @@ function create_else_block_43(ctx) {
   let span;
   let t_value = (
     /*item*/
-    ctx[78].name + ""
+    ctx[79].name + ""
   );
   let t;
   return {
@@ -22046,7 +22049,7 @@ function create_else_block_43(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*filteredItems*/
       524288 && t_value !== (t_value = /*item*/
-      ctx2[78].name + ""))
+      ctx2[79].name + ""))
         set_data(t, t_value);
     },
     d(detaching) {
@@ -22073,14 +22076,14 @@ function create_if_block_94(ctx) {
         /*editingName*/
         ctx[10]
       );
-      ctx[56](input);
+      ctx[57](input);
       if (!mounted) {
         dispose = [
           listen(
             input,
             "input",
             /*input_input_handler_3*/
-            ctx[55]
+            ctx[56]
           ),
           listen(
             input,
@@ -22107,7 +22110,7 @@ function create_if_block_94(ctx) {
       if (detaching) {
         detach(input);
       }
-      ctx[56](null);
+      ctx[57](null);
       mounted = false;
       run_all(dispose);
     }
@@ -22119,7 +22122,7 @@ function create_if_block_84(ctx) {
     /*taskCounts*/
     ctx[3][
       /*item*/
-      ctx[78].filepath
+      ctx[79].filepath
     ] + ""
   );
   let t;
@@ -22138,7 +22141,7 @@ function create_if_block_84(ctx) {
       524296 && t_value !== (t_value = /*taskCounts*/
       ctx2[3][
         /*item*/
-        ctx2[78].filepath
+        ctx2[79].filepath
       ] + ""))
         set_data(t, t_value);
     },
@@ -22153,7 +22156,7 @@ function create_else_block_25(ctx) {
   let span;
   let t_value = (
     /*item*/
-    ctx[78].name + ""
+    ctx[79].name + ""
   );
   let t;
   let mounted;
@@ -22161,9 +22164,9 @@ function create_else_block_25(ctx) {
   function click_handler_22() {
     return (
       /*click_handler_2*/
-      ctx[43](
+      ctx[44](
         /*item*/
-        ctx[78]
+        ctx[79]
       )
     );
   }
@@ -22185,7 +22188,7 @@ function create_else_block_25(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*filteredItems*/
       524288 && t_value !== (t_value = /*item*/
-      ctx[78].name + ""))
+      ctx[79].name + ""))
         set_data(t, t_value);
     },
     d(detaching) {
@@ -22214,14 +22217,14 @@ function create_if_block_75(ctx) {
         /*editingName*/
         ctx[10]
       );
-      ctx[42](input);
+      ctx[43](input);
       if (!mounted) {
         dispose = [
           listen(
             input,
             "input",
             /*input_input_handler_1*/
-            ctx[41]
+            ctx[42]
           ),
           listen(
             input,
@@ -22248,7 +22251,7 @@ function create_if_block_75(ctx) {
       if (detaching) {
         detach(input);
       }
-      ctx[42](null);
+      ctx[43](null);
       mounted = false;
       run_all(dispose);
     }
@@ -22260,11 +22263,11 @@ function create_if_block_45(ctx) {
   let each_1_lookup = /* @__PURE__ */ new Map();
   let each_value_1 = ensure_array_like(
     /*item*/
-    ctx[78].items
+    ctx[79].items
   );
   const get_key = (ctx2) => (
     /*child*/
-    ctx2[81].id
+    ctx2[82].id
   );
   for (let i = 0; i < each_value_1.length; i += 1) {
     let child_ctx = get_each_context_15(ctx, each_value_1, i);
@@ -22292,7 +22295,7 @@ function create_if_block_45(ctx) {
       267140632) {
         each_value_1 = ensure_array_like(
           /*item*/
-          ctx2[78].items
+          ctx2[79].items
         );
         each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_1, each_1_lookup, div, destroy_block, create_each_block_15, null, get_each_context_15);
       }
@@ -22311,7 +22314,7 @@ function create_else_block_15(ctx) {
   let span;
   let t_value = (
     /*child*/
-    ctx[81].name + ""
+    ctx[82].name + ""
   );
   let t;
   return {
@@ -22327,7 +22330,7 @@ function create_else_block_15(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*filteredItems*/
       524288 && t_value !== (t_value = /*child*/
-      ctx2[81].name + ""))
+      ctx2[82].name + ""))
         set_data(t, t_value);
     },
     d(detaching) {
@@ -22354,14 +22357,14 @@ function create_if_block_65(ctx) {
         /*editingName*/
         ctx[10]
       );
-      ctx[49](input);
+      ctx[50](input);
       if (!mounted) {
         dispose = [
           listen(
             input,
             "input",
             /*input_input_handler_2*/
-            ctx[48]
+            ctx[49]
           ),
           listen(
             input,
@@ -22388,7 +22391,7 @@ function create_if_block_65(ctx) {
       if (detaching) {
         detach(input);
       }
-      ctx[49](null);
+      ctx[50](null);
       mounted = false;
       run_all(dispose);
     }
@@ -22400,7 +22403,7 @@ function create_if_block_55(ctx) {
     /*taskCounts*/
     ctx[3][
       /*child*/
-      ctx[81].filepath
+      ctx[82].filepath
     ] + ""
   );
   let t;
@@ -22419,7 +22422,7 @@ function create_if_block_55(ctx) {
       524296 && t_value !== (t_value = /*taskCounts*/
       ctx2[3][
         /*child*/
-        ctx2[81].filepath
+        ctx2[82].filepath
       ] + ""))
         set_data(t, t_value);
     },
@@ -22443,7 +22446,7 @@ function create_each_block_15(key_1, ctx) {
     if (
       /*editingItemId*/
       ctx2[9] === /*child*/
-      ctx2[81].id
+      ctx2[82].id
     )
       return create_if_block_65;
     return create_else_block_15;
@@ -22454,15 +22457,15 @@ function create_each_block_15(key_1, ctx) {
     /*taskCounts*/
     ((_a = ctx[3][
       /*child*/
-      ctx[81].filepath
+      ctx[82].filepath
     ]) != null ? _a : 0) > 0 && create_if_block_55(ctx)
   );
   function dragstart_handler_1(...args) {
     return (
       /*dragstart_handler_1*/
-      ctx[50](
+      ctx[51](
         /*child*/
-        ctx[81],
+        ctx[82],
         ...args
       )
     );
@@ -22470,9 +22473,9 @@ function create_each_block_15(key_1, ctx) {
   function dragover_handler_1(...args) {
     return (
       /*dragover_handler_1*/
-      ctx[51](
+      ctx[52](
         /*child*/
-        ctx[81],
+        ctx[82],
         ...args
       )
     );
@@ -22480,27 +22483,27 @@ function create_each_block_15(key_1, ctx) {
   function drop_handler_1() {
     return (
       /*drop_handler_1*/
-      ctx[52](
+      ctx[53](
         /*child*/
-        ctx[81]
+        ctx[82]
       )
     );
   }
   function click_handler_3() {
     return (
       /*click_handler_3*/
-      ctx[53](
+      ctx[54](
         /*child*/
-        ctx[81]
+        ctx[82]
       )
     );
   }
   function contextmenu_handler_1(...args) {
     return (
       /*contextmenu_handler_1*/
-      ctx[54](
+      ctx[55](
         /*child*/
-        ctx[81],
+        ctx[82],
         ...args
       )
     );
@@ -22532,14 +22535,14 @@ function create_each_block_15(key_1, ctx) {
           /*focusedIndex*/
           ctx[4]
         ]) == null ? void 0 : _a2.filepath) === /*child*/
-        ctx[81].filepath
+        ctx[82].filepath
       );
       toggle_class(
         div,
         "drag-over-top",
         /*dragOverListId*/
         ctx[12] === /*child*/
-        ctx[81].id && /*dragListPosition*/
+        ctx[82].id && /*dragListPosition*/
         ctx[13] === "top"
       );
       toggle_class(
@@ -22547,7 +22550,7 @@ function create_each_block_15(key_1, ctx) {
         "drag-over-bottom",
         /*dragOverListId*/
         ctx[12] === /*child*/
-        ctx[81].id && /*dragListPosition*/
+        ctx[82].id && /*dragListPosition*/
         ctx[13] === "bottom"
       );
       this.first = div;
@@ -22595,7 +22598,7 @@ function create_each_block_15(key_1, ctx) {
         /*taskCounts*/
         ((_a2 = ctx[3][
           /*child*/
-          ctx[81].filepath
+          ctx[82].filepath
         ]) != null ? _a2 : 0) > 0
       ) {
         if (if_block1) {
@@ -22619,7 +22622,7 @@ function create_each_block_15(key_1, ctx) {
             /*focusedIndex*/
             ctx[4]
           ]) == null ? void 0 : _b.filepath) === /*child*/
-          ctx[81].filepath
+          ctx[82].filepath
         );
       }
       if (dirty[0] & /*dragOverListId, filteredItems, dragListPosition*/
@@ -22629,7 +22632,7 @@ function create_each_block_15(key_1, ctx) {
           "drag-over-top",
           /*dragOverListId*/
           ctx[12] === /*child*/
-          ctx[81].id && /*dragListPosition*/
+          ctx[82].id && /*dragListPosition*/
           ctx[13] === "top"
         );
       }
@@ -22640,7 +22643,7 @@ function create_each_block_15(key_1, ctx) {
           "drag-over-bottom",
           /*dragOverListId*/
           ctx[12] === /*child*/
-          ctx[81].id && /*dragListPosition*/
+          ctx[82].id && /*dragListPosition*/
           ctx[13] === "bottom"
         );
       }
@@ -22663,7 +22666,7 @@ function create_each_block5(key_1, ctx) {
   function select_block_type_1(ctx2, dirty) {
     if (
       /*item*/
-      ctx2[78].type === "group"
+      ctx2[79].type === "group"
     )
       return create_if_block_313;
     return create_else_block_35;
@@ -22728,14 +22731,14 @@ function create_if_block_214(ctx) {
         /*newListName*/
         ctx[6]
       );
-      ctx[63](input);
+      ctx[64](input);
       if (!mounted) {
         dispose = [
           listen(
             input,
             "input",
             /*input_input_handler_4*/
-            ctx[62]
+            ctx[63]
           ),
           listen(
             input,
@@ -22762,7 +22765,7 @@ function create_if_block_214(ctx) {
       if (detaching) {
         detach(div);
       }
-      ctx[63](null);
+      ctx[64](null);
       mounted = false;
       run_all(dispose);
     }
@@ -22790,14 +22793,14 @@ function create_if_block_116(ctx) {
         /*newGroupName*/
         ctx[8]
       );
-      ctx[65](input);
+      ctx[66](input);
       if (!mounted) {
         dispose = [
           listen(
             input,
             "input",
             /*input_input_handler_5*/
-            ctx[64]
+            ctx[65]
           ),
           listen(
             input,
@@ -22824,7 +22827,7 @@ function create_if_block_116(ctx) {
       if (detaching) {
         detach(div);
       }
-      ctx[65](null);
+      ctx[66](null);
       mounted = false;
       run_all(dispose);
     }
@@ -22922,7 +22925,7 @@ function create_fragment5(ctx) {
         /*searchQuery*/
         ctx[2]
       );
-      ctx[38](input);
+      ctx[39](input);
       append(div0, t2);
       if (if_block1)
         if_block1.m(div0, null);
@@ -22936,14 +22939,14 @@ function create_fragment5(ctx) {
       append(div2, button1);
       append(div4, t8);
       append(div4, div3);
-      ctx[66](div4);
+      ctx[67](div4);
       if (!mounted) {
         dispose = [
           listen(
             input,
             "input",
             /*input_input_handler*/
-            ctx[37]
+            ctx[38]
           ),
           listen(
             button0,
@@ -23026,11 +23029,11 @@ function create_fragment5(ctx) {
       }
       if (if_block0)
         if_block0.d();
-      ctx[38](null);
+      ctx[39](null);
       if (if_block1)
         if_block1.d();
       if_block2.d();
-      ctx[66](null);
+      ctx[67](null);
       mounted = false;
       run_all(dispose);
     }
@@ -23077,6 +23080,7 @@ function instance5($$self, $$props, $$invalidate) {
   let isFiltering;
   let filteredItems;
   let { app } = $$props;
+  let { plugin = null } = $$props;
   let { dataService } = $$props;
   let { showTip = false } = $$props;
   let { remainingTips = 0 } = $$props;
@@ -23124,7 +23128,7 @@ function instance5($$self, $$props, $$invalidate) {
     void refreshTaskCounts();
   }
   async function loadData() {
-    $$invalidate(36, sidebarItems = await dataService.getSidebarItems());
+    $$invalidate(37, sidebarItems = await dataService.getSidebarItems());
     categories = await dataService.getCategories();
     $$invalidate(18, flatCategories = getFlatCategories2(sidebarItems));
     await refreshTaskCounts();
@@ -23142,12 +23146,22 @@ function instance5($$self, $$props, $$invalidate) {
     $$invalidate(3, taskCounts = { ...taskCounts });
   }
   async function toggleGroup(group) {
-    $$invalidate(36, sidebarItems = toggleGroupExpandedState(sidebarItems, group.id));
+    $$invalidate(37, sidebarItems = toggleGroupExpandedState(sidebarItems, group.id));
     await dataService.saveSidebarState(sidebarItems);
   }
   async function openCategoryInCenterOnly(cat) {
     if (!cat)
       return;
+    if (plugin && typeof plugin.collapseSidebars === "function") {
+      plugin.collapseSidebars();
+    } else {
+      const leftSplit = app.workspace.leftSplit;
+      if (leftSplit && !leftSplit.collapsed)
+        leftSplit.collapse();
+      const rightSplit = app.workspace.rightSplit;
+      if (rightSplit && !rightSplit.collapsed)
+        rightSplit.collapse();
+    }
     const leaves = app.workspace.getLeavesOfType(VIEW_TYPE_MAIN);
     let leaf = leaves[0];
     if (!leaf) {
@@ -23199,7 +23213,7 @@ function instance5($$self, $$props, $$invalidate) {
     $$invalidate(13, dragListPosition = null);
     if (movedId === targetId)
       return;
-    $$invalidate(36, sidebarItems = moveSidebarItem(sidebarItems, movedId, targetId, pos));
+    $$invalidate(37, sidebarItems = moveSidebarItem(sidebarItems, movedId, targetId, pos));
     await dataService.saveSidebarState(sidebarItems);
     EventBus.emit("category:list-changed" /* CATEGORY_LIST_CHANGED */, { sidebarItems });
   }
@@ -23493,18 +23507,20 @@ function instance5($$self, $$props, $$invalidate) {
   $$self.$$set = ($$props2) => {
     if ("app" in $$props2)
       $$invalidate(33, app = $$props2.app);
+    if ("plugin" in $$props2)
+      $$invalidate(34, plugin = $$props2.plugin);
     if ("dataService" in $$props2)
-      $$invalidate(34, dataService = $$props2.dataService);
+      $$invalidate(35, dataService = $$props2.dataService);
     if ("showTip" in $$props2)
       $$invalidate(0, showTip = $$props2.showTip);
     if ("remainingTips" in $$props2)
       $$invalidate(1, remainingTips = $$props2.remainingTips);
     if ("closeModal" in $$props2)
-      $$invalidate(35, closeModal = $$props2.closeModal);
+      $$invalidate(36, closeModal = $$props2.closeModal);
   };
   $$self.$$.update = () => {
     if ($$self.$$.dirty[1] & /*sidebarItems*/
-    32) {
+    64) {
       $:
         $$invalidate(18, flatCategories = getFlatCategories2(sidebarItems));
     }
@@ -23515,7 +23531,7 @@ function instance5($$self, $$props, $$invalidate) {
     }
     if ($$self.$$.dirty[0] & /*searchQuery*/
     4 | $$self.$$.dirty[1] & /*sidebarItems*/
-    32) {
+    64) {
       $:
         $$invalidate(19, filteredItems = getFilteredTree(sidebarItems, searchQuery));
     }
@@ -23555,6 +23571,7 @@ function instance5($$self, $$props, $$invalidate) {
     commitAddGroup,
     handleKeydown,
     app,
+    plugin,
     dataService,
     closeModal,
     sidebarItems,
@@ -23601,10 +23618,11 @@ var QuickListModalView = class extends SvelteComponent {
       safe_not_equal,
       {
         app: 33,
-        dataService: 34,
+        plugin: 34,
+        dataService: 35,
         showTip: 0,
         remainingTips: 1,
-        closeModal: 35
+        closeModal: 36
       },
       null,
       [-1, -1, -1]
@@ -23635,6 +23653,7 @@ var QuickListModal = class extends import_obsidian11.Modal {
       target: contentEl,
       props: {
         app: this.app,
+        plugin: this.plugin,
         dataService: this.dataService,
         showTip,
         remainingTips,
@@ -23845,6 +23864,10 @@ var FluentTasksPlugin = class extends import_obsidian12.Plugin {
     super(...arguments);
     this.ribbonIconEl = null;
     this.settings = Object.assign({}, DEFAULT_SETTINGS);
+    // =============================================
+    // Sidebar Auto-Expand & Collapse Management
+    // =============================================
+    this.suppressAutoExpandSidebarUntil = 0;
     this.registeredCategoryCommandIds = /* @__PURE__ */ new Set();
   }
   async onload() {
@@ -23949,7 +23972,9 @@ var FluentTasksPlugin = class extends import_obsidian12.Plugin {
             const isPluginView = currentType === VIEW_TYPE_MAIN || currentType === VIEW_TYPE_SIDEBAR || currentType === VIEW_TYPE_DETAIL;
             const wasPluginView = lastActiveViewType === VIEW_TYPE_MAIN || lastActiveViewType === VIEW_TYPE_SIDEBAR || lastActiveViewType === VIEW_TYPE_DETAIL;
             if (isPluginView && !wasPluginView && this.settings.autoExpandSidebar) {
-              this.expandSidebarToList();
+              if (Date.now() > this.suppressAutoExpandSidebarUntil) {
+                this.expandSidebarToList();
+              }
             }
             lastActiveViewType = currentType;
           })
@@ -24071,9 +24096,27 @@ var FluentTasksPlugin = class extends import_obsidian12.Plugin {
       "--todo-accent-light": `${this.settings.accentColor}26`
     });
   }
-  // =============================================
-  // Sidebar Auto-Expand
-  // =============================================
+  /**
+   * Suppress automatic sidebar expansion for a period of time (e.g. after jumping from quick modals).
+   */
+  suppressAutoSidebarExpansion(durationMs = 1200) {
+    this.suppressAutoExpandSidebarUntil = Date.now() + durationMs;
+  }
+  /**
+   * Collapse left and right sidebars to provide a clean, focused center task view,
+   * and suppress automatic sidebar expansion.
+   */
+  collapseSidebars(durationMs = 1200) {
+    this.suppressAutoSidebarExpansion(durationMs);
+    const leftSplit = this.app.workspace.leftSplit;
+    if (leftSplit && !leftSplit.collapsed) {
+      leftSplit.collapse();
+    }
+    const rightSplit = this.app.workspace.rightSplit;
+    if (rightSplit && !rightSplit.collapsed) {
+      rightSplit.collapse();
+    }
+  }
   /**
    * Expand the left sidebar and reveal the Fluent Tasks sidebar list tab.
    */

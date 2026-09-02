@@ -50,8 +50,8 @@ Add multi-step checklist subtasks, star/pin priority items, write rich markdown 
 - **Dual Operating Modes**: Switch in settings between *Direct in-modal management* (popup checklist) and *Workspace navigation* (opens list & details in main view).
 
 ### 7. Quick List Modal (List-Only Workspace Navigator)
-- **Sidebar-Free Navigation**: Trigger `Open Quick List Modal (List only)` to browse all lists with fuzzy search and uncompleted task counters.
-- **Clean Workspace Focus**: Selecting a list reveals it in the center task view **without opening or expanding the left sidebar**.
+- **Sidebar-Free Navigation**: Trigger `Open Quick List Modal (List only)` to browse all lists and collapsible groups with fuzzy search, uncompleted task counters, drag-and-drop reordering, and inline <kbd>F2</kbd> renaming.
+- **Clean Workspace Focus**: Selecting a list reveals it in the center task view, automatically collapsing both left and right sidebars if open for maximum focus, and suppressing accidental sidebar re-expansion.
 
 ### 8. Instant Global Search
 Click `🔍` in the category header or trigger Search Modal anytime to search through tasks across all lists in milliseconds.
