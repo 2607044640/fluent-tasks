@@ -434,16 +434,28 @@ export default class FluentTasksPlugin extends Plugin {
                         }
 
                         if (mainLeaf) {
-                            if (!p?.fromHistory) {
-                                await mainLeaf.setViewState({
-                                    type: VIEW_TYPE_MAIN,
-                                    state: {
-                                        categoryFilepath: category.filepath,
-                                        categoryName: category.name,
-                                    },
-                                    active: true,
-                                });
-                            }
+                    if (!p?.fromHistory) {
+                        await mainLeaf.setViewState({
+                            type: VIEW_TYPE_MAIN,
+                            state: {
+                                categoryFilepath: category.filepath,
+                                categoryName: category.name,
+                            },
+                            active: true,
+                        });
+                    } else {
+                        // Restore category UI state from history (prevents UI desync on back/forward)
+                        const mainComponent = mainLeaf.view.getComponent?.() as TaskMainViewComponent | undefined;
+                        if (mainComponent) {
+                            const cat: CategoryInfo = {
+                                id: category.filepath,
+                                type: "category",
+                                name: category.name,
+                                filepath: category.filepath
+                            };
+                            await mainComponent.loadCategory(cat);
+                        }
+                    }
                             void this.app.workspace.revealLeaf(mainLeaf);
                         }
                     })();
