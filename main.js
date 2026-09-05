@@ -491,6 +491,7 @@ var MarkdownParser = class {
         steps: cleanSteps,
         note: typeof meta.note === "string" ? meta.note : "",
         createdAt,
+        ...typeof meta.completedAt === "string" ? { completedAt: meta.completedAt } : {},
         ...typeof meta.dueDate === "string" ? { dueDate: meta.dueDate } : {},
         ...typeof meta.msGraphId === "string" ? { msGraphId: meta.msGraphId } : {},
         ...typeof meta.msGraphListId === "string" ? { msGraphListId: meta.msGraphListId } : {},
@@ -516,6 +517,8 @@ var MarkdownParser = class {
         note: task.note,
         createdAt: task.createdAt
       };
+      if (task.completedAt)
+        meta.completedAt = task.completedAt;
       if (task.dueDate)
         meta.dueDate = task.dueDate;
       if (task.msGraphId)
@@ -568,6 +571,200 @@ var MarkdownParser = class {
   }
 };
 
+// src/utils/timeUtils.ts
+var DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+function parseLocalDate(dateStr) {
+  const parts = dateStr.split("-").map(Number);
+  return new Date(parts[0], parts[1] - 1, parts[2], 0, 0, 0, 0);
+}
+function formatLocalDate(d) {
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+function getTodayLocalDateString() {
+  return formatLocalDate(/* @__PURE__ */ new Date());
+}
+function formatExactTime(iso) {
+  if (!iso)
+    return "";
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime()))
+      return "";
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  } catch (e) {
+    return "";
+  }
+}
+function getRelativeTime(iso) {
+  if (!iso)
+    return "";
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime()))
+      return "";
+    const now2 = Date.now();
+    const diffMs = now2 - d.getTime();
+    const diffSecs = Math.floor(diffMs / 1e3);
+    const diffMins = Math.floor(diffSecs / 60);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffSecs < 60)
+      return "just now";
+    if (diffMins < 60)
+      return `${diffMins}m ago`;
+    if (diffHours < 24)
+      return `${diffHours}h ago`;
+    if (diffDays === 1)
+      return "yesterday";
+    if (diffDays < 30)
+      return `${diffDays}d ago`;
+    const diffMonths = Math.floor(diffDays / 30);
+    if (diffMonths < 12)
+      return `${diffMonths}mo ago`;
+    return `${Math.floor(diffDays / 365)}y ago`;
+  } catch (e) {
+    return "";
+  }
+}
+function getRecurrenceLabel(rule) {
+  if (!rule)
+    return "";
+  switch (rule.type) {
+    case "daily":
+      return rule.interval === 1 ? "Every day" : `Every ${rule.interval} days`;
+    case "weekdays":
+      return "Weekdays (Mon\u2013Fri)";
+    case "weekly": {
+      const days = (rule.daysOfWeek || []).map((d) => DAY_LABELS[d]).join(", ");
+      const prefix = rule.interval === 1 ? "Every week" : `Every ${rule.interval} weeks`;
+      return days ? `${prefix} on ${days}` : prefix;
+    }
+    case "custom": {
+      if (rule.daysOfWeek && rule.daysOfWeek.length > 0) {
+        const days = rule.daysOfWeek.map((d) => DAY_LABELS[d]).join(", ");
+        return `Every ${rule.interval} week(s) on ${days}`;
+      }
+      return `Every ${rule.interval} day(s)`;
+    }
+    default:
+      return "";
+  }
+}
+
+// src/services/RecurrenceService.ts
+var RecurrenceService = class _RecurrenceService {
+  /**
+   * Calculate the next due date from the current due date and recurrence rule.
+   * @param currentDue ISO date string "YYYY-MM-DD"
+   * @param rule The recurrence rule
+   * @returns Next ISO date string "YYYY-MM-DD" in local calendar format
+   */
+  static calculateNextDueDate(currentDue, rule) {
+    const date = parseLocalDate(currentDue);
+    switch (rule.type) {
+      case "daily":
+        date.setDate(date.getDate() + rule.interval);
+        break;
+      case "weekdays":
+        do {
+          date.setDate(date.getDate() + 1);
+        } while (date.getDay() === 0 || date.getDay() === 6);
+        break;
+      case "weekly":
+        if (rule.daysOfWeek && rule.daysOfWeek.length > 0) {
+          const currentDay = date.getDay();
+          const sorted = [...rule.daysOfWeek].sort((a, b) => a - b);
+          let found = false;
+          for (const day of sorted) {
+            if (day > currentDay) {
+              date.setDate(date.getDate() + (day - currentDay));
+              found = true;
+              break;
+            }
+          }
+          if (!found) {
+            const daysUntilFirstDay = 7 * rule.interval - currentDay + sorted[0];
+            date.setDate(date.getDate() + daysUntilFirstDay);
+          }
+        } else {
+          date.setDate(date.getDate() + 7 * rule.interval);
+        }
+        break;
+      case "custom":
+        if (rule.daysOfWeek && rule.daysOfWeek.length > 0) {
+          const currentDay = date.getDay();
+          const sorted = [...rule.daysOfWeek].sort((a, b) => a - b);
+          let found = false;
+          for (const day of sorted) {
+            if (day > currentDay) {
+              date.setDate(date.getDate() + (day - currentDay));
+              found = true;
+              break;
+            }
+          }
+          if (!found) {
+            const daysUntilFirstDay = 7 * rule.interval - currentDay + sorted[0];
+            date.setDate(date.getDate() + daysUntilFirstDay);
+          }
+        } else {
+          date.setDate(date.getDate() + rule.interval);
+        }
+        break;
+    }
+    return formatLocalDate(date);
+  }
+  /**
+   * Check if a recurring task should rollover to today.
+   * - If completed and its next recurrence or new day has arrived: resets completed=false, steps, and dueDate=today.
+   * - If incomplete but dueDate < today ("过了就要重置时间到当天！"): resets dueDate=today.
+   * Returns updated TaskItem if changes were made, or null if no change needed.
+   */
+  static checkTaskRollover(task, todayStr) {
+    if (!task.recurrence)
+      return null;
+    let changed = false;
+    let updated = { ...task };
+    if (updated.completed) {
+      const compDate = updated.completedAt ? formatLocalDate(new Date(updated.completedAt)) : updated.dueDate || "";
+      const baseDate = updated.dueDate || compDate || todayStr;
+      const nextDue = _RecurrenceService.calculateNextDueDate(baseDate, updated.recurrence);
+      if (todayStr >= nextDue || compDate && compDate < todayStr) {
+        updated.completed = false;
+        delete updated.completedAt;
+        updated.dueDate = todayStr;
+        if (updated.steps && updated.steps.length > 0) {
+          updated.steps = updated.steps.map((s) => ({ ...s, done: false }));
+        }
+        changed = true;
+      }
+    } else {
+      if (updated.dueDate && updated.dueDate < todayStr) {
+        updated.dueDate = todayStr;
+        changed = true;
+      }
+    }
+    return changed ? updated : null;
+  }
+  /**
+   * Process an entire array of tasks for rollover to today.
+   * Returns { tasks: TaskItem[], changed: boolean }
+   */
+  static rolloverTasks(tasks2, todayStr) {
+    let hasChanges = false;
+    const newTasks = tasks2.map((task) => {
+      const rolled = _RecurrenceService.checkTaskRollover(task, todayStr);
+      if (rolled) {
+        hasChanges = true;
+        return rolled;
+      }
+      return task;
+    });
+    return { tasks: newTasks, changed: hasChanges };
+  }
+};
+
 // src/services/TaskService.ts
 var TaskService = class {
   constructor(io) {
@@ -577,22 +774,48 @@ var TaskService = class {
   insertTaskBeforeCompleted(tasks2, task) {
     tasks2.unshift(task);
   }
-  /** Read tasks from file (safe, read-only unless auto-healing) */
+  /** Read tasks from file (safe, read-only unless auto-healing or recurring rollover) */
   async getTasks(filepath) {
     const content = await this.io.readFile(filepath);
     const tasks2 = MarkdownParser.parseTasksFromMarkdown(content);
     const seenIds = /* @__PURE__ */ new Set();
-    const uniqueTasks = tasks2.filter((t) => {
+    let uniqueTasks = tasks2.filter((t) => {
       if (seenIds.has(t.id))
         return false;
       seenIds.add(t.id);
       return true;
     });
+    let needsSave = false;
     if (uniqueTasks.length !== tasks2.length) {
-      Logger.log("[MStodo] Deduplicated tasks on load. Auto-healing file:", filepath);
+      Logger.log("[FluentTasks] Deduplicated tasks on load. Auto-healing file:", filepath);
+      needsSave = true;
+    }
+    const todayStr = getTodayLocalDateString();
+    const rolloverRes = RecurrenceService.rolloverTasks(uniqueTasks, todayStr);
+    if (rolloverRes.changed) {
+      uniqueTasks = rolloverRes.tasks;
+      needsSave = true;
+      Logger.log("[Recurrence] Rolled over recurring tasks for:", filepath);
+    }
+    if (needsSave) {
       await this.saveTasks(filepath, uniqueTasks);
     }
     return uniqueTasks;
+  }
+  /** Rollover recurring tasks in a specific file. Returns true if modified. */
+  async rolloverTasksInFile(filepath) {
+    const todayStr = getTodayLocalDateString();
+    let changed = false;
+    await this.io.processFile(filepath, (data) => {
+      const tasks2 = MarkdownParser.parseTasksFromMarkdown(data);
+      const res = RecurrenceService.rolloverTasks(tasks2, todayStr);
+      if (res.changed) {
+        changed = true;
+        return MarkdownParser.serializeTasksToMarkdown(res.tasks);
+      }
+      return data;
+    });
+    return changed;
   }
   /** Atomically overwrite the entire task list */
   async saveTasks(filepath, tasks2) {
@@ -760,6 +983,20 @@ var DataService = class {
       }
     }
     return results;
+  }
+  /**
+   * Rollover all recurring tasks across all categories.
+   * Returns true if any files were updated.
+   */
+  async rolloverRecurringTasks() {
+    const categories = await this.getCategories();
+    let anyChanged = false;
+    for (const cat of categories) {
+      const changed = await this.taskSvc.rolloverTasksInFile(cat.filepath);
+      if (changed)
+        anyChanged = true;
+    }
+    return anyChanged;
   }
 };
 
@@ -6994,159 +7231,8 @@ function calculatePopoverPosition(targetEl, type) {
   return { placement, x, y };
 }
 
-// src/utils/timeUtils.ts
-var DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-function formatExactTime(iso) {
-  if (!iso)
-    return "";
-  try {
-    const d = new Date(iso);
-    if (isNaN(d.getTime()))
-      return "";
-    const pad = (n) => String(n).padStart(2, "0");
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-  } catch (e) {
-    return "";
-  }
-}
-function getRelativeTime(iso) {
-  if (!iso)
-    return "";
-  try {
-    const d = new Date(iso);
-    if (isNaN(d.getTime()))
-      return "";
-    const now2 = Date.now();
-    const diffMs = now2 - d.getTime();
-    const diffSecs = Math.floor(diffMs / 1e3);
-    const diffMins = Math.floor(diffSecs / 60);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
-    if (diffSecs < 60)
-      return "just now";
-    if (diffMins < 60)
-      return `${diffMins}m ago`;
-    if (diffHours < 24)
-      return `${diffHours}h ago`;
-    if (diffDays === 1)
-      return "yesterday";
-    if (diffDays < 30)
-      return `${diffDays}d ago`;
-    const diffMonths = Math.floor(diffDays / 30);
-    if (diffMonths < 12)
-      return `${diffMonths}mo ago`;
-    return `${Math.floor(diffDays / 365)}y ago`;
-  } catch (e) {
-    return "";
-  }
-}
-function getRecurrenceLabel(rule) {
-  if (!rule)
-    return "";
-  switch (rule.type) {
-    case "daily":
-      return rule.interval === 1 ? "Every day" : `Every ${rule.interval} days`;
-    case "weekdays":
-      return "Weekdays (Mon\u2013Fri)";
-    case "weekly": {
-      const days = (rule.daysOfWeek || []).map((d) => DAY_LABELS[d]).join(", ");
-      const prefix = rule.interval === 1 ? "Every week" : `Every ${rule.interval} weeks`;
-      return days ? `${prefix} on ${days}` : prefix;
-    }
-    case "custom": {
-      if (rule.daysOfWeek && rule.daysOfWeek.length > 0) {
-        const days = rule.daysOfWeek.map((d) => DAY_LABELS[d]).join(", ");
-        return `Every ${rule.interval} week(s) on ${days}`;
-      }
-      return `Every ${rule.interval} day(s)`;
-    }
-    default:
-      return "";
-  }
-}
-
 // src/TaskMainView.svelte
 var import_obsidian6 = require("obsidian");
-
-// src/services/RecurrenceService.ts
-var RecurrenceService = class _RecurrenceService {
-  /**
-   * Calculate the next due date from the current due date and recurrence rule.
-   * @param currentDue ISO date string "YYYY-MM-DD"
-   * @param rule The recurrence rule
-   * @returns Next ISO date string "YYYY-MM-DD"
-   */
-  static calculateNextDueDate(currentDue, rule) {
-    const date = /* @__PURE__ */ new Date(currentDue + "T00:00:00");
-    switch (rule.type) {
-      case "daily":
-        date.setDate(date.getDate() + rule.interval);
-        break;
-      case "weekdays":
-        do {
-          date.setDate(date.getDate() + 1);
-        } while (date.getDay() === 0 || date.getDay() === 6);
-        break;
-      case "weekly":
-        if (rule.daysOfWeek && rule.daysOfWeek.length > 0) {
-          const currentDay = date.getDay();
-          const sorted = [...rule.daysOfWeek].sort((a, b) => a - b);
-          let found = false;
-          for (const day of sorted) {
-            if (day > currentDay) {
-              date.setDate(date.getDate() + (day - currentDay));
-              found = true;
-              break;
-            }
-          }
-          if (!found) {
-            const daysUntilFirstDay = 7 * rule.interval - currentDay + sorted[0];
-            date.setDate(date.getDate() + daysUntilFirstDay);
-          }
-        } else {
-          date.setDate(date.getDate() + 7 * rule.interval);
-        }
-        break;
-      case "custom":
-        if (rule.daysOfWeek && rule.daysOfWeek.length > 0) {
-          const currentDay = date.getDay();
-          const sorted = [...rule.daysOfWeek].sort((a, b) => a - b);
-          let found = false;
-          for (const day of sorted) {
-            if (day > currentDay) {
-              date.setDate(date.getDate() + (day - currentDay));
-              found = true;
-              break;
-            }
-          }
-          if (!found) {
-            const daysUntilFirstDay = 7 * rule.interval - currentDay + sorted[0];
-            date.setDate(date.getDate() + daysUntilFirstDay);
-          }
-        } else {
-          date.setDate(date.getDate() + rule.interval);
-        }
-        break;
-    }
-    return date.toISOString().slice(0, 10);
-  }
-  /**
-   * Process a recurring task completion: advance due date, reset completed and steps.
-   * Returns a NEW task object (does not mutate the input).
-   */
-  static handleRecurringCompletion(task) {
-    const baseDue = task.dueDate || (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-    const nextDue = _RecurrenceService.calculateNextDueDate(baseDue, task.recurrence);
-    return {
-      ...task,
-      completed: false,
-      dueDate: nextDue,
-      steps: task.steps.map((s) => ({ ...s, done: false }))
-    };
-  }
-};
-
-// src/TaskMainView.svelte
 var { Map: Map_1, window: window_12 } = globals;
 function get_each_context_2(ctx, list, i) {
   const child_ctx = ctx.slice();
@@ -12024,7 +12110,7 @@ function instance2($$self, $$props, $$invalidate) {
     }
   }
   async function handleTaskUpdated(payload) {
-    if (payload.categoryFilepath === (currentCategory == null ? void 0 : currentCategory.filepath)) {
+    if (!payload.categoryFilepath || payload.categoryFilepath === (currentCategory == null ? void 0 : currentCategory.filepath)) {
       await loadTasks();
       if (payload.isExternal && selectedTaskId && currentCategory) {
         const freshTask = incompleteTasks.find((t) => t.id === selectedTaskId) || completedTasks.find((t) => t.id === selectedTaskId);
@@ -12085,23 +12171,13 @@ function instance2($$self, $$props, $$invalidate) {
   async function toggleComplete(task) {
     if (!currentCategory)
       return;
-    const isBecomingCompleted = !task.completed;
-    if (isBecomingCompleted && task.recurrence) {
-      const advanced = RecurrenceService.handleRecurringCompletion(task);
-      Object.assign(task, advanced);
-      $$invalidate(4, incompleteTasks = [...incompleteTasks]);
-      await dataService.updateTask(currentCategory.filepath, task);
-      EventBus.emit("task:updated" /* TASK_UPDATED */, {
-        task,
-        categoryFilepath: currentCategory.filepath
-      });
-      return;
-    }
     task.completed = !task.completed;
     if (task.completed) {
+      task.completedAt = (/* @__PURE__ */ new Date()).toISOString();
       $$invalidate(4, incompleteTasks = incompleteTasks.filter((t) => t.id !== task.id));
       $$invalidate(5, completedTasks = [task, ...completedTasks]);
     } else {
+      delete task.completedAt;
       $$invalidate(5, completedTasks = completedTasks.filter((t) => t.id !== task.id));
       $$invalidate(4, incompleteTasks = [...incompleteTasks, task]);
     }
@@ -15968,6 +16044,11 @@ function instance3($$self, $$props, $$invalidate) {
     if (!task)
       return;
     $$invalidate(1, task.completed = !task.completed, task);
+    if (task.completed) {
+      $$invalidate(1, task.completedAt = (/* @__PURE__ */ new Date()).toISOString(), task);
+    } else {
+      delete task.completedAt;
+    }
     $$invalidate(1, task);
     await immediateSave();
   }
@@ -23861,6 +23942,7 @@ var FluentTasksPlugin = class extends import_obsidian12.Plugin {
     super(...arguments);
     this.ribbonIconEl = null;
     this.settings = Object.assign({}, DEFAULT_SETTINGS);
+    this.isRollingOver = false;
     // =============================================
     // Sidebar Auto-Expand & Collapse Management
     // =============================================
@@ -24011,7 +24093,7 @@ var FluentTasksPlugin = class extends import_obsidian12.Plugin {
           const category = p == null ? void 0 : p.category;
           if (category) {
             void (async () => {
-              var _a2;
+              var _a2, _b, _c;
               const mainLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MAIN);
               let mainLeaf = (_a2 = mainLeaves[0]) != null ? _a2 : null;
               if (!mainLeaf) {
@@ -24027,6 +24109,17 @@ var FluentTasksPlugin = class extends import_obsidian12.Plugin {
                     },
                     active: true
                   });
+                } else {
+                  const mainComponent = (_c = (_b = mainLeaf.view).getComponent) == null ? void 0 : _c.call(_b);
+                  if (mainComponent) {
+                    const cat = {
+                      id: category.filepath,
+                      type: "category",
+                      name: category.name,
+                      filepath: category.filepath
+                    };
+                    await mainComponent.loadCategory(cat);
+                  }
                 }
                 void this.app.workspace.revealLeaf(mainLeaf);
               }
@@ -24054,9 +24147,35 @@ var FluentTasksPlugin = class extends import_obsidian12.Plugin {
         EventBus.on("category:list-changed" /* CATEGORY_LIST_CHANGED */, () => {
           void this.registerCategoryCommands();
         });
+        void this.checkRecurringTasksRollover();
+        this.registerInterval(
+          window.setInterval(() => {
+            void this.checkRecurringTasksRollover();
+          }, 1e4)
+        );
+        this.registerDomEvent(window, "focus", () => {
+          void this.checkRecurringTasksRollover();
+        });
         void Logger.log("Fluent Tasks plugin loaded successfully.");
       })();
     });
+  }
+  /** Check and rollover any recurring tasks whose new day has arrived or due date has passed ("过了就要重置时间到当天！") */
+  async checkRecurringTasksRollover() {
+    if (this.isRollingOver)
+      return;
+    this.isRollingOver = true;
+    try {
+      const anyChanged = await this.dataService.rolloverRecurringTasks();
+      if (anyChanged) {
+        void Logger.log("[Recurrence] Background rollover applied. Notifying views.");
+        EventBus.emit("task:updated" /* TASK_UPDATED */, { isExternal: true });
+      }
+    } catch (err) {
+      void Logger.log("Error during recurring task rollover:", err);
+    } finally {
+      this.isRollingOver = false;
+    }
   }
   onunload() {
     if (this.ribbonIconEl) {

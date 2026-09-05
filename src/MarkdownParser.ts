@@ -91,6 +91,7 @@ export class MarkdownParser {
                 steps: cleanSteps,
                 note: typeof meta.note === "string" ? meta.note : "",
                 createdAt,
+                ...(typeof meta.completedAt === "string" ? { completedAt: meta.completedAt } : {}),
                 ...(typeof meta.dueDate === "string" ? { dueDate: meta.dueDate } : {}),
                 ...(typeof meta.msGraphId === "string" ? { msGraphId: meta.msGraphId } : {}),
                 ...(typeof meta.msGraphListId === "string" ? { msGraphListId: meta.msGraphListId } : {}),
@@ -118,6 +119,7 @@ export class MarkdownParser {
                 note: task.note,
                 createdAt: task.createdAt,
             };
+            if (task.completedAt) meta.completedAt = task.completedAt;
             if (task.dueDate) meta.dueDate = task.dueDate;
             if (task.msGraphId) meta.msGraphId = task.msGraphId;
             if (task.msGraphListId) meta.msGraphListId = task.msGraphListId;

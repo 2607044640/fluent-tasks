@@ -487,9 +487,43 @@ export default class FluentTasksPlugin extends Plugin {
                 void this.registerCategoryCommands();
             });
 
+            // 1. Immediate recurring tasks rollover check on startup
+            void this.checkRecurringTasksRollover();
+
+            // 2. Schedule recurring tasks check every 10 seconds ("每大概10s检查一下到没到明天")
+            this.registerInterval(
+                window.setInterval(() => {
+                    void this.checkRecurringTasksRollover();
+                }, 10000)
+            );
+
+            // 3. Check on window focus (when switching back to Obsidian)
+            this.registerDomEvent(window, "focus", () => {
+                void this.checkRecurringTasksRollover();
+            });
+
             void Logger.log("Fluent Tasks plugin loaded successfully.");
             })();
         });
+    }
+
+    private isRollingOver = false;
+
+    /** Check and rollover any recurring tasks whose new day has arrived or due date has passed ("过了就要重置时间到当天！") */
+    async checkRecurringTasksRollover(): Promise<void> {
+        if (this.isRollingOver) return;
+        this.isRollingOver = true;
+        try {
+            const anyChanged = await this.dataService.rolloverRecurringTasks();
+            if (anyChanged) {
+                void Logger.log("[Recurrence] Background rollover applied. Notifying views.");
+                EventBus.emit(EventName.TASK_UPDATED, { isExternal: true });
+            }
+        } catch (err) {
+            void Logger.log("Error during recurring task rollover:", err);
+        } finally {
+            this.isRollingOver = false;
+        }
     }
 
     onunload(): void {

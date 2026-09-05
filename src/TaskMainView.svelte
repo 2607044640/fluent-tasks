@@ -364,7 +364,7 @@
     }
 
     async function handleTaskUpdated(payload: any) {
-        if (payload.categoryFilepath === currentCategory?.filepath) {
+        if (!payload.categoryFilepath || payload.categoryFilepath === currentCategory?.filepath) {
             await loadTasks();
             if (payload.isExternal && selectedTaskId && currentCategory) {
                 const freshTask = incompleteTasks.find(t => t.id === selectedTaskId) || completedTasks.find(t => t.id === selectedTaskId);
@@ -440,29 +440,13 @@
     async function toggleComplete(task: TaskItem) {
         if (!currentCategory) return;
 
-        // Optimistic UI: move the task visually first
-        const isBecomingCompleted = !task.completed;
-
-        // Recurring task: advance to next occurrence instead of completing
-        if (isBecomingCompleted && task.recurrence) {
-            const advanced = RecurrenceService.handleRecurringCompletion(task);
-            Object.assign(task, advanced);
-            // Task stays in incompleteTasks — just trigger reactivity
-            incompleteTasks = [...incompleteTasks];
-
-            await dataService.updateTask(currentCategory.filepath, task);
-            EventBus.emit(EventName.TASK_UPDATED, {
-                task,
-                categoryFilepath: currentCategory.filepath,
-            });
-            return;
-        }
-
         task.completed = !task.completed;
         if (task.completed) {
+            task.completedAt = new Date().toISOString();
             incompleteTasks = incompleteTasks.filter(t => t.id !== task.id);
             completedTasks = [task, ...completedTasks];
         } else {
+            delete task.completedAt;
             completedTasks = completedTasks.filter(t => t.id !== task.id);
             incompleteTasks = [...incompleteTasks, task];
         }

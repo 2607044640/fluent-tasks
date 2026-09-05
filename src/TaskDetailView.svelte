@@ -279,6 +279,11 @@
     async function toggleComplete() {
         if (!task) return;
         task.completed = !task.completed;
+        if (task.completed) {
+            task.completedAt = new Date().toISOString();
+        } else {
+            delete task.completedAt;
+        }
         task = task; // trigger reactivity
         await immediateSave();
     }

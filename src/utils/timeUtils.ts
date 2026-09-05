@@ -8,6 +8,31 @@ import type { RecurrenceRule } from "../types";
 export const DAY_LABELS: readonly string[] = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 /**
+ * Parse a calendar date string (YYYY-MM-DD) into a local midnight Date.
+ * Avoids browser UTC timezone offset distortion.
+ */
+export function parseLocalDate(dateStr: string): Date {
+    const parts = dateStr.split("-").map(Number);
+    return new Date(parts[0], parts[1] - 1, parts[2], 0, 0, 0, 0);
+}
+
+/**
+ * Format a Date object to local calendar string: YYYY-MM-DD.
+ * Strictly uses local date components to avoid UTC off-by-one shifts.
+ */
+export function formatLocalDate(d: Date): string {
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+/**
+ * Get today's calendar date in local format: YYYY-MM-DD.
+ */
+export function getTodayLocalDateString(): string {
+    return formatLocalDate(new Date());
+}
+
+/**
  * Format an ISO string to exact second timestamp: YYYY-MM-DD HH:mm:ss
  */
 export function formatExactTime(iso?: string): string {

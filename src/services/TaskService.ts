@@ -2,6 +2,8 @@ import { MarkdownParser } from "../MarkdownParser";
 import { Logger } from "../Logger";
 import { TaskItem } from "../types";
 import { AtomicIOPipeline } from "./AtomicIOPipeline";
+import { RecurrenceService } from "./RecurrenceService";
+import { getTodayLocalDateString } from "../utils/timeUtils";
 
 export class TaskService {
     private io: AtomicIOPipeline;
@@ -15,25 +17,58 @@ export class TaskService {
         tasks.unshift(task);
     }
 
-    /** Read tasks from file (safe, read-only unless auto-healing) */
+    /** Read tasks from file (safe, read-only unless auto-healing or recurring rollover) */
     async getTasks(filepath: string): Promise<TaskItem[]> {
         const content = await this.io.readFile(filepath);
         const tasks = MarkdownParser.parseTasksFromMarkdown(content);
         
         // Self-healing deduplication at the backend layer
         const seenIds = new Set<string>();
-        const uniqueTasks = tasks.filter(t => {
+        let uniqueTasks = tasks.filter(t => {
             if (seenIds.has(t.id)) return false;
             seenIds.add(t.id);
             return true;
         });
 
+        let needsSave = false;
+
         if (uniqueTasks.length !== tasks.length) {
-            Logger.log("[MStodo] Deduplicated tasks on load. Auto-healing file:", filepath);
+            Logger.log("[FluentTasks] Deduplicated tasks on load. Auto-healing file:", filepath);
+            needsSave = true;
+        }
+
+        // Automatic rollover for recurring tasks (overdue reset or new-day reset)
+        const todayStr = getTodayLocalDateString();
+        const rolloverRes = RecurrenceService.rolloverTasks(uniqueTasks, todayStr);
+        if (rolloverRes.changed) {
+            uniqueTasks = rolloverRes.tasks;
+            needsSave = true;
+            Logger.log("[Recurrence] Rolled over recurring tasks for:", filepath);
+        }
+
+        if (needsSave) {
             await this.saveTasks(filepath, uniqueTasks);
         }
 
         return uniqueTasks;
+    }
+
+    /** Rollover recurring tasks in a specific file. Returns true if modified. */
+    async rolloverTasksInFile(filepath: string): Promise<boolean> {
+        const todayStr = getTodayLocalDateString();
+        let changed = false;
+
+        await this.io.processFile(filepath, (data: string) => {
+            const tasks = MarkdownParser.parseTasksFromMarkdown(data);
+            const res = RecurrenceService.rolloverTasks(tasks, todayStr);
+            if (res.changed) {
+                changed = true;
+                return MarkdownParser.serializeTasksToMarkdown(res.tasks);
+            }
+            return data;
+        });
+
+        return changed;
     }
 
     /** Atomically overwrite the entire task list */

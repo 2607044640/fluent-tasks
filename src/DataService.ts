@@ -112,4 +112,18 @@ export class DataService {
         }
         return results;
     }
+
+    /**
+     * Rollover all recurring tasks across all categories.
+     * Returns true if any files were updated.
+     */
+    async rolloverRecurringTasks(): Promise<boolean> {
+        const categories = await this.getCategories();
+        let anyChanged = false;
+        for (const cat of categories) {
+            const changed = await this.taskSvc.rolloverTasksInFile(cat.filepath);
+            if (changed) anyChanged = true;
+        }
+        return anyChanged;
+    }
 }
