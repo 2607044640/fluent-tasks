@@ -24,6 +24,7 @@ import { FluentTasksSettings, DEFAULT_SETTINGS, FluentTasksSettingTab } from "./
 import { TaskSearchModal } from "./TaskSearchModal";
 import { QuickTaskModal } from "./modals/QuickTaskModal";
 import { QuickListModal } from "./modals/QuickListModal";
+import { getTodayLocalDateString } from "./utils/timeUtils";
 import "./styles.css";
 
 // =============================================
@@ -487,8 +488,8 @@ export default class FluentTasksPlugin extends Plugin {
                 void this.registerCategoryCommands();
             });
 
-            // 1. Immediate recurring tasks rollover check on startup
-            void this.checkRecurringTasksRollover();
+            // 1. Immediate recurring tasks rollover check on startup (force=true)
+            void this.checkRecurringTasksRollover(true);
 
             // 2. Schedule recurring tasks check every 10 seconds ("每大概10s检查一下到没到明天")
             this.registerInterval(
@@ -508,13 +509,22 @@ export default class FluentTasksPlugin extends Plugin {
     }
 
     private isRollingOver = false;
+    private lastRolloverDate = "";
 
     /** Check and rollover any recurring tasks whose new day has arrived or due date has passed ("过了就要重置时间到当天！") */
-    async checkRecurringTasksRollover(): Promise<void> {
+    async checkRecurringTasksRollover(force = false): Promise<void> {
         if (this.isRollingOver) return;
+
+        const todayStr = getTodayLocalDateString();
+        // Zero-overhead guard: skip redundant vault disk I/O if calendar day has not rolled over
+        if (!force && this.lastRolloverDate === todayStr) {
+            return;
+        }
+
         this.isRollingOver = true;
         try {
             const anyChanged = await this.dataService.rolloverRecurringTasks();
+            this.lastRolloverDate = todayStr;
             if (anyChanged) {
                 void Logger.log("[Recurrence] Background rollover applied. Notifying views.");
                 EventBus.emit(EventName.TASK_UPDATED, { isExternal: true });

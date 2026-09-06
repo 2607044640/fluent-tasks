@@ -674,46 +674,35 @@ var RecurrenceService = class _RecurrenceService {
         break;
       case "weekly":
         if (rule.daysOfWeek && rule.daysOfWeek.length > 0) {
-          const currentDay = date.getDay();
-          const sorted = [...rule.daysOfWeek].sort((a, b) => a - b);
-          let found = false;
-          for (const day of sorted) {
-            if (day > currentDay) {
-              date.setDate(date.getDate() + (day - currentDay));
-              found = true;
-              break;
-            }
-          }
-          if (!found) {
-            const daysUntilFirstDay = 7 * rule.interval - currentDay + sorted[0];
-            date.setDate(date.getDate() + daysUntilFirstDay);
-          }
+          _RecurrenceService.advanceWeeklyCycle(date, rule.daysOfWeek, rule.interval);
         } else {
           date.setDate(date.getDate() + 7 * rule.interval);
         }
         break;
       case "custom":
         if (rule.daysOfWeek && rule.daysOfWeek.length > 0) {
-          const currentDay = date.getDay();
-          const sorted = [...rule.daysOfWeek].sort((a, b) => a - b);
-          let found = false;
-          for (const day of sorted) {
-            if (day > currentDay) {
-              date.setDate(date.getDate() + (day - currentDay));
-              found = true;
-              break;
-            }
-          }
-          if (!found) {
-            const daysUntilFirstDay = 7 * rule.interval - currentDay + sorted[0];
-            date.setDate(date.getDate() + daysUntilFirstDay);
-          }
+          _RecurrenceService.advanceWeeklyCycle(date, rule.daysOfWeek, rule.interval);
         } else {
           date.setDate(date.getDate() + rule.interval);
         }
         break;
     }
     return formatLocalDate(date);
+  }
+  /**
+   * Advance a date to the next matching weekday in the weekly/custom recurrence cycle.
+   */
+  static advanceWeeklyCycle(date, daysOfWeek, interval) {
+    const currentDay = date.getDay();
+    const sorted = [...daysOfWeek].sort((a, b) => a - b);
+    for (const day of sorted) {
+      if (day > currentDay) {
+        date.setDate(date.getDate() + (day - currentDay));
+        return;
+      }
+    }
+    const daysUntilFirstDay = 7 * interval - currentDay + sorted[0];
+    date.setDate(date.getDate() + daysUntilFirstDay);
   }
   /**
    * Check if a recurring task should rollover to today.
@@ -728,7 +717,7 @@ var RecurrenceService = class _RecurrenceService {
     let updated = { ...task };
     if (updated.completed) {
       const compDate = updated.completedAt ? formatLocalDate(new Date(updated.completedAt)) : updated.dueDate || "";
-      const baseDate = updated.dueDate || compDate || todayStr;
+      const baseDate = compDate || updated.dueDate || todayStr;
       const nextDue = _RecurrenceService.calculateNextDueDate(baseDate, updated.recurrence);
       if (todayStr >= nextDue || compDate && compDate < todayStr) {
         updated.completed = false;
@@ -16004,7 +15993,7 @@ function instance3($$self, $$props, $$invalidate) {
   async function handleExternalTaskUpdate(payload) {
     if (!task || !categoryFilepath)
       return;
-    if (payload.categoryFilepath === categoryFilepath) {
+    if (!payload.categoryFilepath || payload.categoryFilepath === categoryFilepath) {
       if (payload.task && payload.task.id === task.id) {
         $$invalidate(1, task = {
           ...payload.task,
@@ -23943,6 +23932,7 @@ var FluentTasksPlugin = class extends import_obsidian12.Plugin {
     this.ribbonIconEl = null;
     this.settings = Object.assign({}, DEFAULT_SETTINGS);
     this.isRollingOver = false;
+    this.lastRolloverDate = "";
     // =============================================
     // Sidebar Auto-Expand & Collapse Management
     // =============================================
@@ -24147,7 +24137,7 @@ var FluentTasksPlugin = class extends import_obsidian12.Plugin {
         EventBus.on("category:list-changed" /* CATEGORY_LIST_CHANGED */, () => {
           void this.registerCategoryCommands();
         });
-        void this.checkRecurringTasksRollover();
+        void this.checkRecurringTasksRollover(true);
         this.registerInterval(
           window.setInterval(() => {
             void this.checkRecurringTasksRollover();
@@ -24161,12 +24151,17 @@ var FluentTasksPlugin = class extends import_obsidian12.Plugin {
     });
   }
   /** Check and rollover any recurring tasks whose new day has arrived or due date has passed ("过了就要重置时间到当天！") */
-  async checkRecurringTasksRollover() {
+  async checkRecurringTasksRollover(force = false) {
     if (this.isRollingOver)
       return;
+    const todayStr = getTodayLocalDateString();
+    if (!force && this.lastRolloverDate === todayStr) {
+      return;
+    }
     this.isRollingOver = true;
     try {
       const anyChanged = await this.dataService.rolloverRecurringTasks();
+      this.lastRolloverDate = todayStr;
       if (anyChanged) {
         void Logger.log("[Recurrence] Background rollover applied. Notifying views.");
         EventBus.emit("task:updated" /* TASK_UPDATED */, { isExternal: true });

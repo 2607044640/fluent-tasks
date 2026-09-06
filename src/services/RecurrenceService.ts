@@ -30,58 +30,41 @@ export class RecurrenceService {
 
             case 'weekly':
                 if (rule.daysOfWeek && rule.daysOfWeek.length > 0) {
-                    // Find the next matching day in the weekly cycle
-                    const currentDay = date.getDay();
-                    const sorted = [...rule.daysOfWeek].sort((a, b) => a - b);
-
-                    // Look for the next day in the same week
-                    let found = false;
-                    for (const day of sorted) {
-                        if (day > currentDay) {
-                            date.setDate(date.getDate() + (day - currentDay));
-                            found = true;
-                            break;
-                        }
-                    }
-
-                    if (!found) {
-                        // Wrap to the first day of the next interval-week cycle
-                        const daysUntilFirstDay = 7 * rule.interval - currentDay + sorted[0];
-                        date.setDate(date.getDate() + daysUntilFirstDay);
-                    }
+                    RecurrenceService.advanceWeeklyCycle(date, rule.daysOfWeek, rule.interval);
                 } else {
-                    // Simple: advance by N weeks
                     date.setDate(date.getDate() + 7 * rule.interval);
                 }
                 break;
 
             case 'custom':
                 if (rule.daysOfWeek && rule.daysOfWeek.length > 0) {
-                    // Custom with weekday selection: same logic as weekly
-                    const currentDay = date.getDay();
-                    const sorted = [...rule.daysOfWeek].sort((a, b) => a - b);
-
-                    let found = false;
-                    for (const day of sorted) {
-                        if (day > currentDay) {
-                            date.setDate(date.getDate() + (day - currentDay));
-                            found = true;
-                            break;
-                        }
-                    }
-
-                    if (!found) {
-                        const daysUntilFirstDay = 7 * rule.interval - currentDay + sorted[0];
-                        date.setDate(date.getDate() + daysUntilFirstDay);
-                    }
+                    RecurrenceService.advanceWeeklyCycle(date, rule.daysOfWeek, rule.interval);
                 } else {
-                    // Custom every N days
                     date.setDate(date.getDate() + rule.interval);
                 }
                 break;
         }
 
         return formatLocalDate(date);
+    }
+
+    /**
+     * Advance a date to the next matching weekday in the weekly/custom recurrence cycle.
+     */
+    private static advanceWeeklyCycle(date: Date, daysOfWeek: number[], interval: number): void {
+        const currentDay = date.getDay();
+        const sorted = [...daysOfWeek].sort((a, b) => a - b);
+
+        for (const day of sorted) {
+            if (day > currentDay) {
+                date.setDate(date.getDate() + (day - currentDay));
+                return;
+            }
+        }
+
+        // Wrap to the first day of the next interval-week cycle
+        const daysUntilFirstDay = 7 * interval - currentDay + sorted[0];
+        date.setDate(date.getDate() + daysUntilFirstDay);
     }
 
     /**
@@ -102,7 +85,8 @@ export class RecurrenceService {
                 ? formatLocalDate(new Date(updated.completedAt))
                 : (updated.dueDate || "");
             
-            const baseDate = updated.dueDate || compDate || todayStr;
+            // Prioritize actual completion date so today's completion is not prematurely reset by stale due dates
+            const baseDate = compDate || updated.dueDate || todayStr;
             const nextDue = RecurrenceService.calculateNextDueDate(baseDate, updated.recurrence);
 
             if (todayStr >= nextDue || (compDate && compDate < todayStr)) {

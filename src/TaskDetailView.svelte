@@ -231,13 +231,13 @@
 
     async function handleExternalTaskUpdate(payload: any) {
         if (!task || !categoryFilepath) return;
-        if (payload.categoryFilepath === categoryFilepath) {
+        if (!payload.categoryFilepath || payload.categoryFilepath === categoryFilepath) {
             if (payload.task && payload.task.id === task.id) {
                 task = { ...payload.task, steps: payload.task.steps.map((s: any) => ({ ...s })) };
                 return;
             }
             if (payload.isExternal) {
-                // External file write (AI, sync, external editor) — reload task from disk
+                // External file write (AI, sync, external editor, or rollover) — reload task from disk
                 const tasks = await dataService.getTasks(categoryFilepath);
                 const fresh = tasks.find(t => t.id === task?.id);
                 if (fresh) {
