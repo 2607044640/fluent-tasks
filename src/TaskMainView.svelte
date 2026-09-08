@@ -13,6 +13,7 @@
     import { Menu, setIcon, Platform, type App } from "obsidian";
     import { TaskSearchModal } from "./TaskSearchModal";
     import { RecurrenceService } from "./services/RecurrenceService";
+    import { LinkedNoteService } from "./services/LinkedNoteService";
     import { promptDeleteTaskWithLinkedNote } from "./modals/ConfirmDeleteLinkedNoteModal";
 
     // =============================================
@@ -281,17 +282,22 @@
         });
     }
 
-    function handleNoteLinkClick(e: MouseEvent | KeyboardEvent, noteLink?: string) {
+    async function handleNoteLinkClick(e: MouseEvent | KeyboardEvent, noteLink?: string) {
         e.stopPropagation();
         if (!noteLink || !plugin?.app) return;
-        const cleanLink = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
-        if (!cleanLink) return;
-
-        plugin.app.workspace.openLinkText(
-            cleanLink,
-            currentCategory?.filepath || "",
-            false
-        );
+        const file = LinkedNoteService.resolveLinkedNoteFile(plugin.app, noteLink, currentCategory?.filepath);
+        if (file) {
+            await LinkedNoteService.openLinkedNoteFile(plugin.app, file);
+        } else {
+            const cleanLink = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
+            if (cleanLink) {
+                plugin.app.workspace.openLinkText(
+                    cleanLink,
+                    currentCategory?.filepath || "",
+                    "tab"
+                );
+            }
+        }
     }
 
     function handleSettingsChanged() {
@@ -851,16 +857,30 @@
                     {/if}
                     {#if task.note_link}
                         <span class="meta-badge note-badge"
+                              class:hard-bound={LinkedNoteService.isHardBoundNote(task.note_link)}
                               on:mouseenter={(e) => handleNoteLinkHover(e, task.note_link)}
                               on:click={(e) => handleNoteLinkClick(e, task.note_link)}
                               on:keydown={(e) => e.key === "Enter" && handleNoteLinkClick(e, task.note_link)}
                               role="button" tabindex="0"
-                              title={`Linked note: ${task.note_link} (Click to open, hover to preview)`}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                            </svg>
+                              title={LinkedNoteService.isHardBoundNote(task.note_link)
+                                  ? `专属链接笔记: ${task.note_link} (点击跳转，悬停预览)`
+                                  : `Linked note: ${task.note_link} (Click to open, hover to preview)`}>
+                            {#if LinkedNoteService.isHardBoundNote(task.note_link)}
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                                </svg>
+                            {:else}
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                    <polyline points="14 2 14 8 20 8"/>
+                                    <line x1="16" y1="13" x2="8" y2="13"/>
+                                    <line x1="16" y1="17" x2="8" y2="17"/>
+                                    <polyline points="10 9 9 9 8 9"/>
+                                </svg>
+                            {/if}
                         </span>
                     {/if}
                     {#if task.customMeta && Object.keys(task.customMeta).length > 0}
@@ -1014,16 +1034,30 @@
                                 {/if}
                                 {#if task.note_link}
                                     <span class="meta-badge note-badge"
+                                          class:hard-bound={LinkedNoteService.isHardBoundNote(task.note_link)}
                                           on:mouseenter={(e) => handleNoteLinkHover(e, task.note_link)}
                                           on:click={(e) => handleNoteLinkClick(e, task.note_link)}
                                           on:keydown={(e) => e.key === "Enter" && handleNoteLinkClick(e, task.note_link)}
                                           role="button" tabindex="0"
-                                          title={`Linked note: ${task.note_link} (Click to open, hover to preview)`}>
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                                        </svg>
+                                          title={LinkedNoteService.isHardBoundNote(task.note_link)
+                                              ? `专属链接笔记: ${task.note_link} (点击跳转，悬停预览)`
+                                              : `Linked note: ${task.note_link} (Click to open, hover to preview)`}>
+                                        {#if LinkedNoteService.isHardBoundNote(task.note_link)}
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                                            </svg>
+                                        {:else}
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                                <polyline points="14 2 14 8 20 8"/>
+                                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                                <line x1="16" y1="17" x2="8" y2="17"/>
+                                                <polyline points="10 9 9 9 8 9"/>
+                                            </svg>
+                                        {/if}
                                     </span>
                                 {/if}
                                 {#if task.customMeta && Object.keys(task.customMeta).length > 0}
@@ -1234,6 +1268,10 @@
                             <span class="guide-desc">Preview Why (?), SVG (🖼️), Note (📄), Custom (🏷️)</span>
                         </div>
                         <div class="meta-guide-item">
+                            <span class="guide-key">Dedicated Link Note</span>
+                            <span class="guide-desc">Header button creates note, syncs titles bidirectionally & prompts on delete</span>
+                        </div>
+                        <div class="meta-guide-item">
                             <span class="guide-key">Click Note / SVG</span>
                             <span class="guide-desc">Jump directly to note or open full SVG Lightbox</span>
                         </div>
@@ -1361,8 +1399,8 @@
                                 <div class="guide-card-body">Attach development instructions, rationales, or agent methodologies to tasks. Displayed as a clean <span class="why-badge">?</span> badge with rich hover popover.</div>
                             </div>
                             <div class="guide-card">
-                                <div class="guide-card-header">📄 Linked Notes & Block References</div>
-                                <div class="guide-card-body">Link Obsidian notes (e.g. <code>[[Topic#^blockid]]</code>). Direct hover triggers native Page Preview in all view modes; click to jump straight to the note.</div>
+                                <div class="guide-card-header">🔗 Dedicated Linked Notes & Title Hot-Sync</div>
+                                <div class="guide-card-body">Click the dedicated Link Note button in the detail panel header to auto-create and open a dedicated note under <code>TodoData/&lt;ListName&gt;/</code>. Hard-bound notes feature a distinctive chain badge and bidirectional title hot-sync (renaming either task or note automatically updates the other with collision protection). Deleting prompts a confirmation modal to safely trash the note or retain it.</div>
                             </div>
                             <div class="guide-card">
                                 <div class="guide-card-header">🖼️ Visual Memory SVGs & Lightbox</div>

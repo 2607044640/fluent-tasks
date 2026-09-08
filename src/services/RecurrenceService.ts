@@ -87,7 +87,7 @@ export class RecurrenceService {
             
             // Prioritize actual completion date so today's completion is not prematurely reset by stale due dates
             const baseDate = compDate || updated.dueDate || todayStr;
-            const nextDue = RecurrenceService.calculateNextDueDate(baseDate, updated.recurrence);
+            const nextDue = RecurrenceService.calculateNextDueDate(baseDate, updated.recurrence!);
 
             if (todayStr >= nextDue || (compDate && compDate < todayStr)) {
                 updated.completed = false;

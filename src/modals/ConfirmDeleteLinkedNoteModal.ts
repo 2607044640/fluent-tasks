@@ -9,6 +9,7 @@ export class ConfirmDeleteLinkedNoteModal extends Modal {
     private noteFile: TFile;
     private task: TaskItem;
     private onDecision: (deleteNote: boolean | null) => void;
+    private hasDecided = false;
 
     constructor(
         app: App,
@@ -22,12 +23,18 @@ export class ConfirmDeleteLinkedNoteModal extends Modal {
         this.onDecision = onDecision;
     }
 
+    private decide(choice: boolean | null) {
+        if (this.hasDecided) return;
+        this.hasDecided = true;
+        this.onDecision(choice);
+    }
+
     onOpen() {
         const { contentEl } = this;
         contentEl.empty();
         contentEl.addClass("fluent-tasks-delete-modal");
 
-        const heading = contentEl.createEl("h3", { text: "是否删除链接笔记？" });
+        const heading = contentEl.createEl("h3", { text: `是否删除链接笔记（title：${this.task.title}）？` });
         heading.style.marginTop = "0";
         heading.style.marginBottom = "12px";
 
@@ -53,15 +60,15 @@ export class ConfirmDeleteLinkedNoteModal extends Modal {
         // Cancel
         const cancelBtn = btnContainer.createEl("button", { text: "取消" });
         cancelBtn.addEventListener("click", () => {
+            this.decide(null);
             this.close();
-            this.onDecision(null);
         });
 
         // Task only
         const taskOnlyBtn = btnContainer.createEl("button", { text: "仅删除任务（保留笔记）" });
         taskOnlyBtn.addEventListener("click", () => {
+            this.decide(false);
             this.close();
-            this.onDecision(false);
         });
 
         // Both task and note
@@ -70,13 +77,15 @@ export class ConfirmDeleteLinkedNoteModal extends Modal {
             cls: "mod-warning",
         });
         bothBtn.addEventListener("click", () => {
+            this.decide(true);
             this.close();
-            this.onDecision(true);
         });
     }
 
     onClose() {
         this.contentEl.empty();
+        // Fallback: If closed via Esc or clicking modal backdrop, resolve cancellation cleanly
+        this.decide(null);
     }
 }
 

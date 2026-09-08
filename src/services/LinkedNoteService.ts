@@ -107,19 +107,55 @@ export class LinkedNoteService {
     }
 
     /**
-     * Generate an available non-colliding file path in the target folder
-     * Appends (1), (2), etc. if title collisions occur
+     * Strip collision disambiguation suffix like ' (1)', ' (2)'
      */
-    static getAvailableNotePath(app: App, targetFolder: string, baseTitle: string): string {
+    static stripCollisionSuffix(title: string): string {
+        return title.replace(/\s+\(\d+\)$/, "").trim();
+    }
+
+    /**
+     * Check if a note link is a dedicated hard-bound task note under TodoData/
+     */
+    static isHardBoundNote(noteLink?: string): boolean {
+        if (!noteLink) return false;
+        const clean = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
+        return clean.startsWith(`${DATA_FOLDER}/`) || clean.startsWith(`${DATA_FOLDER}\\`);
+    }
+
+    /**
+     * Open or focus a linked note file in a tab without displacing active view
+     */
+    static async openLinkedNoteFile(app: App, file: TFile): Promise<void> {
+        const leaves = app.workspace.getLeavesOfType("markdown");
+        const existingLeaf = leaves.find((l: any) => l.view?.file?.path === file?.path);
+        if (existingLeaf) {
+            app.workspace.setActiveLeaf(existingLeaf, { focus: true });
+        } else {
+            const leaf = app.workspace.getLeaf("tab");
+            await leaf.openFile(file);
+            app.workspace.setActiveLeaf(leaf, { focus: true });
+        }
+    }
+
+    /**
+     * Generate an available non-colliding file path in the target folder
+     * Appends (1), (2), etc. if title collisions occur. Ignores currentFilePath if specified.
+     */
+    static getAvailableNotePath(app: App, targetFolder: string, baseTitle: string, currentFilePath?: string): string {
         const candidate = `${targetFolder}/${baseTitle}.md`;
-        if (!app.vault.getAbstractFileByPath(candidate)) {
+        const existingFirst = app.vault.getAbstractFileByPath(candidate);
+        if (!existingFirst || (currentFilePath && existingFirst.path === currentFilePath)) {
             return candidate;
         }
         let counter = 1;
-        while (app.vault.getAbstractFileByPath(`${targetFolder}/${baseTitle} (${counter}).md`)) {
+        while (true) {
+            const numberedCandidate = `${targetFolder}/${baseTitle} (${counter}).md`;
+            const existingNumbered = app.vault.getAbstractFileByPath(numberedCandidate);
+            if (!existingNumbered || (currentFilePath && existingNumbered.path === currentFilePath)) {
+                return numberedCandidate;
+            }
             counter++;
         }
-        return `${targetFolder}/${baseTitle} (${counter}).md`;
     }
 
     /**
@@ -170,7 +206,8 @@ export class LinkedNoteService {
     static async syncTaskTitleToNote(
         app: App,
         task: TaskItem,
-        categoryFilepath: string
+        categoryFilepath: string,
+        dataService?: DataService
     ): Promise<{ newNoteLink?: string; noteRenamed: boolean }> {
         if (!task.note_link) return { noteRenamed: false };
 
@@ -178,31 +215,30 @@ export class LinkedNoteService {
         if (!file) return { noteRenamed: false };
 
         const cleanNewTitle = this.sanitizeNoteTitle(task.title);
-        if (!cleanNewTitle || file.basename === cleanNewTitle) {
+        const baseExistingTitle = this.stripCollisionSuffix(file.basename);
+
+        // If base title matches (even if disambiguated with (1), (2)), task title did NOT change
+        if (!cleanNewTitle || file.basename === cleanNewTitle || baseExistingTitle === cleanNewTitle) {
             return { noteRenamed: false };
         }
 
         const parentFolder = file.parent ? file.parent.path : this.getTaskNotesFolder(categoryFilepath);
-        let newPath = `${parentFolder}/${cleanNewTitle}.md`;
-
-        // Handle collision if another file occupies this name
-        if (newPath !== file.path && app.vault.getAbstractFileByPath(newPath)) {
-            let counter = 1;
-            while (app.vault.getAbstractFileByPath(`${parentFolder}/${cleanNewTitle} (${counter}).md`)) {
-                counter++;
-            }
-            newPath = `${parentFolder}/${cleanNewTitle} (${counter}).md`;
-        }
+        const newPath = this.getAvailableNotePath(app, parentFolder, cleanNewTitle, file.path);
 
         if (newPath === file.path) return { noteRenamed: false };
 
         this.markInternalRename(file.path, newPath);
+        if (dataService) {
+            dataService.markInternalWrite(file.path, 3000);
+            dataService.markInternalWrite(newPath, 3000);
+        }
 
         try {
             await app.fileManager.renameFile(file, newPath);
 
             // Update first markdown header if present
             try {
+                if (dataService) dataService.markInternalWrite(newPath, 2000);
                 await app.vault.process(file, (content: string) => {
                     if (/^#\s+[^\r\n]+/m.test(content)) {
                         return content.replace(/^#\s+[^\r\n]+/m, `# ${task.title}`);
@@ -217,7 +253,7 @@ export class LinkedNoteService {
             const newNoteLink = `[[${cleanPath}]]`;
             return { newNoteLink, noteRenamed: true };
         } catch (err) {
-            Logger.log("Failed to rename linked note file:", err);
+            void Logger.log("Failed to rename linked note file:", err);
             return { noteRenamed: false };
         }
     }
@@ -235,13 +271,24 @@ export class LinkedNoteService {
         if (!newFile || newFile.extension !== "md") return false;
 
         const oldClean = oldPath.replace(/\.md$/, "");
-        const oldBasename = oldClean.split("/").pop() || "";
         const newClean = newFile.path.replace(/\.md$/, "");
         const newTitle = newFile.basename;
+        const normalizedOldClean = oldClean.replace(/\\/g, "/");
+        const normalizedOldPath = oldPath.replace(/\\/g, "/");
 
-        // Check frontmatter taskId if available for instant pinpointing
-        const cache = app.metadataCache.getFileCache(newFile);
-        const frontmatterTaskId = cache?.frontmatter?.taskId;
+        // Check frontmatter taskId: 1st via metadataCache, 2nd via direct file read fallback
+        let frontmatterTaskId = app.metadataCache?.getFileCache(newFile)?.frontmatter?.taskId;
+        if (!frontmatterTaskId) {
+            try {
+                const content = await app.vault.read(newFile);
+                const match = content.match(/^---\r?\n[\s\S]*?taskId:\s*["']?([^"'\r\n]+)["']?[\s\S]*?\r?\n---/);
+                if (match) {
+                    frontmatterTaskId = match[1].trim();
+                }
+            } catch {
+                // Fallback to path matching below
+            }
+        }
 
         // Get all categories in TodoData
         const categories = await dataService.getCategories();
@@ -255,27 +302,30 @@ export class LinkedNoteService {
                 continue;
             }
 
-            let catChanged = false;
+            const categoryNotesFolder = this.getTaskNotesFolder(cat.filepath).replace(/\\/g, "/");
+
             for (const task of tasks) {
                 let isMatch = false;
 
                 if (frontmatterTaskId && task.id === frontmatterTaskId) {
                     isMatch = true;
                 } else if (task.note_link) {
-                    const taskClean = task.note_link.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
-                    if (
-                        taskClean === oldClean ||
-                        taskClean === oldPath ||
-                        taskClean.split("/").pop() === oldBasename
-                    ) {
+                    const taskClean = task.note_link.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim().replace(/\\/g, "/");
+                    // Exact path match
+                    if (taskClean === normalizedOldClean || taskClean === normalizedOldPath || `${taskClean}.md` === normalizedOldPath) {
                         isMatch = true;
+                    } else if (!taskClean.includes("/") && normalizedOldPath.startsWith(categoryNotesFolder + "/")) {
+                        // Short link without slash: only match if old file belongs to this category's folder
+                        const oldBase = normalizedOldClean.split("/").pop();
+                        if (taskClean === oldBase) {
+                            isMatch = true;
+                        }
                     }
                 }
 
                 if (isMatch) {
-                    task.title = newTitle;
+                    task.title = this.stripCollisionSuffix(newTitle) || newTitle;
                     task.note_link = `[[${newClean}]]`;
-                    catChanged = true;
                     anyUpdated = true;
 
                     // Update task atomically
@@ -286,6 +336,19 @@ export class LinkedNoteService {
                     });
                 }
             }
+        }
+
+        // Keep the top markdown heading in the note file in sync with the new note title
+        try {
+            dataService.markInternalWrite(newFile.path, 2000);
+            await app.vault.process(newFile, (content: string) => {
+                if (/^#\s+[^\r\n]+/m.test(content)) {
+                    return content.replace(/^#\s+[^\r\n]+/m, `# ${this.stripCollisionSuffix(newTitle) || newTitle}`);
+                }
+                return content;
+            });
+        } catch {
+            // Non-critical
         }
 
         return anyUpdated;

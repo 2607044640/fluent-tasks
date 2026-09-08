@@ -392,11 +392,17 @@ export default class FluentTasksPlugin extends Plugin {
                     })
                 );
 
+            const isCategoryFile = (path?: string) => {
+                if (!path || !path.startsWith(DATA_FOLDER + "/") || !path.endsWith(".md")) return false;
+                const relPath = path.slice(DATA_FOLDER.length + 1);
+                return !relPath.includes("/") && !relPath.includes("\\");
+            };
+
             // Listen for external file modifications (AI, sync, external editors)
             this.registerEvent(
                 this.app.vault.on("modify", (file) => {
                     if (!file || !(file instanceof TFile)) return;
-                    if (file.path.startsWith(DATA_FOLDER + "/") && file.path.endsWith(".md")) {
+                    if (isCategoryFile(file.path)) {
                         if (this.dataService.isInternalWrite(file.path)) {
                             return; // Skip self-generated optimistic writes
                         }
@@ -410,7 +416,7 @@ export default class FluentTasksPlugin extends Plugin {
 
             // Listen for category creation, deletion, and renaming to update commands in real-time
             const handleCategoryVaultChange = (file: any) => {
-                if (file && file.path && file.path.startsWith(DATA_FOLDER + "/") && file.path.endsWith(".md")) {
+                if (file && isCategoryFile(file.path)) {
                     void this.registerCategoryCommands();
                 }
             };
@@ -463,7 +469,7 @@ export default class FluentTasksPlugin extends Plugin {
                         });
                     } else {
                         // Restore category UI state from history (prevents UI desync on back/forward)
-                        const mainComponent = mainLeaf.view.getComponent?.() as TaskMainViewComponent | undefined;
+                        const mainComponent = (mainLeaf.view as any).getComponent?.() as TaskMainViewComponent | undefined;
                         if (mainComponent) {
                             const cat: CategoryInfo = {
                                 id: category.filepath,

@@ -258,7 +258,7 @@
         saveTimeout = setTimeout(async () => {
             if (!task || !categoryFilepath) return;
             if (task.note_link && plugin?.app) {
-                const syncRes = await LinkedNoteService.syncTaskTitleToNote(plugin.app, task, categoryFilepath);
+                const syncRes = await LinkedNoteService.syncTaskTitleToNote(plugin.app, task, categoryFilepath, dataService);
                 if (syncRes.noteRenamed && syncRes.newNoteLink) {
                     task.note_link = syncRes.newNoteLink;
                 }
@@ -308,7 +308,7 @@
         if (saveTimeout) clearTimeout(saveTimeout);
         if (!task || !categoryFilepath) return;
         if (task.note_link && plugin?.app) {
-            const syncRes = await LinkedNoteService.syncTaskTitleToNote(plugin.app, task, categoryFilepath);
+            const syncRes = await LinkedNoteService.syncTaskTitleToNote(plugin.app, task, categoryFilepath, dataService);
             if (syncRes.noteRenamed && syncRes.newNoteLink) {
                 task.note_link = syncRes.newNoteLink;
             }
@@ -322,7 +322,7 @@
     // =============================================
     $: hasLinkedNote = !!(task && task.note_link);
     $: linkNoteTooltip = hasLinkedNote
-        ? `打开链接笔记: ${task?.note_link} (点击跳转，悬停预览)`
+        ? `打开链接笔记: ${task?.note_link} (点击跳转，悬停预览，右键管理)`
         : "链接专属笔记 (点击自动创建并跳转)";
 
     function handleLinkNoteHover(e: MouseEvent) {
@@ -356,24 +356,14 @@
             // Already has note link: reveal existing note
             const file = LinkedNoteService.resolveLinkedNoteFile(plugin.app, task.note_link, categoryFilepath);
             if (file) {
-                const leaves = plugin.app.workspace.getLeavesOfType("markdown");
-                const existingLeaf = leaves.find((l: any) => l.view?.file?.path === file?.path);
-                if (existingLeaf) {
-                    plugin.app.workspace.setActiveLeaf(existingLeaf, { focus: true });
-                } else {
-                    const leaf = plugin.app.workspace.getLeaf("tab");
-                    await leaf.openFile(file);
-                    plugin.app.workspace.setActiveLeaf(leaf, { focus: true });
-                }
+                await LinkedNoteService.openLinkedNoteFile(plugin.app, file);
             } else {
                 // Re-create note if file was removed
                 const res = await LinkedNoteService.createOrGetLinkedNote(plugin.app, task, categoryFilepath);
                 task.note_link = res.noteLink;
                 task = task;
                 await immediateSave();
-                const leaf = plugin.app.workspace.getLeaf("tab");
-                await leaf.openFile(res.file);
-                plugin.app.workspace.setActiveLeaf(leaf, { focus: true });
+                await LinkedNoteService.openLinkedNoteFile(plugin.app, res.file);
                 new Notice(`已重新创建并打开链接笔记: ${res.file.basename}`);
             }
         } else {
@@ -382,9 +372,7 @@
             task.note_link = res.noteLink;
             task = task;
             await immediateSave();
-            const leaf = plugin.app.workspace.getLeaf("tab");
-            await leaf.openFile(res.file);
-            plugin.app.workspace.setActiveLeaf(leaf, { focus: true });
+            await LinkedNoteService.openLinkedNoteFile(plugin.app, res.file);
             new Notice(`已创建并打开链接笔记: ${res.file.basename}`);
         }
     }

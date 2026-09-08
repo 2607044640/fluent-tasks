@@ -9,6 +9,7 @@
     import { INPUT_FOCUS_DELAY_MS, POPOVER_HIDE_DELAY_MS } from "../constants";
     import { Menu, Notice } from "obsidian";
     import { promptDeleteTaskWithLinkedNote } from "./ConfirmDeleteLinkedNoteModal";
+    import { LinkedNoteService } from "../services/LinkedNoteService";
 
     // =============================================
     // Props
@@ -232,11 +233,17 @@
         });
     }
 
-    function handleNoteLinkClick(e: MouseEvent, noteLink?: string) {
+    async function handleNoteLinkClick(e: MouseEvent, noteLink?: string) {
         if (!noteLink || !plugin || !plugin.app) return;
-        const cleanLink = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
-        if (!cleanLink) return;
-        plugin.app.workspace.openLinkText(cleanLink, selectedCategory?.filepath || "", e.ctrlKey || e.metaKey);
+        const file = LinkedNoteService.resolveLinkedNoteFile(plugin.app, noteLink, selectedCategory?.filepath);
+        if (file) {
+            await LinkedNoteService.openLinkedNoteFile(plugin.app, file);
+        } else {
+            const cleanLink = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
+            if (cleanLink) {
+                plugin.app.workspace.openLinkText(cleanLink, selectedCategory?.filepath || "", e.ctrlKey || e.metaKey || "tab");
+            }
+        }
         closeModal();
     }
 
@@ -1060,6 +1067,33 @@
                                     <span class="quick-modal-search-category-badge">
                                         {result.category.name}
                                     </span>
+                                    {#if result.task.note_link}
+                                        <span 
+                                            class="meta-badge note-badge"
+                                            class:hard-bound={LinkedNoteService.isHardBoundNote(result.task.note_link)}
+                                            on:mouseenter={(e) => handleNoteLinkHover(e, result.task.note_link)}
+                                            on:click|stopPropagation={(e) => handleNoteLinkClick(e, result.task.note_link)}
+                                            role="button" tabindex="0"
+                                            title={LinkedNoteService.isHardBoundNote(result.task.note_link)
+                                                ? `专属链接笔记: ${result.task.note_link} (点击跳转，悬停预览)`
+                                                : `Linked note: ${result.task.note_link} (Click to open, hover to preview)`}
+                                        >
+                                            {#if LinkedNoteService.isHardBoundNote(result.task.note_link)}
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                                                </svg>
+                                            {:else}
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                                    <polyline points="14 2 14 8 20 8"/>
+                                                    <line x1="16" y1="13" x2="8" y2="13"/>
+                                                    <line x1="16" y1="17" x2="8" y2="17"/>
+                                                    <polyline points="10 9 9 9 8 9"/>
+                                                </svg>
+                                            {/if}
+                                        </span>
+                                    {/if}
                                     <span 
                                         class="quick-modal-star-btn"
                                         class:is-starred={result.task.starred}
@@ -1119,14 +1153,28 @@
                                     {#if task.note_link}
                                         <span 
                                             class="meta-badge note-badge"
+                                            class:hard-bound={LinkedNoteService.isHardBoundNote(task.note_link)}
                                             on:mouseenter={(e) => handleNoteLinkHover(e, task.note_link)}
                                             on:click|stopPropagation={(e) => handleNoteLinkClick(e, task.note_link)}
                                             role="button" tabindex="0"
+                                            title={LinkedNoteService.isHardBoundNote(task.note_link)
+                                                ? `专属链接笔记: ${task.note_link} (点击跳转，悬停预览)`
+                                                : `Linked note: ${task.note_link} (Click to open, hover to preview)`}
                                         >
-                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                                            </svg>
+                                            {#if LinkedNoteService.isHardBoundNote(task.note_link)}
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                                                </svg>
+                                            {:else}
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                                    <polyline points="14 2 14 8 20 8"/>
+                                                    <line x1="16" y1="13" x2="8" y2="13"/>
+                                                    <line x1="16" y1="17" x2="8" y2="17"/>
+                                                    <polyline points="10 9 9 9 8 9"/>
+                                                </svg>
+                                            {/if}
                                         </span>
                                     {/if}
                                     <span 
@@ -1183,6 +1231,33 @@
                                                 on:mouseleave={scheduleHidePopover}
                                                 role="button" tabindex="0"
                                             >?</span>
+                                        {/if}
+                                        {#if task.note_link}
+                                            <span 
+                                                class="meta-badge note-badge"
+                                                class:hard-bound={LinkedNoteService.isHardBoundNote(task.note_link)}
+                                                on:mouseenter={(e) => handleNoteLinkHover(e, task.note_link)}
+                                                on:click|stopPropagation={(e) => handleNoteLinkClick(e, task.note_link)}
+                                                role="button" tabindex="0"
+                                                title={LinkedNoteService.isHardBoundNote(task.note_link)
+                                                    ? `专属链接笔记: ${task.note_link} (点击跳转，悬停预览)`
+                                                    : `Linked note: ${task.note_link} (Click to open, hover to preview)`}
+                                            >
+                                                {#if LinkedNoteService.isHardBoundNote(task.note_link)}
+                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                                                    </svg>
+                                                {:else}
+                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                                        <polyline points="14 2 14 8 20 8"/>
+                                                        <line x1="16" y1="13" x2="8" y2="13"/>
+                                                        <line x1="16" y1="17" x2="8" y2="17"/>
+                                                        <polyline points="10 9 9 9 8 9"/>
+                                                    </svg>
+                                                {/if}
+                                            </span>
                                         {/if}
                                         <span 
                                             class="quick-modal-star-btn"
