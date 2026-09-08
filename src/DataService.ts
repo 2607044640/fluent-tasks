@@ -44,6 +44,9 @@ export class DataService {
     async renameGroup(groupId: string, newName: string): Promise<void> {
         return this.categorySvc.renameGroup(groupId, newName);
     }
+    async deleteGroup(groupId: string): Promise<void> {
+        return this.categorySvc.deleteGroup(groupId);
+    }
 
     async getCategories(): Promise<CategoryInfo[]> {
         const items = await this.categorySvc.getSidebarItems();

@@ -235,6 +235,20 @@ export class CategoryService {
         EventBus.emit(EventName.CATEGORY_LIST_CHANGED, { sidebarItems: items });
     }
 
+    async deleteGroup(groupId: string): Promise<void> {
+        const items = await this.getSidebarItems();
+        const groupIdx = items.findIndex(i => i.id === groupId && i.type === "group");
+        if (groupIdx === -1) return;
+
+        const group = items[groupIdx] as GroupInfo;
+        const children = group.items || [];
+        items.splice(groupIdx, 1, ...children);
+
+        await this.saveSidebarState(items);
+        void Logger.log("Deleted group:", groupId);
+        EventBus.emit(EventName.CATEGORY_LIST_CHANGED, { sidebarItems: items });
+    }
+
     async deleteCategory(filepath: string): Promise<void> {
         const file = this.app.vault.getAbstractFileByPath(filepath);
         const basename = filepath.split("/").pop()?.replace(/\.md$/, "") || "";

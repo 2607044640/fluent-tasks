@@ -52,8 +52,8 @@ export interface TaskItem {
 }
 
 export interface CategoryInfo {
-    /** Optional ID used by Svelte-DND for dragging categories */
-    id?: string;
+    /** ID used by Svelte-DND for dragging categories (matches filepath) */
+    id: string;
     type?: "category";
     /** Display name (derived from filename without .md extension) */
     name: string;

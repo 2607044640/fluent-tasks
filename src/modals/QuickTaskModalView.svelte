@@ -77,10 +77,13 @@
     // Drag-to-list & reorder state
     let draggedListId: string = "";
     let dragOverListId: string = "";
-    let dragListPosition: string | null = null;
+    let dragListPosition: "top" | "bottom" | "inside" | null = null;
     let hoveredDropCategoryPath: string | null = null;
 
     $: flatCategories = getFlatCategories(sidebarItems);
+    $: allDisplayedTasks = isSearching 
+        ? searchResults.map(r => r.task) 
+        : [...incompleteTasks, ...completedTasks];
 
     onMount(async () => {
         await loadData();
