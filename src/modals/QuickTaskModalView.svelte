@@ -8,6 +8,7 @@
     import { calculatePopoverPosition } from "../utils/popoverUtils";
     import { INPUT_FOCUS_DELAY_MS, POPOVER_HIDE_DELAY_MS } from "../constants";
     import { Menu, Notice } from "obsidian";
+    import { promptDeleteTaskWithLinkedNote } from "./ConfirmDeleteLinkedNoteModal";
 
     // =============================================
     // Props
@@ -523,22 +524,27 @@
         const catPath = isSearching 
             ? searchResults.find(r => r.task.id === taskItem.id)?.category.filepath 
             : selectedCategory?.filepath;
-        if (!catPath) return;
+        if (!catPath || !plugin?.app) return;
 
-        await dataService.deleteTask(catPath, taskItem);
-        EventBus.emit(EventName.TASK_DELETED, { task: taskItem, categoryFilepath: catPath });
+        await promptDeleteTaskWithLinkedNote(
+            plugin.app,
+            taskItem,
+            catPath,
+            dataService,
+            async () => {
+                if (!taskItem.completed && taskCounts[catPath] !== undefined) {
+                    taskCounts[catPath] = Math.max(0, taskCounts[catPath] - 1);
+                    taskCounts = { ...taskCounts };
+                }
 
-        if (!taskItem.completed && taskCounts[catPath] !== undefined) {
-            taskCounts[catPath] = Math.max(0, taskCounts[catPath] - 1);
-            taskCounts = { ...taskCounts };
-        }
-
-        if (isSearching) {
-            searchResults = searchResults.filter(r => r.task.id !== taskItem.id);
-        } else if (selectedCategory) {
-            await loadTasksForCategory(selectedCategory);
-        }
-        focusedTaskIndex = Math.max(0, Math.min(focusedTaskIndex, allDisplayedTasks.length - 1));
+                if (isSearching) {
+                    searchResults = searchResults.filter(r => r.task.id !== taskItem.id);
+                } else if (selectedCategory) {
+                    await loadTasksForCategory(selectedCategory);
+                }
+                focusedTaskIndex = Math.max(0, Math.min(focusedTaskIndex, allDisplayedTasks.length - 1));
+            }
+        );
     }
 
     // =============================================
@@ -1117,9 +1123,9 @@
                                             on:click|stopPropagation={(e) => handleNoteLinkClick(e, task.note_link)}
                                             role="button" tabindex="0"
                                         >
-                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                                <polyline points="14 2 14 8 20 8"/>
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
                                             </svg>
                                         </span>
                                     {/if}

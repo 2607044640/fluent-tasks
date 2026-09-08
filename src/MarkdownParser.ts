@@ -10,7 +10,7 @@
  * The %%{...}%% is an Obsidian invisible comment containing structured JSON metadata.
  */
 
-import { TaskItem, TaskStep, DATA_FOLDER } from "./types";
+import { TaskItem, TaskStep, DATA_FOLDER, RecurrenceRule } from "./types";
 
 // =============================================
 // Internal Constants

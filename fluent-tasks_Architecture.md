@@ -64,6 +64,8 @@ Data movement across views and persistent storage follows a strict 7-step sequen
 | `src/modals/QuickTaskModalView.svelte` | Dual-pane floating task manager, keyboard physics, DnD | Raw file system mutations |
 | `src/modals/QuickListModal.ts` | Obsidian Modal wrapper for list-only floating navigator | Direct Svelte UI rendering logic |
 | `src/modals/QuickListModalView.svelte` | List-only floating navigator, fuzzy filter, center view jump | Sidebar leaf state mutations |
+| `src/services/LinkedNoteService.ts` | Dedicated linked note creation, collision avoidance, path sanitization, bidirectional title hot-updates | Direct DOM or view state rendering |
+| `src/modals/ConfirmDeleteLinkedNoteModal.ts` | Confirmation modal prompting whether to delete linked note alongside task | Direct raw task parsing |
 | `src/utils/hotkeyUtils.ts` | Custom hotkey detection and tip countdown management | UI rendering or modal lifecycle |
 | `src/utils/popoverUtils.ts` | Smart viewport auto-flip and coordinate positioning | State management or DOM mutation |
 | `src/utils/domUtils.ts` | Svelte actions and DOM utilities (`portal` to `document.body`, `autosize` auto-resizing textareas) | Business logic or state management |
@@ -97,6 +99,9 @@ Data movement across views and persistent storage follows a strict 7-step sequen
 - **F2 Hover Renaming Protocol**: Hover tracking on lists/groups MUST set `hoveredItem` via `setHoveredCategory` and `setHoveredGroup`. F2 keydown triggers inline rename with autofocus, Enter/blur commits via `renameCategory`/`renameGroup`, and Esc cleanly cancels.
 - **Dynamic Z-Jump Commands & Hotkey Sinking**: Category jump commands MUST be prefixed with `Z-Jump to list: ${cat.name}` and use UTF-8 path hashes for command IDs. On any category create, rename, or delete, `registerCategoryCommands()` MUST dynamically refresh commands in real time without requiring an Obsidian restart. (Why: guarantees non-ASCII list compatibility and keeps main plugin commands sorted cleanly at the top of Obsidian's Hotkeys settings).
 - **Quick List Navigation & Sidebar Isolation (CRITICAL)**: `QuickListModal` and `QuickTaskModal` (in navigation mode) MUST reveal ONLY `VIEW_TYPE_MAIN` in the center workspace while invoking `plugin.collapseSidebars()`. This suppresses `active-leaf-change` auto-expansion and collapses both left and right sidebars if open. (Why: guarantees a distraction-free, focused center task view without unexpected sidebar popups when switching lists from floating modals).
+- **Linked Note Directory Isolation & Disambiguation Protocol (CRITICAL)**: Hard-bound task notes MUST be created in subfolder `TodoData/<ListName>/<SanitizedTitle>.md`. Direct children of `TodoData` are categories; subfolders prevent notes from polluting the sidebar tree as categories. Identical task titles MUST be disambiguated with `(1)`, `(2)` to prevent filesystem collisions or data loss.
+- **Bidirectional Title Hot-Sync & Loop Shield**: Modifying a task title in Fluent Tasks sanitizes Windows forbidden characters (`[\/:*?"<>|\r\n]`) and renames the file via `app.fileManager.renameFile(file, newPath)` while registering an internal rename lease in `LinkedNoteService`. External file renames intercepted via `vault.on("rename")` match `oldPath` or frontmatter `taskId` and hot-update task title and link without triggering echo renames.
+- **Linked Note Deletion Safety Invariant**: When deleting any task with a physical linked note, execution MUST prompt the user via `ConfirmDeleteLinkedNoteModal`, permitting either task-only deletion or both task and note deletion (via `app.fileManager.trashFile`).
 
 ## Key API Reference
 

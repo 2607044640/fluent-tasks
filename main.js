@@ -32,7 +32,7 @@ __export(main_exports, {
   default: () => FluentTasksPlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian12 = require("obsidian");
+var import_obsidian15 = require("obsidian");
 
 // src/types.ts
 var VIEW_TYPE_SIDEBAR = "fluent-tasks-sidebar";
@@ -7221,7 +7221,332 @@ function calculatePopoverPosition(targetEl, type) {
 }
 
 // src/TaskMainView.svelte
+var import_obsidian8 = require("obsidian");
+
+// src/modals/ConfirmDeleteLinkedNoteModal.ts
+var import_obsidian7 = require("obsidian");
+
+// src/services/LinkedNoteService.ts
 var import_obsidian6 = require("obsidian");
+var LinkedNoteService = class {
+  /** Mark a file rename as internal to prevent echo update loops */
+  static markInternalRename(oldPath, newPath, windowMs = 2e3) {
+    const expiry = Date.now() + windowMs;
+    this.internalRenames.set(`${oldPath}->${newPath}`, expiry);
+    this.internalRenames.set(oldPath, expiry);
+    this.internalRenames.set(newPath, expiry);
+  }
+  /** Check if a rename was triggered internally */
+  static isInternalRename(oldPath, newPath) {
+    const key = `${oldPath}->${newPath}`;
+    const now2 = Date.now();
+    const expKey = this.internalRenames.get(key);
+    if (expKey && now2 <= expKey)
+      return true;
+    const expOld = this.internalRenames.get(oldPath);
+    if (expOld && now2 <= expOld)
+      return true;
+    const expNew = this.internalRenames.get(newPath);
+    if (expNew && now2 <= expNew)
+      return true;
+    return false;
+  }
+  /**
+   * Sanitize task title into a safe Windows / Obsidian filename
+   * Removes / \\ : * ? " < > | \r \n and cleans whitespace
+   */
+  static sanitizeNoteTitle(title) {
+    if (!title)
+      return "Untitled Note";
+    const cleaned = title.replace(/[\r\n]+/g, " ").replace(/[\\/:*?"<>|]/g, "-").replace(/\s+/g, " ").replace(/^[\s.-]+|[\s.-]+$/g, "").trim();
+    return cleaned.slice(0, 100) || "Untitled Note";
+  }
+  /**
+   * Determine dedicated note directory for a category list
+   * e.g. TodoData/安全中转待办.md -> TodoData/安全中转待办
+   */
+  static getTaskNotesFolder(categoryFilepath) {
+    var _a;
+    const listName = ((_a = categoryFilepath.replace(/\\/g, "/").split("/").pop()) == null ? void 0 : _a.replace(/\.md$/, "")) || "General";
+    return `${DATA_FOLDER}/${listName}`;
+  }
+  /**
+   * Ensure a vault folder exists, creating parents if missing
+   */
+  static async ensureFolderExists(app, folderPath) {
+    const cleanPath = folderPath.replace(/\\/g, "/").replace(/\/+$/, "");
+    const existing = app.vault.getAbstractFileByPath(cleanPath);
+    if (existing && existing instanceof import_obsidian6.TFolder)
+      return;
+    const parts = cleanPath.split("/");
+    let current = "";
+    for (const part of parts) {
+      current = current ? `${current}/${part}` : part;
+      const item = app.vault.getAbstractFileByPath(current);
+      if (!item) {
+        try {
+          await app.vault.createFolder(current);
+        } catch (e) {
+        }
+      }
+    }
+  }
+  /**
+   * Resolve a note link string (e.g. [[Path/Note|Alias]] or Path/Note) to a physical TFile
+   */
+  static resolveLinkedNoteFile(app, noteLink, sourcePath) {
+    if (!noteLink || !app)
+      return null;
+    const clean = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
+    if (!clean)
+      return null;
+    let file = app.vault.getAbstractFileByPath(clean);
+    if (file instanceof import_obsidian6.TFile)
+      return file;
+    if (!clean.endsWith(".md")) {
+      file = app.vault.getAbstractFileByPath(`${clean}.md`);
+      if (file instanceof import_obsidian6.TFile)
+        return file;
+    }
+    if (app.metadataCache) {
+      const cached = app.metadataCache.getFirstLinkpathDest(clean, sourcePath || "");
+      if (cached instanceof import_obsidian6.TFile)
+        return cached;
+    }
+    return null;
+  }
+  /**
+   * Generate an available non-colliding file path in the target folder
+   * Appends (1), (2), etc. if title collisions occur
+   */
+  static getAvailableNotePath(app, targetFolder, baseTitle) {
+    const candidate = `${targetFolder}/${baseTitle}.md`;
+    if (!app.vault.getAbstractFileByPath(candidate)) {
+      return candidate;
+    }
+    let counter = 1;
+    while (app.vault.getAbstractFileByPath(`${targetFolder}/${baseTitle} (${counter}).md`)) {
+      counter++;
+    }
+    return `${targetFolder}/${baseTitle} (${counter}).md`;
+  }
+  /**
+   * Create or retrieve the linked note for a task
+   */
+  static async createOrGetLinkedNote(app, task, categoryFilepath) {
+    if (task.note_link) {
+      const existingFile = this.resolveLinkedNoteFile(app, task.note_link, categoryFilepath);
+      if (existingFile) {
+        return {
+          file: existingFile,
+          noteLink: task.note_link,
+          cleanPath: existingFile.path.replace(/\.md$/, "")
+        };
+      }
+    }
+    const targetFolder = this.getTaskNotesFolder(categoryFilepath);
+    await this.ensureFolderExists(app, targetFolder);
+    const baseTitle = this.sanitizeNoteTitle(task.title);
+    const finalPath = this.getAvailableNotePath(app, targetFolder, baseTitle);
+    const noteBody = task.note ? task.note.trim() : "";
+    const content = `---
+taskId: "${task.id}"
+---
+
+# ${task.title}
+
+${noteBody}
+`.trim() + "\n";
+    const file = await app.vault.create(finalPath, content);
+    const cleanPath = finalPath.replace(/\.md$/, "");
+    const noteLink = `[[${cleanPath}]]`;
+    void Logger.log(`[LinkedNote] Created note at ${finalPath} for task ${task.id}`);
+    return { file, noteLink, cleanPath };
+  }
+  /**
+   * Synchronize Task Title -> Note Title
+   * When task title is modified in Fluent Tasks, renames note file and heading
+   */
+  static async syncTaskTitleToNote(app, task, categoryFilepath) {
+    if (!task.note_link)
+      return { noteRenamed: false };
+    const file = this.resolveLinkedNoteFile(app, task.note_link, categoryFilepath);
+    if (!file)
+      return { noteRenamed: false };
+    const cleanNewTitle = this.sanitizeNoteTitle(task.title);
+    if (!cleanNewTitle || file.basename === cleanNewTitle) {
+      return { noteRenamed: false };
+    }
+    const parentFolder = file.parent ? file.parent.path : this.getTaskNotesFolder(categoryFilepath);
+    let newPath = `${parentFolder}/${cleanNewTitle}.md`;
+    if (newPath !== file.path && app.vault.getAbstractFileByPath(newPath)) {
+      let counter = 1;
+      while (app.vault.getAbstractFileByPath(`${parentFolder}/${cleanNewTitle} (${counter}).md`)) {
+        counter++;
+      }
+      newPath = `${parentFolder}/${cleanNewTitle} (${counter}).md`;
+    }
+    if (newPath === file.path)
+      return { noteRenamed: false };
+    this.markInternalRename(file.path, newPath);
+    try {
+      await app.fileManager.renameFile(file, newPath);
+      try {
+        await app.vault.process(file, (content) => {
+          if (/^#\s+[^\r\n]+/m.test(content)) {
+            return content.replace(/^#\s+[^\r\n]+/m, `# ${task.title}`);
+          }
+          return content;
+        });
+      } catch (e) {
+      }
+      const cleanPath = newPath.replace(/\.md$/, "");
+      const newNoteLink = `[[${cleanPath}]]`;
+      return { newNoteLink, noteRenamed: true };
+    } catch (err) {
+      Logger.log("Failed to rename linked note file:", err);
+      return { noteRenamed: false };
+    }
+  }
+  /**
+   * Synchronize Note Rename -> Task Title
+   * When note is renamed in Obsidian, updates task title & note_link in real-time
+   */
+  static async syncNoteRenameToTasks(app, dataService, oldPath, newFile) {
+    var _a;
+    if (!newFile || newFile.extension !== "md")
+      return false;
+    const oldClean = oldPath.replace(/\.md$/, "");
+    const oldBasename = oldClean.split("/").pop() || "";
+    const newClean = newFile.path.replace(/\.md$/, "");
+    const newTitle = newFile.basename;
+    const cache = app.metadataCache.getFileCache(newFile);
+    const frontmatterTaskId = (_a = cache == null ? void 0 : cache.frontmatter) == null ? void 0 : _a.taskId;
+    const categories = await dataService.getCategories();
+    let anyUpdated = false;
+    for (const cat of categories) {
+      let tasks2;
+      try {
+        tasks2 = await dataService.getTasks(cat.filepath);
+      } catch (e) {
+        continue;
+      }
+      let catChanged = false;
+      for (const task of tasks2) {
+        let isMatch = false;
+        if (frontmatterTaskId && task.id === frontmatterTaskId) {
+          isMatch = true;
+        } else if (task.note_link) {
+          const taskClean = task.note_link.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
+          if (taskClean === oldClean || taskClean === oldPath || taskClean.split("/").pop() === oldBasename) {
+            isMatch = true;
+          }
+        }
+        if (isMatch) {
+          task.title = newTitle;
+          task.note_link = `[[${newClean}]]`;
+          catChanged = true;
+          anyUpdated = true;
+          await dataService.updateTask(cat.filepath, task);
+          EventBus.emit("task:updated" /* TASK_UPDATED */, {
+            task,
+            categoryFilepath: cat.filepath
+          });
+        }
+      }
+    }
+    return anyUpdated;
+  }
+};
+LinkedNoteService.internalRenames = /* @__PURE__ */ new Map();
+
+// src/modals/ConfirmDeleteLinkedNoteModal.ts
+var ConfirmDeleteLinkedNoteModal = class extends import_obsidian7.Modal {
+  constructor(app, task, noteFile, onDecision) {
+    super(app);
+    this.task = task;
+    this.noteFile = noteFile;
+    this.onDecision = onDecision;
+  }
+  onOpen() {
+    const { contentEl } = this;
+    contentEl.empty();
+    contentEl.addClass("fluent-tasks-delete-modal");
+    const heading = contentEl.createEl("h3", { text: "\u662F\u5426\u5220\u9664\u94FE\u63A5\u7B14\u8BB0\uFF1F" });
+    heading.style.marginTop = "0";
+    heading.style.marginBottom = "12px";
+    const p1 = contentEl.createEl("p");
+    p1.style.marginBottom = "8px";
+    p1.createSpan({ text: "\u5F85\u5220\u9664\u7684\u4EFB\u52A1\u7ED1\u5B9A\u4E86\u4E13\u5C5E\u7B14\u8BB0\uFF1A" });
+    const noteBadge = p1.createEl("strong", { text: ` ${this.noteFile.basename} ` });
+    noteBadge.style.color = "var(--todo-accent, #8b5cf6)";
+    const p2 = contentEl.createEl("p", {
+      text: "\u60A8\u53EF\u4EE5\u9009\u62E9\u4EC5\u5220\u9664\u4EFB\u52A1\u672C\u8EAB\uFF0C\u6216\u540C\u65F6\u5C06\u8BE5\u94FE\u63A5\u7B14\u8BB0\u79FB\u5165\u56DE\u6536\u7AD9\u3002"
+    });
+    p2.style.color = "var(--text-muted)";
+    p2.style.fontSize = "0.9em";
+    p2.style.marginBottom = "24px";
+    const btnContainer = contentEl.createDiv();
+    btnContainer.style.display = "flex";
+    btnContainer.style.justifyContent = "flex-end";
+    btnContainer.style.gap = "10px";
+    btnContainer.style.flexWrap = "wrap";
+    const cancelBtn = btnContainer.createEl("button", { text: "\u53D6\u6D88" });
+    cancelBtn.addEventListener("click", () => {
+      this.close();
+      this.onDecision(null);
+    });
+    const taskOnlyBtn = btnContainer.createEl("button", { text: "\u4EC5\u5220\u9664\u4EFB\u52A1\uFF08\u4FDD\u7559\u7B14\u8BB0\uFF09" });
+    taskOnlyBtn.addEventListener("click", () => {
+      this.close();
+      this.onDecision(false);
+    });
+    const bothBtn = btnContainer.createEl("button", {
+      text: "\u5220\u9664\u4EFB\u52A1\u4E0E\u94FE\u63A5\u7B14\u8BB0",
+      cls: "mod-warning"
+    });
+    bothBtn.addEventListener("click", () => {
+      this.close();
+      this.onDecision(true);
+    });
+  }
+  onClose() {
+    this.contentEl.empty();
+  }
+};
+async function promptDeleteTaskWithLinkedNote(app, task, categoryFilepath, dataService, onDeleted) {
+  const noteFile = LinkedNoteService.resolveLinkedNoteFile(app, task.note_link, categoryFilepath);
+  if (!noteFile) {
+    await dataService.deleteTask(categoryFilepath, task);
+    EventBus.emit("task:deleted" /* TASK_DELETED */, { task, categoryFilepath });
+    if (onDeleted)
+      await onDeleted();
+    return true;
+  }
+  return new Promise((resolve) => {
+    const modal = new ConfirmDeleteLinkedNoteModal(app, task, noteFile, async (deleteNote) => {
+      if (deleteNote === null) {
+        resolve(false);
+        return;
+      }
+      if (deleteNote) {
+        try {
+          await app.fileManager.trashFile(noteFile);
+        } catch (err) {
+          console.error("Failed to trash linked note:", err);
+        }
+      }
+      await dataService.deleteTask(categoryFilepath, task);
+      EventBus.emit("task:deleted" /* TASK_DELETED */, { task, categoryFilepath });
+      if (onDeleted)
+        await onDeleted();
+      resolve(true);
+    });
+    modal.open();
+  });
+}
+
+// src/TaskMainView.svelte
 var { Map: Map_1, window: window_12 } = globals;
 function get_each_context_2(ctx, list, i) {
   const child_ctx = ctx.slice();
@@ -8008,11 +8333,8 @@ function create_each_block_6(ctx) {
 function create_if_block_33(ctx) {
   let span;
   let svg;
-  let path;
-  let polyline0;
-  let line0;
-  let line1;
-  let polyline1;
+  let path0;
+  let path1;
   let span_title_value;
   let mounted;
   let dispose;
@@ -8050,22 +8372,10 @@ function create_if_block_33(ctx) {
     c() {
       span = element("span");
       svg = svg_element("svg");
-      path = svg_element("path");
-      polyline0 = svg_element("polyline");
-      line0 = svg_element("line");
-      line1 = svg_element("line");
-      polyline1 = svg_element("polyline");
-      attr(path, "d", "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z");
-      attr(polyline0, "points", "14 2 14 8 20 8");
-      attr(line0, "x1", "16");
-      attr(line0, "y1", "13");
-      attr(line0, "x2", "8");
-      attr(line0, "y2", "13");
-      attr(line1, "x1", "16");
-      attr(line1, "y1", "17");
-      attr(line1, "x2", "8");
-      attr(line1, "y2", "17");
-      attr(polyline1, "points", "10 9 9 9 8 9");
+      path0 = svg_element("path");
+      path1 = svg_element("path");
+      attr(path0, "d", "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71");
+      attr(path1, "d", "M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71");
       attr(svg, "width", "14");
       attr(svg, "height", "14");
       attr(svg, "viewBox", "0 0 24 24");
@@ -8083,11 +8393,8 @@ function create_if_block_33(ctx) {
     m(target, anchor) {
       insert(target, span, anchor);
       append(span, svg);
-      append(svg, path);
-      append(svg, polyline0);
-      append(svg, line0);
-      append(svg, line1);
-      append(svg, polyline1);
+      append(svg, path0);
+      append(svg, path1);
       if (!mounted) {
         dispose = [
           listen(span, "mouseenter", mouseenter_handler_4),
@@ -9408,11 +9715,8 @@ function create_each_block_4(ctx) {
 function create_if_block_23(ctx) {
   let span;
   let svg;
-  let path;
-  let polyline0;
-  let line0;
-  let line1;
-  let polyline1;
+  let path0;
+  let path1;
   let span_title_value;
   let mounted;
   let dispose;
@@ -9450,22 +9754,10 @@ function create_if_block_23(ctx) {
     c() {
       span = element("span");
       svg = svg_element("svg");
-      path = svg_element("path");
-      polyline0 = svg_element("polyline");
-      line0 = svg_element("line");
-      line1 = svg_element("line");
-      polyline1 = svg_element("polyline");
-      attr(path, "d", "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z");
-      attr(polyline0, "points", "14 2 14 8 20 8");
-      attr(line0, "x1", "16");
-      attr(line0, "y1", "13");
-      attr(line0, "x2", "8");
-      attr(line0, "y2", "13");
-      attr(line1, "x1", "16");
-      attr(line1, "y1", "17");
-      attr(line1, "x2", "8");
-      attr(line1, "y2", "17");
-      attr(polyline1, "points", "10 9 9 9 8 9");
+      path0 = svg_element("path");
+      path1 = svg_element("path");
+      attr(path0, "d", "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71");
+      attr(path1, "d", "M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71");
       attr(svg, "width", "14");
       attr(svg, "height", "14");
       attr(svg, "viewBox", "0 0 24 24");
@@ -9483,11 +9775,8 @@ function create_if_block_23(ctx) {
     m(target, anchor) {
       insert(target, span, anchor);
       append(span, svg);
-      append(svg, path);
-      append(svg, polyline0);
-      append(svg, line0);
-      append(svg, line1);
-      append(svg, polyline1);
+      append(svg, path0);
+      append(svg, path1);
       if (!mounted) {
         dispose = [
           listen(span, "mouseenter", mouseenter_handler_10),
@@ -11928,13 +12217,13 @@ function instance2($$self, $$props, $$invalidate) {
   let hasComboModifierOrKey = false;
   let hoveredTitleTarget = null;
   function isControlKey(e) {
-    return import_obsidian6.Platform.isMacOS ? e.key === "Meta" || e.key === "Control" : e.key === "Control";
+    return import_obsidian8.Platform.isMacOS ? e.key === "Meta" || e.key === "Control" : e.key === "Control";
   }
   function isQuickPeekModifierPressed(e) {
     if (hasComboModifierOrKey || e.shiftKey || e.altKey) {
       return false;
     }
-    if (import_obsidian6.Platform.isMacOS) {
+    if (import_obsidian8.Platform.isMacOS) {
       return e.metaKey || e.ctrlKey;
     }
     return e.ctrlKey && !e.metaKey;
@@ -12333,7 +12622,7 @@ function instance2($$self, $$props, $$invalidate) {
     e.preventDefault();
     if (!currentCategory)
       return;
-    const menu = new import_obsidian6.Menu();
+    const menu = new import_obsidian8.Menu();
     const categories = await dataService.getCategories();
     for (const cat of categories) {
       if (cat.filepath === currentCategory.filepath)
@@ -12356,12 +12645,9 @@ function instance2($$self, $$props, $$invalidate) {
     menu.addSeparator();
     menu.addItem((item) => {
       item.setTitle("Delete task").setIcon("trash").onClick(async () => {
-        $$invalidate(4, incompleteTasks = incompleteTasks.filter((t) => t.id !== task.id));
-        $$invalidate(5, completedTasks = completedTasks.filter((t) => t.id !== task.id));
-        await dataService.deleteTask(currentCategory.filepath, task);
-        EventBus.emit("task:deleted" /* TASK_DELETED */, {
-          task,
-          categoryFilepath: currentCategory.filepath
+        await promptDeleteTaskWithLinkedNote(plugin.app, task, currentCategory.filepath, dataService, () => {
+          $$invalidate(4, incompleteTasks = incompleteTasks.filter((t) => t.id !== task.id));
+          $$invalidate(5, completedTasks = completedTasks.filter((t) => t.id !== task.id));
         });
       });
     });
@@ -12588,30 +12874,31 @@ var TaskMainView = class extends SvelteComponent {
 var TaskMainView_default = TaskMainView;
 
 // src/TaskDetailView.svelte
+var import_obsidian9 = require("obsidian");
 function get_each_context3(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[92] = list[i][0];
-  child_ctx[93] = list[i][1];
+  child_ctx[97] = list[i][0];
+  child_ctx[98] = list[i][1];
   return child_ctx;
 }
 function get_each_context_13(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[96] = list[i];
+  child_ctx[101] = list[i];
   return child_ctx;
 }
 function get_each_context_22(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[92] = list[i][0];
-  child_ctx[93] = list[i][1];
+  child_ctx[97] = list[i][0];
+  child_ctx[98] = list[i][1];
   return child_ctx;
 }
 function get_each_context_32(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[101] = list[i];
-  child_ctx[103] = i;
+  child_ctx[106] = list[i];
+  child_ctx[108] = i;
   return child_ctx;
 }
-function create_else_block_33(ctx) {
+function create_else_block_42(ctx) {
   let div;
   return {
     c() {
@@ -12640,16 +12927,13 @@ function create_if_block3(ctx) {
   let autosize_action;
   let t1;
   let span1;
-  let svg0;
-  let polygon;
-  let svg0_fill_value;
   let t2;
   let div2;
   let each_blocks = [];
   let each_1_lookup = /* @__PURE__ */ new Map();
   let t3;
   let div1;
-  let svg1;
+  let svg0;
   let line0;
   let line1;
   let t4;
@@ -12677,7 +12961,7 @@ function create_if_block3(ctx) {
   let t9;
   let div5;
   let span4;
-  let svg2;
+  let svg1;
   let circle;
   let polyline0;
   let t10;
@@ -12693,7 +12977,7 @@ function create_if_block3(ctx) {
   let t13;
   let span6;
   let t14;
-  let if_block4_anchor;
+  let if_block5_anchor;
   let mounted;
   let dispose;
   function select_block_type_1(ctx2, dirty) {
@@ -12701,33 +12985,43 @@ function create_if_block3(ctx) {
       /*task*/
       ctx2[1].completed
     )
-      return create_if_block_202;
-    return create_else_block_23;
+      return create_if_block_212;
+    return create_else_block_33;
   }
   let current_block_type = select_block_type_1(ctx, [-1, -1, -1, -1]);
   let if_block0 = current_block_type(ctx);
+  function select_block_type_2(ctx2, dirty) {
+    if (
+      /*hasLinkedNote*/
+      ctx2[2]
+    )
+      return create_if_block_202;
+    return create_else_block_23;
+  }
+  let current_block_type_1 = select_block_type_2(ctx, [-1, -1, -1, -1]);
+  let if_block1 = current_block_type_1(ctx);
   let each_value_3 = ensure_array_like(
     /*task*/
     ctx[1].steps
   );
   const get_key = (ctx2) => (
     /*i*/
-    ctx2[103]
+    ctx2[108]
   );
   for (let i = 0; i < each_value_3.length; i += 1) {
     let child_ctx = get_each_context_32(ctx, each_value_3, i);
     let key = get_key(child_ctx);
     each_1_lookup.set(key, each_blocks[i] = create_each_block_32(key, child_ctx));
   }
-  let if_block1 = show_if && create_if_block_142(ctx);
-  let if_block2 = (
+  let if_block2 = show_if && create_if_block_142(ctx);
+  let if_block3 = (
     /*showScheduleSection*/
-    ctx[4] && create_if_block_102(ctx)
+    ctx[5] && create_if_block_102(ctx)
   );
-  function select_block_type_3(ctx2, dirty) {
+  function select_block_type_4(ctx2, dirty) {
     if (
       /*scheduleBadge*/
-      ctx2[13].letter
+      ctx2[15].letter
     )
       return create_if_block_82;
     if (
@@ -12737,11 +13031,11 @@ function create_if_block3(ctx) {
       return create_if_block_92;
     return create_else_block3;
   }
-  let current_block_type_1 = select_block_type_3(ctx, [-1, -1, -1, -1]);
-  let if_block3 = current_block_type_1(ctx);
-  let if_block4 = (
+  let current_block_type_2 = select_block_type_4(ctx, [-1, -1, -1, -1]);
+  let if_block4 = current_block_type_2(ctx);
+  let if_block5 = (
     /*showAddMetaModal*/
-    ctx[6] && create_if_block_111(ctx)
+    ctx[7] && create_if_block_111(ctx)
   );
   return {
     c() {
@@ -12753,8 +13047,7 @@ function create_if_block3(ctx) {
       textarea0 = element("textarea");
       t1 = space();
       span1 = element("span");
-      svg0 = svg_element("svg");
-      polygon = svg_element("polygon");
+      if_block1.c();
       t2 = space();
       div2 = element("div");
       for (let i = 0; i < each_blocks.length; i += 1) {
@@ -12762,7 +13055,7 @@ function create_if_block3(ctx) {
       }
       t3 = space();
       div1 = element("div");
-      svg1 = svg_element("svg");
+      svg0 = svg_element("svg");
       line0 = svg_element("line");
       line1 = svg_element("line");
       t4 = space();
@@ -12771,19 +13064,19 @@ function create_if_block3(ctx) {
       div4 = element("div");
       textarea1 = element("textarea");
       t6 = space();
-      if (if_block1)
-        if_block1.c();
-      t7 = space();
       if (if_block2)
         if_block2.c();
+      t7 = space();
+      if (if_block3)
+        if_block3.c();
       t8 = space();
       div6 = element("div");
       span2 = element("span");
-      if_block3.c();
+      if_block4.c();
       t9 = space();
       div5 = element("div");
       span4 = element("span");
-      svg2 = svg_element("svg");
+      svg1 = svg_element("svg");
       circle = svg_element("circle");
       polyline0 = svg_element("polyline");
       t10 = space();
@@ -12796,9 +13089,9 @@ function create_if_block3(ctx) {
       span6 = element("span");
       span6.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
       t14 = space();
-      if (if_block4)
-        if_block4.c();
-      if_block4_anchor = empty();
+      if (if_block5)
+        if_block5.c();
+      if_block5_anchor = empty();
       attr(span0, "class", "checkbox");
       attr(span0, "role", "checkbox");
       attr(span0, "aria-checked", span0_aria_checked_value = /*task*/
@@ -12807,22 +13100,20 @@ function create_if_block3(ctx) {
       attr(textarea0, "class", "detail-title-input");
       attr(textarea0, "rows", "1");
       attr(textarea0, "placeholder", "Task title");
-      attr(polygon, "points", "12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2");
-      attr(svg0, "width", "20");
-      attr(svg0, "height", "20");
-      attr(svg0, "viewBox", "0 0 24 24");
-      attr(svg0, "fill", svg0_fill_value = /*task*/
-      ctx[1].starred ? "currentColor" : "none");
-      attr(svg0, "stroke", "currentColor");
-      attr(svg0, "stroke-width", "2");
-      attr(span1, "class", "star");
+      attr(span1, "class", "detail-link-note-btn");
       attr(span1, "role", "button");
       attr(span1, "tabindex", "0");
+      attr(
+        span1,
+        "title",
+        /*linkNoteTooltip*/
+        ctx[14]
+      );
       toggle_class(
         span1,
         "active",
-        /*task*/
-        ctx[1].starred
+        /*hasLinkedNote*/
+        ctx[2]
       );
       attr(div0, "class", "title-row");
       attr(line0, "x1", "12");
@@ -12833,14 +13124,14 @@ function create_if_block3(ctx) {
       attr(line1, "y1", "12");
       attr(line1, "x2", "19");
       attr(line1, "y2", "12");
-      attr(svg1, "width", "14");
-      attr(svg1, "height", "14");
-      attr(svg1, "viewBox", "0 0 24 24");
-      attr(svg1, "fill", "none");
-      attr(svg1, "stroke", "currentColor");
-      attr(svg1, "stroke-width", "2");
-      attr(svg1, "stroke-linecap", "round");
-      attr(svg1, "stroke-linejoin", "round");
+      attr(svg0, "width", "14");
+      attr(svg0, "height", "14");
+      attr(svg0, "viewBox", "0 0 24 24");
+      attr(svg0, "fill", "none");
+      attr(svg0, "stroke", "currentColor");
+      attr(svg0, "stroke-width", "2");
+      attr(svg0, "stroke-linecap", "round");
+      attr(svg0, "stroke-linejoin", "round");
       attr(input, "class", "add-step-input");
       attr(input, "type", "text");
       attr(input, "placeholder", "Add step");
@@ -12854,37 +13145,37 @@ function create_if_block3(ctx) {
       attr(span2, "role", "button");
       attr(span2, "tabindex", "0");
       attr(span2, "title", span2_title_value = /*scheduleBadge*/
-      ctx[13].tooltip);
+      ctx[15].tooltip);
       toggle_class(
         span2,
         "is-active",
         /*scheduleBadge*/
-        ctx[13].isActive
+        ctx[15].isActive
       );
       toggle_class(
         span2,
         "is-overdue",
         /*scheduleBadge*/
-        ctx[13].isOverdue
+        ctx[15].isOverdue
       );
       toggle_class(
         span2,
         "is-open",
         /*showScheduleSection*/
-        ctx[4]
+        ctx[5]
       );
       attr(circle, "cx", "12");
       attr(circle, "cy", "12");
       attr(circle, "r", "10");
       attr(polyline0, "points", "12 6 12 12 16 14");
-      attr(svg2, "width", "14");
-      attr(svg2, "height", "14");
-      attr(svg2, "viewBox", "0 0 24 24");
-      attr(svg2, "fill", "none");
-      attr(svg2, "stroke", "currentColor");
-      attr(svg2, "stroke-width", "2");
-      attr(svg2, "stroke-linecap", "round");
-      attr(svg2, "stroke-linejoin", "round");
+      attr(svg1, "width", "14");
+      attr(svg1, "height", "14");
+      attr(svg1, "viewBox", "0 0 24 24");
+      attr(svg1, "fill", "none");
+      attr(svg1, "stroke", "currentColor");
+      attr(svg1, "stroke-width", "2");
+      attr(svg1, "stroke-linecap", "round");
+      attr(svg1, "stroke-linejoin", "round");
       attr(span3, "class", "time-badge-text");
       attr(span4, "class", "footer-btn time-badge-btn");
       attr(span4, "role", "button");
@@ -12921,8 +13212,7 @@ function create_if_block3(ctx) {
       );
       append(div0, t1);
       append(div0, span1);
-      append(span1, svg0);
-      append(svg0, polygon);
+      if_block1.m(span1, null);
       append(div3, t2);
       append(div3, div2);
       for (let i = 0; i < each_blocks.length; i += 1) {
@@ -12932,15 +13222,15 @@ function create_if_block3(ctx) {
       }
       append(div2, t3);
       append(div2, div1);
-      append(div1, svg1);
-      append(svg1, line0);
-      append(svg1, line1);
+      append(div1, svg0);
+      append(svg0, line0);
+      append(svg0, line1);
       append(div1, t4);
       append(div1, input);
       set_input_value(
         input,
         /*newStepText*/
-        ctx[3]
+        ctx[4]
       );
       insert(target, t5, anchor);
       insert(target, div4, anchor);
@@ -12951,21 +13241,21 @@ function create_if_block3(ctx) {
         ctx[1].note
       );
       insert(target, t6, anchor);
-      if (if_block1)
-        if_block1.m(target, anchor);
-      insert(target, t7, anchor);
       if (if_block2)
         if_block2.m(target, anchor);
+      insert(target, t7, anchor);
+      if (if_block3)
+        if_block3.m(target, anchor);
       insert(target, t8, anchor);
       insert(target, div6, anchor);
       append(div6, span2);
-      if_block3.m(span2, null);
+      if_block4.m(span2, null);
       append(div6, t9);
       append(div6, div5);
       append(div5, span4);
-      append(span4, svg2);
-      append(svg2, circle);
-      append(svg2, polyline0);
+      append(span4, svg1);
+      append(svg1, circle);
+      append(svg1, polyline0);
       append(span4, t10);
       append(span4, span3);
       append(span3, t11);
@@ -12974,22 +13264,22 @@ function create_if_block3(ctx) {
       append(div6, t13);
       append(div6, span6);
       insert(target, t14, anchor);
-      if (if_block4)
-        if_block4.m(target, anchor);
-      insert(target, if_block4_anchor, anchor);
+      if (if_block5)
+        if_block5.m(target, anchor);
+      insert(target, if_block5_anchor, anchor);
       if (!mounted) {
         dispose = [
           listen(
             span0,
             "click",
             /*toggleComplete*/
-            ctx[23]
+            ctx[25]
           ),
           listen(
             span0,
             "keydown",
             /*keydown_handler*/
-            ctx[38]
+            ctx[42]
           ),
           action_destroyer(autosize_action = autosize.call(
             null,
@@ -13001,86 +13291,98 @@ function create_if_block3(ctx) {
             textarea0,
             "input",
             /*textarea0_input_handler*/
-            ctx[39]
+            ctx[43]
           ),
           listen(
             textarea0,
             "input",
             /*handleTitleInput*/
-            ctx[22]
+            ctx[24]
           ),
           listen(textarea0, "keydown", handleTitleKeydown),
           listen(
             span1,
             "click",
-            /*toggleStar*/
-            ctx[24]
+            /*handleLinkNoteClick*/
+            ctx[27]
+          ),
+          listen(
+            span1,
+            "mouseenter",
+            /*handleLinkNoteHover*/
+            ctx[26]
+          ),
+          listen(
+            span1,
+            "contextmenu",
+            /*handleLinkNoteContextMenu*/
+            ctx[28]
           ),
           listen(
             span1,
             "keydown",
             /*keydown_handler_1*/
-            ctx[40]
+            ctx[44]
           ),
           listen(
             input,
             "input",
             /*input_input_handler*/
-            ctx[46]
+            ctx[50]
           ),
           listen(
             input,
             "keydown",
             /*handleStepKeydown*/
-            ctx[25]
+            ctx[29]
           ),
           listen(
             textarea1,
             "input",
             /*textarea1_input_handler*/
-            ctx[47]
+            ctx[51]
           ),
           listen(
             textarea1,
             "input",
             /*handleNoteInput*/
-            ctx[29]
+            ctx[33]
           ),
           listen(
             span2,
             "click",
             /*toggleScheduleSection*/
-            ctx[14]
+            ctx[16]
           ),
           listen(
             span2,
             "keydown",
             /*keydown_handler_8*/
-            ctx[65]
+            ctx[69]
           ),
           listen(
             span5,
             "click",
             /*openAddMetaModal*/
-            ctx[31]
+            ctx[35]
           ),
           listen(
             span5,
             "keydown",
             /*keydown_handler_9*/
-            ctx[66]
+            ctx[70]
           ),
           listen(
             span6,
             "click",
             /*deleteTask*/
-            ctx[30]
+            ctx[34]
           ),
           listen(
             span6,
             "keydown",
             /*keydown_handler_10*/
-            ctx[67]
+            ctx[71]
           )
         ];
         mounted = true;
@@ -13115,22 +13417,35 @@ function create_if_block3(ctx) {
           ctx2[1].title
         );
       }
-      if (dirty[0] & /*task*/
-      2 && svg0_fill_value !== (svg0_fill_value = /*task*/
-      ctx2[1].starred ? "currentColor" : "none")) {
-        attr(svg0, "fill", svg0_fill_value);
+      if (current_block_type_1 !== (current_block_type_1 = select_block_type_2(ctx2, dirty))) {
+        if_block1.d(1);
+        if_block1 = current_block_type_1(ctx2);
+        if (if_block1) {
+          if_block1.c();
+          if_block1.m(span1, null);
+        }
       }
-      if (dirty[0] & /*task*/
-      2) {
+      if (dirty[0] & /*linkNoteTooltip*/
+      16384) {
+        attr(
+          span1,
+          "title",
+          /*linkNoteTooltip*/
+          ctx2[14]
+        );
+      }
+      if (dirty[0] & /*hasLinkedNote*/
+      4) {
         toggle_class(
           span1,
           "active",
-          /*task*/
-          ctx2[1].starred
+          /*hasLinkedNote*/
+          ctx2[2]
         );
       }
-      if (dirty[0] & /*deleteStep, task, updateStepText, toggleStepDone*/
-      469762050) {
+      if (dirty[0] & /*task, toggleStepDone*/
+      1073741826 | dirty[1] & /*deleteStep, updateStepText*/
+      3) {
         each_value_3 = ensure_array_like(
           /*task*/
           ctx2[1].steps
@@ -13138,12 +13453,12 @@ function create_if_block3(ctx) {
         each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_3, each_1_lookup, div2, destroy_block, create_each_block_32, t3, get_each_context_32);
       }
       if (dirty[0] & /*newStepText*/
-      8 && input.value !== /*newStepText*/
-      ctx2[3]) {
+      16 && input.value !== /*newStepText*/
+      ctx2[4]) {
         set_input_value(
           input,
           /*newStepText*/
-          ctx2[3]
+          ctx2[4]
         );
       }
       if (dirty[0] & /*task*/
@@ -13166,72 +13481,72 @@ function create_if_block3(ctx) {
           ctx2[1].customMeta
         ).length > 0;
       if (show_if) {
-        if (if_block1) {
-          if_block1.p(ctx2, dirty);
-        } else {
-          if_block1 = create_if_block_142(ctx2);
-          if_block1.c();
-          if_block1.m(t7.parentNode, t7);
-        }
-      } else if (if_block1) {
-        if_block1.d(1);
-        if_block1 = null;
-      }
-      if (
-        /*showScheduleSection*/
-        ctx2[4]
-      ) {
         if (if_block2) {
           if_block2.p(ctx2, dirty);
         } else {
-          if_block2 = create_if_block_102(ctx2);
+          if_block2 = create_if_block_142(ctx2);
           if_block2.c();
-          if_block2.m(t8.parentNode, t8);
+          if_block2.m(t7.parentNode, t7);
         }
       } else if (if_block2) {
         if_block2.d(1);
         if_block2 = null;
       }
-      if (current_block_type_1 === (current_block_type_1 = select_block_type_3(ctx2, dirty)) && if_block3) {
-        if_block3.p(ctx2, dirty);
-      } else {
-        if_block3.d(1);
-        if_block3 = current_block_type_1(ctx2);
+      if (
+        /*showScheduleSection*/
+        ctx2[5]
+      ) {
         if (if_block3) {
+          if_block3.p(ctx2, dirty);
+        } else {
+          if_block3 = create_if_block_102(ctx2);
           if_block3.c();
-          if_block3.m(span2, null);
+          if_block3.m(t8.parentNode, t8);
+        }
+      } else if (if_block3) {
+        if_block3.d(1);
+        if_block3 = null;
+      }
+      if (current_block_type_2 === (current_block_type_2 = select_block_type_4(ctx2, dirty)) && if_block4) {
+        if_block4.p(ctx2, dirty);
+      } else {
+        if_block4.d(1);
+        if_block4 = current_block_type_2(ctx2);
+        if (if_block4) {
+          if_block4.c();
+          if_block4.m(span2, null);
         }
       }
       if (dirty[0] & /*scheduleBadge*/
-      8192 && span2_title_value !== (span2_title_value = /*scheduleBadge*/
-      ctx2[13].tooltip)) {
+      32768 && span2_title_value !== (span2_title_value = /*scheduleBadge*/
+      ctx2[15].tooltip)) {
         attr(span2, "title", span2_title_value);
       }
       if (dirty[0] & /*scheduleBadge*/
-      8192) {
+      32768) {
         toggle_class(
           span2,
           "is-active",
           /*scheduleBadge*/
-          ctx2[13].isActive
+          ctx2[15].isActive
         );
       }
       if (dirty[0] & /*scheduleBadge*/
-      8192) {
+      32768) {
         toggle_class(
           span2,
           "is-overdue",
           /*scheduleBadge*/
-          ctx2[13].isOverdue
+          ctx2[15].isOverdue
         );
       }
       if (dirty[0] & /*showScheduleSection*/
-      16) {
+      32) {
         toggle_class(
           span2,
           "is-open",
           /*showScheduleSection*/
-          ctx2[4]
+          ctx2[5]
         );
       }
       if (dirty[0] & /*task*/
@@ -13252,18 +13567,18 @@ function create_if_block3(ctx) {
       }
       if (
         /*showAddMetaModal*/
-        ctx2[6]
+        ctx2[7]
       ) {
-        if (if_block4) {
-          if_block4.p(ctx2, dirty);
+        if (if_block5) {
+          if_block5.p(ctx2, dirty);
         } else {
-          if_block4 = create_if_block_111(ctx2);
-          if_block4.c();
-          if_block4.m(if_block4_anchor.parentNode, if_block4_anchor);
+          if_block5 = create_if_block_111(ctx2);
+          if_block5.c();
+          if_block5.m(if_block5_anchor.parentNode, if_block5_anchor);
         }
-      } else if (if_block4) {
-        if_block4.d(1);
-        if_block4 = null;
+      } else if (if_block5) {
+        if_block5.d(1);
+        if_block5 = null;
       }
     },
     d(detaching) {
@@ -13276,25 +13591,26 @@ function create_if_block3(ctx) {
         detach(t8);
         detach(div6);
         detach(t14);
-        detach(if_block4_anchor);
+        detach(if_block5_anchor);
       }
       if_block0.d();
+      if_block1.d();
       for (let i = 0; i < each_blocks.length; i += 1) {
         each_blocks[i].d();
       }
-      if (if_block1)
-        if_block1.d(detaching);
       if (if_block2)
         if_block2.d(detaching);
-      if_block3.d();
-      if (if_block4)
-        if_block4.d(detaching);
+      if (if_block3)
+        if_block3.d(detaching);
+      if_block4.d();
+      if (if_block5)
+        if_block5.d(detaching);
       mounted = false;
       run_all(dispose);
     }
   };
 }
-function create_else_block_23(ctx) {
+function create_else_block_33(ctx) {
   let svg;
   let circle;
   return {
@@ -13322,7 +13638,7 @@ function create_else_block_23(ctx) {
     }
   };
 }
-function create_if_block_202(ctx) {
+function create_if_block_212(ctx) {
   let svg;
   let circle;
   let polyline;
@@ -13346,6 +13662,84 @@ function create_if_block_202(ctx) {
       insert(target, svg, anchor);
       append(svg, circle);
       append(svg, polyline);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(svg);
+      }
+    }
+  };
+}
+function create_else_block_23(ctx) {
+  let svg;
+  let path;
+  let polyline;
+  let line0;
+  let line1;
+  return {
+    c() {
+      svg = svg_element("svg");
+      path = svg_element("path");
+      polyline = svg_element("polyline");
+      line0 = svg_element("line");
+      line1 = svg_element("line");
+      attr(path, "d", "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z");
+      attr(polyline, "points", "14 2 14 8 20 8");
+      attr(line0, "x1", "12");
+      attr(line0, "y1", "18");
+      attr(line0, "x2", "12");
+      attr(line0, "y2", "12");
+      attr(line1, "x1", "9");
+      attr(line1, "y1", "15");
+      attr(line1, "x2", "15");
+      attr(line1, "y2", "15");
+      attr(svg, "width", "20");
+      attr(svg, "height", "20");
+      attr(svg, "viewBox", "0 0 24 24");
+      attr(svg, "fill", "none");
+      attr(svg, "stroke", "currentColor");
+      attr(svg, "stroke-width", "2");
+      attr(svg, "stroke-linecap", "round");
+      attr(svg, "stroke-linejoin", "round");
+    },
+    m(target, anchor) {
+      insert(target, svg, anchor);
+      append(svg, path);
+      append(svg, polyline);
+      append(svg, line0);
+      append(svg, line1);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(svg);
+      }
+    }
+  };
+}
+function create_if_block_202(ctx) {
+  let svg;
+  let path0;
+  let path1;
+  return {
+    c() {
+      svg = svg_element("svg");
+      path0 = svg_element("path");
+      path1 = svg_element("path");
+      attr(path0, "d", "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71");
+      attr(path1, "d", "M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71");
+      attr(svg, "width", "20");
+      attr(svg, "height", "20");
+      attr(svg, "viewBox", "0 0 24 24");
+      attr(svg, "fill", "none");
+      attr(svg, "stroke", "currentColor");
+      attr(svg, "stroke-width", "2");
+      attr(svg, "stroke-linecap", "round");
+      attr(svg, "stroke-linejoin", "round");
+    },
+    m(target, anchor) {
+      insert(target, svg, anchor);
+      append(svg, path0);
+      append(svg, path1);
     },
     d(detaching) {
       if (detaching) {
@@ -13427,31 +13821,31 @@ function create_each_block_32(key_1, ctx) {
   let t2;
   let mounted;
   let dispose;
-  function select_block_type_2(ctx2, dirty) {
+  function select_block_type_3(ctx2, dirty) {
     if (
       /*step*/
-      ctx2[101].done
+      ctx2[106].done
     )
       return create_if_block_192;
     return create_else_block_13;
   }
-  let current_block_type = select_block_type_2(ctx, [-1, -1, -1, -1]);
+  let current_block_type = select_block_type_3(ctx, [-1, -1, -1, -1]);
   let if_block = current_block_type(ctx);
   function click_handler2() {
     return (
       /*click_handler*/
-      ctx[41](
+      ctx[45](
         /*i*/
-        ctx[103]
+        ctx[108]
       )
     );
   }
   function keydown_handler_2(...args) {
     return (
       /*keydown_handler_2*/
-      ctx[42](
+      ctx[46](
         /*i*/
-        ctx[103],
+        ctx[108],
         ...args
       )
     );
@@ -13459,9 +13853,9 @@ function create_each_block_32(key_1, ctx) {
   function input_handler(...args) {
     return (
       /*input_handler*/
-      ctx[43](
+      ctx[47](
         /*i*/
-        ctx[103],
+        ctx[108],
         ...args
       )
     );
@@ -13469,18 +13863,18 @@ function create_each_block_32(key_1, ctx) {
   function click_handler_1() {
     return (
       /*click_handler_1*/
-      ctx[44](
+      ctx[48](
         /*i*/
-        ctx[103]
+        ctx[108]
       )
     );
   }
   function keydown_handler_4(...args) {
     return (
       /*keydown_handler_4*/
-      ctx[45](
+      ctx[49](
         /*i*/
-        ctx[103],
+        ctx[108],
         ...args
       )
     );
@@ -13501,17 +13895,17 @@ function create_each_block_32(key_1, ctx) {
       attr(span0, "class", "checkbox");
       attr(span0, "role", "checkbox");
       attr(span0, "aria-checked", span0_aria_checked_value = /*step*/
-      ctx[101].done);
+      ctx[106].done);
       attr(span0, "tabindex", "0");
       attr(textarea, "rows", "1");
       textarea.value = textarea_value_value = /*step*/
-      ctx[101].text;
+      ctx[106].text;
       attr(textarea, "placeholder", "Step text");
       toggle_class(
         textarea,
         "completed",
         /*step*/
-        ctx[101].done
+        ctx[106].done
       );
       attr(span1, "class", "delete-step");
       attr(span1, "role", "button");
@@ -13536,7 +13930,7 @@ function create_each_block_32(key_1, ctx) {
             null,
             textarea,
             /*step*/
-            ctx[101].text
+            ctx[106].text
           )),
           listen(textarea, "input", input_handler),
           listen(textarea, "keydown", keydown_handler_3),
@@ -13548,7 +13942,7 @@ function create_each_block_32(key_1, ctx) {
     },
     p(new_ctx, dirty) {
       ctx = new_ctx;
-      if (current_block_type !== (current_block_type = select_block_type_2(ctx, dirty))) {
+      if (current_block_type !== (current_block_type = select_block_type_3(ctx, dirty))) {
         if_block.d(1);
         if_block = current_block_type(ctx);
         if (if_block) {
@@ -13558,12 +13952,12 @@ function create_each_block_32(key_1, ctx) {
       }
       if (dirty[0] & /*task*/
       2 && span0_aria_checked_value !== (span0_aria_checked_value = /*step*/
-      ctx[101].done)) {
+      ctx[106].done)) {
         attr(span0, "aria-checked", span0_aria_checked_value);
       }
       if (dirty[0] & /*task*/
       2 && textarea_value_value !== (textarea_value_value = /*step*/
-      ctx[101].text)) {
+      ctx[106].text)) {
         textarea.value = textarea_value_value;
       }
       if (autosize_action && is_function(autosize_action.update) && dirty[0] & /*task*/
@@ -13571,7 +13965,7 @@ function create_each_block_32(key_1, ctx) {
         autosize_action.update.call(
           null,
           /*step*/
-          ctx[101].text
+          ctx[106].text
         );
       if (dirty[0] & /*task*/
       2) {
@@ -13579,7 +13973,7 @@ function create_each_block_32(key_1, ctx) {
           textarea,
           "completed",
           /*step*/
-          ctx[101].done
+          ctx[106].done
         );
       }
     },
@@ -13773,13 +14167,13 @@ function create_if_block_182(ctx) {
         dispose = [
           listen(span2, "click", stop_propagation(
             /*click_handler_2*/
-            ctx[48]
+            ctx[52]
           )),
           listen(
             div,
             "click",
             /*click_handler_3*/
-            ctx[49]
+            ctx[53]
           )
         ];
         mounted = true;
@@ -13855,13 +14249,13 @@ function create_if_block_172(ctx) {
         dispose = [
           listen(span2, "click", stop_propagation(
             /*click_handler_4*/
-            ctx[50]
+            ctx[54]
           )),
           listen(
             div,
             "click",
             /*click_handler_5*/
-            ctx[51]
+            ctx[55]
           )
         ];
         mounted = true;
@@ -13943,13 +14337,13 @@ function create_if_block_162(ctx) {
         dispose = [
           listen(span2, "click", stop_propagation(
             /*click_handler_6*/
-            ctx[52]
+            ctx[56]
           )),
           listen(
             div,
             "click",
             /*click_handler_7*/
-            ctx[53]
+            ctx[57]
           )
         ];
         mounted = true;
@@ -14009,7 +14403,7 @@ function create_if_block_152(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*task*/
       2 | dirty[1] & /*deleteCustomKey*/
-      8) {
+      128) {
         each_value_2 = ensure_array_like(Object.entries(
           /*task*/
           ctx2[1].customMeta
@@ -14044,14 +14438,14 @@ function create_each_block_22(ctx) {
   let span0;
   let t0_value = (
     /*k*/
-    ctx[92] + ""
+    ctx[97] + ""
   );
   let t0;
   let t1;
   let span1;
   let t2_value = (
     /*v*/
-    ctx[93] + ""
+    ctx[98] + ""
   );
   let t2;
   let t3;
@@ -14065,9 +14459,9 @@ function create_each_block_22(ctx) {
   function click_handler_8() {
     return (
       /*click_handler_8*/
-      ctx[54](
+      ctx[58](
         /*k*/
-        ctx[92]
+        ctx[97]
       )
     );
   }
@@ -14089,11 +14483,11 @@ function create_each_block_22(ctx) {
       attr(span2, "role", "button");
       attr(span2, "tabindex", "0");
       attr(span2, "title", span2_title_value = `Remove ${/*k*/
-      ctx[92]}`);
+      ctx[97]}`);
       attr(div, "class", "meta-chip custom-chip");
       attr(div, "title", div_title_value = `${/*k*/
-      ctx[92]}: ${/*v*/
-      ctx[93]}`);
+      ctx[97]}: ${/*v*/
+      ctx[98]}`);
     },
     m(target, anchor) {
       insert(target, div, anchor);
@@ -14115,21 +14509,21 @@ function create_each_block_22(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*task*/
       2 && t0_value !== (t0_value = /*k*/
-      ctx[92] + ""))
+      ctx[97] + ""))
         set_data(t0, t0_value);
       if (dirty[0] & /*task*/
       2 && t2_value !== (t2_value = /*v*/
-      ctx[93] + ""))
+      ctx[98] + ""))
         set_data(t2, t2_value);
       if (dirty[0] & /*task*/
       2 && span2_title_value !== (span2_title_value = `Remove ${/*k*/
-      ctx[92]}`)) {
+      ctx[97]}`)) {
         attr(span2, "title", span2_title_value);
       }
       if (dirty[0] & /*task*/
       2 && div_title_value !== (div_title_value = `${/*k*/
-      ctx[92]}: ${/*v*/
-      ctx[93]}`)) {
+      ctx[97]}: ${/*v*/
+      ctx[98]}`)) {
         attr(div, "title", div_title_value);
       }
     },
@@ -14163,7 +14557,7 @@ function create_if_block_102(ctx) {
   let span2;
   let t8_value = (
     /*getRecurrenceLabel*/
-    ctx[15](
+    ctx[17](
       /*task*/
       ctx[1].recurrence
     ) + ""
@@ -14183,7 +14577,7 @@ function create_if_block_102(ctx) {
   );
   let if_block2 = (
     /*showRepeatPicker*/
-    ctx[5] && create_if_block_112(ctx)
+    ctx[6] && create_if_block_112(ctx)
   );
   return {
     c() {
@@ -14269,19 +14663,19 @@ function create_if_block_102(ctx) {
             input,
             "change",
             /*change_handler*/
-            ctx[55]
+            ctx[59]
           ),
           listen(
             div5,
             "click",
             /*click_handler_9*/
-            ctx[58]
+            ctx[62]
           ),
           listen(
             div5,
             "keydown",
             /*keydown_handler_7*/
-            ctx[59]
+            ctx[63]
           )
         ];
         mounted = true;
@@ -14310,7 +14704,7 @@ function create_if_block_102(ctx) {
       }
       if (dirty[0] & /*task*/
       2 && t8_value !== (t8_value = /*getRecurrenceLabel*/
-      ctx2[15](
+      ctx2[17](
         /*task*/
         ctx2[1].recurrence
       ) + ""))
@@ -14337,7 +14731,7 @@ function create_if_block_102(ctx) {
       }
       if (
         /*showRepeatPicker*/
-        ctx2[5]
+        ctx2[6]
       ) {
         if (if_block2) {
           if_block2.p(ctx2, dirty);
@@ -14387,13 +14781,13 @@ function create_if_block_132(ctx) {
             span,
             "click",
             /*clearDueDate*/
-            ctx[18]
+            ctx[20]
           ),
           listen(
             span,
             "keydown",
             /*keydown_handler_5*/
-            ctx[56]
+            ctx[60]
           )
         ];
         mounted = true;
@@ -14428,11 +14822,11 @@ function create_if_block_122(ctx) {
         dispose = [
           listen(span, "click", stop_propagation(
             /*clearRecurrence*/
-            ctx[17]
+            ctx[19]
           )),
           listen(span, "keydown", stop_propagation(
             /*keydown_handler_6*/
-            ctx[57]
+            ctx[61]
           ))
         ];
         mounted = true;
@@ -14569,25 +14963,25 @@ function create_if_block_112(ctx) {
             button0,
             "click",
             /*click_handler_10*/
-            ctx[60]
+            ctx[64]
           ),
           listen(
             button1,
             "click",
             /*click_handler_11*/
-            ctx[61]
+            ctx[65]
           ),
           listen(
             button2,
             "click",
             /*click_handler_12*/
-            ctx[62]
+            ctx[66]
           ),
           listen(
             input,
             "change",
             /*change_handler_1*/
-            ctx[64]
+            ctx[68]
           )
         ];
         mounted = true;
@@ -14625,7 +15019,7 @@ function create_if_block_112(ctx) {
         );
       }
       if (dirty[0] & /*task, handleWeekdayClick*/
-      524290) {
+      2097154) {
         each_value_1 = ensure_array_like([1, 2, 3, 4, 5, 6, 0]);
         let i;
         for (i = 0; i < 7; i += 1) {
@@ -14665,9 +15059,9 @@ function create_each_block_13(ctx) {
   function click_handler_13() {
     return (
       /*click_handler_13*/
-      ctx[63](
+      ctx[67](
         /*day*/
-        ctx[96]
+        ctx[101]
       )
     );
   }
@@ -14677,7 +15071,7 @@ function create_each_block_13(ctx) {
       button = element("button");
       button.textContent = `${DAY_LABELS[
         /*day*/
-        ctx[96]
+        ctx[101]
       ]} `;
       attr(button, "type", "button");
       attr(button, "class", "weekday-chip");
@@ -14687,7 +15081,7 @@ function create_each_block_13(ctx) {
         /*task*/
         (_b = (_a = ctx[1].recurrence) == null ? void 0 : _a.daysOfWeek) == null ? void 0 : _b.includes(
           /*day*/
-          ctx[96]
+          ctx[101]
         )
       );
     },
@@ -14709,7 +15103,7 @@ function create_each_block_13(ctx) {
           /*task*/
           (_b = (_a = ctx[1].recurrence) == null ? void 0 : _a.daysOfWeek) == null ? void 0 : _b.includes(
             /*day*/
-            ctx[96]
+            ctx[101]
           )
         );
       }
@@ -14823,7 +15217,7 @@ function create_if_block_82(ctx) {
   let span;
   let t_value = (
     /*scheduleBadge*/
-    ctx[13].letter + ""
+    ctx[15].letter + ""
   );
   let t;
   return {
@@ -14838,8 +15232,8 @@ function create_if_block_82(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*scheduleBadge*/
-      8192 && t_value !== (t_value = /*scheduleBadge*/
-      ctx2[13].letter + ""))
+      32768 && t_value !== (t_value = /*scheduleBadge*/
+      ctx2[15].letter + ""))
         set_data(t, t_value);
     },
     d(detaching) {
@@ -14875,29 +15269,29 @@ function create_if_block_111(ctx) {
   let portal_action;
   let mounted;
   let dispose;
-  function select_block_type_4(ctx2, dirty) {
+  function select_block_type_5(ctx2, dirty) {
     if (
       /*metaFormType*/
-      ctx2[7] === "why"
+      ctx2[8] === "why"
     )
       return create_if_block_211;
     if (
       /*metaFormType*/
-      ctx2[7] === "note_link"
+      ctx2[8] === "note_link"
     )
       return create_if_block_311;
     if (
       /*metaFormType*/
-      ctx2[7] === "svg"
+      ctx2[8] === "svg"
     )
       return create_if_block_53;
     if (
       /*metaFormType*/
-      ctx2[7] === "custom"
+      ctx2[8] === "custom"
     )
       return create_if_block_63;
   }
-  let current_block_type = select_block_type_4(ctx, [-1, -1, -1, -1]);
+  let current_block_type = select_block_type_5(ctx, [-1, -1, -1, -1]);
   let if_block = current_block_type && current_block_type(ctx);
   return {
     c() {
@@ -14944,7 +15338,7 @@ function create_if_block_111(ctx) {
         button0,
         "active",
         /*metaFormType*/
-        ctx[7] === "why"
+        ctx[8] === "why"
       );
       attr(button1, "type", "button");
       attr(button1, "class", "meta-modal-tab");
@@ -14952,7 +15346,7 @@ function create_if_block_111(ctx) {
         button1,
         "active",
         /*metaFormType*/
-        ctx[7] === "note_link"
+        ctx[8] === "note_link"
       );
       attr(button2, "type", "button");
       attr(button2, "class", "meta-modal-tab");
@@ -14960,7 +15354,7 @@ function create_if_block_111(ctx) {
         button2,
         "active",
         /*metaFormType*/
-        ctx[7] === "svg"
+        ctx[8] === "svg"
       );
       attr(button3, "type", "button");
       attr(button3, "class", "meta-modal-tab");
@@ -14968,7 +15362,7 @@ function create_if_block_111(ctx) {
         button3,
         "active",
         /*metaFormType*/
-        ctx[7] === "custom"
+        ctx[8] === "custom"
       );
       attr(div2, "class", "meta-modal-tabs");
       attr(div3, "class", "meta-modal-body");
@@ -15015,56 +15409,56 @@ function create_if_block_111(ctx) {
             span1,
             "click",
             /*closeAddMetaModal*/
-            ctx[32]
+            ctx[36]
           ),
           listen(
             span1,
             "keydown",
             /*keydown_handler_11*/
-            ctx[68]
+            ctx[72]
           ),
           listen(
             button0,
             "click",
             /*click_handler_14*/
-            ctx[69]
+            ctx[73]
           ),
           listen(
             button1,
             "click",
             /*click_handler_15*/
-            ctx[70]
+            ctx[74]
           ),
           listen(
             button2,
             "click",
             /*click_handler_16*/
-            ctx[71]
+            ctx[75]
           ),
           listen(
             button3,
             "click",
             /*click_handler_17*/
-            ctx[72]
+            ctx[76]
           ),
           listen(
             button4,
             "click",
             /*closeAddMetaModal*/
-            ctx[32]
+            ctx[36]
           ),
           listen(
             button5,
             "click",
             /*saveMetadata*/
-            ctx[33]
+            ctx[37]
           ),
           action_destroyer(portal_action = portal.call(null, div6)),
           listen(
             div6,
             "click",
             /*click_handler_20*/
-            ctx[80]
+            ctx[84]
           )
         ];
         mounted = true;
@@ -15072,42 +15466,42 @@ function create_if_block_111(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*metaFormType*/
-      128) {
+      256) {
         toggle_class(
           button0,
           "active",
           /*metaFormType*/
-          ctx2[7] === "why"
+          ctx2[8] === "why"
         );
       }
       if (dirty[0] & /*metaFormType*/
-      128) {
+      256) {
         toggle_class(
           button1,
           "active",
           /*metaFormType*/
-          ctx2[7] === "note_link"
+          ctx2[8] === "note_link"
         );
       }
       if (dirty[0] & /*metaFormType*/
-      128) {
+      256) {
         toggle_class(
           button2,
           "active",
           /*metaFormType*/
-          ctx2[7] === "svg"
+          ctx2[8] === "svg"
         );
       }
       if (dirty[0] & /*metaFormType*/
-      128) {
+      256) {
         toggle_class(
           button3,
           "active",
           /*metaFormType*/
-          ctx2[7] === "custom"
+          ctx2[8] === "custom"
         );
       }
-      if (current_block_type === (current_block_type = select_block_type_4(ctx2, dirty)) && if_block) {
+      if (current_block_type === (current_block_type = select_block_type_5(ctx2, dirty)) && if_block) {
         if_block.p(ctx2, dirty);
       } else {
         if (if_block)
@@ -15190,7 +15584,7 @@ function create_if_block_63(ctx) {
       set_input_value(
         input0,
         /*metaCustomKey*/
-        ctx[11]
+        ctx[12]
       );
       insert(target, t3, anchor);
       insert(target, div1, anchor);
@@ -15200,7 +15594,7 @@ function create_if_block_63(ctx) {
       set_input_value(
         input1,
         /*metaCustomVal*/
-        ctx[12]
+        ctx[13]
       );
       if (!mounted) {
         dispose = [
@@ -15208,13 +15602,13 @@ function create_if_block_63(ctx) {
             input0,
             "input",
             /*input0_input_handler*/
-            ctx[78]
+            ctx[82]
           ),
           listen(
             input1,
             "input",
             /*input1_input_handler*/
-            ctx[79]
+            ctx[83]
           )
         ];
         mounted = true;
@@ -15241,21 +15635,21 @@ function create_if_block_63(ctx) {
         if_block = null;
       }
       if (dirty[0] & /*metaCustomKey*/
-      2048 && input0.value !== /*metaCustomKey*/
-      ctx2[11]) {
+      4096 && input0.value !== /*metaCustomKey*/
+      ctx2[12]) {
         set_input_value(
           input0,
           /*metaCustomKey*/
-          ctx2[11]
+          ctx2[12]
         );
       }
       if (dirty[0] & /*metaCustomVal*/
-      4096 && input1.value !== /*metaCustomVal*/
-      ctx2[12]) {
+      8192 && input1.value !== /*metaCustomVal*/
+      ctx2[13]) {
         set_input_value(
           input1,
           /*metaCustomVal*/
-          ctx2[12]
+          ctx2[13]
         );
       }
     },
@@ -15307,7 +15701,7 @@ function create_if_block_53(ctx) {
       set_input_value(
         textarea,
         /*metaSvgVal*/
-        ctx[10]
+        ctx[11]
       );
       append(div, t2);
       append(div, span1);
@@ -15316,18 +15710,18 @@ function create_if_block_53(ctx) {
           textarea,
           "input",
           /*textarea_input_handler_1*/
-          ctx[76]
+          ctx[80]
         );
         mounted = true;
       }
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*metaSvgVal*/
-      1024) {
+      2048) {
         set_input_value(
           textarea,
           /*metaSvgVal*/
-          ctx2[10]
+          ctx2[11]
         );
       }
     },
@@ -15353,7 +15747,7 @@ function create_if_block_311(ctx) {
   let dispose;
   let if_block = (
     /*metaNoteLinkVal*/
-    ctx[9] && /*plugin*/
+    ctx[10] && /*plugin*/
     ((_a = ctx[0]) == null ? void 0 : _a.app) && create_if_block_43(ctx)
   );
   return {
@@ -15384,7 +15778,7 @@ function create_if_block_311(ctx) {
       set_input_value(
         input,
         /*metaNoteLinkVal*/
-        ctx[9]
+        ctx[10]
       );
       append(div, t2);
       append(div, span1);
@@ -15396,7 +15790,7 @@ function create_if_block_311(ctx) {
           input,
           "input",
           /*input_input_handler_1*/
-          ctx[74]
+          ctx[78]
         );
         mounted = true;
       }
@@ -15404,17 +15798,17 @@ function create_if_block_311(ctx) {
     p(ctx2, dirty) {
       var _a2;
       if (dirty[0] & /*metaNoteLinkVal*/
-      512 && input.value !== /*metaNoteLinkVal*/
-      ctx2[9]) {
+      1024 && input.value !== /*metaNoteLinkVal*/
+      ctx2[10]) {
         set_input_value(
           input,
           /*metaNoteLinkVal*/
-          ctx2[9]
+          ctx2[10]
         );
       }
       if (
         /*metaNoteLinkVal*/
-        ctx2[9] && /*plugin*/
+        ctx2[10] && /*plugin*/
         ((_a2 = ctx2[0]) == null ? void 0 : _a2.app)
       ) {
         if (if_block) {
@@ -15468,25 +15862,25 @@ function create_if_block_211(ctx) {
       set_input_value(
         textarea,
         /*metaWhyVal*/
-        ctx[8]
+        ctx[9]
       );
       if (!mounted) {
         dispose = listen(
           textarea,
           "input",
           /*textarea_input_handler*/
-          ctx[73]
+          ctx[77]
         );
         mounted = true;
       }
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*metaWhyVal*/
-      256) {
+      512) {
         set_input_value(
           textarea,
           /*metaWhyVal*/
-          ctx2[8]
+          ctx2[9]
         );
       }
     },
@@ -15558,7 +15952,7 @@ function create_if_block_73(ctx) {
         set_data(t1, t1_value);
       if (dirty[0] & /*task*/
       2 | dirty[1] & /*deleteCustomKey*/
-      8) {
+      128) {
         each_value = ensure_array_like(Object.entries(
           /*task*/
           ctx2[1].customMeta
@@ -15593,7 +15987,7 @@ function create_each_block3(ctx) {
   let span0;
   let t0_value = (
     /*k*/
-    ctx[92] + ""
+    ctx[97] + ""
   );
   let t0;
   let t1;
@@ -15601,7 +15995,7 @@ function create_each_block3(ctx) {
   let span1;
   let t3_value = (
     /*v*/
-    ctx[93] + ""
+    ctx[98] + ""
   );
   let t3;
   let t4;
@@ -15612,9 +16006,9 @@ function create_each_block3(ctx) {
   function click_handler_19() {
     return (
       /*click_handler_19*/
-      ctx[77](
+      ctx[81](
         /*k*/
-        ctx[92]
+        ctx[97]
       )
     );
   }
@@ -15659,11 +16053,11 @@ function create_each_block3(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*task*/
       2 && t0_value !== (t0_value = /*k*/
-      ctx[92] + ""))
+      ctx[97] + ""))
         set_data(t0, t0_value);
       if (dirty[0] & /*task*/
       2 && t3_value !== (t3_value = /*v*/
-      ctx[93] + ""))
+      ctx[98] + ""))
         set_data(t3, t3_value);
     },
     d(detaching) {
@@ -15697,7 +16091,7 @@ function create_if_block_43(ctx) {
           button,
           "click",
           /*click_handler_18*/
-          ctx[75]
+          ctx[79]
         );
         mounted = true;
       }
@@ -15720,7 +16114,7 @@ function create_fragment3(ctx) {
       ctx2[1]
     )
       return create_if_block3;
-    return create_else_block_33;
+    return create_else_block_42;
   }
   let current_block_type = select_block_type(ctx, [-1, -1, -1, -1]);
   let if_block = current_block_type(ctx);
@@ -15770,6 +16164,8 @@ var keydown_handler_3 = (e) => {
 };
 function instance3($$self, $$props, $$invalidate) {
   let scheduleBadge;
+  let hasLinkedNote;
+  let linkNoteTooltip;
   let { dataService } = $$props;
   let { plugin = void 0 } = $$props;
   let task = null;
@@ -15778,9 +16174,9 @@ function instance3($$self, $$props, $$invalidate) {
   let showScheduleSection = false;
   let showRepeatPicker = false;
   function toggleScheduleSection() {
-    $$invalidate(4, showScheduleSection = !showScheduleSection);
+    $$invalidate(5, showScheduleSection = !showScheduleSection);
     if (!showScheduleSection) {
-      $$invalidate(5, showRepeatPicker = false);
+      $$invalidate(6, showRepeatPicker = false);
     }
   }
   function getScheduleBadge(t) {
@@ -15867,7 +16263,7 @@ function instance3($$self, $$props, $$invalidate) {
         break;
       case "custom":
         $$invalidate(1, task.recurrence = { type: "daily", interval: 1 }, task);
-        $$invalidate(5, showRepeatPicker = true);
+        $$invalidate(6, showRepeatPicker = true);
         break;
     }
     $$invalidate(1, task);
@@ -15878,7 +16274,7 @@ function instance3($$self, $$props, $$invalidate) {
       return;
     $$invalidate(1, task.recurrence = void 0, task);
     $$invalidate(1, task);
-    $$invalidate(5, showRepeatPicker = false);
+    $$invalidate(6, showRepeatPicker = false);
     immediateSave();
   }
   function setDueDatePreset(preset) {
@@ -15902,7 +16298,7 @@ function instance3($$self, $$props, $$invalidate) {
     $$invalidate(1, task.dueDate = void 0, task);
     $$invalidate(1, task.recurrence = void 0, task);
     $$invalidate(1, task);
-    $$invalidate(5, showRepeatPicker = false);
+    $$invalidate(6, showRepeatPicker = false);
     immediateSave();
   }
   function toggleWeekday(day) {
@@ -15972,18 +16368,18 @@ function instance3($$self, $$props, $$invalidate) {
       ...t,
       steps: t.steps.map((s) => ({ ...s }))
     });
-    $$invalidate(2, categoryFilepath = filepath);
-    $$invalidate(4, showScheduleSection = false);
-    $$invalidate(5, showRepeatPicker = false);
+    $$invalidate(3, categoryFilepath = filepath);
+    $$invalidate(5, showScheduleSection = false);
+    $$invalidate(6, showRepeatPicker = false);
   }
   function handleTaskSelected(payload) {
     loadTask(payload.task, payload.categoryFilepath);
   }
   function handleClose() {
     $$invalidate(1, task = null);
-    $$invalidate(2, categoryFilepath = "");
-    $$invalidate(4, showScheduleSection = false);
-    $$invalidate(5, showRepeatPicker = false);
+    $$invalidate(3, categoryFilepath = "");
+    $$invalidate(5, showScheduleSection = false);
+    $$invalidate(6, showRepeatPicker = false);
   }
   function handleTaskDeleted(payload) {
     if (task && payload.task.id === task.id) {
@@ -16020,6 +16416,12 @@ function instance3($$self, $$props, $$invalidate) {
       async () => {
         if (!task || !categoryFilepath)
           return;
+        if (task.note_link && (plugin == null ? void 0 : plugin.app)) {
+          const syncRes = await LinkedNoteService.syncTaskTitleToNote(plugin.app, task, categoryFilepath);
+          if (syncRes.noteRenamed && syncRes.newNoteLink) {
+            $$invalidate(1, task.note_link = syncRes.newNoteLink, task);
+          }
+        }
         await dataService.updateTask(categoryFilepath, task);
         EventBus.emit("task:updated" /* TASK_UPDATED */, { task, categoryFilepath });
       },
@@ -16053,15 +16455,110 @@ function instance3($$self, $$props, $$invalidate) {
       clearTimeout(saveTimeout);
     if (!task || !categoryFilepath)
       return;
+    if (task.note_link && (plugin == null ? void 0 : plugin.app)) {
+      const syncRes = await LinkedNoteService.syncTaskTitleToNote(plugin.app, task, categoryFilepath);
+      if (syncRes.noteRenamed && syncRes.newNoteLink) {
+        $$invalidate(1, task.note_link = syncRes.newNoteLink, task);
+      }
+    }
     await dataService.updateTask(categoryFilepath, task);
     EventBus.emit("task:updated" /* TASK_UPDATED */, { task, categoryFilepath });
+  }
+  function handleLinkNoteHover(e) {
+    if (!hasLinkedNote || !(task == null ? void 0 : task.note_link) || !(plugin == null ? void 0 : plugin.app))
+      return;
+    const cleanLink = task.note_link.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
+    if (!cleanLink)
+      return;
+    const proxiedEvent = new Proxy(
+      e,
+      {
+        get(target, prop) {
+          if (prop === "ctrlKey" || prop === "metaKey")
+            return true;
+          const val = target[prop];
+          return typeof val === "function" ? val.bind(target) : val;
+        }
+      }
+    );
+    plugin.app.workspace.trigger("hover-link", {
+      event: proxiedEvent,
+      source: "fluent-tasks",
+      hoverParent: e.currentTarget,
+      targetEl: e.currentTarget,
+      linktext: cleanLink,
+      sourcePath: categoryFilepath || ""
+    });
+  }
+  async function handleLinkNoteClick(e) {
+    e.stopPropagation();
+    if (!task || !categoryFilepath || !(plugin == null ? void 0 : plugin.app))
+      return;
+    if (hasLinkedNote && task.note_link) {
+      const file = LinkedNoteService.resolveLinkedNoteFile(plugin.app, task.note_link, categoryFilepath);
+      if (file) {
+        const leaves = plugin.app.workspace.getLeavesOfType("markdown");
+        const existingLeaf = leaves.find((l) => {
+          var _a, _b;
+          return ((_b = (_a = l.view) == null ? void 0 : _a.file) == null ? void 0 : _b.path) === (file == null ? void 0 : file.path);
+        });
+        if (existingLeaf) {
+          plugin.app.workspace.setActiveLeaf(existingLeaf, { focus: true });
+        } else {
+          const leaf = plugin.app.workspace.getLeaf("tab");
+          await leaf.openFile(file);
+          plugin.app.workspace.setActiveLeaf(leaf, { focus: true });
+        }
+      } else {
+        const res = await LinkedNoteService.createOrGetLinkedNote(plugin.app, task, categoryFilepath);
+        $$invalidate(1, task.note_link = res.noteLink, task);
+        $$invalidate(1, task);
+        await immediateSave();
+        const leaf = plugin.app.workspace.getLeaf("tab");
+        await leaf.openFile(res.file);
+        plugin.app.workspace.setActiveLeaf(leaf, { focus: true });
+        new import_obsidian9.Notice(`\u5DF2\u91CD\u65B0\u521B\u5EFA\u5E76\u6253\u5F00\u94FE\u63A5\u7B14\u8BB0: ${res.file.basename}`);
+      }
+    } else {
+      const res = await LinkedNoteService.createOrGetLinkedNote(plugin.app, task, categoryFilepath);
+      $$invalidate(1, task.note_link = res.noteLink, task);
+      $$invalidate(1, task);
+      await immediateSave();
+      const leaf = plugin.app.workspace.getLeaf("tab");
+      await leaf.openFile(res.file);
+      plugin.app.workspace.setActiveLeaf(leaf, { focus: true });
+      new import_obsidian9.Notice(`\u5DF2\u521B\u5EFA\u5E76\u6253\u5F00\u94FE\u63A5\u7B14\u8BB0: ${res.file.basename}`);
+    }
+  }
+  function handleLinkNoteContextMenu(e) {
+    if (!hasLinkedNote || !(plugin == null ? void 0 : plugin.app) || !task)
+      return;
+    e.preventDefault();
+    e.stopPropagation();
+    const menu = new import_obsidian9.Menu();
+    menu.addItem((item) => {
+      item.setTitle("\u6253\u5F00\u94FE\u63A5\u7B14\u8BB0").setIcon("file-text").onClick(() => {
+        void handleLinkNoteClick(e);
+      });
+    });
+    menu.addItem((item) => {
+      item.setTitle("\u53D6\u6D88\u5173\u8054\u7B14\u8BB0").setIcon("unlink").onClick(async () => {
+        if (!task)
+          return;
+        delete task.note_link;
+        $$invalidate(1, task);
+        await immediateSave();
+        new import_obsidian9.Notice("\u5DF2\u53D6\u6D88\u7B14\u8BB0\u5173\u8054");
+      });
+    });
+    menu.showAtMouseEvent(e);
   }
   function addStep() {
     const text2 = newStepText.trim();
     if (!text2 || !task)
       return;
     $$invalidate(1, task.steps = [...task.steps, { text: text2, done: false }], task);
-    $$invalidate(3, newStepText = "");
+    $$invalidate(4, newStepText = "");
     $$invalidate(1, task);
     scheduleSave();
   }
@@ -16097,18 +16594,18 @@ function instance3($$self, $$props, $$invalidate) {
   }
   function closePanel() {
     $$invalidate(1, task = null);
-    $$invalidate(2, categoryFilepath = "");
+    $$invalidate(3, categoryFilepath = "");
     EventBus.emit("detail:close" /* DETAIL_CLOSE */, {});
   }
   async function deleteTask() {
-    if (!task || !categoryFilepath)
+    if (!task || !categoryFilepath || !(plugin == null ? void 0 : plugin.app))
       return;
     const toDelete = task;
     const path = categoryFilepath;
-    $$invalidate(1, task = null);
-    $$invalidate(2, categoryFilepath = "");
-    await dataService.deleteTask(path, toDelete);
-    EventBus.emit("task:deleted" /* TASK_DELETED */, { task: toDelete, categoryFilepath: path });
+    await promptDeleteTaskWithLinkedNote(plugin.app, toDelete, path, dataService, () => {
+      $$invalidate(1, task = null);
+      $$invalidate(3, categoryFilepath = "");
+    });
   }
   let showAddMetaModal = false;
   let metaFormType = "why";
@@ -16120,15 +16617,15 @@ function instance3($$self, $$props, $$invalidate) {
   function openAddMetaModal() {
     if (!task)
       return;
-    $$invalidate(8, metaWhyVal = task.why || "");
-    $$invalidate(9, metaNoteLinkVal = task.note_link || "");
-    $$invalidate(10, metaSvgVal = task.svgs && task.svgs.length > 0 ? task.svgs[0] : "");
-    $$invalidate(11, metaCustomKey = "");
-    $$invalidate(12, metaCustomVal = "");
-    $$invalidate(6, showAddMetaModal = true);
+    $$invalidate(9, metaWhyVal = task.why || "");
+    $$invalidate(10, metaNoteLinkVal = task.note_link || "");
+    $$invalidate(11, metaSvgVal = task.svgs && task.svgs.length > 0 ? task.svgs[0] : "");
+    $$invalidate(12, metaCustomKey = "");
+    $$invalidate(13, metaCustomVal = "");
+    $$invalidate(7, showAddMetaModal = true);
   }
   function closeAddMetaModal() {
-    $$invalidate(6, showAddMetaModal = false);
+    $$invalidate(7, showAddMetaModal = false);
   }
   async function saveMetadata() {
     if (!task)
@@ -16200,7 +16697,7 @@ function instance3($$self, $$props, $$invalidate) {
     task.title = this.value;
     $$invalidate(1, task);
   }
-  const keydown_handler_1 = (e) => e.key === "Enter" && toggleStar();
+  const keydown_handler_1 = (e) => e.key === "Enter" && handleLinkNoteClick(e);
   const click_handler2 = (i) => toggleStepDone(i);
   const keydown_handler_2 = (i, e) => e.key === "Enter" && toggleStepDone(i);
   const input_handler = (i, e) => updateStepText(i, e.currentTarget.value);
@@ -16208,7 +16705,7 @@ function instance3($$self, $$props, $$invalidate) {
   const keydown_handler_4 = (i, e) => e.key === "Enter" && deleteStep(i);
   function input_input_handler() {
     newStepText = this.value;
-    $$invalidate(3, newStepText);
+    $$invalidate(4, newStepText);
   }
   function textarea1_input_handler() {
     task.note = this.value;
@@ -16216,17 +16713,17 @@ function instance3($$self, $$props, $$invalidate) {
   }
   const click_handler_22 = () => deleteMetaProp("why");
   const click_handler_3 = () => {
-    $$invalidate(7, metaFormType = "why");
+    $$invalidate(8, metaFormType = "why");
     openAddMetaModal();
   };
   const click_handler_42 = () => deleteMetaProp("note_link");
   const click_handler_5 = () => {
-    $$invalidate(7, metaFormType = "note_link");
+    $$invalidate(8, metaFormType = "note_link");
     openAddMetaModal();
   };
   const click_handler_6 = () => deleteMetaProp("svg");
   const click_handler_7 = () => {
-    $$invalidate(7, metaFormType = "svg");
+    $$invalidate(8, metaFormType = "svg");
     openAddMetaModal();
   };
   const click_handler_8 = (k) => deleteCustomKey(k);
@@ -16238,8 +16735,8 @@ function instance3($$self, $$props, $$invalidate) {
   };
   const keydown_handler_5 = (e) => e.key === "Enter" && clearDueDate();
   const keydown_handler_6 = (e) => e.key === "Enter" && clearRecurrence();
-  const click_handler_9 = () => $$invalidate(5, showRepeatPicker = !showRepeatPicker);
-  const keydown_handler_7 = (e) => e.key === "Enter" && $$invalidate(5, showRepeatPicker = !showRepeatPicker);
+  const click_handler_9 = () => $$invalidate(6, showRepeatPicker = !showRepeatPicker);
+  const keydown_handler_7 = (e) => e.key === "Enter" && $$invalidate(6, showRepeatPicker = !showRepeatPicker);
   const click_handler_10 = () => setRecurrencePreset("daily");
   const click_handler_11 = () => setRecurrencePreset("weekdays");
   const click_handler_12 = () => setRecurrencePreset("weekly");
@@ -16249,17 +16746,17 @@ function instance3($$self, $$props, $$invalidate) {
   const keydown_handler_9 = (e) => e.key === "Enter" && openAddMetaModal();
   const keydown_handler_10 = (e) => e.key === "Enter" && deleteTask();
   const keydown_handler_11 = (e) => e.key === "Enter" && closeAddMetaModal();
-  const click_handler_14 = () => $$invalidate(7, metaFormType = "why");
-  const click_handler_15 = () => $$invalidate(7, metaFormType = "note_link");
-  const click_handler_16 = () => $$invalidate(7, metaFormType = "svg");
-  const click_handler_17 = () => $$invalidate(7, metaFormType = "custom");
+  const click_handler_14 = () => $$invalidate(8, metaFormType = "why");
+  const click_handler_15 = () => $$invalidate(8, metaFormType = "note_link");
+  const click_handler_16 = () => $$invalidate(8, metaFormType = "svg");
+  const click_handler_17 = () => $$invalidate(8, metaFormType = "custom");
   function textarea_input_handler() {
     metaWhyVal = this.value;
-    $$invalidate(8, metaWhyVal);
+    $$invalidate(9, metaWhyVal);
   }
   function input_input_handler_1() {
     metaNoteLinkVal = this.value;
-    $$invalidate(9, metaNoteLinkVal);
+    $$invalidate(10, metaNoteLinkVal);
   }
   const click_handler_18 = () => {
     const clean = metaNoteLinkVal.replace(/^\[\[/, "").replace(/\]\]$/, "").trim();
@@ -16268,21 +16765,21 @@ function instance3($$self, $$props, $$invalidate) {
   };
   function textarea_input_handler_1() {
     metaSvgVal = this.value;
-    $$invalidate(10, metaSvgVal);
+    $$invalidate(11, metaSvgVal);
   }
   const click_handler_19 = (k) => deleteCustomKey(k);
   function input0_input_handler() {
     metaCustomKey = this.value;
-    $$invalidate(11, metaCustomKey);
+    $$invalidate(12, metaCustomKey);
   }
   function input1_input_handler() {
     metaCustomVal = this.value;
-    $$invalidate(12, metaCustomVal);
+    $$invalidate(13, metaCustomVal);
   }
   const click_handler_20 = (e) => e.target === e.currentTarget && closeAddMetaModal();
   $$self.$$set = ($$props2) => {
     if ("dataService" in $$props2)
-      $$invalidate(36, dataService = $$props2.dataService);
+      $$invalidate(40, dataService = $$props2.dataService);
     if ("plugin" in $$props2)
       $$invalidate(0, plugin = $$props2.plugin);
   };
@@ -16290,12 +16787,23 @@ function instance3($$self, $$props, $$invalidate) {
     if ($$self.$$.dirty[0] & /*task*/
     2) {
       $:
-        $$invalidate(13, scheduleBadge = getScheduleBadge(task));
+        $$invalidate(15, scheduleBadge = getScheduleBadge(task));
+    }
+    if ($$self.$$.dirty[0] & /*task*/
+    2) {
+      $:
+        $$invalidate(2, hasLinkedNote = !!(task && task.note_link));
+    }
+    if ($$self.$$.dirty[0] & /*hasLinkedNote, task*/
+    6) {
+      $:
+        $$invalidate(14, linkNoteTooltip = hasLinkedNote ? `\u6253\u5F00\u94FE\u63A5\u7B14\u8BB0: ${task == null ? void 0 : task.note_link} (\u70B9\u51FB\u8DF3\u8F6C\uFF0C\u60AC\u505C\u9884\u89C8)` : "\u94FE\u63A5\u4E13\u5C5E\u7B14\u8BB0 (\u70B9\u51FB\u81EA\u52A8\u521B\u5EFA\u5E76\u8DF3\u8F6C)");
     }
   };
   return [
     plugin,
     task,
+    hasLinkedNote,
     categoryFilepath,
     newStepText,
     showScheduleSection,
@@ -16307,6 +16815,7 @@ function instance3($$self, $$props, $$invalidate) {
     metaSvgVal,
     metaCustomKey,
     metaCustomVal,
+    linkNoteTooltip,
     scheduleBadge,
     toggleScheduleSection,
     getRecurrenceLabel2,
@@ -16318,7 +16827,9 @@ function instance3($$self, $$props, $$invalidate) {
     scheduleSave,
     handleTitleInput,
     toggleComplete,
-    toggleStar,
+    handleLinkNoteHover,
+    handleLinkNoteClick,
+    handleLinkNoteContextMenu,
     handleStepKeydown,
     toggleStepDone,
     updateStepText,
@@ -16380,16 +16891,16 @@ function instance3($$self, $$props, $$invalidate) {
 var TaskDetailView = class extends SvelteComponent {
   constructor(options) {
     super();
-    init(this, options, instance3, create_fragment3, safe_not_equal, { dataService: 36, plugin: 0, loadTask: 37 }, null, [-1, -1, -1, -1]);
+    init(this, options, instance3, create_fragment3, safe_not_equal, { dataService: 40, plugin: 0, loadTask: 41 }, null, [-1, -1, -1, -1]);
   }
   get loadTask() {
-    return this.$$.ctx[37];
+    return this.$$.ctx[41];
   }
 };
 var TaskDetailView_default = TaskDetailView;
 
 // src/settings.ts
-var import_obsidian7 = require("obsidian");
+var import_obsidian10 = require("obsidian");
 var DEFAULT_SETTINGS = {
   accentColor: "#8b5cf6",
   autoExpandSidebar: true,
@@ -16400,7 +16911,7 @@ var DEFAULT_SETTINGS = {
   quickModalAction: "direct",
   quickModalTipCount: 0
 };
-var FluentTasksSettingTab = class extends import_obsidian7.PluginSettingTab {
+var FluentTasksSettingTab = class extends import_obsidian10.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
     this.plugin = plugin;
@@ -16408,7 +16919,7 @@ var FluentTasksSettingTab = class extends import_obsidian7.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    const colorSetting = new import_obsidian7.Setting(containerEl).setName("Accent Color").setDesc("Choose the primary accent color for the plugin (e.g., active borders, stars).").addColorPicker((color) => color.setValue(this.plugin.settings.accentColor).onChange(async (value) => {
+    const colorSetting = new import_obsidian10.Setting(containerEl).setName("Accent Color").setDesc("Choose the primary accent color for the plugin (e.g., active borders, stars).").addColorPicker((color) => color.setValue(this.plugin.settings.accentColor).onChange(async (value) => {
       this.plugin.settings.accentColor = value;
       await this.plugin.saveSettings();
       this.plugin.applySettings();
@@ -16422,36 +16933,36 @@ var FluentTasksSettingTab = class extends import_obsidian7.PluginSettingTab {
         this.plugin.applySettings();
       });
     }
-    new import_obsidian7.Setting(containerEl).setName("Wrap Task Titles").setDesc("Wrap long task titles across multiple lines in the task list instead of truncating with ellipsis.").addToggle((toggle) => {
+    new import_obsidian10.Setting(containerEl).setName("Wrap Task Titles").setDesc("Wrap long task titles across multiple lines in the task list instead of truncating with ellipsis.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.wrapTaskTitles) != null ? _a : true).onChange(async (value) => {
         this.plugin.settings.wrapTaskTitles = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian7.Setting(containerEl).setName("Quick Task Modal Action").setDesc("Choose whether selecting a task/list in the Quick Task Modal manages it directly in the popup or navigates and reveals it in the main workspace.").addDropdown((dropdown) => {
+    new import_obsidian10.Setting(containerEl).setName("Quick Task Modal Action").setDesc("Choose whether selecting a task/list in the Quick Task Modal manages it directly in the popup or navigates and reveals it in the main workspace.").addDropdown((dropdown) => {
       var _a;
       return dropdown.addOption("direct", "Direct In-Modal Management (Toggle & Add in popup)").addOption("navigate", "Navigate Workspace (Open list & details in workspace)").setValue((_a = this.plugin.settings.quickModalAction) != null ? _a : "direct").onChange(async (value) => {
         this.plugin.settings.quickModalAction = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian7.Setting(containerEl).setName("Auto-Expand Sidebar on Focus").setDesc("Automatically expand the left sidebar list panel when switching to Fluent Tasks tab (via Ctrl+Tab, Ctrl+Shift+Tab, or clicking the tab).").addToggle((toggle) => toggle.setValue(this.plugin.settings.autoExpandSidebar).onChange(async (value) => {
+    new import_obsidian10.Setting(containerEl).setName("Auto-Expand Sidebar on Focus").setDesc("Automatically expand the left sidebar list panel when switching to Fluent Tasks tab (via Ctrl+Tab, Ctrl+Shift+Tab, or clicking the tab).").addToggle((toggle) => toggle.setValue(this.plugin.settings.autoExpandSidebar).onChange(async (value) => {
       this.plugin.settings.autoExpandSidebar = value;
       await this.plugin.saveSettings();
     }));
-    new import_obsidian7.Setting(containerEl).setName("Auto-Collapse Sidebar on Tab Switch").setDesc("Automatically collapse the sidebar when switching away to other tabs (notes, settings) if the sidebar is currently displaying Fluent Tasks.").addToggle((toggle) => {
+    new import_obsidian10.Setting(containerEl).setName("Auto-Collapse Sidebar on Tab Switch").setDesc("Automatically collapse the sidebar when switching away to other tabs (notes, settings) if the sidebar is currently displaying Fluent Tasks.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.autoCollapseSidebarOnSwitch) != null ? _a : true).onChange(async (value) => {
         this.plugin.settings.autoCollapseSidebarOnSwitch = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian7.Setting(containerEl).setName("Search: Hide Completed Tasks").setDesc("When searching, hide completed tasks by default. Can also be toggled directly in the search modal.").addToggle((toggle) => toggle.setValue(this.plugin.settings.searchHideCompleted).onChange(async (value) => {
+    new import_obsidian10.Setting(containerEl).setName("Search: Hide Completed Tasks").setDesc("When searching, hide completed tasks by default. Can also be toggled directly in the search modal.").addToggle((toggle) => toggle.setValue(this.plugin.settings.searchHideCompleted).onChange(async (value) => {
       this.plugin.settings.searchHideCompleted = value;
       await this.plugin.saveSettings();
     }));
-    new import_obsidian7.Setting(containerEl).setName("Hide Ribbon Icon").setDesc("Hide the Fluent Tasks icon in the left ribbon.").addToggle((toggle) => {
+    new import_obsidian10.Setting(containerEl).setName("Hide Ribbon Icon").setDesc("Hide the Fluent Tasks icon in the left ribbon.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.hideRibbonIcon) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.hideRibbonIcon = value;
@@ -16463,7 +16974,7 @@ var FluentTasksSettingTab = class extends import_obsidian7.PluginSettingTab {
 };
 
 // src/modals/QuickTaskModal.ts
-var import_obsidian9 = require("obsidian");
+var import_obsidian12 = require("obsidian");
 
 // src/utils/sidebarTreeUtils.ts
 function moveSidebarItem(items, movedItemId, targetId, position) {
@@ -16593,7 +17104,7 @@ function filterSidebarTree(items, query) {
 }
 
 // src/modals/QuickTaskModalView.svelte
-var import_obsidian8 = require("obsidian");
+var import_obsidian11 = require("obsidian");
 function get_each_context4(ctx, list, i) {
   const child_ctx = ctx.slice();
   child_ctx[139] = list[i];
@@ -17005,7 +17516,7 @@ function create_if_block_173(ctx) {
       ctx2[20] === /*item*/
       ctx2[150].id
     )
-      return create_if_block_212;
+      return create_if_block_213;
     return create_else_block_5;
   }
   let current_block_type = select_block_type_1(ctx, [-1, -1, -1, -1, -1, -1]);
@@ -17375,7 +17886,7 @@ function create_else_block_5(ctx) {
     }
   };
 }
-function create_if_block_212(ctx) {
+function create_if_block_213(ctx) {
   let input;
   let mounted;
   let dispose;
@@ -17486,7 +17997,7 @@ function create_if_block_183(ctx) {
     }
   };
 }
-function create_else_block_42(ctx) {
+function create_else_block_43(ctx) {
   let span;
   let t_value = (
     /*child*/
@@ -17625,7 +18136,7 @@ function create_each_block_52(key_1, ctx) {
       ctx2[153].id
     )
       return create_if_block_203;
-    return create_else_block_42;
+    return create_else_block_43;
   }
   let current_block_type = select_block_type_2(ctx, [-1, -1, -1, -1, -1, -1]);
   let if_block0 = current_block_type(ctx);
@@ -18565,7 +19076,7 @@ function create_if_block_93(ctx) {
   return {
     c() {
       span = element("span");
-      span.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>`;
+      span.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>`;
       attr(span, "class", "meta-badge note-badge");
       attr(span, "role", "button");
       attr(span, "tabindex", "0");
@@ -19574,7 +20085,7 @@ function create_if_block4(ctx) {
       ctx2[29].steps && /*popoverTask*/
       ctx2[29].steps.length > 0
     )
-      return create_if_block_213;
+      return create_if_block_214;
   }
   let current_block_type = select_block_type_8(ctx, [-1, -1, -1, -1, -1, -1]);
   let if_block = current_block_type && current_block_type(ctx);
@@ -19675,7 +20186,7 @@ function create_if_block4(ctx) {
     }
   };
 }
-function create_if_block_213(ctx) {
+function create_if_block_214(ctx) {
   let div3;
   let div1;
   let div0;
@@ -20597,7 +21108,7 @@ function instance4($$self, $$props, $$invalidate) {
       });
       EventBus.emit("task:updated" /* TASK_UPDATED */, { categoryFilepath: targetCat.filepath });
       await loadData();
-      new import_obsidian8.Notice(`Moved task to "${targetCat.name}"`);
+      new import_obsidian11.Notice(`Moved task to "${targetCat.name}"`);
     } catch (e) {
       console.error("[QuickTaskModal] Failed to move task:", e);
     }
@@ -20709,7 +21220,7 @@ function instance4($$self, $$props, $$invalidate) {
   function showItemContextMenu(e, item) {
     e.preventDefault();
     e.stopPropagation();
-    const menu = new import_obsidian8.Menu();
+    const menu = new import_obsidian11.Menu();
     menu.addItem((i) => {
       i.setTitle("Rename (F2)").setIcon("edit").onClick(() => startRenameItem(item));
     });
@@ -20747,7 +21258,7 @@ function instance4($$self, $$props, $$invalidate) {
       await loadData();
       await selectCategory(newCat);
     } catch (e) {
-      new import_obsidian8.Notice(`Failed to create list: ${e}`);
+      new import_obsidian11.Notice(`Failed to create list: ${e}`);
     }
     $$invalidate(16, isAddingList = false);
     $$invalidate(17, newListName = "");
@@ -20773,7 +21284,7 @@ function instance4($$self, $$props, $$invalidate) {
       await dataService.createGroup(name);
       await loadData();
     } catch (e) {
-      new import_obsidian8.Notice(`Failed to create group: ${e}`);
+      new import_obsidian11.Notice(`Failed to create group: ${e}`);
     }
     $$invalidate(18, isAddingGroup = false);
     $$invalidate(19, newGroupName = "");
@@ -20820,23 +21331,20 @@ function instance4($$self, $$props, $$invalidate) {
   async function deleteTaskSafely(taskItem) {
     var _a;
     const catPath = isSearching ? (_a = searchResults.find((r) => r.task.id === taskItem.id)) == null ? void 0 : _a.category.filepath : selectedCategory == null ? void 0 : selectedCategory.filepath;
-    if (!catPath)
+    if (!catPath || !(plugin == null ? void 0 : plugin.app))
       return;
-    await dataService.deleteTask(catPath, taskItem);
-    EventBus.emit("task:deleted" /* TASK_DELETED */, {
-      task: taskItem,
-      categoryFilepath: catPath
+    await promptDeleteTaskWithLinkedNote(plugin.app, taskItem, catPath, dataService, async () => {
+      if (!taskItem.completed && taskCounts[catPath] !== void 0) {
+        $$invalidate(7, taskCounts[catPath] = Math.max(0, taskCounts[catPath] - 1), taskCounts);
+        $$invalidate(7, taskCounts = { ...taskCounts });
+      }
+      if (isSearching) {
+        $$invalidate(10, searchResults = searchResults.filter((r) => r.task.id !== taskItem.id));
+      } else if (selectedCategory) {
+        await loadTasksForCategory(selectedCategory);
+      }
+      focusedTaskIndex = Math.max(0, Math.min(focusedTaskIndex, allDisplayedTasks.length - 1));
     });
-    if (!taskItem.completed && taskCounts[catPath] !== void 0) {
-      $$invalidate(7, taskCounts[catPath] = Math.max(0, taskCounts[catPath] - 1), taskCounts);
-      $$invalidate(7, taskCounts = { ...taskCounts });
-    }
-    if (isSearching) {
-      $$invalidate(10, searchResults = searchResults.filter((r) => r.task.id !== taskItem.id));
-    } else if (selectedCategory) {
-      await loadTasksForCategory(selectedCategory);
-    }
-    focusedTaskIndex = Math.max(0, Math.min(focusedTaskIndex, allDisplayedTasks.length - 1));
   }
   function startInlineAddTask() {
     if (!selectedCategory)
@@ -21415,7 +21923,7 @@ function recordHotkeyTipShown(plugin) {
 }
 
 // src/modals/QuickTaskModal.ts
-var QuickTaskModal = class extends import_obsidian9.Modal {
+var QuickTaskModal = class extends import_obsidian12.Modal {
   constructor(app, plugin, dataService) {
     super(app);
     this.component = null;
@@ -21454,10 +21962,10 @@ var QuickTaskModal = class extends import_obsidian9.Modal {
 };
 
 // src/modals/QuickListModal.ts
-var import_obsidian11 = require("obsidian");
+var import_obsidian14 = require("obsidian");
 
 // src/modals/QuickListModalView.svelte
-var import_obsidian10 = require("obsidian");
+var import_obsidian13 = require("obsidian");
 function get_each_context5(ctx, list, i) {
   const child_ctx = ctx.slice();
   child_ctx[79] = list[i];
@@ -21573,7 +22081,7 @@ function create_else_block5(ctx) {
   }
   let if_block0 = (
     /*isAddingList*/
-    ctx[5] && create_if_block_214(ctx)
+    ctx[5] && create_if_block_215(ctx)
   );
   let if_block1 = (
     /*isAddingGroup*/
@@ -21622,7 +22130,7 @@ function create_else_block5(ctx) {
         if (if_block0) {
           if_block0.p(ctx2, dirty);
         } else {
-          if_block0 = create_if_block_214(ctx2);
+          if_block0 = create_if_block_215(ctx2);
           if_block0.c();
           if_block0.m(t1.parentNode, t1);
         }
@@ -21697,7 +22205,7 @@ function create_else_block_35(ctx) {
       ctx2[79].id
     )
       return create_if_block_94;
-    return create_else_block_43;
+    return create_else_block_44;
   }
   let current_block_type = select_block_type_4(ctx, [-1, -1, -1]);
   let if_block0 = current_block_type(ctx);
@@ -22130,7 +22638,7 @@ function create_if_block_313(ctx) {
     }
   };
 }
-function create_else_block_43(ctx) {
+function create_else_block_44(ctx) {
   let span;
   let t_value = (
     /*item*/
@@ -22810,7 +23318,7 @@ function create_each_block5(key_1, ctx) {
     }
   };
 }
-function create_if_block_214(ctx) {
+function create_if_block_215(ctx) {
   let div;
   let input;
   let mounted;
@@ -23322,7 +23830,7 @@ function instance5($$self, $$props, $$invalidate) {
   function showItemContextMenu(e, item) {
     e.preventDefault();
     e.stopPropagation();
-    const menu = new import_obsidian10.Menu();
+    const menu = new import_obsidian13.Menu();
     menu.addItem((i) => {
       i.setTitle("Rename (F2)").setIcon("edit").onClick(() => startRenameItem(item));
     });
@@ -23352,7 +23860,7 @@ function instance5($$self, $$props, $$invalidate) {
       await loadData();
       await openCategoryInCenterOnly(newCat);
     } catch (e) {
-      new import_obsidian10.Notice(`Failed to create list: ${e}`);
+      new import_obsidian13.Notice(`Failed to create list: ${e}`);
     }
     $$invalidate(5, isAddingList = false);
     $$invalidate(6, newListName = "");
@@ -23372,7 +23880,7 @@ function instance5($$self, $$props, $$invalidate) {
       await dataService.createGroup(name);
       await loadData();
     } catch (e) {
-      new import_obsidian10.Notice(`Failed to create group: ${e}`);
+      new import_obsidian13.Notice(`Failed to create group: ${e}`);
     }
     $$invalidate(7, isAddingGroup = false);
     $$invalidate(8, newGroupName = "");
@@ -23697,7 +24205,7 @@ var QuickListModalView = class extends SvelteComponent {
 var QuickListModalView_default = QuickListModalView;
 
 // src/modals/QuickListModal.ts
-var QuickListModal = class extends import_obsidian11.Modal {
+var QuickListModal = class extends import_obsidian14.Modal {
   constructor(app, plugin, dataService) {
     super(app);
     this.component = null;
@@ -23738,13 +24246,13 @@ var QuickListModal = class extends import_obsidian11.Modal {
 };
 
 // src/main.ts
-var TaskSidebarViewWrapper = class extends import_obsidian12.ItemView {
+var TaskSidebarViewWrapper = class extends import_obsidian15.ItemView {
   constructor(leaf, dataService, plugin) {
     super(leaf);
     this.component = null;
     this.dataService = dataService;
     this.plugin = plugin;
-    this.scope = new import_obsidian12.Scope(this.app.scope);
+    this.scope = new import_obsidian15.Scope(this.app.scope);
     this.scope.register([], "F2", (evt) => {
       var _a;
       if ((_a = this.component) == null ? void 0 : _a.triggerRenameHoveredOrActive()) {
@@ -23789,7 +24297,7 @@ var TaskSidebarViewWrapper = class extends import_obsidian12.ItemView {
     return this.component;
   }
 };
-var TaskMainViewWrapper = class extends import_obsidian12.ItemView {
+var TaskMainViewWrapper = class extends import_obsidian15.ItemView {
   // Enables Obsidian Leaf Navigation & History tracking
   constructor(leaf, dataService, plugin) {
     super(leaf);
@@ -23823,7 +24331,7 @@ var TaskMainViewWrapper = class extends import_obsidian12.ItemView {
     await super.setState(state, result);
     if (state && state.categoryFilepath) {
       const file = this.app.vault.getAbstractFileByPath(state.categoryFilepath);
-      if (file && file instanceof import_obsidian12.TFile) {
+      if (file && file instanceof import_obsidian15.TFile) {
         const cat = {
           id: state.categoryFilepath,
           type: "category",
@@ -23860,7 +24368,7 @@ var TaskMainViewWrapper = class extends import_obsidian12.ItemView {
     const state = this.getState();
     if (state == null ? void 0 : state.categoryFilepath) {
       const file = this.app.vault.getAbstractFileByPath(state.categoryFilepath);
-      if (file && file instanceof import_obsidian12.TFile) {
+      if (file && file instanceof import_obsidian15.TFile) {
         const cat = {
           id: state.categoryFilepath,
           type: "category",
@@ -23886,13 +24394,13 @@ var TaskMainViewWrapper = class extends import_obsidian12.ItemView {
     const cat = (_a = this.component) == null ? void 0 : _a.getCurrentCategory();
     if (cat && cat.filepath) {
       const f = this.app.vault.getAbstractFileByPath(cat.filepath);
-      if (f instanceof import_obsidian12.TFile)
+      if (f instanceof import_obsidian15.TFile)
         return f;
     }
     return null;
   }
 };
-var TaskDetailViewWrapper = class extends import_obsidian12.ItemView {
+var TaskDetailViewWrapper = class extends import_obsidian15.ItemView {
   constructor(leaf, dataService, plugin) {
     super(leaf);
     this.component = null;
@@ -23926,7 +24434,7 @@ var TaskDetailViewWrapper = class extends import_obsidian12.ItemView {
     return this.component;
   }
 };
-var FluentTasksPlugin = class extends import_obsidian12.Plugin {
+var FluentTasksPlugin = class extends import_obsidian15.Plugin {
   constructor() {
     super(...arguments);
     this.ribbonIconEl = null;
@@ -24032,7 +24540,7 @@ var FluentTasksPlugin = class extends import_obsidian12.Plugin {
         await this.dataService.ensureDataFolder();
         await this.loadSettings();
         this.applySettings();
-        let lastActiveViewType = ((_a = this.app.workspace.getActiveViewOfType(import_obsidian12.ItemView)) == null ? void 0 : _a.getViewType()) || "";
+        let lastActiveViewType = ((_a = this.app.workspace.getActiveViewOfType(import_obsidian15.ItemView)) == null ? void 0 : _a.getViewType()) || "";
         this.registerEvent(
           this.app.workspace.on("active-leaf-change", (leaf) => {
             var _a2;
@@ -24054,7 +24562,7 @@ var FluentTasksPlugin = class extends import_obsidian12.Plugin {
         );
         this.registerEvent(
           this.app.vault.on("modify", (file) => {
-            if (!file || !(file instanceof import_obsidian12.TFile))
+            if (!file || !(file instanceof import_obsidian15.TFile))
               return;
             if (file.path.startsWith(DATA_FOLDER + "/") && file.path.endsWith(".md")) {
               if (this.dataService.isInternalWrite(file.path)) {
@@ -24074,7 +24582,21 @@ var FluentTasksPlugin = class extends import_obsidian12.Plugin {
         };
         this.registerEvent(this.app.vault.on("create", handleCategoryVaultChange));
         this.registerEvent(this.app.vault.on("delete", handleCategoryVaultChange));
-        this.registerEvent(this.app.vault.on("rename", handleCategoryVaultChange));
+        this.registerEvent(
+          this.app.vault.on("rename", (file, oldPath) => {
+            handleCategoryVaultChange(file);
+            if (file instanceof import_obsidian15.TFile && file.extension === "md") {
+              if (!LinkedNoteService.isInternalRename(oldPath, file.path)) {
+                void LinkedNoteService.syncNoteRenameToTasks(
+                  this.app,
+                  this.dataService,
+                  oldPath,
+                  file
+                );
+              }
+            }
+          })
+        );
         EventBus.on("detail:close" /* DETAIL_CLOSE */, () => {
           this.app.workspace.detachLeavesOfType(VIEW_TYPE_DETAIL);
         });

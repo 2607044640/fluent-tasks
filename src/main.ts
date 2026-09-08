@@ -25,6 +25,7 @@ import { TaskSearchModal } from "./TaskSearchModal";
 import { QuickTaskModal } from "./modals/QuickTaskModal";
 import { QuickListModal } from "./modals/QuickListModal";
 import { getTodayLocalDateString } from "./utils/timeUtils";
+import { LinkedNoteService } from "./services/LinkedNoteService";
 import "./styles.css";
 
 // =============================================
@@ -415,7 +416,23 @@ export default class FluentTasksPlugin extends Plugin {
             };
             this.registerEvent(this.app.vault.on("create", handleCategoryVaultChange));
             this.registerEvent(this.app.vault.on("delete", handleCategoryVaultChange));
-            this.registerEvent(this.app.vault.on("rename", handleCategoryVaultChange));
+            this.registerEvent(
+                this.app.vault.on("rename", (file, oldPath) => {
+                    handleCategoryVaultChange(file);
+
+                    // Hot-sync note rename to task if linked
+                    if (file instanceof TFile && file.extension === "md") {
+                        if (!LinkedNoteService.isInternalRename(oldPath, file.path)) {
+                            void LinkedNoteService.syncNoteRenameToTasks(
+                                this.app,
+                                this.dataService,
+                                oldPath,
+                                file
+                            );
+                        }
+                    }
+                })
+            );
 
             // Manage dynamic opening/closing of the detail view
             EventBus.on(EventName.DETAIL_CLOSE, () => {

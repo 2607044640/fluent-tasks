@@ -6,6 +6,9 @@
     import { SAVE_DEBOUNCE_MS } from "./constants";
     import { portal, autosize } from "./utils/domUtils";
     import { DAY_LABELS, formatExactTime, getRelativeTime, getRecurrenceLabel } from "./utils/timeUtils";
+    import { LinkedNoteService } from "./services/LinkedNoteService";
+    import { promptDeleteTaskWithLinkedNote } from "./modals/ConfirmDeleteLinkedNoteModal";
+    import { Menu, Notice } from "obsidian";
 
     // =============================================
     // Props
@@ -254,6 +257,12 @@
         if (saveTimeout) clearTimeout(saveTimeout);
         saveTimeout = setTimeout(async () => {
             if (!task || !categoryFilepath) return;
+            if (task.note_link && plugin?.app) {
+                const syncRes = await LinkedNoteService.syncTaskTitleToNote(plugin.app, task, categoryFilepath);
+                if (syncRes.noteRenamed && syncRes.newNoteLink) {
+                    task.note_link = syncRes.newNoteLink;
+                }
+            }
             await dataService.updateTask(categoryFilepath, task);
             EventBus.emit(EventName.TASK_UPDATED, {
                 task,
@@ -298,8 +307,112 @@
     async function immediateSave() {
         if (saveTimeout) clearTimeout(saveTimeout);
         if (!task || !categoryFilepath) return;
+        if (task.note_link && plugin?.app) {
+            const syncRes = await LinkedNoteService.syncTaskTitleToNote(plugin.app, task, categoryFilepath);
+            if (syncRes.noteRenamed && syncRes.newNoteLink) {
+                task.note_link = syncRes.newNoteLink;
+            }
+        }
         await dataService.updateTask(categoryFilepath, task);
         EventBus.emit(EventName.TASK_UPDATED, { task, categoryFilepath });
+    }
+
+    // =============================================
+    // Linked Note Actions
+    // =============================================
+    $: hasLinkedNote = !!(task && task.note_link);
+    $: linkNoteTooltip = hasLinkedNote
+        ? `打开链接笔记: ${task?.note_link} (点击跳转，悬停预览)`
+        : "链接专属笔记 (点击自动创建并跳转)";
+
+    function handleLinkNoteHover(e: MouseEvent) {
+        if (!hasLinkedNote || !task?.note_link || !plugin?.app) return;
+        const cleanLink = task.note_link.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
+        if (!cleanLink) return;
+
+        const proxiedEvent = new Proxy(e, {
+            get(target, prop) {
+                if (prop === "ctrlKey" || prop === "metaKey") return true;
+                const val = (target as any)[prop];
+                return typeof val === "function" ? val.bind(target) : val;
+            }
+        });
+
+        plugin.app.workspace.trigger("hover-link", {
+            event: proxiedEvent,
+            source: "fluent-tasks",
+            hoverParent: e.currentTarget as HTMLElement,
+            targetEl: e.currentTarget as HTMLElement,
+            linktext: cleanLink,
+            sourcePath: categoryFilepath || "",
+        });
+    }
+
+    async function handleLinkNoteClick(e: MouseEvent | KeyboardEvent) {
+        e.stopPropagation();
+        if (!task || !categoryFilepath || !plugin?.app) return;
+
+        if (hasLinkedNote && task.note_link) {
+            // Already has note link: reveal existing note
+            const file = LinkedNoteService.resolveLinkedNoteFile(plugin.app, task.note_link, categoryFilepath);
+            if (file) {
+                const leaves = plugin.app.workspace.getLeavesOfType("markdown");
+                const existingLeaf = leaves.find((l: any) => l.view?.file?.path === file?.path);
+                if (existingLeaf) {
+                    plugin.app.workspace.setActiveLeaf(existingLeaf, { focus: true });
+                } else {
+                    const leaf = plugin.app.workspace.getLeaf("tab");
+                    await leaf.openFile(file);
+                    plugin.app.workspace.setActiveLeaf(leaf, { focus: true });
+                }
+            } else {
+                // Re-create note if file was removed
+                const res = await LinkedNoteService.createOrGetLinkedNote(plugin.app, task, categoryFilepath);
+                task.note_link = res.noteLink;
+                task = task;
+                await immediateSave();
+                const leaf = plugin.app.workspace.getLeaf("tab");
+                await leaf.openFile(res.file);
+                plugin.app.workspace.setActiveLeaf(leaf, { focus: true });
+                new Notice(`已重新创建并打开链接笔记: ${res.file.basename}`);
+            }
+        } else {
+            // Create brand new linked note and jump to it
+            const res = await LinkedNoteService.createOrGetLinkedNote(plugin.app, task, categoryFilepath);
+            task.note_link = res.noteLink;
+            task = task;
+            await immediateSave();
+            const leaf = plugin.app.workspace.getLeaf("tab");
+            await leaf.openFile(res.file);
+            plugin.app.workspace.setActiveLeaf(leaf, { focus: true });
+            new Notice(`已创建并打开链接笔记: ${res.file.basename}`);
+        }
+    }
+
+    function handleLinkNoteContextMenu(e: MouseEvent) {
+        if (!hasLinkedNote || !plugin?.app || !task) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const menu = new Menu();
+        menu.addItem((item: any) => {
+            item.setTitle("打开链接笔记")
+                .setIcon("file-text")
+                .onClick(() => {
+                    void handleLinkNoteClick(e);
+                });
+        });
+        menu.addItem((item: any) => {
+            item.setTitle("取消关联笔记")
+                .setIcon("unlink")
+                .onClick(async () => {
+                    if (!task) return;
+                    delete task.note_link;
+                    task = task;
+                    await immediateSave();
+                    new Notice("已取消笔记关联");
+                });
+        });
+        menu.showAtMouseEvent(e);
     }
 
     // =============================================
@@ -359,16 +472,19 @@
     }
 
     async function deleteTask() {
-        if (!task || !categoryFilepath) return;
+        if (!task || !categoryFilepath || !plugin?.app) return;
         const toDelete = task;
         const path = categoryFilepath;
-        task = null;
-        categoryFilepath = "";
-        await dataService.deleteTask(path, toDelete);
-        EventBus.emit(EventName.TASK_DELETED, {
-            task: toDelete,
-            categoryFilepath: path,
-        });
+        await promptDeleteTaskWithLinkedNote(
+            plugin.app,
+            toDelete,
+            path,
+            dataService,
+            () => {
+                task = null;
+                categoryFilepath = "";
+            }
+        );
     }
 
     let showAddMetaModal: boolean = false;
@@ -492,15 +608,32 @@
                     placeholder="Task title"
                 />
 
-                <!-- Star -->
-                <span class="star" class:active={task.starred}
-                      on:click={toggleStar} role="button" tabindex="0"
-                      on:keydown={(e) => e.key === "Enter" && toggleStar()}>
-                    <svg width="20" height="20" viewBox="0 0 24 24"
-                         fill={task.starred ? "currentColor" : "none"}
-                         stroke="currentColor" stroke-width="2">
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                    </svg>
+                <!-- Link Note Button (replaces detail panel star, star is maintained in center list) -->
+                <!-- svelte-ignore a11y-click-events-have-key-events -->
+                <span class="detail-link-note-btn" class:active={hasLinkedNote}
+                      on:click={handleLinkNoteClick}
+                      on:mouseenter={handleLinkNoteHover}
+                      on:contextmenu={handleLinkNoteContextMenu}
+                      role="button" tabindex="0"
+                      title={linkNoteTooltip}
+                      on:keydown={(e) => e.key === "Enter" && handleLinkNoteClick(e)}>
+                    {#if hasLinkedNote}
+                        <!-- Hard-bound linked note active icon -->
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                        </svg>
+                    {:else}
+                        <!-- Create & link note icon -->
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="12" y1="18" x2="12" y2="12"/>
+                            <line x1="9" y1="15" x2="15" y2="15"/>
+                        </svg>
+                    {/if}
                 </span>
             </div>
 
