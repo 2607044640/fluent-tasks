@@ -1,10 +1,12 @@
 {
   "accentColor": "#006eff",
+  "openDetailInModal": false,
   "autoExpandSidebar": true,
   "autoCollapseSidebarOnSwitch": true,
   "searchHideCompleted": false,
   "hideRibbonIcon": true,
   "wrapTaskTitles": true,
   "quickModalAction": "direct",
-  "quickModalTipCount": 0
+  "quickModalTipCount": 0,
+  "quickListGridLayout": true
 }
