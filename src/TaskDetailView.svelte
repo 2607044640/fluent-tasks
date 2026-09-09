@@ -24,6 +24,13 @@
     let newStepText: string = "";
     let showScheduleSection: boolean = false;
     let showRepeatPicker: boolean = false;
+    let detailBodyEl: HTMLElement | null = null;
+
+    function handleContainerWheel(e: WheelEvent) {
+        if (detailBodyEl && e.target && !detailBodyEl.contains(e.target as Node)) {
+            detailBodyEl.scrollTop += e.deltaY;
+        }
+    }
 
     function toggleScheduleSection() {
         showScheduleSection = !showScheduleSection;
@@ -562,10 +569,12 @@
     }
 </script>
 
-<div class="detail-container">
+<div class="detail-container" on:wheel={handleContainerWheel}>
     {#if task}
-        <!-- Header: Checkbox + Title + Star -->
-        <div class="detail-header">
+        <!-- Scrollable Content Body -->
+        <div class="detail-body" bind:this={detailBodyEl}>
+            <!-- Header: Checkbox + Title + Star -->
+            <div class="detail-header">
             <div class="title-row">
                 <!-- Completion circle -->
                 <span class="checkbox" on:click={toggleComplete}
@@ -752,6 +761,7 @@
                 {/if}
             </div>
         {/if}
+        </div>
 
         <!-- Due Date & Repeat Section (Collapsible Drawer) -->
         {#if showScheduleSection}

@@ -1,6 +1,10 @@
 {
   "accentColor": "#006eff",
   "autoExpandSidebar": true,
-  "searchHideCompleted": true,
-  "hideRibbonIcon": true
+  "autoCollapseSidebarOnSwitch": true,
+  "searchHideCompleted": false,
+  "hideRibbonIcon": true,
+  "wrapTaskTitles": true,
+  "quickModalAction": "direct",
+  "quickModalTipCount": 0
 }

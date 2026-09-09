@@ -560,6 +560,8 @@
 
 .completed-list {
     margin-top: 4px;
+    max-height: 40vh;
+    overflow-y: auto;
 }
 
 /* =============================================
@@ -570,9 +572,40 @@
     flex-direction: column;
     height: 100%;
     background-color: var(--todo-panel-bg);
-    padding: 20px;
+    padding: 20px 20px 14px 20px;
     font-family: var(--todo-font);
     color: var(--todo-text-main);
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.detail-body {
+    flex: 1 1 0%;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-right: 4px;
+    scroll-behavior: auto !important;
+}
+
+.detail-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.detail-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.detail-body::-webkit-scrollbar-thumb {
+    background: var(--todo-border, var(--background-modifier-border, rgba(255, 255, 255, 0.15)));
+    border-radius: 3px;
+}
+
+.detail-body::-webkit-scrollbar-thumb:hover {
+    background: var(--todo-text-muted, rgba(255, 255, 255, 0.3));
 }
 
 .detail-empty {
@@ -589,7 +622,8 @@
     background-color: var(--todo-item-bg);
     border-radius: var(--todo-radius);
     padding: 15px;
-    margin-bottom: 10px;
+    margin-bottom: 0;
+    flex-shrink: 0;
 }
 
 .title-row {
@@ -766,10 +800,12 @@
 .note-section {
     background-color: var(--todo-item-bg);
     border-radius: var(--todo-radius);
-    margin-top: 10px;
+    margin-top: 0;
     flex-grow: 1;
+    min-height: 120px;
     display: flex;
     flex-direction: column;
+    flex-shrink: 0;
 }
 
 .note-textarea {
@@ -797,7 +833,8 @@
     align-items: center;
     padding-top: 12px;
     border-top: 1px solid var(--todo-border);
-    margin-top: 10px;
+    margin-top: 8px;
+    flex-shrink: 0;
 }
 
 .created-info {
@@ -1022,10 +1059,15 @@ body.is-dragging-ghost #dnd-action-dragged-el {
    ============================================= */
 .detail-schedule-section {
     padding: 10px 16px;
+    border-top: 1px solid var(--todo-border);
     border-bottom: 1px solid var(--todo-border);
     display: flex;
     flex-direction: column;
     gap: 6px;
+    flex-shrink: 0;
+    max-height: 280px;
+    overflow-y: auto;
+    margin-top: 6px;
 }
 
 .schedule-row {
@@ -1715,8 +1757,9 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    margin-top: 10px;
+    margin-top: 0;
     padding: 2px 0;
+    flex-shrink: 0;
 }
 
 .meta-chip {
