@@ -27288,11 +27288,9 @@ var FluentTasksPlugin = class extends import_obsidian17.Plugin {
         name: `Z-Jump to list: ${cat.name}`,
         callback: () => {
           void (async () => {
+            this.collapseSidebars(1500);
             await this.activateView(VIEW_TYPE_MAIN, "center");
             EventBus.emit("category:selected" /* CATEGORY_SELECTED */, { category: cat, focusInput: true });
-            if (this.settings.autoExpandSidebar) {
-              this.expandSidebarToList();
-            }
           })();
         }
       });
