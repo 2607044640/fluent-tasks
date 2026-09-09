@@ -2314,6 +2314,28 @@ body .task-quick-modal .modal-content {
     background-color: var(--background-modifier-hover);
 }
 
+.quick-modal-layout-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--background-modifier-border);
+    background: var(--background-secondary);
+    color: var(--text-muted);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+    margin-left: 6px;
+}
+
+.quick-modal-layout-toggle-btn:hover {
+    background: var(--background-modifier-hover);
+    color: var(--text-normal);
+    border-color: var(--todo-accent, #8b5cf6);
+}
+
 .quick-modal-dual-pane {
     display: flex;
     flex: 1;
@@ -2769,6 +2791,111 @@ body .quick-modal-task-item.is-focused {
     background: var(--background-modifier-hover);
     color: var(--text-normal);
     border-color: var(--todo-accent, #8b5cf6);
+}
+
+.quick-modal-footer-add-wrap {
+    flex: 1;
+    display: flex;
+}
+
+/* =============================================
+   Quick List Grid Board Layout (图表平铺看板)
+   ============================================= */
+.quick-list-grid-board {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    padding: 18px 24px;
+    align-content: start;
+}
+
+.quick-grid-card {
+    background: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    min-width: 0;
+}
+
+.quick-grid-card:hover {
+    border-color: var(--background-modifier-border-hover, #444);
+}
+
+.quick-grid-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--background-modifier-border);
+    cursor: pointer;
+    user-select: none;
+}
+
+.quick-grid-card-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow: hidden;
+    flex: 1;
+}
+
+.quick-grid-card-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-normal);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+}
+
+.quick-grid-card-count {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: var(--background-primary);
+    padding: 2px 7px;
+    border-radius: 12px;
+    border: 1px solid var(--background-modifier-border);
+    flex-shrink: 0;
+    margin-left: 8px;
+}
+
+.quick-grid-card-items {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.quick-modal-list-item.is-grid-item {
+    padding: 7px 10px;
+    border-radius: 6px;
+    background: transparent;
+    transition: background-color 0.15s ease, transform 0.08s ease;
+}
+
+.quick-modal-list-item.is-grid-item:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+body .quick-modal-list-item.is-grid-item.is-focused {
+    background-color: var(--todo-accent-light, rgba(139, 92, 246, 0.18)) !important;
+    outline: 2px solid var(--todo-accent, #8b5cf6) !important;
+    outline-offset: -1px;
+}
+
+.quick-grid-card.is-root-card .quick-grid-card-icon {
+    font-size: 13px;
+    line-height: 1;
 }
 
 /* =============================================
