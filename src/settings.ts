@@ -11,6 +11,7 @@ export interface FluentTasksSettings {
     wrapTaskTitles: boolean;
     quickModalAction: 'direct' | 'navigate';
     quickModalTipCount: number;
+    quickListGridLayout: boolean;
 }
 
 export const DEFAULT_SETTINGS: FluentTasksSettings = {
@@ -23,6 +24,7 @@ export const DEFAULT_SETTINGS: FluentTasksSettings = {
     wrapTaskTitles: true,
     quickModalAction: 'direct',
     quickModalTipCount: 0,
+    quickListGridLayout: true,
 }
 
 export class FluentTasksSettingTab extends PluginSettingTab {
@@ -98,6 +100,16 @@ export class FluentTasksSettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.quickModalAction ?? "direct")
                 .onChange(async (value: string) => {
                     this.plugin.settings.quickModalAction = value as "direct" | "navigate";
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName("Quick List Modal: Grid Board Layout")
+            .setDesc("Tile lists and groups across multi-column cards like a dashboard chart to fully display lists in the available screen space without scrolling. Turn off to revert to the classic single-column list.")
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.quickListGridLayout ?? true)
+                .onChange(async (value) => {
+                    this.plugin.settings.quickListGridLayout = value;
                     await this.plugin.saveSettings();
                 }));
 
