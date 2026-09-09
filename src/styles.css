@@ -317,7 +317,7 @@
     flex-direction: column;
     height: 100%;
     background-color: var(--todo-bg-dark);
-    padding: 24px 40px;
+    padding: 24px 40px 10px 40px;
     font-family: var(--todo-font);
     color: var(--todo-text-main);
 }
@@ -398,9 +398,11 @@
 
 /* Task List */
 .task-list {
-    flex-grow: 1;
+    flex: 1 1 0%;
+    min-height: 0;
     overflow-y: auto;
     scroll-behavior: auto !important;
+    padding-bottom: 24px;
 }
 
 .task-item {
@@ -513,6 +515,13 @@
 /* Completed Section */
 .completed-section {
     margin-top: 20px;
+    flex-shrink: 0;
+}
+
+.completed-section.is-collapsed {
+    margin-top: auto;
+    margin-bottom: 0;
+    padding-bottom: 2px;
 }
 
 .completed-header {
@@ -524,6 +533,10 @@
     font-size: 14px;
     color: var(--todo-text-main);
     user-select: none;
+}
+
+.completed-section.is-collapsed .completed-header {
+    padding: 6px 0 2px 0;
 }
 
 .completed-header:hover {
@@ -899,6 +912,9 @@
 /* =============================================
    Obsidian Overrides
    ============================================= */
+.workspace-leaf-content[data-type="fluent-tasks-sidebar"] .view-content,
+.workspace-leaf-content[data-type="fluent-tasks-main"] .view-content,
+.workspace-leaf-content[data-type="fluent-tasks-detail"] .view-content,
 .workspace-leaf-content[data-type="ms-todo-sidebar"] .view-content,
 .workspace-leaf-content[data-type="ms-todo-main"] .view-content,
 .workspace-leaf-content[data-type="ms-todo-detail"] .view-content {

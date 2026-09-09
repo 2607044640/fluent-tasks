@@ -9179,6 +9179,8 @@ function create_if_block_20(ctx) {
       attr(div0, "role", "button");
       attr(div0, "tabindex", "0");
       attr(div1, "class", "completed-section");
+      toggle_class(div1, "is-collapsed", !/*showCompleted*/
+      ctx[7]);
     },
     m(target, anchor) {
       insert(target, div1, anchor);
@@ -9238,6 +9240,11 @@ function create_if_block_20(ctx) {
       } else if (if_block) {
         if_block.d(1);
         if_block = null;
+      }
+      if (dirty[0] & /*showCompleted*/
+      128) {
+        toggle_class(div1, "is-collapsed", !/*showCompleted*/
+        ctx2[7]);
       }
     },
     d(detaching) {

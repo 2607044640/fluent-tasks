@@ -913,7 +913,7 @@
 
         <!-- Completed Section -->
         {#if completedTasks.length > 0}
-            <div class="completed-section">
+            <div class="completed-section" class:is-collapsed={!showCompleted}>
                 <div class="completed-header" on:click={toggleCompletedSection}
                      role="button" tabindex="0"
                      on:keydown={(e) => e.key === "Enter" && toggleCompletedSection()}>
