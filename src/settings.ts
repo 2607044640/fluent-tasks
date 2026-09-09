@@ -3,6 +3,7 @@ import type FluentTasksPlugin from "./main";
 
 export interface FluentTasksSettings {
     accentColor: string;
+    openDetailInModal: boolean;
     autoExpandSidebar: boolean;
     autoCollapseSidebarOnSwitch: boolean;
     searchHideCompleted: boolean;
@@ -14,6 +15,7 @@ export interface FluentTasksSettings {
 
 export const DEFAULT_SETTINGS: FluentTasksSettings = {
     accentColor: "#8b5cf6",
+    openDetailInModal: false,
     autoExpandSidebar: true,
     autoCollapseSidebarOnSwitch: true,
     searchHideCompleted: true,
@@ -59,6 +61,19 @@ export class FluentTasksSettingTab extends PluginSettingTab {
         }
 
 
+
+        new Setting(containerEl)
+            .setName("Open Task Details in Floating Modal")
+            .setDesc("Open task details in a centered floating modal instead of expanding the right sidebar panel.")
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.openDetailInModal ?? false)
+                .onChange(async (value) => {
+                    this.plugin.settings.openDetailInModal = value;
+                    await this.plugin.saveSettings();
+                    if (value) {
+                        this.plugin.handleDetailModalModeEnabled();
+                    }
+                }));
 
         new Setting(containerEl)
             .setName("Wrap Task Titles")

@@ -15,6 +15,8 @@
     // =============================================
     export let dataService: DataService;
     export let plugin: any = undefined;
+    export let isModal: boolean = false;
+    export let onCloseModal: (() => void) | undefined = undefined;
 
     // =============================================
     // State
@@ -198,16 +200,27 @@
     // =============================================
     // Lifecycle
     // =============================================
+    function handleMetaModalKeydown(e: KeyboardEvent) {
+        if (showAddMetaModal && e.key === "Escape") {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            closeAddMetaModal();
+        }
+    }
+
     onMount(() => {
         EventBus.on(EventName.TASK_SELECTED, handleTaskSelected);
         EventBus.on(EventName.TASK_DELETED, handleTaskDeleted);
         EventBus.on(EventName.TASK_UPDATED, handleExternalTaskUpdate);
+        window.addEventListener("keydown", handleMetaModalKeydown, true);
     });
 
     onDestroy(() => {
         EventBus.off(EventName.TASK_SELECTED, handleTaskSelected);
         EventBus.off(EventName.TASK_DELETED, handleTaskDeleted);
         EventBus.off(EventName.TASK_UPDATED, handleExternalTaskUpdate);
+        window.removeEventListener("keydown", handleMetaModalKeydown, true);
         if (saveTimeout) clearTimeout(saveTimeout);
     });
 
@@ -231,6 +244,9 @@
         categoryFilepath = "";
         showScheduleSection = false;
         showRepeatPicker = false;
+        if (isModal && onCloseModal) {
+            onCloseModal();
+        }
     }
 
     function handleTaskDeleted(payload: any) {
@@ -464,6 +480,9 @@
         task = null;
         categoryFilepath = "";
         EventBus.emit(EventName.DETAIL_CLOSE, {});
+        if (isModal && onCloseModal) {
+            onCloseModal();
+        }
     }
 
     async function deleteTask() {
@@ -632,6 +651,22 @@
                         </svg>
                     {/if}
                 </span>
+
+                {#if isModal}
+                    <!-- Close button in modal mode -->
+                    <!-- svelte-ignore a11y-click-events-have-key-events -->
+                    <span class="detail-modal-close-btn"
+                          on:click={() => onCloseModal ? onCloseModal() : closePanel()}
+                          role="button" tabindex="0"
+                          title="Close details (Esc)"
+                          on:keydown={(e) => e.key === "Enter" && (onCloseModal ? onCloseModal() : closePanel())}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </span>
+                {/if}
             </div>
 
             <!-- Steps -->
@@ -944,8 +979,8 @@
             <!-- svelte-ignore a11y-click-events-have-key-events -->
             <!-- svelte-ignore a11y-no-static-element-interactions -->
             <div use:portal
-                 class="meta-modal-backdrop" on:click={(e) => e.target === e.currentTarget && closeAddMetaModal()} role="presentation">
-                <div class="meta-modal-dialog" role="dialog" aria-modal="true" tabindex="-1">
+                 class="meta-modal-backdrop" on:click|stopPropagation={(e) => e.target === e.currentTarget && closeAddMetaModal()} role="presentation">
+                <div class="meta-modal-dialog" role="dialog" aria-modal="true" tabindex="-1" on:click|stopPropagation>
                     <div class="meta-modal-header">
                         <div class="meta-modal-title">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--todo-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1038,7 +1073,23 @@
         {/if}
     {:else}
         <div class="detail-empty">
-            Click a task to view details.
+            {#if isModal}
+                <!-- svelte-ignore a11y-click-events-have-key-events -->
+                <div class="detail-empty-modal-header">
+                    <span class="detail-modal-close-btn"
+                          on:click={() => onCloseModal ? onCloseModal() : closePanel()}
+                          role="button" tabindex="0"
+                          title="Close (Esc)"
+                          on:keydown={(e) => e.key === "Enter" && (onCloseModal ? onCloseModal() : closePanel())}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </span>
+                </div>
+            {/if}
+            <span>Click a task to view details.</span>
         </div>
     {/if}
 </div>

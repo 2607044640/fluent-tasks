@@ -24,6 +24,7 @@ import { FluentTasksSettings, DEFAULT_SETTINGS, FluentTasksSettingTab } from "./
 import { TaskSearchModal } from "./TaskSearchModal";
 import { QuickTaskModal } from "./modals/QuickTaskModal";
 import { QuickListModal } from "./modals/QuickListModal";
+import { TaskDetailModal } from "./modals/TaskDetailModal";
 import { getTodayLocalDateString } from "./utils/timeUtils";
 import { LinkedNoteService } from "./services/LinkedNoteService";
 import "./styles.css";
@@ -255,6 +256,43 @@ export default class FluentTasksPlugin extends Plugin {
     private dataService!: DataService;
     private ribbonIconEl: HTMLElement | null = null;
     settings: FluentTasksSettings = Object.assign({}, DEFAULT_SETTINGS);
+    public activeDetailModal: TaskDetailModal | null = null;
+    public lastSelectedTask?: TaskItem;
+    public lastSelectedCategoryFilepath?: string;
+
+    openTaskDetailModal(task?: TaskItem, categoryFilepath?: string): void {
+        if (task && categoryFilepath) {
+            this.lastSelectedTask = task;
+            this.lastSelectedCategoryFilepath = categoryFilepath;
+        }
+
+        if (this.activeDetailModal) {
+            if (task && categoryFilepath) {
+                this.activeDetailModal.loadTask(task, categoryFilepath);
+            }
+            return;
+        }
+
+        const targetTask = task || this.lastSelectedTask;
+        const targetPath = categoryFilepath || this.lastSelectedCategoryFilepath;
+
+        this.activeDetailModal = new TaskDetailModal(
+            this.app,
+            this,
+            this.dataService,
+            targetTask,
+            targetPath
+        );
+        this.activeDetailModal.open();
+    }
+
+    handleDetailModalModeEnabled(): void {
+        this.app.workspace.detachLeavesOfType(VIEW_TYPE_DETAIL);
+        const rightSplit = this.app.workspace.rightSplit as { collapsed?: boolean; collapse: () => void } | null;
+        if (rightSplit && !rightSplit.collapsed && this.isPluginRightSidebarActive()) {
+            rightSplit.collapse();
+        }
+    }
 
     async onload(): Promise<void> {
         // Synchronous initialization before any async awaits
@@ -296,7 +334,13 @@ export default class FluentTasksPlugin extends Plugin {
         this.addCommand({
             id: "open-detail-view",
             name: "Open detail view",
-            callback: () => { void this.activateView(VIEW_TYPE_DETAIL, "right"); },
+            callback: () => {
+                if (this.settings.openDetailInModal) {
+                    this.openTaskDetailModal();
+                } else {
+                    void this.activateView(VIEW_TYPE_DETAIL, "right");
+                }
+            },
         });
 
         this.addCommand({
@@ -450,6 +494,13 @@ export default class FluentTasksPlugin extends Plugin {
                 const category = p?.category;
                 if (category) {
                     void (async () => {
+                        if (this.settings.openDetailInModal) {
+                            const rightSplit = this.app.workspace.rightSplit as { collapsed?: boolean; collapse: () => void } | null;
+                            if (rightSplit && !rightSplit.collapsed && this.isPluginRightSidebarActive()) {
+                                rightSplit.collapse();
+                            }
+                        }
+
                         const mainLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MAIN);
                         let mainLeaf: WorkspaceLeaf | null = mainLeaves[0] ?? null;
 
@@ -489,7 +540,19 @@ export default class FluentTasksPlugin extends Plugin {
             EventBus.on(EventName.TASK_SELECTED, (payload: unknown) => {
                 const p = payload as { task: TaskItem; categoryFilepath: string } | null;
                 if (!p) return;
+                this.lastSelectedTask = p.task;
+                this.lastSelectedCategoryFilepath = p.categoryFilepath;
+
                 void (async () => {
+                    if (this.settings.openDetailInModal) {
+                        const rightSplit = this.app.workspace.rightSplit as { collapsed?: boolean; collapse: () => void } | null;
+                        if (rightSplit && !rightSplit.collapsed && this.isPluginRightSidebarActive()) {
+                            rightSplit.collapse();
+                        }
+                        this.openTaskDetailModal(p.task, p.categoryFilepath);
+                        return;
+                    }
+
                     const leaf = await this.activateView(VIEW_TYPE_DETAIL, "right");
                     if (leaf && leaf.view instanceof TaskDetailViewWrapper) {
                         const comp = leaf.view.getComponent();
@@ -501,6 +564,10 @@ export default class FluentTasksPlugin extends Plugin {
             });
 
             // Automatically open views on startup if not already open
+            if (this.settings.openDetailInModal) {
+                this.handleDetailModalModeEnabled();
+            }
+
             if (this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR).length === 0) {
                 await this.activateAllViews();
             }
@@ -815,7 +882,9 @@ export default class FluentTasksPlugin extends Plugin {
     async activateAllViews(): Promise<void> {
         await this.activateView(VIEW_TYPE_SIDEBAR, "left");
         await this.activateView(VIEW_TYPE_MAIN, "center");
-        await this.activateView(VIEW_TYPE_DETAIL, "right");
+        if (!this.settings.openDetailInModal) {
+            await this.activateView(VIEW_TYPE_DETAIL, "right");
+        }
     }
 
     /**
@@ -826,6 +895,10 @@ export default class FluentTasksPlugin extends Plugin {
         viewType: string,
         position: "left" | "center" | "right"
     ): Promise<WorkspaceLeaf | null> {
+        if (viewType === VIEW_TYPE_DETAIL && this.settings.openDetailInModal) {
+            return null;
+        }
+
         const { workspace } = this.app;
 
         // Check if the view already exists
