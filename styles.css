@@ -2492,6 +2492,7 @@ body .task-steps-floating-modal .modal-close-button {
 body .task-steps-floating-modal .modal-content.task-steps-modal-content {
   height: 100% !important;
   max-height: 85vh !important;
+  min-height: 0 !important;
   padding: 0 !important;
   margin: 0 !important;
   display: flex;
@@ -2503,6 +2504,7 @@ body .task-steps-floating-modal .modal-content.task-steps-modal-content {
   flex-direction: column;
   height: 100%;
   max-height: 85vh;
+  min-height: 0;
   overflow: hidden;
 }
 .task-steps-modal-header {
@@ -2590,7 +2592,9 @@ body .task-steps-floating-modal .modal-content.task-steps-modal-content {
 }
 .task-steps-modal-body {
   flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
+  scrollbar-width: thin;
   padding: 20px 24px 24px 24px;
   box-sizing: border-box;
   display: flex;

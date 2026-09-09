@@ -12,7 +12,7 @@
     export let task: TaskItem;
     export let categoryFilepath: string;
     export let dataService: DataService;
-    export const plugin: any = null;
+    export let plugin: any = null;
     export let closeModal: () => void = () => {};
 
     // =============================================
@@ -21,6 +21,7 @@
     let steps: { text: string; done: boolean }[] = task.steps ? task.steps.map(s => ({ ...s })) : [];
     let newStepText: string = "";
     let addInputEl: HTMLTextAreaElement;
+    let modalBodyEl: HTMLElement;
     let saveTimeout: any = null;
     const SAVE_DEBOUNCE_MS = 400;
 
@@ -90,9 +91,11 @@
         await persistTask();
         await tick();
         addInputEl?.focus();
+        modalBodyEl?.scrollTo({ top: modalBodyEl.scrollHeight, behavior: 'smooth' });
     }
 
     function handleStepKeydown(e: KeyboardEvent, index: number) {
+        if (e.isComposing || e.keyCode === 229) return;
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
             (e.currentTarget as HTMLElement).blur();
@@ -100,6 +103,7 @@
     }
 
     function handleAddInputKeydown(e: KeyboardEvent) {
+        if (e.isComposing || e.keyCode === 229) return;
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
             void addStep();
@@ -184,7 +188,7 @@
     {/if}
 
     <!-- Modal Scrollable Body -->
-    <div class="task-steps-modal-body">
+    <div class="task-steps-modal-body" bind:this={modalBodyEl}>
         {#if steps.length === 0}
             <div class="task-steps-empty-state">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--todo-text-muted)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">

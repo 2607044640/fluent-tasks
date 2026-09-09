@@ -800,6 +800,7 @@
                                 <!-- svelte-ignore a11y-no-static-element-interactions -->
                                 <span class="task-meta steps-badge"
                                       on:click|stopPropagation={() => openStepsModal(task)}
+                                      on:keydown|stopPropagation={(e) => (e.key === "Enter" || e.key === " ") && openStepsModal(task)}
                                       on:mouseenter={(e) => showPopover(e, task, 'steps')}
                                       on:mouseleave={scheduleHidePopover}
                                       role="button"
@@ -981,6 +982,7 @@
                                                 <!-- svelte-ignore a11y-no-static-element-interactions -->
                                                 <span class="task-meta steps-badge"
                                                       on:click|stopPropagation={() => openStepsModal(task)}
+                                                      on:keydown|stopPropagation={(e) => (e.key === "Enter" || e.key === " ") && openStepsModal(task)}
                                                       on:mouseenter={(e) => showPopover(e, task, 'steps')}
                                                       on:mouseleave={scheduleHidePopover}
                                                       role="button"
@@ -1305,6 +1307,10 @@
                             <span class="guide-desc">Preview Why (?), SVG (🖼️), Note (📄), Custom (🏷️)</span>
                         </div>
                         <div class="meta-guide-item">
+                            <span class="guide-key">Click Steps Badge</span>
+                            <span class="guide-desc">Open large scrollable subtasks editor (edit, add, check & IME shield)</span>
+                        </div>
+                        <div class="meta-guide-item">
                             <span class="guide-key">Dedicated Link Note</span>
                             <span class="guide-desc">Header button creates note, syncs titles bidirectionally & prompts on delete</span>
                         </div>
@@ -1400,6 +1406,10 @@
                             <div class="guide-card">
                                 <div class="guide-card-header"><span class="guide-badge-pill">Direct Hover</span> Meta Badges</div>
                                 <div class="guide-card-body">Hovering over <span class="why-badge">?</span>, <span class="note-badge">📄</span>, <span class="svg-badge">🖼️</span>, or <span class="custom-badge">🏷️</span> instantly previews rationale, notes, SVGs, or custom properties with zero modifier keys.</div>
+                            </div>
+                            <div class="guide-card">
+                                <div class="guide-card-header"><span class="guide-badge-pill">Click Steps</span> Big Subtasks Floating Editor</div>
+                                <div class="guide-card-body">Click any subtask badge (or the hover preview card) to open the spacious floating editor with large typography. Easily check off, edit multiline text, delete, or add steps with instant auto-save without opening the right task detail panel.</div>
                             </div>
                             <div class="guide-card">
                                 <div class="guide-card-header"><span class="guide-badge-pill">Right Click</span> Instant Dismiss & Context Actions</div>
