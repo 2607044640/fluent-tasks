@@ -186,9 +186,11 @@ export class LinkedNoteService {
         const baseTitle = this.sanitizeNoteTitle(task.title);
         const finalPath = this.getAvailableNotePath(app, targetFolder, baseTitle);
 
-        // 4. Initial note content with frontmatter metadata & heading
+        // 4. Initial note content with frontmatter metadata
         const noteBody = task.note ? task.note.trim() : "";
-        const content = `---\ntaskId: "${task.id}"\n---\n\n# ${task.title}\n\n${noteBody}\n`.trim() + "\n";
+        const content = noteBody
+            ? `---\ntaskId: "${task.id}"\n---\n\n${noteBody}\n`
+            : `---\ntaskId: "${task.id}"\n---\n\n`;
 
         // 5. Create note file in vault
         const file = await app.vault.create(finalPath, content);
@@ -201,7 +203,7 @@ export class LinkedNoteService {
 
     /**
      * Synchronize Task Title -> Note Title
-     * When task title is modified in Fluent Tasks, renames note file and heading
+     * When task title is modified in Fluent Tasks, renames note file
      */
     static async syncTaskTitleToNote(
         app: App,
@@ -235,19 +237,6 @@ export class LinkedNoteService {
 
         try {
             await app.fileManager.renameFile(file, newPath);
-
-            // Update first markdown header if present
-            try {
-                if (dataService) dataService.markInternalWrite(newPath, 2000);
-                await app.vault.process(file, (content: string) => {
-                    if (/^#\s+[^\r\n]+/m.test(content)) {
-                        return content.replace(/^#\s+[^\r\n]+/m, `# ${task.title}`);
-                    }
-                    return content;
-                });
-            } catch (e) {
-                // Non-critical header update
-            }
 
             const cleanPath = newPath.replace(/\.md$/, "");
             const newNoteLink = `[[${cleanPath}]]`;
@@ -336,19 +325,6 @@ export class LinkedNoteService {
                     });
                 }
             }
-        }
-
-        // Keep the top markdown heading in the note file in sync with the new note title
-        try {
-            dataService.markInternalWrite(newFile.path, 2000);
-            await app.vault.process(newFile, (content: string) => {
-                if (/^#\s+[^\r\n]+/m.test(content)) {
-                    return content.replace(/^#\s+[^\r\n]+/m, `# ${this.stripCollisionSuffix(newTitle) || newTitle}`);
-                }
-                return content;
-            });
-        } catch {
-            // Non-critical
         }
 
         return anyUpdated;

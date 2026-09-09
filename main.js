@@ -7398,14 +7398,16 @@ var LinkedNoteService = class {
     const baseTitle = this.sanitizeNoteTitle(task.title);
     const finalPath = this.getAvailableNotePath(app, targetFolder, baseTitle);
     const noteBody = task.note ? task.note.trim() : "";
-    const content = `---
+    const content = noteBody ? `---
 taskId: "${task.id}"
 ---
 
-# ${task.title}
-
 ${noteBody}
-`.trim() + "\n";
+` : `---
+taskId: "${task.id}"
+---
+
+`;
     const file = await app.vault.create(finalPath, content);
     const cleanPath = finalPath.replace(/\.md$/, "");
     const noteLink = `[[${cleanPath}]]`;
@@ -7414,7 +7416,7 @@ ${noteBody}
   }
   /**
    * Synchronize Task Title -> Note Title
-   * When task title is modified in Fluent Tasks, renames note file and heading
+   * When task title is modified in Fluent Tasks, renames note file
    */
   static async syncTaskTitleToNote(app, task, categoryFilepath, dataService) {
     if (!task.note_link)
@@ -7438,17 +7440,6 @@ ${noteBody}
     }
     try {
       await app.fileManager.renameFile(file, newPath);
-      try {
-        if (dataService)
-          dataService.markInternalWrite(newPath, 2e3);
-        await app.vault.process(file, (content) => {
-          if (/^#\s+[^\r\n]+/m.test(content)) {
-            return content.replace(/^#\s+[^\r\n]+/m, `# ${task.title}`);
-          }
-          return content;
-        });
-      } catch (e) {
-      }
       const cleanPath = newPath.replace(/\.md$/, "");
       const newNoteLink = `[[${cleanPath}]]`;
       return { newNoteLink, noteRenamed: true };
@@ -7517,16 +7508,6 @@ ${noteBody}
           });
         }
       }
-    }
-    try {
-      dataService.markInternalWrite(newFile.path, 2e3);
-      await app.vault.process(newFile, (content) => {
-        if (/^#\s+[^\r\n]+/m.test(content)) {
-          return content.replace(/^#\s+[^\r\n]+/m, `# ${this.stripCollisionSuffix(newTitle) || newTitle}`);
-        }
-        return content;
-      });
-    } catch (e) {
     }
     return anyUpdated;
   }
