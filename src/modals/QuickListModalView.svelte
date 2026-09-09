@@ -29,16 +29,23 @@
     let searchQuery: string = "";
     let focusedIndex: number = 0;
     let isGridLayout: boolean = plugin?.settings?.quickListGridLayout ?? true;
-    let isFullscreen: boolean = false;
     let isComposing: boolean = false;
 
-    function toggleFullscreen() {
-        isFullscreen = !isFullscreen;
-        if (modalEl) {
-            if (isFullscreen) {
-                modalEl.addClass("is-fullscreen");
-            } else {
-                modalEl.removeClass("is-fullscreen");
+    function handleBoardWheel(e: WheelEvent) {
+        if (e.deltaY !== 0 && !e.shiftKey) {
+            const target = e.target as HTMLElement | null;
+            const cardItems = target?.closest(".quick-grid-card-items") as HTMLElement | null;
+            if (cardItems && cardItems.scrollHeight > cardItems.clientHeight) {
+                const canScrollDown = e.deltaY > 0 && cardItems.scrollTop + cardItems.clientHeight < cardItems.scrollHeight - 1;
+                const canScrollUp = e.deltaY < 0 && cardItems.scrollTop > 1;
+                if (canScrollDown || canScrollUp) {
+                    return;
+                }
+            }
+            const board = e.currentTarget as HTMLElement;
+            if (board && board.scrollWidth > board.clientWidth) {
+                board.scrollLeft += e.deltaY;
+                e.preventDefault();
             }
         }
     }
@@ -672,23 +679,6 @@
         </button>
 
         <button 
-            class="quick-modal-header-btn"
-            title={isFullscreen ? "Restore floating window (88vw)" : "Maximize to full screen (100vw)"}
-            on:click={toggleFullscreen}
-        >
-            {#if isFullscreen}
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="5" y="9" width="10" height="10" rx="1"></rect>
-                    <polyline points="9 9 9 5 19 5 19 15 15 15"></polyline>
-                </svg>
-            {:else}
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
-                </svg>
-            {/if}
-        </button>
-
-        <button 
             class="quick-modal-header-btn quick-modal-close-btn"
             title="Close (Esc)"
             on:click={closeModal}
@@ -702,9 +692,9 @@
 
     {#if isGridLayout}
         <!-- =============================================
-             Grid Board / Dashboard Card Layout (图表平铺看板)
+             Grid Board / Dashboard Card Layout (图表平铺看板 - 横向滑动 + 纵向换列)
              ============================================= -->
-        <div class="quick-list-grid-board">
+        <div class="quick-list-grid-board" on:wheel={handleBoardWheel}>
             {#if filteredItems.length === 0}
                 <div class="quick-modal-empty">No matching lists or groups found.</div>
             {:else}

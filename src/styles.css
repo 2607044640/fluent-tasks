@@ -2815,8 +2815,9 @@ body .quick-modal-task-item.is-focused {
    Quick List Grid Board Layout (图表平铺看板 - 横向滑动 + 纵向自动换列)
    ============================================= */
 .quick-list-grid-board {
-    flex: 1;
+    flex: 1 1 0;
     min-height: 0;
+    height: 0;
     max-height: 100%;
     overflow-x: auto;
     overflow-y: hidden;
@@ -2824,8 +2825,8 @@ body .quick-modal-task-item.is-focused {
     flex-direction: column;
     flex-wrap: wrap;
     align-content: flex-start;
-    gap: 10px;
-    padding: 12px 14px;
+    gap: 8px 10px;
+    padding: 10px 14px;
     box-sizing: border-box;
 }
 
@@ -2849,16 +2850,16 @@ body .quick-modal-task-item.is-focused {
     background: var(--background-secondary);
     border: 1px solid var(--background-modifier-border);
     border-radius: 8px;
-    padding: 7px 10px;
+    padding: 6px 9px;
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 2px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
     width: fit-content;
-    min-width: 180px;
-    max-width: 290px;
-    max-height: calc(100% - 4px);
+    min-width: 160px;
+    max-width: 280px;
+    max-height: calc(100% - 2px);
     flex-shrink: 0;
     box-sizing: border-box;
 }
@@ -2871,8 +2872,8 @@ body .quick-modal-task-item.is-focused {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding-bottom: 5px;
-    margin-bottom: 3px;
+    padding-bottom: 4px;
+    margin-bottom: 2px;
     border-bottom: 1px solid var(--background-modifier-border);
     cursor: pointer;
     user-select: none;
@@ -2911,13 +2912,14 @@ body .quick-modal-task-item.is-focused {
 .quick-grid-card-items {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 1px;
     overflow-y: auto;
     min-height: 0;
+    flex: 1;
 }
 
 .quick-modal-list-item.is-grid-item {
-    padding: 4px 7px;
+    padding: 3px 6px;
     border-radius: 5px;
     background: transparent;
     font-size: 12px;

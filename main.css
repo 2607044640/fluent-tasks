@@ -1898,26 +1898,10 @@ body .task-quick-modal {
   overflow: hidden;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
 }
-body .modal-container:has(.task-quick-list-modal.is-fullscreen) {
+body .modal-container:has(.task-quick-list-modal) {
   padding: 0 !important;
 }
 body .task-quick-list-modal {
-  width: var(--task-quick-list-modal-width, 88vw) !important;
-  max-width: 1560px !important;
-  height: var(--task-quick-list-modal-height, 86vh) !important;
-  max-height: 90vh !important;
-  border-radius: 12px !important;
-  border: 1px solid var(--background-modifier-border) !important;
-  background-color: var(--background-primary) !important;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55) !important;
-  overflow: hidden !important;
-  margin: auto !important;
-  transition:
-    width 0.18s ease,
-    height 0.18s ease,
-    border-radius 0.18s ease;
-}
-body .task-quick-list-modal.is-fullscreen {
   position: fixed !important;
   top: 0 !important;
   left: 0 !important;
@@ -1932,6 +1916,7 @@ body .task-quick-list-modal.is-fullscreen {
   border-radius: 0 !important;
   border: none !important;
   box-shadow: none !important;
+  background-color: var(--background-primary) !important;
 }
 body .task-quick-list-modal .modal-close-button {
   display: none !important;
@@ -2458,26 +2443,50 @@ body .quick-modal-task-item.is-focused {
   display: flex;
 }
 .quick-list-grid-board {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
-  padding: 18px 24px;
-  align-content: start;
+  flex: 1 1 0;
+  min-height: 0;
+  height: 0;
+  max-height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 8px 10px;
+  padding: 10px 14px;
+  box-sizing: border-box;
+}
+.quick-list-grid-board::-webkit-scrollbar {
+  height: 8px;
+}
+.quick-list-grid-board::-webkit-scrollbar-track {
+  background: var(--background-secondary);
+  border-radius: 4px;
+}
+.quick-list-grid-board::-webkit-scrollbar-thumb {
+  background: var(--background-modifier-border-hover, #4a4a4a);
+  border-radius: 4px;
+}
+.quick-list-grid-board::-webkit-scrollbar-thumb:hover {
+  background: var(--todo-accent, #8b5cf6);
 }
 .quick-grid-card {
   background: var(--background-secondary);
   border: 1px solid var(--background-modifier-border);
-  border-radius: 10px;
-  padding: 12px 14px;
+  border-radius: 8px;
+  padding: 6px 9px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  gap: 2px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
-  min-width: 0;
+  width: fit-content;
+  min-width: 160px;
+  max-width: 280px;
+  max-height: calc(100% - 2px);
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 .quick-grid-card:hover {
   border-color: var(--background-modifier-border-hover, #444);
@@ -2486,8 +2495,8 @@ body .quick-modal-task-item.is-focused {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 8px;
-  margin-bottom: 4px;
+  padding-bottom: 4px;
+  margin-bottom: 2px;
   border-bottom: 1px solid var(--background-modifier-border);
   cursor: pointer;
   user-select: none;
@@ -2495,40 +2504,45 @@ body .quick-modal-task-item.is-focused {
 .quick-grid-card-title-wrap {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   overflow: hidden;
   flex: 1;
 }
 .quick-grid-card-title {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-normal);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
 }
 .quick-grid-card-count {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--text-muted);
   background: var(--background-primary);
-  padding: 2px 7px;
-  border-radius: 12px;
+  padding: 1px 6px;
+  border-radius: 10px;
   border: 1px solid var(--background-modifier-border);
   flex-shrink: 0;
-  margin-left: 8px;
+  margin-left: 6px;
 }
 .quick-grid-card-items {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 1px;
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1;
 }
 .quick-modal-list-item.is-grid-item {
-  padding: 7px 10px;
-  border-radius: 6px;
+  padding: 3px 6px;
+  border-radius: 5px;
   background: transparent;
-  transition: background-color 0.15s ease, transform 0.08s ease;
+  font-size: 12px;
+  gap: 6px;
+  transition: background-color 0.15s ease;
 }
 .quick-modal-list-item.is-grid-item:hover {
   background-color: var(--background-modifier-hover);
@@ -2538,8 +2552,16 @@ body .quick-modal-list-item.is-grid-item.is-focused {
   outline: 2px solid var(--todo-accent, #8b5cf6) !important;
   outline-offset: -1px;
 }
+.quick-modal-list-item.is-grid-item .quick-modal-list-icon {
+  font-size: 12px;
+}
+.quick-modal-list-item.is-grid-item .quick-modal-badge {
+  font-size: 9.5px;
+  padding: 0 5px;
+  margin-left: 8px;
+}
 .quick-grid-card.is-root-card .quick-grid-card-icon {
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1;
 }
 body .task-detail-floating-modal {
