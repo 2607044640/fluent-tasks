@@ -201,11 +201,21 @@
     // Lifecycle
     // =============================================
     function handleMetaModalKeydown(e: KeyboardEvent) {
-        if (showAddMetaModal && e.key === "Escape") {
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-            closeAddMetaModal();
+        if (e.key === "Escape") {
+            if (showAddMetaModal) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                closeAddMetaModal();
+                return;
+            }
+            if (showRepeatPicker) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                showRepeatPicker = false;
+                return;
+            }
         }
     }
 
@@ -221,7 +231,11 @@
         EventBus.off(EventName.TASK_DELETED, handleTaskDeleted);
         EventBus.off(EventName.TASK_UPDATED, handleExternalTaskUpdate);
         window.removeEventListener("keydown", handleMetaModalKeydown, true);
-        if (saveTimeout) clearTimeout(saveTimeout);
+        if (saveTimeout) {
+            clearTimeout(saveTimeout);
+            saveTimeout = null;
+            void immediateSave();
+        }
     });
 
     // Called from main.ts when the view is opened directly
@@ -230,6 +244,7 @@
         categoryFilepath = filepath;
         showScheduleSection = false;
         showRepeatPicker = false;
+        showAddMetaModal = false;
     }
 
     // =============================================
@@ -240,10 +255,16 @@
     }
 
     function handleClose() {
+        if (saveTimeout) {
+            clearTimeout(saveTimeout);
+            saveTimeout = null;
+            void immediateSave();
+        }
         task = null;
         categoryFilepath = "";
         showScheduleSection = false;
         showRepeatPicker = false;
+        showAddMetaModal = false;
         if (isModal && onCloseModal) {
             onCloseModal();
         }
@@ -477,8 +498,16 @@
     // Footer Actions
     // =============================================
     function closePanel() {
+        if (saveTimeout) {
+            clearTimeout(saveTimeout);
+            saveTimeout = null;
+            void immediateSave();
+        }
         task = null;
         categoryFilepath = "";
+        showScheduleSection = false;
+        showRepeatPicker = false;
+        showAddMetaModal = false;
         EventBus.emit(EventName.DETAIL_CLOSE, {});
         if (isModal && onCloseModal) {
             onCloseModal();
@@ -656,10 +685,10 @@
                     <!-- Close button in modal mode -->
                     <!-- svelte-ignore a11y-click-events-have-key-events -->
                     <span class="detail-modal-close-btn"
-                          on:click={() => onCloseModal ? onCloseModal() : closePanel()}
+                          on:click={closePanel}
                           role="button" tabindex="0"
                           title="Close details (Esc)"
-                          on:keydown={(e) => e.key === "Enter" && (onCloseModal ? onCloseModal() : closePanel())}>
+                          on:keydown={(e) => e.key === "Enter" && closePanel()}>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="18" y1="6" x2="6" y2="18"/>
@@ -1077,10 +1106,10 @@
                 <!-- svelte-ignore a11y-click-events-have-key-events -->
                 <div class="detail-empty-modal-header">
                     <span class="detail-modal-close-btn"
-                          on:click={() => onCloseModal ? onCloseModal() : closePanel()}
+                          on:click={closePanel}
                           role="button" tabindex="0"
                           title="Close (Esc)"
-                          on:keydown={(e) => e.key === "Enter" && (onCloseModal ? onCloseModal() : closePanel())}>
+                          on:keydown={(e) => e.key === "Enter" && closePanel()}>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="18" y1="6" x2="6" y2="18"/>

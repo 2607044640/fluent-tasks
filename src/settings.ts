@@ -72,6 +72,10 @@ export class FluentTasksSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                     if (value) {
                         this.plugin.handleDetailModalModeEnabled();
+                    } else {
+                        if (this.plugin.activeDetailModal) {
+                            this.plugin.activeDetailModal.close();
+                        }
                     }
                 }));
 

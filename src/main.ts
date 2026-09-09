@@ -287,9 +287,10 @@ export default class FluentTasksPlugin extends Plugin {
     }
 
     handleDetailModalModeEnabled(): void {
+        const wasRightActive = this.isPluginRightSidebarActive();
         this.app.workspace.detachLeavesOfType(VIEW_TYPE_DETAIL);
         const rightSplit = this.app.workspace.rightSplit as { collapsed?: boolean; collapse: () => void } | null;
-        if (rightSplit && !rightSplit.collapsed && this.isPluginRightSidebarActive()) {
+        if (rightSplit && !rightSplit.collapsed && wasRightActive) {
             rightSplit.collapse();
         }
     }
@@ -495,8 +496,12 @@ export default class FluentTasksPlugin extends Plugin {
                 if (category) {
                     void (async () => {
                         if (this.settings.openDetailInModal) {
+                            if (this.activeDetailModal) {
+                                this.activeDetailModal.close();
+                            }
+                            const wasRightActive = this.isPluginRightSidebarActive();
                             const rightSplit = this.app.workspace.rightSplit as { collapsed?: boolean; collapse: () => void } | null;
-                            if (rightSplit && !rightSplit.collapsed && this.isPluginRightSidebarActive()) {
+                            if (rightSplit && !rightSplit.collapsed && wasRightActive) {
                                 rightSplit.collapse();
                             }
                         }
@@ -545,8 +550,9 @@ export default class FluentTasksPlugin extends Plugin {
 
                 void (async () => {
                     if (this.settings.openDetailInModal) {
+                        const wasRightActive = this.isPluginRightSidebarActive();
                         const rightSplit = this.app.workspace.rightSplit as { collapsed?: boolean; collapse: () => void } | null;
-                        if (rightSplit && !rightSplit.collapsed && this.isPluginRightSidebarActive()) {
+                        if (rightSplit && !rightSplit.collapsed && wasRightActive) {
                             rightSplit.collapse();
                         }
                         this.openTaskDetailModal(p.task, p.categoryFilepath);
