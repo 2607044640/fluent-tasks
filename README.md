@@ -49,14 +49,20 @@ Add multi-step checklist subtasks, star/pin priority items, write rich markdown 
 - **Hover Previews**: Direct hover previews for subtasks, why rationales, SVG memory aids, and note links.
 - **Dual Operating Modes**: Switch in settings between *Direct in-modal management* (popup checklist) and *Workspace navigation* (opens list & details in main view).
 
-### 7. Quick List Modal (List-Only Workspace Navigator)
-- **Sidebar-Free Navigation**: Trigger `Open Quick List Modal (List only)` to browse all lists and collapsible groups with fuzzy search, uncompleted task counters, drag-and-drop reordering, and inline <kbd>F2</kbd> renaming.
-- **Clean Workspace Focus**: Selecting a list reveals it in the center task view, automatically collapsing both left and right sidebars if open for maximum focus, and suppressing accidental sidebar re-expansion.
+### 7. Quick List Modal (Full-Screen Grid Board Navigator)
+- **100% Full-Screen Canvas**: Summon `Fluent Tasks: Open Quick List Modal` to reveal an immersive, edge-to-edge (`100vw × 100vh`) dashboard board displaying all your lists and groups at a glance.
+- **Horizontal Scroll & Vertical Column Wrap**: Short lists stack vertically with comfortable 16px row gaps; lists automatically wrap into the next column when reaching the bottom edge. Natural mouse wheel rolling pans horizontally across the board.
+- **Dynamic Centering & Space Expansion**: Automatically detects remaining horizontal space, centering columns symmetrically and dynamically expanding the distance between lists until they gracefully reach the screen boundary margins.
+- **2D Keyboard Navigation**: Seamlessly navigate lists and cards using <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd>, hit <kbd>Enter</kbd> to open in the center view, press <kbd>F2</kbd> for inline renaming, and <kbd>Esc</kbd> to exit.
+- **Clean Workspace Focus**: Selecting a list opens it directly in the center workspace while collapsing open sidebars for a distraction-free experience.
 
-### 8. Instant Global Search
+### 8. Floating Detail View Modal
+- **Sidebar-Free Task Inspection**: Toggle `Open Task Details in Floating Modal` in settings to inspect and edit task details in an elegant centered floating modal rather than expanding the right sidebar panel, keeping your note workspace completely undisturbed. Fully supports multi-tier modal stacking (e.g. metadata editor).
+
+### 9. Instant Global Search
 Click `🔍` in the category header or trigger Search Modal anytime to search through tasks across all lists in milliseconds.
 
-### 9. Custom Accent Colors
+### 10. Custom Accent Colors
 Customize the primary accent color to match your personal theme preference.
 
 ![Custom Accent Color Demo](https://raw.githubusercontent.com/2607044640/fluent-tasks/main/docs/assets/custom_colors.gif)
