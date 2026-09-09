@@ -10,6 +10,7 @@
     import { Menu, Notice } from "obsidian";
     import { promptDeleteTaskWithLinkedNote } from "./ConfirmDeleteLinkedNoteModal";
     import { LinkedNoteService } from "../services/LinkedNoteService";
+    import { TaskStepsModal } from "./TaskStepsModal";
 
     // =============================================
     // Props
@@ -220,6 +221,16 @@
     function dismissPopover() {
         if (popoverTimeout) clearTimeout(popoverTimeout);
         popoverVisible = false;
+    }
+
+    function openStepsModal(task: TaskItem | null) {
+        if (!task) return;
+        dismissPopover();
+        const catPath = isSearching 
+            ? searchResults.find(r => r.task.id === task.id)?.category.filepath 
+            : selectedCategory?.filepath;
+        if (!catPath || !plugin || !plugin.app) return;
+        new TaskStepsModal(plugin.app, plugin, dataService, task, catPath).open();
     }
 
     function handleNoteLinkHover(e: MouseEvent, noteLink?: string) {
@@ -1138,9 +1149,11 @@
                                     {#if task.steps && task.steps.length > 0}
                                         <span 
                                             class="quick-modal-steps-badge"
+                                            on:click|stopPropagation={() => openStepsModal(task)}
                                             on:mouseenter={(e) => showPopover(e, task, 'steps')}
                                             on:mouseleave={scheduleHidePopover}
                                             role="button" tabindex="0"
+                                            title="Click to view & edit subtasks, hover to preview"
                                         >
                                             {task.steps.filter(s => s.done).length}/{task.steps.length}
                                         </span>
@@ -1220,9 +1233,11 @@
                                         {#if task.steps && task.steps.length > 0}
                                             <span 
                                                 class="quick-modal-steps-badge"
+                                                on:click|stopPropagation={() => openStepsModal(task)}
                                                 on:mouseenter={(e) => showPopover(e, task, 'steps')}
                                                 on:mouseleave={scheduleHidePopover}
                                                 role="button" tabindex="0"
+                                                title="Click to view & edit subtasks, hover to preview"
                                             >
                                                 {task.steps.filter(s => s.done).length}/{task.steps.length}
                                             </span>
@@ -1314,7 +1329,14 @@
             </div>
             <div class="meta-popover-body">{popoverTask.why}</div>
         {:else if popoverType === 'steps' && popoverTask.steps && popoverTask.steps.length > 0}
-            <div class="meta-popover-steps-card">
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <div class="meta-popover-steps-card"
+                 on:click|stopPropagation={() => openStepsModal(popoverTask)}
+                 on:keydown|stopPropagation={(e) => e.key === "Enter" && openStepsModal(popoverTask)}
+                 role="button"
+                 tabindex="0"
+                 title="Click to open big subtasks editor">
                 <div class="meta-popover-header">
                     <div style="display: flex; align-items: center; gap: 6px;">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--todo-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1332,6 +1354,15 @@
                             <span class="step-text">{step.text}</span>
                         </div>
                     {/each}
+                </div>
+                <div class="meta-popover-expand-hint">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 3 21 3 21 9"/>
+                        <polyline points="9 21 3 21 3 15"/>
+                        <line x1="21" y1="3" x2="14" y2="10"/>
+                        <line x1="3" y1="21" x2="10" y2="14"/>
+                    </svg>
+                    <span>Click to expand & edit</span>
                 </div>
             </div>
         {/if}

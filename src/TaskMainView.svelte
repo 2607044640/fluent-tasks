@@ -15,6 +15,7 @@
     import { RecurrenceService } from "./services/RecurrenceService";
     import { LinkedNoteService } from "./services/LinkedNoteService";
     import { promptDeleteTaskWithLinkedNote } from "./modals/ConfirmDeleteLinkedNoteModal";
+    import { TaskStepsModal } from "./modals/TaskStepsModal";
 
     // =============================================
     // Props
@@ -159,6 +160,13 @@
         popoverType = type;
         popoverSvgIndex = svgIndex;
         popoverVisible = true;
+    }
+
+    function openStepsModal(task: TaskItem | null) {
+        if (!task) return;
+        dismissPopover();
+        if (!currentCategory || !plugin?.app) return;
+        new TaskStepsModal(plugin.app, plugin, dataService, task, currentCategory.filepath).open();
     }
 
     // Dedicated keyboard state tracking to ensure Quick Peek activates ONLY on standalone Ctrl
@@ -791,9 +799,12 @@
                             {#if task.steps.length > 0}
                                 <!-- svelte-ignore a11y-no-static-element-interactions -->
                                 <span class="task-meta steps-badge"
+                                      on:click|stopPropagation={() => openStepsModal(task)}
                                       on:mouseenter={(e) => showPopover(e, task, 'steps')}
                                       on:mouseleave={scheduleHidePopover}
-                                      title="Hover to preview subtasks">
+                                      role="button"
+                                      tabindex="0"
+                                      title="Click to view & edit subtasks, hover to preview">
                                     {task.steps.filter(s => s.done).length}/{task.steps.length} steps
                                 </span>
                             {/if}
@@ -969,9 +980,12 @@
                                             {#if task.steps && task.steps.length > 0}
                                                 <!-- svelte-ignore a11y-no-static-element-interactions -->
                                                 <span class="task-meta steps-badge"
+                                                      on:click|stopPropagation={() => openStepsModal(task)}
                                                       on:mouseenter={(e) => showPopover(e, task, 'steps')}
                                                       on:mouseleave={scheduleHidePopover}
-                                                      title="Hover to preview subtasks">
+                                                      role="button"
+                                                      tabindex="0"
+                                                      title="Click to view & edit subtasks, hover to preview">
                                                     {task.steps.filter(s => s.done).length}/{task.steps.length} steps
                                                 </span>
                                             {/if}
@@ -1161,7 +1175,14 @@
                     {/each}
                 </div>
             {:else if popoverType === 'steps' && popoverTask && popoverTask.steps && popoverTask.steps.length > 0}
-                <div class="meta-popover-steps-card">
+                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                <!-- svelte-ignore a11y-click-events-have-key-events -->
+                <div class="meta-popover-steps-card"
+                     on:click|stopPropagation={() => openStepsModal(popoverTask)}
+                     on:keydown|stopPropagation={(e) => e.key === "Enter" && openStepsModal(popoverTask)}
+                     role="button"
+                     tabindex="0"
+                     title="Click to open big subtasks editor">
                     <div class="meta-popover-header">
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--todo-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1179,6 +1200,15 @@
                                 <span class="step-text">{step.text}</span>
                             </div>
                         {/each}
+                    </div>
+                    <div class="meta-popover-expand-hint">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="15 3 21 3 21 9"/>
+                            <polyline points="9 21 3 21 3 15"/>
+                            <line x1="21" y1="3" x2="14" y2="10"/>
+                            <line x1="3" y1="21" x2="10" y2="14"/>
+                        </svg>
+                        <span>Click to expand & edit</span>
                     </div>
                 </div>
             {:else if popoverType === 'title' && popoverTask}
@@ -1201,9 +1231,16 @@
 
                     <!-- Mini Details Section -->
                     {#if popoverTask.steps && popoverTask.steps.length > 0}
-                        <div class="meta-popover-detail-section">
-                            <div class="popover-detail-label">
-                                Steps ({popoverTask.steps.filter(s => s.done).length}/{popoverTask.steps.length})
+                        <!-- svelte-ignore a11y-no-static-element-interactions -->
+                        <div class="meta-popover-detail-section"
+                             style="cursor: pointer;"
+                             title="Click to open big subtasks editor"
+                             role="button"
+                             tabindex="0"
+                             on:click|stopPropagation={() => openStepsModal(popoverTask)}>
+                            <div class="popover-detail-label" style="display: flex; justify-content: space-between; align-items: center;">
+                                <span>Steps ({popoverTask.steps.filter(s => s.done).length}/{popoverTask.steps.length})</span>
+                                <span style="font-size: 10px; color: var(--todo-accent); text-transform: none; font-weight: normal;">Expand ↗</span>
                             </div>
                             <div class="popover-steps-list">
                                 {#each popoverTask.steps as step}
