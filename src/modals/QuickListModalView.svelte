@@ -81,6 +81,9 @@
     let modalContainerEl: HTMLElement;
     let addListInputEl: HTMLInputElement;
     let addGroupInputEl: HTMLInputElement;
+    let boardEl: HTMLElement | null = null;
+    let resizeObserver: ResizeObserver | null = null;
+    let isAdjustingSpacing: boolean = false;
 
     $: isFiltering = !!searchQuery.trim();
     $: filteredItems = filterSidebarTree(sidebarItems, searchQuery);
@@ -90,12 +93,87 @@
     $: if (focusedIndex >= flatCategories.length) {
         focusedIndex = Math.max(0, flatCategories.length - 1);
     }
+    $: if (filteredItems && isGridLayout) {
+        scheduleAdjustSpacing();
+    }
+
+    function scheduleAdjustSpacing() {
+        if (!isGridLayout) return;
+        if (isAdjustingSpacing) return;
+        isAdjustingSpacing = true;
+        requestAnimationFrame(() => {
+            adjustBoardSpacing();
+            isAdjustingSpacing = false;
+        });
+    }
+
+    function adjustBoardSpacing() {
+        if (!boardEl || !isGridLayout) return;
+
+        const cards = Array.from(boardEl.querySelectorAll<HTMLElement>(".quick-grid-card"));
+        if (cards.length === 0) return;
+
+        // Group cards into columns by offsetLeft
+        const colMap = new Map<number, HTMLElement[]>();
+        for (const card of cards) {
+            const left = Math.round(card.offsetLeft);
+            let bucketKey: number | null = null;
+            for (const key of colMap.keys()) {
+                if (Math.abs(key - left) < 18) {
+                    bucketKey = key;
+                    break;
+                }
+            }
+            if (bucketKey !== null) {
+                colMap.get(bucketKey)!.push(card);
+            } else {
+                colMap.set(left, [card]);
+            }
+        }
+
+        const numCols = colMap.size;
+        let totalColsWidth = 0;
+        for (const colCards of colMap.values()) {
+            const maxW = Math.max(...colCards.map(c => c.offsetWidth));
+            totalColsWidth += maxW;
+        }
+
+        const availableWidth = boardEl.clientWidth;
+        const minMargin = 32; // comfortable margin from boundaries
+        const usableWidth = availableWidth - 2 * minMargin;
+
+        if (numCols <= 1) {
+            boardEl.style.alignContent = "center";
+            boardEl.style.columnGap = "14px";
+            return;
+        }
+
+        const defaultGap = 14;
+        const minNeededWidth = totalColsWidth + (numCols - 1) * defaultGap;
+
+        if (minNeededWidth >= usableWidth) {
+            // Tight fit or overflowing horizontally: left align so user can scroll naturally
+            boardEl.style.alignContent = "flex-start";
+            boardEl.style.columnGap = defaultGap + "px";
+        } else {
+            // Surplus space detected! Center and expand column distance until near boundary
+            const surplus = usableWidth - totalColsWidth;
+            const expandedGap = Math.floor(surplus / (numCols - 1));
+            // Cap at 240px to keep very small sets looking tasteful on ultrawide monitors
+            const finalGap = Math.min(expandedGap, 240);
+            boardEl.style.alignContent = "center";
+            boardEl.style.columnGap = finalGap + "px";
+        }
+    }
 
     async function toggleLayoutMode() {
         isGridLayout = !isGridLayout;
         if (plugin?.settings) {
             plugin.settings.quickListGridLayout = isGridLayout;
             await plugin.saveSettings();
+        }
+        if (isGridLayout) {
+            scheduleAdjustSpacing();
         }
     }
 
@@ -106,12 +184,24 @@
 
         setTimeout(() => {
             searchInputEl?.focus();
+            scheduleAdjustSpacing();
         }, 50);
+
+        if (typeof ResizeObserver !== "undefined" && modalContainerEl) {
+            resizeObserver = new ResizeObserver(() => {
+                scheduleAdjustSpacing();
+            });
+            resizeObserver.observe(modalContainerEl);
+        }
     });
 
     onDestroy(() => {
         EventBus.off(EventName.CATEGORY_LIST_CHANGED, handleExternalListChanged);
         EventBus.off(EventName.TASK_UPDATED, handleExternalTaskUpdated);
+        if (resizeObserver) {
+            resizeObserver.disconnect();
+            resizeObserver = null;
+        }
     });
 
     function handleExternalListChanged() {
@@ -126,6 +216,7 @@
         sidebarItems = await dataService.getSidebarItems();
         categories = await dataService.getCategories();
         await refreshTaskCounts();
+        scheduleAdjustSpacing();
     }
 
     async function refreshTaskCounts() {
@@ -144,6 +235,7 @@
     async function toggleGroup(group: GroupInfo) {
         sidebarItems = toggleGroupExpandedState(sidebarItems, group.id);
         await dataService.saveSidebarState(sidebarItems);
+        scheduleAdjustSpacing();
     }
 
     async function openCategoryInCenterOnly(cat: CategoryInfo) {
@@ -694,7 +786,7 @@
         <!-- =============================================
              Grid Board / Dashboard Card Layout (图表平铺看板 - 横向滑动 + 纵向换列)
              ============================================= -->
-        <div class="quick-list-grid-board" on:wheel={handleBoardWheel}>
+        <div class="quick-list-grid-board" bind:this={boardEl} on:wheel={handleBoardWheel}>
             {#if filteredItems.length === 0}
                 <div class="quick-modal-empty">No matching lists or groups found.</div>
             {:else}

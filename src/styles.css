@@ -2825,9 +2825,10 @@ body .quick-modal-task-item.is-focused {
     flex-direction: column;
     flex-wrap: wrap;
     align-content: flex-start;
-    gap: 8px 10px;
-    padding: 10px 14px;
+    gap: 8px 14px;
+    padding: 10px 24px;
     box-sizing: border-box;
+    transition: column-gap 0.12s ease;
 }
 
 /* Horizontal scrollbar styling */
@@ -2850,15 +2851,15 @@ body .quick-modal-task-item.is-focused {
     background: var(--background-secondary);
     border: 1px solid var(--background-modifier-border);
     border-radius: 8px;
-    padding: 6px 9px;
+    padding: 7px 11px;
     display: flex;
     flex-direction: column;
     gap: 2px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
     width: fit-content;
-    min-width: 160px;
-    max-width: 280px;
+    min-width: 170px;
+    max-width: 310px;
     max-height: calc(100% - 2px);
     flex-shrink: 0;
     box-sizing: border-box;
