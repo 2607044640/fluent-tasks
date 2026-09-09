@@ -27368,15 +27368,20 @@ function create_fragment6(ctx) {
   let input;
   let t2;
   let t3;
-  let button0;
-  let button0_title_value;
+  let button;
+  let button_title_value;
   let t4;
-  let button1;
   let t5;
-  let t6;
   let div1;
-  let t7;
+  let t6;
   let div2;
+  let span1;
+  let t9;
+  let span2;
+  let t12;
+  let span3;
+  let t15;
+  let span4;
   let mounted;
   let dispose;
   let if_block0 = (
@@ -27437,30 +27442,39 @@ function create_fragment6(ctx) {
       if (if_block1)
         if_block1.c();
       t3 = space();
-      button0 = element("button");
+      button = element("button");
       if_block2.c();
       t4 = space();
-      button1 = element("button");
-      button1.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
-      t5 = space();
       if_block3.c();
-      t6 = space();
+      t5 = space();
       div1 = element("div");
       if_block4.c();
-      t7 = space();
+      t6 = space();
       div2 = element("div");
-      div2.innerHTML = `<span><b>\u2191\u2193\u2190\u2192</b> Navigate</span> <span><b>F2</b> Rename</span> <span><b>Enter</b> Open in Center View</span> <span><b>Esc</b> Close</span>`;
+      span1 = element("span");
+      span1.innerHTML = `<b>\u2191\u2193\u2190\u2192</b> Navigate`;
+      t9 = space();
+      span2 = element("span");
+      span2.innerHTML = `<b>F2</b> Rename`;
+      t12 = space();
+      span3 = element("span");
+      span3.innerHTML = `<b>Enter</b> Open in Center View`;
+      t15 = space();
+      span4 = element("span");
+      span4.innerHTML = `<b>Esc</b> Close`;
       attr(span0, "class", "quick-modal-filter-icon");
       attr(input, "type", "text");
       attr(input, "class", "quick-modal-filter-input");
       attr(input, "placeholder", "Type to filter lists (\u2191\u2193\u2190\u2192 navigate, F2 rename, Enter to open in center)...");
-      attr(button0, "class", "quick-modal-header-btn quick-modal-layout-toggle-btn");
-      attr(button0, "title", button0_title_value = /*isGridLayout*/
+      attr(button, "class", "quick-modal-header-btn quick-modal-layout-toggle-btn");
+      attr(button, "title", button_title_value = /*isGridLayout*/
       ctx[5] ? "Switch to Classic Single-Column List" : "Switch to Grid Board Layout");
-      attr(button1, "class", "quick-modal-header-btn quick-modal-close-btn");
-      attr(button1, "title", "Close (Esc)");
       attr(div0, "class", "quick-modal-filter-bar");
       attr(div1, "class", "quick-modal-list-pane-footer");
+      attr(span4, "class", "quick-status-close-btn");
+      attr(span4, "role", "button");
+      attr(span4, "tabindex", "0");
+      attr(span4, "title", "Close (Esc)");
       attr(div2, "class", "quick-modal-status-bar");
       attr(div3, "class", "quick-modal-container quick-list-only-container");
       attr(div3, "tabindex", "0");
@@ -27485,17 +27499,22 @@ function create_fragment6(ctx) {
       if (if_block1)
         if_block1.m(div0, null);
       append(div0, t3);
-      append(div0, button0);
-      if_block2.m(button0, null);
-      append(div0, t4);
-      append(div0, button1);
-      append(div3, t5);
+      append(div0, button);
+      if_block2.m(button, null);
+      append(div3, t4);
       if_block3.m(div3, null);
-      append(div3, t6);
+      append(div3, t5);
       append(div3, div1);
       if_block4.m(div1, null);
-      append(div3, t7);
+      append(div3, t6);
       append(div3, div2);
+      append(div2, span1);
+      append(div2, t9);
+      append(div2, span2);
+      append(div2, t12);
+      append(div2, span3);
+      append(div2, t15);
+      append(div2, span4);
       ctx[98](div3);
       if (!mounted) {
         dispose = [
@@ -27518,12 +27537,12 @@ function create_fragment6(ctx) {
             ctx[26]
           ),
           listen(
-            button0,
+            button,
             "click",
             /*toggleLayoutMode*/
             ctx[27]
           ),
-          listen(button1, "click", function() {
+          listen(span4, "click", function() {
             if (is_function(
               /*closeModal*/
               ctx[2]
@@ -27586,13 +27605,13 @@ function create_fragment6(ctx) {
         if_block2 = current_block_type(ctx);
         if (if_block2) {
           if_block2.c();
-          if_block2.m(button0, null);
+          if_block2.m(button, null);
         }
       }
       if (dirty[0] & /*isGridLayout*/
-      32 && button0_title_value !== (button0_title_value = /*isGridLayout*/
+      32 && button_title_value !== (button_title_value = /*isGridLayout*/
       ctx[5] ? "Switch to Classic Single-Column List" : "Switch to Grid Board Layout")) {
-        attr(button0, "title", button0_title_value);
+        attr(button, "title", button_title_value);
       }
       if (current_block_type_1 === (current_block_type_1 = select_block_type_1(ctx, dirty)) && if_block3) {
         if_block3.p(ctx, dirty);
@@ -27601,7 +27620,7 @@ function create_fragment6(ctx) {
         if_block3 = current_block_type_1(ctx);
         if (if_block3) {
           if_block3.c();
-          if_block3.m(div3, t6);
+          if_block3.m(div3, t5);
         }
       }
       if (current_block_type_2 === (current_block_type_2 = select_block_type_11(ctx, dirty)) && if_block4) {
@@ -27733,38 +27752,68 @@ function instance6($$self, $$props, $$invalidate) {
     if (currentCol.length > 0)
       columns.push(currentCol);
     const numCols = columns.length;
+    if (numCols === 0)
+      return;
+    const availableWidth = boardEl.clientWidth;
+    const availableHeight = boardEl.clientHeight;
     let totalColsWidth = 0;
     for (const colCards of columns) {
       const maxW = Math.max(...colCards.map((c) => c.offsetWidth));
       totalColsWidth += maxW;
     }
-    const availableWidth = boardEl.clientWidth;
-    const minMargin = 32;
-    const usableWidth = availableWidth - 2 * minMargin;
-    if (numCols <= 1) {
-      if (boardEl.style.alignContent !== "center")
-        $$invalidate(22, boardEl.style.alignContent = "center", boardEl);
-      if (boardEl.style.columnGap !== "14px")
-        $$invalidate(22, boardEl.style.columnGap = "14px", boardEl);
-      return;
-    }
-    const defaultGap = 14;
-    const minNeededWidth = totalColsWidth + (numCols - 1) * defaultGap;
-    if (minNeededWidth >= usableWidth) {
-      if (boardEl.style.alignContent !== "flex-start")
-        $$invalidate(22, boardEl.style.alignContent = "flex-start", boardEl);
-      if (boardEl.style.columnGap !== defaultGap + "px")
-        $$invalidate(22, boardEl.style.columnGap = defaultGap + "px", boardEl);
+    const defaultColGap = 16;
+    const minPaddingX = 28;
+    const surplusX = availableWidth - totalColsWidth;
+    if (numCols === 1) {
+      const padX = Math.max(minPaddingX, Math.floor(surplusX / 2));
+      $$invalidate(22, boardEl.style.paddingLeft = padX + "px", boardEl);
+      $$invalidate(22, boardEl.style.paddingRight = padX + "px", boardEl);
+      $$invalidate(22, boardEl.style.columnGap = defaultColGap + "px", boardEl);
+      $$invalidate(22, boardEl.style.alignContent = "center", boardEl);
     } else {
-      const surplus = usableWidth - totalColsWidth;
-      const expandedGap = Math.floor(surplus / (numCols - 1));
-      const finalGap = Math.min(expandedGap, 240);
-      const targetGap = finalGap + "px";
-      if (boardEl.style.alignContent !== "center")
-        $$invalidate(22, boardEl.style.alignContent = "center", boardEl);
-      if (boardEl.style.columnGap !== targetGap)
-        $$invalidate(22, boardEl.style.columnGap = targetGap, boardEl);
+      const equalColGap = Math.floor(surplusX / (numCols + 1));
+      if (equalColGap < defaultColGap) {
+        $$invalidate(22, boardEl.style.alignContent = "flex-start", boardEl);
+        $$invalidate(22, boardEl.style.paddingLeft = minPaddingX + "px", boardEl);
+        $$invalidate(22, boardEl.style.paddingRight = minPaddingX + "px", boardEl);
+        $$invalidate(22, boardEl.style.columnGap = defaultColGap + "px", boardEl);
+      } else {
+        const maxAllowedColGap = 220;
+        if (equalColGap <= maxAllowedColGap) {
+          $$invalidate(22, boardEl.style.alignContent = "flex-start", boardEl);
+          $$invalidate(22, boardEl.style.paddingLeft = equalColGap + "px", boardEl);
+          $$invalidate(22, boardEl.style.paddingRight = equalColGap + "px", boardEl);
+          $$invalidate(22, boardEl.style.columnGap = equalColGap + "px", boardEl);
+        } else {
+          const remainingOuter = Math.floor((availableWidth - (totalColsWidth + (numCols - 1) * maxAllowedColGap)) / 2);
+          $$invalidate(22, boardEl.style.alignContent = "flex-start", boardEl);
+          $$invalidate(22, boardEl.style.paddingLeft = remainingOuter + "px", boardEl);
+          $$invalidate(22, boardEl.style.paddingRight = remainingOuter + "px", boardEl);
+          $$invalidate(22, boardEl.style.columnGap = maxAllowedColGap + "px", boardEl);
+        }
+      }
     }
+    const defaultRowGap = 16;
+    const minPaddingY = 16;
+    const multiCardCols = columns.filter((col) => col.length > 1);
+    let targetRowGap = defaultRowGap;
+    if (multiCardCols.length > 0) {
+      const safeGaps = multiCardCols.map((col) => {
+        const sumH = col.reduce((sum, c) => sum + c.offsetHeight, 0);
+        return Math.floor((availableHeight - sumH) / (col.length + 1));
+      });
+      const minSafeGap = Math.min(...safeGaps);
+      targetRowGap = Math.max(defaultRowGap, Math.min(minSafeGap, 64));
+    }
+    const maxColTotalH = Math.max(...columns.map((col) => {
+      const sumH = col.reduce((sum, c) => sum + c.offsetHeight, 0);
+      return sumH + (col.length - 1) * targetRowGap;
+    }));
+    const verticalSurplus = availableHeight - maxColTotalH;
+    const targetPadY = Math.max(minPaddingY, Math.min(Math.floor(verticalSurplus / 2), 64));
+    $$invalidate(22, boardEl.style.rowGap = targetRowGap + "px", boardEl);
+    $$invalidate(22, boardEl.style.paddingTop = targetPadY + "px", boardEl);
+    $$invalidate(22, boardEl.style.paddingBottom = targetPadY + "px", boardEl);
   }
   async function toggleLayoutMode() {
     $$invalidate(5, isGridLayout = !isGridLayout);
@@ -27780,13 +27829,8 @@ function instance6($$self, $$props, $$invalidate) {
     await loadData();
     EventBus.on("category:list-changed" /* CATEGORY_LIST_CHANGED */, handleExternalListChanged);
     EventBus.on("task:updated" /* TASK_UPDATED */, handleExternalTaskUpdated);
-    setTimeout(
-      () => {
-        searchInputEl == null ? void 0 : searchInputEl.focus();
-        scheduleAdjustSpacing();
-      },
-      50
-    );
+    searchInputEl == null ? void 0 : searchInputEl.focus();
+    scheduleAdjustSpacing();
     if (typeof ResizeObserver !== "undefined" && modalContainerEl) {
       resizeObserver = new ResizeObserver(() => {
         scheduleAdjustSpacing();

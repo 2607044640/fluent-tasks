@@ -114,7 +114,7 @@
         const cards = Array.from(boardEl.querySelectorAll<HTMLElement>(".quick-grid-card"));
         if (cards.length === 0) return;
 
-        // Group cards into vertical columns based on offsetTop wrap (independent of horizontal animation)
+        // Group cards into vertical columns based on offsetTop wrap (independent of horizontal coordinates)
         const columns: HTMLElement[][] = [];
         let currentCol: HTMLElement[] = [];
         let prevTop = -1;
@@ -132,39 +132,89 @@
         if (currentCol.length > 0) columns.push(currentCol);
 
         const numCols = columns.length;
+        if (numCols === 0) return;
+
+        const availableWidth = boardEl.clientWidth;
+        const availableHeight = boardEl.clientHeight;
+
+        // 1. Calculate total column widths
         let totalColsWidth = 0;
         for (const colCards of columns) {
             const maxW = Math.max(...colCards.map(c => c.offsetWidth));
             totalColsWidth += maxW;
         }
 
-        const availableWidth = boardEl.clientWidth;
-        const minMargin = 32; // comfortable margin from boundaries
-        const usableWidth = availableWidth - 2 * minMargin;
+        // 2. Horizontal Spacing (左右空间):
+        // Equal spacing rule: Left margin == Column gap == Right margin = surplus / (numCols + 1)
+        const defaultColGap = 16;
+        const minPaddingX = 28;
+        const surplusX = availableWidth - totalColsWidth;
 
-        if (numCols <= 1) {
-            if (boardEl.style.alignContent !== "center") boardEl.style.alignContent = "center";
-            if (boardEl.style.columnGap !== "14px") boardEl.style.columnGap = "14px";
-            return;
-        }
-
-        const defaultGap = 14;
-        const minNeededWidth = totalColsWidth + (numCols - 1) * defaultGap;
-
-        if (minNeededWidth >= usableWidth) {
-            // Tight fit or overflowing horizontally: left align so user can scroll naturally
-            if (boardEl.style.alignContent !== "flex-start") boardEl.style.alignContent = "flex-start";
-            if (boardEl.style.columnGap !== defaultGap + "px") boardEl.style.columnGap = defaultGap + "px";
+        if (numCols === 1) {
+            const padX = Math.max(minPaddingX, Math.floor(surplusX / 2));
+            boardEl.style.paddingLeft = padX + "px";
+            boardEl.style.paddingRight = padX + "px";
+            boardEl.style.columnGap = defaultColGap + "px";
+            boardEl.style.alignContent = "center";
         } else {
-            // Surplus space detected! Center and expand column distance until near boundary
-            const surplus = usableWidth - totalColsWidth;
-            const expandedGap = Math.floor(surplus / (numCols - 1));
-            // Cap at 240px to keep very small sets looking tasteful on ultrawide monitors
-            const finalGap = Math.min(expandedGap, 240);
-            const targetGap = finalGap + "px";
-            if (boardEl.style.alignContent !== "center") boardEl.style.alignContent = "center";
-            if (boardEl.style.columnGap !== targetGap) boardEl.style.columnGap = targetGap;
+            const equalColGap = Math.floor(surplusX / (numCols + 1));
+
+            if (equalColGap < defaultColGap) {
+                // Tight fit or overflowing horizontally: allow natural horizontal scrolling
+                boardEl.style.alignContent = "flex-start";
+                boardEl.style.paddingLeft = minPaddingX + "px";
+                boardEl.style.paddingRight = minPaddingX + "px";
+                boardEl.style.columnGap = defaultColGap + "px";
+            } else {
+                // Equal gap everywhere: left margin = column gaps = right margin
+                // Cap at 220px to prevent disconnected appearance on ultra-wide monitors
+                const maxAllowedColGap = 220;
+                if (equalColGap <= maxAllowedColGap) {
+                    boardEl.style.alignContent = "flex-start";
+                    boardEl.style.paddingLeft = equalColGap + "px";
+                    boardEl.style.paddingRight = equalColGap + "px";
+                    boardEl.style.columnGap = equalColGap + "px";
+                } else {
+                    const remainingOuter = Math.floor((availableWidth - (totalColsWidth + (numCols - 1) * maxAllowedColGap)) / 2);
+                    boardEl.style.alignContent = "flex-start";
+                    boardEl.style.paddingLeft = remainingOuter + "px";
+                    boardEl.style.paddingRight = remainingOuter + "px";
+                    boardEl.style.columnGap = maxAllowedColGap + "px";
+                }
+            }
         }
+
+        // 3. Vertical Spacing (上下间距):
+        // Auto-separate cards in multi-card columns and expand vertical padding
+        const defaultRowGap = 16;
+        const minPaddingY = 16;
+
+        const multiCardCols = columns.filter(col => col.length > 1);
+        let targetRowGap = defaultRowGap;
+
+        if (multiCardCols.length > 0) {
+            // Find the maximum rowGap that safely fits in every multi-card column without overflowing
+            const safeGaps = multiCardCols.map(col => {
+                const sumH = col.reduce((sum, c) => sum + c.offsetHeight, 0);
+                // Distribute surplus height across (col.length + 1) intervals (top pad, inner gaps, bottom pad)
+                return Math.floor((availableHeight - sumH) / (col.length + 1));
+            });
+            const minSafeGap = Math.min(...safeGaps);
+            // Expand row gap: min 16px, up to 64px
+            targetRowGap = Math.max(defaultRowGap, Math.min(minSafeGap, 64));
+        }
+
+        // Symmetrically center the tallest column vertically
+        const maxColTotalH = Math.max(...columns.map(col => {
+            const sumH = col.reduce((sum, c) => sum + c.offsetHeight, 0);
+            return sumH + (col.length - 1) * targetRowGap;
+        }));
+        const verticalSurplus = availableHeight - maxColTotalH;
+        const targetPadY = Math.max(minPaddingY, Math.min(Math.floor(verticalSurplus / 2), 64));
+
+        boardEl.style.rowGap = targetRowGap + "px";
+        boardEl.style.paddingTop = targetPadY + "px";
+        boardEl.style.paddingBottom = targetPadY + "px";
     }
 
     async function toggleLayoutMode() {
@@ -183,10 +233,8 @@
         EventBus.on(EventName.CATEGORY_LIST_CHANGED, handleExternalListChanged);
         EventBus.on(EventName.TASK_UPDATED, handleExternalTaskUpdated);
 
-        setTimeout(() => {
-            searchInputEl?.focus();
-            scheduleAdjustSpacing();
-        }, 50);
+        searchInputEl?.focus();
+        scheduleAdjustSpacing();
 
         if (typeof ResizeObserver !== "undefined" && modalContainerEl) {
             resizeObserver = new ResizeObserver(() => {
@@ -774,17 +822,6 @@
                 <span>List</span>
             {/if}
         </button>
-
-        <button 
-            class="quick-modal-header-btn quick-modal-close-btn"
-            title="Close (Esc)"
-            on:click={closeModal}
-        >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-        </button>
     </div>
 
     {#if isGridLayout}
@@ -1097,6 +1134,7 @@
         <span><b>↑↓←→</b> Navigate</span>
         <span><b>F2</b> Rename</span>
         <span><b>Enter</b> Open in Center View</span>
-        <span><b>Esc</b> Close</span>
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <span class="quick-status-close-btn" on:click={closeModal} role="button" tabindex="0" title="Close (Esc)"><b>Esc</b> Close</span>
     </div>
 </div>

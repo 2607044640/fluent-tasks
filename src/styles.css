@@ -2599,6 +2599,18 @@ body .quick-modal-task-item.is-focused {
     font-weight: 600;
 }
 
+.quick-status-close-btn {
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.quick-status-close-btn:hover {
+    background: var(--background-modifier-hover);
+    color: var(--text-normal);
+}
+
 .quick-modal-list-item.drop-hover {
     background-color: var(--todo-accent-light, rgba(139, 92, 246, 0.25)) !important;
     outline: 2px dashed var(--todo-accent, #8b5cf6) !important;
@@ -2834,11 +2846,11 @@ body .quick-modal-task-item.is-focused {
     display: flex;
     flex-direction: column;
     flex-wrap: wrap;
-    align-content: center;
+    align-content: flex-start;
     gap: 16px 14px;
     padding: 16px 28px;
     box-sizing: border-box;
-    transition: column-gap 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: column-gap 0.2s cubic-bezier(0.16, 1, 0.3, 1), row-gap 0.2s cubic-bezier(0.16, 1, 0.3, 1), padding 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Horizontal scrollbar styling */
