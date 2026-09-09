@@ -24279,7 +24279,6 @@ var import_obsidian15 = require("obsidian");
 
 // src/modals/QuickListModalView.svelte
 var import_obsidian14 = require("obsidian");
-var { Map: Map_12 } = globals;
 function get_each_context_34(ctx, list, i) {
   const child_ctx = ctx.slice();
   child_ctx[125] = list[i];
@@ -24617,7 +24616,7 @@ function create_if_block_216(ctx) {
 }
 function create_else_block_63(ctx) {
   let each_blocks = [];
-  let each_1_lookup = new Map_12();
+  let each_1_lookup = /* @__PURE__ */ new Map();
   let each_1_anchor;
   let each_value_3 = ensure_array_like(
     /*filteredItems*/
@@ -25375,7 +25374,7 @@ function create_if_block_164(ctx) {
 function create_if_block_134(ctx) {
   let div;
   let each_blocks = [];
-  let each_1_lookup = new Map_12();
+  let each_1_lookup = /* @__PURE__ */ new Map();
   let each_value_4 = ensure_array_like(
     /*item*/
     ctx[125].items
@@ -25836,7 +25835,7 @@ function create_each_block_34(key_1, ctx) {
 function create_else_block_16(ctx) {
   let t;
   let each_blocks = [];
-  let each_1_lookup = new Map_12();
+  let each_1_lookup = /* @__PURE__ */ new Map();
   let each_1_anchor;
   let if_block = (
     /*rootCategories*/
@@ -25948,7 +25947,7 @@ function create_if_block_84(ctx) {
   let t5;
   let div2;
   let each_blocks = [];
-  let each_1_lookup = new Map_12();
+  let each_1_lookup = /* @__PURE__ */ new Map();
   let each_value_2 = ensure_array_like(
     /*rootCategories*/
     ctx[23]
@@ -26496,7 +26495,7 @@ function create_if_block_75(ctx) {
 function create_if_block_46(ctx) {
   let div;
   let each_blocks = [];
-  let each_1_lookup = new Map_12();
+  let each_1_lookup = /* @__PURE__ */ new Map();
   let each_value_1 = ensure_array_like(
     /*group*/
     ctx[116].items
@@ -27685,16 +27684,15 @@ function instance6($$self, $$props, $$invalidate) {
   let addGroupInputEl;
   let boardEl = null;
   let resizeObserver = null;
-  let isAdjustingSpacing = false;
+  let rafId = null;
   function scheduleAdjustSpacing() {
     if (!isGridLayout)
       return;
-    if (isAdjustingSpacing)
-      return;
-    isAdjustingSpacing = true;
-    requestAnimationFrame(() => {
+    if (rafId !== null)
+      cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(() => {
+      rafId = null;
       adjustBoardSpacing();
-      isAdjustingSpacing = false;
     });
   }
   function adjustBoardSpacing() {
@@ -27703,25 +27701,25 @@ function instance6($$self, $$props, $$invalidate) {
     const cards = Array.from(boardEl.querySelectorAll(".quick-grid-card"));
     if (cards.length === 0)
       return;
-    const colMap = /* @__PURE__ */ new Map();
+    const columns = [];
+    let currentCol = [];
+    let prevTop = -1;
     for (const card of cards) {
-      const left = Math.round(card.offsetLeft);
-      let bucketKey = null;
-      for (const key of colMap.keys()) {
-        if (Math.abs(key - left) < 18) {
-          bucketKey = key;
-          break;
-        }
-      }
-      if (bucketKey !== null) {
-        colMap.get(bucketKey).push(card);
+      const top = card.offsetTop;
+      if (prevTop >= 0 && top <= prevTop + 5) {
+        if (currentCol.length > 0)
+          columns.push(currentCol);
+        currentCol = [card];
       } else {
-        colMap.set(left, [card]);
+        currentCol.push(card);
       }
+      prevTop = top;
     }
-    const numCols = colMap.size;
+    if (currentCol.length > 0)
+      columns.push(currentCol);
+    const numCols = columns.length;
     let totalColsWidth = 0;
-    for (const colCards of colMap.values()) {
+    for (const colCards of columns) {
       const maxW = Math.max(...colCards.map((c) => c.offsetWidth));
       totalColsWidth += maxW;
     }
@@ -27729,21 +27727,28 @@ function instance6($$self, $$props, $$invalidate) {
     const minMargin = 32;
     const usableWidth = availableWidth - 2 * minMargin;
     if (numCols <= 1) {
-      $$invalidate(22, boardEl.style.alignContent = "center", boardEl);
-      $$invalidate(22, boardEl.style.columnGap = "14px", boardEl);
+      if (boardEl.style.alignContent !== "center")
+        $$invalidate(22, boardEl.style.alignContent = "center", boardEl);
+      if (boardEl.style.columnGap !== "14px")
+        $$invalidate(22, boardEl.style.columnGap = "14px", boardEl);
       return;
     }
     const defaultGap = 14;
     const minNeededWidth = totalColsWidth + (numCols - 1) * defaultGap;
     if (minNeededWidth >= usableWidth) {
-      $$invalidate(22, boardEl.style.alignContent = "flex-start", boardEl);
-      $$invalidate(22, boardEl.style.columnGap = defaultGap + "px", boardEl);
+      if (boardEl.style.alignContent !== "flex-start")
+        $$invalidate(22, boardEl.style.alignContent = "flex-start", boardEl);
+      if (boardEl.style.columnGap !== defaultGap + "px")
+        $$invalidate(22, boardEl.style.columnGap = defaultGap + "px", boardEl);
     } else {
       const surplus = usableWidth - totalColsWidth;
       const expandedGap = Math.floor(surplus / (numCols - 1));
       const finalGap = Math.min(expandedGap, 240);
-      $$invalidate(22, boardEl.style.alignContent = "center", boardEl);
-      $$invalidate(22, boardEl.style.columnGap = finalGap + "px", boardEl);
+      const targetGap = finalGap + "px";
+      if (boardEl.style.alignContent !== "center")
+        $$invalidate(22, boardEl.style.alignContent = "center", boardEl);
+      if (boardEl.style.columnGap !== targetGap)
+        $$invalidate(22, boardEl.style.columnGap = targetGap, boardEl);
     }
   }
   async function toggleLayoutMode() {
@@ -27775,6 +27780,10 @@ function instance6($$self, $$props, $$invalidate) {
     }
   });
   onDestroy(() => {
+    if (rafId !== null) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
     EventBus.off("category:list-changed" /* CATEGORY_LIST_CHANGED */, handleExternalListChanged);
     EventBus.off("task:updated" /* TASK_UPDATED */, handleExternalTaskUpdated);
     if (resizeObserver) {
@@ -28590,6 +28599,10 @@ var QuickListModal = class extends import_obsidian15.Modal {
     contentEl.empty();
     modalEl.addClass("task-quick-modal");
     modalEl.addClass("task-quick-list-modal");
+    if (this.closeButtonEl) {
+      this.closeButtonEl.remove();
+    }
+    modalEl.querySelectorAll(".modal-close-button").forEach((el) => el.remove());
     const { showTip, remainingTips } = getModalHotkeyTipInfo(
       this.app,
       this.plugin,

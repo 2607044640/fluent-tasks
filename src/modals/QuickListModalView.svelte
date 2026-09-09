@@ -97,13 +97,14 @@
         scheduleAdjustSpacing();
     }
 
+    let rafId: number | null = null;
+
     function scheduleAdjustSpacing() {
         if (!isGridLayout) return;
-        if (isAdjustingSpacing) return;
-        isAdjustingSpacing = true;
-        requestAnimationFrame(() => {
+        if (rafId !== null) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => {
+            rafId = null;
             adjustBoardSpacing();
-            isAdjustingSpacing = false;
         });
     }
 
@@ -113,27 +114,26 @@
         const cards = Array.from(boardEl.querySelectorAll<HTMLElement>(".quick-grid-card"));
         if (cards.length === 0) return;
 
-        // Group cards into columns by offsetLeft
-        const colMap = new Map<number, HTMLElement[]>();
-        for (const card of cards) {
-            const left = Math.round(card.offsetLeft);
-            let bucketKey: number | null = null;
-            for (const key of colMap.keys()) {
-                if (Math.abs(key - left) < 18) {
-                    bucketKey = key;
-                    break;
-                }
-            }
-            if (bucketKey !== null) {
-                colMap.get(bucketKey)!.push(card);
-            } else {
-                colMap.set(left, [card]);
-            }
-        }
+        // Group cards into vertical columns based on offsetTop wrap (independent of horizontal animation)
+        const columns: HTMLElement[][] = [];
+        let currentCol: HTMLElement[] = [];
+        let prevTop = -1;
 
-        const numCols = colMap.size;
+        for (const card of cards) {
+            const top = card.offsetTop;
+            if (prevTop >= 0 && top <= prevTop + 5) {
+                if (currentCol.length > 0) columns.push(currentCol);
+                currentCol = [card];
+            } else {
+                currentCol.push(card);
+            }
+            prevTop = top;
+        }
+        if (currentCol.length > 0) columns.push(currentCol);
+
+        const numCols = columns.length;
         let totalColsWidth = 0;
-        for (const colCards of colMap.values()) {
+        for (const colCards of columns) {
             const maxW = Math.max(...colCards.map(c => c.offsetWidth));
             totalColsWidth += maxW;
         }
@@ -143,8 +143,8 @@
         const usableWidth = availableWidth - 2 * minMargin;
 
         if (numCols <= 1) {
-            boardEl.style.alignContent = "center";
-            boardEl.style.columnGap = "14px";
+            if (boardEl.style.alignContent !== "center") boardEl.style.alignContent = "center";
+            if (boardEl.style.columnGap !== "14px") boardEl.style.columnGap = "14px";
             return;
         }
 
@@ -153,16 +153,17 @@
 
         if (minNeededWidth >= usableWidth) {
             // Tight fit or overflowing horizontally: left align so user can scroll naturally
-            boardEl.style.alignContent = "flex-start";
-            boardEl.style.columnGap = defaultGap + "px";
+            if (boardEl.style.alignContent !== "flex-start") boardEl.style.alignContent = "flex-start";
+            if (boardEl.style.columnGap !== defaultGap + "px") boardEl.style.columnGap = defaultGap + "px";
         } else {
             // Surplus space detected! Center and expand column distance until near boundary
             const surplus = usableWidth - totalColsWidth;
             const expandedGap = Math.floor(surplus / (numCols - 1));
             // Cap at 240px to keep very small sets looking tasteful on ultrawide monitors
             const finalGap = Math.min(expandedGap, 240);
-            boardEl.style.alignContent = "center";
-            boardEl.style.columnGap = finalGap + "px";
+            const targetGap = finalGap + "px";
+            if (boardEl.style.alignContent !== "center") boardEl.style.alignContent = "center";
+            if (boardEl.style.columnGap !== targetGap) boardEl.style.columnGap = targetGap;
         }
     }
 
@@ -196,6 +197,10 @@
     });
 
     onDestroy(() => {
+        if (rafId !== null) {
+            cancelAnimationFrame(rafId);
+            rafId = null;
+        }
         EventBus.off(EventName.CATEGORY_LIST_CHANGED, handleExternalListChanged);
         EventBus.off(EventName.TASK_UPDATED, handleExternalTaskUpdated);
         if (resizeObserver) {

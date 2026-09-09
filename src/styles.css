@@ -2206,8 +2206,13 @@ body .task-quick-list-modal {
 }
 
 /* Suppress Obsidian native modal close button (integrated in header) */
-body .task-quick-list-modal .modal-close-button {
+body .task-quick-list-modal .modal-close-button,
+body .task-quick-modal .modal-close-button,
+body .modal-container:has(.task-quick-list-modal) .modal-close-button {
     display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
 }
 
 body .task-quick-list-modal .quick-modal-filter-bar {
@@ -2824,11 +2829,11 @@ body .quick-modal-task-item.is-focused {
     display: flex;
     flex-direction: column;
     flex-wrap: wrap;
-    align-content: flex-start;
-    gap: 8px 14px;
-    padding: 10px 24px;
+    align-content: center;
+    gap: 16px 14px;
+    padding: 16px 28px;
     box-sizing: border-box;
-    transition: column-gap 0.12s ease;
+    transition: column-gap 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Horizontal scrollbar styling */
@@ -2851,10 +2856,10 @@ body .quick-modal-task-item.is-focused {
     background: var(--background-secondary);
     border: 1px solid var(--background-modifier-border);
     border-radius: 8px;
-    padding: 7px 11px;
+    padding: 8px 12px;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 3px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
     width: fit-content;

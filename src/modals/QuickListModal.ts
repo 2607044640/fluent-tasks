@@ -21,6 +21,12 @@ export class QuickListModal extends Modal {
         modalEl.addClass("task-quick-modal");
         modalEl.addClass("task-quick-list-modal");
 
+        // Remove native Obsidian modal close button
+        if ((this as any).closeButtonEl) {
+            (this as any).closeButtonEl.remove();
+        }
+        modalEl.querySelectorAll(".modal-close-button").forEach(el => el.remove());
+
         const { showTip, remainingTips } = getModalHotkeyTipInfo(
             this.app,
             this.plugin,
