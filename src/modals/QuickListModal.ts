@@ -36,6 +36,7 @@ export class QuickListModal extends Modal {
                 showTip,
                 remainingTips,
                 closeModal: () => this.close(),
+                modalEl,
             },
         });
 

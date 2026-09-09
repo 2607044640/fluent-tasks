@@ -18,6 +18,7 @@
     export let showTip: boolean = false;
     export let remainingTips: number = 0;
     export let closeModal: () => void = () => {};
+    export let modalEl: HTMLElement | null = null;
 
     // =============================================
     // State
@@ -28,6 +29,28 @@
     let searchQuery: string = "";
     let focusedIndex: number = 0;
     let isGridLayout: boolean = plugin?.settings?.quickListGridLayout ?? true;
+    let isFullscreen: boolean = false;
+    let isComposing: boolean = false;
+
+    function toggleFullscreen() {
+        isFullscreen = !isFullscreen;
+        if (modalEl) {
+            if (isFullscreen) {
+                modalEl.addClass("is-fullscreen");
+            } else {
+                modalEl.removeClass("is-fullscreen");
+            }
+        }
+    }
+
+    function handleCompositionStart() {
+        isComposing = true;
+    }
+
+    function handleCompositionEnd(e: CompositionEvent) {
+        isComposing = false;
+        searchQuery = (e.target as HTMLInputElement).value;
+    }
 
     // Inline Add List / Group State
     let isAddingList: boolean = false;
@@ -462,7 +485,7 @@
     }
 
     function handleKeydown(e: KeyboardEvent) {
-        if (e.isComposing || e.keyCode === 229) return;
+        if (e.isComposing || isComposing || e.keyCode === 229) return;
 
         if (e.key === "F2") {
             e.preventDefault();
@@ -557,6 +580,25 @@
             closeModal();
             return;
         }
+
+        // Cookbook Tier 3: Lossless Typing Redirection into Search Input
+        if (document.activeElement !== searchInputEl && !editingItemId && !isAddingList && !isAddingGroup) {
+            if (!e.ctrlKey && !e.altKey && !e.metaKey && !["Shift", "Control", "Alt", "Meta", "CapsLock", "Tab"].includes(e.key) && !e.key.startsWith("F")) {
+                if (e.key === "Process" || e.keyCode === 229) {
+                    searchInputEl?.focus();
+                } else if (e.key === "Backspace") {
+                    searchInputEl?.focus();
+                    if (searchQuery.length > 0) {
+                        e.preventDefault();
+                        searchQuery = searchQuery.slice(0, -1);
+                    }
+                } else if (e.key.length === 1) {
+                    searchInputEl?.focus();
+                    e.preventDefault();
+                    searchQuery += e.key;
+                }
+            }
+        }
     }
 
     function scrollFocusedIntoView() {
@@ -597,12 +639,14 @@
             placeholder="Type to filter lists (↑↓←→ navigate, F2 rename, Enter to open in center)..."
             bind:value={searchQuery}
             bind:this={searchInputEl}
+            on:compositionstart={handleCompositionStart}
+            on:compositionend={handleCompositionEnd}
         />
         {#if searchQuery}
             <button class="quick-modal-filter-clear" on:click={() => { searchQuery = ""; searchInputEl?.focus(); }}>✕</button>
         {/if}
         <button 
-            class="quick-modal-layout-toggle-btn"
+            class="quick-modal-header-btn quick-modal-layout-toggle-btn"
             title={isGridLayout ? "Switch to Classic Single-Column List" : "Switch to Grid Board Layout"}
             on:click={toggleLayoutMode}
         >
@@ -625,6 +669,34 @@
                 </svg>
                 <span>List</span>
             {/if}
+        </button>
+
+        <button 
+            class="quick-modal-header-btn"
+            title={isFullscreen ? "Restore floating window (88vw)" : "Maximize to full screen (100vw)"}
+            on:click={toggleFullscreen}
+        >
+            {#if isFullscreen}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="5" y="9" width="10" height="10" rx="1"></rect>
+                    <polyline points="9 9 9 5 19 5 19 15 15 15"></polyline>
+                </svg>
+            {:else}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+                </svg>
+            {/if}
+        </button>
+
+        <button 
+            class="quick-modal-header-btn quick-modal-close-btn"
+            title="Close (Esc)"
+            on:click={closeModal}
+        >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
         </button>
     </div>
 
