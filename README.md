@@ -26,10 +26,10 @@ For underlying architecture modifications, data flow sequence, component boundar
 - **Multi-line Title Wrapping (`wrapTaskTitles`)**: Enabled by default (`true`). Long task titles automatically wrap onto multiple lines in the center list without truncating or requiring the right detail sidebar to be opened.
 - **Sticky Ctrl + Hover Quick Peek**: Pressing <kbd>Ctrl</kbd> (or <kbd>Cmd</kbd> on macOS) while hovering over any task title displays a rich Quick Peek card containing full unclipped titles, subtasks checklist progress, notes, and due dates. Releasing Ctrl keeps the card pinned until you right-click or preview another task.
 - **Direct Hover Badges (Zero-Ctrl Required)**:
-  - **Subtasks Checklist (`0/x steps`)**: Direct hover over the step counter on any task reveals an interactive checklist popover showing all step items, check status (`✓` / `○`), and completion stats.
+  - **Subtasks Checklist (`0/x steps`) & Big Floating Editor**: Direct hover over the step counter on any task reveals an interactive checklist popover showing all step items, check status (`✓` / `○`), and completion stats. Clicking the badge or preview card opens the **Big Subtasks Floating Editor Modal** (`760px × 85vh`), featuring large comfortable typography (15.5px), smooth multiline editing with IME protection, step addition/deletion, and instant auto-save without opening the right task detail panel.
   - **Why Rationale (`?`)**: Attach development instructions or causal reasoning to tasks with instant hover popovers.
   - **Visual Memory SVGs (`🖼️`)**: Attach vault or inline SVG diagrams. Hover for instant preview; click for an immersive full-screen (`96vw × 94vh`) zoom lightbox with auto-scaling vector diagrams and one-click "Open in Tab" navigation.
-  - **Linked Notes (`📄`)**: Link Obsidian or OneNote notes (`[[Topic#^block]]`). Direct hover triggers native Page Preview without modifier keys; click to jump straight to the note.
+  - **Linked Notes (`📄`) & Dedicated Link Note Button**: Link Obsidian or OneNote notes (`[[Topic#^block]]`). Direct hover triggers native Page Preview without modifier keys; click to jump straight to the note. In the detail panel header, click the dedicated Link Note button to auto-create and bind a note under `TodoData/<ListName>/<TaskTitle>.md` with bidirectional title hot-sync.
   - **Custom Metadata Properties (`🏷️`)**: Add and manage arbitrary key-value tags with interactive popovers.
 
 ### 4. Due Dates, Reminders & Recurring Tasks
@@ -73,11 +73,14 @@ Customize the primary accent color to match your personal theme preference.
 
 1. **Install & Enable**: Install Fluent Tasks from the Obsidian Community Store and enable it.
 2. **Open Sidebar**: The task sidebar is opened automatically on startup. You can also open it via the Command Palette (`Ctrl+P` -> `Fluent Tasks: Open Sidebar`).
-3. **Assign Quick Hotkeys**: Go to **Settings → Hotkeys** to bind shortcuts to `Fluent Tasks: Open Quick Task Modal` or `Fluent Tasks: Open Quick List Modal`.
+3. **Assign Quick Hotkeys**: Go to **Settings → Hotkeys** to bind shortcuts to:
+   - `Fluent Tasks: Open Quick List Modal` (100% full-screen dashboard board navigation with auto-wrap and 2D arrow keys).
+   - `Fluent Tasks: Open Quick Task Modal` (Dual-pane keyboard-first floating manager).
 4. **Create Lists & Groups**: Create a new task list or group from the bottom of the sidebar.
 5. **Manage & Drag Tasks**: Click a list to view its tasks, drag them to reorder or drag onto sidebar lists to move, or click a task to view and edit its details.
-6. **Quick Shortcuts**: Hover over task titles with <kbd>Ctrl</kbd> for quick peeks; hover badges for instant metadata previews; right-click anywhere to dismiss popovers.
-7. **Features & Shortcuts Guide**: Click the `?` icon in the pane header action bar (next to `⋮`) anytime to open the complete interactive guide.
+6. **Floating Detail View**: Toggle `Open Task Details in Floating Modal` in plugin settings to inspect and edit task details in a centered popup without opening the right sidebar.
+7. **Quick Shortcuts**: Hover over task titles with <kbd>Ctrl</kbd> for quick peeks; hover badges for instant metadata previews; click the step counter to open the Big Subtasks Floating Editor; right-click anywhere to dismiss popovers.
+8. **Features & Shortcuts Guide**: Hover over or click the `?` icon in the pane header action bar (next to `⋮`) anytime to open the complete interactive guide.
 
 ---
 

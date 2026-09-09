@@ -1115,6 +1115,7 @@
     {#if popoverVisible && (popoverTask || popoverType === 'guide')}
         <div use:portal
              class="meta-popover placement-{popoverPlacement}"
+             class:guide-popover={popoverType === 'guide'}
              style="left: {popoverX}px; top: {popoverY}px;"
              on:mouseenter={cancelHidePopover}
              on:mouseleave={scheduleHidePopover}
@@ -1295,6 +1296,18 @@
                     </div>
                     <div class="meta-guide-items">
                         <div class="meta-guide-item">
+                            <span class="guide-key">Quick List Modal</span>
+                            <span class="guide-desc">Full-screen board navigator, horizontal slider & 2D arrow keys</span>
+                        </div>
+                        <div class="meta-guide-item">
+                            <span class="guide-key">Floating Detail Modal</span>
+                            <span class="guide-desc">Sidebar-free centered popup for editing task details</span>
+                        </div>
+                        <div class="meta-guide-item">
+                            <span class="guide-key">Quick Task Modal</span>
+                            <span class="guide-desc">Maximized popup for rapid keyboard task management</span>
+                        </div>
+                        <div class="meta-guide-item">
                             <span class="guide-key">Ctrl + Hover Title</span>
                             <span class="guide-desc">Quick peek full title, subtasks & notes</span>
                         </div>
@@ -1399,6 +1412,18 @@
                     <div class="guide-section">
                         <div class="guide-section-title">⚡ Interaction Shortcuts</div>
                         <div class="guide-grid">
+                            <div class="guide-card">
+                                <div class="guide-card-header"><span class="guide-badge-pill">Quick List Modal</span> Full-Screen Board Navigation</div>
+                                <div class="guide-card-body">Press hotkey (or Command Palette) to summon the 100% full-screen dashboard board. Features auto-wrapping vertical columns, horizontal mouse-wheel panning, dynamic gap expansion & centering, and intuitive 2D arrow navigation (← ↑ → ↓ / Enter / F2).</div>
+                            </div>
+                            <div class="guide-card">
+                                <div class="guide-card-header"><span class="guide-badge-pill">Detail View Mode</span> Floating Detail Modal</div>
+                                <div class="guide-card-body">Toggle in Settings to inspect and edit task details in an elegant centered floating modal instead of expanding the right sidebar panel. Supports stacked two-tier metadata modals and Esc dismissal without disturbing your workspace.</div>
+                            </div>
+                            <div class="guide-card">
+                                <div class="guide-card-header"><span class="guide-badge-pill">Quick Task Modal</span> Dual-Pane Popup Manager</div>
+                                <div class="guide-card-body">Summon the 92vw × 86vh floating task popup for lightning-fast task management with full keyboard navigation (↑↓←→, Space, Ctrl+N, Ctrl+Enter) and inline checklist triage.</div>
+                            </div>
                             <div class="guide-card">
                                 <div class="guide-card-header"><span class="guide-badge-pill">Ctrl + Hover</span> Task Title Quick Peek</div>
                                 <div class="guide-card-body">Hover over any task title while pressing <kbd>Ctrl</kbd> (or <kbd>Cmd</kbd> on macOS) to instantly pop up full title, subtasks checklist, notes, and due dates without opening the detail view.</div>

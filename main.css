@@ -1780,12 +1780,16 @@ body.is-dragging-ghost #dnd-action-dragged-el {
   color: var(--todo-accent);
   background-color: var(--todo-hover-bg);
 }
+.meta-popover.guide-popover {
+  max-height: min(85vh, 560px);
+  max-width: 360px;
+}
 .meta-popover-guide-card {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  min-width: 270px;
-  max-width: 340px;
+  min-width: 280px;
+  max-width: 350px;
 }
 .meta-guide-items {
   display: flex;
