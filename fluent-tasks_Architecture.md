@@ -1,7 +1,7 @@
 # Fluent Tasks - Architecture & Developer Guide
 
 <context>
-This document defines the core architecture, state flow, invariants, and API contracts for AI agents and human developers contributing to Fluent Tasks ("vibe coding"). For public usage and user installation, refer to: [README.md](file:///C:/ObsidianPublish/fluent-tasks/README.md).
+This document defines the core architecture, state flow, invariants, and API contracts for developers contributing to Fluent Tasks. For public usage and user installation, refer to: [README.md](README.md).
 </context>
 
 ## Architectural Overview

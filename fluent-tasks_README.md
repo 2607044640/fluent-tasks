@@ -71,7 +71,7 @@ Badges render conditionally between the task title and the star button. If a tas
 ## Microsoft To Do Bidirectional Sync
 
 <external_sync_integration>
-Fluent Tasks supports bidirectional synchronization with Microsoft To Do through the companion bridge plugin `A1MSTodoSync` (`a1-ms-todo-sync`). For full setup and configuration, refer to: [`A1MSTodoSync_README.md`](file:///c:/ObsidianDev/plugins/A1MSTodoSync/A1MSTodoSync_README.md).
+Fluent Tasks supports bidirectional synchronization with Microsoft To Do through the companion bridge plugin `A1MSTodoSync` (`a1-ms-todo-sync`).
 
 ### Architecture: Zero-Coupling Bridge
 - **No runtime dependency**: `A1MSTodoSync` is an independent personal plugin that reads/writes `TodoData/*.md` using the same `%%{...}%%` format. `fluent-tasks` detects changes via existing vault file event listeners.

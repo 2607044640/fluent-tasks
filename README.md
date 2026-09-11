@@ -5,14 +5,11 @@ A beautiful, drag-and-drop task manager for Obsidian, inspired by Microsoft To-D
 > [!NOTE]
 > If you are looking for a local alternative to **Microsoft To-Do**, **Todoist**, **TickTick (滴答清单)**, **Things 3**, or **Google Tasks** directly inside your Obsidian vault, Fluent Tasks provides a beautiful drag-and-drop workflow that stores all your lists and tasks in standard Markdown files.
 
-<context>
-For underlying architecture modifications, data flow sequence, component boundaries, and AI-assisted development ("vibe coding"), please refer to: [fluent-tasks_Architecture.md](file:///C:/ObsidianPublish/fluent-tasks/fluent-tasks_Architecture.md).
-</context>
-
 ## Features
 
 ### 1. Hierarchical Lists & Group Management
 - **Lists & Groups**: Organize your task lists into drag-and-drop groups. Easily reorder lists, create groups, or drag lists out of groups in the sidebar.
+- **Auto-Locate Active List on Sidebar Expand**: Expanding the sidebar (via toggle button or <kbd>Ctrl+B</kbd>) automatically scrolls to and highlights the currently active center list, expanding its parent group if folded.
 - **F2 Hover Rename & Context Menu**: Hover over any list or group and press <kbd>F2</kbd> (or right-click -> `Rename List/Group`) to rename it inline immediately without disrupting your workflow.
 
 ![Lists and Groups Demo](https://raw.githubusercontent.com/2607044640/fluent-tasks/main/docs/assets/lists_and_groups.gif)
@@ -26,7 +23,7 @@ For underlying architecture modifications, data flow sequence, component boundar
 - **Multi-line Title Wrapping (`wrapTaskTitles`)**: Enabled by default (`true`). Long task titles automatically wrap onto multiple lines in the center list without truncating or requiring the right detail sidebar to be opened.
 - **Sticky Ctrl + Hover Quick Peek**: Pressing <kbd>Ctrl</kbd> (or <kbd>Cmd</kbd> on macOS) while hovering over any task title displays a rich Quick Peek card containing full unclipped titles, subtasks checklist progress, notes, and due dates. Releasing Ctrl keeps the card pinned until you right-click or preview another task.
 - **Direct Hover Badges (Zero-Ctrl Required)**:
-  - **Subtasks Checklist (`0/x steps`) & Big Floating Editor**: Direct hover over the step counter on any task reveals an interactive checklist popover showing all step items, check status (`✓` / `○`), and completion stats. Clicking the badge or preview card opens the **Big Subtasks Floating Editor Modal** (`760px × 85vh`), featuring large comfortable typography (15.5px), smooth multiline editing with IME protection, step addition/deletion, and instant auto-save without opening the right task detail panel.
+  - **Subtasks Checklist (`0/x steps`) & Full-Screen Floating Editor**: Direct hover over the step counter on any task reveals an interactive checklist popover showing all step items, check status (`✓` / `○`), and completion stats. Clicking the badge or preview card opens the **Full-Screen Subtasks Floating Editor Modal** (`100vw × 100vh`), featuring large comfortable typography (16px), smooth multiline editing with IME protection, step addition/deletion, and instant auto-save without opening the right task detail panel.
   - **Why Rationale (`?`)**: Attach development instructions or causal reasoning to tasks with instant hover popovers.
   - **Visual Memory SVGs (`🖼️`)**: Attach vault or inline SVG diagrams. Hover for instant preview; click for an immersive full-screen (`96vw × 94vh`) zoom lightbox with auto-scaling vector diagrams and one-click "Open in Tab" navigation.
   - **Linked Notes (`📄`) & Dedicated Link Note Button**: Link Obsidian or OneNote notes (`[[Topic#^block]]`). Direct hover triggers native Page Preview without modifier keys; click to jump straight to the note. In the detail panel header, click the dedicated Link Note button to auto-create and bind a note under `TodoData/<ListName>/<TaskTitle>.md` with bidirectional title hot-sync.
@@ -95,9 +92,9 @@ Fluent Tasks respects your data ownership. All lists are stored as `.md` files i
 
 ---
 
-## Contributing & Vibe Coding
+## Contributing
 
-We welcome contributions! Whether you are writing TypeScript code directly or using AI agents ("vibe coding"), follow these steps to get started:
+We welcome contributions! Follow these steps to get started:
 
 1. **Clone & Install**:
    ```bash
@@ -109,7 +106,7 @@ We welcome contributions! Whether you are writing TypeScript code directly or us
    - Development watch mode: `npm run dev`
    - Production build: `npm run build`
 3. **Architecture Reference**:
-   Read [fluent-tasks_Architecture.md](file:///C:/ObsidianPublish/fluent-tasks/fluent-tasks_Architecture.md) to understand state flows, EventBus events, and strict system invariants before submitting pull requests.
+   Read [fluent-tasks_Architecture.md](fluent-tasks_Architecture.md) to understand state flows, EventBus events, and architecture invariants before submitting pull requests.
 
 ---
 

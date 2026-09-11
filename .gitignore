@@ -1,11 +1,15 @@
 # Node dependencies
 node_modules/
 
-# OS-specific files
+# OS-specific and environment files
 .DS_Store
 Thumbs.db
 desktop.ini
 *.log
+debug.log
+.env
+*.pem
+*.key
 
 # Private development references
 DEVELOPMENT.md
