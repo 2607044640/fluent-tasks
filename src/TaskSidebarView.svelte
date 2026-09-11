@@ -237,6 +237,73 @@
         triggerRenameHoveredOrActive();
     }
 
+    function handleRevealSidebarCategory(payload: any) {
+        if (payload && payload.filepath) {
+            void locateAndRevealCategory(payload.filepath);
+        }
+    }
+
+    /**
+     * Locate and reveal a category in the sidebar tree.
+     * If the category is inside a collapsed group, auto-expand that group beforehand.
+     * Smoothly scrolls the item into view with a gentle highlight pulse.
+     */
+    export async function locateAndRevealCategory(filepath: string): Promise<boolean> {
+        if (!filepath) return false;
+
+        // Ensure sidebar state is loaded
+        if (!sidebarItems || sidebarItems.length === 0) {
+            await loadSidebarItems();
+        }
+
+        let targetCategory: CategoryInfo | null = null;
+        let parentGroup: GroupInfo | null = null;
+
+        for (const item of sidebarItems) {
+            if (item.type === "category" && item.filepath === filepath) {
+                targetCategory = item;
+                break;
+            } else if (item.type === "group") {
+                const child = item.items.find(c => c.filepath === filepath);
+                if (child) {
+                    targetCategory = child;
+                    parentGroup = item;
+                    break;
+                }
+            }
+        }
+
+        if (!targetCategory) return false;
+
+        // If inside a group and group is collapsed, expand it beforehand!
+        if (parentGroup && !parentGroup.isExpanded) {
+            parentGroup.isExpanded = true;
+            sidebarItems = [...sidebarItems];
+            await saveAndSyncSidebarState(sidebarItems);
+        }
+
+        activeCategoryPath = filepath;
+
+        await tick();
+
+        // Delay slightly to ensure Obsidian's sidebar width animation (~150ms-200ms) has expanded container layout
+        setTimeout(() => {
+            const escapedPath = CSS.escape(filepath);
+            const targetEl = document.querySelector(`.category-item[data-filepath="${escapedPath}"]`) as HTMLElement | null;
+            if (targetEl) {
+                targetEl.scrollIntoView({ block: "center", behavior: "smooth" });
+                targetEl.classList.remove("locate-highlight");
+                void targetEl.offsetWidth; // Force reflow to cleanly restart CSS animation
+                targetEl.classList.add("locate-highlight");
+                setTimeout(() => {
+                    targetEl?.classList.remove("locate-highlight");
+                }, 1600);
+            }
+        }, 120);
+
+        return true;
+    }
+
     function startRenaming(target: any) {
         editingItemId = target.id;
         editingItemType = target.type;

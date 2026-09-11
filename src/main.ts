@@ -35,6 +35,7 @@ import "./styles.css";
 
 interface TaskSidebarViewComponent extends TaskSidebarView {
     triggerRenameHoveredOrActive: () => boolean;
+    locateAndRevealCategory: (filepath: string) => Promise<boolean>;
 }
 
 class TaskSidebarViewWrapper extends ItemView {
@@ -437,6 +438,31 @@ export default class FluentTasksPlugin extends Plugin {
                     })
                 );
 
+                // Auto-locate active center list when left sidebar is expanded (via Ctrl+B, ribbon, or layout change)
+                let wasLeftSplitCollapsed = !!(this.app.workspace.leftSplit as any)?.collapsed;
+                this.registerEvent(
+                    this.app.workspace.on("layout-change", () => {
+                        const leftSplit = this.app.workspace.leftSplit as any;
+                        const isNowCollapsed = !!leftSplit?.collapsed;
+                        if (wasLeftSplitCollapsed && !isNowCollapsed) {
+                            this.handleSidebarExpanded();
+                        }
+                        wasLeftSplitCollapsed = isNowCollapsed;
+                    })
+                );
+
+                this.registerDomEvent(window, "keydown", (evt: KeyboardEvent) => {
+                    const isMod = (evt.ctrlKey || evt.metaKey) && !evt.shiftKey && !evt.altKey;
+                    if (isMod && (evt.key === "b" || evt.key === "B")) {
+                        const leftSplit = this.app.workspace.leftSplit as any;
+                        if (leftSplit?.collapsed) {
+                            setTimeout(() => {
+                                this.handleSidebarExpanded();
+                            }, 80);
+                        }
+                    }
+                }, true);
+
             const isCategoryFile = (path?: string) => {
                 if (!path || !path.startsWith(DATA_FOLDER + "/") || !path.endsWith(".md")) return false;
                 const relPath = path.slice(DATA_FOLDER.length + 1);
@@ -794,6 +820,93 @@ export default class FluentTasksPlugin extends Plugin {
             void this.app.workspace.revealLeaf(sidebarLeaves[0]);
         } else {
             void this.activateView(VIEW_TYPE_SIDEBAR, "left");
+        }
+        this.handleSidebarExpanded();
+    }
+
+    /**
+     * Check whether the active workspace focus or visible center leaf belongs to Fluent Tasks.
+     */
+    isPluginPageActive(): boolean {
+        // 1. Check current active view type
+        const activeType = this.app.workspace.getActiveViewOfType(ItemView)?.getViewType();
+        if (activeType === VIEW_TYPE_MAIN || activeType === VIEW_TYPE_SIDEBAR || activeType === VIEW_TYPE_DETAIL) {
+            return true;
+        }
+
+        // 2. Check if the center workspace visible leaf is VIEW_TYPE_MAIN
+        const mainLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MAIN);
+        for (const leaf of mainLeaves) {
+            if (leaf.view instanceof TaskMainViewWrapper) {
+                const el = leaf.view.containerEl;
+                if (el && el.offsetParent !== null) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Get the CategoryInfo currently displayed in the center main view.
+     */
+    getActiveCenterCategory(): CategoryInfo | null {
+        const mainLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MAIN);
+        for (const leaf of mainLeaves) {
+            if (leaf.view instanceof TaskMainViewWrapper) {
+                const el = leaf.view.containerEl;
+                const comp = leaf.view.getComponent();
+                const cat = comp?.getCurrentCategory();
+                if (cat && (!el || el.offsetParent !== null)) {
+                    return cat;
+                }
+            }
+        }
+        for (const leaf of mainLeaves) {
+            if (leaf.view instanceof TaskMainViewWrapper) {
+                const cat = leaf.view.getComponent()?.getCurrentCategory();
+                if (cat) return cat;
+            }
+        }
+        return null;
+    }
+
+    private lastSidebarLocateTime = 0;
+
+    /**
+     * When the left sidebar is expanded (via Ctrl+B, layout-change, or button) while on Fluent Tasks,
+     * reveal the sidebar list tab and auto-locate/expand to the active center category.
+     */
+    handleSidebarExpanded(): void {
+        const now = Date.now();
+        if (now - this.lastSidebarLocateTime < 300) {
+            return; // Prevent duplicate triggers within 300ms
+        }
+        this.lastSidebarLocateTime = now;
+
+        if (!this.isPluginPageActive()) {
+            return; // Only execute when working on Fluent Tasks page
+        }
+
+        const centerCat = this.getActiveCenterCategory();
+        if (!centerCat) {
+            return;
+        }
+
+        const sidebarLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR);
+        if (sidebarLeaves.length > 0) {
+            void this.app.workspace.revealLeaf(sidebarLeaves[0]);
+            const sidebarView = sidebarLeaves[0].view;
+            if (sidebarView instanceof TaskSidebarViewWrapper) {
+                void sidebarView.getComponent()?.locateAndRevealCategory(centerCat.filepath);
+            }
+        } else {
+            void this.activateView(VIEW_TYPE_SIDEBAR, "left").then(() => {
+                const freshLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR);
+                if (freshLeaves.length > 0 && freshLeaves[0].view instanceof TaskSidebarViewWrapper) {
+                    void freshLeaves[0].view.getComponent()?.locateAndRevealCategory(centerCat.filepath);
+                }
+            });
         }
     }
 
