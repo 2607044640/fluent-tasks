@@ -260,6 +260,7 @@ export default class FluentTasksPlugin extends Plugin {
     public activeDetailModal: TaskDetailModal | null = null;
     public lastSelectedTask?: TaskItem;
     public lastSelectedCategoryFilepath?: string;
+    private isUserClosingSidebar = false;
 
     openTaskDetailModal(task?: TaskItem, categoryFilepath?: string): void {
         if (task && categoryFilepath) {
@@ -424,7 +425,7 @@ export default class FluentTasksPlugin extends Plugin {
 
                         // When switching focus from an external tab (e.g. Markdown note via Ctrl+Tab / Ctrl+Shift+Tab) to Fluent Tasks
                         if (isPluginView && !wasPluginView && this.settings.autoExpandSidebar) {
-                            if (Date.now() > this.suppressAutoExpandSidebarUntil) {
+                            if (!this.isUserClosingSidebar && Date.now() > this.suppressAutoExpandSidebarUntil) {
                                 this.expandSidebarToList();
                             }
                         }
@@ -438,28 +439,40 @@ export default class FluentTasksPlugin extends Plugin {
                     })
                 );
 
-                // Auto-locate active center list when left sidebar is expanded (via Ctrl+B, ribbon, or layout change)
-                let wasLeftSplitCollapsed = !!(this.app.workspace.leftSplit as any)?.collapsed;
-                this.registerEvent(
-                    this.app.workspace.on("layout-change", () => {
-                        const leftSplit = this.app.workspace.leftSplit as any;
-                        const isNowCollapsed = !!leftSplit?.collapsed;
-                        if (wasLeftSplitCollapsed && !isNowCollapsed) {
-                            this.handleSidebarExpanded();
-                        }
-                        wasLeftSplitCollapsed = isNowCollapsed;
-                    })
-                );
-
+                // Keyboard-driven sidebar toggle handling (Ctrl+B / Cmd+B)
                 this.registerDomEvent(window, "keydown", (evt: KeyboardEvent) => {
                     const isMod = (evt.ctrlKey || evt.metaKey) && !evt.shiftKey && !evt.altKey;
-                    if (isMod && (evt.key === "b" || evt.key === "B")) {
+                    const isB = evt.key === "b" || evt.key === "B" || evt.code === "KeyB";
+                    if (isMod && isB) {
                         const leftSplit = this.app.workspace.leftSplit as any;
-                        if (leftSplit?.collapsed) {
+                        const isCurrentlyCollapsed = !leftSplit || !!leftSplit.collapsed;
+
+                        if (!isCurrentlyCollapsed) {
+                            // CASE 1: SIDEBAR IS CURRENTLY OPEN.
+                            // User is pressing Ctrl+B to CLOSE it.
+                            // Suppress auto-expand to guarantee it NEVER pops back open!
+                            this.suppressAutoSidebarExpansion(3000);
+                            this.isUserClosingSidebar = true;
                             setTimeout(() => {
-                                this.handleSidebarExpanded();
-                            }, 80);
+                                this.isUserClosingSidebar = false;
+                            }, 600);
+                            // Let Obsidian's native app:toggle-left-sidebar command collapse it cleanly.
+                            return;
                         }
+
+                        // CASE 2: SIDEBAR IS CURRENTLY CLOSED.
+                        // User is pressing Ctrl+B to EXPAND it.
+                        if (!this.isPluginPageActive()) {
+                            return; // Ordinary markdown note -> native Obsidian behavior only
+                        }
+
+                        // On Fluent Tasks page: let Obsidian expand it, then locate list after expand animation
+                        setTimeout(() => {
+                            const currentLeftSplit = this.app.workspace.leftSplit as any;
+                            if (currentLeftSplit && !currentLeftSplit.collapsed) {
+                                this.locateActiveCategoryInSidebar();
+                            }
+                        }, 150);
                     }
                 }, true);
 
@@ -821,7 +834,12 @@ export default class FluentTasksPlugin extends Plugin {
         } else {
             void this.activateView(VIEW_TYPE_SIDEBAR, "left");
         }
-        this.handleSidebarExpanded();
+        setTimeout(() => {
+            const currentLeftSplit = this.app.workspace.leftSplit as any;
+            if (currentLeftSplit && !currentLeftSplit.collapsed) {
+                this.locateActiveCategoryInSidebar();
+            }
+        }, 120);
     }
 
     /**
@@ -874,10 +892,16 @@ export default class FluentTasksPlugin extends Plugin {
     private lastSidebarLocateTime = 0;
 
     /**
-     * When the left sidebar is expanded (via Ctrl+B, layout-change, or button) while on Fluent Tasks,
-     * reveal the sidebar list tab and auto-locate/expand to the active center category.
+     * Locate the active center category in the left sidebar tree.
+     * MUST ONLY operate when the left sidebar is confirmed to be expanded.
+     * NEVER forces sidebar expansion if the user collapsed it.
      */
-    handleSidebarExpanded(): void {
+    locateActiveCategoryInSidebar(): void {
+        const leftSplit = this.app.workspace.leftSplit as any;
+        if (!leftSplit || leftSplit.collapsed) {
+            return; // Safety guard: NEVER do anything if sidebar is collapsed!
+        }
+
         const now = Date.now();
         if (now - this.lastSidebarLocateTime < 300) {
             return; // Prevent duplicate triggers within 300ms
@@ -895,18 +919,15 @@ export default class FluentTasksPlugin extends Plugin {
 
         const sidebarLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR);
         if (sidebarLeaves.length > 0) {
-            void this.app.workspace.revealLeaf(sidebarLeaves[0]);
-            const sidebarView = sidebarLeaves[0].view;
+            const sidebarLeaf = sidebarLeaves[0];
+            // If sidebar view is not currently the active tab in sidedock, switch to it without forcing expand:
+            if (!this.isSidebarLeafActive(VIEW_TYPE_SIDEBAR, "left")) {
+                void this.app.workspace.revealLeaf(sidebarLeaf);
+            }
+            const sidebarView = sidebarLeaf.view;
             if (sidebarView instanceof TaskSidebarViewWrapper) {
                 void sidebarView.getComponent()?.locateAndRevealCategory(centerCat.filepath);
             }
-        } else {
-            void this.activateView(VIEW_TYPE_SIDEBAR, "left").then(() => {
-                const freshLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR);
-                if (freshLeaves.length > 0 && freshLeaves[0].view instanceof TaskSidebarViewWrapper) {
-                    void freshLeaves[0].view.getComponent()?.locateAndRevealCategory(centerCat.filepath);
-                }
-            });
         }
     }
 

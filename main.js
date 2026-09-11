@@ -28981,6 +28981,7 @@ var FluentTasksPlugin = class extends import_obsidian17.Plugin {
     this.ribbonIconEl = null;
     this.settings = Object.assign({}, DEFAULT_SETTINGS);
     this.activeDetailModal = null;
+    this.isUserClosingSidebar = false;
     this.isRollingOver = false;
     this.lastRolloverDate = "";
     // =============================================
@@ -29113,7 +29114,7 @@ var FluentTasksPlugin = class extends import_obsidian17.Plugin {
     });
     this.app.workspace.onLayoutReady(() => {
       void (async () => {
-        var _a, _b;
+        var _a;
         await this.dataService.ensureDataFolder();
         await this.loadSettings();
         this.applySettings();
@@ -29127,7 +29128,7 @@ var FluentTasksPlugin = class extends import_obsidian17.Plugin {
             const isPluginView = currentType === VIEW_TYPE_MAIN || currentType === VIEW_TYPE_SIDEBAR || currentType === VIEW_TYPE_DETAIL;
             const wasPluginView = lastActiveViewType === VIEW_TYPE_MAIN || lastActiveViewType === VIEW_TYPE_SIDEBAR || lastActiveViewType === VIEW_TYPE_DETAIL;
             if (isPluginView && !wasPluginView && this.settings.autoExpandSidebar) {
-              if (Date.now() > this.suppressAutoExpandSidebarUntil) {
+              if (!this.isUserClosingSidebar && Date.now() > this.suppressAutoExpandSidebarUntil) {
                 this.expandSidebarToList();
               }
             }
@@ -29137,26 +29138,29 @@ var FluentTasksPlugin = class extends import_obsidian17.Plugin {
             lastActiveViewType = currentType;
           })
         );
-        let wasLeftSplitCollapsed = !!((_b = this.app.workspace.leftSplit) == null ? void 0 : _b.collapsed);
-        this.registerEvent(
-          this.app.workspace.on("layout-change", () => {
-            const leftSplit = this.app.workspace.leftSplit;
-            const isNowCollapsed = !!(leftSplit == null ? void 0 : leftSplit.collapsed);
-            if (wasLeftSplitCollapsed && !isNowCollapsed) {
-              this.handleSidebarExpanded();
-            }
-            wasLeftSplitCollapsed = isNowCollapsed;
-          })
-        );
         this.registerDomEvent(window, "keydown", (evt) => {
           const isMod = (evt.ctrlKey || evt.metaKey) && !evt.shiftKey && !evt.altKey;
-          if (isMod && (evt.key === "b" || evt.key === "B")) {
+          const isB = evt.key === "b" || evt.key === "B" || evt.code === "KeyB";
+          if (isMod && isB) {
             const leftSplit = this.app.workspace.leftSplit;
-            if (leftSplit == null ? void 0 : leftSplit.collapsed) {
+            const isCurrentlyCollapsed = !leftSplit || !!leftSplit.collapsed;
+            if (!isCurrentlyCollapsed) {
+              this.suppressAutoSidebarExpansion(3e3);
+              this.isUserClosingSidebar = true;
               setTimeout(() => {
-                this.handleSidebarExpanded();
-              }, 80);
+                this.isUserClosingSidebar = false;
+              }, 600);
+              return;
             }
+            if (!this.isPluginPageActive()) {
+              return;
+            }
+            setTimeout(() => {
+              const currentLeftSplit = this.app.workspace.leftSplit;
+              if (currentLeftSplit && !currentLeftSplit.collapsed) {
+                this.locateActiveCategoryInSidebar();
+              }
+            }, 150);
           }
         }, true);
         const isCategoryFile = (path) => {
@@ -29210,7 +29214,7 @@ var FluentTasksPlugin = class extends import_obsidian17.Plugin {
           const category = p == null ? void 0 : p.category;
           if (category) {
             void (async () => {
-              var _a2, _b2, _c;
+              var _a2, _b, _c;
               if (this.settings.openDetailInModal) {
                 if (this.activeDetailModal) {
                   this.activeDetailModal.close();
@@ -29237,7 +29241,7 @@ var FluentTasksPlugin = class extends import_obsidian17.Plugin {
                     active: true
                   });
                 } else {
-                  const mainComponent = (_c = (_b2 = mainLeaf.view).getComponent) == null ? void 0 : _c.call(_b2);
+                  const mainComponent = (_c = (_b = mainLeaf.view).getComponent) == null ? void 0 : _c.call(_b);
                   if (mainComponent) {
                     const cat = {
                       id: category.filepath,
@@ -29454,7 +29458,12 @@ var FluentTasksPlugin = class extends import_obsidian17.Plugin {
     } else {
       void this.activateView(VIEW_TYPE_SIDEBAR, "left");
     }
-    this.handleSidebarExpanded();
+    setTimeout(() => {
+      const currentLeftSplit = this.app.workspace.leftSplit;
+      if (currentLeftSplit && !currentLeftSplit.collapsed) {
+        this.locateActiveCategoryInSidebar();
+      }
+    }, 120);
   }
   /**
    * Check whether the active workspace focus or visible center leaf belongs to Fluent Tasks.
@@ -29502,11 +29511,16 @@ var FluentTasksPlugin = class extends import_obsidian17.Plugin {
     return null;
   }
   /**
-   * When the left sidebar is expanded (via Ctrl+B, layout-change, or button) while on Fluent Tasks,
-   * reveal the sidebar list tab and auto-locate/expand to the active center category.
+   * Locate the active center category in the left sidebar tree.
+   * MUST ONLY operate when the left sidebar is confirmed to be expanded.
+   * NEVER forces sidebar expansion if the user collapsed it.
    */
-  handleSidebarExpanded() {
+  locateActiveCategoryInSidebar() {
     var _a;
+    const leftSplit = this.app.workspace.leftSplit;
+    if (!leftSplit || leftSplit.collapsed) {
+      return;
+    }
     const now2 = Date.now();
     if (now2 - this.lastSidebarLocateTime < 300) {
       return;
@@ -29521,19 +29535,14 @@ var FluentTasksPlugin = class extends import_obsidian17.Plugin {
     }
     const sidebarLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR);
     if (sidebarLeaves.length > 0) {
-      void this.app.workspace.revealLeaf(sidebarLeaves[0]);
-      const sidebarView = sidebarLeaves[0].view;
+      const sidebarLeaf = sidebarLeaves[0];
+      if (!this.isSidebarLeafActive(VIEW_TYPE_SIDEBAR, "left")) {
+        void this.app.workspace.revealLeaf(sidebarLeaf);
+      }
+      const sidebarView = sidebarLeaf.view;
       if (sidebarView instanceof TaskSidebarViewWrapper) {
         void ((_a = sidebarView.getComponent()) == null ? void 0 : _a.locateAndRevealCategory(centerCat.filepath));
       }
-    } else {
-      void this.activateView(VIEW_TYPE_SIDEBAR, "left").then(() => {
-        var _a2;
-        const freshLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR);
-        if (freshLeaves.length > 0 && freshLeaves[0].view instanceof TaskSidebarViewWrapper) {
-          void ((_a2 = freshLeaves[0].view.getComponent()) == null ? void 0 : _a2.locateAndRevealCategory(centerCat.filepath));
-        }
-      });
     }
   }
   getCategoryCommandId(cat) {
