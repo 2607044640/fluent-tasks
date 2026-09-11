@@ -7886,7 +7886,7 @@ function create_each_block2(key_1, ctx) {
   function click_handler2() {
     return (
       /*click_handler*/
-      ctx[19](
+      ctx[18](
         /*i*/
         ctx[32]
       )
@@ -7895,7 +7895,7 @@ function create_each_block2(key_1, ctx) {
   function input_handler(...args) {
     return (
       /*input_handler*/
-      ctx[20](
+      ctx[19](
         /*i*/
         ctx[32],
         ...args
@@ -7905,7 +7905,7 @@ function create_each_block2(key_1, ctx) {
   function keydown_handler(...args) {
     return (
       /*keydown_handler*/
-      ctx[21](
+      ctx[20](
         /*i*/
         ctx[32],
         ...args
@@ -7915,7 +7915,7 @@ function create_each_block2(key_1, ctx) {
   function click_handler_1() {
     return (
       /*click_handler_1*/
-      ctx[22](
+      ctx[21](
         /*i*/
         ctx[32]
       )
@@ -8093,20 +8093,18 @@ function create_fragment2(ctx) {
   let t7;
   let t8;
   let t9;
-  let button0;
   let t10;
-  let t11;
   let div5;
-  let t12;
+  let t11;
   let div4;
   let span1;
-  let t13;
+  let t12;
   let textarea;
   let autosize_action;
+  let t13;
+  let button;
   let t14;
-  let button1;
-  let t15;
-  let button1_disabled_value;
+  let button_disabled_value;
   let mounted;
   let dispose;
   let if_block0 = (
@@ -8150,23 +8148,20 @@ function create_fragment2(ctx) {
       t7 = text(t7_value);
       t8 = text(" completed");
       t9 = space();
-      button0 = element("button");
-      button0.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
-      t10 = space();
       if (if_block0)
         if_block0.c();
-      t11 = space();
+      t10 = space();
       div5 = element("div");
       if_block1.c();
-      t12 = space();
+      t11 = space();
       div4 = element("div");
       span1 = element("span");
       span1.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--todo-accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`;
-      t13 = space();
+      t12 = space();
       textarea = element("textarea");
-      t14 = space();
-      button1 = element("button");
-      t15 = text("Add");
+      t13 = space();
+      button = element("button");
+      t14 = text("Add");
       attr(polyline, "points", "9 11 12 14 22 4");
       attr(path, "d", "M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11");
       attr(svg0, "class", "task-steps-header-icon");
@@ -8183,19 +8178,15 @@ function create_fragment2(ctx) {
       ctx[0].title);
       attr(div1, "class", "task-steps-modal-title-box");
       attr(span0, "class", "task-steps-progress-pill");
-      attr(button0, "type", "button");
-      attr(button0, "class", "task-steps-modal-close-btn");
-      attr(button0, "title", "Close (Esc)");
-      attr(button0, "aria-label", "Close");
       attr(div2, "class", "task-steps-modal-header-actions");
       attr(div3, "class", "task-steps-modal-header");
       attr(span1, "class", "steps-modal-add-icon");
       attr(textarea, "rows", "1");
       attr(textarea, "class", "steps-modal-add-input");
       attr(textarea, "placeholder", "Add a step... (Press Enter to add, Shift+Enter for newline)");
-      attr(button1, "type", "button");
-      attr(button1, "class", "steps-modal-add-btn");
-      button1.disabled = button1_disabled_value = !/*newStepText*/
+      attr(button, "type", "button");
+      attr(button, "class", "steps-modal-add-btn");
+      button.disabled = button_disabled_value = !/*newStepText*/
       ctx[5].trim();
       attr(div4, "class", "steps-modal-add-row");
       attr(div5, "class", "task-steps-modal-body");
@@ -8220,37 +8211,29 @@ function create_fragment2(ctx) {
       append(span0, t6);
       append(span0, t7);
       append(span0, t8);
-      append(div2, t9);
-      append(div2, button0);
-      append(div6, t10);
+      append(div6, t9);
       if (if_block0)
         if_block0.m(div6, null);
-      append(div6, t11);
+      append(div6, t10);
       append(div6, div5);
       if_block1.m(div5, null);
-      append(div5, t12);
+      append(div5, t11);
       append(div5, div4);
       append(div4, span1);
-      append(div4, t13);
+      append(div4, t12);
       append(div4, textarea);
       set_input_value(
         textarea,
         /*newStepText*/
         ctx[5]
       );
-      ctx[24](textarea);
-      append(div4, t14);
-      append(div4, button1);
-      append(button1, t15);
-      ctx[25](div5);
+      ctx[23](textarea);
+      append(div4, t13);
+      append(div4, button);
+      append(button, t14);
+      ctx[24](div5);
       if (!mounted) {
         dispose = [
-          listen(
-            button0,
-            "click",
-            /*handleClose*/
-            ctx[14]
-          ),
           action_destroyer(autosize_action = autosize.call(
             null,
             textarea,
@@ -8261,7 +8244,7 @@ function create_fragment2(ctx) {
             textarea,
             "input",
             /*textarea_input_handler*/
-            ctx[23]
+            ctx[22]
           ),
           listen(
             textarea,
@@ -8270,7 +8253,7 @@ function create_fragment2(ctx) {
             ctx[13]
           ),
           listen(
-            button1,
+            button,
             "click",
             /*addStep*/
             ctx[12]
@@ -8316,7 +8299,7 @@ function create_fragment2(ctx) {
         } else {
           if_block0 = create_if_block_22(ctx2);
           if_block0.c();
-          if_block0.m(div6, t11);
+          if_block0.m(div6, t10);
         }
       } else if (if_block0) {
         if_block0.d(1);
@@ -8329,7 +8312,7 @@ function create_fragment2(ctx) {
         if_block1 = current_block_type(ctx2);
         if (if_block1) {
           if_block1.c();
-          if_block1.m(div5, t12);
+          if_block1.m(div5, t11);
         }
       }
       if (autosize_action && is_function(autosize_action.update) && dirty[0] & /*newStepText*/
@@ -8348,9 +8331,9 @@ function create_fragment2(ctx) {
         );
       }
       if (dirty[0] & /*newStepText*/
-      32 && button1_disabled_value !== (button1_disabled_value = !/*newStepText*/
+      32 && button_disabled_value !== (button_disabled_value = !/*newStepText*/
       ctx2[5].trim())) {
-        button1.disabled = button1_disabled_value;
+        button.disabled = button_disabled_value;
       }
     },
     i: noop,
@@ -8362,8 +8345,8 @@ function create_fragment2(ctx) {
       if (if_block0)
         if_block0.d();
       if_block1.d();
+      ctx[23](null);
       ctx[24](null);
-      ctx[25](null);
       mounted = false;
       run_all(dispose);
     }
@@ -8522,13 +8505,13 @@ function instance2($$self, $$props, $$invalidate) {
     if ("task" in $$props2)
       $$invalidate(0, task = $$props2.task);
     if ("categoryFilepath" in $$props2)
-      $$invalidate(15, categoryFilepath = $$props2.categoryFilepath);
+      $$invalidate(14, categoryFilepath = $$props2.categoryFilepath);
     if ("dataService" in $$props2)
-      $$invalidate(16, dataService = $$props2.dataService);
+      $$invalidate(15, dataService = $$props2.dataService);
     if ("plugin" in $$props2)
-      $$invalidate(17, plugin = $$props2.plugin);
+      $$invalidate(16, plugin = $$props2.plugin);
     if ("closeModal" in $$props2)
-      $$invalidate(18, closeModal = $$props2.closeModal);
+      $$invalidate(17, closeModal = $$props2.closeModal);
   };
   $$self.$$.update = () => {
     if ($$self.$$.dirty[0] & /*steps*/
@@ -8562,7 +8545,6 @@ function instance2($$self, $$props, $$invalidate) {
     deleteStep,
     addStep,
     handleAddInputKeydown,
-    handleClose,
     categoryFilepath,
     dataService,
     plugin,
@@ -8587,10 +8569,10 @@ var TaskStepsModalView = class extends SvelteComponent {
       safe_not_equal,
       {
         task: 0,
-        categoryFilepath: 15,
-        dataService: 16,
-        plugin: 17,
-        closeModal: 18,
+        categoryFilepath: 14,
+        dataService: 15,
+        plugin: 16,
+        closeModal: 17,
         flushSaveSync: 1
       },
       null,

@@ -2664,30 +2664,34 @@ body .task-detail-floating-modal .detail-container {
   right: 16px;
   cursor: pointer;
 }
+body .modal-container:has(.task-steps-floating-modal) {
+  padding: 0 !important;
+}
 body .modal-container:has(.task-steps-floating-modal) .modal-bg {
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
+  display: none !important;
 }
 body .task-steps-floating-modal {
-  width: 760px !important;
-  max-width: 92vw !important;
-  max-height: 85vh !important;
-  height: auto !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  max-width: 100vw !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  margin: 0 !important;
   padding: 0 !important;
-  border-radius: 14px;
-  overflow: hidden;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
-  background-color: var(--todo-panel-bg, var(--background-secondary, #222));
-  border: 1px solid var(--todo-border, var(--background-modifier-border, #333));
+  border-radius: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  background-color: var(--background-primary) !important;
   display: flex;
   flex-direction: column;
 }
-body .task-steps-floating-modal .modal-close-button {
-  display: none !important;
-}
 body .task-steps-floating-modal .modal-content.task-steps-modal-content {
   height: 100% !important;
-  max-height: 85vh !important;
+  max-height: 100vh !important;
   min-height: 0 !important;
   padding: 0 !important;
   margin: 0 !important;
@@ -2699,7 +2703,7 @@ body .task-steps-floating-modal .modal-content.task-steps-modal-content {
   display: flex;
   flex-direction: column;
   height: 100%;
-  max-height: 85vh;
+  max-height: 100vh;
   min-height: 0;
   overflow: hidden;
 }
@@ -2708,9 +2712,9 @@ body .task-steps-floating-modal .modal-content.task-steps-modal-content {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 16px 22px 14px 22px;
+  padding: 14px 48px 14px 28px;
   border-bottom: 1px solid var(--todo-border, var(--background-modifier-border, #333));
-  background-color: var(--todo-panel-bg, var(--background-secondary, #222));
+  background-color: var(--background-primary);
   flex-shrink: 0;
 }
 .task-steps-modal-title-box {
@@ -2751,30 +2755,6 @@ body .task-steps-floating-modal .modal-content.task-steps-modal-content {
   border: 1px solid var(--todo-accent-glow, rgba(0, 120, 212, 0.3));
   white-space: nowrap;
 }
-.task-steps-modal-close-btn {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 6px;
-  color: var(--todo-text-muted, var(--text-muted, #888));
-  padding: 0;
-  transition:
-    background-color 0.15s ease,
-    color 0.15s ease,
-    transform 0.1s ease;
-}
-.task-steps-modal-close-btn:hover {
-  background-color: var(--background-modifier-hover, rgba(255, 255, 255, 0.08));
-  color: var(--todo-text-main, var(--text-normal, #fff));
-}
-.task-steps-modal-close-btn:active {
-  transform: scale(0.92);
-}
 .task-steps-progress-track {
   width: 100%;
   height: 3px;
@@ -2791,11 +2771,14 @@ body .task-steps-floating-modal .modal-content.task-steps-modal-content {
   min-height: 0;
   overflow-y: auto;
   scrollbar-width: thin;
-  padding: 20px 24px 24px 24px;
+  padding: 24px 32px 32px 32px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  max-width: 1080px;
+  width: 100%;
+  margin: 0 auto;
 }
 .task-steps-empty-state {
   display: flex;
