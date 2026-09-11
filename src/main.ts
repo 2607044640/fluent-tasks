@@ -453,7 +453,7 @@ export default class FluentTasksPlugin extends Plugin {
                             // Suppress auto-expand to guarantee it NEVER pops back open!
                             this.suppressAutoSidebarExpansion(3000);
                             this.isUserClosingSidebar = true;
-                            setTimeout(() => {
+                            window.setTimeout(() => {
                                 this.isUserClosingSidebar = false;
                             }, 600);
                             // Let Obsidian's native app:toggle-left-sidebar command collapse it cleanly.
@@ -467,7 +467,7 @@ export default class FluentTasksPlugin extends Plugin {
                         }
 
                         // On Fluent Tasks page: let Obsidian expand it, then locate list after expand animation
-                        setTimeout(() => {
+                        window.setTimeout(() => {
                             const currentLeftSplit = this.app.workspace.leftSplit as any;
                             if (currentLeftSplit && !currentLeftSplit.collapsed) {
                                 this.locateActiveCategoryInSidebar();
@@ -834,7 +834,7 @@ export default class FluentTasksPlugin extends Plugin {
         } else {
             void this.activateView(VIEW_TYPE_SIDEBAR, "left");
         }
-        setTimeout(() => {
+        window.setTimeout(() => {
             const currentLeftSplit = this.app.workspace.leftSplit as any;
             if (currentLeftSplit && !currentLeftSplit.collapsed) {
                 this.locateActiveCategoryInSidebar();

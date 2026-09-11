@@ -8378,7 +8378,7 @@ function instance2($$self, $$props, $$invalidate) {
   let saveTimeout = null;
   async function persistTask() {
     if (saveTimeout) {
-      clearTimeout(saveTimeout);
+      window.clearTimeout(saveTimeout);
       saveTimeout = null;
     }
     if (!task || !categoryFilepath)
@@ -8389,8 +8389,8 @@ function instance2($$self, $$props, $$invalidate) {
   }
   function scheduleSave() {
     if (saveTimeout)
-      clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(
+      window.clearTimeout(saveTimeout);
+    saveTimeout = window.setTimeout(
       async () => {
         await persistTask();
       },
@@ -8399,7 +8399,7 @@ function instance2($$self, $$props, $$invalidate) {
   }
   function flushSaveSync() {
     if (saveTimeout) {
-      clearTimeout(saveTimeout);
+      window.clearTimeout(saveTimeout);
       saveTimeout = null;
       $$invalidate(0, task.steps = steps.map((s) => ({ ...s })), task);
       void dataService.updateTask(categoryFilepath, task);
@@ -29147,7 +29147,7 @@ var FluentTasksPlugin = class extends import_obsidian17.Plugin {
             if (!isCurrentlyCollapsed) {
               this.suppressAutoSidebarExpansion(3e3);
               this.isUserClosingSidebar = true;
-              setTimeout(() => {
+              window.setTimeout(() => {
                 this.isUserClosingSidebar = false;
               }, 600);
               return;
@@ -29155,7 +29155,7 @@ var FluentTasksPlugin = class extends import_obsidian17.Plugin {
             if (!this.isPluginPageActive()) {
               return;
             }
-            setTimeout(() => {
+            window.setTimeout(() => {
               const currentLeftSplit = this.app.workspace.leftSplit;
               if (currentLeftSplit && !currentLeftSplit.collapsed) {
                 this.locateActiveCategoryInSidebar();
@@ -29458,7 +29458,7 @@ var FluentTasksPlugin = class extends import_obsidian17.Plugin {
     } else {
       void this.activateView(VIEW_TYPE_SIDEBAR, "left");
     }
-    setTimeout(() => {
+    window.setTimeout(() => {
       const currentLeftSplit = this.app.workspace.leftSplit;
       if (currentLeftSplit && !currentLeftSplit.collapsed) {
         this.locateActiveCategoryInSidebar();

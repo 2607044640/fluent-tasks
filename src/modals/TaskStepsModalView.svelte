@@ -34,7 +34,7 @@
     // =============================================
     async function persistTask() {
         if (saveTimeout) {
-            clearTimeout(saveTimeout);
+            window.clearTimeout(saveTimeout);
             saveTimeout = null;
         }
         if (!task || !categoryFilepath) return;
@@ -44,15 +44,15 @@
     }
 
     function scheduleSave() {
-        if (saveTimeout) clearTimeout(saveTimeout);
-        saveTimeout = setTimeout(async () => {
+        if (saveTimeout) window.clearTimeout(saveTimeout);
+        saveTimeout = window.setTimeout(async () => {
             await persistTask();
         }, SAVE_DEBOUNCE_MS);
     }
 
     export function flushSaveSync() {
         if (saveTimeout) {
-            clearTimeout(saveTimeout);
+            window.clearTimeout(saveTimeout);
             saveTimeout = null;
             task.steps = steps.map(s => ({ ...s }));
             void dataService.updateTask(categoryFilepath, task);
