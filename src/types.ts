@@ -126,4 +126,5 @@ export enum EventName {
     TASK_NAVIGATE = "task:navigate",
     SETTINGS_CHANGED = "settings:changed",
     TRIGGER_SIDEBAR_RENAME = "sidebar:trigger-rename",
+    REVEAL_SIDEBAR_CATEGORY = "sidebar:reveal-category",
 }

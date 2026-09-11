@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount, onDestroy } from "svelte";
+    import { onMount, onDestroy, tick } from "svelte";
     import { EventBus } from "./EventBus";
     import { DataService } from "./DataService";
     import { EventName, type SidebarItem, type CategoryInfo, type GroupInfo, DATA_FOLDER } from "./types";
@@ -70,6 +70,7 @@
         // Sync visual selection when category is selected externally (e.g. jump commands, search)
         EventBus.on(EventName.CATEGORY_SELECTED, handleExternalCategorySelected);
         EventBus.on(EventName.TRIGGER_SIDEBAR_RENAME, handleTriggerRename);
+        EventBus.on(EventName.REVEAL_SIDEBAR_CATEGORY, handleRevealSidebarCategory);
 
         window.addEventListener("pointermove", handleGlobalPointerMove, true);
         window.addEventListener("pointerup", handleGlobalPointerUp, true);
@@ -82,6 +83,7 @@
         window.removeEventListener("keydown", handleWindowKeydown, true);
         EventBus.off(EventName.CATEGORY_SELECTED, handleExternalCategorySelected);
         EventBus.off(EventName.TRIGGER_SIDEBAR_RENAME, handleTriggerRename);
+        EventBus.off(EventName.REVEAL_SIDEBAR_CATEGORY, handleRevealSidebarCategory);
         vaultEventRefs.forEach(ref => app.vault.offref(ref));
     });
 
