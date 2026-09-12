@@ -34,28 +34,24 @@ export class ConfirmDeleteLinkedNoteModal extends Modal {
         contentEl.empty();
         contentEl.addClass("fluent-tasks-delete-modal");
 
-        const heading = contentEl.createEl("h3", { text: `是否删除链接笔记（title：${this.task.title}）？` });
-        heading.style.marginTop = "0";
-        heading.style.marginBottom = "12px";
-
-        const p1 = contentEl.createEl("p");
-        p1.style.marginBottom = "8px";
-        p1.createSpan({ text: "待删除的任务绑定了专属笔记：" });
-        const noteBadge = p1.createEl("strong", { text: ` ${this.noteFile.basename} ` });
-        noteBadge.style.color = "var(--todo-accent, #8b5cf6)";
-
-        const p2 = contentEl.createEl("p", {
-            text: "您可以选择仅删除任务本身，或同时将该链接笔记移入回收站。",
+        const heading = contentEl.createEl("h3", {
+            text: `是否删除链接笔记（title：${this.task.title}）？`,
+            cls: "fluent-tasks-delete-modal-heading",
         });
-        p2.style.color = "var(--text-muted)";
-        p2.style.fontSize = "0.9em";
-        p2.style.marginBottom = "24px";
 
-        const btnContainer = contentEl.createDiv();
-        btnContainer.style.display = "flex";
-        btnContainer.style.justifyContent = "flex-end";
-        btnContainer.style.gap = "10px";
-        btnContainer.style.flexWrap = "wrap";
+        const p1 = contentEl.createEl("p", { cls: "fluent-tasks-delete-modal-p1" });
+        p1.createSpan({ text: "待删除的任务绑定了专属笔记：" });
+        p1.createEl("strong", {
+            text: ` ${this.noteFile.basename} `,
+            cls: "fluent-tasks-delete-modal-badge",
+        });
+
+        contentEl.createEl("p", {
+            text: "您可以选择仅删除任务本身，或同时将该链接笔记移入回收站。",
+            cls: "fluent-tasks-delete-modal-p2",
+        });
+
+        const btnContainer = contentEl.createDiv({ cls: "fluent-tasks-delete-modal-buttons" });
 
         // Cancel
         const cancelBtn = btnContainer.createEl("button", { text: "取消" });
