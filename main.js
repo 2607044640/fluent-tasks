@@ -7603,25 +7603,21 @@ var ConfirmDeleteLinkedNoteModal = class extends import_obsidian7.Modal {
     const { contentEl } = this;
     contentEl.empty();
     contentEl.addClass("fluent-tasks-delete-modal");
-    const heading = contentEl.createEl("h3", { text: `\u662F\u5426\u5220\u9664\u94FE\u63A5\u7B14\u8BB0\uFF08title\uFF1A${this.task.title}\uFF09\uFF1F` });
-    heading.style.marginTop = "0";
-    heading.style.marginBottom = "12px";
-    const p1 = contentEl.createEl("p");
-    p1.style.marginBottom = "8px";
-    p1.createSpan({ text: "\u5F85\u5220\u9664\u7684\u4EFB\u52A1\u7ED1\u5B9A\u4E86\u4E13\u5C5E\u7B14\u8BB0\uFF1A" });
-    const noteBadge = p1.createEl("strong", { text: ` ${this.noteFile.basename} ` });
-    noteBadge.style.color = "var(--todo-accent, #8b5cf6)";
-    const p2 = contentEl.createEl("p", {
-      text: "\u60A8\u53EF\u4EE5\u9009\u62E9\u4EC5\u5220\u9664\u4EFB\u52A1\u672C\u8EAB\uFF0C\u6216\u540C\u65F6\u5C06\u8BE5\u94FE\u63A5\u7B14\u8BB0\u79FB\u5165\u56DE\u6536\u7AD9\u3002"
+    const heading = contentEl.createEl("h3", {
+      text: `\u662F\u5426\u5220\u9664\u94FE\u63A5\u7B14\u8BB0\uFF08title\uFF1A${this.task.title}\uFF09\uFF1F`,
+      cls: "fluent-tasks-delete-modal-heading"
     });
-    p2.style.color = "var(--text-muted)";
-    p2.style.fontSize = "0.9em";
-    p2.style.marginBottom = "24px";
-    const btnContainer = contentEl.createDiv();
-    btnContainer.style.display = "flex";
-    btnContainer.style.justifyContent = "flex-end";
-    btnContainer.style.gap = "10px";
-    btnContainer.style.flexWrap = "wrap";
+    const p1 = contentEl.createEl("p", { cls: "fluent-tasks-delete-modal-p1" });
+    p1.createSpan({ text: "\u5F85\u5220\u9664\u7684\u4EFB\u52A1\u7ED1\u5B9A\u4E86\u4E13\u5C5E\u7B14\u8BB0\uFF1A" });
+    p1.createEl("strong", {
+      text: ` ${this.noteFile.basename} `,
+      cls: "fluent-tasks-delete-modal-badge"
+    });
+    contentEl.createEl("p", {
+      text: "\u60A8\u53EF\u4EE5\u9009\u62E9\u4EC5\u5220\u9664\u4EFB\u52A1\u672C\u8EAB\uFF0C\u6216\u540C\u65F6\u5C06\u8BE5\u94FE\u63A5\u7B14\u8BB0\u79FB\u5165\u56DE\u6536\u7AD9\u3002",
+      cls: "fluent-tasks-delete-modal-p2"
+    });
+    const btnContainer = contentEl.createDiv({ cls: "fluent-tasks-delete-modal-buttons" });
     const cancelBtn = btnContainer.createEl("button", { text: "\u53D6\u6D88" });
     cancelBtn.addEventListener("click", () => {
       this.decide(null);

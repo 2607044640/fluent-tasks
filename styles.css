@@ -2978,3 +2978,24 @@ body .task-steps-floating-modal .modal-content.task-steps-modal-content {
   color: var(--todo-accent, #0078d4);
   border-color: var(--todo-accent, #0078d4);
 }
+.fluent-tasks-delete-modal .fluent-tasks-delete-modal-heading {
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+.fluent-tasks-delete-modal .fluent-tasks-delete-modal-p1 {
+  margin-bottom: 8px;
+}
+.fluent-tasks-delete-modal .fluent-tasks-delete-modal-badge {
+  color: var(--todo-accent, #8b5cf6);
+}
+.fluent-tasks-delete-modal .fluent-tasks-delete-modal-p2 {
+  color: var(--text-muted);
+  font-size: 0.9em;
+  margin-bottom: 24px;
+}
+.fluent-tasks-delete-modal .fluent-tasks-delete-modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
