@@ -94,58 +94,16 @@
         focusedIndex = Math.max(0, flatCategories.length - 1);
     }
 
-    // =============================================
-    // Smart Bin-Packing Board Columns
-    // =============================================
-    interface BoardCardItem {
-        id: string;
-        type: "root" | "group";
-        group?: GroupInfo;
-        categories?: CategoryInfo[];
-    }
-
-    interface BoardColumn {
-        id: string;
-        items: BoardCardItem[];
-    }
-
-    let boardColumns: BoardColumn[] = [];
-    let isBoardPacked: boolean = false;
-
-    $: rawBoardCards = [
-        ...(rootCategories.length > 0 ? [{ id: "__root__", type: "root", categories: rootCategories } as BoardCardItem] : []),
-        ...groupItems.map(g => ({ id: g.id, type: "group", group: g } as BoardCardItem))
-    ];
-
-    $: if (rawBoardCards && isGridLayout) {
-        const currentCardIds = new Set(rawBoardCards.map(c => c.id));
-        const existingCardIds = new Set(boardColumns.flatMap(col => col.items.map(it => it.id)));
-
-        let isDifferent = currentCardIds.size !== existingCardIds.size;
-        if (!isDifferent) {
-            for (const id of currentCardIds) {
-                if (!existingCardIds.has(id)) {
-                    isDifferent = true;
-                    break;
-                }
-            }
-        }
-
-        if (isDifferent || boardColumns.length === 0) {
-            boardColumns = rawBoardCards.map(c => ({ id: c.id, items: [c] }));
-            isBoardPacked = false;
-        } else {
-            boardColumns = boardColumns.map(col => ({
-                ...col,
-                items: col.items.map(item => {
-                    const fresh = rawBoardCards.find(c => c.id === item.id);
-                    return fresh || item;
-                })
-            }));
+    $: if (filteredItems && isGridLayout) {
+        if (isPacked) {
+            isPacked = false;
+            cardOrderStyles = new Map();
         }
         scheduleAdjustSpacing();
     }
 
+    let cardOrderStyles: Map<string, string> = new Map();
+    let isPacked: boolean = false;
     let rafId: number | null = null;
 
     function scheduleAdjustSpacing() {
@@ -160,177 +118,198 @@
     function adjustBoardSpacing() {
         if (!boardEl || !isGridLayout) return;
 
+        const cards = Array.from(boardEl.querySelectorAll<HTMLElement>(".quick-grid-card"));
+        if (cards.length === 0) return;
+
+        const availableWidth = boardEl.clientWidth;
+        const availableHeight = boardEl.clientHeight;
+        if (availableWidth <= 0 || availableHeight <= 0) return;
+
         const minColGap = plugin?.settings?.quickListMinColGap ?? 16;
         const minRowGap = plugin?.settings?.quickListMinRowGap ?? 12;
         const minPaddingX = 28;
         const minPaddingY = 16;
-        const availableWidth = boardEl.clientWidth;
-        const availableHeight = boardEl.clientHeight;
 
-        if (availableWidth <= 0 || availableHeight <= 0 || rawBoardCards.length === 0) return;
-
-        // 1. Measure physical card elements from DOM
-        const cardHeights = new Map<string, number>();
-        const cardWidths = new Map<string, number>();
-
-        for (const card of rawBoardCards) {
-            const el = boardEl.querySelector(`.quick-grid-card[data-card-id="${card.id}"]`) as HTMLElement | null;
-            if (el && el.offsetHeight > 0) {
-                cardHeights.set(card.id, el.offsetHeight);
-                cardWidths.set(card.id, el.offsetWidth);
-            } else {
-                const count = card.type === "root" ? (card.categories?.length ?? 0) : (card.group?.items?.length ?? 0);
-                cardHeights.set(card.id, 44 + Math.max(1, count) * 28);
-                cardWidths.set(card.id, 220);
-            }
-        }
-
-        // 2. Check natural width under 1-card-per-column arrangement
-        let naturalTotalWidth = 0;
-        for (const card of rawBoardCards) {
-            naturalTotalWidth += (cardWidths.get(card.id) || 220);
-        }
-        const naturalTotalWidthWithGaps = naturalTotalWidth + Math.max(0, rawBoardCards.length - 1) * minColGap + minPaddingX * 2;
-
-        // Trigger condition per user requirement:
-        // Only pack when natural layout overflows horizontally (would require horizontal scrolling)
-        const naturalOverflows = naturalTotalWidthWithGaps > availableWidth;
-
-        if (!naturalOverflows) {
-            // Natural order fits comfortably on screen without horizontal scrollbar
-            if (isBoardPacked) {
-                boardColumns = rawBoardCards.map(c => ({ id: c.id, items: [c] }));
-                isBoardPacked = false;
-            }
-            applySpacing(boardColumns, cardWidths, availableWidth, availableHeight, minColGap, minRowGap, minPaddingX, minPaddingY);
-            return;
-        }
-
-        // 3. Natural layout overflows horizontally! Run Best-Fit Decreasing (BFD) bin packing
-        const maxColumnHeight = Math.max(150, availableHeight - minPaddingY * 2);
-
-        // Sort cards by height descending
-        const sortedCards = [...rawBoardCards].sort((a, b) => {
-            const ha = cardHeights.get(a.id) || 0;
-            const hb = cardHeights.get(b.id) || 0;
-            return hb - ha;
+        // Group cards into vertical columns based on visual position (left, then top)
+        const sortedCards = [...cards].sort((a, b) => {
+            const leftDiff = a.offsetLeft - b.offsetLeft;
+            if (Math.abs(leftDiff) > 10) return leftDiff;
+            return a.offsetTop - b.offsetTop;
         });
 
-        interface Bin {
-            items: BoardCardItem[];
-            usedHeight: number;
-        }
-
-        const bins: Bin[] = [];
+        const columns: HTMLElement[][] = [];
+        let currentCol: HTMLElement[] = [];
+        let prevColLeft = -1;
 
         for (const card of sortedCards) {
-            const h = cardHeights.get(card.id) || 120;
-            let bestBinIndex = -1;
-            let minRemainingSpace = Infinity;
-
-            // Try to place into an existing bin that minimizes remaining space (Best-Fit)
-            for (let i = 0; i < bins.length; i++) {
-                const bin = bins[i];
-                const neededHeight = bin.items.length === 0 ? h : (h + minRowGap);
-                const remainingSpace = maxColumnHeight - (bin.usedHeight + neededHeight);
-
-                if (remainingSpace >= 0 && remainingSpace < minRemainingSpace) {
-                    minRemainingSpace = remainingSpace;
-                    bestBinIndex = i;
-                }
-            }
-
-            if (bestBinIndex !== -1) {
-                const bin = bins[bestBinIndex];
-                const neededHeight = bin.items.length === 0 ? h : (h + minRowGap);
-                bin.items.push(card);
-                bin.usedHeight += neededHeight;
+            const left = card.offsetLeft;
+            if (prevColLeft >= 0 && Math.abs(left - prevColLeft) > 10) {
+                if (currentCol.length > 0) columns.push(currentCol);
+                currentCol = [card];
             } else {
-                // Open a new column
-                bins.push({
-                    items: [card],
-                    usedHeight: h
-                });
+                currentCol.push(card);
             }
+            prevColLeft = left;
         }
+        if (currentCol.length > 0) columns.push(currentCol);
 
-        // Preserve original relative order within each column
-        const rawOrderMap = new Map(rawBoardCards.map((c, i) => [c.id, i]));
-        for (const bin of bins) {
-            bin.items.sort((a, b) => (rawOrderMap.get(a.id) ?? 0) - (rawOrderMap.get(b.id) ?? 0));
-        }
+        const numCols = columns.length;
+        if (numCols === 0) return;
 
-        // Sort columns by the original order of their first item
-        bins.sort((a, b) => {
-            const firstA = a.items[0]?.id ? (rawOrderMap.get(a.items[0].id) ?? 0) : 0;
-            const firstB = b.items[0]?.id ? (rawOrderMap.get(b.items[0].id) ?? 0) : 0;
-            return firstA - firstB;
-        });
-
-        const newColumns: BoardColumn[] = bins.map(bin => ({
-            id: bin.items.map(it => it.id).join("__"),
-            items: bin.items
-        }));
-
-        const columnsChanged = newColumns.length !== boardColumns.length ||
-            newColumns.some((col, i) => col.id !== boardColumns[i]?.id);
-
-        if (columnsChanged) {
-            boardColumns = newColumns;
-            isBoardPacked = true;
-        }
-
-        applySpacing(newColumns, cardWidths, availableWidth, availableHeight, minColGap, minRowGap, minPaddingX, minPaddingY);
-    }
-
-    function applySpacing(
-        columns: BoardColumn[],
-        cardWidths: Map<string, number>,
-        availableWidth: number,
-        availableHeight: number,
-        minColGap: number,
-        minRowGap: number,
-        minPaddingX: number,
-        minPaddingY: number
-    ) {
-        if (!boardEl) return;
-
+        // 1. Calculate total column widths
         let totalColsWidth = 0;
-        for (const col of columns) {
-            const maxW = Math.max(...col.items.map(it => cardWidths.get(it.id) || 220));
+        for (const colCards of columns) {
+            const maxW = Math.max(...colCards.map(c => c.offsetWidth));
             totalColsWidth += maxW;
         }
 
-        const numCols = columns.length;
+        // 2. Horizontal Spacing (左右空间 - 图2算法: 均分列间距与左右外边距):
         const surplusX = availableWidth - totalColsWidth;
 
-        if (numCols <= 1) {
+        if (numCols === 1) {
             const padX = Math.max(minPaddingX, Math.floor(surplusX / 2));
             boardEl.style.paddingLeft = padX + "px";
             boardEl.style.paddingRight = padX + "px";
             boardEl.style.columnGap = minColGap + "px";
+            boardEl.style.alignContent = "center";
         } else {
             const equalColGap = Math.floor(surplusX / (numCols + 1));
             const maxAllowedColGap = 220;
 
             if (equalColGap < minColGap) {
+                // Tight fit or overflowing horizontally: allow natural horizontal scrolling
+                boardEl.style.alignContent = "flex-start";
                 boardEl.style.paddingLeft = minPaddingX + "px";
                 boardEl.style.paddingRight = minPaddingX + "px";
                 boardEl.style.columnGap = minColGap + "px";
             } else if (equalColGap <= maxAllowedColGap) {
+                // Equal gap everywhere: left margin = column gaps = right margin
+                boardEl.style.alignContent = "flex-start";
                 boardEl.style.paddingLeft = equalColGap + "px";
                 boardEl.style.paddingRight = equalColGap + "px";
                 boardEl.style.columnGap = equalColGap + "px";
             } else {
                 const remainingOuter = Math.floor((availableWidth - (totalColsWidth + (numCols - 1) * maxAllowedColGap)) / 2);
+                boardEl.style.alignContent = "flex-start";
                 boardEl.style.paddingLeft = remainingOuter + "px";
                 boardEl.style.paddingRight = remainingOuter + "px";
                 boardEl.style.columnGap = maxAllowedColGap + "px";
             }
         }
 
-        boardEl.style.paddingTop = minPaddingY + "px";
-        boardEl.style.paddingBottom = minPaddingY + "px";
+        // 3. Vertical Spacing (上下间距 - 图2算法: 多卡片列安全拉开间距 + 上下居中平衡):
+        const multiCardCols = columns.filter(col => col.length > 1);
+        let targetRowGap = minRowGap;
+
+        if (multiCardCols.length > 0) {
+            // 在不溢出的前提下尽量拉开卡片，让多卡片列呼吸感好
+            const safeGaps = multiCardCols.map(col => {
+                const sumH = col.reduce((sum, c) => sum + c.offsetHeight, 0);
+                return Math.floor((availableHeight - sumH) / (col.length + 1));
+            });
+            const minSafeGap = Math.min(...safeGaps);
+            targetRowGap = Math.max(minRowGap, Math.min(minSafeGap, 64));
+        }
+
+        // 垂直居中最高列，上下 padding 均等平衡（绝不上面紧下面空）
+        const maxColTotalH = Math.max(...columns.map(col => {
+            const sumH = col.reduce((sum, c) => sum + c.offsetHeight, 0);
+            return sumH + (col.length - 1) * targetRowGap;
+        }));
+        const verticalSurplus = availableHeight - maxColTotalH;
+        const targetPadY = Math.max(minPaddingY, Math.min(Math.floor(verticalSurplus / 2), 64));
+
+        boardEl.style.rowGap = targetRowGap + "px";
+        boardEl.style.paddingTop = targetPadY + "px";
+        boardEl.style.paddingBottom = targetPadY + "px";
+
+        // 4. 智能排布门禁：只有当实际发生横向溢出（超出屏幕有滑动条）时才触发！
+        const hasHorizontalOverflow = boardEl.scrollWidth > boardEl.clientWidth + 2;
+
+        if (isPacked) {
+            // 已在智能排布中：当窗口拉宽、默认排布已能放下时，自动恢复图2默认排布
+            if (!hasHorizontalOverflow) {
+                const estimatedCols = Math.ceil(cards.length / 2);
+                const estimatedWidth = estimatedCols * 220 + (estimatedCols + 1) * minColGap + minPaddingX * 2;
+                if (availableWidth >= estimatedWidth) {
+                    isPacked = false;
+                    cardOrderStyles = new Map();
+                    scheduleAdjustSpacing();
+                }
+            }
+            return;
+        }
+
+        // 默认排布下：如果没有横向溢出，直接保持图2原版排布，严禁改动！
+        if (!hasHorizontalOverflow) {
+            return;
+        }
+
+        // 确实超出了边界（出现了横向滑动条）：尝试计算是否能通过重排小卡片省出一整列，消除滑动条
+        const maxColHeight = Math.max(150, availableHeight - minPaddingY * 2);
+        const cardData = cards.map(el => ({
+            id: el.getAttribute("data-card-id") || "",
+            height: el.offsetHeight || 120,
+            width: el.offsetWidth || 220,
+        })).filter(c => c.id);
+
+        if (cardData.length <= 1) return;
+
+        // 按卡片高度从大到小排序 (Best-Fit Decreasing)
+        const sortedByHeight = [...cardData].sort((a, b) => b.height - a.height);
+        interface PackBin {
+            items: typeof cardData;
+            usedHeight: number;
+        }
+        const bins: PackBin[] = [];
+
+        for (const card of sortedByHeight) {
+            let bestBinIdx = -1;
+            let minRemaining = Infinity;
+
+            for (let i = 0; i < bins.length; i++) {
+                const bin = bins[i];
+                const neededH = bin.items.length === 0 ? card.height : (card.height + minRowGap);
+                const rem = maxColHeight - (bin.usedHeight + neededH);
+                if (rem >= 0 && rem < minRemaining) {
+                    minRemaining = rem;
+                    bestBinIdx = i;
+                }
+            }
+
+            if (bestBinIdx !== -1) {
+                const bin = bins[bestBinIdx];
+                const neededH = bin.items.length === 0 ? card.height : (card.height + minRowGap);
+                bin.items.push(card);
+                bin.usedHeight += neededH;
+            } else {
+                bins.push({ items: [card], usedHeight: card.height });
+            }
+        }
+
+        // 只有当智能合并后的列数严格小于当前溢出列数时才采用
+        if (bins.length < numCols) {
+            let packedColsWidth = 0;
+            for (const b of bins) {
+                const maxW = Math.max(...b.items.map(it => it.width));
+                packedColsWidth += maxW;
+            }
+            const totalPackedNeeded = packedColsWidth + (bins.length - 1) * minColGap + minPaddingX * 2;
+
+            if (totalPackedNeeded <= availableWidth) {
+                // 智能合并能完全消除滑动条！应用 CSS order 排布
+                const newStyles = new Map<string, string>();
+                let orderIdx = 0;
+                for (const b of bins) {
+                    for (const item of b.items) {
+                        newStyles.set(item.id, `order: ${orderIdx++};`);
+                    }
+                }
+                cardOrderStyles = newStyles;
+                isPacked = true;
+                scheduleAdjustSpacing();
+            }
+        }
     }
 
     async function toggleLayoutMode() {
@@ -948,145 +927,146 @@
             {#if filteredItems.length === 0}
                 <div class="quick-modal-empty">No matching lists or groups found.</div>
             {:else}
-                {#each boardColumns as col (col.id)}
-                    <div class="quick-grid-column" style="gap: {plugin?.settings?.quickListMinRowGap ?? 12}px;">
-                        {#each col.items as item (item.id)}
-                            {#if item.type === "root" && item.categories}
-                                {@const rootCats = item.categories}
-                                <div class="quick-grid-card is-root-card" data-card-id={item.id}>
-                                    <div class="quick-grid-card-header">
-                                        <div class="quick-grid-card-title-wrap">
-                                            <span class="quick-grid-card-icon">📁</span>
-                                            <span class="quick-grid-card-title">Lists</span>
-                                        </div>
-                                        <span class="quick-grid-card-count">{rootCats.length}</span>
-                                    </div>
-                                    <div class="quick-grid-card-items">
-                                        {#each rootCats as cat (cat.id)}
-                                            <div 
-                                                class="quick-modal-list-item is-grid-item"
-                                                class:is-focused={flatCategories[focusedIndex]?.filepath === cat.filepath}
-                                                class:drag-over-top={dragOverListId === cat.id && dragListPosition === "top"}
-                                                class:drag-over-bottom={dragOverListId === cat.id && dragListPosition === "bottom"}
-                                                data-filepath={cat.filepath}
-                                                role="button"
-                                                tabindex="0"
-                                                draggable="true"
-                                                on:dragstart={(e) => handleListDragStart(e, cat)}
-                                                on:dragover={(e) => handleListDragOver(e, cat, false)}
-                                                on:dragleave={handleListDragLeave}
-                                                on:drop|preventDefault={() => handleListDrop(cat)}
-                                                on:click={() => openCategoryInCenterOnly(cat)}
-                                                on:contextmenu={(e) => showItemContextMenu(e, { id: cat.id || "", name: cat.name, type: "category", filepath: cat.filepath })}
-                                            >
-                                                <span class="quick-modal-list-icon">📁</span>
-                                                
-                                                {#if editingItemId === cat.id}
-                                                    <input 
-                                                        type="text" 
-                                                        class="quick-modal-inline-rename-input"
-                                                        bind:value={editingName}
-                                                        bind:this={renameInputEl}
-                                                        on:blur={commitRename}
-                                                    />
-                                                {:else}
-                                                    <span class="quick-modal-list-name" title={cat.name}>{cat.name}</span>
-                                                {/if}
-
-                                                {#if (taskCounts[cat.filepath] ?? 0) > 0}
-                                                    <span class="quick-modal-badge">{taskCounts[cat.filepath]}</span>
-                                                {/if}
-                                            </div>
-                                        {/each}
-                                    </div>
-                                </div>
-                            {:else if item.type === "group" && item.group}
-                                {@const group = item.group}
+                <!-- Standalone Root Categories Card (if any exist) -->
+                {#if rootCategories.length > 0}
+                    <div 
+                        class="quick-grid-card is-root-card" 
+                        data-card-id="__root__" 
+                        style={cardOrderStyles.get("__root__") || ""}
+                    >
+                        <div class="quick-grid-card-header">
+                            <div class="quick-grid-card-title-wrap">
+                                <span class="quick-grid-card-icon">📁</span>
+                                <span class="quick-grid-card-title">Lists</span>
+                            </div>
+                            <span class="quick-grid-card-count">{rootCategories.length}</span>
+                        </div>
+                        <div class="quick-grid-card-items">
+                            {#each rootCategories as cat (cat.id)}
                                 <div 
-                                    class="quick-grid-card"
-                                    data-card-id={item.id}
-                                    class:drag-over-top={dragOverListId === group.id && dragListPosition === "top"}
-                                    class:drag-over-bottom={dragOverListId === group.id && dragListPosition === "bottom"}
-                                    class:drag-over-inside={dragOverListId === group.id && dragListPosition === "inside"}
+                                    class="quick-modal-list-item is-grid-item"
+                                    class:is-focused={flatCategories[focusedIndex]?.filepath === cat.filepath}
+                                    class:drag-over-top={dragOverListId === cat.id && dragListPosition === "top"}
+                                    class:drag-over-bottom={dragOverListId === cat.id && dragListPosition === "bottom"}
+                                    data-filepath={cat.filepath}
+                                    role="button"
+                                    tabindex="0"
+                                    draggable="true"
+                                    on:dragstart={(e) => handleListDragStart(e, cat)}
+                                    on:dragover={(e) => handleListDragOver(e, cat, false)}
+                                    on:dragleave={handleListDragLeave}
+                                    on:drop|preventDefault={() => handleListDrop(cat)}
+                                    on:click={() => openCategoryInCenterOnly(cat)}
+                                    on:contextmenu={(e) => showItemContextMenu(e, { id: cat.id || "", name: cat.name, type: "category", filepath: cat.filepath })}
                                 >
-                                    <div 
-                                        class="quick-grid-card-header"
-                                        draggable="true"
-                                        on:dragstart={(e) => handleListDragStart(e, group)}
-                                        on:dragover={(e) => handleListDragOver(e, group, true)}
-                                        on:dragleave={handleListDragLeave}
-                                        on:drop|preventDefault={() => handleListDrop(group)}
-                                        on:contextmenu={(e) => showItemContextMenu(e, { id: group.id, name: group.name, type: "group" })}
-                                    >
-                                        <div class="quick-grid-card-title-wrap">
-                                            <!-- svelte-ignore a11y-click-events-have-key-events -->
-                                            <span class="quick-modal-group-chevron" on:click|stopPropagation={() => toggleGroup(group)}>
-                                                {group.isExpanded ? "▼" : "▶"}
-                                            </span>
+                                    <span class="quick-modal-list-icon">📁</span>
+                                    
+                                    {#if editingItemId === cat.id}
+                                        <input 
+                                            type="text" 
+                                            class="quick-modal-inline-rename-input"
+                                            bind:value={editingName}
+                                            bind:this={renameInputEl}
+                                            on:blur={commitRename}
+                                        />
+                                    {:else}
+                                        <span class="quick-modal-list-name" title={cat.name}>{cat.name}</span>
+                                    {/if}
 
-                                            {#if editingItemId === group.id}
-                                                <input 
-                                                    type="text" 
-                                                    class="quick-modal-inline-rename-input"
-                                                    bind:value={editingName}
-                                                    bind:this={renameInputEl}
-                                                    on:blur={commitRename}
-                                                />
-                                            {:else}
-                                                <span class="quick-grid-card-title" on:click={() => toggleGroup(group)}>
-                                                    {group.name}
-                                                </span>
-                                            {/if}
-                                        </div>
-
-                                        <span class="quick-grid-card-count">
-                                            {group.items ? group.items.length : 0}
-                                        </span>
-                                    </div>
-
-                                    {#if group.isExpanded && group.items && group.items.length > 0}
-                                        <div class="quick-grid-card-items">
-                                            {#each group.items as child (child.id)}
-                                                <div 
-                                                    class="quick-modal-list-item is-grid-item"
-                                                    class:is-focused={flatCategories[focusedIndex]?.filepath === child.filepath}
-                                                    class:drag-over-top={dragOverListId === child.id && dragListPosition === "top"}
-                                                    class:drag-over-bottom={dragOverListId === child.id && dragListPosition === "bottom"}
-                                                    data-filepath={child.filepath}
-                                                    role="button"
-                                                    tabindex="0"
-                                                    draggable="true"
-                                                    on:dragstart={(e) => handleListDragStart(e, child)}
-                                                    on:dragover={(e) => handleListDragOver(e, child, false)}
-                                                    on:dragleave={handleListDragLeave}
-                                                    on:drop|preventDefault={() => handleListDrop(child)}
-                                                    on:click={() => openCategoryInCenterOnly(child)}
-                                                    on:contextmenu={(e) => showItemContextMenu(e, { id: child.id || "", name: child.name, type: "category", filepath: child.filepath })}
-                                                >
-                                                    <span class="quick-modal-list-icon">📁</span>
-                                                    
-                                                    {#if editingItemId === child.id}
-                                                        <input 
-                                                            type="text" 
-                                                            class="quick-modal-inline-rename-input"
-                                                            bind:value={editingName}
-                                                            bind:this={renameInputEl}
-                                                            on:blur={commitRename}
-                                                        />
-                                                    {:else}
-                                                        <span class="quick-modal-list-name" title={child.name}>{child.name}</span>
-                                                    {/if}
-
-                                                    {#if (taskCounts[child.filepath] ?? 0) > 0}
-                                                        <span class="quick-modal-badge">{taskCounts[child.filepath]}</span>
-                                                    {/if}
-                                                </div>
-                                            {/each}
-                                        </div>
+                                    {#if (taskCounts[cat.filepath] ?? 0) > 0}
+                                        <span class="quick-modal-badge">{taskCounts[cat.filepath]}</span>
                                     {/if}
                                 </div>
-                            {/if}
-                        {/each}
+                            {/each}
+                        </div>
+                    </div>
+                {/if}
+
+                <!-- Group Cards -->
+                {#each groupItems as group (group.id)}
+                    <div 
+                        class="quick-grid-card"
+                        data-card-id={group.id}
+                        style={cardOrderStyles.get(group.id) || ""}
+                        class:drag-over-top={dragOverListId === group.id && dragListPosition === "top"}
+                        class:drag-over-bottom={dragOverListId === group.id && dragListPosition === "bottom"}
+                        class:drag-over-inside={dragOverListId === group.id && dragListPosition === "inside"}
+                    >
+                        <div 
+                            class="quick-grid-card-header"
+                            draggable="true"
+                            on:dragstart={(e) => handleListDragStart(e, group)}
+                            on:dragover={(e) => handleListDragOver(e, group, true)}
+                            on:dragleave={handleListDragLeave}
+                            on:drop|preventDefault={() => handleListDrop(group)}
+                            on:contextmenu={(e) => showItemContextMenu(e, { id: group.id, name: group.name, type: "group" })}
+                        >
+                            <div class="quick-grid-card-title-wrap">
+                                <!-- svelte-ignore a11y-click-events-have-key-events -->
+                                <span class="quick-modal-group-chevron" on:click|stopPropagation={() => toggleGroup(group)}>
+                                    {group.isExpanded ? "▼" : "▶"}
+                                </span>
+
+                                {#if editingItemId === group.id}
+                                    <input 
+                                        type="text" 
+                                        class="quick-modal-inline-rename-input"
+                                        bind:value={editingName}
+                                        bind:this={renameInputEl}
+                                        on:blur={commitRename}
+                                    />
+                                {:else}
+                                    <span class="quick-grid-card-title" on:click={() => toggleGroup(group)}>
+                                        {group.name}
+                                    </span>
+                                {/if}
+                            </div>
+
+                            <span class="quick-grid-card-count">
+                                {group.items ? group.items.length : 0}
+                            </span>
+                        </div>
+
+                        {#if group.isExpanded && group.items && group.items.length > 0}
+                            <div class="quick-grid-card-items">
+                                {#each group.items as child (child.id)}
+                                    <div 
+                                        class="quick-modal-list-item is-grid-item"
+                                        class:is-focused={flatCategories[focusedIndex]?.filepath === child.filepath}
+                                        class:drag-over-top={dragOverListId === child.id && dragListPosition === "top"}
+                                        class:drag-over-bottom={dragOverListId === child.id && dragListPosition === "bottom"}
+                                        data-filepath={child.filepath}
+                                        role="button"
+                                        tabindex="0"
+                                        draggable="true"
+                                        on:dragstart={(e) => handleListDragStart(e, child)}
+                                        on:dragover={(e) => handleListDragOver(e, child, false)}
+                                        on:dragleave={handleListDragLeave}
+                                        on:drop|preventDefault={() => handleListDrop(child)}
+                                        on:click={() => openCategoryInCenterOnly(child)}
+                                        on:contextmenu={(e) => showItemContextMenu(e, { id: child.id || "", name: child.name, type: "category", filepath: child.filepath })}
+                                    >
+                                        <span class="quick-modal-list-icon">📁</span>
+                                        
+                                        {#if editingItemId === child.id}
+                                            <input 
+                                                type="text" 
+                                                class="quick-modal-inline-rename-input"
+                                                bind:value={editingName}
+                                                bind:this={renameInputEl}
+                                                on:blur={commitRename}
+                                            />
+                                        {:else}
+                                            <span class="quick-modal-list-name" title={child.name}>{child.name}</span>
+                                        {/if}
+
+                                        {#if (taskCounts[child.filepath] ?? 0) > 0}
+                                            <span class="quick-modal-badge">{taskCounts[child.filepath]}</span>
+                                        {/if}
+                                    </div>
+                                {/each}
+                            </div>
+                        {/if}
                     </div>
                 {/each}
             {/if}
