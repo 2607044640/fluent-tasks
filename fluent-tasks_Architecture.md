@@ -1,215 +1,55 @@
-# Fluent Tasks - Architecture & Developer Guide
+# fluent-tasks Architecture
 
-<context>
-This document defines the core architecture, state flow, invariants, and API contracts for developers contributing to Fluent Tasks. For public usage and user installation, refer to: [README.md](README.md).
-</context>
+Fluent Tasks (`manifest.json` id `fluent-tasks`, v1.0.23) is an Obsidian plugin. Tasks are Markdown checklists under `TodoData/*.md`. Cross-view traffic uses the `EventBus` singleton. Vault I/O uses `DataService`. There is **no** Microsoft Graph / To Do sync client; `TaskItem.msGraphId` / `msGraphListId` are optional serialized fields only. Cross-pane drag uses `window.__mstodo_drag_data` (legacy name).
 
-## Architectural Overview
+## Global Invariants
 
-Fluent Tasks follows a decoupled Three-Panel View architecture using Svelte 4 for presentational UI, an EventBus for cross-view communication, and an Atomic I/O Pipeline for vault state persistence.
+1. Flat `TodoData/*.md` files are the only task store. Sidebar grouping lives in `TodoData/.metadata.json` via `vault.adapter` (Obsidian Vault API ignores dotfiles). (Why chosen over a JSON/DB store: lists remain editable as ordinary checklists.)
+2. Views never call `vault.modify` themselves. Mutations go `UI → DataService → AtomicIOPipeline.processFile` (or adapter for metadata), then `EventBus` notifies peers. Internal-write windows suppress echo reloads. (Why chosen over per-view writes: concurrent edit + vault `modify` events would duplicate or drop tasks.)
+3. Recurrence uses local calendar dates (`YYYY-MM-DD` via `timeUtils`). Rollover runs inside `TaskService.getTasks`, on a 10s interval, and on window focus. (Why chosen over UTC `Date` math: due dates must not shift by timezone.)
 
-```
-+-----------------------------------------------------------------------------------+
-|                              Obsidian Workspace                                   |
-|                                                                                   |
-|  +-------------------------+  +-----------------------+  +---------------------+  |
-|  | TaskSidebarViewWrapper  |  |  TaskMainViewWrapper  |  | TaskDetailViewWrapper|  |
-|  |  (VIEW_TYPE_SIDEBAR)    |  |   (VIEW_TYPE_MAIN)    |  |  (VIEW_TYPE_DETAIL) |  |
-|  |  [Mounted Svelte View]  |  | [Mounted Svelte View] |  | [Mounted Svelte View|  |
-|  +------------+------------+  +-----------+-----------+  +----------+----------+  |
-+---------------|---------------------------|-------------------------|-------------+
-                |                           |                         |
-                +------------------- EventBus (Pub/Sub) --------------+
-                                            |
-                                            v
-                                   DataService Facade
-                                   /                \
-                       CategoryService            TaskService
-                                   \                /
-                                  AtomicIOPipeline
-                                         |
-                                         v
-                         Obsidian Vault API & Disk Storage
-```
+## Progressive Router
 
-<data_flow>
-Data movement across views and persistent storage follows a strict 7-step sequence:
+| Subsystem | Live entry | Doc |
+|---|---|---|
+| Plugin lifecycle | `src/main.ts` `FluentTasksPlugin` | [plugin-lifecycle](./docs/modules/plugin-lifecycle.md) |
+| Markdown parser | `src/MarkdownParser.ts` | [markdown-parser](./docs/modules/markdown-parser.md) |
+| Data facade + atomic I/O | `src/DataService.ts`, `src/services/AtomicIOPipeline.ts` | [data-service](./docs/modules/data-service.md) |
+| Task CRUD | `src/services/TaskService.ts` | [task-service](./docs/modules/task-service.md) |
+| Lists & groups | `src/services/CategoryService.ts` | [category-service](./docs/modules/category-service.md) |
+| Recurrence | `src/services/RecurrenceService.ts` | [recurrence-engine](./docs/modules/recurrence-engine.md) |
+| Linked notes | `src/services/LinkedNoteService.ts` | [linked-notes](./docs/modules/linked-notes.md) |
+| Search & filter | `DataService.searchTasks`, `src/TaskSearchModal.ts` | [query-search](./docs/modules/query-search.md) |
+| Svelte UI | `src/Task*View.svelte`, `src/modals/` | [svelte-ui](./docs/modules/svelte-ui.md) |
+| Settings | `src/settings.ts` | [settings](./docs/modules/settings.md) |
 
-1. **User Interaction**: User triggers an action in a Svelte view (e.g. checks a task, reorders a list, edits a note).
-2. **Optimistic UI Update**: Svelte component updates local state synchronously for zero-latency rendering.
-3. **Facade Delegation**: Svelte component invokes `DataService` facade methods (`updateTask`, `moveTask`, `saveSidebarState`).
-4. **Atomic Pipeline Execution**: `AtomicIOPipeline.processFile` executes `app.vault.process` for task files or `app.vault.adapter` for `.metadata.json`.
-5. **Serialization**: `MarkdownParser` parses or serializes Markdown text containing embedded `%%{...}%%` JSON comments.
-6. **Disk Commitment**: Obsidian Vault API commits changes atomically to local `.md` files under `TodoData/`.
-7. **Event Broadcast**: `EventBus.emit` dispatches typed events (`EventName`) to notify all active views to stay synchronized.
-</data_flow>
+## Runtime Surface
 
-## Component Scope & Ownership
+View types (`src/types.ts`): `fluent-tasks-sidebar` (left), `fluent-tasks-main` (center), `fluent-tasks-detail` (right leaf, or `TaskDetailModal` when `openDetailInModal`).
 
-<scope_boundaries>
-| Component | Primary Responsibility | MUST NOT Contain |
-| :--- | :--- | :--- |
-| `src/main.ts` | Plugin lifecycle, registering ItemViews, commands, settings tab | Direct DOM manipulations, raw vault I/O |
-| `src/EventBus.ts` | Typed pub/sub event bus for cross-view reactivity | State storage, direct vault I/O |
-| `src/DataService.ts` | Facade unifying CategoryService and TaskService | Direct Svelte UI rendering logic |
-| `src/services/AtomicIOPipeline.ts` | Race-condition-safe vault file I/O via `app.vault.process` | Task parsing or UI business logic |
-| `src/services/CategoryService.ts` | Sidebar group and category metadata management | Direct task item parsing |
-| `src/services/TaskService.ts` | Task CRUD, deduplication, auto-healing, cross-file moves | Direct DOM or view state rendering |
-| `src/MarkdownParser.ts` | Pure functional Markdown ↔ `TaskItem[]` parser & serializer | Vault API calls, side-effects, mutable state |
-| `src/settings.ts` | `FluentTasksSettingTab` UI & settings serialization | Core task list I/O logic |
-| `src/TaskSidebarView.svelte` | Presentational sidebar tree, drag-and-drop groups/categories | Direct `app.vault` file mutation |
-| `src/TaskMainView.svelte` | Presentational center task list, completion toggles, DND reorder | Raw file system reads |
-| `src/TaskDetailView.svelte` | Presentational right task detail panel (notes, subtask steps) | Direct file parsing logic |
-| `src/modals/QuickTaskModal.ts` | Obsidian Modal wrapper for standalone Quick Task Manager | Direct Svelte UI rendering logic |
-| `src/modals/QuickTaskModalView.svelte` | Dual-pane floating task manager, keyboard physics, DnD | Raw file system mutations |
-| `src/modals/QuickListModal.ts` | Obsidian Modal wrapper for list-only floating navigator | Direct Svelte UI rendering logic |
-| `src/modals/QuickListModalView.svelte` | List-only floating navigator, fuzzy filter, center view jump | Sidebar leaf state mutations |
-| `src/services/LinkedNoteService.ts` | Dedicated linked note creation, collision avoidance, path sanitization, bidirectional title hot-updates | Direct DOM or view state rendering |
-| `src/modals/ConfirmDeleteLinkedNoteModal.ts` | Confirmation modal prompting whether to delete linked note alongside task | Direct raw task parsing |
-| `src/modals/TaskDetailModal.ts` | Obsidian Modal wrapper for floating task detail panel | Direct Svelte UI rendering logic |
-| `src/modals/TaskStepsModal.ts` | Obsidian Modal wrapper for standalone Big Subtasks Floating Editor | Direct Svelte UI rendering logic |
-| `src/modals/TaskStepsModalView.svelte` | Standalone subtasks modal view: large typography, auto-resizing textareas, scrollable body, IME shield, optimistic check toggle, step deletion & addition, debounced sync | Raw file system mutations |
-| `src/utils/hotkeyUtils.ts` | Custom hotkey detection and tip countdown management | UI rendering or modal lifecycle |
-| `src/utils/popoverUtils.ts` | Smart viewport auto-flip and coordinate positioning | State management or DOM mutation |
-| `src/utils/domUtils.ts` | Svelte actions and DOM utilities (`portal` to `document.body`, `autosize` auto-resizing textareas) | Business logic or state management |
-| `src/utils/timeUtils.ts` | Pure formatters (`formatExactTime`, `getRelativeTime`, `getRecurrenceLabel`) | DOM mutation or side-effects |
-</scope_boundaries>
+Static commands: `open-all-views`, `open-sidebar`, `open-main-view`, `open-detail-view`, `search-all-tasks`, `search-current-list`, `rename-hovered-list-or-group`, `open-quick-list-modal`, `open-quick-task-modal`. Dynamic: `z-jump-to-list-*` from `registerCategoryCommands`.
 
-## System Invariants & Rules
+Models in `src/types.ts`: `TaskItem`, `TaskStep`, `RecurrenceRule` (`daily` | `weekdays` | `weekly` | `custom`), `CategoryInfo`, `GroupInfo`, `SidebarItem`. Timing: `src/constants.ts`.
 
-<key_invariants>
-- **Synchronous Settings Tab Registration**: MUST call `this.addSettingTab(new FluentTasksSettingTab(...))` synchronously in `onload()` before awaiting any async setup. (Why: prevents monkey-patched settings managers like 'settings-in-tab' from failing to intercept the gear icon).
-- **No Leaf Detaching in `onunload()`**: NEVER call `app.workspace.detachLeavesOfType()` inside `onunload()`. (Why: resets user's custom layout positions on plugin reload).
-- **Dotfile Storage Adapter**: MUST use `app.vault.adapter.read` and `write` for `.metadata.json`. (Why: Obsidian's `Vault` API ignores files starting with a dot).
-- **File Deletion API**: MUST use `app.fileManager.trashFile(file)` instead of `app.vault.trash(file)`. (Why: respects user's configured trash preferences).
-- **Static CSS Styling**: NEVER inject dynamic `<style>` DOM tags at runtime. Use `document.body.setCssProps()` for dynamic theme variables. (Why: strictly required by Obsidian Community Store automated checks).
-- **Type-Safe Folder Inspection**: MUST use `if (!(folder instanceof TFolder))` runtime checks instead of `(folder as TFolder)` casting. (Why: prevents runtime type assertion errors).
-- **Pure Markdown Data Storage**: Tasks MUST be stored as standard checklists `- [ ] Title %%{"id":...}%%`. (Why: preserves complete user data ownership in open Markdown format).
-- **Global Drag State Cleanup (CRITICAL)**: MUST unconditionally clear `(window as any).__mstodo_drag_data = null` on ANY global `pointerup` event, regardless of drop validity. (Why: prevents phantom drag states from teleporting items on subsequent clicks).
-- **Microsoft To Do Sync Format Parity (CRITICAL)**: The companion plugin `A1MSTodoSync` writes directly to `TodoData/*.md` using the identical `%%{...}%%` format. Any modification to `MarkdownParser.serializeTasksToMarkdown` MUST be mirrored in `A1MSTodoSync/src/MarkdownBridge.ts`. (Why: format divergence causes silent data corruption during sync).
-- **Sync Field Backward Compatibility**: Optional fields `dueDate?`, `msGraphId?`, `msGraphListId?`, `why?`, `svgs?`, `note_link?`, `customMeta?` on `TaskItem` MUST remain optional and NEVER be required. (Why: existing users without sync must not be affected — these fields only appear in `%%{...}%%` metadata when populated).
-- **Sidebar Expansion Protocol**: Automatic sidebar expansion on view focus MUST verify `leftSplit.collapsed` prior to `expand()` and check `getLeavesOfType(VIEW_TYPE_SIDEBAR).length > 0` before invoking `workspace.revealLeaf()`. (Why: prevents runtime crashes or layout disruptions if the sidebar leaf is closed or not yet initialized).
-- **Document Body Portaling for Popovers & Modals (CRITICAL)**: All hover popovers (`.meta-popover`), Lightbox modals, and dialog backdrops MUST mount directly to `document.body` via `use:portal` with `z-index: 100000`. (Why: prevents adjacent panes, sidebars, or parent container `overflow: hidden` from clipping popovers).
-- **Smart Viewport Auto-Flip Collision Avoidance**: Popover coordinate calculation MUST calculate `fitsAbove = rect.top >= estimatedHeight + 24` and flip to `placement-bottom` if space above is insufficient via `calculatePopoverPosition()`. (Why: guarantees popovers never overflow beyond the top window boundary).
-- **Obsidian Native Page Preview Protocol**: Note link hover previews MUST invoke `app.workspace.trigger("hover-link", ...)` passing a proxied `MouseEvent` (`ctrlKey: true`), `source: "fluent-tasks"`, `hoverParent`, `targetEl`, and `sourcePath`. (Why: allows seamless direct hover previews across both Reading and Live Preview modes while reuses Obsidian's native link caching).
-- **Instant Modal/Popover Dismissal**: Popovers and Lightbox modals MUST dismiss on global `contextmenu` (right-click) or backdrop left-click outside action buttons. (Why: provides zero-friction dismissal for rapid workflow navigation).
-- **Sticky Quick Peek Popover Invariant**: `scheduleHidePopover` MUST skip auto-hiding when `popoverType === 'title'`. (Why: allows users to release Ctrl and comfortably read complex multi-line steps, notes, and rationales without accidental dismissal).
-- **Standalone Ctrl Quick Peek Invariant (CRITICAL)**: `isQuickPeekModifierPressed` and global key listeners MUST reject any `Shift`, `Alt`, or combo keys (e.g. `C` in `Ctrl+C`, `V` in `Ctrl+V`). Any non-control keydown MUST instantly dismiss active Quick Peek popovers. (Why: prevents accidental popover flashes during clipboard operations, text selection, or IME switching).
-- **Dual-Layer Auto-Growing Textarea Invariant (`field-sizing` + reactive `use:autosize={value}`)**: Multi-line task title and subtask inputs MUST use `field-sizing: content; width: 100%; min-width: 0; box-sizing: border-box;` combined with `use:autosize={value}` resetting inline `height: auto` and `scrollTop = 0`. (Why: allows native `field-sizing` to shrink/grow freely without stale fixed inline pixel locks when external AI edits or task switches occur).
-- **Vault File Watcher & Internal Write Echo Prevention**: `app.vault.on("modify")` watches `TodoData/*.md` and broadcasts `EventName.TASK_UPDATED` with `isExternal: true`. `AtomicIOPipeline.markInternalWrite()` tracks timestamps to ignore self-initiated optimistic writes. (Why: guarantees instant cross-view updates when external AI agents modify task files while preventing disruptive UI reloads during user typing).
-- **Metadata-First Category Creation & Deduplication Auto-Healing (CRITICAL)**: `createCategory` MUST update `.metadata.json` BEFORE creating the `.md` file on disk. `getSidebarItems()` and `saveSidebarState()` MUST enforce `usedFiles` and `seenCategories` Set deduplication with automatic metadata self-healing. (Why: prevents newly created files from being detected as orphaned markdown files during vault create event races, eliminating double-insertion duplicates at both head and tail of the sidebar).
-- **Creation Form Mutex Invariant**: `confirmAddList` and `confirmAddGroup` MUST guard execution with mutex booleans (`isCreatingList`, `isCreatingGroup`). (Why: prevents simultaneous blur and Enter keydown events from firing concurrent duplicate creation calls).
-- **F2 Hover Renaming Protocol**: Hover tracking on lists/groups MUST set `hoveredItem` via `setHoveredCategory` and `setHoveredGroup`. F2 keydown triggers inline rename with autofocus, Enter/blur commits via `renameCategory`/`renameGroup`, and Esc cleanly cancels.
-- **Dynamic Z-Jump Commands & Hotkey Sinking**: Category jump commands MUST be prefixed with `Z-Jump to list: ${cat.name}` and use UTF-8 path hashes for command IDs. On any category create, rename, or delete, `registerCategoryCommands()` MUST dynamically refresh commands in real time without requiring an Obsidian restart. Jump command execution MUST invoke `collapseSidebars(1500)` to suppress `active-leaf-change` auto-expansion and strictly prevent expanding the left sidebar, keeping the center task view focused and clean without unexpected popups.
-- **Quick List Navigation & Sidebar Isolation (CRITICAL)**: `QuickListModal` and `QuickTaskModal` (in navigation mode) MUST reveal ONLY `VIEW_TYPE_MAIN` in the center workspace while invoking `plugin.collapseSidebars()`. This suppresses `active-leaf-change` auto-expansion and collapses both left and right sidebars if open. (Why: guarantees a distraction-free, focused center task view without unexpected sidebar popups when switching lists from floating modals).
-- **Quick List Full-Screen Grid Board Protocol**: `QuickListModal` renders at pure 100% full screen (`100vw × 100vh`, fixed top/left/right/bottom: 0, zero margins/borders/border-radius). Obsidian's native close button is destroyed via `closeButtonEl.remove()` and CSS suppressed, leaving the single integrated `[✕ Close]` button in the top filter bar. Root categories and groups render as cards in a horizontal column-wrap board (`flex-direction: column; flex-wrap: wrap; overflow-x: auto; overflow-y: hidden;`). Cards stack vertically with 16px row gap and automatically wrap to the right upon reaching the vertical boundary.
-- **Dynamic Space Detection & Boundary Gap Expansion Invariant**: Available width is checked against total column width. When columns fit without overflowing (`neededWidth < usableWidth`), `boardEl` centers symmetrically (`align-content: center`) and expands the distance between columns (`column-gap = Math.min(surplus / (numCols - 1), 240)`) until cards reach the 32px boundary margins. When overflowing, the board automatically falls back to `align-content: flex-start` with 14px compact gap and enables horizontal scrolling.
-- **Vertical-First Column Topology & Flicker-Free Invariant**: Column grouping is computed strictly via vertical `offsetTop <= prevTop` topology, completely decoupled from horizontal transition coordinates. All layout adjustments are coalesced via single `requestAnimationFrame` with pending cancellation in `onDestroy` to eliminate layout recalculation oscillation and visual flicker.
-- **Floating Detail Modal & Two-Tier Stacking Protocol**: When `openDetailInModal` is enabled in settings, selecting a task opens `TaskDetailModal` centered in the workspace rather than expanding the right sidebar leaf. All automatic sidebar openings and tab-switch expansions are strictly suppressed. Sub-modals (e.g. metadata modal portaled to body with higher z-index) stack cleanly over the floating detail modal.
-- **Linked Note Directory Isolation & Disambiguation Protocol (CRITICAL)**: Hard-bound task notes MUST be created in subfolder `TodoData/<ListName>/<SanitizedTitle>.md`. Direct children of `TodoData` are categories; subfolders prevent notes from polluting the sidebar tree as categories. Identical task titles MUST be disambiguated with `(1)`, `(2)` suffixes. When checking if a task title changed, comparison MUST strip trailing `(\d+)` collision suffixes to prevent infinite incremental rename loops on auto-save, and path collision detection MUST exclude the file's current path.
-- **Bidirectional Title Hot-Sync & Scoped Loop Shield**: Modifying a task title in Fluent Tasks sanitizes Windows forbidden characters (`[\/:*?"<>|\r\n]`), marks internal writes to prevent modify echo loops, and renames the file via `app.fileManager.renameFile(file, newPath)`. External file renames intercepted via `vault.on("rename")` extract frontmatter `taskId` (via metadataCache or direct file read fallback) and strictly scope path comparisons to the category's notes folder to prevent cross-category mutations.
-- **Linked Note Deletion Safety Invariant**: When deleting any task with a physical linked note, execution MUST prompt the user via `ConfirmDeleteLinkedNoteModal` (`是否删除链接笔记（title：xxx）？`), permitting either task-only deletion or both task and note deletion (via `app.fileManager.trashFile`). The modal MUST resolve its returned Promise on all exit paths (including `Esc` and backdrop dismissal) to prevent async hanging.
-- **Subtasks Big Floating Editor & Isolation Invariant**: Clicking the subtasks badge (`0/x steps`) or the hover preview card MUST call `stopPropagation()` to prevent triggering task selection or revealing the right task detail panel. The modal MUST open with comfortable large typography (15.5px), constrained max-height (85vh), and `min-height: 0` flex scrolling. Step edits MUST include Chinese IME composition guards (`isComposing || keyCode === 229`), auto-resize via `use:autosize`, auto-scroll on add, and debounced/synchronous flush persistence via `dataService.updateTask` with `TASK_UPDATED` event broadcasts.
+On disk: `TodoData/<List>.md` (tasks), `TodoData/.metadata.json` (tree), `TodoData/<List>/<title>.md` (optional bound notes), `TodoData/debug.log` (`Logger`). Plugin options: Obsidian `saveData` (`FluentTasksSettings`).
 
-## Key API Reference
+`onload` (sync): `new DataService(app)`, setting tab, `Logger.init`, `loadSettings`, `registerView` ×3, ribbon, commands. `onLayoutReady`: `ensureDataFolder`, vault `modify`/`create`/`delete`/`rename`, EventBus wiring, `registerCategoryCommands`, `checkRecurringTasksRollover(true)` then 10s interval + `focus`. `onunload`: ribbon off, `EventBus.destroy()`, clear `__mstodo_drag_data`.
 
-<api_reference>
-| Class / Module | Method | Signature | Side-Effects |
-| :--- | :--- | :--- | :--- |
-| `DataService` | `getSidebarItems` | `Promise<SidebarItem[]>` | Reads `DATA_FOLDER` files and `.metadata.json` |
-| `DataService` | `saveSidebarState` | `(items: SidebarItem[]) => Promise<void>` | Writes to `.metadata.json` via adapter |
-| `DataService` | `createCategory` | `(name: string) => Promise<CategoryInfo>` | Creates new `.md` file in `TodoData/` |
-| `DataService` | `renameCategory` | `(filepath: string, newName: string) => Promise<CategoryInfo>` | Renames file and updates `.metadata.json` |
-| `DataService` | `renameGroup` | `(groupId: string, newName: string) => Promise<void>` | Renames group in `.metadata.json` |
-| `DataService` | `deleteCategory` | `(filepath: string) => Promise<void>` | Trashes `.md` file via `trashFile` |
-| `DataService` | `getTasks` | `(filepath: string) => Promise<TaskItem[]>` | Reads file, deduplicates IDs |
-| `DataService` | `addTask` | `(filepath: string, title: string) => Promise<TaskItem>` | Atomically appends task via `processFile` |
-| `DataService` | `updateTask` | `(filepath: string, updated: TaskItem) => Promise<void>` | Atomically mutates task line |
-| `DataService` | `moveTask` | `(task: TaskItem, src: string, dst: string) => Promise<void>` | Removes from src, appends to dst |
-| `DataService` | `isInternalWrite` | `(filepath: string) => boolean` | Pure query against recent write timestamp cache |
-| `AtomicIOPipeline` | `processFile` | `(filepath: string, mutator: (data: string) => string) => Promise<void>` | Marks internal write and atomically updates file via `app.vault.process` |
-| `AtomicIOPipeline` | `isInternalWrite` | `(filepath: string) => boolean` | Checks if filepath was written internally within window |
-| `MarkdownParser` | `parseTasksFromMarkdown` | `(content: string) => TaskItem[]` | Pure query, zero side-effects |
-| `MarkdownParser` | `serializeTasksToMarkdown` | `(tasks: TaskItem[]) => string` | Pure query, zero side-effects |
-| `FluentTasksPlugin` | `expandSidebarToList` | `() => void` | Expands `leftSplit` and reveals `VIEW_TYPE_SIDEBAR` leaf |
-| `FluentTasksPlugin` | `collapseSidebars` | `(durationMs?: number, force?: boolean) => void` | Collapses `leftSplit` and `rightSplit` IF displaying Fluent Tasks views and sets suppression timeout |
-| `FluentTasksPlugin` | `suppressAutoSidebarExpansion` | `(durationMs?: number) => void` | Suppresses `active-leaf-change` sidebar auto-expansion |
-| `FluentTasksPlugin` | `isPluginLeftSidebarActive` | `() => boolean` | Checks if `VIEW_TYPE_SIDEBAR` is currently the active visible tab in `leftSplit` |
-| `FluentTasksPlugin` | `isPluginRightSidebarActive` | `() => boolean` | Checks if `VIEW_TYPE_DETAIL` is currently the active visible tab in `rightSplit` |
-</api_reference>
+## EventBus (`src/EventBus.ts` + `EventName`)
 
-## Development Recipes for Contributors
+| Event | Typical producer → consumer |
+|---|---|
+| `category:selected` | Sidebar / search / jump → plugin + main `loadCategory` |
+| `category:list-changed` | CategoryService → plugin `registerCategoryCommands` |
+| `task:selected` | Main / search → detail leaf or modal |
+| `task:updated` | CRUD + rollover + external `modify` → main/detail reload |
+| `task:moved` | Sidebar drop / context move → main optimistic lists |
+| `task:deleted` | Delete prompt → main/detail close |
+| `task:navigate` | Search hit → main scroll/highlight |
+| `detail:close` | Detail UI → detach leaf or close modal |
+| `settings:changed` | `saveSettings` → main wrap-titles |
+| `sidebar:trigger-rename` / `sidebar:reveal-category` | Plugin → sidebar F2 / locate |
 
-<adding_new_command_recipe>
-To add a new command accessible via the Obsidian Command Palette (`Ctrl+P`):
+`task:completed` is declared on `EventName` and is unused. Handlers run synchronously; `EventBus.destroy()` clears the map.
 
-1. Open `src/main.ts`.
-2. Inside `onload()`, add a command registration block:
-```typescript
-this.addCommand({
-    id: "my-command-id", // Do NOT prefix with plugin ID; Obsidian handles scoping
-    name: "My Command Display Name", // Do NOT include "Fluent Tasks:" in the name
-    callback: () => {
-        void this.myCommandImplementation();
-    },
-});
-```
-</adding_new_command_recipe>
-
-<adding_new_event_recipe>
-To add a new cross-view event:
-
-1. Open `src/types.ts` and append the event string to `EventName` enum:
-```typescript
-export enum EventName {
-    // ...
-    MY_NEW_EVENT = "my:new-event",
-}
-```
-2. Define the payload interface in `src/types.ts` if payload is required.
-3. Emit from emitting component: `EventBus.emit(EventName.MY_NEW_EVENT, payload);`.
-4. Listen in target component / view wrapper:
-```typescript
-EventBus.on(EventName.MY_NEW_EVENT, (payload) => {
-    // Handle reaction
-});
-```
-</adding_new_event_recipe>
-
-<adding_new_setting_recipe>
-To add a new configurable setting:
-
-1. Open `src/settings.ts`.
-2. Add the key and type to `FluentTasksSettings` interface and default value to `DEFAULT_SETTINGS`:
-```typescript
-export interface FluentTasksSettings {
-    accentColor: string;
-    myNewSetting: boolean;
-}
-export const DEFAULT_SETTINGS: FluentTasksSettings = {
-    accentColor: "#0078d4",
-    myNewSetting: true,
-};
-```
-3. Add a setting control inside `FluentTasksSettingTab.display()`:
-```typescript
-new Setting(containerEl)
-    .setName("My New Setting")
-    .setDesc("Description of what this setting controls.")
-    .addToggle(toggle => toggle
-        .setValue(this.plugin.settings.myNewSetting)
-        .onChange(async (value) => {
-            this.plugin.settings.myNewSetting = value;
-            await this.plugin.saveSettings();
-        }));
-```
-</adding_new_setting_recipe>
-
-## Troubleshooting & Common Edge Cases
-
-<troubleshooting>
-- **Zombie CSS Cache**: After editing `src/styles.css` or building CSS, verify that `styles.css` in the plugin root matches `main.css` in size. (Obsidian only loads `styles.css` from the plugin root).
-- **Dotfile Metadata Missing**: If categories or sidebar order fail to persist, ensure `CategoryService` uses `this.app.vault.adapter.read/write` on `TodoData/.metadata.json` instead of standard Vault API calls.
-- **Floating Promise Warnings**: Always wrap unawaited async callbacks in command handlers or EventBus listeners with `void (async () => { ... })()` or `void fn()`.
-- **Phantom Drag Teleportation**: If items spontaneously move lists after normal clicks, verify that `__mstodo_drag_data` is being unconditionally cleared on all `pointerup` escape paths in the Drag & Drop orchestration handlers.
-</troubleshooting>
+Build: `npm run dev` / `npm run build` → `esbuild.config.mjs` bundles `src/main.ts` to `main.js`. User onboarding: [fluent-tasks_README.md](./fluent-tasks_README.md).
