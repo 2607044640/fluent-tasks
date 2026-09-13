@@ -52,4 +52,4 @@ On disk: `TodoData/<List>.md` (tasks), `TodoData/.metadata.json` (tree), `TodoDa
 
 `task:completed` is declared on `EventName` and is unused. Handlers run synchronously; `EventBus.destroy()` clears the map.
 
-Build: `npm run dev` / `npm run build` → `esbuild.config.mjs` bundles `src/main.ts` to `main.js`. User onboarding: [fluent-tasks_README.md](./fluent-tasks_README.md).
+Build: `npm run dev` / `npm run build` → `esbuild.config.mjs` bundles `src/main.ts` to `main.js`. User onboarding: [README.md](./README.md).
