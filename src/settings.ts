@@ -12,6 +12,8 @@ export interface FluentTasksSettings {
     quickModalAction: 'direct' | 'navigate';
     quickModalTipCount: number;
     quickListGridLayout: boolean;
+    quickListMinColGap: number;
+    quickListMinRowGap: number;
 }
 
 export const DEFAULT_SETTINGS: FluentTasksSettings = {
@@ -25,6 +27,8 @@ export const DEFAULT_SETTINGS: FluentTasksSettings = {
     quickModalAction: 'direct',
     quickModalTipCount: 0,
     quickListGridLayout: true,
+    quickListMinColGap: 16,
+    quickListMinRowGap: 12,
 }
 
 export class FluentTasksSettingTab extends PluginSettingTab {
@@ -110,6 +114,30 @@ export class FluentTasksSettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.quickListGridLayout ?? true)
                 .onChange(async (value) => {
                     this.plugin.settings.quickListGridLayout = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName("Quick List Modal: Min Column Gap")
+            .setDesc("Minimum horizontal gap (in px) between columns in the Quick List grid board layout (default: 16px).")
+            .addSlider(slider => slider
+                .setLimits(8, 48, 2)
+                .setValue(this.plugin.settings.quickListMinColGap ?? 16)
+                .setDynamicTooltip()
+                .onChange(async (value) => {
+                    this.plugin.settings.quickListMinColGap = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName("Quick List Modal: Min Row Gap")
+            .setDesc("Minimum vertical gap (in px) between stacked cards within the same column (default: 12px).")
+            .addSlider(slider => slider
+                .setLimits(6, 32, 2)
+                .setValue(this.plugin.settings.quickListMinRowGap ?? 12)
+                .setDynamicTooltip()
+                .onChange(async (value) => {
+                    this.plugin.settings.quickListMinRowGap = value;
                     await this.plugin.saveSettings();
                 }));
 
