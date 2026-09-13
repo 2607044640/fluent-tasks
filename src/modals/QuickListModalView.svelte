@@ -164,60 +164,68 @@
         }
 
         // 2. Horizontal Spacing (左右空间 - 图2算法: 均分列间距与左右外边距):
-        const surplusX = availableWidth - totalColsWidth;
+        // 预留 8px 安全冗余，防止子像素四舍五入或卡片边框/阴影导致微溢出
+        const safeSurplusX = Math.max(0, availableWidth - totalColsWidth - 8);
 
         if (numCols === 1) {
-            const padX = Math.max(minPaddingX, Math.floor(surplusX / 2));
+            const padX = Math.max(minPaddingX, Math.floor(safeSurplusX / 2));
             boardEl.style.paddingLeft = padX + "px";
             boardEl.style.paddingRight = padX + "px";
             boardEl.style.columnGap = minColGap + "px";
             boardEl.style.alignContent = "center";
+            boardEl.style.overflowX = "hidden";
         } else {
-            const equalColGap = Math.floor(surplusX / (numCols + 1));
+            const equalColGap = Math.floor(safeSurplusX / (numCols + 1));
             const maxAllowedColGap = 220;
 
             if (equalColGap < minColGap) {
-                // Tight fit or overflowing horizontally: allow natural horizontal scrolling
+                // 空间不足，允许原生横向平滑滚动
                 boardEl.style.alignContent = "flex-start";
                 boardEl.style.paddingLeft = minPaddingX + "px";
                 boardEl.style.paddingRight = minPaddingX + "px";
                 boardEl.style.columnGap = minColGap + "px";
+                boardEl.style.overflowX = "auto";
             } else if (equalColGap <= maxAllowedColGap) {
-                // Equal gap everywhere: left margin = column gaps = right margin
+                // 空间充裕，均等分配边距与间距，彻底消除幽灵滚动条
                 boardEl.style.alignContent = "flex-start";
                 boardEl.style.paddingLeft = equalColGap + "px";
                 boardEl.style.paddingRight = equalColGap + "px";
                 boardEl.style.columnGap = equalColGap + "px";
+                boardEl.style.overflowX = "hidden";
             } else {
-                const remainingOuter = Math.floor((availableWidth - (totalColsWidth + (numCols - 1) * maxAllowedColGap)) / 2);
+                const remainingOuter = Math.floor((availableWidth - (totalColsWidth + (numCols - 1) * maxAllowedColGap) - 8) / 2);
                 boardEl.style.alignContent = "flex-start";
                 boardEl.style.paddingLeft = remainingOuter + "px";
                 boardEl.style.paddingRight = remainingOuter + "px";
                 boardEl.style.columnGap = maxAllowedColGap + "px";
+                boardEl.style.overflowX = "hidden";
             }
         }
 
         // 3. Vertical Spacing (上下间距 - 图2算法: 多卡片列安全拉开间距 + 上下居中平衡):
+        // 核心数学保证：预留 48px（32px基础Padding + 16px物理安全缓冲区），确保多卡片绝对不挤出容器产生换列诡异现象
         const multiCardCols = columns.filter(col => col.length > 1);
         let targetRowGap = minRowGap;
 
         if (multiCardCols.length > 0) {
-            // 在不溢出的前提下尽量拉开卡片，让多卡片列呼吸感好
+            // 计算在预留 48px 安全边界下，多卡片列所能容纳的最大安全间距
             const safeGaps = multiCardCols.map(col => {
                 const sumH = col.reduce((sum, c) => sum + c.offsetHeight, 0);
-                return Math.floor((availableHeight - sumH) / (col.length + 1));
+                const spaceForGaps = Math.max(0, availableHeight - 48 - sumH);
+                return Math.floor(spaceForGaps / Math.max(1, col.length - 1));
             });
             const minSafeGap = Math.min(...safeGaps);
-            targetRowGap = Math.max(minRowGap, Math.min(minSafeGap, 64));
+            targetRowGap = Math.max(minRowGap, Math.min(minSafeGap, 48));
         }
 
-        // 垂直居中最高列，上下 padding 均等平衡（绝不上面紧下面空）
+        // 垂直居中最高列，计算剩余垂直空间
         const maxColTotalH = Math.max(...columns.map(col => {
             const sumH = col.reduce((sum, c) => sum + c.offsetHeight, 0);
             return sumH + (col.length - 1) * targetRowGap;
         }));
-        const verticalSurplus = availableHeight - maxColTotalH;
-        const targetPadY = Math.max(minPaddingY, Math.min(Math.floor(verticalSurplus / 2), 64));
+        const verticalSurplus = Math.max(0, availableHeight - maxColTotalH);
+        // 上下 Padding 对称居中，留出至少 14px 垂直安全余量，物理阻止 flex-wrap 溢出换列
+        const targetPadY = Math.max(minPaddingY, Math.min(Math.floor((verticalSurplus - 14) / 2), 48));
 
         boardEl.style.rowGap = targetRowGap + "px";
         boardEl.style.paddingTop = targetPadY + "px";

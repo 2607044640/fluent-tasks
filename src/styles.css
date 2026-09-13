@@ -2860,7 +2860,7 @@ body .quick-modal-task-item.is-focused {
     min-height: 0;
     height: 0;
     max-height: 100%;
-    overflow-x: auto;
+    overflow-x: hidden;
     overflow-y: hidden;
     display: flex;
     flex-direction: column;
@@ -2869,7 +2869,6 @@ body .quick-modal-task-item.is-focused {
     gap: 16px 14px;
     padding: 16px 28px;
     box-sizing: border-box;
-    transition: column-gap 0.2s cubic-bezier(0.16, 1, 0.3, 1), row-gap 0.2s cubic-bezier(0.16, 1, 0.3, 1), padding 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Horizontal scrollbar styling */

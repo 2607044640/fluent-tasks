@@ -27865,32 +27865,36 @@ function instance6($$self, $$props, $$invalidate) {
       const maxW = Math.max(...colCards.map((c) => c.offsetWidth));
       totalColsWidth += maxW;
     }
-    const surplusX = availableWidth - totalColsWidth;
+    const safeSurplusX = Math.max(0, availableWidth - totalColsWidth - 8);
     if (numCols === 1) {
-      const padX = Math.max(minPaddingX, Math.floor(surplusX / 2));
+      const padX = Math.max(minPaddingX, Math.floor(safeSurplusX / 2));
       $$invalidate(22, boardEl.style.paddingLeft = padX + "px", boardEl);
       $$invalidate(22, boardEl.style.paddingRight = padX + "px", boardEl);
       $$invalidate(22, boardEl.style.columnGap = minColGap + "px", boardEl);
       $$invalidate(22, boardEl.style.alignContent = "center", boardEl);
+      $$invalidate(22, boardEl.style.overflowX = "hidden", boardEl);
     } else {
-      const equalColGap = Math.floor(surplusX / (numCols + 1));
+      const equalColGap = Math.floor(safeSurplusX / (numCols + 1));
       const maxAllowedColGap = 220;
       if (equalColGap < minColGap) {
         $$invalidate(22, boardEl.style.alignContent = "flex-start", boardEl);
         $$invalidate(22, boardEl.style.paddingLeft = minPaddingX + "px", boardEl);
         $$invalidate(22, boardEl.style.paddingRight = minPaddingX + "px", boardEl);
         $$invalidate(22, boardEl.style.columnGap = minColGap + "px", boardEl);
+        $$invalidate(22, boardEl.style.overflowX = "auto", boardEl);
       } else if (equalColGap <= maxAllowedColGap) {
         $$invalidate(22, boardEl.style.alignContent = "flex-start", boardEl);
         $$invalidate(22, boardEl.style.paddingLeft = equalColGap + "px", boardEl);
         $$invalidate(22, boardEl.style.paddingRight = equalColGap + "px", boardEl);
         $$invalidate(22, boardEl.style.columnGap = equalColGap + "px", boardEl);
+        $$invalidate(22, boardEl.style.overflowX = "hidden", boardEl);
       } else {
-        const remainingOuter = Math.floor((availableWidth - (totalColsWidth + (numCols - 1) * maxAllowedColGap)) / 2);
+        const remainingOuter = Math.floor((availableWidth - (totalColsWidth + (numCols - 1) * maxAllowedColGap) - 8) / 2);
         $$invalidate(22, boardEl.style.alignContent = "flex-start", boardEl);
         $$invalidate(22, boardEl.style.paddingLeft = remainingOuter + "px", boardEl);
         $$invalidate(22, boardEl.style.paddingRight = remainingOuter + "px", boardEl);
         $$invalidate(22, boardEl.style.columnGap = maxAllowedColGap + "px", boardEl);
+        $$invalidate(22, boardEl.style.overflowX = "hidden", boardEl);
       }
     }
     const multiCardCols = columns.filter((col) => col.length > 1);
@@ -27898,17 +27902,18 @@ function instance6($$self, $$props, $$invalidate) {
     if (multiCardCols.length > 0) {
       const safeGaps = multiCardCols.map((col) => {
         const sumH = col.reduce((sum, c) => sum + c.offsetHeight, 0);
-        return Math.floor((availableHeight - sumH) / (col.length + 1));
+        const spaceForGaps = Math.max(0, availableHeight - 48 - sumH);
+        return Math.floor(spaceForGaps / Math.max(1, col.length - 1));
       });
       const minSafeGap = Math.min(...safeGaps);
-      targetRowGap = Math.max(minRowGap, Math.min(minSafeGap, 64));
+      targetRowGap = Math.max(minRowGap, Math.min(minSafeGap, 48));
     }
     const maxColTotalH = Math.max(...columns.map((col) => {
       const sumH = col.reduce((sum, c) => sum + c.offsetHeight, 0);
       return sumH + (col.length - 1) * targetRowGap;
     }));
-    const verticalSurplus = availableHeight - maxColTotalH;
-    const targetPadY = Math.max(minPaddingY, Math.min(Math.floor(verticalSurplus / 2), 64));
+    const verticalSurplus = Math.max(0, availableHeight - maxColTotalH);
+    const targetPadY = Math.max(minPaddingY, Math.min(Math.floor((verticalSurplus - 14) / 2), 48));
     $$invalidate(22, boardEl.style.rowGap = targetRowGap + "px", boardEl);
     $$invalidate(22, boardEl.style.paddingTop = targetPadY + "px", boardEl);
     $$invalidate(22, boardEl.style.paddingBottom = targetPadY + "px", boardEl);
