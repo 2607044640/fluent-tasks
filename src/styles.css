@@ -2860,14 +2860,14 @@ body .quick-modal-task-item.is-focused {
     min-height: 0;
     height: 0;
     max-height: 100%;
-    overflow-x: hidden;
+    overflow-x: auto;
     overflow-y: hidden;
     display: flex;
-    flex-direction: column;
-    flex-wrap: wrap;
-    align-content: flex-start;
-    gap: 16px 14px;
-    padding: 16px 28px;
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 20px 28px;
     box-sizing: border-box;
 }
 
@@ -2887,6 +2887,16 @@ body .quick-modal-task-item.is-focused {
     background: var(--todo-accent, #8b5cf6);
 }
 
+.quick-grid-column {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 240px;
+    min-width: 200px;
+    max-width: 280px;
+    flex-shrink: 0;
+}
+
 .quick-grid-card {
     background: var(--background-secondary);
     border: 1px solid var(--background-modifier-border);
@@ -2897,11 +2907,7 @@ body .quick-modal-task-item.is-focused {
     gap: 3px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
-    width: fit-content;
-    min-width: 170px;
-    max-width: 310px;
-    max-height: calc(100% - 2px);
-    flex-shrink: 0;
+    width: 100%;
     box-sizing: border-box;
 }
 
