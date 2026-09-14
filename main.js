@@ -8822,6 +8822,22 @@ var BackupService = class {
       new import_obsidian9.Notice("\u{1F5D1}\uFE0F \u5907\u4EFD\u5DF2\u5220\u9664");
     }
   }
+  static async deleteAllBackups(app) {
+    const backups = await this.getBackups(app);
+    let deletedCount = 0;
+    for (const b of backups) {
+      const normPath = (0, import_obsidian9.normalizePath)(b.filepath);
+      try {
+        if (await app.vault.adapter.exists(normPath)) {
+          await app.vault.adapter.remove(normPath);
+          deletedCount++;
+        }
+      } catch (e) {
+        console.warn(`[BackupService] Failed to remove ${normPath}:`, e);
+      }
+    }
+    return deletedCount;
+  }
   static async pickAndImportBackupFile(app, plugin) {
     try {
       await this.ensureBackupFolder(app);
@@ -8878,7 +8894,7 @@ BackupService.LEGACY_BACKUP_FOLDER = `${DATA_FOLDER}/.backups`;
 // src/modals/BackupModalView.svelte
 function get_each_context3(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[21] = list[i];
+  child_ctx[22] = list[i];
   return child_ctx;
 }
 function create_else_block3(ctx) {
@@ -8891,7 +8907,7 @@ function create_else_block3(ctx) {
   );
   const get_key = (ctx2) => (
     /*b*/
-    ctx2[21].filepath
+    ctx2[22].filepath
   );
   for (let i = 0; i < each_value.length; i += 1) {
     let child_ctx = get_each_context3(ctx, each_value, i);
@@ -8978,14 +8994,14 @@ function create_each_block3(key_1, ctx) {
   let span0;
   let t0_value = (
     /*b*/
-    ctx[21].isDaily ? "\u6BCF\u65E5\u5907\u4EFD" : "\u624B\u52A8\u5907\u4EFD"
+    ctx[22].isDaily ? "\u6BCF\u65E5\u5907\u4EFD" : "\u624B\u52A8\u5907\u4EFD"
   );
   let t0;
   let t1;
   let span1;
   let t2_value = (
     /*b*/
-    ctx[21].createdAtFormatted + ""
+    ctx[22].createdAtFormatted + ""
   );
   let t2;
   let t3;
@@ -8993,7 +9009,7 @@ function create_each_block3(key_1, ctx) {
   let span2;
   let t4_value = (
     /*b*/
-    ctx[21].taskCount + ""
+    ctx[22].taskCount + ""
   );
   let t4;
   let t5;
@@ -9003,7 +9019,7 @@ function create_each_block3(key_1, ctx) {
   let span4;
   let t9_value = (
     /*b*/
-    ctx[21].listsCount + ""
+    ctx[22].listsCount + ""
   );
   let t9;
   let t10;
@@ -9013,7 +9029,7 @@ function create_each_block3(key_1, ctx) {
   let span6;
   let t14_value = formatBytes(
     /*b*/
-    ctx[21].sizeBytes
+    ctx[22].sizeBytes
   ) + "";
   let t14;
   let t15;
@@ -9027,18 +9043,18 @@ function create_each_block3(key_1, ctx) {
   function click_handler_1() {
     return (
       /*click_handler_1*/
-      ctx[18](
+      ctx[19](
         /*b*/
-        ctx[21]
+        ctx[22]
       )
     );
   }
   function click_handler_22() {
     return (
       /*click_handler_2*/
-      ctx[19](
+      ctx[20](
         /*b*/
-        ctx[21]
+        ctx[22]
       )
     );
   }
@@ -9085,7 +9101,7 @@ function create_each_block3(key_1, ctx) {
         span0,
         "is-daily",
         /*b*/
-        ctx[21].isDaily
+        ctx[22].isDaily
       );
       attr(span1, "class", "backup-time");
       attr(div0, "class", "backup-item-title-wrap");
@@ -9103,7 +9119,7 @@ function create_each_block3(key_1, ctx) {
         div4,
         "is-daily",
         /*b*/
-        ctx[21].isDaily
+        ctx[22].isDaily
       );
       this.first = div4;
     },
@@ -9150,7 +9166,7 @@ function create_each_block3(key_1, ctx) {
       ctx = new_ctx;
       if (dirty & /*backups*/
       8 && t0_value !== (t0_value = /*b*/
-      ctx[21].isDaily ? "\u6BCF\u65E5\u5907\u4EFD" : "\u624B\u52A8\u5907\u4EFD"))
+      ctx[22].isDaily ? "\u6BCF\u65E5\u5907\u4EFD" : "\u624B\u52A8\u5907\u4EFD"))
         set_data(t0, t0_value);
       if (dirty & /*backups*/
       8) {
@@ -9158,25 +9174,25 @@ function create_each_block3(key_1, ctx) {
           span0,
           "is-daily",
           /*b*/
-          ctx[21].isDaily
+          ctx[22].isDaily
         );
       }
       if (dirty & /*backups*/
       8 && t2_value !== (t2_value = /*b*/
-      ctx[21].createdAtFormatted + ""))
+      ctx[22].createdAtFormatted + ""))
         set_data(t2, t2_value);
       if (dirty & /*backups*/
       8 && t4_value !== (t4_value = /*b*/
-      ctx[21].taskCount + ""))
+      ctx[22].taskCount + ""))
         set_data(t4, t4_value);
       if (dirty & /*backups*/
       8 && t9_value !== (t9_value = /*b*/
-      ctx[21].listsCount + ""))
+      ctx[22].listsCount + ""))
         set_data(t9, t9_value);
       if (dirty & /*backups*/
       8 && t14_value !== (t14_value = formatBytes(
         /*b*/
-        ctx[21].sizeBytes
+        ctx[22].sizeBytes
       ) + ""))
         set_data(t14, t14_value);
       if (dirty & /*backups*/
@@ -9185,7 +9201,7 @@ function create_each_block3(key_1, ctx) {
           div4,
           "is-daily",
           /*b*/
-          ctx[21].isDaily
+          ctx[22].isDaily
         );
       }
     },
@@ -9199,7 +9215,7 @@ function create_each_block3(key_1, ctx) {
   };
 }
 function create_fragment3(ctx) {
-  let div9;
+  let div10;
   let div1;
   let div0;
   let t2;
@@ -9230,7 +9246,7 @@ function create_fragment3(ctx) {
   let t15;
   let input1;
   let t16;
-  let div7;
+  let div8;
   let div6;
   let h3;
   let t17;
@@ -9243,9 +9259,15 @@ function create_fragment3(ctx) {
   let t20;
   let button3;
   let t22;
+  let div7;
   let button4;
+  let t23;
+  let button4_disabled_value;
+  let button4_title_value;
   let t24;
-  let div8;
+  let button5;
+  let t26;
+  let div9;
   let mounted;
   let dispose;
   function select_block_type(ctx2, dirty) {
@@ -9265,7 +9287,7 @@ function create_fragment3(ctx) {
   let if_block = current_block_type(ctx);
   return {
     c() {
-      div9 = element("div");
+      div10 = element("div");
       div1 = element("div");
       div0 = element("div");
       div0.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg> <h2>\u4EFB\u52A1\u6570\u636E\u5907\u4EFD\u5668</h2>`;
@@ -9296,7 +9318,7 @@ function create_fragment3(ctx) {
       t15 = space();
       input1 = element("input");
       t16 = space();
-      div7 = element("div");
+      div8 = element("div");
       div6 = element("div");
       h3 = element("h3");
       t17 = text("\u5386\u53F2\u5907\u4EFD\u8BB0\u5F55 (");
@@ -9306,10 +9328,14 @@ function create_fragment3(ctx) {
       button3 = element("button");
       button3.textContent = "\u{1F4C2} \u6253\u5F00\u76EE\u5F55";
       t22 = space();
+      div7 = element("div");
       button4 = element("button");
-      button4.textContent = "\u{1F504}";
+      t23 = text("\u{1F5D1}\uFE0F \u5220\u9664\u5168\u90E8\u5907\u4EFD");
       t24 = space();
-      div8 = element("div");
+      button5 = element("button");
+      button5.textContent = "\u{1F504}";
+      t26 = space();
+      div9 = element("div");
       if_block.c();
       attr(div0, "class", "backup-header-title-wrap");
       attr(button0, "class", "backup-close-btn");
@@ -9343,20 +9369,26 @@ function create_fragment3(ctx) {
       attr(button3, "class", "backup-link-btn");
       attr(button3, "title", "\u5728\u6587\u4EF6\u7BA1\u7406\u5668\u4E2D\u6253\u5F00\u5907\u4EFD\u6240\u5728\u6587\u4EF6\u5939");
       attr(div6, "class", "backup-header-left");
-      attr(button4, "class", "backup-refresh-btn");
-      attr(button4, "title", "\u5237\u65B0\u5217\u8868");
-      attr(div7, "class", "backup-list-header");
-      attr(div8, "class", "backup-list-scrollable");
-      attr(div9, "class", "backup-modal-container");
+      attr(button4, "class", "backup-danger-btn");
+      button4.disabled = button4_disabled_value = /*backups*/
+      ctx[3].length === 0;
+      attr(button4, "title", button4_title_value = /*backups*/
+      ctx[3].length === 0 ? "\u6682\u65E0\u5907\u4EFD\u53EF\u5220\u9664" : "\u6E05\u7A7A\u5E76\u5220\u9664\u5168\u90E8\u672C\u5730\u5907\u4EFD\u6587\u4EF6");
+      attr(button5, "class", "backup-refresh-btn");
+      attr(button5, "title", "\u5237\u65B0\u5217\u8868");
+      attr(div7, "class", "backup-header-right");
+      attr(div8, "class", "backup-list-header");
+      attr(div9, "class", "backup-list-scrollable");
+      attr(div10, "class", "backup-modal-container");
     },
     m(target, anchor) {
-      insert(target, div9, anchor);
-      append(div9, div1);
+      insert(target, div10, anchor);
+      append(div10, div1);
       append(div1, div0);
       append(div1, t2);
       append(div1, button0);
-      append(div9, t4);
-      append(div9, div5);
+      append(div10, t4);
+      append(div10, div5);
       append(div5, div4);
       append(div4, div2);
       append(div2, input0);
@@ -9376,21 +9408,25 @@ function create_fragment3(ctx) {
       append(div3, button2);
       append(div3, t15);
       append(div3, input1);
-      ctx[16](input1);
-      append(div9, t16);
-      append(div9, div7);
-      append(div7, div6);
+      ctx[17](input1);
+      append(div10, t16);
+      append(div10, div8);
+      append(div8, div6);
       append(div6, h3);
       append(h3, t17);
       append(h3, t18);
       append(h3, t19);
       append(div6, t20);
       append(div6, button3);
-      append(div7, t22);
+      append(div8, t22);
+      append(div8, div7);
       append(div7, button4);
-      append(div9, t24);
-      append(div9, div8);
-      if_block.m(div8, null);
+      append(button4, t23);
+      append(div7, t24);
+      append(div7, button5);
+      append(div10, t26);
+      append(div10, div9);
+      if_block.m(div9, null);
       if (!mounted) {
         dispose = [
           listen(button0, "click", function() {
@@ -9428,10 +9464,16 @@ function create_fragment3(ctx) {
             button3,
             "click",
             /*click_handler*/
-            ctx[17]
+            ctx[18]
           ),
           listen(
             button4,
+            "click",
+            /*handleDeleteAll*/
+            ctx[14]
+          ),
+          listen(
+            button5,
             "click",
             /*refreshBackups*/
             ctx[7]
@@ -9460,6 +9502,16 @@ function create_fragment3(ctx) {
       8 && t18_value !== (t18_value = /*backups*/
       ctx[3].length + ""))
         set_data(t18, t18_value);
+      if (dirty & /*backups*/
+      8 && button4_disabled_value !== (button4_disabled_value = /*backups*/
+      ctx[3].length === 0)) {
+        button4.disabled = button4_disabled_value;
+      }
+      if (dirty & /*backups*/
+      8 && button4_title_value !== (button4_title_value = /*backups*/
+      ctx[3].length === 0 ? "\u6682\u65E0\u5907\u4EFD\u53EF\u5220\u9664" : "\u6E05\u7A7A\u5E76\u5220\u9664\u5168\u90E8\u672C\u5730\u5907\u4EFD\u6587\u4EF6")) {
+        attr(button4, "title", button4_title_value);
+      }
       if (current_block_type === (current_block_type = select_block_type(ctx, dirty)) && if_block) {
         if_block.p(ctx, dirty);
       } else {
@@ -9467,7 +9519,7 @@ function create_fragment3(ctx) {
         if_block = current_block_type(ctx);
         if (if_block) {
           if_block.c();
-          if_block.m(div8, null);
+          if_block.m(div9, null);
         }
       }
     },
@@ -9475,9 +9527,9 @@ function create_fragment3(ctx) {
     o: noop,
     d(detaching) {
       if (detaching) {
-        detach(div9);
+        detach(div10);
       }
-      ctx[16](null);
+      ctx[17](null);
       if_block.d();
       mounted = false;
       run_all(dispose);
@@ -9519,7 +9571,7 @@ function instance3($$self, $$props, $$invalidate) {
   async function handleToggleDailyBackup() {
     $$invalidate(2, dailyBackup = !dailyBackup);
     if (plugin == null ? void 0 : plugin.settings) {
-      $$invalidate(14, plugin.settings.dailyBackupEnabled = dailyBackup, plugin);
+      $$invalidate(15, plugin.settings.dailyBackupEnabled = dailyBackup, plugin);
       await plugin.saveSettings();
       new import_obsidian10.Notice(dailyBackup ? "\u2705 \u5DF2\u5F00\u542F\u6BCF\u65E5\u81EA\u52A8\u5907\u4EFD" : "\u26A0\uFE0F \u5DF2\u5173\u95ED\u6BCF\u65E5\u81EA\u52A8\u5907\u4EFD");
     }
@@ -9588,6 +9640,16 @@ function instance3($$self, $$props, $$invalidate) {
       await refreshBackups();
     }
   }
+  async function handleDeleteAll() {
+    if (backups.length === 0)
+      return;
+    if (confirm(`\u26A0\uFE0F \u5371\u9669\u64CD\u4F5C\uFF1A\u786E\u8BA4\u6E05\u7A7A\u5E76\u5220\u9664\u5168\u90E8 ${backups.length} \u4E2A\u672C\u5730\u5907\u4EFD\u6587\u4EF6\uFF1F
+\u6B64\u64CD\u4F5C\u4E0D\u53EF\u64A4\u9500\uFF01`)) {
+      const count = await BackupService.deleteAllBackups(app);
+      new import_obsidian10.Notice(`\u{1F5D1}\uFE0F \u5DF2\u6E05\u7A7A\u5220\u9664\u5168\u90E8 ${count} \u4E2A\u5907\u4EFD\u6587\u4EF6`);
+      await refreshBackups();
+    }
+  }
   function input1_binding($$value) {
     binding_callbacks[$$value ? "unshift" : "push"](() => {
       fileInputEl = $$value;
@@ -9601,9 +9663,9 @@ function instance3($$self, $$props, $$invalidate) {
     if ("app" in $$props2)
       $$invalidate(0, app = $$props2.app);
     if ("plugin" in $$props2)
-      $$invalidate(14, plugin = $$props2.plugin);
+      $$invalidate(15, plugin = $$props2.plugin);
     if ("dataService" in $$props2)
-      $$invalidate(15, dataService = $$props2.dataService);
+      $$invalidate(16, dataService = $$props2.dataService);
     if ("closeModal" in $$props2)
       $$invalidate(1, closeModal = $$props2.closeModal);
   };
@@ -9622,6 +9684,7 @@ function instance3($$self, $$props, $$invalidate) {
     handleFileSelected,
     handleRestore,
     handleDelete,
+    handleDeleteAll,
     plugin,
     dataService,
     input1_binding,
@@ -9635,8 +9698,8 @@ var BackupModalView = class extends SvelteComponent {
     super();
     init(this, options, instance3, create_fragment3, safe_not_equal, {
       app: 0,
-      plugin: 14,
-      dataService: 15,
+      plugin: 15,
+      dataService: 16,
       closeModal: 1
     });
   }

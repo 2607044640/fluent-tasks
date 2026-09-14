@@ -106,6 +106,15 @@
         }
     }
 
+    async function handleDeleteAll() {
+        if (backups.length === 0) return;
+        if (confirm(`⚠️ 危险操作：确认清空并删除全部 ${backups.length} 个本地备份文件？\n此操作不可撤销！`)) {
+            const count = await BackupService.deleteAllBackups(app);
+            new Notice(`🗑️ 已清空删除全部 ${count} 个备份文件`);
+            await refreshBackups();
+        }
+    }
+
     function formatBytes(bytes: number): string {
         if (bytes < 1024) return `${bytes} B`;
         if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -178,7 +187,17 @@
                 📂 打开目录
             </button>
         </div>
-        <button class="backup-refresh-btn" on:click={refreshBackups} title="刷新列表">🔄</button>
+        <div class="backup-header-right">
+            <button 
+                class="backup-danger-btn" 
+                on:click={handleDeleteAll} 
+                disabled={backups.length === 0}
+                title={backups.length === 0 ? "暂无备份可删除" : "清空并删除全部本地备份文件"}
+            >
+                🗑️ 删除全部备份
+            </button>
+            <button class="backup-refresh-btn" on:click={refreshBackups} title="刷新列表">🔄</button>
+        </div>
     </div>
 
     <div class="backup-list-scrollable">

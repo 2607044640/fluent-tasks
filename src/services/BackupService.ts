@@ -251,6 +251,23 @@ export class BackupService {
         }
     }
 
+    public static async deleteAllBackups(app: App): Promise<number> {
+        const backups = await this.getBackups(app);
+        let deletedCount = 0;
+        for (const b of backups) {
+            const normPath = normalizePath(b.filepath);
+            try {
+                if (await app.vault.adapter.exists(normPath)) {
+                    await app.vault.adapter.remove(normPath);
+                    deletedCount++;
+                }
+            } catch (e) {
+                console.warn(`[BackupService] Failed to remove ${normPath}:`, e);
+            }
+        }
+        return deletedCount;
+    }
+
     public static async pickAndImportBackupFile(app: App, plugin: any): Promise<{ success: boolean; handled: boolean }> {
         try {
             await this.ensureBackupFolder(app);
