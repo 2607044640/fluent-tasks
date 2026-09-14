@@ -32,6 +32,8 @@
     let isComposing: boolean = false;
     let hasInitializedFocus: boolean = false;
     let prevSearchQuery: string = "";
+    let isPickingDefaultFocus: boolean = false;
+    let showFocusPopover: boolean = false;
 
     function handleBoardWheel(e: WheelEvent) {
         if (e.deltaY !== 0 && !e.shiftKey) {
@@ -92,6 +94,8 @@
     $: flatCategories = getFlatCategories(filteredItems);
     $: groupItems = filteredItems.filter(i => i.type === "group") as GroupInfo[];
     $: rootCategories = filteredItems.filter(i => i.type === "category") as CategoryInfo[];
+    $: defaultFocusCategory = flatCategories.find(c => c.filepath === plugin?.settings?.defaultQuickListFocusFilepath);
+    $: defaultFocusListName = defaultFocusCategory ? defaultFocusCategory.name : "";
     $: if (focusedIndex >= flatCategories.length) {
         focusedIndex = Math.max(0, flatCategories.length - 1);
     }
@@ -289,79 +293,79 @@
         if (!hasInitializedFocus && flatCategories.length > 0) {
             hasInitializedFocus = true;
             setTimeout(() => {
-                focusCenterList();
+                applyInitialFocus();
             }, 30);
         }
     }
 
-    function focusCenterList() {
-        const shouldFocusCenter = plugin?.settings?.quickListFocusCenter ?? false;
-        if (!shouldFocusCenter || searchQuery.trim() || !flatCategories || flatCategories.length === 0) {
+    function applyInitialFocus() {
+        if (!flatCategories || flatCategories.length === 0 || searchQuery.trim()) {
             return;
         }
 
-        if (isGridLayout && boardEl) {
-            const items = Array.from(boardEl.querySelectorAll<HTMLElement>(".quick-modal-list-item[data-filepath]"));
-            if (items.length === 0) return;
+        const defaultPath = plugin?.settings?.defaultQuickListFocusFilepath;
+        let targetIndex = -1;
 
-            // Compute geometric bounding box of all list items on the board
-            let minX = Infinity;
-            let maxX = -Infinity;
-            let minY = Infinity;
-            let maxY = -Infinity;
-
-            const itemCoords = items.map(item => {
-                const rect = item.getBoundingClientRect();
-                const cx = rect.left + rect.width / 2;
-                const cy = rect.top + rect.height / 2;
-                if (cx < minX) minX = cx;
-                if (cx > maxX) maxX = cx;
-                if (cy < minY) minY = cy;
-                if (cy > maxY) maxY = cy;
-                return { item, cx, cy, filepath: item.dataset.filepath || "" };
-            });
-
-            const contentCenterX = (minX + maxX) / 2;
-            const contentCenterY = (minY + maxY) / 2;
-
-            let bestIndex = -1;
-            let minDistanceSq = Infinity;
-            let bestItemEl: HTMLElement | null = null;
-
-            for (const { item, cx, cy, filepath } of itemCoords) {
-                if (!filepath) continue;
-                const idx = flatCategories.findIndex(c => c.filepath === filepath);
-                if (idx === -1) continue;
-
-                const dx = cx - contentCenterX;
-                const dy = cy - contentCenterY;
-                const distSq = dx * dx + dy * dy;
-
-                if (distSq < minDistanceSq) {
-                    minDistanceSq = distSq;
-                    bestIndex = idx;
-                    bestItemEl = item;
-                }
-            }
-
-            if (bestIndex !== -1) {
-                focusedIndex = bestIndex;
-                if (bestItemEl) {
-                    // Center the board scroll horizontally if overflowing
-                    if (boardEl.scrollWidth > boardEl.clientWidth) {
-                        const boardRect = boardEl.getBoundingClientRect();
-                        const itemRect = bestItemEl.getBoundingClientRect();
-                        const offset = (itemRect.left + itemRect.width / 2) - (boardRect.left + boardRect.width / 2);
-                        boardEl.scrollLeft += offset;
-                    }
-                    bestItemEl.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "auto" });
-                }
-            }
-        } else {
-            const mid = Math.floor(flatCategories.length / 2);
-            focusedIndex = mid;
-            scrollFocusedIntoView();
+        if (defaultPath) {
+            targetIndex = flatCategories.findIndex(c => c.filepath === defaultPath);
         }
+
+        // If no configured path or file missing, fallback to top-left item (首列首项)
+        if (targetIndex === -1) {
+            if (isGridLayout && layoutColumns.length > 0) {
+                const firstCol = layoutColumns[0];
+                if (firstCol && firstCol.length > 0) {
+                    const firstCard = firstCol[0];
+                    const firstItem = firstCard.type === "root"
+                        ? (rootCategories && rootCategories[0])
+                        : (firstCard.items && firstCard.items[0]);
+                    if (firstItem) {
+                        const idx = flatCategories.findIndex(c => c.filepath === firstItem.filepath);
+                        if (idx !== -1) targetIndex = idx;
+                    }
+                }
+            }
+            if (targetIndex === -1) {
+                targetIndex = 0;
+            }
+        }
+
+        focusedIndex = targetIndex;
+        scrollFocusedIntoView();
+    }
+
+    function togglePickingDefaultFocus() {
+        isPickingDefaultFocus = !isPickingDefaultFocus;
+        if (isPickingDefaultFocus) {
+            new Notice("🎯 选择模式已开启：请点击想要设为默认聚焦的列表 (按 ESC 取消)");
+        }
+    }
+
+    function showFocusTooltip() {
+        showFocusPopover = true;
+    }
+
+    function hideFocusTooltip() {
+        showFocusPopover = false;
+    }
+
+    async function handleCategoryClick(cat: CategoryInfo) {
+        if (isPickingDefaultFocus) {
+            isPickingDefaultFocus = false;
+            showFocusPopover = false;
+            if (plugin?.settings) {
+                plugin.settings.defaultQuickListFocusFilepath = cat.filepath;
+                await plugin.saveSettings();
+            }
+            new Notice(`🎯 已将 "${cat.name}" 设为打开时的默认聚焦列表`);
+            const idx = flatCategories.findIndex(c => c.filepath === cat.filepath);
+            if (idx !== -1) {
+                focusedIndex = idx;
+                scrollFocusedIntoView();
+            }
+            return;
+        }
+        await openCategoryInCenterOnly(cat);
     }
 
     async function toggleLayoutMode() {
@@ -375,7 +379,7 @@
             scheduleAdjustSpacing();
         } else {
             hasInitializedFocus = true;
-            focusCenterList();
+            applyInitialFocus();
         }
     }
 
@@ -390,7 +394,7 @@
         } else {
             if (!hasInitializedFocus && flatCategories.length > 0) {
                 hasInitializedFocus = true;
-                focusCenterList();
+                applyInitialFocus();
             }
         }
 
@@ -579,6 +583,25 @@
         e.stopPropagation();
 
         const menu = new Menu();
+
+        if (item.type === "category" && item.filepath) {
+            const isCurrentlyDefault = plugin?.settings?.defaultQuickListFocusFilepath === item.filepath;
+            menu.addItem((i) => {
+                i.setTitle(isCurrentlyDefault ? "取消默认聚焦 (恢复首项)" : "设为默认聚焦 (打开时首选)")
+                 .setIcon("target")
+                 .onClick(async () => {
+                     if (isCurrentlyDefault) {
+                         plugin.settings.defaultQuickListFocusFilepath = "";
+                         new Notice("已恢复默认聚焦 (左上角首项)");
+                     } else {
+                         plugin.settings.defaultQuickListFocusFilepath = item.filepath!;
+                         new Notice(`🎯 已将 "${item.name}" 设为打开时的默认聚焦列表`);
+                     }
+                     await plugin.saveSettings();
+                 });
+            });
+        }
+
         menu.addItem((i) => {
             i.setTitle("Rename (F2)")
              .setIcon("edit")
@@ -871,11 +894,29 @@
             return;
         }
 
+        if (isPickingDefaultFocus) {
+            if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                isPickingDefaultFocus = false;
+                new Notice("已取消选择默认聚焦列表");
+                return;
+            }
+            if (e.key === "Enter") {
+                e.preventDefault();
+                e.stopPropagation();
+                if (flatCategories.length > 0 && flatCategories[focusedIndex]) {
+                    void handleCategoryClick(flatCategories[focusedIndex]);
+                }
+                return;
+            }
+        }
+
         if (e.key === "Enter") {
             e.preventDefault();
             e.stopPropagation();
             if (flatCategories.length > 0 && flatCategories[focusedIndex]) {
-                void openCategoryInCenterOnly(flatCategories[focusedIndex]);
+                void handleCategoryClick(flatCategories[focusedIndex]);
             }
             return;
         }
@@ -915,6 +956,14 @@
         setTimeout(() => {
             const el = modalContainerEl?.querySelector(".quick-modal-list-item.is-focused") as HTMLElement | null;
             if (el) {
+                if (isGridLayout && boardEl && boardEl.scrollWidth > boardEl.clientWidth) {
+                    const boardRect = boardEl.getBoundingClientRect();
+                    const itemRect = el.getBoundingClientRect();
+                    if (itemRect.left < boardRect.left || itemRect.right > boardRect.right) {
+                        const offset = (itemRect.left + itemRect.width / 2) - (boardRect.left + boardRect.width / 2);
+                        boardEl.scrollLeft += offset;
+                    }
+                }
                 el.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "auto" });
             }
         }, 10);
@@ -924,6 +973,7 @@
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions a11y-no-noninteractive-tabindex a11y-click-events-have-key-events -->
 <div 
     class="quick-modal-container quick-list-only-container"
+    class:is-picking-focus={isPickingDefaultFocus}
     bind:this={modalContainerEl}
     on:keydown={handleKeydown}
     tabindex="0"
@@ -955,6 +1005,51 @@
         {#if searchQuery}
             <button class="quick-modal-filter-clear" on:click={() => { searchQuery = ""; searchInputEl?.focus(); }}>✕</button>
         {/if}
+
+        {#if isGridLayout}
+            <button 
+                class="quick-modal-header-btn quick-modal-focus-picker-btn"
+                class:is-active={isPickingDefaultFocus}
+                aria-label="设置默认聚焦列表：点击进入选择模式，右键可重置为左上角首项"
+                on:click={togglePickingDefaultFocus}
+                on:contextmenu|preventDefault={async () => {
+                    if (plugin?.settings) {
+                        plugin.settings.defaultQuickListFocusFilepath = "";
+                        await plugin.saveSettings();
+                        new Notice("🎯 已恢复默认聚焦：左上角首项");
+                        applyInitialFocus();
+                    }
+                }}
+                on:mouseenter={showFocusTooltip}
+                on:mouseleave={hideFocusTooltip}
+            >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <line x1="12" y1="2" x2="12" y2="5"></line>
+                    <line x1="12" y1="19" x2="12" y2="22"></line>
+                    <line x1="2" y1="12" x2="5" y2="12"></line>
+                    <line x1="19" y1="12" x2="22" y2="12"></line>
+                </svg>
+                <span>{isPickingDefaultFocus ? "选择目标列表..." : (defaultFocusListName ? `聚焦: ${defaultFocusListName}` : "设置聚焦")}</span>
+            </button>
+            {#if showFocusPopover}
+                <div class="quick-modal-focus-popover">
+                    <div class="focus-popover-title">🎯 初始默认聚焦设置</div>
+                    <div class="focus-popover-desc">
+                        {#if defaultFocusListName}
+                            当前默认聚焦：<b>{defaultFocusListName}</b>
+                        {:else}
+                            当前未设置，默认聚焦：<b>左上角首项</b>
+                        {/if}
+                    </div>
+                    <div class="focus-popover-hint">
+                        点击按钮进入选择模式后点击目标列表；右键此按钮可重置为左上角首项。
+                    </div>
+                </div>
+            {/if}
+        {/if}
+
         <button 
             class="quick-modal-header-btn quick-modal-layout-toggle-btn"
             title={isGridLayout ? "Switch to Classic Single-Column List" : "Switch to Grid Board Layout"}
@@ -1011,6 +1106,7 @@
                                             <div 
                                                 class="quick-modal-list-item is-grid-item"
                                                 class:is-focused={flatCategories[focusedIndex]?.filepath === cat.filepath}
+                                                class:is-default-focus={plugin?.settings?.defaultQuickListFocusFilepath === cat.filepath}
                                                 class:drag-over-top={dragOverListId === cat.id && dragListPosition === "top"}
                                                 class:drag-over-bottom={dragOverListId === cat.id && dragListPosition === "bottom"}
                                                 data-filepath={cat.filepath}
@@ -1021,7 +1117,7 @@
                                                 on:dragover={(e) => handleListDragOver(e, cat, false)}
                                                 on:dragleave={handleListDragLeave}
                                                 on:drop|preventDefault={() => handleListDrop(cat)}
-                                                on:click={() => openCategoryInCenterOnly(cat)}
+                                                on:click={() => handleCategoryClick(cat)}
                                                 on:contextmenu={(e) => showItemContextMenu(e, { id: cat.id || "", name: cat.name, type: "category", filepath: cat.filepath })}
                                             >
                                                 <span class="quick-modal-list-icon">📁</span>
@@ -1040,6 +1136,9 @@
 
                                                 {#if (taskCounts[cat.filepath] ?? 0) > 0}
                                                     <span class="quick-modal-badge">{taskCounts[cat.filepath]}</span>
+                                                {/if}
+                                                {#if plugin?.settings?.defaultQuickListFocusFilepath === cat.filepath}
+                                                    <span class="quick-modal-focus-tag" title="默认聚焦目标">🎯</span>
                                                 {/if}
                                             </div>
                                         {/each}
@@ -1095,6 +1194,7 @@
                                                 <div 
                                                     class="quick-modal-list-item is-grid-item"
                                                     class:is-focused={flatCategories[focusedIndex]?.filepath === child.filepath}
+                                                    class:is-default-focus={plugin?.settings?.defaultQuickListFocusFilepath === child.filepath}
                                                     class:drag-over-top={dragOverListId === child.id && dragListPosition === "top"}
                                                     class:drag-over-bottom={dragOverListId === child.id && dragListPosition === "bottom"}
                                                     data-filepath={child.filepath}
@@ -1105,7 +1205,7 @@
                                                     on:dragover={(e) => handleListDragOver(e, child, false)}
                                                     on:dragleave={handleListDragLeave}
                                                     on:drop|preventDefault={() => handleListDrop(child)}
-                                                    on:click={() => openCategoryInCenterOnly(child)}
+                                                    on:click={() => handleCategoryClick(child)}
                                                     on:contextmenu={(e) => showItemContextMenu(e, { id: child.id || "", name: child.name, type: "category", filepath: child.filepath })}
                                                 >
                                                     <span class="quick-modal-list-icon">📁</span>
@@ -1124,6 +1224,9 @@
 
                                                     {#if (taskCounts[child.filepath] ?? 0) > 0}
                                                         <span class="quick-modal-badge">{taskCounts[child.filepath]}</span>
+                                                    {/if}
+                                                    {#if plugin?.settings?.defaultQuickListFocusFilepath === child.filepath}
+                                                        <span class="quick-modal-focus-tag" title="默认聚焦目标">🎯</span>
                                                     {/if}
                                                 </div>
                                             {/each}
@@ -1189,6 +1292,7 @@
                                         <div 
                                             class="quick-modal-list-item is-nested"
                                             class:is-focused={flatCategories[focusedIndex]?.filepath === child.filepath}
+                                            class:is-default-focus={plugin?.settings?.defaultQuickListFocusFilepath === child.filepath}
                                             class:drag-over-top={dragOverListId === child.id && dragListPosition === "top"}
                                             class:drag-over-bottom={dragOverListId === child.id && dragListPosition === "bottom"}
                                             data-filepath={child.filepath}
@@ -1199,7 +1303,7 @@
                                             on:dragover={(e) => handleListDragOver(e, child, false)}
                                             on:dragleave={handleListDragLeave}
                                             on:drop|preventDefault={() => handleListDrop(child)}
-                                            on:click={() => openCategoryInCenterOnly(child)}
+                                            on:click={() => handleCategoryClick(child)}
                                             on:contextmenu={(e) => showItemContextMenu(e, { id: child.id || "", name: child.name, type: "category", filepath: child.filepath })}
                                         >
                                             <span class="quick-modal-list-icon">📁</span>
@@ -1219,6 +1323,9 @@
                                             {#if (taskCounts[child.filepath] ?? 0) > 0}
                                                 <span class="quick-modal-badge">{taskCounts[child.filepath]}</span>
                                             {/if}
+                                            {#if plugin?.settings?.defaultQuickListFocusFilepath === child.filepath}
+                                                <span class="quick-modal-focus-tag" title="默认聚焦目标">🎯</span>
+                                            {/if}
                                         </div>
                                     {/each}
                                 </div>
@@ -1229,6 +1336,7 @@
                         <div 
                             class="quick-modal-list-item"
                             class:is-focused={flatCategories[focusedIndex]?.filepath === item.filepath}
+                            class:is-default-focus={plugin?.settings?.defaultQuickListFocusFilepath === item.filepath}
                             class:drag-over-top={dragOverListId === item.id && dragListPosition === "top"}
                             class:drag-over-bottom={dragOverListId === item.id && dragListPosition === "bottom"}
                             data-filepath={item.filepath}
@@ -1239,7 +1347,7 @@
                             on:dragover={(e) => handleListDragOver(e, item, false)}
                             on:dragleave={handleListDragLeave}
                             on:drop|preventDefault={() => handleListDrop(item)}
-                            on:click={() => openCategoryInCenterOnly(item)}
+                            on:click={() => handleCategoryClick(item)}
                             on:contextmenu={(e) => showItemContextMenu(e, { id: item.id || "", name: item.name, type: "category", filepath: item.filepath })}
                         >
                             <span class="quick-modal-list-icon">📁</span>
@@ -1258,6 +1366,9 @@
 
                             {#if (taskCounts[item.filepath] ?? 0) > 0}
                                 <span class="quick-modal-badge">{taskCounts[item.filepath]}</span>
+                            {/if}
+                            {#if plugin?.settings?.defaultQuickListFocusFilepath === item.filepath}
+                                <span class="quick-modal-focus-tag" title="默认聚焦目标">🎯</span>
                             {/if}
                         </div>
                     {/if}

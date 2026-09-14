@@ -15,6 +15,7 @@ export interface FluentTasksSettings {
     quickListMinColGap: number;
     quickListMinRowGap: number;
     quickListFocusCenter: boolean;
+    defaultQuickListFocusFilepath: string;
 }
 
 export const DEFAULT_SETTINGS: FluentTasksSettings = {
@@ -31,6 +32,7 @@ export const DEFAULT_SETTINGS: FluentTasksSettings = {
     quickListMinColGap: 20,
     quickListMinRowGap: 16,
     quickListFocusCenter: false,
+    defaultQuickListFocusFilepath: "",
 }
 
 export class FluentTasksSettingTab extends PluginSettingTab {

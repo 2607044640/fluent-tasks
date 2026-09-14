@@ -22,12 +22,16 @@ const copyCssPlugin = {
 	setup(build) {
 		build.onEnd(() => {
 			try {
-				if (fs.existsSync("main.css")) {
+				if (fs.existsSync("src/styles.css")) {
+					fs.copyFileSync("src/styles.css", "styles.css");
+					fs.copyFileSync("src/styles.css", "main.css");
+					console.log("Copied src/styles.css to styles.css and main.css successfully.");
+				} else if (fs.existsSync("main.css")) {
 					fs.copyFileSync("main.css", "styles.css");
 					console.log("Copied main.css to styles.css successfully.");
 				}
 			} catch (e) {
-				console.error("Failed to copy main.css to styles.css:", e);
+				console.error("Failed to copy CSS:", e);
 			}
 		});
 	},
