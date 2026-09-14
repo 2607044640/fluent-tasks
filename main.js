@@ -24359,6 +24359,7 @@ var import_obsidian15 = require("obsidian");
 
 // src/modals/QuickListModalView.svelte
 var import_obsidian14 = require("obsidian");
+var { Map: Map_12 } = globals;
 function get_each_context_43(ctx, list, i) {
   const child_ctx = ctx.slice();
   child_ctx[133] = list[i];
@@ -24711,7 +24712,7 @@ function create_if_block_216(ctx) {
 }
 function create_else_block_63(ctx) {
   let each_blocks = [];
-  let each_1_lookup = /* @__PURE__ */ new Map();
+  let each_1_lookup = new Map_12();
   let each_1_anchor;
   let each_value_4 = ensure_array_like(
     /*filteredItems*/
@@ -25469,7 +25470,7 @@ function create_if_block_174(ctx) {
 function create_if_block_144(ctx) {
   let div;
   let each_blocks = [];
-  let each_1_lookup = /* @__PURE__ */ new Map();
+  let each_1_lookup = new Map_12();
   let each_value_5 = ensure_array_like(
     /*item*/
     ctx[133].items
@@ -25929,7 +25930,7 @@ function create_each_block_43(key_1, ctx) {
 }
 function create_else_block_16(ctx) {
   let each_blocks = [];
-  let each_1_lookup = /* @__PURE__ */ new Map();
+  let each_1_lookup = new Map_12();
   let each_1_anchor;
   let each_value = ensure_array_like(
     /*layoutColumns*/
@@ -26273,7 +26274,7 @@ function create_if_block_46(ctx) {
   let t5;
   let div2;
   let each_blocks = [];
-  let each_1_lookup = /* @__PURE__ */ new Map();
+  let each_1_lookup = new Map_12();
   let each_value_2 = ensure_array_like(
     /*rootCategories*/
     ctx[24]
@@ -26456,7 +26457,7 @@ function create_if_block_115(ctx) {
 function create_if_block_84(ctx) {
   let div;
   let each_blocks = [];
-  let each_1_lookup = /* @__PURE__ */ new Map();
+  let each_1_lookup = new Map_12();
   let each_value_3 = ensure_array_like(
     /*group*/
     ctx[129].items
@@ -27300,7 +27301,7 @@ function create_each_block_15(key_1, ctx) {
 function create_each_block6(key_1, ctx) {
   let div;
   let each_blocks = [];
-  let each_1_lookup = /* @__PURE__ */ new Map();
+  let each_1_lookup = new Map_12();
   let t;
   let each_value_1 = ensure_array_like(
     /*column*/
@@ -27922,7 +27923,6 @@ function instance6($$self, $$props, $$invalidate) {
     });
   }
   function updateLayoutColumns() {
-    var _a2, _b2, _c, _d;
     if (!isGridLayout)
       return;
     const cards = [];
@@ -27960,77 +27960,73 @@ function instance6($$self, $$props, $$invalidate) {
     }
     const availW = boardEl ? boardEl.clientWidth : 1200;
     const availH = boardEl ? boardEl.clientHeight : 540;
-    const cardW = 240;
-    const colGap = (_b2 = (_a2 = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _a2.quickListMinColGap) != null ? _b2 : 20;
-    const rowGap = (_d = (_c = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _c.quickListMinRowGap) != null ? _d : 12;
-    const padX = 28;
-    const padY = 20;
-    const maxH = Math.max(160, availH - padY * 2);
-    const maxColsByW = Math.max(1, Math.floor((availW - padX * 2 + colGap) / (cardW + colGap)));
+    const minPadX = 28;
+    const minPadY = 24;
+    const minCardW = 205;
+    const maxCardW = 245;
+    const minColGap = 20;
+    const maxColGap = 32;
+    const rowGap = 14;
+    const availContentW = availW - minPadX * 2;
+    const maxColsByW = Math.max(1, Math.floor((availContentW + minColGap) / (minCardW + minColGap)));
+    const maxCandidateK = Math.min(cards.length, maxColsByW);
+    const maxSingleH = Math.max(...cards.map((c) => c.height));
+    const targetPeakH = Math.max(maxSingleH, Math.floor(availH * 0.62));
+    let bestK = 1;
     let bestBins = null;
     let bestScore = Infinity;
-    const maxCandidateK = Math.min(cards.length, maxColsByW);
-    for (let k2 = maxCandidateK; k2 >= 1; k2--) {
-      const maxPerCol = Math.ceil(cards.length / k2);
-      const minPerCol = Math.floor(cards.length / k2);
-      const bins = packCardsIntoK(cards, k2, rowGap);
+    const sortedCards = [...cards].sort((a, b) => b.height - a.height);
+    for (let k = maxCandidateK; k >= 1; k--) {
+      const bins = Array.from({ length: k }, () => ({ items: [], h: 0 }));
+      for (const c of sortedCards) {
+        bins.sort((a, b) => a.h - b.h);
+        const underTarget = bins.filter((b) => b.h + (b.items.length === 0 ? c.height : c.height + rowGap) <= targetPeakH);
+        const chosen = underTarget.length > 0 ? underTarget[0] : bins[0];
+        const needed = chosen.items.length === 0 ? c.height : c.height + rowGap;
+        chosen.items.push(c);
+        chosen.h += needed;
+      }
       const peakH2 = Math.max(...bins.map((b) => b.h));
-      if (peakH2 <= maxH) {
-        const avgH = bins.reduce((sum, b) => sum + b.h, 0) / k2;
-        const variance = bins.reduce((sum, b) => sum + (b.h - avgH) ** 2, 0) / k2;
-        const unbalancePenalty = (maxPerCol - minPerCol) * 5e4;
-        const score = unbalancePenalty + variance;
-        if (score < bestScore) {
-          bestScore = score;
-          bestBins = bins;
-          if (maxPerCol - minPerCol === 0) {
-            break;
-          }
-        }
+      const excess = Math.max(0, peakH2 - targetPeakH);
+      const excessPenalty = excess * 200;
+      const shortPenalty = Math.max(0, 260 - peakH2) * 50;
+      const avgH = bins.reduce((sum, b) => sum + b.h, 0) / k;
+      const variance = bins.reduce((sum, b) => sum + (b.h - avgH) ** 2, 0) / k;
+      const kBonus = (maxCandidateK - k) * 300;
+      const score = excessPenalty + shortPenalty + Math.sqrt(variance) * 5 + kBonus;
+      if (score < bestScore) {
+        bestScore = score;
+        bestK = k;
+        bestBins = bins;
       }
     }
     if (!bestBins) {
-      for (let k2 = maxColsByW + 1; k2 <= cards.length; k2++) {
-        const bins = packCardsIntoK(cards, k2, rowGap);
-        const peakH2 = Math.max(...bins.map((b) => b.h));
-        if (peakH2 <= maxH) {
-          bestBins = bins;
-          break;
-        }
-      }
+      bestBins = packCardsIntoK(cards, maxCandidateK, rowGap);
+      bestK = maxCandidateK;
     }
-    if (!bestBins) {
-      const k2 = Math.min(cards.length, Math.max(1, maxColsByW));
-      bestBins = packCardsIntoK(cards, k2, rowGap);
-    }
+    const cardOrderMap = new Map(cards.map((c, i) => [c.id, i]));
+    bestBins.sort((a, b) => {
+      var _a2, _b2, _c, _d;
+      const orderA = (_b2 = cardOrderMap.get(((_a2 = a.items[0]) == null ? void 0 : _a2.id) || "")) != null ? _b2 : 0;
+      const orderB = (_d = cardOrderMap.get(((_c = b.items[0]) == null ? void 0 : _c.id) || "")) != null ? _d : 0;
+      return orderA - orderB;
+    });
     $$invalidate(23, layoutColumns = bestBins.map((b) => b.items));
-    const k = bestBins.length;
-    const baseColsW = k * cardW;
-    const availableForContentW = availW - padX * 2;
-    let actualColGap = colGap;
-    if (availableForContentW > baseColsW && k > 1) {
-      const surplusW = availableForContentW - baseColsW;
-      actualColGap = Math.min(48, Math.max(colGap, Math.floor(surplusW / k)));
-    }
-    const maxCardHSum = Math.max(...bestBins.map((b) => b.items.reduce((sum, it) => sum + it.height, 0)));
-    const maxItemsInAnyCol = Math.max(...bestBins.map((b) => b.items.length));
-    const availableForContentH = availH - padY * 2;
-    let actualRowGap = rowGap;
-    if (availableForContentH > maxCardHSum && maxItemsInAnyCol > 1) {
-      const surplusH = availableForContentH - maxCardHSum;
-      actualRowGap = Math.min(24, Math.max(rowGap, Math.floor(surplusH / (maxItemsInAnyCol + 1))));
-    }
-    const peakH = maxCardHSum + (maxItemsInAnyCol - 1) * actualRowGap;
-    const totalW = baseColsW + (k - 1) * actualColGap;
-    const dynamicPadY = Math.max(padY, Math.floor((availH - peakH) / 2));
-    const dynamicPadX = Math.max(padX, Math.floor((availW - totalW) / 2));
+    const peakH = Math.max(...bestBins.map((b) => b.h));
+    const padY = Math.max(minPadY, Math.floor((availH - peakH) / 2));
+    const colGap = Math.min(maxColGap, Math.max(minColGap, 26));
+    const totalGapsW = (bestK - 1) * colGap;
+    const actualCardW = Math.min(maxCardW, Math.max(minCardW, Math.floor((availContentW - totalGapsW) / bestK)));
+    const totalW = bestK * actualCardW + totalGapsW;
+    const padX = Math.max(minPadX, Math.floor((availW - totalW) / 2));
     if (boardEl) {
-      boardEl.style.setProperty("--quick-grid-col-gap", `${actualColGap}px`);
-      boardEl.style.setProperty("--quick-grid-row-gap", `${actualRowGap}px`);
-      $$invalidate(22, boardEl.style.paddingTop = `${dynamicPadY}px`, boardEl);
-      $$invalidate(22, boardEl.style.paddingBottom = `${dynamicPadY}px`, boardEl);
-      $$invalidate(22, boardEl.style.paddingLeft = `${dynamicPadX}px`, boardEl);
-      $$invalidate(22, boardEl.style.paddingRight = `${dynamicPadX}px`, boardEl);
+      boardEl.style.setProperty("--quick-grid-card-w", `${actualCardW}px`);
+      boardEl.style.setProperty("--quick-grid-col-gap", `${colGap}px`);
+      boardEl.style.setProperty("--quick-grid-row-gap", `${rowGap}px`);
+      $$invalidate(22, boardEl.style.paddingTop = `${padY}px`, boardEl);
+      $$invalidate(22, boardEl.style.paddingBottom = `${padY}px`, boardEl);
+      $$invalidate(22, boardEl.style.paddingLeft = `${padX}px`, boardEl);
+      $$invalidate(22, boardEl.style.paddingRight = `${padX}px`, boardEl);
       if (totalW > availW) {
         $$invalidate(22, boardEl.style.justifyContent = "flex-start", boardEl);
       } else {

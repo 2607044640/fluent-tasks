@@ -2510,10 +2510,10 @@ body .quick-modal-task-item.is-focused {
 .quick-grid-column {
   display: flex;
   flex-direction: column;
-  gap: var(--quick-grid-row-gap, 16px);
-  width: 240px;
-  min-width: 200px;
-  max-width: 280px;
+  gap: var(--quick-grid-row-gap, 14px);
+  width: var(--quick-grid-card-w, 220px);
+  min-width: 195px;
+  max-width: 260px;
   flex-shrink: 0;
 }
 .quick-grid-card {

@@ -186,97 +186,98 @@
             }
         }
 
-        // 3. Compute available dimensions
+        // 3. Compute available dimensions and bounds
         const availW = boardEl ? boardEl.clientWidth : 1200;
         const availH = boardEl ? boardEl.clientHeight : 540;
-        const cardW = 240;
-        const colGap = plugin?.settings?.quickListMinColGap ?? 20;
-        const rowGap = plugin?.settings?.quickListMinRowGap ?? 12;
-        const padX = 28;
-        const padY = 20;
+        const minPadX = 28;
+        const minPadY = 24;
+        const minCardW = 205;
+        const maxCardW = 245;
+        const minColGap = 20;
+        const maxColGap = 32;
+        const rowGap = 14;
 
-        const maxH = Math.max(160, availH - padY * 2);
-        const maxColsByW = Math.max(1, Math.floor((availW - padX * 2 + colGap) / (cardW + colGap)));
+        const availContentW = availW - minPadX * 2;
+        const maxColsByW = Math.max(1, Math.floor((availContentW + minColGap) / (minCardW + minColGap)));
+        const maxCandidateK = Math.min(cards.length, maxColsByW);
 
-        // 4. Find optimal K (balanced card count and minimal height variance)
+        // Desired maximum column height should stay close to tallest single card
+        // to leave generous, comfortable ~90-100px top and bottom margins (matching user's red lines)
+        const maxSingleH = Math.max(...cards.map(c => c.height));
+        const targetPeakH = Math.max(maxSingleH, Math.floor(availH * 0.62));
+
+        // 4. Find optimal K (smarter height-capped distribution)
+        let bestK = 1;
         let bestBins: { items: GridCardData[]; h: number }[] | null = null;
         let bestScore = Infinity;
 
-        const maxCandidateK = Math.min(cards.length, maxColsByW);
+        const sortedCards = [...cards].sort((a, b) => b.height - a.height);
+
         for (let k = maxCandidateK; k >= 1; k--) {
-            const maxPerCol = Math.ceil(cards.length / k);
-            const minPerCol = Math.floor(cards.length / k);
-            const bins = packCardsIntoK(cards, k, rowGap);
+            const bins: { items: GridCardData[]; h: number }[] = Array.from({ length: k }, () => ({ items: [], h: 0 }));
+
+            for (const c of sortedCards) {
+                bins.sort((a, b) => a.h - b.h);
+                // Try to find a bin where adding this card stays <= targetPeakH
+                const underTarget = bins.filter(b => (b.h + (b.items.length === 0 ? c.height : c.height + rowGap)) <= targetPeakH);
+                const chosen = underTarget.length > 0 ? underTarget[0] : bins[0];
+                const needed = chosen.items.length === 0 ? c.height : (c.height + rowGap);
+                chosen.items.push(c);
+                chosen.h += needed;
+            }
+
             const peakH = Math.max(...bins.map(b => b.h));
+            const excess = Math.max(0, peakH - targetPeakH);
+            const excessPenalty = excess * 200;
+            const shortPenalty = Math.max(0, 260 - peakH) * 50;
+            const avgH = bins.reduce((sum, b) => sum + b.h, 0) / k;
+            const variance = bins.reduce((sum, b) => sum + (b.h - avgH) ** 2, 0) / k;
+            const kBonus = (maxCandidateK - k) * 300;
 
-            if (peakH <= maxH) {
-                const avgH = bins.reduce((sum, b) => sum + b.h, 0) / k;
-                const variance = bins.reduce((sum, b) => sum + (b.h - avgH) ** 2, 0) / k;
-                const unbalancePenalty = (maxPerCol - minPerCol) * 50000;
-                const score = unbalancePenalty + variance;
-                if (score < bestScore) {
-                    bestScore = score;
-                    bestBins = bins;
-                    if (maxPerCol - minPerCol === 0) {
-                        break;
-                    }
-                }
+            const score = excessPenalty + shortPenalty + Math.sqrt(variance) * 5 + kBonus;
+
+            if (score < bestScore) {
+                bestScore = score;
+                bestK = k;
+                bestBins = bins;
             }
         }
 
         if (!bestBins) {
-            // Horizontal scroll fallback: increase K so columns fit vertically
-            for (let k = maxColsByW + 1; k <= cards.length; k++) {
-                const bins = packCardsIntoK(cards, k, rowGap);
-                const peakH = Math.max(...bins.map(b => b.h));
-                if (peakH <= maxH) {
-                    bestBins = bins;
-                    break;
-                }
-            }
+            bestBins = packCardsIntoK(cards, maxCandidateK, rowGap);
+            bestK = maxCandidateK;
         }
 
-        if (!bestBins) {
-            // Final fallback: use maxColsByW
-            const k = Math.min(cards.length, Math.max(1, maxColsByW));
-            bestBins = packCardsIntoK(cards, k, rowGap);
-        }
+        // Sort columns so that taller/anchor cards are balanced
+        // Order bins by their first item's natural order
+        const cardOrderMap = new Map(cards.map((c, i) => [c.id, i]));
+        bestBins.sort((a, b) => {
+            const orderA = cardOrderMap.get(a.items[0]?.id || "") ?? 0;
+            const orderB = cardOrderMap.get(b.items[0]?.id || "") ?? 0;
+            return orderA - orderB;
+        });
 
         // 5. Update layoutColumns
         layoutColumns = bestBins.map(b => b.items);
 
-        // 6. Elastic Spacing & Omnidirectional Centering
-        const k = bestBins.length;
-        const baseColsW = k * cardW;
-        const availableForContentW = availW - padX * 2;
-        let actualColGap = colGap;
-        if (availableForContentW > baseColsW && k > 1) {
-            const surplusW = availableForContentW - baseColsW;
-            actualColGap = Math.min(48, Math.max(colGap, Math.floor(surplusW / k)));
-        }
+        // 6. Calculate elastic card width, column gap, and symmetrical top/bottom padding
+        const peakH = Math.max(...bestBins.map(b => b.h));
+        const padY = Math.max(minPadY, Math.floor((availH - peakH) / 2));
 
-        const maxCardHSum = Math.max(...bestBins.map(b => b.items.reduce((sum, it) => sum + it.height, 0)));
-        const maxItemsInAnyCol = Math.max(...bestBins.map(b => b.items.length));
-        const availableForContentH = availH - padY * 2;
-        let actualRowGap = rowGap;
-        if (availableForContentH > maxCardHSum && maxItemsInAnyCol > 1) {
-            const surplusH = availableForContentH - maxCardHSum;
-            actualRowGap = Math.min(24, Math.max(rowGap, Math.floor(surplusH / (maxItemsInAnyCol + 1))));
-        }
-
-        const peakH = maxCardHSum + (maxItemsInAnyCol - 1) * actualRowGap;
-        const totalW = baseColsW + (k - 1) * actualColGap;
-
-        const dynamicPadY = Math.max(padY, Math.floor((availH - peakH) / 2));
-        const dynamicPadX = Math.max(padX, Math.floor((availW - totalW) / 2));
+        const colGap = Math.min(maxColGap, Math.max(minColGap, 26));
+        const totalGapsW = (bestK - 1) * colGap;
+        const actualCardW = Math.min(maxCardW, Math.max(minCardW, Math.floor((availContentW - totalGapsW) / bestK)));
+        const totalW = bestK * actualCardW + totalGapsW;
+        const padX = Math.max(minPadX, Math.floor((availW - totalW) / 2));
 
         if (boardEl) {
-            boardEl.style.setProperty("--quick-grid-col-gap", `${actualColGap}px`);
-            boardEl.style.setProperty("--quick-grid-row-gap", `${actualRowGap}px`);
-            boardEl.style.paddingTop = `${dynamicPadY}px`;
-            boardEl.style.paddingBottom = `${dynamicPadY}px`;
-            boardEl.style.paddingLeft = `${dynamicPadX}px`;
-            boardEl.style.paddingRight = `${dynamicPadX}px`;
+            boardEl.style.setProperty("--quick-grid-card-w", `${actualCardW}px`);
+            boardEl.style.setProperty("--quick-grid-col-gap", `${colGap}px`);
+            boardEl.style.setProperty("--quick-grid-row-gap", `${rowGap}px`);
+            boardEl.style.paddingTop = `${padY}px`;
+            boardEl.style.paddingBottom = `${padY}px`;
+            boardEl.style.paddingLeft = `${padX}px`;
+            boardEl.style.paddingRight = `${padX}px`;
 
             if (totalW > availW) {
                 boardEl.style.justifyContent = "flex-start";
