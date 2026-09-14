@@ -27,8 +27,8 @@ export const DEFAULT_SETTINGS: FluentTasksSettings = {
     quickModalAction: 'direct',
     quickModalTipCount: 0,
     quickListGridLayout: true,
-    quickListMinColGap: 16,
-    quickListMinRowGap: 12,
+    quickListMinColGap: 20,
+    quickListMinRowGap: 16,
 }
 
 export class FluentTasksSettingTab extends PluginSettingTab {
@@ -119,10 +119,10 @@ export class FluentTasksSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName("Quick List Modal: Min Column Gap")
-            .setDesc("Minimum horizontal gap (in px) between columns in the Quick List grid board layout (default: 16px).")
+            .setDesc("Minimum horizontal gap (in px) between columns in the Quick List grid board layout (default: 20px).")
             .addSlider(slider => slider
-                .setLimits(8, 48, 2)
-                .setValue(this.plugin.settings.quickListMinColGap ?? 16)
+                .setLimits(10, 64, 2)
+                .setValue(this.plugin.settings.quickListMinColGap ?? 20)
                 .setDynamicTooltip()
                 .onChange(async (value) => {
                     this.plugin.settings.quickListMinColGap = value;
@@ -131,10 +131,10 @@ export class FluentTasksSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName("Quick List Modal: Min Row Gap")
-            .setDesc("Minimum vertical gap (in px) between stacked cards within the same column (default: 12px).")
+            .setDesc("Minimum vertical gap (in px) between stacked cards within the same column (default: 16px).")
             .addSlider(slider => slider
-                .setLimits(6, 32, 2)
-                .setValue(this.plugin.settings.quickListMinRowGap ?? 12)
+                .setLimits(8, 48, 2)
+                .setValue(this.plugin.settings.quickListMinRowGap ?? 16)
                 .setDynamicTooltip()
                 .onChange(async (value) => {
                     this.plugin.settings.quickListMinRowGap = value;

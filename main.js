@@ -18600,8 +18600,8 @@ var DEFAULT_SETTINGS = {
   quickModalAction: "direct",
   quickModalTipCount: 0,
   quickListGridLayout: true,
-  quickListMinColGap: 16,
-  quickListMinRowGap: 12
+  quickListMinColGap: 20,
+  quickListMinRowGap: 16
 };
 var FluentTasksSettingTab = class extends import_obsidian11.PluginSettingTab {
   constructor(app, plugin) {
@@ -18660,16 +18660,16 @@ var FluentTasksSettingTab = class extends import_obsidian11.PluginSettingTab {
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian11.Setting(containerEl).setName("Quick List Modal: Min Column Gap").setDesc("Minimum horizontal gap (in px) between columns in the Quick List grid board layout (default: 16px).").addSlider((slider) => {
+    new import_obsidian11.Setting(containerEl).setName("Quick List Modal: Min Column Gap").setDesc("Minimum horizontal gap (in px) between columns in the Quick List grid board layout (default: 20px).").addSlider((slider) => {
       var _a;
-      return slider.setLimits(8, 48, 2).setValue((_a = this.plugin.settings.quickListMinColGap) != null ? _a : 16).setDynamicTooltip().onChange(async (value) => {
+      return slider.setLimits(10, 64, 2).setValue((_a = this.plugin.settings.quickListMinColGap) != null ? _a : 20).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.quickListMinColGap = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian11.Setting(containerEl).setName("Quick List Modal: Min Row Gap").setDesc("Minimum vertical gap (in px) between stacked cards within the same column (default: 12px).").addSlider((slider) => {
+    new import_obsidian11.Setting(containerEl).setName("Quick List Modal: Min Row Gap").setDesc("Minimum vertical gap (in px) between stacked cards within the same column (default: 16px).").addSlider((slider) => {
       var _a;
-      return slider.setLimits(6, 32, 2).setValue((_a = this.plugin.settings.quickListMinRowGap) != null ? _a : 12).setDynamicTooltip().onChange(async (value) => {
+      return slider.setLimits(8, 48, 2).setValue((_a = this.plugin.settings.quickListMinRowGap) != null ? _a : 16).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.quickListMinRowGap = value;
         await this.plugin.saveSettings();
       });
@@ -27761,6 +27761,52 @@ function handleBoardWheel(e) {
     }
   }
 }
+function findBestContiguousPartition(cardHeights, targetCols, rowGap) {
+  const n = cardHeights.length;
+  const k = targetCols;
+  if (k <= 1 || n <= k) {
+    return cardHeights.map((h) => [h]);
+  }
+  let bestIndices = [];
+  let bestScore = Infinity;
+  function searchCuts(start, remainingCuts, currentIndices) {
+    if (remainingCuts === 0) {
+      const indices = [0, ...currentIndices, n];
+      const colHeights = [];
+      let cardPenalty = 0;
+      const maxAllowed = Math.ceil(n / k);
+      for (let j = 0; j < k; j++) {
+        const slice = cardHeights.slice(indices[j], indices[j + 1]);
+        const h = slice.reduce((a, b) => a + b, 0) + Math.max(0, slice.length - 1) * rowGap;
+        colHeights.push(h);
+        if (slice.length > maxAllowed)
+          cardPenalty += 1e3;
+      }
+      const maxH = Math.max(...colHeights);
+      const minH = Math.min(...colHeights);
+      const score = maxH * 2 + (maxH - minH) + cardPenalty;
+      if (score < bestScore) {
+        bestScore = score;
+        bestIndices = indices;
+      }
+      return;
+    }
+    for (let i = start; i <= n - remainingCuts; i++) {
+      currentIndices.push(i);
+      searchCuts(i + 1, remainingCuts - 1, currentIndices);
+      currentIndices.pop();
+    }
+  }
+  searchCuts(1, k - 1, []);
+  if (bestIndices.length === 0) {
+    return cardHeights.map((h) => [h]);
+  }
+  const result = [];
+  for (let j = 0; j < k; j++) {
+    result.push(cardHeights.slice(bestIndices[j], bestIndices[j + 1]));
+  }
+  return result;
+}
 function instance6($$self, $$props, $$invalidate) {
   var _a, _b;
   let isFiltering;
@@ -27831,92 +27877,10 @@ function instance6($$self, $$props, $$invalidate) {
     const availableHeight = boardEl.clientHeight;
     if (availableWidth <= 0 || availableHeight <= 0)
       return;
-    const minColGap = (_b2 = (_a2 = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _a2.quickListMinColGap) != null ? _b2 : 16;
-    const minRowGap = (_d = (_c = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _c.quickListMinRowGap) != null ? _d : 12;
+    const minColGap = (_b2 = (_a2 = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _a2.quickListMinColGap) != null ? _b2 : 20;
+    const minRowGap = (_d = (_c = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _c.quickListMinRowGap) != null ? _d : 16;
     const minPaddingX = 28;
     const minPaddingY = 16;
-    const sortedCards = [...cards].sort((a, b) => {
-      const leftDiff = a.offsetLeft - b.offsetLeft;
-      if (Math.abs(leftDiff) > 10)
-        return leftDiff;
-      return a.offsetTop - b.offsetTop;
-    });
-    const columns = [];
-    let currentCol = [];
-    let prevColLeft = -1;
-    for (const card of sortedCards) {
-      const left = card.offsetLeft;
-      if (prevColLeft >= 0 && Math.abs(left - prevColLeft) > 10) {
-        if (currentCol.length > 0)
-          columns.push(currentCol);
-        currentCol = [card];
-      } else {
-        currentCol.push(card);
-      }
-      prevColLeft = left;
-    }
-    if (currentCol.length > 0)
-      columns.push(currentCol);
-    const numCols = columns.length;
-    if (numCols === 0)
-      return;
-    let totalColsWidth = 0;
-    for (const colCards of columns) {
-      const maxW = Math.max(...colCards.map((c) => c.offsetWidth));
-      totalColsWidth += maxW;
-    }
-    const safeSurplusX = Math.max(0, availableWidth - totalColsWidth - 8);
-    if (numCols === 1) {
-      const padX = Math.max(minPaddingX, Math.floor(safeSurplusX / 2));
-      $$invalidate(22, boardEl.style.paddingLeft = padX + "px", boardEl);
-      $$invalidate(22, boardEl.style.paddingRight = padX + "px", boardEl);
-      $$invalidate(22, boardEl.style.columnGap = minColGap + "px", boardEl);
-      $$invalidate(22, boardEl.style.alignContent = "center", boardEl);
-      $$invalidate(22, boardEl.style.overflowX = "hidden", boardEl);
-    } else {
-      const equalColGap = Math.floor(safeSurplusX / (numCols + 1));
-      const maxAllowedColGap = 220;
-      if (equalColGap < minColGap) {
-        $$invalidate(22, boardEl.style.alignContent = "flex-start", boardEl);
-        $$invalidate(22, boardEl.style.paddingLeft = minPaddingX + "px", boardEl);
-        $$invalidate(22, boardEl.style.paddingRight = minPaddingX + "px", boardEl);
-        $$invalidate(22, boardEl.style.columnGap = minColGap + "px", boardEl);
-        $$invalidate(22, boardEl.style.overflowX = "auto", boardEl);
-      } else if (equalColGap <= maxAllowedColGap) {
-        $$invalidate(22, boardEl.style.alignContent = "flex-start", boardEl);
-        $$invalidate(22, boardEl.style.paddingLeft = equalColGap + "px", boardEl);
-        $$invalidate(22, boardEl.style.paddingRight = equalColGap + "px", boardEl);
-        $$invalidate(22, boardEl.style.columnGap = equalColGap + "px", boardEl);
-        $$invalidate(22, boardEl.style.overflowX = "hidden", boardEl);
-      } else {
-        const remainingOuter = Math.floor((availableWidth - (totalColsWidth + (numCols - 1) * maxAllowedColGap) - 8) / 2);
-        $$invalidate(22, boardEl.style.alignContent = "flex-start", boardEl);
-        $$invalidate(22, boardEl.style.paddingLeft = remainingOuter + "px", boardEl);
-        $$invalidate(22, boardEl.style.paddingRight = remainingOuter + "px", boardEl);
-        $$invalidate(22, boardEl.style.columnGap = maxAllowedColGap + "px", boardEl);
-        $$invalidate(22, boardEl.style.overflowX = "hidden", boardEl);
-      }
-    }
-    const multiCardCols = columns.filter((col) => col.length > 1);
-    let targetRowGap = minRowGap;
-    if (multiCardCols.length > 0) {
-      const safeGaps = multiCardCols.map((col) => {
-        const sumH = col.reduce((sum, c) => sum + c.offsetHeight, 0);
-        const spaceForGaps = Math.max(0, availableHeight - 48 - sumH);
-        return Math.floor(spaceForGaps / Math.max(1, col.length - 1));
-      });
-      const minSafeGap = Math.min(...safeGaps);
-      targetRowGap = Math.max(minRowGap, Math.min(minSafeGap, 48));
-    }
-    const maxColTotalH = Math.max(...columns.map((col) => {
-      const sumH = col.reduce((sum, c) => sum + c.offsetHeight, 0);
-      return sumH + (col.length - 1) * targetRowGap;
-    }));
-    const verticalSurplus = Math.max(0, availableHeight - maxColTotalH);
-    const targetPadY = Math.max(minPaddingY, Math.min(Math.floor((verticalSurplus - 14) / 2), 48));
-    $$invalidate(22, boardEl.style.rowGap = targetRowGap + "px", boardEl);
-    $$invalidate(22, boardEl.style.paddingTop = targetPadY + "px", boardEl);
-    $$invalidate(22, boardEl.style.paddingBottom = targetPadY + "px", boardEl);
     const hasHorizontalOverflow = boardEl.scrollWidth > boardEl.clientWidth + 2;
     if (isPacked) {
       if (!hasHorizontalOverflow) {
@@ -27930,60 +27894,117 @@ function instance6($$self, $$props, $$invalidate) {
       }
       return;
     }
-    if (!hasHorizontalOverflow) {
-      return;
-    }
-    const maxColHeight = Math.max(150, availableHeight - minPaddingY * 2);
-    const cardData = cards.map((el) => ({
-      id: el.getAttribute("data-card-id") || "",
-      height: el.offsetHeight || 120,
-      width: el.offsetWidth || 220
-    })).filter((c) => c.id);
-    if (cardData.length <= 1)
-      return;
-    const sortedByHeight = [...cardData].sort((a, b) => b.height - a.height);
-    const bins = [];
-    for (const card of sortedByHeight) {
-      let bestBinIdx = -1;
-      let minRemaining = Infinity;
-      for (let i = 0; i < bins.length; i++) {
-        const bin = bins[i];
-        const neededH = bin.items.length === 0 ? card.height : card.height + minRowGap;
-        const rem = maxColHeight - (bin.usedHeight + neededH);
-        if (rem >= 0 && rem < minRemaining) {
-          minRemaining = rem;
-          bestBinIdx = i;
-        }
-      }
-      if (bestBinIdx !== -1) {
-        const bin = bins[bestBinIdx];
-        const neededH = bin.items.length === 0 ? card.height : card.height + minRowGap;
-        bin.items.push(card);
-        bin.usedHeight += neededH;
-      } else {
-        bins.push({ items: [card], usedHeight: card.height });
-      }
-    }
-    if (bins.length < numCols) {
-      let packedColsWidth = 0;
-      for (const b of bins) {
-        const maxW = Math.max(...b.items.map((it) => it.width));
-        packedColsWidth += maxW;
-      }
-      const totalPackedNeeded = packedColsWidth + (bins.length - 1) * minColGap + minPaddingX * 2;
-      if (totalPackedNeeded <= availableWidth) {
-        const newStyles = /* @__PURE__ */ new Map();
-        let orderIdx = 0;
-        for (const b of bins) {
-          for (const item of b.items) {
-            newStyles.set(item.id, `order: ${orderIdx++};`);
+    if (hasHorizontalOverflow) {
+      const maxColHeight = Math.max(150, availableHeight - minPaddingY * 2);
+      const cardData = cards.map((el) => ({
+        id: el.getAttribute("data-card-id") || "",
+        height: el.offsetHeight || 120,
+        width: el.offsetWidth || 220
+      })).filter((c) => c.id);
+      if (cardData.length > 1) {
+        const sortedByHeight = [...cardData].sort((a, b) => b.height - a.height);
+        const bins = [];
+        for (const card of sortedByHeight) {
+          let bestBinIdx = -1;
+          let minRemaining = Infinity;
+          for (let i = 0; i < bins.length; i++) {
+            const bin = bins[i];
+            const neededH = bin.items.length === 0 ? card.height : card.height + minRowGap;
+            const rem = maxColHeight - (bin.usedHeight + neededH);
+            if (rem >= 0 && rem < minRemaining) {
+              minRemaining = rem;
+              bestBinIdx = i;
+            }
+          }
+          if (bestBinIdx !== -1) {
+            const bin = bins[bestBinIdx];
+            const neededH = bin.items.length === 0 ? card.height : card.height + minRowGap;
+            bin.items.push(card);
+            bin.usedHeight += neededH;
+          } else {
+            bins.push({ items: [card], usedHeight: card.height });
           }
         }
-        $$invalidate(23, cardOrderStyles = newStyles);
-        $$invalidate(47, isPacked = true);
-        scheduleAdjustSpacing();
+        const currentColsCount = Math.max(1, Math.floor((availableWidth - minPaddingX * 2) / (220 + minColGap)));
+        if (bins.length < currentColsCount) {
+          let packedColsWidth = 0;
+          for (const b of bins) {
+            const maxW = Math.max(...b.items.map((it) => it.width));
+            packedColsWidth += maxW;
+          }
+          const totalPackedNeeded = packedColsWidth + (bins.length - 1) * minColGap + minPaddingX * 2;
+          if (totalPackedNeeded <= availableWidth) {
+            const newStyles = /* @__PURE__ */ new Map();
+            let orderIdx = 0;
+            for (const b of bins) {
+              for (const item of b.items) {
+                newStyles.set(item.id, `order: ${orderIdx++};`);
+              }
+            }
+            $$invalidate(23, cardOrderStyles = newStyles);
+            $$invalidate(47, isPacked = true);
+            scheduleAdjustSpacing();
+            return;
+          }
+        }
       }
     }
+    const cardHeights = cards.map((c) => c.offsetHeight || 120);
+    const cardWidths = cards.map((c) => c.offsetWidth || 220);
+    const avgCardW = Math.max(180, Math.round(cardWidths.reduce((a, b) => a + b, 0) / cardWidths.length));
+    const maxColsByWidth = Math.max(1, Math.floor((availableWidth - minPaddingX * 2 + minColGap) / (avgCardW + minColGap)));
+    const targetCols = Math.min(cards.length, Math.max(1, Math.min(maxColsByWidth, Math.ceil(cards.length / 2))));
+    const targetRowGap = Math.max(minRowGap, Math.min(32, Math.floor((availableHeight - minPaddingY * 2 - 380) / 2)));
+    const partitions = findBestContiguousPartition(cardHeights, targetCols, targetRowGap);
+    const partitionHeights = partitions.map((col) => col.reduce((a, b) => a + b, 0) + Math.max(0, col.length - 1) * targetRowGap);
+    const balancedMaxH = Math.max(...partitionHeights);
+    const hWrap = balancedMaxH + 16;
+    const surplusY = Math.max(0, availableHeight - hWrap);
+    const targetPadY = Math.max(minPaddingY, Math.floor(surplusY / 2));
+    let cardIdx = 0;
+    let totalColsWidth = 0;
+    for (const col of partitions) {
+      let colMaxW = 0;
+      for (let i = 0; i < col.length; i++) {
+        colMaxW = Math.max(colMaxW, cardWidths[cardIdx++]);
+      }
+      totalColsWidth += colMaxW;
+    }
+    const safeSurplusX = Math.max(0, availableWidth - totalColsWidth - 8);
+    const maxAllowedColGap = 220;
+    if (targetCols === 1) {
+      const padX = Math.max(minPaddingX, Math.floor(safeSurplusX / 2));
+      $$invalidate(22, boardEl.style.alignContent = "center", boardEl);
+      $$invalidate(22, boardEl.style.paddingLeft = padX + "px", boardEl);
+      $$invalidate(22, boardEl.style.paddingRight = padX + "px", boardEl);
+      $$invalidate(22, boardEl.style.columnGap = minColGap + "px", boardEl);
+      $$invalidate(22, boardEl.style.overflowX = "hidden", boardEl);
+    } else {
+      const equalColGap = Math.floor(safeSurplusX / (targetCols + 1));
+      if (equalColGap < minColGap) {
+        $$invalidate(22, boardEl.style.alignContent = "flex-start", boardEl);
+        $$invalidate(22, boardEl.style.paddingLeft = minPaddingX + "px", boardEl);
+        $$invalidate(22, boardEl.style.paddingRight = minPaddingX + "px", boardEl);
+        $$invalidate(22, boardEl.style.columnGap = minColGap + "px", boardEl);
+        $$invalidate(22, boardEl.style.overflowX = "auto", boardEl);
+      } else if (equalColGap <= maxAllowedColGap) {
+        $$invalidate(22, boardEl.style.alignContent = "flex-start", boardEl);
+        $$invalidate(22, boardEl.style.paddingLeft = equalColGap + "px", boardEl);
+        $$invalidate(22, boardEl.style.paddingRight = equalColGap + "px", boardEl);
+        $$invalidate(22, boardEl.style.columnGap = equalColGap + "px", boardEl);
+        $$invalidate(22, boardEl.style.overflowX = "hidden", boardEl);
+      } else {
+        const remainingOuter = Math.floor((availableWidth - (totalColsWidth + (targetCols - 1) * maxAllowedColGap) - 8) / 2);
+        $$invalidate(22, boardEl.style.alignContent = "flex-start", boardEl);
+        $$invalidate(22, boardEl.style.paddingLeft = remainingOuter + "px", boardEl);
+        $$invalidate(22, boardEl.style.paddingRight = remainingOuter + "px", boardEl);
+        $$invalidate(22, boardEl.style.columnGap = maxAllowedColGap + "px", boardEl);
+        $$invalidate(22, boardEl.style.overflowX = "hidden", boardEl);
+      }
+    }
+    $$invalidate(22, boardEl.style.rowGap = targetRowGap + "px", boardEl);
+    $$invalidate(22, boardEl.style.paddingTop = targetPadY + "px", boardEl);
+    $$invalidate(22, boardEl.style.paddingBottom = targetPadY + "px", boardEl);
   }
   async function toggleLayoutMode() {
     $$invalidate(5, isGridLayout = !isGridLayout);
