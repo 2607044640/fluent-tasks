@@ -25,6 +25,8 @@ import { TaskSearchModal } from "./TaskSearchModal";
 import { QuickTaskModal } from "./modals/QuickTaskModal";
 import { QuickListModal } from "./modals/QuickListModal";
 import { TaskDetailModal } from "./modals/TaskDetailModal";
+import { BackupModal } from "./modals/BackupModal";
+import { BackupService } from "./services/BackupService";
 import { getTodayLocalDateString } from "./utils/timeUtils";
 import { LinkedNoteService } from "./services/LinkedNoteService";
 import "./styles.css";
@@ -100,6 +102,8 @@ interface TaskMainViewComponent extends TaskMainView {
     scheduleHidePopover: () => void;
     getCurrentCategory: () => CategoryInfo | null;
     loadCategory: (cat: CategoryInfo) => Promise<void>;
+    toggleMultiSelect: () => void;
+    openBackupModal: () => void;
 }
 
 class TaskMainViewWrapper extends ItemView {
@@ -154,6 +158,16 @@ class TaskMainViewWrapper extends ItemView {
     }
 
     async onOpen(): Promise<void> {
+        this.addAction("check-square", "多选任务 (批量删除/收藏)", () => {
+            const comp = this.component;
+            comp?.toggleMultiSelect();
+        });
+
+        this.addAction("archive", "数据备份器 (快照与恢复)", () => {
+            const comp = this.component;
+            comp?.openBackupModal();
+        });
+
         const guideAction = this.addAction("help-circle", "Features & shortcuts guide", () => {
             const comp = this.component;
             comp?.openHintsModal();
@@ -398,6 +412,14 @@ export default class FluentTasksPlugin extends Plugin {
             },
         });
 
+        this.addCommand({
+            id: "open-backup-modal",
+            name: "Open Backup Manager (数据备份与还原)",
+            callback: () => {
+                new BackupModal(this.app, this, this.dataService).open();
+            },
+        });
+
         // FIX: All workspace/vault operations MUST wait until layout is ready.
         // Running them before this causes silent startup crashes on Obsidian boot.
         this.app.workspace.onLayoutReady(() => {
@@ -406,6 +428,9 @@ export default class FluentTasksPlugin extends Plugin {
 
                 await this.loadSettings();
                 this.applySettings();
+
+                // Check and run daily backup if enabled
+                await BackupService.checkAndRunDailyBackup(this.app, this);
 
                 // Track active view type to expand sidebar ONLY when switching from external tabs (Ctrl+Tab, Ctrl+Shift+Tab, etc.)
                 let lastActiveViewType = this.app.workspace.getActiveViewOfType(ItemView)?.getViewType() || "";

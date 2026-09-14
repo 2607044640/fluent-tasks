@@ -9,5 +9,10 @@
   "quickModalAction": "direct",
   "quickModalTipCount": 0,
   "quickListGridLayout": true,
-  "quickListFocusCenter": false
+  "quickListMinColGap": 20,
+  "quickListMinRowGap": 16,
+  "quickListFocusCenter": false,
+  "defaultQuickListFocusFilepath": "",
+  "dailyBackupEnabled": true,
+  "lastDailyBackupDate": "2026-09-14"
 }

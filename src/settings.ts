@@ -16,6 +16,8 @@ export interface FluentTasksSettings {
     quickListMinRowGap: number;
     quickListFocusCenter: boolean;
     defaultQuickListFocusFilepath: string;
+    dailyBackupEnabled: boolean;
+    lastDailyBackupDate: string;
 }
 
 export const DEFAULT_SETTINGS: FluentTasksSettings = {
@@ -33,6 +35,8 @@ export const DEFAULT_SETTINGS: FluentTasksSettings = {
     quickListMinRowGap: 16,
     quickListFocusCenter: false,
     defaultQuickListFocusFilepath: "",
+    dailyBackupEnabled: true,
+    lastDailyBackupDate: "",
 }
 
 export class FluentTasksSettingTab extends PluginSettingTab {

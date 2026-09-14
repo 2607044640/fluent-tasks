@@ -10,12 +10,13 @@
     import { calculatePopoverPosition, type PopoverContentType } from "./utils/popoverUtils";
     import { getRelativeTime, getRecurrenceLabel } from "./utils/timeUtils";
     import { DISK_SYNC_DELAY_MS, ANTI_FLICKER_DURATION_MS, POPOVER_HIDE_DELAY_MS } from "./constants";
-    import { Menu, setIcon, Platform, type App } from "obsidian";
+    import { Menu, setIcon, Platform, Notice, type App } from "obsidian";
     import { TaskSearchModal } from "./TaskSearchModal";
     import { RecurrenceService } from "./services/RecurrenceService";
     import { LinkedNoteService } from "./services/LinkedNoteService";
     import { promptDeleteTaskWithLinkedNote } from "./modals/ConfirmDeleteLinkedNoteModal";
     import { TaskStepsModal } from "./modals/TaskStepsModal";
+    import { BackupModal } from "./modals/BackupModal";
 
     // =============================================
     // Props
@@ -34,6 +35,10 @@
     let selectedTaskId: string = "";
     let addTaskInputEl: HTMLInputElement;
     let wrapTaskTitles: boolean = plugin?.settings?.wrapTaskTitles ?? true;
+
+    // Multi-Select Mode State
+    let isMultiSelectMode: boolean = false;
+    let selectedTaskIds: Set<string> = new Set();
 
     // DND requires items to have an `id` field — our TaskItem already has it
     const DND_FLIP_DURATION = 200;
@@ -716,10 +721,83 @@
         showPopover(e, null, 'guide');
     }
 
+    export function toggleMultiSelect() {
+        isMultiSelectMode = !isMultiSelectMode;
+        if (!isMultiSelectMode) {
+            selectedTaskIds.clear();
+            selectedTaskIds = selectedTaskIds;
+        } else {
+            new Notice("☑️ 多选模式已开启：可勾选任务进行批量操作");
+        }
+    }
+
+    export function openBackupModal() {
+        new BackupModal(plugin.app, plugin, dataService).open();
+    }
+
+    function toggleTaskSelection(id: string) {
+        if (selectedTaskIds.has(id)) {
+            selectedTaskIds.delete(id);
+        } else {
+            selectedTaskIds.add(id);
+        }
+        selectedTaskIds = selectedTaskIds;
+    }
+
+    function selectAllTasks() {
+        const all = [...incompleteTasks, ...completedTasks];
+        if (selectedTaskIds.size === all.length && all.length > 0) {
+            selectedTaskIds.clear();
+        } else {
+            for (const t of all) {
+                selectedTaskIds.add(t.id);
+            }
+        }
+        selectedTaskIds = selectedTaskIds;
+    }
+
+    async function handleBatchStar() {
+        if (!currentCategory || selectedTaskIds.size === 0) return;
+        const all = [...incompleteTasks, ...completedTasks];
+        const selected = all.filter(t => selectedTaskIds.has(t.id));
+        if (selected.length === 0) return;
+        const shouldStar = !selected.every(t => t.starred);
+        for (const t of selected) {
+            t.starred = shouldStar;
+        }
+        incompleteTasks = [...incompleteTasks];
+        completedTasks = [...completedTasks];
+        await dataService.saveTasks(currentCategory.filepath, [...incompleteTasks, ...completedTasks]);
+        new Notice(shouldStar ? `⭐ 已收藏选中的 ${selected.length} 项任务` : `已取消收藏选中的 ${selected.length} 项任务`);
+    }
+
+    async function handleBatchDelete() {
+        if (!currentCategory || selectedTaskIds.size === 0) return;
+        const count = selectedTaskIds.size;
+        if (!confirm(`确认批量删除选中的 ${count} 项任务？此操作不可逆。`)) return;
+
+        incompleteTasks = incompleteTasks.filter(t => !selectedTaskIds.has(t.id));
+        completedTasks = completedTasks.filter(t => !selectedTaskIds.has(t.id));
+        await dataService.saveTasks(currentCategory.filepath, [...incompleteTasks, ...completedTasks]);
+        selectedTaskIds.clear();
+        selectedTaskIds = selectedTaskIds;
+        isMultiSelectMode = false;
+        new Notice(`🗑️ 已批量删除 ${count} 项任务`);
+    }
+
     export { scheduleHidePopover };
 </script>
 
-<svelte:window on:contextmenu={() => { if (popoverVisible) dismissPopover(); }} />
+<svelte:window 
+    on:contextmenu={() => { if (popoverVisible) dismissPopover(); }} 
+    on:keydown={(e) => {
+        if (isMultiSelectMode && e.key === "Escape") {
+            isMultiSelectMode = false;
+            selectedTaskIds.clear();
+            selectedTaskIds = selectedTaskIds;
+        }
+    }}
+/>
 
 <div class="main-container" class:wrap-titles={wrapTaskTitles} role="application">
     {#if currentCategory}
@@ -727,15 +805,42 @@
         <div class="main-header">
             <div style="display: flex; align-items: center; gap: 10px;">
                 <h1 class="category-title">{currentCategory.name}</h1>
-                <span class="icon-btn" on:click|stopPropagation={() => new TaskSearchModal(plugin.app, plugin, dataService, currentCategory?.filepath).open()}
-                      role="button" tabindex="0" aria-label="Search this list" title="Search this list"
-                      on:keydown|stopPropagation={(e) => e.key === "Enter" && new TaskSearchModal(plugin.app, plugin, dataService, currentCategory?.filepath).open()}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="11" cy="11" r="8"/>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                    </svg>
-                </span>
+                <div class="main-header-actions">
+                    <span class="icon-btn" on:click|stopPropagation={() => new TaskSearchModal(plugin.app, plugin, dataService, currentCategory?.filepath).open()}
+                          role="button" tabindex="0" aria-label="Search this list" title="Search this list"
+                          on:keydown|stopPropagation={(e) => e.key === "Enter" && new TaskSearchModal(plugin.app, plugin, dataService, currentCategory?.filepath).open()}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                    </span>
+
+                    <!-- Multi-Select Toggle Button in Header -->
+                    <span class="icon-btn" class:is-active={isMultiSelectMode}
+                          on:click|stopPropagation={toggleMultiSelect}
+                          role="button" tabindex="0" aria-label="多选任务 (批量删除/收藏)" title="多选任务 (批量删除/收藏)"
+                          on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleMultiSelect()}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 11 12 14 22 4"></polyline>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                        </svg>
+                    </span>
+
+                    <!-- Backup Manager Button in Header -->
+                    <span class="icon-btn"
+                          on:click|stopPropagation={openBackupModal}
+                          role="button" tabindex="0" aria-label="数据备份器" title="数据备份器"
+                          on:keydown|stopPropagation={(e) => e.key === "Enter" && openBackupModal()}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                            <rect x="1" y="3" width="22" height="5"></rect>
+                            <line x1="10" y1="12" x2="14" y2="12"></line>
+                        </svg>
+                    </span>
+                </div>
             </div>
         </div>
 
@@ -770,6 +875,7 @@
                     animate:flip={{duration: DND_FLIP_DURATION}}
                     class="task-item"
                     class:selected={selectedTaskId === task.id}
+                    class:is-multi-selected={isMultiSelectMode && selectedTaskIds.has(task.id)}
                     on:pointerdown={() => handleTaskPointerDown(task)}
                     on:click={() => selectTask(task)}
                     on:contextmenu={(e) => handleContextMenu(e, task)}
@@ -777,6 +883,19 @@
                     tabindex="0"
                     role="button"
                 >
+                    {#if isMultiSelectMode}
+                        <!-- svelte-ignore a11y-click-events-have-key-events -->
+                        <span class="multi-select-checkbox-wrap" on:click|stopPropagation={() => toggleTaskSelection(task.id)}>
+                            <span class="multi-select-checkbox" class:is-checked={selectedTaskIds.has(task.id)}>
+                                {#if selectedTaskIds.has(task.id)}
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                {/if}
+                            </span>
+                        </span>
+                    {/if}
+
                     <!-- Checkbox circle -->
                     <span class="checkbox" on:click|stopPropagation={() => toggleComplete(task)}
                           role="checkbox" aria-checked="false" tabindex="0"
@@ -951,6 +1070,7 @@
                                 animate:flip={{duration: DND_FLIP_DURATION}}
                                 class="task-item completed"
                                 class:selected={selectedTaskId === task.id}
+                                class:is-multi-selected={isMultiSelectMode && selectedTaskIds.has(task.id)}
                                 on:pointerdown={() => handleTaskPointerDown(task)}
                                 on:click={() => selectTask(task)}
                                 on:contextmenu={(e) => handleContextMenu(e, task)}
@@ -958,6 +1078,19 @@
                                 tabindex="0"
                                 role="button"
                             >
+                                {#if isMultiSelectMode}
+                                    <!-- svelte-ignore a11y-click-events-have-key-events -->
+                                    <span class="multi-select-checkbox-wrap" on:click|stopPropagation={() => toggleTaskSelection(task.id)}>
+                                        <span class="multi-select-checkbox" class:is-checked={selectedTaskIds.has(task.id)}>
+                                            {#if selectedTaskIds.has(task.id)}
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                                </svg>
+                                            {/if}
+                                        </span>
+                                    </span>
+                                {/if}
+
                                 <span class="checkbox" on:click|stopPropagation={() => toggleComplete(task)}
                                       role="checkbox" aria-checked="true" tabindex="0"
                                       on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleComplete(task)}>
@@ -1523,6 +1656,34 @@
                     <button type="button" class="meta-btn-primary" on:click={() => showHintsModal = false}>Got it!</button>
                 </div>
             </div>
+        </div>
+    {/if}
+
+    <!-- Multi-Select Floating Action Toolbar -->
+    {#if isMultiSelectMode}
+        <div class="multi-select-floating-toolbar">
+            <div class="multi-select-count">
+                已选 <b>{selectedTaskIds.size}</b> 项
+            </div>
+            <button class="multi-select-btn" on:click={selectAllTasks}>
+                {selectedTaskIds.size === (incompleteTasks.length + completedTasks.length) && (incompleteTasks.length + completedTasks.length) > 0 ? "取消全选" : "全选"}
+            </button>
+            <button class="multi-select-btn" on:click={handleBatchStar} disabled={selectedTaskIds.size === 0}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+                <span>批量收藏</span>
+            </button>
+            <button class="multi-select-btn is-delete" on:click={handleBatchDelete} disabled={selectedTaskIds.size === 0}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+                <span>批量删除</span>
+            </button>
+            <button class="multi-select-btn is-exit" on:click={() => { isMultiSelectMode = false; selectedTaskIds.clear(); selectedTaskIds = selectedTaskIds; }}>
+                <span>✕ 退出</span>
+            </button>
         </div>
     {/if}
 </div>
