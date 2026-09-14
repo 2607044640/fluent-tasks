@@ -44,13 +44,26 @@
         isBackingUp = true;
         try {
             const res = await BackupService.createBackup(app, plugin, false);
-            new Notice(`✅ 备份创建成功：${res.filename} (含 ${res.taskCount} 项任务)`);
+            new Notice(`数据已保存到 ${res.filepath}`);
             await refreshBackups();
-        } catch (e) {
-            new Notice(`❌ 备份失败: ${e}`);
+        } catch (e: any) {
+            new Notice(`❌ 备份失败: ${e?.message || e}`);
         } finally {
             isBackingUp = false;
         }
+    }
+
+    async function handleImportClick() {
+        const res = await BackupService.pickAndImportBackupFile(app, plugin);
+        if (res.handled) {
+            if (res.success) {
+                await refreshBackups();
+                closeModal();
+            }
+            return;
+        }
+        // Fallback for non-desktop web/mobile
+        triggerImportFile();
     }
 
     function triggerImportFile() {
@@ -138,7 +151,7 @@
                     </svg>
                     <span>{isBackingUp ? "备份中..." : "现在备份"}</span>
                 </button>
-                <button class="backup-btn backup-secondary-btn" on:click={triggerImportFile}>
+                <button class="backup-btn backup-secondary-btn" on:click={handleImportClick}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="7 10 12 15 17 10"></polyline>
@@ -159,7 +172,12 @@
 
     <!-- Backups History Section -->
     <div class="backup-list-header">
-        <h3>历史备份记录 ({backups.length})</h3>
+        <div class="backup-header-left">
+            <h3>历史备份记录 ({backups.length})</h3>
+            <button class="backup-link-btn" on:click={() => BackupService.openBackupFolderInOS(app)} title="在文件管理器中打开备份所在文件夹">
+                📂 打开目录
+            </button>
+        </div>
         <button class="backup-refresh-btn" on:click={refreshBackups} title="刷新列表">🔄</button>
     </div>
 

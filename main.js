@@ -8626,14 +8626,53 @@ var import_obsidian10 = require("obsidian");
 var import_obsidian9 = require("obsidian");
 var BackupService = class {
   static async ensureBackupFolder(app) {
-    const dataFolder = app.vault.getAbstractFileByPath(DATA_FOLDER);
-    if (!dataFolder) {
-      await app.vault.createFolder(DATA_FOLDER);
+    var _a, _b;
+    if (!await app.vault.adapter.exists(DATA_FOLDER)) {
+      try {
+        await app.vault.adapter.mkdir(DATA_FOLDER);
+      } catch (e) {
+        if (!((_a = e == null ? void 0 : e.message) == null ? void 0 : _a.includes("already exists")))
+          throw e;
+      }
     }
-    const backupFolder = app.vault.getAbstractFileByPath(this.BACKUP_FOLDER);
-    if (!backupFolder) {
-      await app.vault.createFolder(this.BACKUP_FOLDER);
+    if (!await app.vault.adapter.exists(this.BACKUP_FOLDER)) {
+      try {
+        await app.vault.adapter.mkdir(this.BACKUP_FOLDER);
+      } catch (e) {
+        if (!((_b = e == null ? void 0 : e.message) == null ? void 0 : _b.includes("already exists")))
+          throw e;
+      }
     }
+  }
+  static getAbsoluteBackupFolderPath(app) {
+    if (app.vault.adapter instanceof import_obsidian9.FileSystemAdapter) {
+      const base = app.vault.adapter.getBasePath();
+      const rel = (0, import_obsidian9.normalizePath)(this.BACKUP_FOLDER);
+      try {
+        const path = window.require ? window.require("path") : null;
+        if (path && path.resolve) {
+          return path.resolve(base, rel);
+        }
+      } catch (e) {
+      }
+      return `${base}/${rel}`.replace(/\//g, "\\");
+    }
+    return this.BACKUP_FOLDER;
+  }
+  static async openBackupFolderInOS(app) {
+    var _a;
+    await this.ensureBackupFolder(app);
+    const absPath = this.getAbsoluteBackupFolderPath(app);
+    try {
+      const electron = window.require ? window.require("electron") : null;
+      if ((_a = electron == null ? void 0 : electron.shell) == null ? void 0 : _a.openPath) {
+        await electron.shell.openPath(absPath);
+        return;
+      }
+    } catch (e) {
+      console.warn("[BackupService] Failed to open folder in OS:", e);
+    }
+    new import_obsidian9.Notice(`\u5907\u4EFD\u76EE\u5F55: ${this.BACKUP_FOLDER}`);
   }
   static async createBackup(app, plugin, isDaily = false) {
     await this.ensureBackupFolder(app);
@@ -8647,16 +8686,18 @@ var BackupService = class {
     const filesToBackup = {};
     let totalTaskCount = 0;
     let listCount = 0;
-    const todoFolder = app.vault.getAbstractFileByPath(DATA_FOLDER);
-    if (todoFolder && todoFolder instanceof import_obsidian9.TFolder) {
-      for (const child of todoFolder.children) {
-        if (child.name.startsWith(".backups") || child.name === "debug.log") {
+    try {
+      const listing = await app.vault.adapter.list(DATA_FOLDER);
+      for (const filePath of listing.files) {
+        const normPath = (0, import_obsidian9.normalizePath)(filePath);
+        const fname = normPath.split("/").pop() || "";
+        if (fname === "debug.log" || normPath.includes("/Backups/") || normPath.includes("/.backups/")) {
           continue;
         }
-        if (child instanceof import_obsidian9.TFile) {
-          const content = await app.vault.read(child);
-          filesToBackup[child.path] = content;
-          if (child.extension === "md") {
+        if (fname.endsWith(".md") || fname.endsWith(".json")) {
+          const content = await app.vault.adapter.read(normPath);
+          filesToBackup[normPath] = content;
+          if (fname.endsWith(".md")) {
             listCount++;
             const matches = content.match(/^[ \t]*- \[[ xX]\]/gm);
             if (matches) {
@@ -8665,6 +8706,8 @@ var BackupService = class {
           }
         }
       }
+    } catch (e) {
+      console.error("[BackupService] Error collecting files for backup:", e);
     }
     const payload = {
       version: "1.0",
@@ -8676,12 +8719,7 @@ var BackupService = class {
       settings: (plugin == null ? void 0 : plugin.settings) ? JSON.parse(JSON.stringify(plugin.settings)) : void 0
     };
     const jsonStr = JSON.stringify(payload, null, 2);
-    const existing = app.vault.getAbstractFileByPath(targetPath);
-    if (existing && existing instanceof import_obsidian9.TFile) {
-      await app.vault.modify(existing, jsonStr);
-    } else {
-      await app.vault.create(targetPath, jsonStr);
-    }
+    await app.vault.adapter.write(targetPath, jsonStr);
     return {
       filename,
       filepath: targetPath,
@@ -8696,44 +8734,57 @@ var BackupService = class {
   static async getBackups(app) {
     var _a, _b, _c;
     await this.ensureBackupFolder(app);
-    const folder = app.vault.getAbstractFileByPath(this.BACKUP_FOLDER);
-    if (!folder || !(folder instanceof import_obsidian9.TFolder)) {
-      return [];
+    const foldersToCheck = [this.BACKUP_FOLDER, this.LEGACY_BACKUP_FOLDER];
+    const allFilePaths = [];
+    for (const folder of foldersToCheck) {
+      try {
+        if (await app.vault.adapter.exists(folder)) {
+          const listing = await app.vault.adapter.list(folder);
+          for (const f of listing.files) {
+            if (f.endsWith(".json")) {
+              allFilePaths.push(f);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn(`[BackupService] Scan ${folder} failed:`, e);
+      }
     }
     const list = [];
     const pad = (n) => n.toString().padStart(2, "0");
-    for (const child of folder.children) {
-      if (child instanceof import_obsidian9.TFile && child.extension === "json") {
-        try {
-          const content = await app.vault.read(child);
-          const parsed = JSON.parse(content);
-          const d = parsed.createdAt ? new Date(parsed.createdAt) : new Date(child.stat.mtime);
-          const dateStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-          const timeStr = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-          list.push({
-            filename: child.name,
-            filepath: child.path,
-            createdAt: parsed.createdAt || d.toISOString(),
-            createdAtFormatted: `${dateStr} ${timeStr}`,
-            sizeBytes: child.stat.size,
-            taskCount: (_a = parsed.taskCount) != null ? _a : 0,
-            listsCount: (_b = parsed.listsCount) != null ? _b : 0,
-            isDaily: (_c = parsed.isDaily) != null ? _c : child.name.startsWith("daily-")
-          });
-        } catch (e) {
-        }
+    for (const filePath of allFilePaths) {
+      try {
+        const normPath = (0, import_obsidian9.normalizePath)(filePath);
+        const content = await app.vault.adapter.read(normPath);
+        const stat = await app.vault.adapter.stat(normPath);
+        const parsed = JSON.parse(content);
+        const filename = normPath.split("/").pop() || normPath;
+        const d = parsed.createdAt ? new Date(parsed.createdAt) : new Date((stat == null ? void 0 : stat.mtime) || Date.now());
+        const dateStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+        const timeStr = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        list.push({
+          filename,
+          filepath: normPath,
+          createdAt: parsed.createdAt || d.toISOString(),
+          createdAtFormatted: `${dateStr} ${timeStr}`,
+          sizeBytes: (stat == null ? void 0 : stat.size) || new Blob([content]).size,
+          taskCount: (_a = parsed.taskCount) != null ? _a : 0,
+          listsCount: (_b = parsed.listsCount) != null ? _b : 0,
+          isDaily: (_c = parsed.isDaily) != null ? _c : filename.startsWith("daily-")
+        });
+      } catch (e) {
       }
     }
     list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     return list;
   }
   static async restoreBackup(app, plugin, backupPath) {
-    const file = app.vault.getAbstractFileByPath(backupPath);
-    if (!file || !(file instanceof import_obsidian9.TFile)) {
+    const normPath = (0, import_obsidian9.normalizePath)(backupPath);
+    if (!await app.vault.adapter.exists(normPath)) {
       new import_obsidian9.Notice("\u672A\u627E\u5230\u6307\u5B9A\u7684\u5907\u4EFD\u6587\u4EF6");
       return false;
     }
-    const raw = await app.vault.read(file);
+    const raw = await app.vault.adapter.read(normPath);
     return this.applyBackupPayload(app, plugin, raw);
   }
   static async applyBackupPayload(app, plugin, rawJson) {
@@ -8745,20 +8796,15 @@ var BackupService = class {
         return false;
       }
       for (const [relPath, content] of Object.entries(payload.files)) {
-        const lastSlash = relPath.lastIndexOf("/");
+        const normalized = (0, import_obsidian9.normalizePath)(relPath);
+        const lastSlash = normalized.lastIndexOf("/");
         if (lastSlash > 0) {
-          const folderPath = relPath.slice(0, lastSlash);
-          const folder = app.vault.getAbstractFileByPath(folderPath);
-          if (!folder) {
-            await app.vault.createFolder(folderPath);
+          const folderPath = normalized.slice(0, lastSlash);
+          if (!await app.vault.adapter.exists(folderPath)) {
+            await app.vault.adapter.mkdir(folderPath);
           }
         }
-        const existing = app.vault.getAbstractFileByPath(relPath);
-        if (existing && existing instanceof import_obsidian9.TFile) {
-          await app.vault.modify(existing, content);
-        } else {
-          await app.vault.create(relPath, content);
-        }
+        await app.vault.adapter.write(normalized, content);
       }
       new import_obsidian9.Notice(`\u2705 \u6210\u529F\u8FD8\u539F\u5907\u4EFD\uFF1A\u5171\u6062\u590D ${Object.keys(payload.files).length} \u4E2A\u6587\u4EF6\uFF0C\u5305\u542B ${(_a = payload.taskCount) != null ? _a : 0} \u9879\u4EFB\u52A1`);
       EventBus.emit("category:list-changed" /* CATEGORY_LIST_CHANGED */, {});
@@ -8770,11 +8816,39 @@ var BackupService = class {
     }
   }
   static async deleteBackup(app, backupPath) {
-    const file = app.vault.getAbstractFileByPath(backupPath);
-    if (file && file instanceof import_obsidian9.TFile) {
-      await app.vault.delete(file);
+    const normPath = (0, import_obsidian9.normalizePath)(backupPath);
+    if (await app.vault.adapter.exists(normPath)) {
+      await app.vault.adapter.remove(normPath);
       new import_obsidian9.Notice("\u{1F5D1}\uFE0F \u5907\u4EFD\u5DF2\u5220\u9664");
     }
+  }
+  static async pickAndImportBackupFile(app, plugin) {
+    try {
+      await this.ensureBackupFolder(app);
+      const electron = window.require ? window.require("electron") : null;
+      const remote = (electron == null ? void 0 : electron.remote) || (window.require ? window.require("@electron/remote") : null);
+      const dialog = (remote == null ? void 0 : remote.dialog) || (electron == null ? void 0 : electron.dialog);
+      if (dialog && typeof dialog.showOpenDialog === "function") {
+        const defaultFolder = this.getAbsoluteBackupFolderPath(app);
+        const res = await dialog.showOpenDialog({
+          title: "\u9009\u62E9\u8981\u5BFC\u5165\u7684\u5907\u4EFD\u6587\u4EF6",
+          defaultPath: defaultFolder,
+          filters: [{ name: "Fluent Tasks \u5907\u4EFD\u6587\u4EF6 (*.json)", extensions: ["json"] }],
+          properties: ["openFile"]
+        });
+        if (res.canceled || !res.filePaths || res.filePaths.length === 0) {
+          return { success: false, handled: true };
+        }
+        const chosenPath = res.filePaths[0];
+        const fs = window.require("fs");
+        const raw = fs.readFileSync(chosenPath, "utf-8");
+        const ok = await this.applyBackupPayload(app, plugin, raw);
+        return { success: ok, handled: true };
+      }
+    } catch (e) {
+      console.warn("[BackupService] Native file picker dialog:", e);
+    }
+    return { success: false, handled: false };
   }
   static async checkAndRunDailyBackup(app, plugin) {
     var _a;
@@ -8797,12 +8871,14 @@ var BackupService = class {
     }
   }
 };
-BackupService.BACKUP_FOLDER = `${DATA_FOLDER}/.backups`;
+// Visible folder in vault without leading dot so Obsidian vault adapter can index and access it without error
+BackupService.BACKUP_FOLDER = `${DATA_FOLDER}/Backups`;
+BackupService.LEGACY_BACKUP_FOLDER = `${DATA_FOLDER}/.backups`;
 
 // src/modals/BackupModalView.svelte
 function get_each_context3(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[19] = list[i];
+  child_ctx[21] = list[i];
   return child_ctx;
 }
 function create_else_block3(ctx) {
@@ -8811,11 +8887,11 @@ function create_else_block3(ctx) {
   let each_1_anchor;
   let each_value = ensure_array_like(
     /*backups*/
-    ctx[2]
+    ctx[3]
   );
   const get_key = (ctx2) => (
     /*b*/
-    ctx2[19].filepath
+    ctx2[21].filepath
   );
   for (let i = 0; i < each_value.length; i += 1) {
     let child_ctx = get_each_context3(ctx, each_value, i);
@@ -8839,10 +8915,10 @@ function create_else_block3(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty & /*backups, handleDelete, handleRestore, formatBytes*/
-      6148) {
+      12296) {
         each_value = ensure_array_like(
           /*backups*/
-          ctx2[2]
+          ctx2[3]
         );
         each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value, each_1_lookup, each_1_anchor.parentNode, destroy_block, create_each_block3, each_1_anchor, get_each_context3);
       }
@@ -8902,14 +8978,14 @@ function create_each_block3(key_1, ctx) {
   let span0;
   let t0_value = (
     /*b*/
-    ctx[19].isDaily ? "\u6BCF\u65E5\u5907\u4EFD" : "\u624B\u52A8\u5907\u4EFD"
+    ctx[21].isDaily ? "\u6BCF\u65E5\u5907\u4EFD" : "\u624B\u52A8\u5907\u4EFD"
   );
   let t0;
   let t1;
   let span1;
   let t2_value = (
     /*b*/
-    ctx[19].createdAtFormatted + ""
+    ctx[21].createdAtFormatted + ""
   );
   let t2;
   let t3;
@@ -8917,7 +8993,7 @@ function create_each_block3(key_1, ctx) {
   let span2;
   let t4_value = (
     /*b*/
-    ctx[19].taskCount + ""
+    ctx[21].taskCount + ""
   );
   let t4;
   let t5;
@@ -8927,7 +9003,7 @@ function create_each_block3(key_1, ctx) {
   let span4;
   let t9_value = (
     /*b*/
-    ctx[19].listsCount + ""
+    ctx[21].listsCount + ""
   );
   let t9;
   let t10;
@@ -8937,7 +9013,7 @@ function create_each_block3(key_1, ctx) {
   let span6;
   let t14_value = formatBytes(
     /*b*/
-    ctx[19].sizeBytes
+    ctx[21].sizeBytes
   ) + "";
   let t14;
   let t15;
@@ -8948,21 +9024,21 @@ function create_each_block3(key_1, ctx) {
   let t19;
   let mounted;
   let dispose;
-  function click_handler2() {
-    return (
-      /*click_handler*/
-      ctx[17](
-        /*b*/
-        ctx[19]
-      )
-    );
-  }
   function click_handler_1() {
     return (
       /*click_handler_1*/
       ctx[18](
         /*b*/
-        ctx[19]
+        ctx[21]
+      )
+    );
+  }
+  function click_handler_22() {
+    return (
+      /*click_handler_2*/
+      ctx[19](
+        /*b*/
+        ctx[21]
       )
     );
   }
@@ -9009,7 +9085,7 @@ function create_each_block3(key_1, ctx) {
         span0,
         "is-daily",
         /*b*/
-        ctx[19].isDaily
+        ctx[21].isDaily
       );
       attr(span1, "class", "backup-time");
       attr(div0, "class", "backup-item-title-wrap");
@@ -9027,7 +9103,7 @@ function create_each_block3(key_1, ctx) {
         div4,
         "is-daily",
         /*b*/
-        ctx[19].isDaily
+        ctx[21].isDaily
       );
       this.first = div4;
     },
@@ -9064,8 +9140,8 @@ function create_each_block3(key_1, ctx) {
       append(div4, t19);
       if (!mounted) {
         dispose = [
-          listen(button0, "click", click_handler2),
-          listen(button1, "click", click_handler_1)
+          listen(button0, "click", click_handler_1),
+          listen(button1, "click", click_handler_22)
         ];
         mounted = true;
       }
@@ -9073,43 +9149,43 @@ function create_each_block3(key_1, ctx) {
     p(new_ctx, dirty) {
       ctx = new_ctx;
       if (dirty & /*backups*/
-      4 && t0_value !== (t0_value = /*b*/
-      ctx[19].isDaily ? "\u6BCF\u65E5\u5907\u4EFD" : "\u624B\u52A8\u5907\u4EFD"))
+      8 && t0_value !== (t0_value = /*b*/
+      ctx[21].isDaily ? "\u6BCF\u65E5\u5907\u4EFD" : "\u624B\u52A8\u5907\u4EFD"))
         set_data(t0, t0_value);
       if (dirty & /*backups*/
-      4) {
+      8) {
         toggle_class(
           span0,
           "is-daily",
           /*b*/
-          ctx[19].isDaily
+          ctx[21].isDaily
         );
       }
       if (dirty & /*backups*/
-      4 && t2_value !== (t2_value = /*b*/
-      ctx[19].createdAtFormatted + ""))
+      8 && t2_value !== (t2_value = /*b*/
+      ctx[21].createdAtFormatted + ""))
         set_data(t2, t2_value);
       if (dirty & /*backups*/
-      4 && t4_value !== (t4_value = /*b*/
-      ctx[19].taskCount + ""))
+      8 && t4_value !== (t4_value = /*b*/
+      ctx[21].taskCount + ""))
         set_data(t4, t4_value);
       if (dirty & /*backups*/
-      4 && t9_value !== (t9_value = /*b*/
-      ctx[19].listsCount + ""))
+      8 && t9_value !== (t9_value = /*b*/
+      ctx[21].listsCount + ""))
         set_data(t9, t9_value);
       if (dirty & /*backups*/
-      4 && t14_value !== (t14_value = formatBytes(
+      8 && t14_value !== (t14_value = formatBytes(
         /*b*/
-        ctx[19].sizeBytes
+        ctx[21].sizeBytes
       ) + ""))
         set_data(t14, t14_value);
       if (dirty & /*backups*/
-      4) {
+      8) {
         toggle_class(
           div4,
           "is-daily",
           /*b*/
-          ctx[19].isDaily
+          ctx[21].isDaily
         );
       }
     },
@@ -9123,7 +9199,7 @@ function create_each_block3(key_1, ctx) {
   };
 }
 function create_fragment3(ctx) {
-  let div8;
+  let div9;
   let div1;
   let div0;
   let t2;
@@ -9146,7 +9222,7 @@ function create_fragment3(ctx) {
   let span1;
   let t11_value = (
     /*isBackingUp*/
-    ctx[4] ? "\u5907\u4EFD\u4E2D..." : "\u73B0\u5728\u5907\u4EFD"
+    ctx[5] ? "\u5907\u4EFD\u4E2D..." : "\u73B0\u5728\u5907\u4EFD"
   );
   let t11;
   let t12;
@@ -9154,30 +9230,33 @@ function create_fragment3(ctx) {
   let t15;
   let input1;
   let t16;
+  let div7;
   let div6;
   let h3;
   let t17;
   let t18_value = (
     /*backups*/
-    ctx[2].length + ""
+    ctx[3].length + ""
   );
   let t18;
   let t19;
   let t20;
   let button3;
   let t22;
-  let div7;
+  let button4;
+  let t24;
+  let div8;
   let mounted;
   let dispose;
   function select_block_type(ctx2, dirty) {
     if (
       /*isLoading*/
-      ctx2[3]
+      ctx2[4]
     )
       return create_if_block3;
     if (
       /*backups*/
-      ctx2[2].length === 0
+      ctx2[3].length === 0
     )
       return create_if_block_13;
     return create_else_block3;
@@ -9186,7 +9265,7 @@ function create_fragment3(ctx) {
   let if_block = current_block_type(ctx);
   return {
     c() {
-      div8 = element("div");
+      div9 = element("div");
       div1 = element("div");
       div0 = element("div");
       div0.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg> <h2>\u4EFB\u52A1\u6570\u636E\u5907\u4EFD\u5668</h2>`;
@@ -9217,6 +9296,7 @@ function create_fragment3(ctx) {
       t15 = space();
       input1 = element("input");
       t16 = space();
+      div7 = element("div");
       div6 = element("div");
       h3 = element("h3");
       t17 = text("\u5386\u53F2\u5907\u4EFD\u8BB0\u5F55 (");
@@ -9224,9 +9304,12 @@ function create_fragment3(ctx) {
       t19 = text(")");
       t20 = space();
       button3 = element("button");
-      button3.textContent = "\u{1F504}";
+      button3.textContent = "\u{1F4C2} \u6253\u5F00\u76EE\u5F55";
       t22 = space();
-      div7 = element("div");
+      button4 = element("button");
+      button4.textContent = "\u{1F504}";
+      t24 = space();
+      div8 = element("div");
       if_block.c();
       attr(div0, "class", "backup-header-title-wrap");
       attr(button0, "class", "backup-close-btn");
@@ -9235,7 +9318,7 @@ function create_fragment3(ctx) {
       attr(input0, "type", "checkbox");
       attr(input0, "id", "daily-backup-checkbox");
       input0.checked = /*dailyBackup*/
-      ctx[1];
+      ctx[2];
       attr(label, "for", "daily-backup-checkbox");
       attr(div2, "class", "backup-toggle-label");
       attr(path0, "d", "M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z");
@@ -9249,7 +9332,7 @@ function create_fragment3(ctx) {
       attr(svg1, "stroke-width", "2");
       attr(button1, "class", "backup-btn backup-primary-btn");
       button1.disabled = /*isBackingUp*/
-      ctx[4];
+      ctx[5];
       attr(button2, "class", "backup-btn backup-secondary-btn");
       attr(input1, "type", "file");
       attr(input1, "accept", ".json");
@@ -9257,20 +9340,23 @@ function create_fragment3(ctx) {
       attr(div3, "class", "backup-action-btns");
       attr(div4, "class", "backup-row");
       attr(div5, "class", "backup-card");
-      attr(button3, "class", "backup-refresh-btn");
-      attr(button3, "title", "\u5237\u65B0\u5217\u8868");
-      attr(div6, "class", "backup-list-header");
-      attr(div7, "class", "backup-list-scrollable");
-      attr(div8, "class", "backup-modal-container");
+      attr(button3, "class", "backup-link-btn");
+      attr(button3, "title", "\u5728\u6587\u4EF6\u7BA1\u7406\u5668\u4E2D\u6253\u5F00\u5907\u4EFD\u6240\u5728\u6587\u4EF6\u5939");
+      attr(div6, "class", "backup-header-left");
+      attr(button4, "class", "backup-refresh-btn");
+      attr(button4, "title", "\u5237\u65B0\u5217\u8868");
+      attr(div7, "class", "backup-list-header");
+      attr(div8, "class", "backup-list-scrollable");
+      attr(div9, "class", "backup-modal-container");
     },
     m(target, anchor) {
-      insert(target, div8, anchor);
-      append(div8, div1);
+      insert(target, div9, anchor);
+      append(div9, div1);
       append(div1, div0);
       append(div1, t2);
       append(div1, button0);
-      append(div8, t4);
-      append(div8, div5);
+      append(div9, t4);
+      append(div9, div5);
       append(div5, div4);
       append(div4, div2);
       append(div2, input0);
@@ -9291,55 +9377,64 @@ function create_fragment3(ctx) {
       append(div3, t15);
       append(div3, input1);
       ctx[16](input1);
-      append(div8, t16);
-      append(div8, div6);
+      append(div9, t16);
+      append(div9, div7);
+      append(div7, div6);
       append(div6, h3);
       append(h3, t17);
       append(h3, t18);
       append(h3, t19);
       append(div6, t20);
       append(div6, button3);
-      append(div8, t22);
-      append(div8, div7);
-      if_block.m(div7, null);
+      append(div7, t22);
+      append(div7, button4);
+      append(div9, t24);
+      append(div9, div8);
+      if_block.m(div8, null);
       if (!mounted) {
         dispose = [
           listen(button0, "click", function() {
             if (is_function(
               /*closeModal*/
-              ctx[0]
+              ctx[1]
             ))
-              ctx[0].apply(this, arguments);
+              ctx[1].apply(this, arguments);
           }),
           listen(
             input0,
             "change",
             /*handleToggleDailyBackup*/
-            ctx[7]
+            ctx[8]
           ),
           listen(
             button1,
             "click",
             /*handleBackupNow*/
-            ctx[8]
+            ctx[9]
           ),
           listen(
             button2,
             "click",
-            /*triggerImportFile*/
-            ctx[9]
+            /*handleImportClick*/
+            ctx[10]
           ),
           listen(
             input1,
             "change",
             /*handleFileSelected*/
-            ctx[10]
+            ctx[11]
           ),
           listen(
             button3,
             "click",
+            /*click_handler*/
+            ctx[17]
+          ),
+          listen(
+            button4,
+            "click",
             /*refreshBackups*/
-            ctx[6]
+            ctx[7]
           )
         ];
         mounted = true;
@@ -9348,22 +9443,22 @@ function create_fragment3(ctx) {
     p(new_ctx, [dirty]) {
       ctx = new_ctx;
       if (dirty & /*dailyBackup*/
-      2) {
+      4) {
         input0.checked = /*dailyBackup*/
-        ctx[1];
+        ctx[2];
       }
       if (dirty & /*isBackingUp*/
-      16 && t11_value !== (t11_value = /*isBackingUp*/
-      ctx[4] ? "\u5907\u4EFD\u4E2D..." : "\u73B0\u5728\u5907\u4EFD"))
+      32 && t11_value !== (t11_value = /*isBackingUp*/
+      ctx[5] ? "\u5907\u4EFD\u4E2D..." : "\u73B0\u5728\u5907\u4EFD"))
         set_data(t11, t11_value);
       if (dirty & /*isBackingUp*/
-      16) {
+      32) {
         button1.disabled = /*isBackingUp*/
-        ctx[4];
+        ctx[5];
       }
       if (dirty & /*backups*/
-      4 && t18_value !== (t18_value = /*backups*/
-      ctx[2].length + ""))
+      8 && t18_value !== (t18_value = /*backups*/
+      ctx[3].length + ""))
         set_data(t18, t18_value);
       if (current_block_type === (current_block_type = select_block_type(ctx, dirty)) && if_block) {
         if_block.p(ctx, dirty);
@@ -9372,7 +9467,7 @@ function create_fragment3(ctx) {
         if_block = current_block_type(ctx);
         if (if_block) {
           if_block.c();
-          if_block.m(div7, null);
+          if_block.m(div8, null);
         }
       }
     },
@@ -9380,7 +9475,7 @@ function create_fragment3(ctx) {
     o: noop,
     d(detaching) {
       if (detaching) {
-        detach(div8);
+        detach(div9);
       }
       ctx[16](null);
       if_block.d();
@@ -9412,19 +9507,19 @@ function instance3($$self, $$props, $$invalidate) {
     await refreshBackups();
   });
   async function refreshBackups() {
-    $$invalidate(3, isLoading = true);
+    $$invalidate(4, isLoading = true);
     try {
-      $$invalidate(2, backups = await BackupService.getBackups(app));
+      $$invalidate(3, backups = await BackupService.getBackups(app));
     } catch (e) {
       console.error("[BackupModalView] Failed to load backups:", e);
     } finally {
-      $$invalidate(3, isLoading = false);
+      $$invalidate(4, isLoading = false);
     }
   }
   async function handleToggleDailyBackup() {
-    $$invalidate(1, dailyBackup = !dailyBackup);
+    $$invalidate(2, dailyBackup = !dailyBackup);
     if (plugin == null ? void 0 : plugin.settings) {
-      $$invalidate(13, plugin.settings.dailyBackupEnabled = dailyBackup, plugin);
+      $$invalidate(14, plugin.settings.dailyBackupEnabled = dailyBackup, plugin);
       await plugin.saveSettings();
       new import_obsidian10.Notice(dailyBackup ? "\u2705 \u5DF2\u5F00\u542F\u6BCF\u65E5\u81EA\u52A8\u5907\u4EFD" : "\u26A0\uFE0F \u5DF2\u5173\u95ED\u6BCF\u65E5\u81EA\u52A8\u5907\u4EFD");
     }
@@ -9432,16 +9527,27 @@ function instance3($$self, $$props, $$invalidate) {
   async function handleBackupNow() {
     if (isBackingUp)
       return;
-    $$invalidate(4, isBackingUp = true);
+    $$invalidate(5, isBackingUp = true);
     try {
       const res = await BackupService.createBackup(app, plugin, false);
-      new import_obsidian10.Notice(`\u2705 \u5907\u4EFD\u521B\u5EFA\u6210\u529F\uFF1A${res.filename} (\u542B ${res.taskCount} \u9879\u4EFB\u52A1)`);
+      new import_obsidian10.Notice(`\u6570\u636E\u5DF2\u4FDD\u5B58\u5230 ${res.filepath}`);
       await refreshBackups();
     } catch (e) {
-      new import_obsidian10.Notice(`\u274C \u5907\u4EFD\u5931\u8D25: ${e}`);
+      new import_obsidian10.Notice(`\u274C \u5907\u4EFD\u5931\u8D25: ${(e == null ? void 0 : e.message) || e}`);
     } finally {
-      $$invalidate(4, isBackingUp = false);
+      $$invalidate(5, isBackingUp = false);
     }
+  }
+  async function handleImportClick() {
+    const res = await BackupService.pickAndImportBackupFile(app, plugin);
+    if (res.handled) {
+      if (res.success) {
+        await refreshBackups();
+        closeModal();
+      }
+      return;
+    }
+    triggerImportFile();
   }
   function triggerImportFile() {
     fileInputEl == null ? void 0 : fileInputEl.click();
@@ -9485,22 +9591,24 @@ function instance3($$self, $$props, $$invalidate) {
   function input1_binding($$value) {
     binding_callbacks[$$value ? "unshift" : "push"](() => {
       fileInputEl = $$value;
-      $$invalidate(5, fileInputEl);
+      $$invalidate(6, fileInputEl);
     });
   }
-  const click_handler2 = (b) => handleRestore(b);
-  const click_handler_1 = (b) => handleDelete(b);
+  const click_handler2 = () => BackupService.openBackupFolderInOS(app);
+  const click_handler_1 = (b) => handleRestore(b);
+  const click_handler_22 = (b) => handleDelete(b);
   $$self.$$set = ($$props2) => {
     if ("app" in $$props2)
-      $$invalidate(14, app = $$props2.app);
+      $$invalidate(0, app = $$props2.app);
     if ("plugin" in $$props2)
-      $$invalidate(13, plugin = $$props2.plugin);
+      $$invalidate(14, plugin = $$props2.plugin);
     if ("dataService" in $$props2)
       $$invalidate(15, dataService = $$props2.dataService);
     if ("closeModal" in $$props2)
-      $$invalidate(0, closeModal = $$props2.closeModal);
+      $$invalidate(1, closeModal = $$props2.closeModal);
   };
   return [
+    app,
     closeModal,
     dailyBackup,
     backups,
@@ -9510,26 +9618,26 @@ function instance3($$self, $$props, $$invalidate) {
     refreshBackups,
     handleToggleDailyBackup,
     handleBackupNow,
-    triggerImportFile,
+    handleImportClick,
     handleFileSelected,
     handleRestore,
     handleDelete,
     plugin,
-    app,
     dataService,
     input1_binding,
     click_handler2,
-    click_handler_1
+    click_handler_1,
+    click_handler_22
   ];
 }
 var BackupModalView = class extends SvelteComponent {
   constructor(options) {
     super();
     init(this, options, instance3, create_fragment3, safe_not_equal, {
-      app: 14,
-      plugin: 13,
+      app: 0,
+      plugin: 14,
       dataService: 15,
-      closeModal: 0
+      closeModal: 1
     });
   }
 };

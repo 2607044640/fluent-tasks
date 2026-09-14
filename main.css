@@ -3687,6 +3687,29 @@ body .task-steps-floating-modal .modal-content.task-steps-modal-content {
     margin-bottom: 10px;
 }
 
+.backup-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.backup-link-btn {
+    background: transparent;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-size: 11.5px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.backup-link-btn:hover {
+    color: var(--todo-accent, #8b5cf6);
+    border-color: var(--todo-accent, #8b5cf6);
+    background: var(--background-modifier-hover);
+}
+
 .backup-list-header h3 {
     margin: 0;
     font-size: 14px;
