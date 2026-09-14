@@ -18602,7 +18602,7 @@ var DEFAULT_SETTINGS = {
   quickListGridLayout: true,
   quickListMinColGap: 20,
   quickListMinRowGap: 16,
-  quickListFocusCenter: true
+  quickListFocusCenter: false
 };
 var FluentTasksSettingTab = class extends import_obsidian11.PluginSettingTab {
   constructor(app, plugin) {
@@ -18675,9 +18675,9 @@ var FluentTasksSettingTab = class extends import_obsidian11.PluginSettingTab {
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian11.Setting(containerEl).setName("Quick List Modal: Focus Center List on Open").setDesc("Automatically focus the visually centered list when opening the Quick List board instead of the top-left list, enabling immediate multi-directional arrow navigation (default: on).").addToggle((toggle) => {
+    new import_obsidian11.Setting(containerEl).setName("Quick List Modal: Focus Center List on Open").setDesc("Automatically focus the visually centered list when opening the Quick List board instead of the top-left list, enabling immediate multi-directional arrow navigation.").addToggle((toggle) => {
       var _a;
-      return toggle.setValue((_a = this.plugin.settings.quickListFocusCenter) != null ? _a : true).onChange(async (value) => {
+      return toggle.setValue((_a = this.plugin.settings.quickListFocusCenter) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.quickListFocusCenter = value;
         await this.plugin.saveSettings();
       });
@@ -28027,7 +28027,7 @@ function instance6($$self, $$props, $$invalidate) {
   }
   function focusCenterList() {
     var _a2, _b2;
-    const shouldFocusCenter = (_b2 = (_a2 = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _a2.quickListFocusCenter) != null ? _b2 : true;
+    const shouldFocusCenter = (_b2 = (_a2 = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _a2.quickListFocusCenter) != null ? _b2 : false;
     if (!shouldFocusCenter || searchQuery.trim() || !flatCategories || flatCategories.length === 0) {
       return;
     }

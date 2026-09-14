@@ -362,7 +362,7 @@
     }
 
     function focusCenterList() {
-        const shouldFocusCenter = plugin?.settings?.quickListFocusCenter ?? true;
+        const shouldFocusCenter = plugin?.settings?.quickListFocusCenter ?? false;
         if (!shouldFocusCenter || searchQuery.trim() || !flatCategories || flatCategories.length === 0) {
             return;
         }

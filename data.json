@@ -8,5 +8,6 @@
   "wrapTaskTitles": true,
   "quickModalAction": "direct",
   "quickModalTipCount": 0,
-  "quickListGridLayout": true
+  "quickListGridLayout": true,
+  "quickListFocusCenter": false
 }

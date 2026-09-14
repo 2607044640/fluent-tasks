@@ -30,7 +30,7 @@ export const DEFAULT_SETTINGS: FluentTasksSettings = {
     quickListGridLayout: true,
     quickListMinColGap: 20,
     quickListMinRowGap: 16,
-    quickListFocusCenter: true,
+    quickListFocusCenter: false,
 }
 
 export class FluentTasksSettingTab extends PluginSettingTab {
@@ -145,9 +145,9 @@ export class FluentTasksSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName("Quick List Modal: Focus Center List on Open")
-            .setDesc("Automatically focus the visually centered list when opening the Quick List board instead of the top-left list, enabling immediate multi-directional arrow navigation (default: on).")
+            .setDesc("Automatically focus the visually centered list when opening the Quick List board instead of the top-left list, enabling immediate multi-directional arrow navigation.")
             .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.quickListFocusCenter ?? true)
+                .setValue(this.plugin.settings.quickListFocusCenter ?? false)
                 .onChange(async (value) => {
                     this.plugin.settings.quickListFocusCenter = value;
                     await this.plugin.saveSettings();
