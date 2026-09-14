@@ -104,15 +104,10 @@
     }
 
     $: if (filteredItems && isGridLayout) {
-        if (isPacked) {
-            isPacked = false;
-            cardOrderStyles = new Map();
-        }
         scheduleAdjustSpacing();
     }
 
     let cardOrderStyles: Map<string, string> = new Map();
-    let isPacked: boolean = false;
     let rafId: number | null = null;
 
     function scheduleAdjustSpacing() {
@@ -122,61 +117,6 @@
             rafId = null;
             adjustBoardSpacing();
         });
-    }
-
-    function findBestContiguousPartition(cardHeights: number[], targetCols: number, rowGap: number): number[][] {
-        const n = cardHeights.length;
-        const k = targetCols;
-        if (k <= 1 || n <= k) {
-            return cardHeights.map(h => [h]);
-        }
-
-        let bestIndices: number[] = [];
-        let bestScore = Infinity;
-
-        function searchCuts(start: number, remainingCuts: number, currentIndices: number[]) {
-            if (remainingCuts === 0) {
-                const indices = [0, ...currentIndices, n];
-                const colHeights: number[] = [];
-                let cardPenalty = 0;
-                const maxAllowed = Math.ceil(n / k);
-
-                for (let j = 0; j < k; j++) {
-                    const slice = cardHeights.slice(indices[j], indices[j + 1]);
-                    const h = slice.reduce((a, b) => a + b, 0) + Math.max(0, slice.length - 1) * rowGap;
-                    colHeights.push(h);
-                    if (slice.length > maxAllowed) cardPenalty += 1000;
-                }
-
-                const maxH = Math.max(...colHeights);
-                const minH = Math.min(...colHeights);
-                const score = maxH * 2 + (maxH - minH) + cardPenalty;
-
-                if (score < bestScore) {
-                    bestScore = score;
-                    bestIndices = indices;
-                }
-                return;
-            }
-
-            for (let i = start; i <= n - remainingCuts; i++) {
-                currentIndices.push(i);
-                searchCuts(i + 1, remainingCuts - 1, currentIndices);
-                currentIndices.pop();
-            }
-        }
-
-        searchCuts(1, k - 1, []);
-
-        if (bestIndices.length === 0) {
-            return cardHeights.map(h => [h]);
-        }
-
-        const result: number[][] = [];
-        for (let j = 0; j < k; j++) {
-            result.push(cardHeights.slice(bestIndices[j], bestIndices[j + 1]));
-        }
-        return result;
     }
 
     interface CardLayoutInfo {
@@ -205,44 +145,33 @@
         return cols;
     }
 
-    function balancedPack(cards: CardLayoutInfo[], targetCols: number, maxColHeight: number, rowGap: number): PackBin[] {
+    function balancedPack(cards: CardLayoutInfo[], targetCols: number, rowGap: number): PackBin[] {
+        if (targetCols <= 1) {
+            let usedH = 0;
+            for (const c of cards) {
+                usedH = usedH === 0 ? c.height : (usedH + rowGap + c.height);
+            }
+            return [{ items: [...cards], usedHeight: usedH }];
+        }
+
         const sorted = [...cards].sort((a, b) => b.height - a.height);
         const bins: PackBin[] = Array.from({ length: targetCols }, () => ({ items: [], usedHeight: 0 }));
+        const maxPerBin = Math.ceil(cards.length / targetCols);
 
         for (const card of sorted) {
-            let bestBinIdx = -1;
-            let minUsed = Infinity;
+            let validBins = bins.filter(b => b.items.length < maxPerBin);
+            if (validBins.length === 0) validBins = bins;
 
-            for (let i = 0; i < bins.length; i++) {
-                const b = bins[i];
-                const needed = b.items.length === 0 ? card.height : (b.usedHeight + rowGap + card.height);
-                if (needed <= maxColHeight && b.usedHeight < minUsed) {
-                    minUsed = b.usedHeight;
-                    bestBinIdx = i;
+            let bestBin = validBins[0];
+            for (let i = 1; i < validBins.length; i++) {
+                if (validBins[i].usedHeight < bestBin.usedHeight) {
+                    bestBin = validBins[i];
                 }
             }
 
-            if (bestBinIdx !== -1) {
-                const b = bins[bestBinIdx];
-                const needed = b.items.length === 0 ? card.height : (b.usedHeight + rowGap + card.height);
-                b.items.push(card);
-                b.usedHeight = needed;
-            } else if (bins.length < targetCols) {
-                bins.push({ items: [card], usedHeight: card.height });
-            } else {
-                let minBinIdx = 0;
-                let minBinH = bins[0].usedHeight;
-                for (let i = 1; i < bins.length; i++) {
-                    if (bins[i].usedHeight < minBinH) {
-                        minBinH = bins[i].usedHeight;
-                        minBinIdx = i;
-                    }
-                }
-                const b = bins[minBinIdx];
-                const needed = b.items.length === 0 ? card.height : (b.usedHeight + rowGap + card.height);
-                b.items.push(card);
-                b.usedHeight = needed;
-            }
+            const needed = bestBin.items.length === 0 ? card.height : (bestBin.usedHeight + rowGap + card.height);
+            bestBin.items.push(card);
+            bestBin.usedHeight = needed;
         }
 
         return bins.filter(b => b.items.length > 0);
@@ -268,21 +197,8 @@
         const avgCardW = Math.max(180, Math.round(cardWidths.reduce((a, b) => a + b, 0) / cardWidths.length));
         const maxColHeight = Math.max(150, availableHeight - minPaddingY * 2);
 
-        // 视口宽度能舒适容纳的最大列数
+        // Theoretical maximum columns based on average card width
         const maxColsByWidth = Math.max(1, Math.floor((availableWidth - minPaddingX * 2 + minColGap) / (avgCardW + minColGap)));
-
-        // 检查默认 DOM 自然排列所需要的列数
-        const naturalCols = getNaturalCols(cardHeights, maxColHeight, minRowGap);
-        const naturalWidthNeeded = naturalCols * avgCardW + (naturalCols - 1) * minColGap + minPaddingX * 2;
-        const naturalFits = naturalCols <= maxColsByWidth && naturalWidthNeeded <= availableWidth;
-
-        // 1. 恢复机制：若处于智能排布中，当窗口拉宽后默认自然顺序已能放下时，恢复为默认自然顺序
-        if (isPacked && naturalFits) {
-            isPacked = false;
-            cardOrderStyles = new Map();
-            scheduleAdjustSpacing();
-            return;
-        }
 
         const cardData: CardLayoutInfo[] = cards.map(el => ({
             id: el.getAttribute("data-card-id") || "",
@@ -290,147 +206,112 @@
             width: el.offsetWidth || 220,
         })).filter(c => c.id);
 
-        // 2. 超出边界时触发智能紧凑排布 (当自然顺序溢出屏幕时)
-        if (!naturalFits) {
-            // 尝试将所有卡片紧凑划分到视口可容纳的列数内 (不超过 maxColsByWidth)
-            const targetCols = Math.min(cards.length, maxColsByWidth);
-            const bins = balancedPack(cardData, targetCols, maxColHeight, minRowGap);
+        // 1. Search for optimal column count (from min(cards.length, maxColsByWidth) down to 1)
+        // that physically fits both horizontally (actual column max widths) and vertically (maxColHeight).
+        let chosenBins: PackBin[] | null = null;
+        const maxCandidateCols = Math.min(cards.length, maxColsByWidth);
 
-            let packedColsWidth = 0;
-            for (const b of bins) {
-                const maxW = Math.max(...b.items.map(it => it.width));
-                packedColsWidth += maxW;
+        for (let k = maxCandidateCols; k >= 1; k--) {
+            const candidateBins = balancedPack(cardData, k, minRowGap);
+            let packedColsW = 0;
+            for (const b of candidateBins) {
+                packedColsW += Math.max(...b.items.map(it => it.width));
             }
-            const totalPackedNeeded = packedColsWidth + (bins.length - 1) * minColGap + minPaddingX * 2;
+            const totalNeededW = packedColsW + (candidateBins.length - 1) * minColGap + minPaddingX * 2;
+            const packedH = Math.max(...candidateBins.map(b => b.usedHeight));
 
-            if (bins.length <= maxColsByWidth && totalPackedNeeded <= availableWidth) {
-                // 成功在视口内无滑动条排下
-                if (!isPacked) {
-                    const newStyles = new Map<string, string>();
-                    let orderIdx = 0;
-                    for (const b of bins) {
-                        for (const item of b.items) {
-                            newStyles.set(item.id, `order: ${orderIdx++};`);
-                        }
-                    }
-                    cardOrderStyles = newStyles;
-                    isPacked = true;
-                    scheduleAdjustSpacing();
-                    return;
-                }
-
-                // 计算紧凑排布后的纵向高度与折行缓冲区
-                const packedMaxH = Math.max(...bins.map(b => b.usedHeight));
-                const hWrap = packedMaxH + 4;
-                const surplusY = Math.max(0, availableHeight - hWrap);
-                const targetPadY = Math.max(minPaddingY, Math.floor(surplusY / 2));
-
-                const safeSurplusX = Math.max(0, availableWidth - packedColsWidth - 8);
-                const equalColGap = Math.floor(safeSurplusX / (bins.length + 1));
-                const maxAllowedColGap = 220;
-
-                if (equalColGap < minColGap) {
-                    boardEl.style.alignContent = "flex-start";
-                    boardEl.style.paddingLeft = minPaddingX + "px";
-                    boardEl.style.paddingRight = minPaddingX + "px";
-                    boardEl.style.columnGap = minColGap + "px";
-                    boardEl.style.overflowX = "auto";
-                } else if (equalColGap <= maxAllowedColGap) {
-                    boardEl.style.alignContent = "flex-start";
-                    boardEl.style.paddingLeft = equalColGap + "px";
-                    boardEl.style.paddingRight = equalColGap + "px";
-                    boardEl.style.columnGap = equalColGap + "px";
-                    boardEl.style.overflowX = "hidden";
-                } else {
-                    const remainingOuter = Math.floor((availableWidth - (packedColsWidth + (bins.length - 1) * maxAllowedColGap) - 8) / 2);
-                    boardEl.style.alignContent = "flex-start";
-                    boardEl.style.paddingLeft = remainingOuter + "px";
-                    boardEl.style.paddingRight = remainingOuter + "px";
-                    boardEl.style.columnGap = maxAllowedColGap + "px";
-                    boardEl.style.overflowX = "hidden";
-                }
-
-                boardEl.style.rowGap = minRowGap + "px";
-                boardEl.style.paddingTop = targetPadY + "px";
-                boardEl.style.paddingBottom = targetPadY + "px";
-
-                if (!hasInitializedFocus && flatCategories.length > 0) {
-                    hasInitializedFocus = true;
-                    setTimeout(() => {
-                        focusCenterList();
-                    }, 30);
-                }
-                return;
-            } else {
-                // 如果卡片数量实在太多（比如30个测试卡片），即使紧凑压缩也无法在一屏放下，则允许横向滑动
-                if (isPacked) {
-                    isPacked = false;
-                    cardOrderStyles = new Map();
-                    scheduleAdjustSpacing();
-                    return;
-                }
-                boardEl.style.alignContent = "flex-start";
-                boardEl.style.paddingLeft = minPaddingX + "px";
-                boardEl.style.paddingRight = minPaddingX + "px";
-                boardEl.style.columnGap = minColGap + "px";
-                boardEl.style.rowGap = minRowGap + "px";
-                boardEl.style.paddingTop = minPaddingY + "px";
-                boardEl.style.paddingBottom = minPaddingY + "px";
-                boardEl.style.overflowX = "auto";
-
-                if (!hasInitializedFocus && flatCategories.length > 0) {
-                    hasInitializedFocus = true;
-                    setTimeout(() => {
-                        focusCenterList();
-                    }, 30);
-                }
-                return;
+            if (totalNeededW <= availableWidth && packedH <= maxColHeight) {
+                chosenBins = candidateBins;
+                break;
             }
         }
 
-        // ====================================================================
-        // 3. 默认非溢出状态（未超出边界）：保留 DOM 顺序，大呼吸间距舒展展示
-        // ====================================================================
-        const targetCols = Math.min(cards.length, naturalCols);
-        const targetRowGap = Math.max(minRowGap, Math.min(32, Math.floor((availableHeight - minPaddingY * 2 - 380) / 2)));
+        let isHorizontalOverflow = false;
+        if (!chosenBins) {
+            // Cannot fit in one screen without overflow.
+            // Check if natural columns fitting maxColHeight can fit horizontally:
+            const natCols = getNaturalCols(cardHeights, maxColHeight, minRowGap);
+            chosenBins = balancedPack(cardData, natCols, minRowGap);
 
-        const partitions = findBestContiguousPartition(cardHeights, targetCols, targetRowGap);
-        const partitionHeights = partitions.map(col => col.reduce((a, b) => a + b, 0) + Math.max(0, col.length - 1) * targetRowGap);
-        const balancedMaxH = Math.max(...partitionHeights);
-
-        const hWrap = balancedMaxH + 16;
-        const surplusY = Math.max(0, availableHeight - hWrap);
-        const targetPadY = Math.max(minPaddingY, Math.floor(surplusY / 2));
-
-        let cardIdx = 0;
-        let totalColsWidth = 0;
-        for (const col of partitions) {
-            let colMaxW = 0;
-            for (let i = 0; i < col.length; i++) {
-                colMaxW = Math.max(colMaxW, cardWidths[cardIdx++]);
+            let packedColsW = 0;
+            for (const b of chosenBins) {
+                packedColsW += Math.max(...b.items.map(it => it.width));
             }
-            totalColsWidth += colMaxW;
+            const totalNeededW = packedColsW + (chosenBins.length - 1) * minColGap + minPaddingX * 2;
+            if (totalNeededW > availableWidth) {
+                isHorizontalOverflow = true;
+            }
         }
 
-        const safeSurplusX = Math.max(0, availableWidth - totalColsWidth - 8);
-        const maxAllowedColGap = 220;
+        const bins = chosenBins;
+        const packedMaxH = Math.max(...bins.map(b => b.usedHeight));
 
-        if (targetCols === 1) {
-            const padX = Math.max(minPaddingX, Math.floor(safeSurplusX / 2));
-            boardEl.style.alignContent = "center";
-            boardEl.style.paddingLeft = padX + "px";
-            boardEl.style.paddingRight = padX + "px";
-            boardEl.style.columnGap = minColGap + "px";
-            boardEl.style.overflowX = "hidden";
+        // 2. Build deterministic card order and wrap break margins
+        const newStyles = new Map<string, string>();
+        let orderIdx = 0;
+        for (let colIdx = 0; colIdx < bins.length; colIdx++) {
+            const b = bins[colIdx];
+            for (let itemIdx = 0; itemIdx < b.items.length; itemIdx++) {
+                const item = b.items[itemIdx];
+                const isLastInCol = (itemIdx === b.items.length - 1) && (colIdx < bins.length - 1);
+                const extraBottom = isLastInCol ? Math.max(0, packedMaxH - b.usedHeight) : 0;
+                let style = `order: ${orderIdx++};`;
+                if (extraBottom > 0) {
+                    style += ` margin-bottom: ${extraBottom}px;`;
+                }
+                newStyles.set(item.id, style);
+            }
+        }
+
+        // 3. Diff styles to prevent unnecessary re-rendering
+        let stylesChanged = false;
+        if (cardOrderStyles.size !== newStyles.size) {
+            stylesChanged = true;
         } else {
-            const equalColGap = Math.floor(safeSurplusX / (targetCols + 1));
+            for (const [id, style] of newStyles.entries()) {
+                if (cardOrderStyles.get(id) !== style) {
+                    stylesChanged = true;
+                    break;
+                }
+            }
+        }
+
+        if (stylesChanged) {
+            cardOrderStyles = newStyles;
+            scheduleAdjustSpacing();
+            return;
+        }
+
+        // 4. Calculate actual layout dimensions and gaps
+        let packedColsWidth = 0;
+        for (const b of bins) {
+            packedColsWidth += Math.max(...b.items.map(it => it.width));
+        }
+
+        if (isHorizontalOverflow) {
+            boardEl.style.alignContent = "flex-start";
+            boardEl.style.paddingLeft = minPaddingX + "px";
+            boardEl.style.paddingRight = minPaddingX + "px";
+            boardEl.style.columnGap = minColGap + "px";
+            boardEl.style.rowGap = minRowGap + "px";
+            boardEl.style.paddingTop = minPaddingY + "px";
+            boardEl.style.paddingBottom = minPaddingY + "px";
+            boardEl.style.overflowX = "auto";
+        } else {
+            const hWrap = packedMaxH + 4;
+            const surplusY = Math.max(0, availableHeight - hWrap);
+            const targetPadY = Math.max(minPaddingY, Math.floor(surplusY / 2));
+
+            const safeSurplusX = Math.max(0, availableWidth - packedColsWidth);
+            const equalColGap = Math.floor(safeSurplusX / (bins.length + 1));
+            const maxAllowedColGap = 220;
 
             if (equalColGap < minColGap) {
                 boardEl.style.alignContent = "flex-start";
                 boardEl.style.paddingLeft = minPaddingX + "px";
                 boardEl.style.paddingRight = minPaddingX + "px";
                 boardEl.style.columnGap = minColGap + "px";
-                boardEl.style.overflowX = "auto";
+                boardEl.style.overflowX = "hidden";
             } else if (equalColGap <= maxAllowedColGap) {
                 boardEl.style.alignContent = "flex-start";
                 boardEl.style.paddingLeft = equalColGap + "px";
@@ -438,18 +319,18 @@
                 boardEl.style.columnGap = equalColGap + "px";
                 boardEl.style.overflowX = "hidden";
             } else {
-                const remainingOuter = Math.floor((availableWidth - (totalColsWidth + (targetCols - 1) * maxAllowedColGap) - 8) / 2);
+                const remainingOuter = Math.floor((availableWidth - (packedColsWidth + (bins.length - 1) * maxAllowedColGap)) / 2);
                 boardEl.style.alignContent = "flex-start";
-                boardEl.style.paddingLeft = remainingOuter + "px";
-                boardEl.style.paddingRight = remainingOuter + "px";
+                boardEl.style.paddingLeft = Math.max(minPaddingX, remainingOuter) + "px";
+                boardEl.style.paddingRight = Math.max(minPaddingX, remainingOuter) + "px";
                 boardEl.style.columnGap = maxAllowedColGap + "px";
                 boardEl.style.overflowX = "hidden";
             }
-        }
 
-        boardEl.style.rowGap = targetRowGap + "px";
-        boardEl.style.paddingTop = targetPadY + "px";
-        boardEl.style.paddingBottom = targetPadY + "px";
+            boardEl.style.rowGap = minRowGap + "px";
+            boardEl.style.paddingTop = targetPadY + "px";
+            boardEl.style.paddingBottom = targetPadY + "px";
+        }
 
         if (!hasInitializedFocus && flatCategories.length > 0) {
             hasInitializedFocus = true;

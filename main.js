@@ -24362,27 +24362,27 @@ var import_obsidian14 = require("obsidian");
 var { Map: Map_12 } = globals;
 function get_each_context_34(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[130] = list[i];
+  child_ctx[129] = list[i];
   return child_ctx;
 }
 function get_each_context_43(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[124] = list[i];
+  child_ctx[123] = list[i];
   return child_ctx;
 }
 function get_each_context6(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[121] = list[i];
+  child_ctx[120] = list[i];
   return child_ctx;
 }
 function get_each_context_15(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[124] = list[i];
+  child_ctx[123] = list[i];
   return child_ctx;
 }
 function get_each_context_24(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[127] = list[i];
+  child_ctx[126] = list[i];
   return child_ctx;
 }
 function create_if_block_215(ctx) {
@@ -24454,7 +24454,7 @@ function create_if_block_204(ctx) {
           button,
           "click",
           /*click_handler*/
-          ctx[51]
+          ctx[50]
         );
         mounted = true;
       }
@@ -24666,7 +24666,7 @@ function create_if_block_216(ctx) {
     m(target, anchor) {
       insert(target, div, anchor);
       if_block.m(div, null);
-      ctx[74](div);
+      ctx[73](div);
       if (!mounted) {
         dispose = listen(div, "wheel", handleBoardWheel);
         mounted = true;
@@ -24689,7 +24689,7 @@ function create_if_block_216(ctx) {
         detach(div);
       }
       if_block.d();
-      ctx[74](null);
+      ctx[73](null);
       mounted = false;
       dispose();
     }
@@ -24705,7 +24705,7 @@ function create_else_block_63(ctx) {
   );
   const get_key = (ctx2) => (
     /*item*/
-    ctx2[130].id
+    ctx2[129].id
   );
   for (let i = 0; i < each_value_3.length; i += 1) {
     let child_ctx = get_each_context_34(ctx, each_value_3, i);
@@ -24781,7 +24781,7 @@ function create_else_block_92(ctx) {
     if (
       /*editingItemId*/
       ctx2[13] === /*item*/
-      ctx2[130].id
+      ctx2[129].id
     )
       return create_if_block_184;
     return create_else_block_102;
@@ -24792,15 +24792,15 @@ function create_else_block_92(ctx) {
     /*taskCounts*/
     ((_a = ctx[8][
       /*item*/
-      ctx[130].filepath
+      ctx[129].filepath
     ]) != null ? _a : 0) > 0 && create_if_block_174(ctx)
   );
   function dragstart_handler_5(...args) {
     return (
       /*dragstart_handler_5*/
-      ctx[92](
+      ctx[91](
         /*item*/
-        ctx[130],
+        ctx[129],
         ...args
       )
     );
@@ -24808,9 +24808,9 @@ function create_else_block_92(ctx) {
   function dragover_handler_5(...args) {
     return (
       /*dragover_handler_5*/
-      ctx[93](
+      ctx[92](
         /*item*/
-        ctx[130],
+        ctx[129],
         ...args
       )
     );
@@ -24818,27 +24818,27 @@ function create_else_block_92(ctx) {
   function drop_handler_5() {
     return (
       /*drop_handler_5*/
-      ctx[94](
+      ctx[93](
         /*item*/
-        ctx[130]
+        ctx[129]
       )
     );
   }
   function click_handler_8() {
     return (
       /*click_handler_8*/
-      ctx[95](
+      ctx[94](
         /*item*/
-        ctx[130]
+        ctx[129]
       )
     );
   }
   function contextmenu_handler_5(...args) {
     return (
       /*contextmenu_handler_5*/
-      ctx[96](
+      ctx[95](
         /*item*/
-        ctx[130],
+        ctx[129],
         ...args
       )
     );
@@ -24858,7 +24858,7 @@ function create_else_block_92(ctx) {
       attr(span, "class", "quick-modal-list-icon");
       attr(div, "class", "quick-modal-list-item");
       attr(div, "data-filepath", div_data_filepath_value = /*item*/
-      ctx[130].filepath);
+      ctx[129].filepath);
       attr(div, "role", "button");
       attr(div, "tabindex", "0");
       attr(div, "draggable", "true");
@@ -24870,14 +24870,14 @@ function create_else_block_92(ctx) {
           /*focusedIndex*/
           ctx[4]
         ]) == null ? void 0 : _a2.filepath) === /*item*/
-        ctx[130].filepath
+        ctx[129].filepath
       );
       toggle_class(
         div,
         "drag-over-top",
         /*dragOverListId*/
         ctx[16] === /*item*/
-        ctx[130].id && /*dragListPosition*/
+        ctx[129].id && /*dragListPosition*/
         ctx[17] === "top"
       );
       toggle_class(
@@ -24885,7 +24885,7 @@ function create_else_block_92(ctx) {
         "drag-over-bottom",
         /*dragOverListId*/
         ctx[16] === /*item*/
-        ctx[130].id && /*dragListPosition*/
+        ctx[129].id && /*dragListPosition*/
         ctx[17] === "bottom"
       );
     },
@@ -24932,7 +24932,7 @@ function create_else_block_92(ctx) {
         /*taskCounts*/
         ((_a2 = ctx[8][
           /*item*/
-          ctx[130].filepath
+          ctx[129].filepath
         ]) != null ? _a2 : 0) > 0
       ) {
         if (if_block1) {
@@ -24948,7 +24948,7 @@ function create_else_block_92(ctx) {
       }
       if (dirty[0] & /*filteredItems*/
       128 && div_data_filepath_value !== (div_data_filepath_value = /*item*/
-      ctx[130].filepath)) {
+      ctx[129].filepath)) {
         attr(div, "data-filepath", div_data_filepath_value);
       }
       if (dirty[0] & /*flatCategories, focusedIndex, filteredItems*/
@@ -24961,7 +24961,7 @@ function create_else_block_92(ctx) {
             /*focusedIndex*/
             ctx[4]
           ]) == null ? void 0 : _b.filepath) === /*item*/
-          ctx[130].filepath
+          ctx[129].filepath
         );
       }
       if (dirty[0] & /*dragOverListId, filteredItems, dragListPosition*/
@@ -24971,7 +24971,7 @@ function create_else_block_92(ctx) {
           "drag-over-top",
           /*dragOverListId*/
           ctx[16] === /*item*/
-          ctx[130].id && /*dragListPosition*/
+          ctx[129].id && /*dragListPosition*/
           ctx[17] === "top"
         );
       }
@@ -24982,7 +24982,7 @@ function create_else_block_92(ctx) {
           "drag-over-bottom",
           /*dragOverListId*/
           ctx[16] === /*item*/
-          ctx[130].id && /*dragListPosition*/
+          ctx[129].id && /*dragListPosition*/
           ctx[17] === "bottom"
         );
       }
@@ -25005,7 +25005,7 @@ function create_if_block_125(ctx) {
   let span;
   let t0_value = (
     /*item*/
-    ctx[130].isExpanded ? "\u25BC" : "\u25B6"
+    ctx[129].isExpanded ? "\u25BC" : "\u25B6"
   );
   let t0;
   let t1;
@@ -25016,9 +25016,9 @@ function create_if_block_125(ctx) {
   function click_handler_5() {
     return (
       /*click_handler_5*/
-      ctx[75](
+      ctx[74](
         /*item*/
-        ctx[130]
+        ctx[129]
       )
     );
   }
@@ -25026,7 +25026,7 @@ function create_if_block_125(ctx) {
     if (
       /*editingItemId*/
       ctx2[13] === /*item*/
-      ctx2[130].id
+      ctx2[129].id
     )
       return create_if_block_164;
     return create_else_block_82;
@@ -25036,9 +25036,9 @@ function create_if_block_125(ctx) {
   function dragstart_handler_3(...args) {
     return (
       /*dragstart_handler_3*/
-      ctx[79](
+      ctx[78](
         /*item*/
-        ctx[130],
+        ctx[129],
         ...args
       )
     );
@@ -25046,9 +25046,9 @@ function create_if_block_125(ctx) {
   function dragover_handler_3(...args) {
     return (
       /*dragover_handler_3*/
-      ctx[80](
+      ctx[79](
         /*item*/
-        ctx[130],
+        ctx[129],
         ...args
       )
     );
@@ -25056,26 +25056,26 @@ function create_if_block_125(ctx) {
   function drop_handler_3() {
     return (
       /*drop_handler_3*/
-      ctx[81](
+      ctx[80](
         /*item*/
-        ctx[130]
+        ctx[129]
       )
     );
   }
   function contextmenu_handler_3(...args) {
     return (
       /*contextmenu_handler_3*/
-      ctx[82](
+      ctx[81](
         /*item*/
-        ctx[130],
+        ctx[129],
         ...args
       )
     );
   }
   let if_block1 = (
     /*item*/
-    ctx[130].isExpanded && /*item*/
-    ctx[130].items && create_if_block_134(ctx)
+    ctx[129].isExpanded && /*item*/
+    ctx[129].items && create_if_block_134(ctx)
   );
   return {
     c() {
@@ -25098,7 +25098,7 @@ function create_if_block_125(ctx) {
         "drag-over-top",
         /*dragOverListId*/
         ctx[16] === /*item*/
-        ctx[130].id && /*dragListPosition*/
+        ctx[129].id && /*dragListPosition*/
         ctx[17] === "top"
       );
       toggle_class(
@@ -25106,7 +25106,7 @@ function create_if_block_125(ctx) {
         "drag-over-bottom",
         /*dragOverListId*/
         ctx[16] === /*item*/
-        ctx[130].id && /*dragListPosition*/
+        ctx[129].id && /*dragListPosition*/
         ctx[17] === "bottom"
       );
       toggle_class(
@@ -25114,7 +25114,7 @@ function create_if_block_125(ctx) {
         "drag-over-inside",
         /*dragOverListId*/
         ctx[16] === /*item*/
-        ctx[130].id && /*dragListPosition*/
+        ctx[129].id && /*dragListPosition*/
         ctx[17] === "inside"
       );
     },
@@ -25150,7 +25150,7 @@ function create_if_block_125(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*filteredItems*/
       128 && t0_value !== (t0_value = /*item*/
-      ctx[130].isExpanded ? "\u25BC" : "\u25B6"))
+      ctx[129].isExpanded ? "\u25BC" : "\u25B6"))
         set_data(t0, t0_value);
       if (current_block_type === (current_block_type = select_block_type_8(ctx, dirty)) && if_block0) {
         if_block0.p(ctx, dirty);
@@ -25164,8 +25164,8 @@ function create_if_block_125(ctx) {
       }
       if (
         /*item*/
-        ctx[130].isExpanded && /*item*/
-        ctx[130].items
+        ctx[129].isExpanded && /*item*/
+        ctx[129].items
       ) {
         if (if_block1) {
           if_block1.p(ctx, dirty);
@@ -25185,7 +25185,7 @@ function create_if_block_125(ctx) {
           "drag-over-top",
           /*dragOverListId*/
           ctx[16] === /*item*/
-          ctx[130].id && /*dragListPosition*/
+          ctx[129].id && /*dragListPosition*/
           ctx[17] === "top"
         );
       }
@@ -25196,7 +25196,7 @@ function create_if_block_125(ctx) {
           "drag-over-bottom",
           /*dragOverListId*/
           ctx[16] === /*item*/
-          ctx[130].id && /*dragListPosition*/
+          ctx[129].id && /*dragListPosition*/
           ctx[17] === "bottom"
         );
       }
@@ -25207,7 +25207,7 @@ function create_if_block_125(ctx) {
           "drag-over-inside",
           /*dragOverListId*/
           ctx[16] === /*item*/
-          ctx[130].id && /*dragListPosition*/
+          ctx[129].id && /*dragListPosition*/
           ctx[17] === "inside"
         );
       }
@@ -25228,7 +25228,7 @@ function create_else_block_102(ctx) {
   let span;
   let t_value = (
     /*item*/
-    ctx[130].name + ""
+    ctx[129].name + ""
   );
   let t;
   return {
@@ -25244,7 +25244,7 @@ function create_else_block_102(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*filteredItems*/
       128 && t_value !== (t_value = /*item*/
-      ctx2[130].name + ""))
+      ctx2[129].name + ""))
         set_data(t, t_value);
     },
     d(detaching) {
@@ -25271,14 +25271,14 @@ function create_if_block_184(ctx) {
         /*editingName*/
         ctx[14]
       );
-      ctx[91](input);
+      ctx[90](input);
       if (!mounted) {
         dispose = [
           listen(
             input,
             "input",
             /*input_input_handler_6*/
-            ctx[90]
+            ctx[89]
           ),
           listen(
             input,
@@ -25305,7 +25305,7 @@ function create_if_block_184(ctx) {
       if (detaching) {
         detach(input);
       }
-      ctx[91](null);
+      ctx[90](null);
       mounted = false;
       run_all(dispose);
     }
@@ -25317,7 +25317,7 @@ function create_if_block_174(ctx) {
     /*taskCounts*/
     ctx[8][
       /*item*/
-      ctx[130].filepath
+      ctx[129].filepath
     ] + ""
   );
   let t;
@@ -25336,7 +25336,7 @@ function create_if_block_174(ctx) {
       384 && t_value !== (t_value = /*taskCounts*/
       ctx2[8][
         /*item*/
-        ctx2[130].filepath
+        ctx2[129].filepath
       ] + ""))
         set_data(t, t_value);
     },
@@ -25351,7 +25351,7 @@ function create_else_block_82(ctx) {
   let span;
   let t_value = (
     /*item*/
-    ctx[130].name + ""
+    ctx[129].name + ""
   );
   let t;
   let mounted;
@@ -25359,9 +25359,9 @@ function create_else_block_82(ctx) {
   function click_handler_6() {
     return (
       /*click_handler_6*/
-      ctx[78](
+      ctx[77](
         /*item*/
-        ctx[130]
+        ctx[129]
       )
     );
   }
@@ -25383,7 +25383,7 @@ function create_else_block_82(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*filteredItems*/
       128 && t_value !== (t_value = /*item*/
-      ctx[130].name + ""))
+      ctx[129].name + ""))
         set_data(t, t_value);
     },
     d(detaching) {
@@ -25412,14 +25412,14 @@ function create_if_block_164(ctx) {
         /*editingName*/
         ctx[14]
       );
-      ctx[77](input);
+      ctx[76](input);
       if (!mounted) {
         dispose = [
           listen(
             input,
             "input",
             /*input_input_handler_4*/
-            ctx[76]
+            ctx[75]
           ),
           listen(
             input,
@@ -25446,7 +25446,7 @@ function create_if_block_164(ctx) {
       if (detaching) {
         detach(input);
       }
-      ctx[77](null);
+      ctx[76](null);
       mounted = false;
       run_all(dispose);
     }
@@ -25458,11 +25458,11 @@ function create_if_block_134(ctx) {
   let each_1_lookup = new Map_12();
   let each_value_4 = ensure_array_like(
     /*item*/
-    ctx[130].items
+    ctx[129].items
   );
   const get_key = (ctx2) => (
     /*child*/
-    ctx2[124].id
+    ctx2[123].id
   );
   for (let i = 0; i < each_value_4.length; i += 1) {
     let child_ctx = get_each_context_43(ctx, each_value_4, i);
@@ -25491,7 +25491,7 @@ function create_if_block_134(ctx) {
       63) {
         each_value_4 = ensure_array_like(
           /*item*/
-          ctx2[130].items
+          ctx2[129].items
         );
         each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_4, each_1_lookup, div, destroy_block, create_each_block_43, null, get_each_context_43);
       }
@@ -25510,7 +25510,7 @@ function create_else_block_72(ctx) {
   let span;
   let t_value = (
     /*child*/
-    ctx[124].name + ""
+    ctx[123].name + ""
   );
   let t;
   return {
@@ -25526,7 +25526,7 @@ function create_else_block_72(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*filteredItems*/
       128 && t_value !== (t_value = /*child*/
-      ctx2[124].name + ""))
+      ctx2[123].name + ""))
         set_data(t, t_value);
     },
     d(detaching) {
@@ -25553,14 +25553,14 @@ function create_if_block_154(ctx) {
         /*editingName*/
         ctx[14]
       );
-      ctx[84](input);
+      ctx[83](input);
       if (!mounted) {
         dispose = [
           listen(
             input,
             "input",
             /*input_input_handler_5*/
-            ctx[83]
+            ctx[82]
           ),
           listen(
             input,
@@ -25587,7 +25587,7 @@ function create_if_block_154(ctx) {
       if (detaching) {
         detach(input);
       }
-      ctx[84](null);
+      ctx[83](null);
       mounted = false;
       run_all(dispose);
     }
@@ -25599,7 +25599,7 @@ function create_if_block_144(ctx) {
     /*taskCounts*/
     ctx[8][
       /*child*/
-      ctx[124].filepath
+      ctx[123].filepath
     ] + ""
   );
   let t;
@@ -25618,7 +25618,7 @@ function create_if_block_144(ctx) {
       384 && t_value !== (t_value = /*taskCounts*/
       ctx2[8][
         /*child*/
-        ctx2[124].filepath
+        ctx2[123].filepath
       ] + ""))
         set_data(t, t_value);
     },
@@ -25643,7 +25643,7 @@ function create_each_block_43(key_1, ctx) {
     if (
       /*editingItemId*/
       ctx2[13] === /*child*/
-      ctx2[124].id
+      ctx2[123].id
     )
       return create_if_block_154;
     return create_else_block_72;
@@ -25654,15 +25654,15 @@ function create_each_block_43(key_1, ctx) {
     /*taskCounts*/
     ((_a = ctx[8][
       /*child*/
-      ctx[124].filepath
+      ctx[123].filepath
     ]) != null ? _a : 0) > 0 && create_if_block_144(ctx)
   );
   function dragstart_handler_4(...args) {
     return (
       /*dragstart_handler_4*/
-      ctx[85](
+      ctx[84](
         /*child*/
-        ctx[124],
+        ctx[123],
         ...args
       )
     );
@@ -25670,9 +25670,9 @@ function create_each_block_43(key_1, ctx) {
   function dragover_handler_4(...args) {
     return (
       /*dragover_handler_4*/
-      ctx[86](
+      ctx[85](
         /*child*/
-        ctx[124],
+        ctx[123],
         ...args
       )
     );
@@ -25680,27 +25680,27 @@ function create_each_block_43(key_1, ctx) {
   function drop_handler_4() {
     return (
       /*drop_handler_4*/
-      ctx[87](
+      ctx[86](
         /*child*/
-        ctx[124]
+        ctx[123]
       )
     );
   }
   function click_handler_7() {
     return (
       /*click_handler_7*/
-      ctx[88](
+      ctx[87](
         /*child*/
-        ctx[124]
+        ctx[123]
       )
     );
   }
   function contextmenu_handler_4(...args) {
     return (
       /*contextmenu_handler_4*/
-      ctx[89](
+      ctx[88](
         /*child*/
-        ctx[124],
+        ctx[123],
         ...args
       )
     );
@@ -25722,7 +25722,7 @@ function create_each_block_43(key_1, ctx) {
       attr(span, "class", "quick-modal-list-icon");
       attr(div, "class", "quick-modal-list-item is-nested");
       attr(div, "data-filepath", div_data_filepath_value = /*child*/
-      ctx[124].filepath);
+      ctx[123].filepath);
       attr(div, "role", "button");
       attr(div, "tabindex", "0");
       attr(div, "draggable", "true");
@@ -25734,14 +25734,14 @@ function create_each_block_43(key_1, ctx) {
           /*focusedIndex*/
           ctx[4]
         ]) == null ? void 0 : _a2.filepath) === /*child*/
-        ctx[124].filepath
+        ctx[123].filepath
       );
       toggle_class(
         div,
         "drag-over-top",
         /*dragOverListId*/
         ctx[16] === /*child*/
-        ctx[124].id && /*dragListPosition*/
+        ctx[123].id && /*dragListPosition*/
         ctx[17] === "top"
       );
       toggle_class(
@@ -25749,7 +25749,7 @@ function create_each_block_43(key_1, ctx) {
         "drag-over-bottom",
         /*dragOverListId*/
         ctx[16] === /*child*/
-        ctx[124].id && /*dragListPosition*/
+        ctx[123].id && /*dragListPosition*/
         ctx[17] === "bottom"
       );
       this.first = div;
@@ -25797,7 +25797,7 @@ function create_each_block_43(key_1, ctx) {
         /*taskCounts*/
         ((_a2 = ctx[8][
           /*child*/
-          ctx[124].filepath
+          ctx[123].filepath
         ]) != null ? _a2 : 0) > 0
       ) {
         if (if_block1) {
@@ -25813,7 +25813,7 @@ function create_each_block_43(key_1, ctx) {
       }
       if (dirty[0] & /*filteredItems*/
       128 && div_data_filepath_value !== (div_data_filepath_value = /*child*/
-      ctx[124].filepath)) {
+      ctx[123].filepath)) {
         attr(div, "data-filepath", div_data_filepath_value);
       }
       if (dirty[0] & /*flatCategories, focusedIndex, filteredItems*/
@@ -25826,7 +25826,7 @@ function create_each_block_43(key_1, ctx) {
             /*focusedIndex*/
             ctx[4]
           ]) == null ? void 0 : _b.filepath) === /*child*/
-          ctx[124].filepath
+          ctx[123].filepath
         );
       }
       if (dirty[0] & /*dragOverListId, filteredItems, dragListPosition*/
@@ -25836,7 +25836,7 @@ function create_each_block_43(key_1, ctx) {
           "drag-over-top",
           /*dragOverListId*/
           ctx[16] === /*child*/
-          ctx[124].id && /*dragListPosition*/
+          ctx[123].id && /*dragListPosition*/
           ctx[17] === "top"
         );
       }
@@ -25847,7 +25847,7 @@ function create_each_block_43(key_1, ctx) {
           "drag-over-bottom",
           /*dragOverListId*/
           ctx[16] === /*child*/
-          ctx[124].id && /*dragListPosition*/
+          ctx[123].id && /*dragListPosition*/
           ctx[17] === "bottom"
         );
       }
@@ -25870,7 +25870,7 @@ function create_each_block_34(key_1, ctx) {
   function select_block_type_7(ctx2, dirty) {
     if (
       /*item*/
-      ctx2[130].type === "group"
+      ctx2[129].type === "group"
     )
       return create_if_block_125;
     return create_else_block_92;
@@ -25928,7 +25928,7 @@ function create_else_block_16(ctx) {
   );
   const get_key = (ctx2) => (
     /*group*/
-    ctx2[121].id
+    ctx2[120].id
   );
   for (let i = 0; i < each_value.length; i += 1) {
     let child_ctx = get_each_context6(ctx, each_value, i);
@@ -26036,7 +26036,7 @@ function create_if_block_84(ctx) {
   );
   const get_key = (ctx2) => (
     /*cat*/
-    ctx2[127].id
+    ctx2[126].id
   );
   for (let i = 0; i < each_value_2.length; i += 1) {
     let child_ctx = get_each_context_24(ctx, each_value_2, i);
@@ -26115,7 +26115,7 @@ function create_else_block_44(ctx) {
   let span;
   let t_value = (
     /*cat*/
-    ctx[127].name + ""
+    ctx[126].name + ""
   );
   let t;
   let span_title_value;
@@ -26125,7 +26125,7 @@ function create_else_block_44(ctx) {
       t = text(t_value);
       attr(span, "class", "quick-modal-list-name");
       attr(span, "title", span_title_value = /*cat*/
-      ctx[127].name);
+      ctx[126].name);
     },
     m(target, anchor) {
       insert(target, span, anchor);
@@ -26134,11 +26134,11 @@ function create_else_block_44(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*rootCategories*/
       16777216 && t_value !== (t_value = /*cat*/
-      ctx2[127].name + ""))
+      ctx2[126].name + ""))
         set_data(t, t_value);
       if (dirty[0] & /*rootCategories*/
       16777216 && span_title_value !== (span_title_value = /*cat*/
-      ctx2[127].name)) {
+      ctx2[126].name)) {
         attr(span, "title", span_title_value);
       }
     },
@@ -26166,14 +26166,14 @@ function create_if_block_104(ctx) {
         /*editingName*/
         ctx[14]
       );
-      ctx[53](input);
+      ctx[52](input);
       if (!mounted) {
         dispose = [
           listen(
             input,
             "input",
             /*input_input_handler_1*/
-            ctx[52]
+            ctx[51]
           ),
           listen(
             input,
@@ -26200,7 +26200,7 @@ function create_if_block_104(ctx) {
       if (detaching) {
         detach(input);
       }
-      ctx[53](null);
+      ctx[52](null);
       mounted = false;
       run_all(dispose);
     }
@@ -26212,7 +26212,7 @@ function create_if_block_94(ctx) {
     /*taskCounts*/
     ctx[8][
       /*cat*/
-      ctx[127].filepath
+      ctx[126].filepath
     ] + ""
   );
   let t;
@@ -26231,7 +26231,7 @@ function create_if_block_94(ctx) {
       16777472 && t_value !== (t_value = /*taskCounts*/
       ctx2[8][
         /*cat*/
-        ctx2[127].filepath
+        ctx2[126].filepath
       ] + ""))
         set_data(t, t_value);
     },
@@ -26256,7 +26256,7 @@ function create_each_block_24(key_1, ctx) {
     if (
       /*editingItemId*/
       ctx2[13] === /*cat*/
-      ctx2[127].id
+      ctx2[126].id
     )
       return create_if_block_104;
     return create_else_block_44;
@@ -26267,15 +26267,15 @@ function create_each_block_24(key_1, ctx) {
     /*taskCounts*/
     ((_a = ctx[8][
       /*cat*/
-      ctx[127].filepath
+      ctx[126].filepath
     ]) != null ? _a : 0) > 0 && create_if_block_94(ctx)
   );
   function dragstart_handler(...args) {
     return (
       /*dragstart_handler*/
-      ctx[54](
+      ctx[53](
         /*cat*/
-        ctx[127],
+        ctx[126],
         ...args
       )
     );
@@ -26283,9 +26283,9 @@ function create_each_block_24(key_1, ctx) {
   function dragover_handler(...args) {
     return (
       /*dragover_handler*/
-      ctx[55](
+      ctx[54](
         /*cat*/
-        ctx[127],
+        ctx[126],
         ...args
       )
     );
@@ -26293,27 +26293,27 @@ function create_each_block_24(key_1, ctx) {
   function drop_handler() {
     return (
       /*drop_handler*/
-      ctx[56](
+      ctx[55](
         /*cat*/
-        ctx[127]
+        ctx[126]
       )
     );
   }
   function click_handler_1() {
     return (
       /*click_handler_1*/
-      ctx[57](
+      ctx[56](
         /*cat*/
-        ctx[127]
+        ctx[126]
       )
     );
   }
   function contextmenu_handler(...args) {
     return (
       /*contextmenu_handler*/
-      ctx[58](
+      ctx[57](
         /*cat*/
-        ctx[127],
+        ctx[126],
         ...args
       )
     );
@@ -26335,7 +26335,7 @@ function create_each_block_24(key_1, ctx) {
       attr(span, "class", "quick-modal-list-icon");
       attr(div, "class", "quick-modal-list-item is-grid-item");
       attr(div, "data-filepath", div_data_filepath_value = /*cat*/
-      ctx[127].filepath);
+      ctx[126].filepath);
       attr(div, "role", "button");
       attr(div, "tabindex", "0");
       attr(div, "draggable", "true");
@@ -26347,14 +26347,14 @@ function create_each_block_24(key_1, ctx) {
           /*focusedIndex*/
           ctx[4]
         ]) == null ? void 0 : _a2.filepath) === /*cat*/
-        ctx[127].filepath
+        ctx[126].filepath
       );
       toggle_class(
         div,
         "drag-over-top",
         /*dragOverListId*/
         ctx[16] === /*cat*/
-        ctx[127].id && /*dragListPosition*/
+        ctx[126].id && /*dragListPosition*/
         ctx[17] === "top"
       );
       toggle_class(
@@ -26362,7 +26362,7 @@ function create_each_block_24(key_1, ctx) {
         "drag-over-bottom",
         /*dragOverListId*/
         ctx[16] === /*cat*/
-        ctx[127].id && /*dragListPosition*/
+        ctx[126].id && /*dragListPosition*/
         ctx[17] === "bottom"
       );
       this.first = div;
@@ -26410,7 +26410,7 @@ function create_each_block_24(key_1, ctx) {
         /*taskCounts*/
         ((_a2 = ctx[8][
           /*cat*/
-          ctx[127].filepath
+          ctx[126].filepath
         ]) != null ? _a2 : 0) > 0
       ) {
         if (if_block1) {
@@ -26426,7 +26426,7 @@ function create_each_block_24(key_1, ctx) {
       }
       if (dirty[0] & /*rootCategories*/
       16777216 && div_data_filepath_value !== (div_data_filepath_value = /*cat*/
-      ctx[127].filepath)) {
+      ctx[126].filepath)) {
         attr(div, "data-filepath", div_data_filepath_value);
       }
       if (dirty[0] & /*flatCategories, focusedIndex, rootCategories*/
@@ -26439,7 +26439,7 @@ function create_each_block_24(key_1, ctx) {
             /*focusedIndex*/
             ctx[4]
           ]) == null ? void 0 : _b.filepath) === /*cat*/
-          ctx[127].filepath
+          ctx[126].filepath
         );
       }
       if (dirty[0] & /*dragOverListId, rootCategories, dragListPosition*/
@@ -26449,7 +26449,7 @@ function create_each_block_24(key_1, ctx) {
           "drag-over-top",
           /*dragOverListId*/
           ctx[16] === /*cat*/
-          ctx[127].id && /*dragListPosition*/
+          ctx[126].id && /*dragListPosition*/
           ctx[17] === "top"
         );
       }
@@ -26460,7 +26460,7 @@ function create_each_block_24(key_1, ctx) {
           "drag-over-bottom",
           /*dragOverListId*/
           ctx[16] === /*cat*/
-          ctx[127].id && /*dragListPosition*/
+          ctx[126].id && /*dragListPosition*/
           ctx[17] === "bottom"
         );
       }
@@ -26481,7 +26481,7 @@ function create_else_block_35(ctx) {
   let span;
   let t_value = (
     /*group*/
-    ctx[121].name + ""
+    ctx[120].name + ""
   );
   let t;
   let mounted;
@@ -26489,9 +26489,9 @@ function create_else_block_35(ctx) {
   function click_handler_3() {
     return (
       /*click_handler_3*/
-      ctx[62](
+      ctx[61](
         /*group*/
-        ctx[121]
+        ctx[120]
       )
     );
   }
@@ -26513,7 +26513,7 @@ function create_else_block_35(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*groupItems*/
       33554432 && t_value !== (t_value = /*group*/
-      ctx[121].name + ""))
+      ctx[120].name + ""))
         set_data(t, t_value);
     },
     d(detaching) {
@@ -26542,14 +26542,14 @@ function create_if_block_75(ctx) {
         /*editingName*/
         ctx[14]
       );
-      ctx[61](input);
+      ctx[60](input);
       if (!mounted) {
         dispose = [
           listen(
             input,
             "input",
             /*input_input_handler_2*/
-            ctx[60]
+            ctx[59]
           ),
           listen(
             input,
@@ -26576,7 +26576,7 @@ function create_if_block_75(ctx) {
       if (detaching) {
         detach(input);
       }
-      ctx[61](null);
+      ctx[60](null);
       mounted = false;
       run_all(dispose);
     }
@@ -26588,11 +26588,11 @@ function create_if_block_46(ctx) {
   let each_1_lookup = new Map_12();
   let each_value_1 = ensure_array_like(
     /*group*/
-    ctx[121].items
+    ctx[120].items
   );
   const get_key = (ctx2) => (
     /*child*/
-    ctx2[124].id
+    ctx2[123].id
   );
   for (let i = 0; i < each_value_1.length; i += 1) {
     let child_ctx = get_each_context_15(ctx, each_value_1, i);
@@ -26621,7 +26621,7 @@ function create_if_block_46(ctx) {
       63) {
         each_value_1 = ensure_array_like(
           /*group*/
-          ctx2[121].items
+          ctx2[120].items
         );
         each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_1, each_1_lookup, div, destroy_block, create_each_block_15, null, get_each_context_15);
       }
@@ -26640,7 +26640,7 @@ function create_else_block_25(ctx) {
   let span;
   let t_value = (
     /*child*/
-    ctx[124].name + ""
+    ctx[123].name + ""
   );
   let t;
   let span_title_value;
@@ -26650,7 +26650,7 @@ function create_else_block_25(ctx) {
       t = text(t_value);
       attr(span, "class", "quick-modal-list-name");
       attr(span, "title", span_title_value = /*child*/
-      ctx[124].name);
+      ctx[123].name);
     },
     m(target, anchor) {
       insert(target, span, anchor);
@@ -26659,11 +26659,11 @@ function create_else_block_25(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*groupItems*/
       33554432 && t_value !== (t_value = /*child*/
-      ctx2[124].name + ""))
+      ctx2[123].name + ""))
         set_data(t, t_value);
       if (dirty[0] & /*groupItems*/
       33554432 && span_title_value !== (span_title_value = /*child*/
-      ctx2[124].name)) {
+      ctx2[123].name)) {
         attr(span, "title", span_title_value);
       }
     },
@@ -26691,14 +26691,14 @@ function create_if_block_65(ctx) {
         /*editingName*/
         ctx[14]
       );
-      ctx[68](input);
+      ctx[67](input);
       if (!mounted) {
         dispose = [
           listen(
             input,
             "input",
             /*input_input_handler_3*/
-            ctx[67]
+            ctx[66]
           ),
           listen(
             input,
@@ -26725,7 +26725,7 @@ function create_if_block_65(ctx) {
       if (detaching) {
         detach(input);
       }
-      ctx[68](null);
+      ctx[67](null);
       mounted = false;
       run_all(dispose);
     }
@@ -26737,7 +26737,7 @@ function create_if_block_55(ctx) {
     /*taskCounts*/
     ctx[8][
       /*child*/
-      ctx[124].filepath
+      ctx[123].filepath
     ] + ""
   );
   let t;
@@ -26756,7 +26756,7 @@ function create_if_block_55(ctx) {
       33554688 && t_value !== (t_value = /*taskCounts*/
       ctx2[8][
         /*child*/
-        ctx2[124].filepath
+        ctx2[123].filepath
       ] + ""))
         set_data(t, t_value);
     },
@@ -26781,7 +26781,7 @@ function create_each_block_15(key_1, ctx) {
     if (
       /*editingItemId*/
       ctx2[13] === /*child*/
-      ctx2[124].id
+      ctx2[123].id
     )
       return create_if_block_65;
     return create_else_block_25;
@@ -26792,15 +26792,15 @@ function create_each_block_15(key_1, ctx) {
     /*taskCounts*/
     ((_a = ctx[8][
       /*child*/
-      ctx[124].filepath
+      ctx[123].filepath
     ]) != null ? _a : 0) > 0 && create_if_block_55(ctx)
   );
   function dragstart_handler_2(...args) {
     return (
       /*dragstart_handler_2*/
-      ctx[69](
+      ctx[68](
         /*child*/
-        ctx[124],
+        ctx[123],
         ...args
       )
     );
@@ -26808,9 +26808,9 @@ function create_each_block_15(key_1, ctx) {
   function dragover_handler_2(...args) {
     return (
       /*dragover_handler_2*/
-      ctx[70](
+      ctx[69](
         /*child*/
-        ctx[124],
+        ctx[123],
         ...args
       )
     );
@@ -26818,27 +26818,27 @@ function create_each_block_15(key_1, ctx) {
   function drop_handler_2() {
     return (
       /*drop_handler_2*/
-      ctx[71](
+      ctx[70](
         /*child*/
-        ctx[124]
+        ctx[123]
       )
     );
   }
   function click_handler_42() {
     return (
       /*click_handler_4*/
-      ctx[72](
+      ctx[71](
         /*child*/
-        ctx[124]
+        ctx[123]
       )
     );
   }
   function contextmenu_handler_2(...args) {
     return (
       /*contextmenu_handler_2*/
-      ctx[73](
+      ctx[72](
         /*child*/
-        ctx[124],
+        ctx[123],
         ...args
       )
     );
@@ -26860,7 +26860,7 @@ function create_each_block_15(key_1, ctx) {
       attr(span, "class", "quick-modal-list-icon");
       attr(div, "class", "quick-modal-list-item is-grid-item");
       attr(div, "data-filepath", div_data_filepath_value = /*child*/
-      ctx[124].filepath);
+      ctx[123].filepath);
       attr(div, "role", "button");
       attr(div, "tabindex", "0");
       attr(div, "draggable", "true");
@@ -26872,14 +26872,14 @@ function create_each_block_15(key_1, ctx) {
           /*focusedIndex*/
           ctx[4]
         ]) == null ? void 0 : _a2.filepath) === /*child*/
-        ctx[124].filepath
+        ctx[123].filepath
       );
       toggle_class(
         div,
         "drag-over-top",
         /*dragOverListId*/
         ctx[16] === /*child*/
-        ctx[124].id && /*dragListPosition*/
+        ctx[123].id && /*dragListPosition*/
         ctx[17] === "top"
       );
       toggle_class(
@@ -26887,7 +26887,7 @@ function create_each_block_15(key_1, ctx) {
         "drag-over-bottom",
         /*dragOverListId*/
         ctx[16] === /*child*/
-        ctx[124].id && /*dragListPosition*/
+        ctx[123].id && /*dragListPosition*/
         ctx[17] === "bottom"
       );
       this.first = div;
@@ -26935,7 +26935,7 @@ function create_each_block_15(key_1, ctx) {
         /*taskCounts*/
         ((_a2 = ctx[8][
           /*child*/
-          ctx[124].filepath
+          ctx[123].filepath
         ]) != null ? _a2 : 0) > 0
       ) {
         if (if_block1) {
@@ -26951,7 +26951,7 @@ function create_each_block_15(key_1, ctx) {
       }
       if (dirty[0] & /*groupItems*/
       33554432 && div_data_filepath_value !== (div_data_filepath_value = /*child*/
-      ctx[124].filepath)) {
+      ctx[123].filepath)) {
         attr(div, "data-filepath", div_data_filepath_value);
       }
       if (dirty[0] & /*flatCategories, focusedIndex, groupItems*/
@@ -26964,7 +26964,7 @@ function create_each_block_15(key_1, ctx) {
             /*focusedIndex*/
             ctx[4]
           ]) == null ? void 0 : _b.filepath) === /*child*/
-          ctx[124].filepath
+          ctx[123].filepath
         );
       }
       if (dirty[0] & /*dragOverListId, groupItems, dragListPosition*/
@@ -26974,7 +26974,7 @@ function create_each_block_15(key_1, ctx) {
           "drag-over-top",
           /*dragOverListId*/
           ctx[16] === /*child*/
-          ctx[124].id && /*dragListPosition*/
+          ctx[123].id && /*dragListPosition*/
           ctx[17] === "top"
         );
       }
@@ -26985,7 +26985,7 @@ function create_each_block_15(key_1, ctx) {
           "drag-over-bottom",
           /*dragOverListId*/
           ctx[16] === /*child*/
-          ctx[124].id && /*dragListPosition*/
+          ctx[123].id && /*dragListPosition*/
           ctx[17] === "bottom"
         );
       }
@@ -27009,7 +27009,7 @@ function create_each_block6(key_1, ctx) {
   let span0;
   let t0_value = (
     /*group*/
-    ctx[121].isExpanded ? "\u25BC" : "\u25B6"
+    ctx[120].isExpanded ? "\u25BC" : "\u25B6"
   );
   let t0;
   let t1;
@@ -27017,9 +27017,9 @@ function create_each_block6(key_1, ctx) {
   let span1;
   let t3_value = (
     /*group*/
-    (ctx[121].items ? (
+    (ctx[120].items ? (
       /*group*/
-      ctx[121].items.length
+      ctx[120].items.length
     ) : 0) + ""
   );
   let t3;
@@ -27032,9 +27032,9 @@ function create_each_block6(key_1, ctx) {
   function click_handler_22() {
     return (
       /*click_handler_2*/
-      ctx[59](
+      ctx[58](
         /*group*/
-        ctx[121]
+        ctx[120]
       )
     );
   }
@@ -27042,7 +27042,7 @@ function create_each_block6(key_1, ctx) {
     if (
       /*editingItemId*/
       ctx2[13] === /*group*/
-      ctx2[121].id
+      ctx2[120].id
     )
       return create_if_block_75;
     return create_else_block_35;
@@ -27052,9 +27052,9 @@ function create_each_block6(key_1, ctx) {
   function dragstart_handler_1(...args) {
     return (
       /*dragstart_handler_1*/
-      ctx[63](
+      ctx[62](
         /*group*/
-        ctx[121],
+        ctx[120],
         ...args
       )
     );
@@ -27062,9 +27062,9 @@ function create_each_block6(key_1, ctx) {
   function dragover_handler_1(...args) {
     return (
       /*dragover_handler_1*/
-      ctx[64](
+      ctx[63](
         /*group*/
-        ctx[121],
+        ctx[120],
         ...args
       )
     );
@@ -27072,27 +27072,27 @@ function create_each_block6(key_1, ctx) {
   function drop_handler_1() {
     return (
       /*drop_handler_1*/
-      ctx[65](
+      ctx[64](
         /*group*/
-        ctx[121]
+        ctx[120]
       )
     );
   }
   function contextmenu_handler_1(...args) {
     return (
       /*contextmenu_handler_1*/
-      ctx[66](
+      ctx[65](
         /*group*/
-        ctx[121],
+        ctx[120],
         ...args
       )
     );
   }
   let if_block1 = (
     /*group*/
-    ctx[121].isExpanded && /*group*/
-    ctx[121].items && /*group*/
-    ctx[121].items.length > 0 && create_if_block_46(ctx)
+    ctx[120].isExpanded && /*group*/
+    ctx[120].items && /*group*/
+    ctx[120].items.length > 0 && create_if_block_46(ctx)
   );
   return {
     key: key_1,
@@ -27119,18 +27119,18 @@ function create_each_block6(key_1, ctx) {
       attr(div1, "draggable", "true");
       attr(div2, "class", "quick-grid-card");
       attr(div2, "data-card-id", div2_data_card_id_value = /*group*/
-      ctx[121].id);
+      ctx[120].id);
       attr(div2, "style", div2_style_value = /*cardOrderStyles*/
       ctx[23].get(
         /*group*/
-        ctx[121].id
+        ctx[120].id
       ) || "");
       toggle_class(
         div2,
         "drag-over-top",
         /*dragOverListId*/
         ctx[16] === /*group*/
-        ctx[121].id && /*dragListPosition*/
+        ctx[120].id && /*dragListPosition*/
         ctx[17] === "top"
       );
       toggle_class(
@@ -27138,7 +27138,7 @@ function create_each_block6(key_1, ctx) {
         "drag-over-bottom",
         /*dragOverListId*/
         ctx[16] === /*group*/
-        ctx[121].id && /*dragListPosition*/
+        ctx[120].id && /*dragListPosition*/
         ctx[17] === "bottom"
       );
       toggle_class(
@@ -27146,7 +27146,7 @@ function create_each_block6(key_1, ctx) {
         "drag-over-inside",
         /*dragOverListId*/
         ctx[16] === /*group*/
-        ctx[121].id && /*dragListPosition*/
+        ctx[120].id && /*dragListPosition*/
         ctx[17] === "inside"
       );
       this.first = div2;
@@ -27187,7 +27187,7 @@ function create_each_block6(key_1, ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*groupItems*/
       33554432 && t0_value !== (t0_value = /*group*/
-      ctx[121].isExpanded ? "\u25BC" : "\u25B6"))
+      ctx[120].isExpanded ? "\u25BC" : "\u25B6"))
         set_data(t0, t0_value);
       if (current_block_type === (current_block_type = select_block_type_4(ctx, dirty)) && if_block0) {
         if_block0.p(ctx, dirty);
@@ -27201,16 +27201,16 @@ function create_each_block6(key_1, ctx) {
       }
       if (dirty[0] & /*groupItems*/
       33554432 && t3_value !== (t3_value = /*group*/
-      (ctx[121].items ? (
+      (ctx[120].items ? (
         /*group*/
-        ctx[121].items.length
+        ctx[120].items.length
       ) : 0) + ""))
         set_data(t3, t3_value);
       if (
         /*group*/
-        ctx[121].isExpanded && /*group*/
-        ctx[121].items && /*group*/
-        ctx[121].items.length > 0
+        ctx[120].isExpanded && /*group*/
+        ctx[120].items && /*group*/
+        ctx[120].items.length > 0
       ) {
         if (if_block1) {
           if_block1.p(ctx, dirty);
@@ -27225,14 +27225,14 @@ function create_each_block6(key_1, ctx) {
       }
       if (dirty[0] & /*groupItems*/
       33554432 && div2_data_card_id_value !== (div2_data_card_id_value = /*group*/
-      ctx[121].id)) {
+      ctx[120].id)) {
         attr(div2, "data-card-id", div2_data_card_id_value);
       }
       if (dirty[0] & /*cardOrderStyles, groupItems*/
       41943040 && div2_style_value !== (div2_style_value = /*cardOrderStyles*/
       ctx[23].get(
         /*group*/
-        ctx[121].id
+        ctx[120].id
       ) || "")) {
         attr(div2, "style", div2_style_value);
       }
@@ -27243,7 +27243,7 @@ function create_each_block6(key_1, ctx) {
           "drag-over-top",
           /*dragOverListId*/
           ctx[16] === /*group*/
-          ctx[121].id && /*dragListPosition*/
+          ctx[120].id && /*dragListPosition*/
           ctx[17] === "top"
         );
       }
@@ -27254,7 +27254,7 @@ function create_each_block6(key_1, ctx) {
           "drag-over-bottom",
           /*dragOverListId*/
           ctx[16] === /*group*/
-          ctx[121].id && /*dragListPosition*/
+          ctx[120].id && /*dragListPosition*/
           ctx[17] === "bottom"
         );
       }
@@ -27265,7 +27265,7 @@ function create_each_block6(key_1, ctx) {
           "drag-over-inside",
           /*dragOverListId*/
           ctx[16] === /*group*/
-          ctx[121].id && /*dragListPosition*/
+          ctx[120].id && /*dragListPosition*/
           ctx[17] === "inside"
         );
       }
@@ -27354,14 +27354,14 @@ function create_if_block_116(ctx) {
         /*newGroupName*/
         ctx[12]
       );
-      ctx[100](input);
+      ctx[99](input);
       if (!mounted) {
         dispose = [
           listen(
             input,
             "input",
             /*input_input_handler_8*/
-            ctx[99]
+            ctx[98]
           ),
           listen(
             input,
@@ -27388,7 +27388,7 @@ function create_if_block_116(ctx) {
       if (detaching) {
         detach(div);
       }
-      ctx[100](null);
+      ctx[99](null);
       mounted = false;
       run_all(dispose);
     }
@@ -27416,14 +27416,14 @@ function create_if_block6(ctx) {
         /*newListName*/
         ctx[10]
       );
-      ctx[98](input);
+      ctx[97](input);
       if (!mounted) {
         dispose = [
           listen(
             input,
             "input",
             /*input_input_handler_7*/
-            ctx[97]
+            ctx[96]
           ),
           listen(
             input,
@@ -27450,7 +27450,7 @@ function create_if_block6(ctx) {
       if (detaching) {
         detach(div);
       }
-      ctx[98](null);
+      ctx[97](null);
       mounted = false;
       run_all(dispose);
     }
@@ -27591,7 +27591,7 @@ function create_fragment6(ctx) {
         /*searchQuery*/
         ctx[3]
       );
-      ctx[50](input);
+      ctx[49](input);
       append(div0, t2);
       if (if_block1)
         if_block1.m(div0, null);
@@ -27612,14 +27612,14 @@ function create_fragment6(ctx) {
       append(div2, span3);
       append(div2, t15);
       append(div2, span4);
-      ctx[101](div3);
+      ctx[100](div3);
       if (!mounted) {
         dispose = [
           listen(
             input,
             "input",
             /*input_input_handler*/
-            ctx[49]
+            ctx[48]
           ),
           listen(
             input,
@@ -27739,13 +27739,13 @@ function create_fragment6(ctx) {
       }
       if (if_block0)
         if_block0.d();
-      ctx[50](null);
+      ctx[49](null);
       if (if_block1)
         if_block1.d();
       if_block2.d();
       if_block3.d();
       if_block4.d();
-      ctx[101](null);
+      ctx[100](null);
       mounted = false;
       run_all(dispose);
     }
@@ -27769,52 +27769,6 @@ function handleBoardWheel(e) {
     }
   }
 }
-function findBestContiguousPartition(cardHeights, targetCols, rowGap) {
-  const n = cardHeights.length;
-  const k = targetCols;
-  if (k <= 1 || n <= k) {
-    return cardHeights.map((h) => [h]);
-  }
-  let bestIndices = [];
-  let bestScore = Infinity;
-  function searchCuts(start, remainingCuts, currentIndices) {
-    if (remainingCuts === 0) {
-      const indices = [0, ...currentIndices, n];
-      const colHeights = [];
-      let cardPenalty = 0;
-      const maxAllowed = Math.ceil(n / k);
-      for (let j = 0; j < k; j++) {
-        const slice = cardHeights.slice(indices[j], indices[j + 1]);
-        const h = slice.reduce((a, b) => a + b, 0) + Math.max(0, slice.length - 1) * rowGap;
-        colHeights.push(h);
-        if (slice.length > maxAllowed)
-          cardPenalty += 1e3;
-      }
-      const maxH = Math.max(...colHeights);
-      const minH = Math.min(...colHeights);
-      const score = maxH * 2 + (maxH - minH) + cardPenalty;
-      if (score < bestScore) {
-        bestScore = score;
-        bestIndices = indices;
-      }
-      return;
-    }
-    for (let i = start; i <= n - remainingCuts; i++) {
-      currentIndices.push(i);
-      searchCuts(i + 1, remainingCuts - 1, currentIndices);
-      currentIndices.pop();
-    }
-  }
-  searchCuts(1, k - 1, []);
-  if (bestIndices.length === 0) {
-    return cardHeights.map((h) => [h]);
-  }
-  const result = [];
-  for (let j = 0; j < k; j++) {
-    result.push(cardHeights.slice(bestIndices[j], bestIndices[j + 1]));
-  }
-  return result;
-}
 function getNaturalCols(cardHeights, maxColHeight, rowGap) {
   let cols = 1;
   let currH = 0;
@@ -27829,41 +27783,30 @@ function getNaturalCols(cardHeights, maxColHeight, rowGap) {
   }
   return cols;
 }
-function balancedPack(cards, targetCols, maxColHeight, rowGap) {
+function balancedPack(cards, targetCols, rowGap) {
+  if (targetCols <= 1) {
+    let usedH = 0;
+    for (const c of cards) {
+      usedH = usedH === 0 ? c.height : usedH + rowGap + c.height;
+    }
+    return [{ items: [...cards], usedHeight: usedH }];
+  }
   const sorted = [...cards].sort((a, b) => b.height - a.height);
   const bins = Array.from({ length: targetCols }, () => ({ items: [], usedHeight: 0 }));
+  const maxPerBin = Math.ceil(cards.length / targetCols);
   for (const card of sorted) {
-    let bestBinIdx = -1;
-    let minUsed = Infinity;
-    for (let i = 0; i < bins.length; i++) {
-      const b = bins[i];
-      const needed = b.items.length === 0 ? card.height : b.usedHeight + rowGap + card.height;
-      if (needed <= maxColHeight && b.usedHeight < minUsed) {
-        minUsed = b.usedHeight;
-        bestBinIdx = i;
+    let validBins = bins.filter((b) => b.items.length < maxPerBin);
+    if (validBins.length === 0)
+      validBins = bins;
+    let bestBin = validBins[0];
+    for (let i = 1; i < validBins.length; i++) {
+      if (validBins[i].usedHeight < bestBin.usedHeight) {
+        bestBin = validBins[i];
       }
     }
-    if (bestBinIdx !== -1) {
-      const b = bins[bestBinIdx];
-      const needed = b.items.length === 0 ? card.height : b.usedHeight + rowGap + card.height;
-      b.items.push(card);
-      b.usedHeight = needed;
-    } else if (bins.length < targetCols) {
-      bins.push({ items: [card], usedHeight: card.height });
-    } else {
-      let minBinIdx = 0;
-      let minBinH = bins[0].usedHeight;
-      for (let i = 1; i < bins.length; i++) {
-        if (bins[i].usedHeight < minBinH) {
-          minBinH = bins[i].usedHeight;
-          minBinIdx = i;
-        }
-      }
-      const b = bins[minBinIdx];
-      const needed = b.items.length === 0 ? card.height : b.usedHeight + rowGap + card.height;
-      b.items.push(card);
-      b.usedHeight = needed;
-    }
+    const needed = bestBin.items.length === 0 ? card.height : bestBin.usedHeight + rowGap + card.height;
+    bestBin.items.push(card);
+    bestBin.usedHeight = needed;
   }
   return bins.filter((b) => b.items.length > 0);
 }
@@ -27916,7 +27859,6 @@ function instance6($$self, $$props, $$invalidate) {
   let boardEl = null;
   let resizeObserver = null;
   let cardOrderStyles = /* @__PURE__ */ new Map();
-  let isPacked = false;
   let rafId = null;
   function scheduleAdjustSpacing() {
     if (!isGridLayout)
@@ -27948,144 +27890,97 @@ function instance6($$self, $$props, $$invalidate) {
     const avgCardW = Math.max(180, Math.round(cardWidths.reduce((a, b) => a + b, 0) / cardWidths.length));
     const maxColHeight = Math.max(150, availableHeight - minPaddingY * 2);
     const maxColsByWidth = Math.max(1, Math.floor((availableWidth - minPaddingX * 2 + minColGap) / (avgCardW + minColGap)));
-    const naturalCols = getNaturalCols(cardHeights, maxColHeight, minRowGap);
-    const naturalWidthNeeded = naturalCols * avgCardW + (naturalCols - 1) * minColGap + minPaddingX * 2;
-    const naturalFits = naturalCols <= maxColsByWidth && naturalWidthNeeded <= availableWidth;
-    if (isPacked && naturalFits) {
-      $$invalidate(48, isPacked = false);
-      $$invalidate(23, cardOrderStyles = /* @__PURE__ */ new Map());
-      scheduleAdjustSpacing();
-      return;
-    }
     const cardData = cards.map((el) => ({
       id: el.getAttribute("data-card-id") || "",
       height: el.offsetHeight || 120,
       width: el.offsetWidth || 220
     })).filter((c) => c.id);
-    if (!naturalFits) {
-      const targetCols2 = Math.min(cards.length, maxColsByWidth);
-      const bins = balancedPack(cardData, targetCols2, maxColHeight, minRowGap);
-      let packedColsWidth = 0;
-      for (const b of bins) {
-        const maxW = Math.max(...b.items.map((it) => it.width));
-        packedColsWidth += maxW;
+    let chosenBins = null;
+    const maxCandidateCols = Math.min(cards.length, maxColsByWidth);
+    for (let k = maxCandidateCols; k >= 1; k--) {
+      const candidateBins = balancedPack(cardData, k, minRowGap);
+      let packedColsW = 0;
+      for (const b of candidateBins) {
+        packedColsW += Math.max(...b.items.map((it) => it.width));
       }
-      const totalPackedNeeded = packedColsWidth + (bins.length - 1) * minColGap + minPaddingX * 2;
-      if (bins.length <= maxColsByWidth && totalPackedNeeded <= availableWidth) {
-        if (!isPacked) {
-          const newStyles = /* @__PURE__ */ new Map();
-          let orderIdx = 0;
-          for (const b of bins) {
-            for (const item of b.items) {
-              newStyles.set(item.id, `order: ${orderIdx++};`);
-            }
-          }
-          $$invalidate(23, cardOrderStyles = newStyles);
-          $$invalidate(48, isPacked = true);
-          scheduleAdjustSpacing();
-          return;
-        }
-        const packedMaxH = Math.max(...bins.map((b) => b.usedHeight));
-        const hWrap2 = packedMaxH + 4;
-        const surplusY2 = Math.max(0, availableHeight - hWrap2);
-        const targetPadY2 = Math.max(minPaddingY, Math.floor(surplusY2 / 2));
-        const safeSurplusX2 = Math.max(0, availableWidth - packedColsWidth - 8);
-        const equalColGap = Math.floor(safeSurplusX2 / (bins.length + 1));
-        const maxAllowedColGap2 = 220;
-        if (equalColGap < minColGap) {
-          $$invalidate(22, boardEl.style.alignContent = "flex-start", boardEl);
-          $$invalidate(22, boardEl.style.paddingLeft = minPaddingX + "px", boardEl);
-          $$invalidate(22, boardEl.style.paddingRight = minPaddingX + "px", boardEl);
-          $$invalidate(22, boardEl.style.columnGap = minColGap + "px", boardEl);
-          $$invalidate(22, boardEl.style.overflowX = "auto", boardEl);
-        } else if (equalColGap <= maxAllowedColGap2) {
-          $$invalidate(22, boardEl.style.alignContent = "flex-start", boardEl);
-          $$invalidate(22, boardEl.style.paddingLeft = equalColGap + "px", boardEl);
-          $$invalidate(22, boardEl.style.paddingRight = equalColGap + "px", boardEl);
-          $$invalidate(22, boardEl.style.columnGap = equalColGap + "px", boardEl);
-          $$invalidate(22, boardEl.style.overflowX = "hidden", boardEl);
-        } else {
-          const remainingOuter = Math.floor((availableWidth - (packedColsWidth + (bins.length - 1) * maxAllowedColGap2) - 8) / 2);
-          $$invalidate(22, boardEl.style.alignContent = "flex-start", boardEl);
-          $$invalidate(22, boardEl.style.paddingLeft = remainingOuter + "px", boardEl);
-          $$invalidate(22, boardEl.style.paddingRight = remainingOuter + "px", boardEl);
-          $$invalidate(22, boardEl.style.columnGap = maxAllowedColGap2 + "px", boardEl);
-          $$invalidate(22, boardEl.style.overflowX = "hidden", boardEl);
-        }
-        $$invalidate(22, boardEl.style.rowGap = minRowGap + "px", boardEl);
-        $$invalidate(22, boardEl.style.paddingTop = targetPadY2 + "px", boardEl);
-        $$invalidate(22, boardEl.style.paddingBottom = targetPadY2 + "px", boardEl);
-        if (!hasInitializedFocus && flatCategories.length > 0) {
-          hasInitializedFocus = true;
-          setTimeout(
-            () => {
-              focusCenterList();
-            },
-            30
-          );
-        }
-        return;
-      } else {
-        if (isPacked) {
-          $$invalidate(48, isPacked = false);
-          $$invalidate(23, cardOrderStyles = /* @__PURE__ */ new Map());
-          scheduleAdjustSpacing();
-          return;
-        }
-        $$invalidate(22, boardEl.style.alignContent = "flex-start", boardEl);
-        $$invalidate(22, boardEl.style.paddingLeft = minPaddingX + "px", boardEl);
-        $$invalidate(22, boardEl.style.paddingRight = minPaddingX + "px", boardEl);
-        $$invalidate(22, boardEl.style.columnGap = minColGap + "px", boardEl);
-        $$invalidate(22, boardEl.style.rowGap = minRowGap + "px", boardEl);
-        $$invalidate(22, boardEl.style.paddingTop = minPaddingY + "px", boardEl);
-        $$invalidate(22, boardEl.style.paddingBottom = minPaddingY + "px", boardEl);
-        $$invalidate(22, boardEl.style.overflowX = "auto", boardEl);
-        if (!hasInitializedFocus && flatCategories.length > 0) {
-          hasInitializedFocus = true;
-          setTimeout(
-            () => {
-              focusCenterList();
-            },
-            30
-          );
-        }
-        return;
+      const totalNeededW = packedColsW + (candidateBins.length - 1) * minColGap + minPaddingX * 2;
+      const packedH = Math.max(...candidateBins.map((b) => b.usedHeight));
+      if (totalNeededW <= availableWidth && packedH <= maxColHeight) {
+        chosenBins = candidateBins;
+        break;
       }
     }
-    const targetCols = Math.min(cards.length, naturalCols);
-    const targetRowGap = Math.max(minRowGap, Math.min(32, Math.floor((availableHeight - minPaddingY * 2 - 380) / 2)));
-    const partitions = findBestContiguousPartition(cardHeights, targetCols, targetRowGap);
-    const partitionHeights = partitions.map((col) => col.reduce((a, b) => a + b, 0) + Math.max(0, col.length - 1) * targetRowGap);
-    const balancedMaxH = Math.max(...partitionHeights);
-    const hWrap = balancedMaxH + 16;
-    const surplusY = Math.max(0, availableHeight - hWrap);
-    const targetPadY = Math.max(minPaddingY, Math.floor(surplusY / 2));
-    let cardIdx = 0;
-    let totalColsWidth = 0;
-    for (const col of partitions) {
-      let colMaxW = 0;
-      for (let i = 0; i < col.length; i++) {
-        colMaxW = Math.max(colMaxW, cardWidths[cardIdx++]);
+    let isHorizontalOverflow = false;
+    if (!chosenBins) {
+      const natCols = getNaturalCols(cardHeights, maxColHeight, minRowGap);
+      chosenBins = balancedPack(cardData, natCols, minRowGap);
+      let packedColsW = 0;
+      for (const b of chosenBins) {
+        packedColsW += Math.max(...b.items.map((it) => it.width));
       }
-      totalColsWidth += colMaxW;
+      const totalNeededW = packedColsW + (chosenBins.length - 1) * minColGap + minPaddingX * 2;
+      if (totalNeededW > availableWidth) {
+        isHorizontalOverflow = true;
+      }
     }
-    const safeSurplusX = Math.max(0, availableWidth - totalColsWidth - 8);
-    const maxAllowedColGap = 220;
-    if (targetCols === 1) {
-      const padX = Math.max(minPaddingX, Math.floor(safeSurplusX / 2));
-      $$invalidate(22, boardEl.style.alignContent = "center", boardEl);
-      $$invalidate(22, boardEl.style.paddingLeft = padX + "px", boardEl);
-      $$invalidate(22, boardEl.style.paddingRight = padX + "px", boardEl);
-      $$invalidate(22, boardEl.style.columnGap = minColGap + "px", boardEl);
-      $$invalidate(22, boardEl.style.overflowX = "hidden", boardEl);
+    const bins = chosenBins;
+    const packedMaxH = Math.max(...bins.map((b) => b.usedHeight));
+    const targetPadY = minPaddingY;
+    const contentBoxH = Math.max(packedMaxH + 4, availableHeight - targetPadY * 2);
+    const newStyles = /* @__PURE__ */ new Map();
+    let orderIdx = 0;
+    for (let colIdx = 0; colIdx < bins.length; colIdx++) {
+      const b = bins[colIdx];
+      for (let itemIdx = 0; itemIdx < b.items.length; itemIdx++) {
+        const item = b.items[itemIdx];
+        const isLastInCol = itemIdx === b.items.length - 1 && colIdx < bins.length - 1;
+        const extraBottom = isLastInCol ? Math.max(0, contentBoxH - b.usedHeight) : 0;
+        let style = `order: ${orderIdx++};`;
+        if (extraBottom > 0) {
+          style += ` margin-bottom: ${extraBottom}px;`;
+        }
+        newStyles.set(item.id, style);
+      }
+    }
+    let stylesChanged = false;
+    if (cardOrderStyles.size !== newStyles.size) {
+      stylesChanged = true;
     } else {
-      const equalColGap = Math.floor(safeSurplusX / (targetCols + 1));
+      for (const [id, style] of newStyles.entries()) {
+        if (cardOrderStyles.get(id) !== style) {
+          stylesChanged = true;
+          break;
+        }
+      }
+    }
+    if (stylesChanged) {
+      $$invalidate(23, cardOrderStyles = newStyles);
+      scheduleAdjustSpacing();
+      return;
+    }
+    let packedColsWidth = 0;
+    for (const b of bins) {
+      packedColsWidth += Math.max(...b.items.map((it) => it.width));
+    }
+    if (isHorizontalOverflow) {
+      $$invalidate(22, boardEl.style.alignContent = "flex-start", boardEl);
+      $$invalidate(22, boardEl.style.paddingLeft = minPaddingX + "px", boardEl);
+      $$invalidate(22, boardEl.style.paddingRight = minPaddingX + "px", boardEl);
+      $$invalidate(22, boardEl.style.columnGap = minColGap + "px", boardEl);
+      $$invalidate(22, boardEl.style.rowGap = minRowGap + "px", boardEl);
+      $$invalidate(22, boardEl.style.paddingTop = minPaddingY + "px", boardEl);
+      $$invalidate(22, boardEl.style.paddingBottom = minPaddingY + "px", boardEl);
+      $$invalidate(22, boardEl.style.overflowX = "auto", boardEl);
+    } else {
+      const safeSurplusX = Math.max(0, availableWidth - packedColsWidth);
+      const equalColGap = Math.floor(safeSurplusX / (bins.length + 1));
+      const maxAllowedColGap = 220;
       if (equalColGap < minColGap) {
         $$invalidate(22, boardEl.style.alignContent = "flex-start", boardEl);
         $$invalidate(22, boardEl.style.paddingLeft = minPaddingX + "px", boardEl);
         $$invalidate(22, boardEl.style.paddingRight = minPaddingX + "px", boardEl);
         $$invalidate(22, boardEl.style.columnGap = minColGap + "px", boardEl);
-        $$invalidate(22, boardEl.style.overflowX = "auto", boardEl);
+        $$invalidate(22, boardEl.style.overflowX = "hidden", boardEl);
       } else if (equalColGap <= maxAllowedColGap) {
         $$invalidate(22, boardEl.style.alignContent = "flex-start", boardEl);
         $$invalidate(22, boardEl.style.paddingLeft = equalColGap + "px", boardEl);
@@ -28093,17 +27988,17 @@ function instance6($$self, $$props, $$invalidate) {
         $$invalidate(22, boardEl.style.columnGap = equalColGap + "px", boardEl);
         $$invalidate(22, boardEl.style.overflowX = "hidden", boardEl);
       } else {
-        const remainingOuter = Math.floor((availableWidth - (totalColsWidth + (targetCols - 1) * maxAllowedColGap) - 8) / 2);
+        const remainingOuter = Math.floor((availableWidth - (packedColsWidth + (bins.length - 1) * maxAllowedColGap)) / 2);
         $$invalidate(22, boardEl.style.alignContent = "flex-start", boardEl);
-        $$invalidate(22, boardEl.style.paddingLeft = remainingOuter + "px", boardEl);
-        $$invalidate(22, boardEl.style.paddingRight = remainingOuter + "px", boardEl);
+        $$invalidate(22, boardEl.style.paddingLeft = Math.max(minPaddingX, remainingOuter) + "px", boardEl);
+        $$invalidate(22, boardEl.style.paddingRight = Math.max(minPaddingX, remainingOuter) + "px", boardEl);
         $$invalidate(22, boardEl.style.columnGap = maxAllowedColGap + "px", boardEl);
         $$invalidate(22, boardEl.style.overflowX = "hidden", boardEl);
       }
+      $$invalidate(22, boardEl.style.rowGap = minRowGap + "px", boardEl);
+      $$invalidate(22, boardEl.style.paddingTop = targetPadY + "px", boardEl);
+      $$invalidate(22, boardEl.style.paddingBottom = targetPadY + "px", boardEl);
     }
-    $$invalidate(22, boardEl.style.rowGap = targetRowGap + "px", boardEl);
-    $$invalidate(22, boardEl.style.paddingTop = targetPadY + "px", boardEl);
-    $$invalidate(22, boardEl.style.paddingBottom = targetPadY + "px", boardEl);
     if (!hasInitializedFocus && flatCategories.length > 0) {
       hasInitializedFocus = true;
       setTimeout(
@@ -28908,14 +28803,9 @@ function instance6($$self, $$props, $$invalidate) {
         }
     }
     if ($$self.$$.dirty[0] & /*filteredItems, isGridLayout*/
-    160 | $$self.$$.dirty[1] & /*isPacked*/
-    131072) {
+    160) {
       $:
         if (filteredItems && isGridLayout) {
-          if (isPacked) {
-            $$invalidate(48, isPacked = false);
-            $$invalidate(23, cardOrderStyles = /* @__PURE__ */ new Map());
-          }
           scheduleAdjustSpacing();
         }
     }
@@ -28969,7 +28859,6 @@ function instance6($$self, $$props, $$invalidate) {
     modalEl,
     sidebarItems,
     prevSearchQuery,
-    isPacked,
     input_input_handler,
     input_binding,
     click_handler2,
