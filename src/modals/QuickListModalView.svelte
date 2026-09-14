@@ -227,8 +227,21 @@
                 const needed = b.items.length === 0 ? card.height : (b.usedHeight + rowGap + card.height);
                 b.items.push(card);
                 b.usedHeight = needed;
-            } else {
+            } else if (bins.length < targetCols) {
                 bins.push({ items: [card], usedHeight: card.height });
+            } else {
+                let minBinIdx = 0;
+                let minBinH = bins[0].usedHeight;
+                for (let i = 1; i < bins.length; i++) {
+                    if (bins[i].usedHeight < minBinH) {
+                        minBinH = bins[i].usedHeight;
+                        minBinIdx = i;
+                    }
+                }
+                const b = bins[minBinIdx];
+                const needed = b.items.length === 0 ? card.height : (b.usedHeight + rowGap + card.height);
+                b.items.push(card);
+                b.usedHeight = needed;
             }
         }
 
@@ -308,7 +321,7 @@
 
                 // 计算紧凑排布后的纵向高度与折行缓冲区
                 const packedMaxH = Math.max(...bins.map(b => b.usedHeight));
-                const hWrap = packedMaxH + 16;
+                const hWrap = packedMaxH + 4;
                 const surplusY = Math.max(0, availableHeight - hWrap);
                 const targetPadY = Math.max(minPaddingY, Math.floor(surplusY / 2));
 

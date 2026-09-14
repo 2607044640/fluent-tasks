@@ -27848,8 +27848,21 @@ function balancedPack(cards, targetCols, maxColHeight, rowGap) {
       const needed = b.items.length === 0 ? card.height : b.usedHeight + rowGap + card.height;
       b.items.push(card);
       b.usedHeight = needed;
-    } else {
+    } else if (bins.length < targetCols) {
       bins.push({ items: [card], usedHeight: card.height });
+    } else {
+      let minBinIdx = 0;
+      let minBinH = bins[0].usedHeight;
+      for (let i = 1; i < bins.length; i++) {
+        if (bins[i].usedHeight < minBinH) {
+          minBinH = bins[i].usedHeight;
+          minBinIdx = i;
+        }
+      }
+      const b = bins[minBinIdx];
+      const needed = b.items.length === 0 ? card.height : b.usedHeight + rowGap + card.height;
+      b.items.push(card);
+      b.usedHeight = needed;
     }
   }
   return bins.filter((b) => b.items.length > 0);
@@ -27973,7 +27986,7 @@ function instance6($$self, $$props, $$invalidate) {
           return;
         }
         const packedMaxH = Math.max(...bins.map((b) => b.usedHeight));
-        const hWrap2 = packedMaxH + 16;
+        const hWrap2 = packedMaxH + 4;
         const surplusY2 = Math.max(0, availableHeight - hWrap2);
         const targetPadY2 = Math.max(minPaddingY, Math.floor(surplusY2 / 2));
         const safeSurplusX2 = Math.max(0, availableWidth - packedColsWidth - 8);
