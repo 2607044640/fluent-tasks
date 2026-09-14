@@ -27815,6 +27815,45 @@ function findBestContiguousPartition(cardHeights, targetCols, rowGap) {
   }
   return result;
 }
+function getNaturalCols(cardHeights, maxColHeight, rowGap) {
+  let cols = 1;
+  let currH = 0;
+  for (const h of cardHeights) {
+    const needed = currH === 0 ? h : currH + rowGap + h;
+    if (needed <= maxColHeight) {
+      currH = needed;
+    } else {
+      cols++;
+      currH = h;
+    }
+  }
+  return cols;
+}
+function balancedPack(cards, targetCols, maxColHeight, rowGap) {
+  const sorted = [...cards].sort((a, b) => b.height - a.height);
+  const bins = Array.from({ length: targetCols }, () => ({ items: [], usedHeight: 0 }));
+  for (const card of sorted) {
+    let bestBinIdx = -1;
+    let minUsed = Infinity;
+    for (let i = 0; i < bins.length; i++) {
+      const b = bins[i];
+      const needed = b.items.length === 0 ? card.height : b.usedHeight + rowGap + card.height;
+      if (needed <= maxColHeight && b.usedHeight < minUsed) {
+        minUsed = b.usedHeight;
+        bestBinIdx = i;
+      }
+    }
+    if (bestBinIdx !== -1) {
+      const b = bins[bestBinIdx];
+      const needed = b.items.length === 0 ? card.height : b.usedHeight + rowGap + card.height;
+      b.items.push(card);
+      b.usedHeight = needed;
+    } else {
+      bins.push({ items: [card], usedHeight: card.height });
+    }
+  }
+  return bins.filter((b) => b.items.length > 0);
+}
 function instance6($$self, $$props, $$invalidate) {
   var _a, _b;
   let isFiltering;
@@ -27891,79 +27930,116 @@ function instance6($$self, $$props, $$invalidate) {
     const minRowGap = (_d = (_c = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _c.quickListMinRowGap) != null ? _d : 16;
     const minPaddingX = 28;
     const minPaddingY = 16;
-    const hasHorizontalOverflow = boardEl.scrollWidth > boardEl.clientWidth + 2;
-    if (isPacked) {
-      if (!hasHorizontalOverflow) {
-        const estimatedCols = Math.ceil(cards.length / 2);
-        const estimatedWidth = estimatedCols * 220 + (estimatedCols + 1) * minColGap + minPaddingX * 2;
-        if (availableWidth >= estimatedWidth) {
-          $$invalidate(48, isPacked = false);
-          $$invalidate(23, cardOrderStyles = /* @__PURE__ */ new Map());
-          scheduleAdjustSpacing();
-        }
-      }
-      return;
-    }
-    if (hasHorizontalOverflow) {
-      const maxColHeight = Math.max(150, availableHeight - minPaddingY * 2);
-      const cardData = cards.map((el) => ({
-        id: el.getAttribute("data-card-id") || "",
-        height: el.offsetHeight || 120,
-        width: el.offsetWidth || 220
-      })).filter((c) => c.id);
-      if (cardData.length > 1) {
-        const sortedByHeight = [...cardData].sort((a, b) => b.height - a.height);
-        const bins = [];
-        for (const card of sortedByHeight) {
-          let bestBinIdx = -1;
-          let minRemaining = Infinity;
-          for (let i = 0; i < bins.length; i++) {
-            const bin = bins[i];
-            const neededH = bin.items.length === 0 ? card.height : card.height + minRowGap;
-            const rem = maxColHeight - (bin.usedHeight + neededH);
-            if (rem >= 0 && rem < minRemaining) {
-              minRemaining = rem;
-              bestBinIdx = i;
-            }
-          }
-          if (bestBinIdx !== -1) {
-            const bin = bins[bestBinIdx];
-            const neededH = bin.items.length === 0 ? card.height : card.height + minRowGap;
-            bin.items.push(card);
-            bin.usedHeight += neededH;
-          } else {
-            bins.push({ items: [card], usedHeight: card.height });
-          }
-        }
-        const currentColsCount = Math.max(1, Math.floor((availableWidth - minPaddingX * 2) / (220 + minColGap)));
-        if (bins.length < currentColsCount) {
-          let packedColsWidth = 0;
-          for (const b of bins) {
-            const maxW = Math.max(...b.items.map((it) => it.width));
-            packedColsWidth += maxW;
-          }
-          const totalPackedNeeded = packedColsWidth + (bins.length - 1) * minColGap + minPaddingX * 2;
-          if (totalPackedNeeded <= availableWidth) {
-            const newStyles = /* @__PURE__ */ new Map();
-            let orderIdx = 0;
-            for (const b of bins) {
-              for (const item of b.items) {
-                newStyles.set(item.id, `order: ${orderIdx++};`);
-              }
-            }
-            $$invalidate(23, cardOrderStyles = newStyles);
-            $$invalidate(48, isPacked = true);
-            scheduleAdjustSpacing();
-            return;
-          }
-        }
-      }
-    }
     const cardHeights = cards.map((c) => c.offsetHeight || 120);
     const cardWidths = cards.map((c) => c.offsetWidth || 220);
     const avgCardW = Math.max(180, Math.round(cardWidths.reduce((a, b) => a + b, 0) / cardWidths.length));
+    const maxColHeight = Math.max(150, availableHeight - minPaddingY * 2);
     const maxColsByWidth = Math.max(1, Math.floor((availableWidth - minPaddingX * 2 + minColGap) / (avgCardW + minColGap)));
-    const targetCols = Math.min(cards.length, Math.max(1, Math.min(maxColsByWidth, Math.ceil(cards.length / 2))));
+    const naturalCols = getNaturalCols(cardHeights, maxColHeight, minRowGap);
+    const naturalWidthNeeded = naturalCols * avgCardW + (naturalCols - 1) * minColGap + minPaddingX * 2;
+    const naturalFits = naturalCols <= maxColsByWidth && naturalWidthNeeded <= availableWidth;
+    if (isPacked && naturalFits) {
+      $$invalidate(48, isPacked = false);
+      $$invalidate(23, cardOrderStyles = /* @__PURE__ */ new Map());
+      scheduleAdjustSpacing();
+      return;
+    }
+    const cardData = cards.map((el) => ({
+      id: el.getAttribute("data-card-id") || "",
+      height: el.offsetHeight || 120,
+      width: el.offsetWidth || 220
+    })).filter((c) => c.id);
+    if (!naturalFits) {
+      const targetCols2 = Math.min(cards.length, maxColsByWidth);
+      const bins = balancedPack(cardData, targetCols2, maxColHeight, minRowGap);
+      let packedColsWidth = 0;
+      for (const b of bins) {
+        const maxW = Math.max(...b.items.map((it) => it.width));
+        packedColsWidth += maxW;
+      }
+      const totalPackedNeeded = packedColsWidth + (bins.length - 1) * minColGap + minPaddingX * 2;
+      if (bins.length <= maxColsByWidth && totalPackedNeeded <= availableWidth) {
+        if (!isPacked) {
+          const newStyles = /* @__PURE__ */ new Map();
+          let orderIdx = 0;
+          for (const b of bins) {
+            for (const item of b.items) {
+              newStyles.set(item.id, `order: ${orderIdx++};`);
+            }
+          }
+          $$invalidate(23, cardOrderStyles = newStyles);
+          $$invalidate(48, isPacked = true);
+          scheduleAdjustSpacing();
+          return;
+        }
+        const packedMaxH = Math.max(...bins.map((b) => b.usedHeight));
+        const hWrap2 = packedMaxH + 16;
+        const surplusY2 = Math.max(0, availableHeight - hWrap2);
+        const targetPadY2 = Math.max(minPaddingY, Math.floor(surplusY2 / 2));
+        const safeSurplusX2 = Math.max(0, availableWidth - packedColsWidth - 8);
+        const equalColGap = Math.floor(safeSurplusX2 / (bins.length + 1));
+        const maxAllowedColGap2 = 220;
+        if (equalColGap < minColGap) {
+          $$invalidate(22, boardEl.style.alignContent = "flex-start", boardEl);
+          $$invalidate(22, boardEl.style.paddingLeft = minPaddingX + "px", boardEl);
+          $$invalidate(22, boardEl.style.paddingRight = minPaddingX + "px", boardEl);
+          $$invalidate(22, boardEl.style.columnGap = minColGap + "px", boardEl);
+          $$invalidate(22, boardEl.style.overflowX = "auto", boardEl);
+        } else if (equalColGap <= maxAllowedColGap2) {
+          $$invalidate(22, boardEl.style.alignContent = "flex-start", boardEl);
+          $$invalidate(22, boardEl.style.paddingLeft = equalColGap + "px", boardEl);
+          $$invalidate(22, boardEl.style.paddingRight = equalColGap + "px", boardEl);
+          $$invalidate(22, boardEl.style.columnGap = equalColGap + "px", boardEl);
+          $$invalidate(22, boardEl.style.overflowX = "hidden", boardEl);
+        } else {
+          const remainingOuter = Math.floor((availableWidth - (packedColsWidth + (bins.length - 1) * maxAllowedColGap2) - 8) / 2);
+          $$invalidate(22, boardEl.style.alignContent = "flex-start", boardEl);
+          $$invalidate(22, boardEl.style.paddingLeft = remainingOuter + "px", boardEl);
+          $$invalidate(22, boardEl.style.paddingRight = remainingOuter + "px", boardEl);
+          $$invalidate(22, boardEl.style.columnGap = maxAllowedColGap2 + "px", boardEl);
+          $$invalidate(22, boardEl.style.overflowX = "hidden", boardEl);
+        }
+        $$invalidate(22, boardEl.style.rowGap = minRowGap + "px", boardEl);
+        $$invalidate(22, boardEl.style.paddingTop = targetPadY2 + "px", boardEl);
+        $$invalidate(22, boardEl.style.paddingBottom = targetPadY2 + "px", boardEl);
+        if (!hasInitializedFocus && flatCategories.length > 0) {
+          hasInitializedFocus = true;
+          setTimeout(
+            () => {
+              focusCenterList();
+            },
+            30
+          );
+        }
+        return;
+      } else {
+        if (isPacked) {
+          $$invalidate(48, isPacked = false);
+          $$invalidate(23, cardOrderStyles = /* @__PURE__ */ new Map());
+          scheduleAdjustSpacing();
+          return;
+        }
+        $$invalidate(22, boardEl.style.alignContent = "flex-start", boardEl);
+        $$invalidate(22, boardEl.style.paddingLeft = minPaddingX + "px", boardEl);
+        $$invalidate(22, boardEl.style.paddingRight = minPaddingX + "px", boardEl);
+        $$invalidate(22, boardEl.style.columnGap = minColGap + "px", boardEl);
+        $$invalidate(22, boardEl.style.rowGap = minRowGap + "px", boardEl);
+        $$invalidate(22, boardEl.style.paddingTop = minPaddingY + "px", boardEl);
+        $$invalidate(22, boardEl.style.paddingBottom = minPaddingY + "px", boardEl);
+        $$invalidate(22, boardEl.style.overflowX = "auto", boardEl);
+        if (!hasInitializedFocus && flatCategories.length > 0) {
+          hasInitializedFocus = true;
+          setTimeout(
+            () => {
+              focusCenterList();
+            },
+            30
+          );
+        }
+        return;
+      }
+    }
+    const targetCols = Math.min(cards.length, naturalCols);
     const targetRowGap = Math.max(minRowGap, Math.min(32, Math.floor((availableHeight - minPaddingY * 2 - 380) / 2)));
     const partitions = findBestContiguousPartition(cardHeights, targetCols, targetRowGap);
     const partitionHeights = partitions.map((col) => col.reduce((a, b) => a + b, 0) + Math.max(0, col.length - 1) * targetRowGap);

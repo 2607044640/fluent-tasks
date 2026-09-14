@@ -179,6 +179,62 @@
         return result;
     }
 
+    interface CardLayoutInfo {
+        id: string;
+        height: number;
+        width: number;
+    }
+
+    interface PackBin {
+        items: CardLayoutInfo[];
+        usedHeight: number;
+    }
+
+    function getNaturalCols(cardHeights: number[], maxColHeight: number, rowGap: number): number {
+        let cols = 1;
+        let currH = 0;
+        for (const h of cardHeights) {
+            const needed = currH === 0 ? h : (currH + rowGap + h);
+            if (needed <= maxColHeight) {
+                currH = needed;
+            } else {
+                cols++;
+                currH = h;
+            }
+        }
+        return cols;
+    }
+
+    function balancedPack(cards: CardLayoutInfo[], targetCols: number, maxColHeight: number, rowGap: number): PackBin[] {
+        const sorted = [...cards].sort((a, b) => b.height - a.height);
+        const bins: PackBin[] = Array.from({ length: targetCols }, () => ({ items: [], usedHeight: 0 }));
+
+        for (const card of sorted) {
+            let bestBinIdx = -1;
+            let minUsed = Infinity;
+
+            for (let i = 0; i < bins.length; i++) {
+                const b = bins[i];
+                const needed = b.items.length === 0 ? card.height : (b.usedHeight + rowGap + card.height);
+                if (needed <= maxColHeight && b.usedHeight < minUsed) {
+                    minUsed = b.usedHeight;
+                    bestBinIdx = i;
+                }
+            }
+
+            if (bestBinIdx !== -1) {
+                const b = bins[bestBinIdx];
+                const needed = b.items.length === 0 ? card.height : (b.usedHeight + rowGap + card.height);
+                b.items.push(card);
+                b.usedHeight = needed;
+            } else {
+                bins.push({ items: [card], usedHeight: card.height });
+            }
+        }
+
+        return bins.filter(b => b.items.length > 0);
+    }
+
     function adjustBoardSpacing() {
         if (!boardEl || !isGridLayout) return;
 
@@ -194,115 +250,145 @@
         const minPaddingX = 28;
         const minPaddingY = 16;
 
-        // 1. 智能排布恢复门禁：如果处于智能排布中，当窗口拉宽已能放下时，自动恢复
-        const hasHorizontalOverflow = boardEl.scrollWidth > boardEl.clientWidth + 2;
-
-        if (isPacked) {
-            if (!hasHorizontalOverflow) {
-                const estimatedCols = Math.ceil(cards.length / 2);
-                const estimatedWidth = estimatedCols * 220 + (estimatedCols + 1) * minColGap + minPaddingX * 2;
-                if (availableWidth >= estimatedWidth) {
-                    isPacked = false;
-                    cardOrderStyles = new Map();
-                    scheduleAdjustSpacing();
-                }
-            }
-            return;
-        }
-
-        // 2. 真实横向溢出（超出屏幕有滑动条）时才触发智能压缩并列
-        if (hasHorizontalOverflow) {
-            const maxColHeight = Math.max(150, availableHeight - minPaddingY * 2);
-            const cardData = cards.map(el => ({
-                id: el.getAttribute("data-card-id") || "",
-                height: el.offsetHeight || 120,
-                width: el.offsetWidth || 220,
-            })).filter(c => c.id);
-
-            if (cardData.length > 1) {
-                const sortedByHeight = [...cardData].sort((a, b) => b.height - a.height);
-                interface PackBin {
-                    items: typeof cardData;
-                    usedHeight: number;
-                }
-                const bins: PackBin[] = [];
-
-                for (const card of sortedByHeight) {
-                    let bestBinIdx = -1;
-                    let minRemaining = Infinity;
-
-                    for (let i = 0; i < bins.length; i++) {
-                        const bin = bins[i];
-                        const neededH = bin.items.length === 0 ? card.height : (card.height + minRowGap);
-                        const rem = maxColHeight - (bin.usedHeight + neededH);
-                        if (rem >= 0 && rem < minRemaining) {
-                            minRemaining = rem;
-                            bestBinIdx = i;
-                        }
-                    }
-
-                    if (bestBinIdx !== -1) {
-                        const bin = bins[bestBinIdx];
-                        const neededH = bin.items.length === 0 ? card.height : (card.height + minRowGap);
-                        bin.items.push(card);
-                        bin.usedHeight += neededH;
-                    } else {
-                        bins.push({ items: [card], usedHeight: card.height });
-                    }
-                }
-
-                // 统计当前视口宽度下的列数
-                const currentColsCount = Math.max(1, Math.floor((availableWidth - minPaddingX * 2) / (220 + minColGap)));
-                if (bins.length < currentColsCount) {
-                    let packedColsWidth = 0;
-                    for (const b of bins) {
-                        const maxW = Math.max(...b.items.map(it => it.width));
-                        packedColsWidth += maxW;
-                    }
-                    const totalPackedNeeded = packedColsWidth + (bins.length - 1) * minColGap + minPaddingX * 2;
-
-                    if (totalPackedNeeded <= availableWidth) {
-                        const newStyles = new Map<string, string>();
-                        let orderIdx = 0;
-                        for (const b of bins) {
-                            for (const item of b.items) {
-                                newStyles.set(item.id, `order: ${orderIdx++};`);
-                            }
-                        }
-                        cardOrderStyles = newStyles;
-                        isPacked = true;
-                        scheduleAdjustSpacing();
-                        return;
-                    }
-                }
-            }
-        }
-
-        // ====================================================================
-        // 3. 默认非溢出状态（未超出边界）：均衡列分布 + 大呼吸间距调节
-        // ====================================================================
         const cardHeights = cards.map(c => c.offsetHeight || 120);
         const cardWidths = cards.map(c => c.offsetWidth || 220);
         const avgCardW = Math.max(180, Math.round(cardWidths.reduce((a, b) => a + b, 0) / cardWidths.length));
+        const maxColHeight = Math.max(150, availableHeight - minPaddingY * 2);
 
-        // 计算当前视口宽度能舒适容纳的最大列数（最多 Math.ceil(cards.length / 2) 列，保证每列最多2个卡片）
+        // 视口宽度能舒适容纳的最大列数
         const maxColsByWidth = Math.max(1, Math.floor((availableWidth - minPaddingX * 2 + minColGap) / (avgCardW + minColGap)));
-        const targetCols = Math.min(cards.length, Math.max(1, Math.min(maxColsByWidth, Math.ceil(cards.length / 2))));
 
-        // 充裕舒展的行间距（24px ~ 36px）
+        // 检查默认 DOM 自然排列所需要的列数
+        const naturalCols = getNaturalCols(cardHeights, maxColHeight, minRowGap);
+        const naturalWidthNeeded = naturalCols * avgCardW + (naturalCols - 1) * minColGap + minPaddingX * 2;
+        const naturalFits = naturalCols <= maxColsByWidth && naturalWidthNeeded <= availableWidth;
+
+        // 1. 恢复机制：若处于智能排布中，当窗口拉宽后默认自然顺序已能放下时，恢复为默认自然顺序
+        if (isPacked && naturalFits) {
+            isPacked = false;
+            cardOrderStyles = new Map();
+            scheduleAdjustSpacing();
+            return;
+        }
+
+        const cardData: CardLayoutInfo[] = cards.map(el => ({
+            id: el.getAttribute("data-card-id") || "",
+            height: el.offsetHeight || 120,
+            width: el.offsetWidth || 220,
+        })).filter(c => c.id);
+
+        // 2. 超出边界时触发智能紧凑排布 (当自然顺序溢出屏幕时)
+        if (!naturalFits) {
+            // 尝试将所有卡片紧凑划分到视口可容纳的列数内 (不超过 maxColsByWidth)
+            const targetCols = Math.min(cards.length, maxColsByWidth);
+            const bins = balancedPack(cardData, targetCols, maxColHeight, minRowGap);
+
+            let packedColsWidth = 0;
+            for (const b of bins) {
+                const maxW = Math.max(...b.items.map(it => it.width));
+                packedColsWidth += maxW;
+            }
+            const totalPackedNeeded = packedColsWidth + (bins.length - 1) * minColGap + minPaddingX * 2;
+
+            if (bins.length <= maxColsByWidth && totalPackedNeeded <= availableWidth) {
+                // 成功在视口内无滑动条排下
+                if (!isPacked) {
+                    const newStyles = new Map<string, string>();
+                    let orderIdx = 0;
+                    for (const b of bins) {
+                        for (const item of b.items) {
+                            newStyles.set(item.id, `order: ${orderIdx++};`);
+                        }
+                    }
+                    cardOrderStyles = newStyles;
+                    isPacked = true;
+                    scheduleAdjustSpacing();
+                    return;
+                }
+
+                // 计算紧凑排布后的纵向高度与折行缓冲区
+                const packedMaxH = Math.max(...bins.map(b => b.usedHeight));
+                const hWrap = packedMaxH + 16;
+                const surplusY = Math.max(0, availableHeight - hWrap);
+                const targetPadY = Math.max(minPaddingY, Math.floor(surplusY / 2));
+
+                const safeSurplusX = Math.max(0, availableWidth - packedColsWidth - 8);
+                const equalColGap = Math.floor(safeSurplusX / (bins.length + 1));
+                const maxAllowedColGap = 220;
+
+                if (equalColGap < minColGap) {
+                    boardEl.style.alignContent = "flex-start";
+                    boardEl.style.paddingLeft = minPaddingX + "px";
+                    boardEl.style.paddingRight = minPaddingX + "px";
+                    boardEl.style.columnGap = minColGap + "px";
+                    boardEl.style.overflowX = "auto";
+                } else if (equalColGap <= maxAllowedColGap) {
+                    boardEl.style.alignContent = "flex-start";
+                    boardEl.style.paddingLeft = equalColGap + "px";
+                    boardEl.style.paddingRight = equalColGap + "px";
+                    boardEl.style.columnGap = equalColGap + "px";
+                    boardEl.style.overflowX = "hidden";
+                } else {
+                    const remainingOuter = Math.floor((availableWidth - (packedColsWidth + (bins.length - 1) * maxAllowedColGap) - 8) / 2);
+                    boardEl.style.alignContent = "flex-start";
+                    boardEl.style.paddingLeft = remainingOuter + "px";
+                    boardEl.style.paddingRight = remainingOuter + "px";
+                    boardEl.style.columnGap = maxAllowedColGap + "px";
+                    boardEl.style.overflowX = "hidden";
+                }
+
+                boardEl.style.rowGap = minRowGap + "px";
+                boardEl.style.paddingTop = targetPadY + "px";
+                boardEl.style.paddingBottom = targetPadY + "px";
+
+                if (!hasInitializedFocus && flatCategories.length > 0) {
+                    hasInitializedFocus = true;
+                    setTimeout(() => {
+                        focusCenterList();
+                    }, 30);
+                }
+                return;
+            } else {
+                // 如果卡片数量实在太多（比如30个测试卡片），即使紧凑压缩也无法在一屏放下，则允许横向滑动
+                if (isPacked) {
+                    isPacked = false;
+                    cardOrderStyles = new Map();
+                    scheduleAdjustSpacing();
+                    return;
+                }
+                boardEl.style.alignContent = "flex-start";
+                boardEl.style.paddingLeft = minPaddingX + "px";
+                boardEl.style.paddingRight = minPaddingX + "px";
+                boardEl.style.columnGap = minColGap + "px";
+                boardEl.style.rowGap = minRowGap + "px";
+                boardEl.style.paddingTop = minPaddingY + "px";
+                boardEl.style.paddingBottom = minPaddingY + "px";
+                boardEl.style.overflowX = "auto";
+
+                if (!hasInitializedFocus && flatCategories.length > 0) {
+                    hasInitializedFocus = true;
+                    setTimeout(() => {
+                        focusCenterList();
+                    }, 30);
+                }
+                return;
+            }
+        }
+
+        // ====================================================================
+        // 3. 默认非溢出状态（未超出边界）：保留 DOM 顺序，大呼吸间距舒展展示
+        // ====================================================================
+        const targetCols = Math.min(cards.length, naturalCols);
         const targetRowGap = Math.max(minRowGap, Math.min(32, Math.floor((availableHeight - minPaddingY * 2 - 380) / 2)));
 
-        // 连续均衡分组划分：使各列高度尽可能接近，消除 3 卡片挤压和右侧大留白
         const partitions = findBestContiguousPartition(cardHeights, targetCols, targetRowGap);
         const partitionHeights = partitions.map(col => col.reduce((a, b) => a + b, 0) + Math.max(0, col.length - 1) * targetRowGap);
         const balancedMaxH = Math.max(...partitionHeights);
 
-        // 预留 16px 缓冲区，精确控制视口净高度，引导浏览器 native flex-wrap 在预期列边界处自然折行
         const hWrap = balancedMaxH + 16;
         const surplusY = Math.max(0, availableHeight - hWrap);
         const targetPadY = Math.max(minPaddingY, Math.floor(surplusY / 2));
 
-        // 水平间距：均等分配列间距与左右内边距
         let cardIdx = 0;
         let totalColsWidth = 0;
         for (const col of partitions) {
@@ -352,7 +438,6 @@
         boardEl.style.paddingTop = targetPadY + "px";
         boardEl.style.paddingBottom = targetPadY + "px";
 
-        // Initial focus on center list once layout settles
         if (!hasInitializedFocus && flatCategories.length > 0) {
             hasInitializedFocus = true;
             setTimeout(() => {
