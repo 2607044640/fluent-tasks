@@ -30,6 +30,8 @@
     let focusedIndex: number = 0;
     let isGridLayout: boolean = plugin?.settings?.quickListGridLayout ?? true;
     let isComposing: boolean = false;
+    let hasInitializedFocus: boolean = false;
+    let prevSearchQuery: string = "";
 
     function handleBoardWheel(e: WheelEvent) {
         if (e.deltaY !== 0 && !e.shiftKey) {
@@ -92,6 +94,13 @@
     $: rootCategories = filteredItems.filter(i => i.type === "category") as CategoryInfo[];
     $: if (focusedIndex >= flatCategories.length) {
         focusedIndex = Math.max(0, flatCategories.length - 1);
+    }
+    $: if (searchQuery !== prevSearchQuery) {
+        prevSearchQuery = searchQuery;
+        if (searchQuery.trim()) {
+            focusedIndex = 0;
+            scrollFocusedIntoView();
+        }
     }
 
     $: if (filteredItems && isGridLayout) {
@@ -342,6 +351,84 @@
         boardEl.style.rowGap = targetRowGap + "px";
         boardEl.style.paddingTop = targetPadY + "px";
         boardEl.style.paddingBottom = targetPadY + "px";
+
+        // Initial focus on center list once layout settles
+        if (!hasInitializedFocus && flatCategories.length > 0) {
+            hasInitializedFocus = true;
+            setTimeout(() => {
+                focusCenterList();
+            }, 30);
+        }
+    }
+
+    function focusCenterList() {
+        const shouldFocusCenter = plugin?.settings?.quickListFocusCenter ?? true;
+        if (!shouldFocusCenter || searchQuery.trim() || !flatCategories || flatCategories.length === 0) {
+            return;
+        }
+
+        if (isGridLayout && boardEl) {
+            const items = Array.from(boardEl.querySelectorAll<HTMLElement>(".quick-modal-list-item[data-filepath]"));
+            if (items.length === 0) return;
+
+            // Compute geometric bounding box of all list items on the board
+            let minX = Infinity;
+            let maxX = -Infinity;
+            let minY = Infinity;
+            let maxY = -Infinity;
+
+            const itemCoords = items.map(item => {
+                const rect = item.getBoundingClientRect();
+                const cx = rect.left + rect.width / 2;
+                const cy = rect.top + rect.height / 2;
+                if (cx < minX) minX = cx;
+                if (cx > maxX) maxX = cx;
+                if (cy < minY) minY = cy;
+                if (cy > maxY) maxY = cy;
+                return { item, cx, cy, filepath: item.dataset.filepath || "" };
+            });
+
+            const contentCenterX = (minX + maxX) / 2;
+            const contentCenterY = (minY + maxY) / 2;
+
+            let bestIndex = -1;
+            let minDistanceSq = Infinity;
+            let bestItemEl: HTMLElement | null = null;
+
+            for (const { item, cx, cy, filepath } of itemCoords) {
+                if (!filepath) continue;
+                const idx = flatCategories.findIndex(c => c.filepath === filepath);
+                if (idx === -1) continue;
+
+                const dx = cx - contentCenterX;
+                const dy = cy - contentCenterY;
+                const distSq = dx * dx + dy * dy;
+
+                if (distSq < minDistanceSq) {
+                    minDistanceSq = distSq;
+                    bestIndex = idx;
+                    bestItemEl = item;
+                }
+            }
+
+            if (bestIndex !== -1) {
+                focusedIndex = bestIndex;
+                if (bestItemEl) {
+                    // Center the board scroll horizontally if overflowing
+                    if (boardEl.scrollWidth > boardEl.clientWidth) {
+                        const boardRect = boardEl.getBoundingClientRect();
+                        const itemRect = bestItemEl.getBoundingClientRect();
+                        const offset = (itemRect.left + itemRect.width / 2) - (boardRect.left + boardRect.width / 2);
+                        boardEl.scrollLeft += offset;
+                    }
+                    bestItemEl.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "auto" });
+                }
+            }
+        } else {
+            const mid = Math.floor(flatCategories.length / 2);
+            focusedIndex = mid;
+            scrollFocusedIntoView();
+        }
     }
 
     async function toggleLayoutMode() {
@@ -350,8 +437,12 @@
             plugin.settings.quickListGridLayout = isGridLayout;
             await plugin.saveSettings();
         }
+        hasInitializedFocus = false;
         if (isGridLayout) {
             scheduleAdjustSpacing();
+        } else {
+            hasInitializedFocus = true;
+            focusCenterList();
         }
     }
 
@@ -361,7 +452,14 @@
         EventBus.on(EventName.TASK_UPDATED, handleExternalTaskUpdated);
 
         searchInputEl?.focus();
-        scheduleAdjustSpacing();
+        if (isGridLayout) {
+            scheduleAdjustSpacing();
+        } else {
+            if (!hasInitializedFocus && flatCategories.length > 0) {
+                hasInitializedFocus = true;
+                focusCenterList();
+            }
+        }
 
         if (typeof ResizeObserver !== "undefined" && modalContainerEl) {
             resizeObserver = new ResizeObserver(() => {
