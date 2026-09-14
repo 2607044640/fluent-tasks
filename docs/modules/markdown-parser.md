@@ -21,8 +21,8 @@ Pure Markdown ↔ `TaskItem[]` codec. No vault access, no plugin state. Not a to
 1. `parseTasksFromMarkdown(content)` splits on `\n`.
 2. Each trimmed line must match `^- \[([ x])\] (.+?)(?:\s*%%\{.*?\}%%)?$`. Non-matching lines (headings, blanks, notes) are skipped.
 3. Checkbox `x` → `completed: true`. Title is `match[2]` with the `%%...%%` tail stripped.
-4. `JSON.parse` of the comment fills `starred`, `steps`, `note`, `createdAt`, optional `completedAt`, `dueDate`, `msGraphId`, `msGraphListId`, `recurrence`, `why`, `svgs`, `note_link` (or legacy `noteLink`), `customMeta`.
-5. `serializeTasksToMarkdown(tasks)` writes one line per task: `- [x]? {title} %%{...}%%`. Empty optional fields are omitted.
+4. `JSON.parse` of `%%(\{.*?\})%%` fills `starred`, `steps`, `note`, `createdAt`, optional `completedAt`, `dueDate`, `msGraphId`, `msGraphListId`, `recurrence`, `why`, `svgs`, `note_link` (or legacy `noteLink`), `customMeta`.
+5. `serializeTasksToMarkdown(tasks)` writes one line per task: `- [x]? {title} %%{...}%%`. Empty optional fields are omitted. Serialize always writes `note_link` (never `noteLink`).
 6. `createTask(title)` sets `completed/starred` false, empty `steps`/`note`, `createdAt` now, hashed `id`.
 
 ## Side-effects API

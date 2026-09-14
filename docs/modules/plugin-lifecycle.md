@@ -21,10 +21,10 @@ Obsidian plugin shell: registers three `ItemView` wrappers, commands, ribbon, va
 
 1. `FluentTasksPlugin.onload` constructs `DataService(app)`, adds `FluentTasksSettingTab`, `Logger.init(app)`, `loadSettings()`, then `registerView` for `VIEW_TYPE_SIDEBAR|MAIN|DETAIL`.
 2. Commands and `refreshRibbonIcon()` register immediately; vault/folder work is deferred to `onLayoutReady`.
-3. On layout ready: `dataService.ensureDataFolder()`, `applySettings()` (CSS `--todo-accent*`), vault `modify`/`create`/`delete`/`rename` listeners, EventBus handlers for `DETAIL_CLOSE`, `CATEGORY_SELECTED`, `TASK_SELECTED`, `CATEGORY_LIST_CHANGED`.
+3. On layout ready: `dataService.ensureDataFolder()`, `applySettings()` (CSS `--todo-accent*`), vault `modify`/`create`/`delete`/`rename`, EventBus handlers for `DETAIL_CLOSE`, `CATEGORY_SELECTED`, `TASK_SELECTED`, `CATEGORY_LIST_CHANGED`.
 4. `CATEGORY_SELECTED` activates/reveals the main leaf and `setViewState` (skipped when `fromHistory` to avoid history loops).
 5. `TASK_SELECTED` either `openTaskDetailModal` or `activateView(VIEW_TYPE_DETAIL, "right")` then `TaskDetailView.loadTask`.
-6. `checkRecurringTasksRollover(true)` runs once; then every 10s and on `window` `focus`.
+6. `checkRecurringTasksRollover(true)` runs once; then every 10s and on `window` `focus`. Non-force calls no-op when `lastRolloverDate === today`.
 7. `onunload` removes ribbon, `EventBus.destroy()`, clears `window.__mstodo_drag_data`.
 
 ## Side-effects API
@@ -43,13 +43,15 @@ Obsidian plugin shell: registers three `ItemView` wrappers, commands, ribbon, va
 | `EventBus.emit` | `(event: string, payload?: unknown): void` | Synchronously invokes listeners |
 | `Logger.log` | `(...args: unknown[]): Promise<void>` | Creates/appends `TodoData/debug.log` |
 
+Event names (`src/types.ts` `EventName`): `category:selected`, `category:list-changed`, `task:selected`, `task:updated`, `task:moved`, `task:deleted`, `task:completed` (declared, unused), `detail:close`, `task:navigate`, `settings:changed`, `sidebar:trigger-rename`, `sidebar:reveal-category`.
+
 ## Recipes
 
 1. **Open the three-pane UI** — Command `open-all-views` → `FluentTasksPlugin.activateAllViews` (`src/main.ts`). Ribbon `check-square` does the same unless `hideRibbonIcon`.
 2. **Select a list** — `TaskSidebarView.selectCategory` emits `CATEGORY_SELECTED` → plugin handler → `leaf.setViewState({ type: VIEW_TYPE_MAIN, state })` → `TaskMainViewWrapper.setState` → `loadCategory`.
-3. **Select a task** — `TaskMainView.selectTask` emits `TASK_SELECTED` → plugin opens detail leaf or modal → `TaskDetailView.loadTask`.
+3. **Select a task** — `TaskMainView` emits `TASK_SELECTED` → plugin opens detail leaf or modal → `TaskDetailView.loadTask`.
 4. **Jump to a list from Command Palette** — `registerCategoryCommands` registers `z-jump-to-list-<hash>`; callback collapses sidebars, activates main, emits `CATEGORY_SELECTED` with `focusInput: true`.
-5. **External file change** — vault `modify` on a flat `TodoData/*.md` (and not `isInternalWrite`) emits `TASK_UPDATED` `{ categoryFilepath, isExternal: true }`.
+5. **External file change** — vault `modify` on a flat `TodoData/*.md` (and not `isInternalWrite`) emits `TASK_UPDATED` `{ categoryFilepath, isExternal: true }`. Nested notes under `TodoData/<List>/` are not category files.
 
 <!-- BEGIN USER-SPECIFIED -->
 <!-- END USER-SPECIFIED -->

@@ -10,17 +10,17 @@ Pure date math for `RecurrenceRule`. No vault I/O. Persistence is a field on `Ta
 | `RecurrenceRule` (`src/types.ts`) | `type: 'daily' \| 'weekdays' \| 'weekly' \| 'custom'`, `interval`, optional `daysOfWeek` (0=Sun…6=Sat) | Monthly/yearly (not implemented) |
 | `timeUtils` (`parseLocalDate`, `formatLocalDate`, `getTodayLocalDateString`, `getRecurrenceLabel`) | Local `YYYY-MM-DD` and labels | Vault |
 | `FluentTasksPlugin.checkRecurringTasksRollover` | Schedule rollover (startup, 10s, focus) | Rule math |
-| `TaskDetailView.setRecurrencePreset` / `setCustomInterval` / `toggleWeekday` | User-facing presets | Direct file I/O (goes through `immediateSave` / `scheduleSave`) |
+| `TaskDetailView.setRecurrencePreset` / `setCustomInterval` / `handleWeekdayClick` | User-facing presets | Direct file I/O (goes through `immediateSave` / `scheduleSave`) |
 
 ## Key Invariants
 
-1. All due dates are local calendar strings, never UTC ISO dates. (Why chosen over `toISOString().slice(0,10)` in the engine: UTC would shift the calendar day.)
+1. Engine due dates are local calendar strings via `parseLocalDate` / `formatLocalDate`, never UTC ISO dates. (Why chosen over `toISOString().slice(0,10)` in the engine: UTC would shift the calendar day.)
 2. Methods copy tasks (`{ ...task }`, mapped steps); they do not mutate the input array. (Why chosen over in-place edits: `getTasks` can decide whether to save.)
-3. Incomplete overdue recurrences snap `dueDate` to **today**, they do not skip forward by `interval` until completion. Completed recurrences wait until `today >= nextDue` (from `completedAt` or `dueDate`) then uncomplete, clear `completedAt`, reset step `done` flags, set `dueDate` today. (Why chosen over generating extra task rows: one row per recurring item.)
+3. Incomplete overdue recurrences snap `dueDate` to **today**; they do not skip forward by `interval` until completion. Completed recurrences wait until `today >= nextDue` (from `completedAt` or `dueDate`) then uncomplete, clear `completedAt`, reset step `done` flags, set `dueDate` today. (Why chosen over generating extra task rows: one row per recurring item.)
 
 ## Numbered Data Flow
 
-1. User sets a preset in `TaskDetailView` (`daily` interval 1, `weekdays`, `weekly` on `new Date().getDay()`, or `custom`). Missing `dueDate` is filled with UTC-slice today in the **UI** (`toISOString().slice(0,10)`).
+1. User sets a preset in `TaskDetailView` (`daily` interval 1, `weekdays`, `weekly` on `new Date().getDay()`, or `custom`). Missing `dueDate` is filled with UTC-slice today in the **UI** (`toISOString().slice(0,10)`) — a known divergence from the engine’s local calendar.
 2. `immediateSave` / `scheduleSave` → `DataService.updateTask` serializes `recurrence` via `MarkdownParser`.
 3. On read: `TaskService.getTasks` → `RecurrenceService.rolloverTasks(tasks, getTodayLocalDateString())`.
 4. Background: `checkRecurringTasksRollover` skips if `lastRolloverDate === today` unless `force`; else `DataService.rolloverRecurringTasks` per file.

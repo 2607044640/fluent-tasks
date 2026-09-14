@@ -10,18 +10,18 @@ Fluent Tasks (`manifest.json` id `fluent-tasks`, v1.0.23) is an Obsidian plugin.
 
 ## Progressive Router
 
-| Subsystem | Live entry | Doc |
-|---|---|---|
-| Plugin lifecycle | `src/main.ts` `FluentTasksPlugin` | [plugin-lifecycle](./docs/modules/plugin-lifecycle.md) |
-| Markdown parser | `src/MarkdownParser.ts` | [markdown-parser](./docs/modules/markdown-parser.md) |
-| Data facade + atomic I/O | `src/DataService.ts`, `src/services/AtomicIOPipeline.ts` | [data-service](./docs/modules/data-service.md) |
-| Task CRUD | `src/services/TaskService.ts` | [task-service](./docs/modules/task-service.md) |
-| Lists & groups | `src/services/CategoryService.ts` | [category-service](./docs/modules/category-service.md) |
-| Recurrence | `src/services/RecurrenceService.ts` | [recurrence-engine](./docs/modules/recurrence-engine.md) |
-| Linked notes | `src/services/LinkedNoteService.ts` | [linked-notes](./docs/modules/linked-notes.md) |
-| Search & filter | `DataService.searchTasks`, `src/TaskSearchModal.ts` | [query-search](./docs/modules/query-search.md) |
-| Svelte UI | `src/Task*View.svelte`, `src/modals/` | [svelte-ui](./docs/modules/svelte-ui.md) |
-| Settings | `src/settings.ts` | [settings](./docs/modules/settings.md) |
+| Subsystem | Doc | Owns | Do not put here |
+|---|---|---|---|
+| Plugin lifecycle | [plugin-lifecycle](./docs/modules/plugin-lifecycle.md) | `src/main.ts` `FluentTasksPlugin`, wrappers, `EventBus` | Markdown parse, task CRUD |
+| Markdown parser | [markdown-parser](./docs/modules/markdown-parser.md) | `src/MarkdownParser.ts` codec | Vault I/O, EventBus |
+| Data facade + atomic I/O | [data-service](./docs/modules/data-service.md) | `DataService`, `AtomicIOPipeline` | Recurrence math, Svelte |
+| Task CRUD | [task-service](./docs/modules/task-service.md) | `src/services/TaskService.ts` | Sidebar metadata, linked-note create |
+| Lists & groups | [category-service](./docs/modules/category-service.md) | `CategoryService`, `.metadata.json` | Task line parse |
+| Recurrence | [recurrence-engine](./docs/modules/recurrence-engine.md) | `RecurrenceService`, `timeUtils` | File writes, Svelte widgets |
+| Linked notes | [linked-notes](./docs/modules/linked-notes.md) | `LinkedNoteService`, delete-confirm modal | List parse, recurrence |
+| Search & filter | [query-search](./docs/modules/query-search.md) | `searchTasks`, `TaskSearchModal`, `filterSidebarTree` | Ranking / query language |
+| Svelte UI | [svelte-ui](./docs/modules/svelte-ui.md) | ItemViews, Quick/Detail/Steps modals, UI utils | Settings tab widgets |
+| Settings | [settings](./docs/modules/settings.md) | `FluentTasksSettings`, `saveData` | Task file schema |
 
 ## Runtime Surface
 
@@ -52,4 +52,4 @@ On disk: `TodoData/<List>.md` (tasks), `TodoData/.metadata.json` (tree), `TodoDa
 
 `task:completed` is declared on `EventName` and is unused. Handlers run synchronously; `EventBus.destroy()` clears the map.
 
-Build: `npm run dev` / `npm run build` → `esbuild.config.mjs` bundles `src/main.ts` to `main.js`. User onboarding: [README.md](./README.md).
+Build: `npm run dev` / `npm run build` → `esbuild.config.mjs` bundles `src/main.ts` to `main.js` (Svelte CSS injected; `copyCssPlugin` copies `main.css` → `styles.css` if present). User onboarding: [README.md](./README.md).

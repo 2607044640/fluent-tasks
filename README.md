@@ -18,7 +18,7 @@ All lists are ordinary Markdown files:
 
 - Sidebar groups and order: `TodoData/.metadata.json` (dotfile, written via the vault adapter)
 - Optional dedicated notes: `TodoData/<ListName>/<TaskTitle>.md` with YAML `taskId`
-- Plugin options: Obsidian plugin data (`accentColor`, modal/sidebar toggles, …) — not the task files
+- Plugin options: Obsidian plugin data (`accentColor`, modal/sidebar toggles, Quick List gaps, …) — not the task files
 
 There is **no** Microsoft Graph / To Do cloud sync in this repository. Optional fields `msGraphId` and `msGraphListId` are only serialized if present.
 
@@ -53,6 +53,6 @@ Layout: left **Fluent Tasks** sidebar, center task list, right details (or modal
 4. **Due date and repeat** — Detail schedule: today / tomorrow / next Monday, plus **daily**, **weekdays**, **weekly**, or **custom**. Recurring tasks stay one row; overdue incomplete recurrences snap due date to today.
 5. **Search / Quick List / Quick Task** — Commands **Search all tasks**, **Search tasks in current list**, **Open Quick List Modal**, **Open Quick Task Modal (Experimental)**.
 
-Extra metadata on a task (detail **Add metadata**): `why`, `svgs`, `note_link`, `customMeta`. Settings tab: accent color, details modal, wrap titles, Quick Task/List layout, auto-expand/collapse, search hide-completed, hide ribbon.
+Extra metadata on a task (detail **Add metadata**): `why`, `svgs`, `note_link`, `customMeta`. Settings tab: accent color, details modal, wrap titles, Quick Task/List layout and grid gaps, auto-expand/collapse, search hide-completed, hide ribbon.
 
 Static commands (`fluent-tasks:`): `open-all-views`, `open-sidebar`, `open-main-view`, `open-detail-view`, `search-all-tasks`, `search-current-list`, `rename-hovered-list-or-group`, `open-quick-list-modal`, `open-quick-task-modal`. Dynamic: `z-jump-to-list-<hash>` per category file path.

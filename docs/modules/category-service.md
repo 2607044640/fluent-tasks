@@ -45,7 +45,7 @@ Lists are flat Markdown files `TodoData/<name>.md`. Groups exist only in `TodoDa
 1. **Load sidebar** — `TaskSidebarView.loadSidebarItems` → `dataService.getSidebarItems`.
 2. **Add list** — `confirmAddList` → `dataService.createCategory(name)` → select it via `CATEGORY_SELECTED`.
 3. **F2 rename** — `triggerRenameHoveredOrActive` → `confirmRename` → `renameCategory` or `renameGroup`.
-4. **Drag list into group** — `TaskSidebarView.handleDrop` rebuilds `SidebarItem[]` then `saveAndSyncSidebarState` → `saveSidebarState`.
+4. **Drag list into group** — sidebar HTML5 DnD rebuilds `SidebarItem[]` then `saveSidebarState`. Shared helper in Quick modals: `moveSidebarItem` (`sidebarTreeUtils.ts`).
 5. **Refresh Command Palette jumps** — plugin listens `CATEGORY_LIST_CHANGED` → `registerCategoryCommands`.
 
 <!-- BEGIN USER-SPECIFIED -->

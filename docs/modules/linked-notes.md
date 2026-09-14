@@ -14,7 +14,7 @@ Optional hard-bound Markdown notes under `TodoData/<ListName>/` with YAML `taskI
 ## Key Invariants
 
 1. Dedicated notes live at `TodoData/<listBasename>/<sanitizedTitle>.md` with frontmatter `taskId: "<task.id>"`. (Why chosen over embedding long notes in `%%{}%%`: Obsidian editing/preview for the body.)
-2. Plugin-driven renames call `markInternalRename` + `markInternalWrite` so vault `rename` does not bounce the title back. (Why chosen over a lock file: short TTL map.)
+2. Plugin-driven renames call `markInternalRename` (default 2000ms) + `markInternalWrite` so vault `rename` does not bounce the title back. (Why chosen over a lock file: short TTL map.)
 3. `isHardBoundNote(note_link)` is true when the cleaned path starts with `TodoData/`. Soft wikilinks elsewhere are still stored on `TaskItem.note_link` but delete-prompt / sync treat missing files as “no physical note”. (Why chosen over requiring every link to be hard-bound: users can paste `[[Note]]`.)
 
 ## Numbered Data Flow

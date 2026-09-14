@@ -10,7 +10,7 @@ Obsidian `ItemView` wrappers in `src/main.ts` mount Svelte 4 components. Cross-p
 | `TaskMainView.svelte` | Task list, add/toggle/star, svelte-dnd-action reorder, popovers, SVG lightbox, hints modal | Settings tab DOM |
 | `TaskDetailView.svelte` | Title/steps/note, schedule + recurrence UI, metadata modal, linked-note button, debounced save | Category tree |
 | `TaskSearchModal` | SuggestModal search (see [query-search](./query-search.md)) | — |
-| `QuickListModal` + `QuickListModalView.svelte` | Keyboard list board; `filterSidebarTree`; open list in center | Task body editor |
+| `QuickListModal` + `QuickListModalView.svelte` | Keyboard list board; `filterSidebarTree`; grid spacing via `quickListMinColGap` / `quickListMinRowGap`; open list in center | Task body editor |
 | `QuickTaskModal` + `QuickTaskModalView.svelte` | In-modal list+task management or navigate (`quickModalAction`) | Recurrence picker |
 | `TaskDetailModal` | Hosts `TaskDetailView` with `isModal: true` | Own save path |
 | `TaskStepsModal` + `TaskStepsModalView.svelte` | Large-type step editor; `flushSaveSync` on close | Creating notes |
@@ -26,9 +26,9 @@ Obsidian `ItemView` wrappers in `src/main.ts` mount Svelte 4 components. Cross-p
 
 1. Plugin `registerView` → wrapper `onOpen` mounts Svelte with `{ app?, dataService, plugin }`.
 2. Sidebar `selectCategory` → `CATEGORY_SELECTED` → plugin sets main leaf state → `loadCategory` → `getTasks` → split incomplete/completed.
-3. Row click `selectTask` → `TASK_SELECTED` → detail leaf or `TaskDetailModal` → `loadTask` (deep-copies `steps`).
+3. Row click emits `TASK_SELECTED` → detail leaf or `TaskDetailModal` → `loadTask` (deep-copies `steps`).
 4. Edits: main toggle/star/DND call `updateTask`/`saveTasks`; detail uses `scheduleSave` (`SAVE_DEBOUNCE_MS` 600) or `immediateSave`; steps modal uses 400ms debounce and `flushSaveSync` on close.
-5. In-list DND: `handleDndConsider` writes `__mstodo_drag_data`; sidebar `pointermove` highlights `.category-item`; `pointerup` `moveTask` + `TASK_MOVED`.
+5. In-list DND: `handleDndConsider` writes `__mstodo_drag_data`; sidebar `pointermove` highlights `.category-item`; `handleGlobalPointerUp` `moveTask` + `TASK_MOVED`.
 6. Quick List Enter → `openCategoryInCenterOnly` (collapse sidebars, reveal main, emit select, close). Quick Task `handlePrimaryAction` either toggles in-modal (`direct`) or navigates (`navigate`).
 
 ## Side-effects API
@@ -47,6 +47,7 @@ Obsidian `ItemView` wrappers in `src/main.ts` mount Svelte 4 components. Cross-p
 | `TaskDetailView.handleLinkNoteClick` | — | Create/open note + save `note_link` |
 | `TaskStepsModalView.flushSaveSync` | `(): void` | `updateTask` if debounce pending |
 | `QuickListModalView.openCategoryInCenterOnly` | `(cat): Promise<void>` | Collapse sidebars; EventBus; close modal |
+| `QuickListModalView.toggleLayoutMode` | `(): Promise<void>` | Writes `quickListGridLayout`; `saveSettings` |
 | `killDndGhostElement` / `injectDndGhostShield` / `removeDndGhostShield` | `(): void` | DOM/CSS only |
 | `portal` / `autosize` | Svelte actions | Move node to `document.body` / resize textarea |
 
@@ -54,11 +55,11 @@ Obsidian `ItemView` wrappers in `src/main.ts` mount Svelte 4 components. Cross-p
 
 1. **Add a task** — Main input Enter → `TaskMainView.addTask` → `DataService.addTask`.
 2. **Open details** — Click row → `TASK_SELECTED` → leaf or `FluentTasksPlugin.openTaskDetailModal`.
-3. **Move task to another list** — Drag onto sidebar row (`__mstodo_drag_data`) or context menu `handleContextMenu` → `moveTask`.
-4. **Reorder lists** — Sidebar HTML5 DnD `handleDrop` / `handleRootDrop` → `saveSidebarState`. Shared helper in Quick modals: `moveSidebarItem` (`sidebarTreeUtils.ts`).
+3. **Move task to another list** — Drag onto sidebar row (`__mstodo_drag_data`) or context menu → `moveTask`.
+4. **Reorder lists** — Sidebar HTML5 DnD → `saveSidebarState`. Shared helper in Quick modals: `moveSidebarItem` (`sidebarTreeUtils.ts`).
 5. **Edit steps in the large modal** — Click steps badge → `TaskStepsModal`; close calls `flushSaveSync`.
-6. **Quick List board** — Command `open-quick-list-modal`; grid vs list is `plugin.settings.quickListGridLayout`.
-7. **Ctrl-hover title peek** — `isQuickPeekModifierPressed` (Ctrl, not Win/Super) → `showPopover(..., 'title')`; dismiss on right-click (`dismissPopover`) or peeking another title.
+6. **Quick List board** — Command `open-quick-list-modal`; grid vs list is `plugin.settings.quickListGridLayout`; column/row gaps are `quickListMinColGap` / `quickListMinRowGap`.
+7. **Ctrl-hover title peek** — `isQuickPeekModifierPressed` (Ctrl on Windows/Linux, not Win/Super; Meta or Ctrl on macOS) → `showPopover(..., 'title')`.
 
 <!-- BEGIN USER-SPECIFIED -->
 <!-- END USER-SPECIFIED -->

@@ -7,7 +7,7 @@ Plugin settings are `FluentTasksSettings` stored by Obsidian `Plugin.saveData` /
 | Component | Responsible For | MUST NOT Contain |
 |---|---|---|
 | `FluentTasksSettings` + `DEFAULT_SETTINGS` (`src/settings.ts`) | Shape and defaults | Vault task files |
-| `FluentTasksSettingTab.display` | Color picker, toggles, dropdown | View mounting, EventBus subscriptions |
+| `FluentTasksSettingTab.display` | Color picker, toggles, dropdown, Quick List gap sliders | View mounting, EventBus subscriptions |
 | `FluentTasksPlugin.loadSettings` / `saveSettings` / `applySettings` | Merge defaults, persist, CSS vars, emit `SETTINGS_CHANGED` | Defining new keys without the interface |
 | `quickModalTipCount` | Incremented by `recordHotkeyTipShown` (`src/utils/hotkeyUtils.ts`), not shown as a Setting control | User-facing tip copy (lives in Quick modals) |
 
@@ -24,7 +24,7 @@ Plugin settings are `FluentTasksSettings` stored by Obsidian `Plugin.saveData` /
 3. Color picker also listens native `input` for live drag.
 4. `hideRibbonIcon` change calls `refreshRibbonIcon()`.
 5. `TaskMainView` listens `SETTINGS_CHANGED` to refresh `wrapTaskTitles`.
-6. Quick List grid toggle in the tab updates `quickListGridLayout`; the modal also has `toggleLayoutMode` which writes the same key.
+6. Quick List grid toggle in the tab updates `quickListGridLayout`; the modal also has `toggleLayoutMode` which writes the same key. Gap sliders write `quickListMinColGap` / `quickListMinRowGap` (read by `QuickListModalView` when packing the board).
 
 ## Side-effects API
 
@@ -44,7 +44,7 @@ Plugin settings are `FluentTasksSettings` stored by Obsidian `Plugin.saveData` /
 1. **Change accent** — Settings → Accent Color → `saveSettings` + `applySettings`.
 2. **Details as modal** — toggle “Open Task Details in Floating Modal”; enabling detaches the right pane.
 3. **Hide ribbon** — toggle → `refreshRibbonIcon`.
-4. **Quick List board** — “Quick List Modal: Grid Board Layout” or in-modal layout toggle (`toggleLayoutMode`).
+4. **Quick List board** — “Quick List Modal: Grid Board Layout” or in-modal layout toggle (`toggleLayoutMode`). Gaps: “Min Column Gap” (10–64, step 2) and “Min Row Gap” (8–48, step 2).
 5. **Hotkey tip cap** — Quick List/Task `onOpen` uses `getModalHotkeyTipInfo(..., "fluent-tasks:open-quick-list-modal" \| "...open-quick-task-modal")`; `MAX_TIP_COUNT = 5`; skipped if a custom hotkey already exists.
 
 ### Default values (`DEFAULT_SETTINGS`)
@@ -61,6 +61,8 @@ Plugin settings are `FluentTasksSettings` stored by Obsidian `Plugin.saveData` /
 | `quickModalAction` | `'direct'` |
 | `quickModalTipCount` | `0` |
 | `quickListGridLayout` | `true` |
+| `quickListMinColGap` | `20` |
+| `quickListMinRowGap` | `16` |
 
 <!-- BEGIN USER-SPECIFIED -->
 <!-- END USER-SPECIFIED -->

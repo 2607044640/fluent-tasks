@@ -22,7 +22,7 @@
 2. `ensureDataFolder()` creates `TodoData` if missing.
 3. Category calls (`getSidebarItems`, `createCategory`, …) go to `CategoryService` (metadata via adapter; `.md` via Vault).
 4. Task calls (`getTasks`, `saveTasks`, `addTask`, `updateTask`, `deleteTask`, `moveTask`) go to `TaskService.processFile` mutators.
-5. `searchTasks(query, scopeFilepath?)` lowercases the query, iterates `getCategories()` (optionally one list), `getTasks` each, matches title then steps then note (`includes`).
+5. `searchTasks(query, scopeFilepath?)` lowercases the query, iterates `getCategories()` (optionally one list), `getTasks` each, matches title then steps then note (`includes`). Empty/whitespace query returns `[]`.
 6. `rolloverRecurringTasks()` loops categories and `TaskService.rolloverTasksInFile`.
 
 ## Side-effects API
