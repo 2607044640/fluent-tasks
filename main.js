@@ -27970,14 +27970,14 @@ function instance6($$self, $$props, $$invalidate) {
     let bestBins = null;
     let bestScore = Infinity;
     const maxCandidateK = Math.min(cards.length, maxColsByW);
-    for (let k = maxCandidateK; k >= 1; k--) {
-      const maxPerCol = Math.ceil(cards.length / k);
-      const minPerCol = Math.floor(cards.length / k);
-      const bins = packCardsIntoK(cards, k, rowGap);
-      const peakH = Math.max(...bins.map((b) => b.h));
-      if (peakH <= maxH) {
-        const avgH = bins.reduce((sum, b) => sum + b.h, 0) / k;
-        const variance = bins.reduce((sum, b) => sum + (b.h - avgH) ** 2, 0) / k;
+    for (let k2 = maxCandidateK; k2 >= 1; k2--) {
+      const maxPerCol = Math.ceil(cards.length / k2);
+      const minPerCol = Math.floor(cards.length / k2);
+      const bins = packCardsIntoK(cards, k2, rowGap);
+      const peakH2 = Math.max(...bins.map((b) => b.h));
+      if (peakH2 <= maxH) {
+        const avgH = bins.reduce((sum, b) => sum + b.h, 0) / k2;
+        const variance = bins.reduce((sum, b) => sum + (b.h - avgH) ** 2, 0) / k2;
         const unbalancePenalty = (maxPerCol - minPerCol) * 5e4;
         const score = unbalancePenalty + variance;
         if (score < bestScore) {
@@ -27990,22 +27990,47 @@ function instance6($$self, $$props, $$invalidate) {
       }
     }
     if (!bestBins) {
-      for (let k = maxColsByW + 1; k <= cards.length; k++) {
-        const bins = packCardsIntoK(cards, k, rowGap);
-        const peakH = Math.max(...bins.map((b) => b.h));
-        if (peakH <= maxH) {
+      for (let k2 = maxColsByW + 1; k2 <= cards.length; k2++) {
+        const bins = packCardsIntoK(cards, k2, rowGap);
+        const peakH2 = Math.max(...bins.map((b) => b.h));
+        if (peakH2 <= maxH) {
           bestBins = bins;
           break;
         }
       }
     }
     if (!bestBins) {
-      const k = Math.min(cards.length, Math.max(1, maxColsByW));
-      bestBins = packCardsIntoK(cards, k, rowGap);
+      const k2 = Math.min(cards.length, Math.max(1, maxColsByW));
+      bestBins = packCardsIntoK(cards, k2, rowGap);
     }
     $$invalidate(23, layoutColumns = bestBins.map((b) => b.items));
+    const k = bestBins.length;
+    const baseColsW = k * cardW;
+    const availableForContentW = availW - padX * 2;
+    let actualColGap = colGap;
+    if (availableForContentW > baseColsW && k > 1) {
+      const surplusW = availableForContentW - baseColsW;
+      actualColGap = Math.min(48, Math.max(colGap, Math.floor(surplusW / k)));
+    }
+    const maxCardHSum = Math.max(...bestBins.map((b) => b.items.reduce((sum, it) => sum + it.height, 0)));
+    const maxItemsInAnyCol = Math.max(...bestBins.map((b) => b.items.length));
+    const availableForContentH = availH - padY * 2;
+    let actualRowGap = rowGap;
+    if (availableForContentH > maxCardHSum && maxItemsInAnyCol > 1) {
+      const surplusH = availableForContentH - maxCardHSum;
+      actualRowGap = Math.min(24, Math.max(rowGap, Math.floor(surplusH / (maxItemsInAnyCol + 1))));
+    }
+    const peakH = maxCardHSum + (maxItemsInAnyCol - 1) * actualRowGap;
+    const totalW = baseColsW + (k - 1) * actualColGap;
+    const dynamicPadY = Math.max(padY, Math.floor((availH - peakH) / 2));
+    const dynamicPadX = Math.max(padX, Math.floor((availW - totalW) / 2));
     if (boardEl) {
-      const totalW = bestBins.length * cardW + (bestBins.length - 1) * colGap + padX * 2;
+      boardEl.style.setProperty("--quick-grid-col-gap", `${actualColGap}px`);
+      boardEl.style.setProperty("--quick-grid-row-gap", `${actualRowGap}px`);
+      $$invalidate(22, boardEl.style.paddingTop = `${dynamicPadY}px`, boardEl);
+      $$invalidate(22, boardEl.style.paddingBottom = `${dynamicPadY}px`, boardEl);
+      $$invalidate(22, boardEl.style.paddingLeft = `${dynamicPadX}px`, boardEl);
+      $$invalidate(22, boardEl.style.paddingRight = `${dynamicPadX}px`, boardEl);
       if (totalW > availW) {
         $$invalidate(22, boardEl.style.justifyContent = "flex-start", boardEl);
       } else {

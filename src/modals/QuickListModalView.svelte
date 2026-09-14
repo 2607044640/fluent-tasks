@@ -245,9 +245,39 @@
         // 5. Update layoutColumns
         layoutColumns = bestBins.map(b => b.items);
 
-        // 6. Handle horizontal overflow alignment
+        // 6. Elastic Spacing & Omnidirectional Centering
+        const k = bestBins.length;
+        const baseColsW = k * cardW;
+        const availableForContentW = availW - padX * 2;
+        let actualColGap = colGap;
+        if (availableForContentW > baseColsW && k > 1) {
+            const surplusW = availableForContentW - baseColsW;
+            actualColGap = Math.min(48, Math.max(colGap, Math.floor(surplusW / k)));
+        }
+
+        const maxCardHSum = Math.max(...bestBins.map(b => b.items.reduce((sum, it) => sum + it.height, 0)));
+        const maxItemsInAnyCol = Math.max(...bestBins.map(b => b.items.length));
+        const availableForContentH = availH - padY * 2;
+        let actualRowGap = rowGap;
+        if (availableForContentH > maxCardHSum && maxItemsInAnyCol > 1) {
+            const surplusH = availableForContentH - maxCardHSum;
+            actualRowGap = Math.min(24, Math.max(rowGap, Math.floor(surplusH / (maxItemsInAnyCol + 1))));
+        }
+
+        const peakH = maxCardHSum + (maxItemsInAnyCol - 1) * actualRowGap;
+        const totalW = baseColsW + (k - 1) * actualColGap;
+
+        const dynamicPadY = Math.max(padY, Math.floor((availH - peakH) / 2));
+        const dynamicPadX = Math.max(padX, Math.floor((availW - totalW) / 2));
+
         if (boardEl) {
-            const totalW = bestBins.length * cardW + (bestBins.length - 1) * colGap + padX * 2;
+            boardEl.style.setProperty("--quick-grid-col-gap", `${actualColGap}px`);
+            boardEl.style.setProperty("--quick-grid-row-gap", `${actualRowGap}px`);
+            boardEl.style.paddingTop = `${dynamicPadY}px`;
+            boardEl.style.paddingBottom = `${dynamicPadY}px`;
+            boardEl.style.paddingLeft = `${dynamicPadX}px`;
+            boardEl.style.paddingRight = `${dynamicPadX}px`;
+
             if (totalW > availW) {
                 boardEl.style.justifyContent = "flex-start";
             } else {

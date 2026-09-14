@@ -2489,7 +2489,7 @@ body .quick-modal-task-item.is-focused {
   flex-direction: row;
   justify-content: center;
   align-items: flex-start;
-  gap: 20px;
+  gap: var(--quick-grid-col-gap, 28px);
   padding: 20px 28px;
   box-sizing: border-box;
 }
@@ -2510,7 +2510,7 @@ body .quick-modal-task-item.is-focused {
 .quick-grid-column {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--quick-grid-row-gap, 16px);
   width: 240px;
   min-width: 200px;
   max-width: 280px;
