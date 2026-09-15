@@ -616,6 +616,8 @@
              .onClick(async () => {
                  if (item.type === "category" && item.filepath) {
                      await dataService.deleteCategory(item.filepath);
+                 } else if (item.type === "group") {
+                     await dataService.deleteGroup(item.id);
                  }
                  await loadData();
              });

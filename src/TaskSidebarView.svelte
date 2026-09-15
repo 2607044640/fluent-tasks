@@ -69,6 +69,7 @@
 
         // Sync visual selection when category is selected externally (e.g. jump commands, search)
         EventBus.on(EventName.CATEGORY_SELECTED, handleExternalCategorySelected);
+        EventBus.on(EventName.CATEGORY_LIST_CHANGED, handleExternalCategoryListChanged);
         EventBus.on(EventName.TRIGGER_SIDEBAR_RENAME, handleTriggerRename);
         EventBus.on(EventName.REVEAL_SIDEBAR_CATEGORY, handleRevealSidebarCategory);
 
@@ -82,6 +83,7 @@
         window.removeEventListener("pointerup", handleGlobalPointerUp, true);
         window.removeEventListener("keydown", handleWindowKeydown, true);
         EventBus.off(EventName.CATEGORY_SELECTED, handleExternalCategorySelected);
+        EventBus.off(EventName.CATEGORY_LIST_CHANGED, handleExternalCategoryListChanged);
         EventBus.off(EventName.TRIGGER_SIDEBAR_RENAME, handleTriggerRename);
         EventBus.off(EventName.REVEAL_SIDEBAR_CATEGORY, handleRevealSidebarCategory);
         vaultEventRefs.forEach(ref => app.vault.offref(ref));
@@ -101,6 +103,14 @@
         }
     }
 
+    async function handleExternalCategoryListChanged(payload?: any) {
+        if (payload && Array.isArray(payload.sidebarItems)) {
+            sidebarItems = payload.sidebarItems;
+        } else {
+            await loadSidebarItems();
+        }
+    }
+
     async function loadSidebarItems() {
         sidebarItems = await dataService.getSidebarItems();
     }
@@ -116,6 +126,7 @@
     async function saveAndSyncSidebarState(newItems: SidebarItem[]) {
         sidebarItems = newItems;
         await dataService.saveSidebarState(newItems);
+        EventBus.emit(EventName.CATEGORY_LIST_CHANGED, { sidebarItems: newItems });
     }
 
     function toggleGroup(group: SidebarItem) {
@@ -522,8 +533,7 @@
             });
         }
 
-        sidebarItems = nextSidebarItems;
-        await dataService.saveSidebarState(sidebarItems);
+        await saveAndSyncSidebarState(nextSidebarItems);
     }
 
     // =============================================
