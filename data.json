@@ -12,7 +12,7 @@
   "quickListMinColGap": 20,
   "quickListMinRowGap": 16,
   "quickListFocusCenter": false,
-  "defaultQuickListFocusFilepath": "TodoData/任务.md",
+  "defaultQuickListFocusFilepath": "",
   "dailyBackupEnabled": true,
   "lastDailyBackupDate": "2026-09-15"
 }

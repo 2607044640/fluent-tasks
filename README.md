@@ -1,58 +1,81 @@
 # Fluent Tasks
 
-Obsidian plugin: a three-pane, drag-and-drop task manager inspired by Microsoft To Do, Todoist, and TickTick. Version **1.0.24** (`manifest.json`). Desktop and mobile (`isDesktopOnly: false`). Minimum Obsidian **1.7.2**.
+Obsidian plugin: a three-pane, drag-and-drop task manager inspired by Microsoft To Do, Todoist, and TickTick. Version **1.0.25** (`manifest.json`). Desktop and mobile (`isDesktopOnly: false`). Minimum Obsidian **1.7.2**.
 
-Architecture: [ARCHITECTURE.md](./ARCHITECTURE.md).
+Architecture documentation: [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ## What it stores
 
-All lists are ordinary Markdown files:
+All lists are stored as ordinary Markdown files inside your vault:
 
 - Folder: `TodoData/` (constant `DATA_FOLDER` in `src/types.ts`)
 - One list = one file `TodoData/<ListName>.md`
-- Each task is a checklist line plus an Obsidian comment:
+- Each task is a standard Markdown checklist line with an embedded JSON metadata comment:
 
 ```markdown
-- [ ] Buy milk %%{"id":"...","starred":false,"steps":[],"note":"","createdAt":"..."}%%
+- [ ] Buy groceries %%{"id":"...","starred":false,"steps":[],"note":"","createdAt":"..."}%%
 ```
 
-- Sidebar groups and order: `TodoData/.metadata.json` (dotfile, written via the vault adapter)
-- Optional dedicated notes: `TodoData/<ListName>/<TaskTitle>.md` with YAML `taskId`
-- Plugin options: Obsidian plugin data (`accentColor`, modal/sidebar toggles, Quick List gaps, …) — not the task files
+- Sidebar groups and list ordering: `TodoData/.metadata.json`
+- Dedicated linked notes: `TodoData/<ListName>/<TaskTitle>.md` with frontmatter `taskId`
+- Plugin options: Obsidian plugin data (`accentColor`, modal/sidebar toggles, Quick List grid settings, backup toggles)
 
-There is **no** Microsoft Graph / To Do cloud sync in this repository. Optional fields `msGraphId` and `msGraphListId` are only serialized if present.
+There is no cloud lock-in or external server dependency. All data remains 100% local in your Obsidian vault.
+
+## Key Features
+
+- **Lists & Groups**: Create custom lists and organize them into collapsible groups. Drag-and-drop lists into groups or reorder them freely. Press **F2** to rename hovered or active lists.
+- **Task Management**: Inline task creation, completion toggles, star/pin priority, drag-and-drop task reordering, and moving tasks between lists.
+- **Batch Operations & Multi-Select**: Toggle multi-select mode to select multiple tasks and perform batch star/unstar or batch deletion.
+- **Subtasks & Notes**: Dedicated detail panel for step checklists and inline notes. Create linked Markdown notes directly from tasks.
+- **Due Dates & Recurrence**: Schedule tasks with smart presets (today, tomorrow, next week) and flexible recurrence rules (daily, weekdays, weekly, custom). Overdue recurring tasks automatically roll over.
+- **Quick Modals & Dashboard Grid**: Access Quick List board (`Ctrl+Shift+L` or command) and Quick Task popup for rapid task capture and navigation. Configurable grid layouts, elastic gaps, and default focus list options.
+- **Automatic & Manual Backups**: Built-in Backup Manager with automatic daily snapshots, manual export, import, and backup history management.
+- **Internationalization**: Full bilingual support defaulting to English, with automatic Chinese localization when Obsidian runs in Chinese.
 
 ## Install and build
 
-Requires Node. From the plugin directory:
+### From Community Plugins / BRAT
+Search for **Fluent Tasks** in Obsidian Settings -> Community Plugins, or install via BRAT using the repository URL `https://github.com/2607044640/fluent-tasks`.
+
+### Manual Build
+Requires Node.js. From the plugin directory:
 
 ```bash
 npm install
-npm run dev      # esbuild watch → main.js
-npm run build    # production bundle
+npm run build
 ```
 
-Copy or symlink the folder into `<vault>/.obsidian/plugins/fluent-tasks/` with `main.js`, `manifest.json`, and `styles.css`. Enable **Fluent Tasks** in Community plugins.
+Copy `main.js`, `manifest.json`, and `styles.css` into `<vault>/.obsidian/plugins/fluent-tasks/`, then reload Obsidian and enable **Fluent Tasks**.
 
 ## Open the UI
 
 | Action | How |
 |---|---|
-| All panes | Ribbon check-square (unless hidden) or command **Open all views** |
+| All panes | Ribbon check-square icon or command **Open all views** |
 | Sidebar / main / detail | Commands **Open sidebar**, **Open main view**, **Open detail view** |
-| Detail as floating modal | Settings → **Open Task Details in Floating Modal** |
+| Detail as floating modal | Settings -> **Open Task Details in Floating Modal** |
 | Jump to a list | Command Palette `Z-Jump to list: <name>` (registered per list) |
+| Quick List Board | Command **Open Quick List Modal (List only)** |
+| Backup Manager | Command **Open Backup Manager** or header archive button |
 
-Layout: left **Fluent Tasks** sidebar, center task list, right details (or modal). Switching to a Markdown tab can auto-collapse plugin sidebars; switching back can auto-expand (settings).
+## Commands
 
-## Daily use
+Static commands (`fluent-tasks:`):
+- `open-all-views`: Open all three panels
+- `open-sidebar`: Open the task list sidebar
+- `open-main-view`: Open the main task list view
+- `open-detail-view`: Open the task detail view
+- `search-all-tasks`: Global task search modal
+- `search-current-list`: Search tasks within current list
+- `rename-hovered-list-or-group`: Rename hovered or active list / group (F2)
+- `open-quick-list-modal`: Open Quick List modal board
+- `open-quick-task-modal`: Open Quick Task modal popup
+- `open-backup-modal`: Open Backup Manager modal
 
-1. **Lists and groups** — Sidebar `+` for a list or group. Drag lists into groups. **F2** (or command **Rename hovered or active list / group**) renames. Delete list uses Obsidian trash; deleting a group ungroups lists (does not trash files).
-2. **Tasks** — Type in the main input, Enter. Click the circle to complete, star to pin. Completed rows sit in a collapsible section. Drag to reorder; drag onto another sidebar list (or right-click **Move to …**) to move.
-3. **Subtasks / notes / linked note** — Detail pane for steps and the `%%{}%%` note field. Header link button creates `TodoData/<List>/<title>.md` and sets `note_link`.
-4. **Due date and repeat** — Detail schedule: today / tomorrow / next Monday, plus **daily**, **weekdays**, **weekly**, or **custom**. Recurring tasks stay one row; overdue incomplete recurrences snap due date to today.
-5. **Search / Quick List / Quick Task** — Commands **Search all tasks**, **Search tasks in current list**, **Open Quick List Modal**, **Open Quick Task Modal (Experimental)**.
+Dynamic commands:
+- `z-jump-to-list-<hash>`: Dedicated jump command per list file path
 
-Extra metadata on a task (detail **Add metadata**): `why`, `svgs`, `note_link`, `customMeta`. Settings tab: accent color, details modal, wrap titles, Quick Task/List layout and grid gaps, auto-expand/collapse, search hide-completed, hide ribbon.
+## License
 
-Static commands (`fluent-tasks:`): `open-all-views`, `open-sidebar`, `open-main-view`, `open-detail-view`, `search-all-tasks`, `search-current-list`, `rename-hovered-list-or-group`, `open-quick-list-modal`, `open-quick-task-modal`. Dynamic: `z-jump-to-list-<hash>` per category file path.
+MIT License. See [LICENSE](./LICENSE) for details.
