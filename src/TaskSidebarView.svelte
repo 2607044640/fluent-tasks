@@ -4,6 +4,7 @@
     import { DataService } from "./DataService";
     import { EventName, type SidebarItem, type CategoryInfo, type GroupInfo, DATA_FOLDER } from "./types";
     import { killDndGhostElement, injectDndGhostShield, removeDndGhostShield } from "./utils/dndUtils";
+    import { moveSidebarItem, moveListToGroupOrRoot, deleteGroupFromTree } from "./utils/sidebarTreeUtils";
     import { INPUT_FOCUS_DELAY_MS, BLUR_CONFIRM_DELAY_MS, DND_SHIELD_REMOVAL_DELAY_MS, DND_RESCUE_DELAY_MS } from "./constants";
     import { Menu, type App, type TAbstractFile, type EventRef } from "obsidian";
     import { TaskSearchModal } from "./TaskSearchModal";
@@ -478,61 +479,12 @@
     }
 
     async function deleteGroup(groupId: string) {
-        const groupIdx = sidebarItems.findIndex(i => i.id === groupId && i.type === "group");
-        if (groupIdx === -1) return;
-
-        const group = sidebarItems[groupIdx] as GroupInfo;
-        const children = group.items || [];
-
-        // Remove the group and insert its children at the same index
-        let nextSidebarItems = [...sidebarItems];
-        nextSidebarItems.splice(groupIdx, 1, ...children);
-
+        const nextSidebarItems = deleteGroupFromTree(sidebarItems, groupId);
         await saveAndSyncSidebarState(nextSidebarItems);
     }
 
     async function moveListToGroup(listId: string, targetGroupId: string) {
-        let listToMove: SidebarItem | null = null;
-        let nextSidebarItems: SidebarItem[] = [];
-
-        // Find and extract the item immutably from sidebarItems
-        for (const item of sidebarItems) {
-            if (item.id === listId) {
-                listToMove = item;
-            } else if (item.type === "group") {
-                const childIdx = item.items.findIndex(c => c.id === listId);
-                if (childIdx !== -1) {
-                    listToMove = item.items[childIdx];
-                    nextSidebarItems.push({
-                        ...item,
-                        items: item.items.filter(c => c.id !== listId)
-                    });
-                } else {
-                    nextSidebarItems.push(item);
-                }
-            } else {
-                nextSidebarItems.push(item);
-            }
-        }
-
-        if (!listToMove) return;
-
-        // 2. Insert the item into its new destination immutably
-        if (targetGroupId === "root") {
-            nextSidebarItems = [...nextSidebarItems, listToMove];
-        } else {
-            nextSidebarItems = nextSidebarItems.map(item => {
-                if (item.type === "group" && item.id === targetGroupId) {
-                    return {
-                        ...item,
-                        isExpanded: true,
-                        items: [...item.items, listToMove as CategoryInfo]
-                    };
-                }
-                return item;
-            });
-        }
-
+        const nextSidebarItems = moveListToGroupOrRoot(sidebarItems, listId, targetGroupId);
         await saveAndSyncSidebarState(nextSidebarItems);
     }
 
@@ -654,89 +606,8 @@
 
         if (!pos || !movedItemId || targetId === movedItemId) return;
 
-        let listToMove: SidebarItem | null = null;
-        
-        // Remove item from sidebarItems recursively and return the item
-        const extractItem = (list: SidebarItem[]): SidebarItem[] => {
-            const nextList: SidebarItem[] = [];
-            for (const item of list) {
-                if (item.id === movedItemId) {
-                    listToMove = item;
-                } else if (item.type === "group") {
-                    const childIdx = item.items.findIndex(c => c.id === movedItemId);
-                    if (childIdx !== -1) {
-                        listToMove = item.items[childIdx];
-                        nextList.push({
-                            ...item,
-                            items: item.items.filter(c => c.id !== movedItemId)
-                        });
-                    } else {
-                        nextList.push(item);
-                    }
-                } else {
-                    nextList.push(item);
-                }
-            }
-            return nextList;
-        };
-
-        let tempItems = extractItem(sidebarItems);
-        if (!listToMove) return;
-
-        if (pos === "inside") {
-            tempItems = tempItems.map(item => {
-                if (item.type === "group" && item.id === targetId) {
-                    return {
-                        ...item,
-                        isExpanded: true,
-                        items: [...item.items, listToMove as CategoryInfo]
-                    };
-                }
-                return item;
-            });
-        } else {
-            const insertNextTo = (list: SidebarItem[], tId: string, itemToInsert: SidebarItem, p: "top" | "bottom"): SidebarItem[] => {
-                const nextList: SidebarItem[] = [];
-                for (const item of list) {
-                    if (item.id === tId) {
-                        if (p === "top") {
-                            nextList.push(itemToInsert);
-                            nextList.push(item);
-                        } else {
-                            nextList.push(item);
-                            nextList.push(itemToInsert);
-                        }
-                    } else if (item.type === "group") {
-                        const targetIdx = item.items.findIndex(c => c.id === tId);
-                        if (targetIdx !== -1) {
-                            const newChildren = [...item.items];
-                            const filtered = newChildren.filter(c => c.id !== itemToInsert.id);
-                            const insertIdx = filtered.findIndex(c => c.id === tId);
-                            
-                            if (p === "top") {
-                                filtered.splice(insertIdx, 0, itemToInsert as CategoryInfo);
-                            } else {
-                                filtered.splice(insertIdx + 1, 0, itemToInsert as CategoryInfo);
-                            }
-                            
-                            nextList.push({
-                                ...item,
-                                items: filtered
-                            });
-                        } else {
-                            nextList.push(item);
-                        }
-                    } else {
-                        nextList.push(item);
-                    }
-                }
-                return nextList;
-            };
-
-            tempItems = insertNextTo(tempItems, targetId, listToMove, pos);
-        }
-
-        await saveAndSyncSidebarState(tempItems);
+        const nextItems = moveSidebarItem(sidebarItems, movedItemId, targetId, pos);
+        await saveAndSyncSidebarState(nextItems);
     }
 
     function getLastItem(): SidebarItem | CategoryInfo | null {
@@ -774,37 +645,8 @@
 
         if (!movedItemId) return;
 
-        let listToMove: SidebarItem | null = null;
-        const extractItem = (list: SidebarItem[]): SidebarItem[] => {
-            const nextList: SidebarItem[] = [];
-            for (const item of list) {
-                if (item.id === movedItemId) {
-                    listToMove = item;
-                } else if (item.type === "group") {
-                    const childIdx = item.items.findIndex(c => c.id === movedItemId);
-                    if (childIdx !== -1) {
-                        listToMove = item.items[childIdx];
-                        nextList.push({
-                            ...item,
-                            items: item.items.filter(c => c.id !== movedItemId)
-                        });
-                    } else {
-                        nextList.push(item);
-                    }
-                } else {
-                    nextList.push(item);
-                }
-            }
-            return nextList;
-        };
-
-        let tempItems = extractItem(sidebarItems);
-        if (!listToMove) return;
-
-        // Append to the root list
-        tempItems = [...tempItems, listToMove];
-
-        await saveAndSyncSidebarState(tempItems);
+        const nextItems = moveListToGroupOrRoot(sidebarItems, movedItemId, "root");
+        await saveAndSyncSidebarState(nextItems);
     }
 
     // =============================================

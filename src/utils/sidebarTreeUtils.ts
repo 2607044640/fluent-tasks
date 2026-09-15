@@ -130,6 +130,71 @@ export function getFlatCategories(items: SidebarItem[]): CategoryInfo[] {
 }
 
 /**
+ * Moves a list item directly into a target group or out to the root list.
+ */
+export function moveListToGroupOrRoot(
+    items: SidebarItem[],
+    listId: string,
+    targetGroupId: string
+): SidebarItem[] {
+    let listToMove: SidebarItem | CategoryInfo | null = null;
+    let nextItems: SidebarItem[] = [];
+
+    // 1. Extract item from tree
+    for (const item of items) {
+        if (item.id === listId) {
+            listToMove = item;
+        } else if (item.type === "group") {
+            const childIdx = item.items.findIndex(c => c.id === listId);
+            if (childIdx !== -1) {
+                listToMove = item.items[childIdx];
+                nextItems.push({
+                    ...item,
+                    items: item.items.filter(c => c.id !== listId)
+                });
+            } else {
+                nextItems.push(item);
+            }
+        } else {
+            nextItems.push(item);
+        }
+    }
+
+    if (!listToMove) return items;
+
+    // 2. Insert into target group or append to root
+    if (targetGroupId === "root") {
+        return [...nextItems, listToMove];
+    }
+
+    return nextItems.map(item => {
+        if (item.type === "group" && item.id === targetGroupId) {
+            return {
+                ...item,
+                isExpanded: true,
+                items: [...item.items, listToMove as CategoryInfo]
+            };
+        }
+        return item;
+    });
+}
+
+/**
+ * Deletes a group from the tree and unwraps its child lists to the same position in the root hierarchy.
+ */
+export function deleteGroupFromTree(items: SidebarItem[], groupId: string): SidebarItem[] {
+    const groupIdx = items.findIndex(i => i.id === groupId && i.type === "group");
+    if (groupIdx === -1) return items;
+
+    const group = items[groupIdx] as GroupInfo;
+    const children = group.items || [];
+
+    const nextItems = [...items];
+    nextItems.splice(groupIdx, 1, ...children);
+    return nextItems;
+}
+
+/**
  * Filters a hierarchical SidebarItem tree by search query.
  * When matching children in a group, returns the group with isExpanded=true and filtered children.
  * If the group name matches, preserves all its children.
@@ -157,3 +222,4 @@ export function filterSidebarTree(items: SidebarItem[], query: string): SidebarI
     }
     return result;
 }
+

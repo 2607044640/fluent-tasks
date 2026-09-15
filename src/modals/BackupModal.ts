@@ -29,7 +29,6 @@ export class BackupModal extends Modal {
             props: {
                 app: this.app,
                 plugin: this.plugin,
-                dataService: this.dataService,
                 closeModal: () => this.close(),
             },
         });

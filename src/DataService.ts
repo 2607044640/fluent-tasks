@@ -3,6 +3,7 @@ import { TaskItem, CategoryInfo, SidebarItem, GroupInfo } from "./types";
 import { AtomicIOPipeline } from "./services/AtomicIOPipeline";
 import { CategoryService } from "./services/CategoryService";
 import { TaskService } from "./services/TaskService";
+import { getFlatCategories } from "./utils/sidebarTreeUtils";
 
 /**
  * DataService.ts
@@ -50,15 +51,7 @@ export class DataService {
 
     async getCategories(): Promise<CategoryInfo[]> {
         const items = await this.categorySvc.getSidebarItems();
-        const categories: CategoryInfo[] = [];
-        for (const item of items) {
-            if (item.type === "group") {
-                categories.push(...item.items);
-            } else if (item.type === "category") {
-                categories.push(item);
-            }
-        }
-        return categories;
+        return getFlatCategories(items);
     }
     async createCategory(name: string): Promise<CategoryInfo> {
         return this.categorySvc.createCategory(name);

@@ -19,7 +19,6 @@
     export let showTip: boolean = false;
     export let remainingTips: number = 0;
     export let closeModal: () => void = () => {};
-    export let modalEl: HTMLElement | null = null;
 
     // =============================================
     // State

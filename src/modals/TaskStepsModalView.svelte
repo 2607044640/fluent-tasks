@@ -12,7 +12,6 @@
     export let task: TaskItem;
     export let categoryFilepath: string;
     export let dataService: DataService;
-    export let plugin: any = null;
     export let closeModal: () => void = () => {};
 
     // =============================================

@@ -7,7 +7,6 @@
 
     export let app: App;
     export let plugin: any;
-    export let dataService: DataService;
     export let closeModal: () => void = () => {};
 
     let dailyBackup: boolean = plugin?.settings?.dailyBackupEnabled ?? true;

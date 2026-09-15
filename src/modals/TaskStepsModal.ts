@@ -34,7 +34,6 @@ export class TaskStepsModal extends Modal {
         this.component = new TaskStepsModalView({
             target: contentEl,
             props: {
-                plugin: this.plugin,
                 dataService: this.dataService,
                 task: this.task,
                 categoryFilepath: this.categoryFilepath,
