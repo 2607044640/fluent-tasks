@@ -4,6 +4,7 @@ import { EventName } from "../types";
 import { EventBus } from "../EventBus";
 import type { DataService } from "../DataService";
 import { LinkedNoteService } from "../services/LinkedNoteService";
+import { t } from "../lang/helpers";
 
 export class ConfirmDeleteLinkedNoteModal extends Modal {
     private noteFile: TFile;
@@ -35,33 +36,33 @@ export class ConfirmDeleteLinkedNoteModal extends Modal {
         contentEl.addClass("fluent-tasks-delete-modal");
 
         const heading = contentEl.createEl("h3", {
-            text: `是否删除链接笔记（title：${this.task.title}）？`,
+            text: t("confirm_delete_linked_note_title", this.task.title),
             cls: "fluent-tasks-delete-modal-heading",
         });
 
         const p1 = contentEl.createEl("p", { cls: "fluent-tasks-delete-modal-p1" });
-        p1.createSpan({ text: "待删除的任务绑定了专属笔记：" });
+        p1.createSpan({ text: t("confirm_delete_linked_note_p1") });
         p1.createEl("strong", {
             text: ` ${this.noteFile.basename} `,
             cls: "fluent-tasks-delete-modal-badge",
         });
 
         contentEl.createEl("p", {
-            text: "您可以选择仅删除任务本身，或同时将该链接笔记移入回收站。",
+            text: t("confirm_delete_linked_note_p2"),
             cls: "fluent-tasks-delete-modal-p2",
         });
 
         const btnContainer = contentEl.createDiv({ cls: "fluent-tasks-delete-modal-buttons" });
 
         // Cancel
-        const cancelBtn = btnContainer.createEl("button", { text: "取消" });
+        const cancelBtn = btnContainer.createEl("button", { text: t("cancel") });
         cancelBtn.addEventListener("click", () => {
             this.decide(null);
             this.close();
         });
 
         // Task only
-        const taskOnlyBtn = btnContainer.createEl("button", { text: "仅删除任务（保留笔记）" });
+        const taskOnlyBtn = btnContainer.createEl("button", { text: t("delete_task_only_keep_note") });
         taskOnlyBtn.addEventListener("click", () => {
             this.decide(false);
             this.close();
@@ -69,7 +70,7 @@ export class ConfirmDeleteLinkedNoteModal extends Modal {
 
         // Both task and note
         const bothBtn = btnContainer.createEl("button", {
-            text: "删除任务与链接笔记",
+            text: t("delete_task_and_note"),
             cls: "mod-warning",
         });
         bothBtn.addEventListener("click", () => {

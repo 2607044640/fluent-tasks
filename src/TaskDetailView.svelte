@@ -9,6 +9,7 @@
     import { LinkedNoteService } from "./services/LinkedNoteService";
     import { promptDeleteTaskWithLinkedNote } from "./modals/ConfirmDeleteLinkedNoteModal";
     import { Menu, Notice } from "obsidian";
+    import { t } from "./lang/helpers";
 
     // =============================================
     // Props
@@ -366,8 +367,8 @@
     // =============================================
     $: hasLinkedNote = !!(task && task.note_link);
     $: linkNoteTooltip = hasLinkedNote
-        ? `打开链接笔记: ${task?.note_link} (点击跳转，悬停预览，右键管理)`
-        : "链接专属笔记 (点击自动创建并跳转)";
+        ? t("linked_note_tooltip_exists", task?.note_link || "")
+        : t("linked_note_tooltip_create");
 
     function handleLinkNoteHover(e: MouseEvent) {
         if (!hasLinkedNote || !task?.note_link || !plugin?.app) return;
@@ -408,7 +409,7 @@
                 task = task;
                 await immediateSave();
                 await LinkedNoteService.openLinkedNoteFile(plugin.app, res.file);
-                new Notice(`已重新创建并打开链接笔记: ${res.file.basename}`);
+                new Notice(t("linked_note_recreated", res.file.basename));
             }
         } else {
             // Create brand new linked note and jump to it
@@ -417,7 +418,7 @@
             task = task;
             await immediateSave();
             await LinkedNoteService.openLinkedNoteFile(plugin.app, res.file);
-            new Notice(`已创建并打开链接笔记: ${res.file.basename}`);
+            new Notice(t("linked_note_created", res.file.basename));
         }
     }
 
@@ -427,21 +428,21 @@
         e.stopPropagation();
         const menu = new Menu();
         menu.addItem((item: any) => {
-            item.setTitle("打开链接笔记")
+            item.setTitle(t("open_linked_note"))
                 .setIcon("file-text")
                 .onClick(() => {
                     void handleLinkNoteClick(e);
                 });
         });
         menu.addItem((item: any) => {
-            item.setTitle("取消关联笔记")
+            item.setTitle(t("unlink_note"))
                 .setIcon("unlink")
                 .onClick(async () => {
                     if (!task) return;
                     delete task.note_link;
                     task = task;
                     await immediateSave();
-                    new Notice("已取消笔记关联");
+                    new Notice(t("unlink_note_success"));
                 });
         });
         menu.showAtMouseEvent(e);

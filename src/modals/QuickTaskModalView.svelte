@@ -11,6 +11,7 @@
     import { promptDeleteTaskWithLinkedNote } from "./ConfirmDeleteLinkedNoteModal";
     import { LinkedNoteService } from "../services/LinkedNoteService";
     import { TaskStepsModal } from "./TaskStepsModal";
+    import { t } from "../lang/helpers";
 
     // =============================================
     // Props
@@ -854,7 +855,7 @@
 >
     {#if showTip}
         <div class="quick-modal-tip-banner">
-            💡 提示: 在 <b>设置 → 快捷键</b> 中为 <code>Fluent Tasks: Open Quick Task Modal</code> 设置快捷键即可秒级呼出 (剩余 {remainingTips} 次提醒)
+            {@html t("quick_task_tip", remainingTips)}
         </div>
     {/if}
 
@@ -1088,9 +1089,7 @@
                                             on:mouseenter={(e) => handleNoteLinkHover(e, result.task.note_link)}
                                             on:click|stopPropagation={(e) => handleNoteLinkClick(e, result.task.note_link)}
                                             role="button" tabindex="0"
-                                            title={LinkedNoteService.isHardBoundNote(result.task.note_link)
-                                                ? `专属链接笔记: ${result.task.note_link} (点击跳转，悬停预览)`
-                                                : `Linked note: ${result.task.note_link} (Click to open, hover to preview)`}
+                                            title={t("linked_note_preview_tooltip", result.task.note_link)}
                                         >
                                             {#if LinkedNoteService.isHardBoundNote(result.task.note_link)}
                                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1173,9 +1172,7 @@
                                             on:mouseenter={(e) => handleNoteLinkHover(e, task.note_link)}
                                             on:click|stopPropagation={(e) => handleNoteLinkClick(e, task.note_link)}
                                             role="button" tabindex="0"
-                                            title={LinkedNoteService.isHardBoundNote(task.note_link)
-                                                ? `专属链接笔记: ${task.note_link} (点击跳转，悬停预览)`
-                                                : `Linked note: ${task.note_link} (Click to open, hover to preview)`}
+                                            title={t("linked_note_preview_tooltip", task.note_link)}
                                         >
                                             {#if LinkedNoteService.isHardBoundNote(task.note_link)}
                                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1257,9 +1254,7 @@
                                                 on:mouseenter={(e) => handleNoteLinkHover(e, task.note_link)}
                                                 on:click|stopPropagation={(e) => handleNoteLinkClick(e, task.note_link)}
                                                 role="button" tabindex="0"
-                                                title={LinkedNoteService.isHardBoundNote(task.note_link)
-                                                    ? `专属链接笔记: ${task.note_link} (点击跳转，悬停预览)`
-                                                    : `Linked note: ${task.note_link} (Click to open, hover to preview)`}
+                                                title={t("linked_note_preview_tooltip", task.note_link)}
                                             >
                                                 {#if LinkedNoteService.isHardBoundNote(task.note_link)}
                                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

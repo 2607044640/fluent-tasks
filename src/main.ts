@@ -28,6 +28,7 @@ import { TaskDetailModal } from "./modals/TaskDetailModal";
 import { BackupModal } from "./modals/BackupModal";
 import { BackupService } from "./services/BackupService";
 import { getTodayLocalDateString } from "./utils/timeUtils";
+import { t } from "./lang/helpers";
 import { LinkedNoteService } from "./services/LinkedNoteService";
 import "./styles.css";
 
@@ -158,12 +159,12 @@ class TaskMainViewWrapper extends ItemView {
     }
 
     async onOpen(): Promise<void> {
-        this.addAction("check-square", "多选任务 (批量删除/收藏)", () => {
+        this.addAction("check-square", t("action_multi_select"), () => {
             const comp = this.component;
             comp?.toggleMultiSelect();
         });
 
-        this.addAction("archive", "数据备份器 (快照与恢复)", () => {
+        this.addAction("archive", t("action_backup_manager"), () => {
             const comp = this.component;
             comp?.openBackupModal();
         });
@@ -414,7 +415,7 @@ export default class FluentTasksPlugin extends Plugin {
 
         this.addCommand({
             id: "open-backup-modal",
-            name: "Open Backup Manager (数据备份与还原)",
+            name: t("cmd_backup_manager"),
             callback: () => {
                 new BackupModal(this.app, this, this.dataService).open();
             },

@@ -3,6 +3,7 @@
     import { App, Notice } from "obsidian";
     import type { DataService } from "../DataService";
     import { BackupService, type BackupFileInfo } from "../services/BackupService";
+    import { t } from "../lang/helpers";
 
     export let app: App;
     export let plugin: any;
@@ -35,7 +36,7 @@
         if (plugin?.settings) {
             plugin.settings.dailyBackupEnabled = dailyBackup;
             await plugin.saveSettings();
-            new Notice(dailyBackup ? "✅ 已开启每日自动备份" : "⚠️ 已关闭每日自动备份");
+            new Notice(dailyBackup ? t("daily_backup_enabled") : t("daily_backup_disabled"));
         }
     }
 
@@ -44,10 +45,10 @@
         isBackingUp = true;
         try {
             const res = await BackupService.createBackup(app, plugin, false);
-            new Notice(`数据已保存到 ${res.filepath}`);
+            new Notice(t("data_saved_to", res.filepath));
             await refreshBackups();
         } catch (e: any) {
-            new Notice(`❌ 备份失败: ${e?.message || e}`);
+            new Notice(t("backup_failed", e?.message || e));
         } finally {
             isBackingUp = false;
         }
@@ -91,7 +92,7 @@
     }
 
     async function handleRestore(b: BackupFileInfo) {
-        if (confirm(`确认还原备份「${b.createdAtFormatted}」？\n此操作将用备份中的数据恢复所有任务列表。`)) {
+        if (confirm(t("confirm_restore_backup", b.createdAtFormatted))) {
             const ok = await BackupService.restoreBackup(app, plugin, b.filepath);
             if (ok) {
                 closeModal();
@@ -100,7 +101,7 @@
     }
 
     async function handleDelete(b: BackupFileInfo) {
-        if (confirm(`确认删除备份「${b.filename}」？`)) {
+        if (confirm(t("confirm_delete_backup", b.filename))) {
             await BackupService.deleteBackup(app, b.filepath);
             await refreshBackups();
         }
@@ -108,9 +109,9 @@
 
     async function handleDeleteAll() {
         if (backups.length === 0) return;
-        if (confirm(`⚠️ 危险操作：确认清空并删除全部 ${backups.length} 个本地备份文件？\n此操作不可撤销！`)) {
+        if (confirm(t("confirm_delete_all_backups", backups.length))) {
             const count = await BackupService.deleteAllBackups(app);
-            new Notice(`🗑️ 已清空删除全部 ${count} 个备份文件`);
+            new Notice(t("all_backups_deleted", count));
             await refreshBackups();
         }
     }
@@ -131,9 +132,9 @@
                 <rect x="1" y="3" width="22" height="5"></rect>
                 <line x1="10" y1="12" x2="14" y2="12"></line>
             </svg>
-            <h2>任务数据备份器</h2>
+            <h2>{t("backup_modal_title")}</h2>
         </div>
-        <button class="backup-close-btn" on:click={closeModal} aria-label="关闭">✕</button>
+        <button class="backup-close-btn" on:click={closeModal} aria-label={t("cancel")}>✕</button>
     </div>
 
     <!-- Actions & Settings Card -->
@@ -147,8 +148,8 @@
                     on:change={handleToggleDailyBackup}
                 />
                 <label for="daily-backup-checkbox">
-                    <b>每日自动备份</b>
-                    <span>每天首次打开时自动在本地生成快照</span>
+                    <b>{t("daily_backup_title")}</b>
+                    <span>{t("daily_backup_desc")}</span>
                 </label>
             </div>
             <div class="backup-action-btns">
@@ -158,7 +159,7 @@
                         <polyline points="17 21 17 13 7 13 7 21"></polyline>
                         <polyline points="7 3 7 8 15 8"></polyline>
                     </svg>
-                    <span>{isBackingUp ? "备份中..." : "现在备份"}</span>
+                    <span>{isBackingUp ? t("backing_up") : t("backup_now")}</span>
                 </button>
                 <button class="backup-btn backup-secondary-btn" on:click={handleImportClick}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -166,7 +167,7 @@
                         <polyline points="7 10 12 15 17 10"></polyline>
                         <line x1="12" y1="15" x2="12" y2="3"></line>
                     </svg>
-                    <span>导入备份</span>
+                    <span>{t("import_backup")}</span>
                 </button>
                 <input 
                     type="file" 
@@ -182,9 +183,9 @@
     <!-- Backups History Section -->
     <div class="backup-list-header">
         <div class="backup-header-left">
-            <h3>历史备份记录 ({backups.length})</h3>
-            <button class="backup-link-btn" on:click={() => BackupService.openBackupFolderInOS(app)} title="在文件管理器中打开备份所在文件夹">
-                📂 打开目录
+            <h3>{t("backup_history_title", backups.length)}</h3>
+            <button class="backup-link-btn" on:click={() => BackupService.openBackupFolderInOS(app)} title={t("open_backup_folder_tooltip")}>
+                📂 {t("open_backup_folder")}
             </button>
         </div>
         <div class="backup-header-right">
@@ -192,21 +193,21 @@
                 class="backup-danger-btn" 
                 on:click={handleDeleteAll} 
                 disabled={backups.length === 0}
-                title={backups.length === 0 ? "暂无备份可删除" : "清空并删除全部本地备份文件"}
+                title={backups.length === 0 ? t("no_backups_to_delete") : t("delete_all_backups_tooltip")}
             >
-                🗑️ 删除全部备份
+                🗑️ {t("delete_all_backups")}
             </button>
-            <button class="backup-refresh-btn" on:click={refreshBackups} title="刷新列表">🔄</button>
+            <button class="backup-refresh-btn" on:click={refreshBackups} title={t("refresh_list")}>🔄</button>
         </div>
     </div>
 
     <div class="backup-list-scrollable">
         {#if isLoading}
-            <div class="backup-empty-state">正在读取备份记录...</div>
+            <div class="backup-empty-state">{t("loading_backups")}</div>
         {:else if backups.length === 0}
             <div class="backup-empty-state">
-                <p>📦 暂无本地备份文件</p>
-                <span>点击上方「现在备份」即可创建第一个完整数据快照</span>
+                <p>{t("no_local_backups")}</p>
+                <span>{t("no_local_backups_hint")}</span>
             </div>
         {:else}
             {#each backups as b (b.filepath)}
@@ -214,27 +215,27 @@
                     <div class="backup-item-info">
                         <div class="backup-item-title-wrap">
                             <span class="backup-badge" class:is-daily={b.isDaily}>
-                                {b.isDaily ? "每日备份" : "手动备份"}
+                                {b.isDaily ? t("daily_backup_badge") : t("manual_backup_badge")}
                             </span>
                             <span class="backup-time">{b.createdAtFormatted}</span>
                         </div>
                         <div class="backup-meta-desc">
-                            <span>{b.taskCount} 项任务</span>
+                            <span>{t("task_count_label", b.taskCount)}</span>
                             <span class="backup-dot">·</span>
-                            <span>{b.listsCount} 个列表</span>
+                            <span>{t("list_count_label", b.listsCount)}</span>
                             <span class="backup-dot">·</span>
                             <span>{formatBytes(b.sizeBytes)}</span>
                         </div>
                     </div>
                     <div class="backup-item-actions">
-                        <button class="backup-action-btn restore-btn" on:click={() => handleRestore(b)} title="还原此快照">
+                        <button class="backup-action-btn restore-btn" on:click={() => handleRestore(b)} title={t("restore_snapshot_tooltip")}>
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
                                 <polyline points="3 3 3 8 8 8"></polyline>
                             </svg>
-                            <span>还原</span>
+                            <span>{t("restore")}</span>
                         </button>
-                        <button class="backup-action-btn delete-btn" on:click={() => handleDelete(b)} title="删除备份">
+                        <button class="backup-action-btn delete-btn" on:click={() => handleDelete(b)} title={t("delete_backup_tooltip")}>
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="3 6 5 6 21 6"></polyline>
                                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>

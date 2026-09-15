@@ -8,6 +8,7 @@
     import { INPUT_FOCUS_DELAY_MS } from "../constants";
     import { Menu, Notice } from "obsidian";
     import type { App } from "obsidian";
+    import { t } from "../lang/helpers";
 
     // =============================================
     // Props
@@ -337,7 +338,7 @@
     function togglePickingDefaultFocus() {
         isPickingDefaultFocus = !isPickingDefaultFocus;
         if (isPickingDefaultFocus) {
-            new Notice("🎯 选择模式已开启：请点击想要设为默认聚焦的列表 (按 ESC 取消)");
+            new Notice(t("focus_pick_mode_enabled"));
         }
     }
 
@@ -357,7 +358,7 @@
                 plugin.settings.defaultQuickListFocusFilepath = cat.filepath;
                 await plugin.saveSettings();
             }
-            new Notice(`🎯 已将 "${cat.name}" 设为打开时的默认聚焦列表`);
+            new Notice(t("focus_default_set", cat.name));
             const idx = flatCategories.findIndex(c => c.filepath === cat.filepath);
             if (idx !== -1) {
                 focusedIndex = idx;
@@ -587,15 +588,15 @@
         if (item.type === "category" && item.filepath) {
             const isCurrentlyDefault = plugin?.settings?.defaultQuickListFocusFilepath === item.filepath;
             menu.addItem((i) => {
-                i.setTitle(isCurrentlyDefault ? "取消默认聚焦 (恢复首项)" : "设为默认聚焦 (打开时首选)")
+                i.setTitle(isCurrentlyDefault ? t("focus_cancel_default") : t("focus_set_default"))
                  .setIcon("target")
                  .onClick(async () => {
                      if (isCurrentlyDefault) {
                          plugin.settings.defaultQuickListFocusFilepath = "";
-                         new Notice("已恢复默认聚焦 (左上角首项)");
+                         new Notice(t("focus_restored_default"));
                      } else {
                          plugin.settings.defaultQuickListFocusFilepath = item.filepath!;
-                         new Notice(`🎯 已将 "${item.name}" 设为打开时的默认聚焦列表`);
+                         new Notice(t("focus_default_set", item.name));
                      }
                      await plugin.saveSettings();
                  });
@@ -899,7 +900,7 @@
                 e.preventDefault();
                 e.stopPropagation();
                 isPickingDefaultFocus = false;
-                new Notice("已取消选择默认聚焦列表");
+                new Notice(t("focus_pick_cancelled"));
                 return;
             }
             if (e.key === "Enter") {
@@ -981,7 +982,7 @@
 >
     {#if showTip}
         <div class="quick-modal-tip-banner">
-            💡 提示: 在 <b>设置 → 快捷键</b> 中为 <code>Fluent Tasks: Open Quick List Modal</code> 设置快捷键 (剩余 {remainingTips} 次提醒)
+            {@html t("quick_list_tip", remainingTips)}
         </div>
     {/if}
 
@@ -1010,13 +1011,13 @@
             <button 
                 class="quick-modal-header-btn quick-modal-focus-picker-btn"
                 class:is-active={isPickingDefaultFocus}
-                aria-label="设置默认聚焦列表：点击进入选择模式，右键可重置为左上角首项"
+                aria-label={t("focus_btn_aria_label")}
                 on:click={togglePickingDefaultFocus}
                 on:contextmenu|preventDefault={async () => {
                     if (plugin?.settings) {
                         plugin.settings.defaultQuickListFocusFilepath = "";
                         await plugin.saveSettings();
-                        new Notice("🎯 已恢复默认聚焦：左上角首项");
+                        new Notice(t("focus_restored_default_notice"));
                         applyInitialFocus();
                     }
                 }}
@@ -1031,20 +1032,20 @@
                     <line x1="2" y1="12" x2="5" y2="12"></line>
                     <line x1="19" y1="12" x2="22" y2="12"></line>
                 </svg>
-                <span>{isPickingDefaultFocus ? "选择目标列表..." : (defaultFocusListName ? `聚焦: ${defaultFocusListName}` : "设置聚焦")}</span>
+                <span>{isPickingDefaultFocus ? t("focus_picking_target") : (defaultFocusListName ? t("focus_target_label", defaultFocusListName) : t("focus_set_btn"))}</span>
             </button>
             {#if showFocusPopover}
                 <div class="quick-modal-focus-popover">
-                    <div class="focus-popover-title">🎯 初始默认聚焦设置</div>
+                    <div class="focus-popover-title">{t("focus_popover_title")}</div>
                     <div class="focus-popover-desc">
                         {#if defaultFocusListName}
-                            当前默认聚焦：<b>{defaultFocusListName}</b>
+                            {t("focus_current_prefix")}<b>{defaultFocusListName}</b>
                         {:else}
-                            当前未设置，默认聚焦：<b>左上角首项</b>
+                            {t("focus_unset_prefix")}<b>{t("focus_top_left_default")}</b>
                         {/if}
                     </div>
                     <div class="focus-popover-hint">
-                        点击按钮进入选择模式后点击目标列表；右键此按钮可重置为左上角首项。
+                        {t("focus_instruction_desc")}
                     </div>
                 </div>
             {/if}
@@ -1138,7 +1139,7 @@
                                                     <span class="quick-modal-badge">{taskCounts[cat.filepath]}</span>
                                                 {/if}
                                                 {#if plugin?.settings?.defaultQuickListFocusFilepath === cat.filepath}
-                                                    <span class="quick-modal-focus-tag" title="默认聚焦目标">🎯</span>
+                                                    <span class="quick-modal-focus-tag" title={t("focus_tag_tooltip")}>🎯</span>
                                                 {/if}
                                             </div>
                                         {/each}
@@ -1226,7 +1227,7 @@
                                                         <span class="quick-modal-badge">{taskCounts[child.filepath]}</span>
                                                     {/if}
                                                     {#if plugin?.settings?.defaultQuickListFocusFilepath === child.filepath}
-                                                        <span class="quick-modal-focus-tag" title="默认聚焦目标">🎯</span>
+                                                        <span class="quick-modal-focus-tag" title={t("focus_tag_tooltip")}>🎯</span>
                                                     {/if}
                                                 </div>
                                             {/each}
@@ -1324,7 +1325,7 @@
                                                 <span class="quick-modal-badge">{taskCounts[child.filepath]}</span>
                                             {/if}
                                             {#if plugin?.settings?.defaultQuickListFocusFilepath === child.filepath}
-                                                <span class="quick-modal-focus-tag" title="默认聚焦目标">🎯</span>
+                                                <span class="quick-modal-focus-tag" title={t("focus_tag_tooltip")}>🎯</span>
                                             {/if}
                                         </div>
                                     {/each}
@@ -1368,7 +1369,7 @@
                                 <span class="quick-modal-badge">{taskCounts[item.filepath]}</span>
                             {/if}
                             {#if plugin?.settings?.defaultQuickListFocusFilepath === item.filepath}
-                                <span class="quick-modal-focus-tag" title="默认聚焦目标">🎯</span>
+                                <span class="quick-modal-focus-tag" title={t("focus_tag_tooltip")}>🎯</span>
                             {/if}
                         </div>
                     {/if}

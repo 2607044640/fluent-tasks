@@ -1,0 +1,108 @@
+// English language dictionary (Default / SSOT)
+const en = {
+    // Action ribbon & Commands
+    action_multi_select: "Multi-select Tasks (Batch Delete/Star)",
+    action_backup_manager: "Data Backup Manager (Snapshots & Restore)",
+    cmd_backup_manager: "Open Backup Manager (Snapshots & Restore)",
+    
+    // Backup Service
+    backup_dir: "Backup folder: {0}",
+    backup_file_not_found: "Backup file not found",
+    backup_invalid_format: "❌ Invalid backup format: missing files payload",
+    backup_restore_success: "✅ Backup restored: recovered {0} files containing {1} tasks",
+    backup_restore_failed: "❌ Restore failed: {0}",
+    backup_deleted: "🗑️ Backup deleted",
+    backup_import_dialog_title: "Select Backup File to Import",
+    backup_file_filter_name: "Fluent Tasks Backup File (*.json)",
+    
+    // Backup Modal UI
+    backup_modal_title: "Task Data Backup Manager",
+    daily_backup_title: "Daily Auto Backup",
+    daily_backup_desc: "Automatically creates a local snapshot on first launch each day",
+    daily_backup_enabled: "✅ Daily auto backup enabled",
+    daily_backup_disabled: "⚠️ Daily auto backup disabled",
+    backup_now: "Backup Now",
+    backing_up: "Backing up...",
+    data_saved_to: "Data saved to {0}",
+    backup_failed: "❌ Backup failed: {0}",
+    import_backup: "Import Backup",
+    backup_history_title: "Backup History ({0})",
+    open_backup_folder: "📂 Open Folder",
+    open_backup_folder_tooltip: "Open backup folder in file explorer",
+    delete_all_backups: "🗑️ Delete All Backups",
+    delete_all_backups_tooltip: "Delete all local backup files",
+    no_backups_to_delete: "No backups to delete",
+    refresh_list: "Refresh list",
+    loading_backups: "Loading backup records...",
+    no_local_backups: "📦 No local backups found",
+    no_local_backups_hint: "Click \"Backup Now\" above to create your first snapshot",
+    daily_backup_badge: "Daily Backup",
+    manual_backup_badge: "Manual Backup",
+    task_count_label: "{0} tasks",
+    list_count_label: "{0} lists",
+    restore_snapshot_tooltip: "Restore this snapshot",
+    restore: "Restore",
+    delete_backup_tooltip: "Delete backup",
+    confirm_restore_backup: "Are you sure you want to restore backup \"{0}\"?\nAll task lists will be restored with data from this snapshot.",
+    confirm_delete_backup: "Are you sure you want to delete backup \"{0}\"?",
+    confirm_delete_all_backups: "⚠️ Dangerous action: Delete all {0} local backup files?\nThis action cannot be undone!",
+    all_backups_deleted: "🗑️ Deleted all {0} backup files",
+
+    // Linked Note Modal
+    confirm_delete_linked_note_title: "Delete linked note for \"{0}\"?",
+    confirm_delete_linked_note_p1: "The task to be deleted is linked to note:",
+    confirm_delete_linked_note_p2: "You can delete only the task itself, or move both the task and its linked note to trash.",
+    cancel: "Cancel",
+    delete_task_only_keep_note: "Delete Task Only (Keep Note)",
+    delete_task_and_note: "Delete Task & Linked Note",
+
+    // Linked Note Tooltips & Notices (TaskDetailView)
+    linked_note_tooltip_exists: "Linked note: {0} (Click to open, hover to preview, right-click to manage)",
+    linked_note_tooltip_create: "Link dedicated note (Click to auto-create and open)",
+    linked_note_recreated: "Recreated and opened linked note: {0}",
+    linked_note_created: "Created and opened linked note: {0}",
+    open_linked_note: "Open linked note",
+    unlink_note: "Unlink note",
+    unlink_note_success: "Note unlinked successfully",
+
+    // TaskMainView Multi-Select & Batch
+    multi_select_mode_enabled: "☑️ Multi-select mode enabled: Select tasks for batch operations",
+    batch_starred_tasks: "⭐ Starred {0} selected tasks",
+    batch_unstarred_tasks: "Unstarred {0} selected tasks",
+    confirm_batch_delete_tasks: "Are you sure you want to delete {0} selected tasks? This action cannot be undone.",
+    batch_deleted_tasks_notice: "🗑️ Batch deleted {0} tasks",
+    multi_select_tooltip: "Multi-select Tasks (Batch Delete/Star)",
+    backup_btn_tooltip: "Data Backup Manager",
+    linked_note_preview_tooltip: "Linked note: {0} (Click to open, hover to preview)",
+    selected_items_label: "Selected {0} items",
+    deselect_all: "Deselect All",
+    select_all: "Select All",
+    batch_star: "Batch Star",
+    batch_delete: "Batch Delete",
+    exit: "✕ Exit",
+
+    // Quick Task Modal
+    quick_task_tip: "💡 Tip: Set a hotkey for <code>Fluent Tasks: Open Quick Task Modal</code> in <b>Settings → Hotkeys</b> for instant access ({0} reminders left)",
+
+    // Quick List Modal
+    focus_pick_mode_enabled: "🎯 Selection mode enabled: Click a list to set as default focus (Press ESC to cancel)",
+    focus_default_set: "🎯 Set \"{0}\" as default focus list on open",
+    focus_cancel_default: "Remove default focus (revert to top-left)",
+    focus_set_default: "Set as default focus (opened first)",
+    focus_restored_default: "Restored default focus (top-left item)",
+    focus_restored_default_notice: "🎯 Restored default focus: Top-left first item",
+    focus_pick_cancelled: "Cancelled default focus list selection",
+    quick_list_tip: "💡 Tip: Set a hotkey for <code>Fluent Tasks: Open Quick List Modal</code> in <b>Settings → Hotkeys</b> ({0} reminders left)",
+    focus_btn_aria_label: "Set default focus list: Click to enter selection mode, right click to reset to top-left",
+    focus_picking_target: "Select target list...",
+    focus_target_label: "Focus: {0}",
+    focus_set_btn: "Set Focus",
+    focus_popover_title: "🎯 Initial Focus Settings",
+    focus_current_prefix: "Current default focus: ",
+    focus_unset_prefix: "Not set, defaults to: ",
+    focus_top_left_default: "Top-left first item",
+    focus_instruction_desc: "Click button to enter selection mode then click target list; right click button to reset to top-left.",
+    focus_tag_tooltip: "Default focus target",
+};
+
+export default en;

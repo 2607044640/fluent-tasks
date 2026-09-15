@@ -32,7 +32,7 @@ __export(main_exports, {
   default: () => FluentTasksPlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian20 = require("obsidian");
+var import_obsidian21 = require("obsidian");
 
 // src/types.ts
 var VIEW_TYPE_SIDEBAR = "fluent-tasks-sidebar";
@@ -556,15 +556,15 @@ var MarkdownParser = class {
   static findTaskIndex(tasks2, target) {
     if (!target)
       return -1;
-    const byId = tasks2.findIndex((t) => t.id === target.id);
+    const byId = tasks2.findIndex((t2) => t2.id === target.id);
     if (byId !== -1)
       return byId;
     const byTitleAndCreated = tasks2.findIndex(
-      (t) => t.title === target.title && t.createdAt === target.createdAt
+      (t2) => t2.title === target.title && t2.createdAt === target.createdAt
     );
     if (byTitleAndCreated !== -1)
       return byTitleAndCreated;
-    return tasks2.findIndex((t) => t.title === target.title);
+    return tasks2.findIndex((t2) => t2.title === target.title);
   }
   /**
    * Factory: create a new TaskItem with sensible defaults.
@@ -780,10 +780,10 @@ var TaskService = class {
     const content = await this.io.readFile(filepath);
     const tasks2 = MarkdownParser.parseTasksFromMarkdown(content);
     const seenIds = /* @__PURE__ */ new Set();
-    let uniqueTasks = tasks2.filter((t) => {
-      if (seenIds.has(t.id))
+    let uniqueTasks = tasks2.filter((t2) => {
+      if (seenIds.has(t2.id))
         return false;
-      seenIds.add(t.id);
+      seenIds.add(t2.id);
       return true;
     });
     let needsSave = false;
@@ -849,8 +849,8 @@ var TaskService = class {
         return data;
       }
       tasks2[idx] = updatedTask;
-      const incomplete = tasks2.filter((t) => !t.completed);
-      const completed = tasks2.filter((t) => t.completed);
+      const incomplete = tasks2.filter((t2) => !t2.completed);
+      const completed = tasks2.filter((t2) => t2.completed);
       return MarkdownParser.serializeTasksToMarkdown([...incomplete, ...completed]);
     });
   }
@@ -1350,8 +1350,8 @@ function create_rule(node, a, b, duration, delay, ease, fn, uid = 0) {
   const step = 16.666 / duration;
   let keyframes = "{\n";
   for (let p = 0; p <= 1; p += step) {
-    const t = a + (b - a) * ease(p);
-    keyframes += p * 100 + `%{${fn(t, 1 - t)}}
+    const t2 = a + (b - a) * ease(p);
+    keyframes += p * 100 + `%{${fn(t2, 1 - t2)}}
 `;
   }
   const rule = keyframes + `100% {${fn(b, 1 - b)}}
@@ -1442,8 +1442,8 @@ function create_animation(node, from, fn, params) {
     }
     if (started) {
       const p = now2 - start_time;
-      const t = 0 + 1 * easing(p / duration);
-      tick2(t, 1 - t);
+      const t2 = 0 + 1 * easing(p / duration);
+      tick2(t2, 1 - t2);
     }
     return true;
   });
@@ -2748,22 +2748,22 @@ function create_else_block_3(ctx) {
     /*item*/
     ctx[107].name + ""
   );
-  let t;
+  let t2;
   return {
     c() {
       span = element("span");
-      t = text(t_value);
+      t2 = text(t_value);
       attr(span, "class", "group-name");
     },
     m(target, anchor) {
       insert(target, span, anchor);
-      append(span, t);
+      append(span, t2);
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*sidebarItems*/
       1 && t_value !== (t_value = /*item*/
       ctx2[107].name + ""))
-        set_data(t, t_value);
+        set_data(t2, t_value);
     },
     d(detaching) {
       if (detaching) {
@@ -2972,22 +2972,22 @@ function create_else_block_2(ctx) {
     /*cat*/
     ctx[110].name + ""
   );
-  let t;
+  let t2;
   return {
     c() {
       span = element("span");
-      t = text(t_value);
+      t2 = text(t_value);
       attr(span, "class", "cat-name");
     },
     m(target, anchor) {
       insert(target, span, anchor);
-      append(span, t);
+      append(span, t2);
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*sidebarItems*/
       1 && t_value !== (t_value = /*cat*/
       ctx2[110].name + ""))
-        set_data(t, t_value);
+        set_data(t2, t_value);
     },
     d(detaching) {
       if (detaching) {
@@ -3334,22 +3334,22 @@ function create_else_block_1(ctx) {
     /*item*/
     ctx[107].name + ""
   );
-  let t;
+  let t2;
   return {
     c() {
       span = element("span");
-      t = text(t_value);
+      t2 = text(t_value);
       attr(span, "class", "cat-name drag-handle");
     },
     m(target, anchor) {
       insert(target, span, anchor);
-      append(span, t);
+      append(span, t2);
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*sidebarItems*/
       1 && t_value !== (t_value = /*item*/
       ctx2[107].name + ""))
-        set_data(t, t_value);
+        set_data(t2, t_value);
     },
     d(detaching) {
       if (detaching) {
@@ -3554,14 +3554,14 @@ function create_else_block(ctx) {
 }
 function create_if_block_1(ctx) {
   let input;
-  let t;
+  let t2;
   let span;
   let mounted;
   let dispose;
   return {
     c() {
       input = element("input");
-      t = space();
+      t2 = space();
       span = element("span");
       span.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
       attr(input, "class", "new-group-input");
@@ -3578,7 +3578,7 @@ function create_if_block_1(ctx) {
         /*newGroupName*/
         ctx[8]
       );
-      insert(target, t, anchor);
+      insert(target, t2, anchor);
       insert(target, span, anchor);
       if (!mounted) {
         dispose = [
@@ -3630,7 +3630,7 @@ function create_if_block_1(ctx) {
     d(detaching) {
       if (detaching) {
         detach(input);
-        detach(t);
+        detach(t2);
         detach(span);
       }
       mounted = false;
@@ -3640,14 +3640,14 @@ function create_if_block_1(ctx) {
 }
 function create_if_block(ctx) {
   let input;
-  let t;
+  let t2;
   let span;
   let mounted;
   let dispose;
   return {
     c() {
       input = element("input");
-      t = space();
+      t2 = space();
       span = element("span");
       span.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
       attr(input, "class", "new-list-input");
@@ -3664,7 +3664,7 @@ function create_if_block(ctx) {
         /*newListName*/
         ctx[6]
       );
-      insert(target, t, anchor);
+      insert(target, t2, anchor);
       insert(target, span, anchor);
       if (!mounted) {
         dispose = [
@@ -3716,7 +3716,7 @@ function create_if_block(ctx) {
     d(detaching) {
       if (detaching) {
         detach(input);
-        detach(t);
+        detach(t2);
         detach(span);
       }
       mounted = false;
@@ -7213,8 +7213,8 @@ var isItemsDragDisabled = createStore(true);
 var userDragDisabled = createStore(false);
 
 // node_modules/svelte/src/runtime/easing/index.js
-function cubicOut(t) {
-  const f = t - 1;
+function cubicOut(t2) {
+  const f = t2 - 1;
   return f * f * f + 1;
 }
 
@@ -7230,11 +7230,11 @@ function flip(node, { from, to }, params = {}) {
     delay,
     duration: is_function(duration) ? duration(Math.sqrt(dx * dx + dy * dy)) : duration,
     easing,
-    css: (t, u) => {
+    css: (t2, u) => {
       const x = u * dx;
       const y = u * dy;
-      const sx = t + u * from.width / to.width;
-      const sy = t + u * from.height / to.height;
+      const sx = t2 + u * from.width / to.width;
+      const sy = t2 + u * from.height / to.height;
       return `transform: ${transform} translate(${x}px, ${y}px) scale(${sx}, ${sy});`;
     }
   };
@@ -7305,7 +7305,7 @@ function calculatePopoverPosition(targetEl, type) {
 }
 
 // src/TaskMainView.svelte
-var import_obsidian12 = require("obsidian");
+var import_obsidian13 = require("obsidian");
 
 // src/services/LinkedNoteService.ts
 var import_obsidian6 = require("obsidian");
@@ -7584,8 +7584,263 @@ taskId: "${task.id}"
 LinkedNoteService.internalRenames = /* @__PURE__ */ new Map();
 
 // src/modals/ConfirmDeleteLinkedNoteModal.ts
+var import_obsidian8 = require("obsidian");
+
+// src/lang/helpers.ts
 var import_obsidian7 = require("obsidian");
-var ConfirmDeleteLinkedNoteModal = class extends import_obsidian7.Modal {
+
+// src/lang/locale/en.ts
+var en = {
+  // Action ribbon & Commands
+  action_multi_select: "Multi-select Tasks (Batch Delete/Star)",
+  action_backup_manager: "Data Backup Manager (Snapshots & Restore)",
+  cmd_backup_manager: "Open Backup Manager (Snapshots & Restore)",
+  // Backup Service
+  backup_dir: "Backup folder: {0}",
+  backup_file_not_found: "Backup file not found",
+  backup_invalid_format: "\u274C Invalid backup format: missing files payload",
+  backup_restore_success: "\u2705 Backup restored: recovered {0} files containing {1} tasks",
+  backup_restore_failed: "\u274C Restore failed: {0}",
+  backup_deleted: "\u{1F5D1}\uFE0F Backup deleted",
+  backup_import_dialog_title: "Select Backup File to Import",
+  backup_file_filter_name: "Fluent Tasks Backup File (*.json)",
+  // Backup Modal UI
+  backup_modal_title: "Task Data Backup Manager",
+  daily_backup_title: "Daily Auto Backup",
+  daily_backup_desc: "Automatically creates a local snapshot on first launch each day",
+  daily_backup_enabled: "\u2705 Daily auto backup enabled",
+  daily_backup_disabled: "\u26A0\uFE0F Daily auto backup disabled",
+  backup_now: "Backup Now",
+  backing_up: "Backing up...",
+  data_saved_to: "Data saved to {0}",
+  backup_failed: "\u274C Backup failed: {0}",
+  import_backup: "Import Backup",
+  backup_history_title: "Backup History ({0})",
+  open_backup_folder: "\u{1F4C2} Open Folder",
+  open_backup_folder_tooltip: "Open backup folder in file explorer",
+  delete_all_backups: "\u{1F5D1}\uFE0F Delete All Backups",
+  delete_all_backups_tooltip: "Delete all local backup files",
+  no_backups_to_delete: "No backups to delete",
+  refresh_list: "Refresh list",
+  loading_backups: "Loading backup records...",
+  no_local_backups: "\u{1F4E6} No local backups found",
+  no_local_backups_hint: 'Click "Backup Now" above to create your first snapshot',
+  daily_backup_badge: "Daily Backup",
+  manual_backup_badge: "Manual Backup",
+  task_count_label: "{0} tasks",
+  list_count_label: "{0} lists",
+  restore_snapshot_tooltip: "Restore this snapshot",
+  restore: "Restore",
+  delete_backup_tooltip: "Delete backup",
+  confirm_restore_backup: 'Are you sure you want to restore backup "{0}"?\nAll task lists will be restored with data from this snapshot.',
+  confirm_delete_backup: 'Are you sure you want to delete backup "{0}"?',
+  confirm_delete_all_backups: "\u26A0\uFE0F Dangerous action: Delete all {0} local backup files?\nThis action cannot be undone!",
+  all_backups_deleted: "\u{1F5D1}\uFE0F Deleted all {0} backup files",
+  // Linked Note Modal
+  confirm_delete_linked_note_title: 'Delete linked note for "{0}"?',
+  confirm_delete_linked_note_p1: "The task to be deleted is linked to note:",
+  confirm_delete_linked_note_p2: "You can delete only the task itself, or move both the task and its linked note to trash.",
+  cancel: "Cancel",
+  delete_task_only_keep_note: "Delete Task Only (Keep Note)",
+  delete_task_and_note: "Delete Task & Linked Note",
+  // Linked Note Tooltips & Notices (TaskDetailView)
+  linked_note_tooltip_exists: "Linked note: {0} (Click to open, hover to preview, right-click to manage)",
+  linked_note_tooltip_create: "Link dedicated note (Click to auto-create and open)",
+  linked_note_recreated: "Recreated and opened linked note: {0}",
+  linked_note_created: "Created and opened linked note: {0}",
+  open_linked_note: "Open linked note",
+  unlink_note: "Unlink note",
+  unlink_note_success: "Note unlinked successfully",
+  // TaskMainView Multi-Select & Batch
+  multi_select_mode_enabled: "\u2611\uFE0F Multi-select mode enabled: Select tasks for batch operations",
+  batch_starred_tasks: "\u2B50 Starred {0} selected tasks",
+  batch_unstarred_tasks: "Unstarred {0} selected tasks",
+  confirm_batch_delete_tasks: "Are you sure you want to delete {0} selected tasks? This action cannot be undone.",
+  batch_deleted_tasks_notice: "\u{1F5D1}\uFE0F Batch deleted {0} tasks",
+  multi_select_tooltip: "Multi-select Tasks (Batch Delete/Star)",
+  backup_btn_tooltip: "Data Backup Manager",
+  linked_note_preview_tooltip: "Linked note: {0} (Click to open, hover to preview)",
+  selected_items_label: "Selected {0} items",
+  deselect_all: "Deselect All",
+  select_all: "Select All",
+  batch_star: "Batch Star",
+  batch_delete: "Batch Delete",
+  exit: "\u2715 Exit",
+  // Quick Task Modal
+  quick_task_tip: "\u{1F4A1} Tip: Set a hotkey for <code>Fluent Tasks: Open Quick Task Modal</code> in <b>Settings \u2192 Hotkeys</b> for instant access ({0} reminders left)",
+  // Quick List Modal
+  focus_pick_mode_enabled: "\u{1F3AF} Selection mode enabled: Click a list to set as default focus (Press ESC to cancel)",
+  focus_default_set: '\u{1F3AF} Set "{0}" as default focus list on open',
+  focus_cancel_default: "Remove default focus (revert to top-left)",
+  focus_set_default: "Set as default focus (opened first)",
+  focus_restored_default: "Restored default focus (top-left item)",
+  focus_restored_default_notice: "\u{1F3AF} Restored default focus: Top-left first item",
+  focus_pick_cancelled: "Cancelled default focus list selection",
+  quick_list_tip: "\u{1F4A1} Tip: Set a hotkey for <code>Fluent Tasks: Open Quick List Modal</code> in <b>Settings \u2192 Hotkeys</b> ({0} reminders left)",
+  focus_btn_aria_label: "Set default focus list: Click to enter selection mode, right click to reset to top-left",
+  focus_picking_target: "Select target list...",
+  focus_target_label: "Focus: {0}",
+  focus_set_btn: "Set Focus",
+  focus_popover_title: "\u{1F3AF} Initial Focus Settings",
+  focus_current_prefix: "Current default focus: ",
+  focus_unset_prefix: "Not set, defaults to: ",
+  focus_top_left_default: "Top-left first item",
+  focus_instruction_desc: "Click button to enter selection mode then click target list; right click button to reset to top-left.",
+  focus_tag_tooltip: "Default focus target"
+};
+var en_default = en;
+
+// src/lang/locale/zh-cn.ts
+var zhCn = {
+  // Action ribbon & Commands
+  action_multi_select: "\u591A\u9009\u4EFB\u52A1 (\u6279\u91CF\u5220\u9664/\u6536\u85CF)",
+  action_backup_manager: "\u6570\u636E\u5907\u4EFD\u5668 (\u5FEB\u7167\u4E0E\u6062\u590D)",
+  cmd_backup_manager: "\u6253\u5F00\u5907\u4EFD\u7BA1\u7406\u5668 (\u6570\u636E\u5907\u4EFD\u4E0E\u6062\u590D)",
+  // Backup Service
+  backup_dir: "\u5907\u4EFD\u76EE\u5F55: {0}",
+  backup_file_not_found: "\u672A\u627E\u5230\u6307\u5B9A\u7684\u5907\u4EFD\u6587\u4EF6",
+  backup_invalid_format: "\u274C \u5907\u4EFD\u6587\u4EF6\u683C\u5F0F\u65E0\u6548\uFF1A\u7F3A\u5C11 files \u6570\u636E\u9879",
+  backup_restore_success: "\u2705 \u6210\u529F\u8FD8\u539F\u5907\u4EFD\uFF1A\u5171\u6062\u590D {0} \u4E2A\u6587\u4EF6\uFF0C\u5305\u542B {1} \u9879\u4EFB\u52A1",
+  backup_restore_failed: "\u274C \u8FD8\u539F\u5931\u8D25: {0}",
+  backup_deleted: "\u{1F5D1}\uFE0F \u5907\u4EFD\u5DF2\u5220\u9664",
+  backup_import_dialog_title: "\u9009\u62E9\u8981\u5BFC\u5165\u7684\u5907\u4EFD\u6587\u4EF6",
+  backup_file_filter_name: "Fluent Tasks \u5907\u4EFD\u6587\u4EF6 (*.json)",
+  // Backup Modal UI
+  backup_modal_title: "\u4EFB\u52A1\u6570\u636E\u5907\u4EFD\u5668",
+  daily_backup_title: "\u6BCF\u65E5\u81EA\u52A8\u5907\u4EFD",
+  daily_backup_desc: "\u6BCF\u5929\u9996\u6B21\u6253\u5F00\u65F6\u81EA\u52A8\u5728\u672C\u5730\u751F\u6210\u5FEB\u7167",
+  daily_backup_enabled: "\u2705 \u5DF2\u5F00\u542F\u6BCF\u65E5\u81EA\u52A8\u5907\u4EFD",
+  daily_backup_disabled: "\u26A0\uFE0F \u5DF2\u5173\u95ED\u6BCF\u65E5\u81EA\u52A8\u5907\u4EFD",
+  backup_now: "\u73B0\u5728\u5907\u4EFD",
+  backing_up: "\u5907\u4EFD\u4E2D...",
+  data_saved_to: "\u6570\u636E\u5DF2\u4FDD\u5B58\u5230 {0}",
+  backup_failed: "\u274C \u5907\u4EFD\u5931\u8D25: {0}",
+  import_backup: "\u5BFC\u5165\u5907\u4EFD",
+  backup_history_title: "\u5386\u53F2\u5907\u4EFD\u8BB0\u5F55 ({0})",
+  open_backup_folder: "\u{1F4C2} \u6253\u5F00\u76EE\u5F55",
+  open_backup_folder_tooltip: "\u5728\u6587\u4EF6\u7BA1\u7406\u5668\u4E2D\u6253\u5F00\u5907\u4EFD\u6240\u5728\u6587\u4EF6\u5939",
+  delete_all_backups: "\u{1F5D1}\uFE0F \u5220\u9664\u5168\u90E8\u5907\u4EFD",
+  delete_all_backups_tooltip: "\u6E05\u7A7A\u5E76\u5220\u9664\u5168\u90E8\u672C\u5730\u5907\u4EFD\u6587\u4EF6",
+  no_backups_to_delete: "\u6682\u65E0\u5907\u4EFD\u53EF\u5220\u9664",
+  refresh_list: "\u5237\u65B0\u5217\u8868",
+  loading_backups: "\u6B63\u5728\u8BFB\u53D6\u5907\u4EFD\u8BB0\u5F55...",
+  no_local_backups: "\u{1F4E6} \u6682\u65E0\u672C\u5730\u5907\u4EFD\u6587\u4EF6",
+  no_local_backups_hint: "\u70B9\u51FB\u4E0A\u65B9\u300C\u73B0\u5728\u5907\u4EFD\u300D\u5373\u53EF\u521B\u5EFA\u7B2C\u4E00\u4E2A\u5B8C\u6574\u6570\u636E\u5FEB\u7167",
+  daily_backup_badge: "\u6BCF\u65E5\u5907\u4EFD",
+  manual_backup_badge: "\u624B\u52A8\u5907\u4EFD",
+  task_count_label: "{0} \u9879\u4EFB\u52A1",
+  list_count_label: "{0} \u4E2A\u5217\u8868",
+  restore_snapshot_tooltip: "\u8FD8\u539F\u6B64\u5FEB\u7167",
+  restore: "\u8FD8\u539F",
+  delete_backup_tooltip: "\u5220\u9664\u5907\u4EFD",
+  confirm_restore_backup: "\u786E\u8BA4\u8FD8\u539F\u5907\u4EFD\u300C{0}\u300D\uFF1F\n\u6B64\u64CD\u4F5C\u5C06\u7528\u5907\u4EFD\u4E2D\u7684\u6570\u636E\u6062\u590D\u6240\u6709\u4EFB\u52A1\u5217\u8868\u3002",
+  confirm_delete_backup: "\u786E\u8BA4\u5220\u9664\u5907\u4EFD\u300C{0}\u300D\uFF1F",
+  confirm_delete_all_backups: "\u26A0\uFE0F \u5371\u9669\u64CD\u4F5C\uFF1A\u786E\u8BA4\u6E05\u7A7A\u5E76\u5220\u9664\u5168\u90E8 {0} \u4E2A\u672C\u5730\u5907\u4EFD\u6587\u4EF6\uFF1F\n\u6B64\u64CD\u4F5C\u4E0D\u53EF\u64A4\u9500\uFF01",
+  all_backups_deleted: "\u{1F5D1}\uFE0F \u5DF2\u6E05\u7A7A\u5220\u9664\u5168\u90E8 {0} \u4E2A\u5907\u4EFD\u6587\u4EF6",
+  // Linked Note Modal
+  confirm_delete_linked_note_title: "\u662F\u5426\u5220\u9664\u94FE\u63A5\u7B14\u8BB0\uFF08title\uFF1A{0}\uFF09\uFF1F",
+  confirm_delete_linked_note_p1: "\u5F85\u5220\u9664\u7684\u4EFB\u52A1\u7ED1\u5B9A\u4E86\u4E13\u5C5E\u7B14\u8BB0\uFF1A",
+  confirm_delete_linked_note_p2: "\u60A8\u53EF\u4EE5\u9009\u62E9\u4EC5\u5220\u9664\u4EFB\u52A1\u672C\u8EAB\uFF0C\u6216\u540C\u65F6\u5C06\u8BE5\u94FE\u63A5\u7B14\u8BB0\u79FB\u5165\u56DE\u6536\u7AD9\u3002",
+  cancel: "\u53D6\u6D88",
+  delete_task_only_keep_note: "\u4EC5\u5220\u9664\u4EFB\u52A1\uFF08\u4FDD\u7559\u7B14\u8BB0\uFF09",
+  delete_task_and_note: "\u5220\u9664\u4EFB\u52A1\u4E0E\u94FE\u63A5\u7B14\u8BB0",
+  // Linked Note Tooltips & Notices (TaskDetailView)
+  linked_note_tooltip_exists: "\u6253\u5F00\u94FE\u63A5\u7B14\u8BB0: {0} (\u70B9\u51FB\u8DF3\u8F6C\uFF0C\u60AC\u505C\u9884\u89C8\uFF0C\u53F3\u952E\u7BA1\u7406)",
+  linked_note_tooltip_create: "\u94FE\u63A5\u4E13\u5C5E\u7B14\u8BB0 (\u70B9\u51FB\u81EA\u52A8\u521B\u5EFA\u5E76\u8DF3\u8F6C)",
+  linked_note_recreated: "\u5DF2\u91CD\u65B0\u521B\u5EFA\u5E76\u6253\u5F00\u94FE\u63A5\u7B14\u8BB0: {0}",
+  linked_note_created: "\u5DF2\u521B\u5EFA\u5E76\u6253\u5F00\u94FE\u63A5\u7B14\u8BB0: {0}",
+  open_linked_note: "\u6253\u5F00\u94FE\u63A5\u7B14\u8BB0",
+  unlink_note: "\u53D6\u6D88\u5173\u8054\u7B14\u8BB0",
+  unlink_note_success: "\u5DF2\u53D6\u6D88\u7B14\u8BB0\u5173\u8054",
+  // TaskMainView Multi-Select & Batch
+  multi_select_mode_enabled: "\u2611\uFE0F \u591A\u9009\u6A21\u5F0F\u5DF2\u5F00\u542F\uFF1A\u53EF\u52FE\u9009\u4EFB\u52A1\u8FDB\u884C\u6279\u91CF\u64CD\u4F5C",
+  batch_starred_tasks: "\u2B50 \u5DF2\u6536\u85CF\u9009\u4E2D\u7684 {0} \u9879\u4EFB\u52A1",
+  batch_unstarred_tasks: "\u5DF2\u53D6\u6D88\u6536\u85CF\u9009\u4E2D\u7684 {0} \u9879\u4EFB\u52A1",
+  confirm_batch_delete_tasks: "\u786E\u8BA4\u6279\u91CF\u5220\u9664\u9009\u4E2D\u7684 {0} \u9879\u4EFB\u52A1\uFF1F\u6B64\u64CD\u4F5C\u4E0D\u53EF\u9006\u3002",
+  batch_deleted_tasks_notice: "\u{1F5D1}\uFE0F \u5DF2\u6279\u91CF\u5220\u9664 {0} \u9879\u4EFB\u52A1",
+  multi_select_tooltip: "\u591A\u9009\u4EFB\u52A1 (\u6279\u91CF\u5220\u9664/\u6536\u85CF)",
+  backup_btn_tooltip: "\u6570\u636E\u5907\u4EFD\u5668",
+  linked_note_preview_tooltip: "\u4E13\u5C5E\u94FE\u63A5\u7B14\u8BB0: {0} (\u70B9\u51FB\u8DF3\u8F6C\uFF0C\u60AC\u505C\u9884\u89C8)",
+  selected_items_label: "\u5DF2\u9009 {0} \u9879",
+  deselect_all: "\u53D6\u6D88\u5168\u9009",
+  select_all: "\u5168\u9009",
+  batch_star: "\u6279\u91CF\u6536\u85CF",
+  batch_delete: "\u6279\u91CF\u5220\u9664",
+  exit: "\u2715 \u9000\u51FA",
+  // Quick Task Modal
+  quick_task_tip: "\u{1F4A1} \u63D0\u793A: \u5728 <b>\u8BBE\u7F6E \u2192 \u5FEB\u6377\u952E</b> \u4E2D\u4E3A <code>Fluent Tasks: Open Quick Task Modal</code> \u8BBE\u7F6E\u5FEB\u6377\u952E\u5373\u53EF\u79D2\u7EA7\u547C\u51FA (\u5269\u4F59 {0} \u6B21\u63D0\u9192)",
+  // Quick List Modal
+  focus_pick_mode_enabled: "\u{1F3AF} \u9009\u62E9\u6A21\u5F0F\u5DF2\u5F00\u542F\uFF1A\u8BF7\u70B9\u51FB\u60F3\u8981\u8BBE\u4E3A\u9ED8\u8BA4\u805A\u7126\u7684\u5217\u8868 (\u6309 ESC \u53D6\u6D88)",
+  focus_default_set: '\u{1F3AF} \u5DF2\u5C06 "{0}" \u8BBE\u4E3A\u6253\u5F00\u65F6\u7684\u9ED8\u8BA4\u805A\u7126\u5217\u8868',
+  focus_cancel_default: "\u53D6\u6D88\u9ED8\u8BA4\u805A\u7126 (\u6062\u590D\u9996\u9879)",
+  focus_set_default: "\u8BBE\u4E3A\u9ED8\u8BA4\u805A\u7126 (\u6253\u5F00\u65F6\u9996\u9009)",
+  focus_restored_default: "\u5DF2\u6062\u590D\u9ED8\u8BA4\u805A\u7126 (\u5DE6\u4E0A\u89D2\u9996\u9879)",
+  focus_restored_default_notice: "\u{1F3AF} \u5DF2\u6062\u590D\u9ED8\u8BA4\u805A\u7126\uFF1A\u5DE6\u4E0A\u89D2\u9996\u9879",
+  focus_pick_cancelled: "\u5DF2\u53D6\u6D88\u9009\u62E9\u9ED8\u8BA4\u805A\u7126\u5217\u8868",
+  quick_list_tip: "\u{1F4A1} \u63D0\u793A: \u5728 <b>\u8BBE\u7F6E \u2192 \u5FEB\u6377\u952E</b> \u4E2D\u4E3A <code>Fluent Tasks: Open Quick List Modal</code> \u8BBE\u7F6E\u5FEB\u6377\u952E (\u5269\u4F59 {0} \u6B21\u63D0\u9192)",
+  focus_btn_aria_label: "\u8BBE\u7F6E\u9ED8\u8BA4\u805A\u7126\u5217\u8868\uFF1A\u70B9\u51FB\u8FDB\u5165\u9009\u62E9\u6A21\u5F0F\uFF0C\u53F3\u952E\u53EF\u91CD\u7F6E\u4E3A\u5DE6\u4E0A\u89D2\u9996\u9879",
+  focus_picking_target: "\u9009\u62E9\u76EE\u6807\u5217\u8868...",
+  focus_target_label: "\u805A\u7126: {0}",
+  focus_set_btn: "\u8BBE\u7F6E\u805A\u7126",
+  focus_popover_title: "\u{1F3AF} \u521D\u59CB\u9ED8\u8BA4\u805A\u7126\u8BBE\u7F6E",
+  focus_current_prefix: "\u5F53\u524D\u9ED8\u8BA4\u805A\u7126\uFF1A",
+  focus_unset_prefix: "\u5F53\u524D\u672A\u8BBE\u7F6E\uFF0C\u9ED8\u8BA4\u805A\u7126\uFF1A",
+  focus_top_left_default: "\u5DE6\u4E0A\u89D2\u9996\u9879",
+  focus_instruction_desc: "\u70B9\u51FB\u6309\u94AE\u8FDB\u5165\u9009\u62E9\u6A21\u5F0F\u540E\u70B9\u51FB\u76EE\u6807\u5217\u8868\uFF1B\u53F3\u952E\u6B64\u6309\u94AE\u53EF\u91CD\u7F6E\u4E3A\u5DE6\u4E0A\u89D2\u9996\u9879\u3002",
+  focus_tag_tooltip: "\u9ED8\u8BA4\u805A\u7126\u76EE\u6807"
+};
+var zh_cn_default = zhCn;
+
+// src/lang/helpers.ts
+function detectLanguage() {
+  var _a, _b, _c;
+  let lang = "";
+  try {
+    if (typeof import_obsidian7.getLanguage === "function") {
+      lang = (0, import_obsidian7.getLanguage)();
+    }
+  } catch (e) {
+  }
+  if (!lang) {
+    try {
+      lang = ((_a = window.localStorage) == null ? void 0 : _a.getItem("language")) || "";
+    } catch (e) {
+    }
+  }
+  if (!lang) {
+    try {
+      lang = ((_c = (_b = import_obsidian7.moment) == null ? void 0 : _b.locale) == null ? void 0 : _c.call(_b)) || "";
+    } catch (e) {
+    }
+  }
+  if (!lang && typeof navigator !== "undefined") {
+    lang = navigator.language || "";
+  }
+  return (lang || "en").toLowerCase();
+}
+function isChinese() {
+  const lang = detectLanguage();
+  return lang === "zh" || lang.startsWith("zh-") || lang.startsWith("zh_");
+}
+function getLocaleDict() {
+  if (isChinese()) {
+    return zh_cn_default;
+  }
+  return en_default;
+}
+function t(key, ...params) {
+  const dict = getLocaleDict();
+  let text2 = dict[key] || en_default[key] || key;
+  if (params && params.length > 0) {
+    for (let i = 0; i < params.length; i++) {
+      text2 = text2.replace(new RegExp(`\\{${i}\\}`, "g"), String(params[i]));
+    }
+  }
+  return text2;
+}
+
+// src/modals/ConfirmDeleteLinkedNoteModal.ts
+var ConfirmDeleteLinkedNoteModal = class extends import_obsidian8.Modal {
   constructor(app, task, noteFile, onDecision) {
     super(app);
     this.hasDecided = false;
@@ -7604,32 +7859,32 @@ var ConfirmDeleteLinkedNoteModal = class extends import_obsidian7.Modal {
     contentEl.empty();
     contentEl.addClass("fluent-tasks-delete-modal");
     const heading = contentEl.createEl("h3", {
-      text: `\u662F\u5426\u5220\u9664\u94FE\u63A5\u7B14\u8BB0\uFF08title\uFF1A${this.task.title}\uFF09\uFF1F`,
+      text: t("confirm_delete_linked_note_title", this.task.title),
       cls: "fluent-tasks-delete-modal-heading"
     });
     const p1 = contentEl.createEl("p", { cls: "fluent-tasks-delete-modal-p1" });
-    p1.createSpan({ text: "\u5F85\u5220\u9664\u7684\u4EFB\u52A1\u7ED1\u5B9A\u4E86\u4E13\u5C5E\u7B14\u8BB0\uFF1A" });
+    p1.createSpan({ text: t("confirm_delete_linked_note_p1") });
     p1.createEl("strong", {
       text: ` ${this.noteFile.basename} `,
       cls: "fluent-tasks-delete-modal-badge"
     });
     contentEl.createEl("p", {
-      text: "\u60A8\u53EF\u4EE5\u9009\u62E9\u4EC5\u5220\u9664\u4EFB\u52A1\u672C\u8EAB\uFF0C\u6216\u540C\u65F6\u5C06\u8BE5\u94FE\u63A5\u7B14\u8BB0\u79FB\u5165\u56DE\u6536\u7AD9\u3002",
+      text: t("confirm_delete_linked_note_p2"),
       cls: "fluent-tasks-delete-modal-p2"
     });
     const btnContainer = contentEl.createDiv({ cls: "fluent-tasks-delete-modal-buttons" });
-    const cancelBtn = btnContainer.createEl("button", { text: "\u53D6\u6D88" });
+    const cancelBtn = btnContainer.createEl("button", { text: t("cancel") });
     cancelBtn.addEventListener("click", () => {
       this.decide(null);
       this.close();
     });
-    const taskOnlyBtn = btnContainer.createEl("button", { text: "\u4EC5\u5220\u9664\u4EFB\u52A1\uFF08\u4FDD\u7559\u7B14\u8BB0\uFF09" });
+    const taskOnlyBtn = btnContainer.createEl("button", { text: t("delete_task_only_keep_note") });
     taskOnlyBtn.addEventListener("click", () => {
       this.decide(false);
       this.close();
     });
     const bothBtn = btnContainer.createEl("button", {
-      text: "\u5220\u9664\u4EFB\u52A1\u4E0E\u94FE\u63A5\u7B14\u8BB0",
+      text: t("delete_task_and_note"),
       cls: "mod-warning"
     });
     bothBtn.addEventListener("click", () => {
@@ -7675,7 +7930,7 @@ async function promptDeleteTaskWithLinkedNote(app, task, categoryFilepath, dataS
 }
 
 // src/modals/TaskStepsModal.ts
-var import_obsidian8 = require("obsidian");
+var import_obsidian9 = require("obsidian");
 
 // src/modals/TaskStepsModalView.svelte
 function get_each_context2(ctx, list, i) {
@@ -8582,7 +8837,7 @@ var TaskStepsModalView = class extends SvelteComponent {
 var TaskStepsModalView_default = TaskStepsModalView;
 
 // src/modals/TaskStepsModal.ts
-var TaskStepsModal = class extends import_obsidian8.Modal {
+var TaskStepsModal = class extends import_obsidian9.Modal {
   constructor(app, plugin, dataService, task, categoryFilepath) {
     super(app);
     this.component = null;
@@ -8617,13 +8872,13 @@ var TaskStepsModal = class extends import_obsidian8.Modal {
 };
 
 // src/modals/BackupModal.ts
-var import_obsidian11 = require("obsidian");
+var import_obsidian12 = require("obsidian");
 
 // src/modals/BackupModalView.svelte
-var import_obsidian10 = require("obsidian");
+var import_obsidian11 = require("obsidian");
 
 // src/services/BackupService.ts
-var import_obsidian9 = require("obsidian");
+var import_obsidian10 = require("obsidian");
 var BackupService = class {
   static async ensureBackupFolder(app) {
     var _a, _b;
@@ -8645,9 +8900,9 @@ var BackupService = class {
     }
   }
   static getAbsoluteBackupFolderPath(app) {
-    if (app.vault.adapter instanceof import_obsidian9.FileSystemAdapter) {
+    if (app.vault.adapter instanceof import_obsidian10.FileSystemAdapter) {
       const base = app.vault.adapter.getBasePath();
-      const rel = (0, import_obsidian9.normalizePath)(this.BACKUP_FOLDER);
+      const rel = (0, import_obsidian10.normalizePath)(this.BACKUP_FOLDER);
       try {
         const path = window.require ? window.require("path") : null;
         if (path && path.resolve) {
@@ -8672,7 +8927,7 @@ var BackupService = class {
     } catch (e) {
       console.warn("[BackupService] Failed to open folder in OS:", e);
     }
-    new import_obsidian9.Notice(`\u5907\u4EFD\u76EE\u5F55: ${this.BACKUP_FOLDER}`);
+    new import_obsidian10.Notice(t("backup_dir", this.BACKUP_FOLDER));
   }
   static async createBackup(app, plugin, isDaily = false) {
     await this.ensureBackupFolder(app);
@@ -8689,7 +8944,7 @@ var BackupService = class {
     try {
       const listing = await app.vault.adapter.list(DATA_FOLDER);
       for (const filePath of listing.files) {
-        const normPath = (0, import_obsidian9.normalizePath)(filePath);
+        const normPath = (0, import_obsidian10.normalizePath)(filePath);
         const fname = normPath.split("/").pop() || "";
         if (fname === "debug.log" || normPath.includes("/Backups/") || normPath.includes("/.backups/")) {
           continue;
@@ -8754,7 +9009,7 @@ var BackupService = class {
     const pad = (n) => n.toString().padStart(2, "0");
     for (const filePath of allFilePaths) {
       try {
-        const normPath = (0, import_obsidian9.normalizePath)(filePath);
+        const normPath = (0, import_obsidian10.normalizePath)(filePath);
         const content = await app.vault.adapter.read(normPath);
         const stat = await app.vault.adapter.stat(normPath);
         const parsed = JSON.parse(content);
@@ -8779,9 +9034,9 @@ var BackupService = class {
     return list;
   }
   static async restoreBackup(app, plugin, backupPath) {
-    const normPath = (0, import_obsidian9.normalizePath)(backupPath);
+    const normPath = (0, import_obsidian10.normalizePath)(backupPath);
     if (!await app.vault.adapter.exists(normPath)) {
-      new import_obsidian9.Notice("\u672A\u627E\u5230\u6307\u5B9A\u7684\u5907\u4EFD\u6587\u4EF6");
+      new import_obsidian10.Notice(t("backup_file_not_found"));
       return false;
     }
     const raw = await app.vault.adapter.read(normPath);
@@ -8792,11 +9047,11 @@ var BackupService = class {
     try {
       const payload = JSON.parse(rawJson);
       if (!payload || typeof payload !== "object" || !payload.files) {
-        new import_obsidian9.Notice("\u274C \u5907\u4EFD\u6587\u4EF6\u683C\u5F0F\u65E0\u6548\uFF1A\u7F3A\u5C11 files \u6570\u636E\u9879");
+        new import_obsidian10.Notice(t("backup_invalid_format"));
         return false;
       }
       for (const [relPath, content] of Object.entries(payload.files)) {
-        const normalized = (0, import_obsidian9.normalizePath)(relPath);
+        const normalized = (0, import_obsidian10.normalizePath)(relPath);
         const lastSlash = normalized.lastIndexOf("/");
         if (lastSlash > 0) {
           const folderPath = normalized.slice(0, lastSlash);
@@ -8806,27 +9061,27 @@ var BackupService = class {
         }
         await app.vault.adapter.write(normalized, content);
       }
-      new import_obsidian9.Notice(`\u2705 \u6210\u529F\u8FD8\u539F\u5907\u4EFD\uFF1A\u5171\u6062\u590D ${Object.keys(payload.files).length} \u4E2A\u6587\u4EF6\uFF0C\u5305\u542B ${(_a = payload.taskCount) != null ? _a : 0} \u9879\u4EFB\u52A1`);
+      new import_obsidian10.Notice(t("backup_restore_success", Object.keys(payload.files).length, (_a = payload.taskCount) != null ? _a : 0));
       EventBus.emit("category:list-changed" /* CATEGORY_LIST_CHANGED */, {});
       return true;
     } catch (e) {
       console.error("[BackupService] Restore failed:", e);
-      new import_obsidian9.Notice(`\u274C \u8FD8\u539F\u5931\u8D25: ${e}`);
+      new import_obsidian10.Notice(t("backup_restore_failed", String(e)));
       return false;
     }
   }
   static async deleteBackup(app, backupPath) {
-    const normPath = (0, import_obsidian9.normalizePath)(backupPath);
+    const normPath = (0, import_obsidian10.normalizePath)(backupPath);
     if (await app.vault.adapter.exists(normPath)) {
       await app.vault.adapter.remove(normPath);
-      new import_obsidian9.Notice("\u{1F5D1}\uFE0F \u5907\u4EFD\u5DF2\u5220\u9664");
+      new import_obsidian10.Notice(t("backup_deleted"));
     }
   }
   static async deleteAllBackups(app) {
     const backups = await this.getBackups(app);
     let deletedCount = 0;
     for (const b of backups) {
-      const normPath = (0, import_obsidian9.normalizePath)(b.filepath);
+      const normPath = (0, import_obsidian10.normalizePath)(b.filepath);
       try {
         if (await app.vault.adapter.exists(normPath)) {
           await app.vault.adapter.remove(normPath);
@@ -8847,9 +9102,9 @@ var BackupService = class {
       if (dialog && typeof dialog.showOpenDialog === "function") {
         const defaultFolder = this.getAbsoluteBackupFolderPath(app);
         const res = await dialog.showOpenDialog({
-          title: "\u9009\u62E9\u8981\u5BFC\u5165\u7684\u5907\u4EFD\u6587\u4EF6",
+          title: t("backup_import_dialog_title"),
           defaultPath: defaultFolder,
-          filters: [{ name: "Fluent Tasks \u5907\u4EFD\u6587\u4EF6 (*.json)", extensions: ["json"] }],
+          filters: [{ name: t("backup_file_filter_name"), extensions: ["json"] }],
           properties: ["openFile"]
         });
         if (res.canceled || !res.filePaths || res.filePaths.length === 0) {
@@ -8951,14 +9206,24 @@ function create_else_block3(ctx) {
 }
 function create_if_block_13(ctx) {
   let div;
+  let p;
+  let t1;
+  let span;
   return {
     c() {
       div = element("div");
-      div.innerHTML = `<p>\u{1F4E6} \u6682\u65E0\u672C\u5730\u5907\u4EFD\u6587\u4EF6</p> <span>\u70B9\u51FB\u4E0A\u65B9\u300C\u73B0\u5728\u5907\u4EFD\u300D\u5373\u53EF\u521B\u5EFA\u7B2C\u4E00\u4E2A\u5B8C\u6574\u6570\u636E\u5FEB\u7167</span>`;
+      p = element("p");
+      p.textContent = `${t("no_local_backups")}`;
+      t1 = space();
+      span = element("span");
+      span.textContent = `${t("no_local_backups_hint")}`;
       attr(div, "class", "backup-empty-state");
     },
     m(target, anchor) {
       insert(target, div, anchor);
+      append(div, p);
+      append(div, t1);
+      append(div, span);
     },
     p: noop,
     d(detaching) {
@@ -8973,7 +9238,7 @@ function create_if_block3(ctx) {
   return {
     c() {
       div = element("div");
-      div.textContent = "\u6B63\u5728\u8BFB\u53D6\u5907\u4EFD\u8BB0\u5F55...";
+      div.textContent = `${t("loading_backups")}`;
       attr(div, "class", "backup-empty-state");
     },
     m(target, anchor) {
@@ -8994,7 +9259,7 @@ function create_each_block3(key_1, ctx) {
   let span0;
   let t0_value = (
     /*b*/
-    ctx[22].isDaily ? "\u6BCF\u65E5\u5907\u4EFD" : "\u624B\u52A8\u5907\u4EFD"
+    (ctx[22].isDaily ? t("daily_backup_badge") : t("manual_backup_badge")) + ""
   );
   let t0;
   let t1;
@@ -9007,37 +9272,44 @@ function create_each_block3(key_1, ctx) {
   let t3;
   let div1;
   let span2;
-  let t4_value = (
+  let t4_value = t(
+    "task_count_label",
     /*b*/
-    ctx[22].taskCount + ""
-  );
+    ctx[22].taskCount
+  ) + "";
   let t4;
   let t5;
-  let t6;
   let span3;
-  let t8;
+  let t7;
   let span4;
-  let t9_value = (
+  let t8_value = t(
+    "list_count_label",
     /*b*/
-    ctx[22].listsCount + ""
-  );
+    ctx[22].listsCount
+  ) + "";
+  let t8;
   let t9;
-  let t10;
-  let t11;
   let span5;
-  let t13;
+  let t11;
   let span6;
-  let t14_value = formatBytes(
+  let t12_value = formatBytes(
     /*b*/
     ctx[22].sizeBytes
   ) + "";
-  let t14;
-  let t15;
+  let t12;
+  let t13;
   let div3;
   let button0;
-  let t18;
+  let svg0;
+  let path0;
+  let polyline0;
+  let t14;
+  let span7;
+  let button0_title_value;
+  let t16;
   let button1;
-  let t19;
+  let button1_title_value;
+  let t17;
   let mounted;
   let dispose;
   function click_handler_1() {
@@ -9074,28 +9346,31 @@ function create_each_block3(key_1, ctx) {
       div1 = element("div");
       span2 = element("span");
       t4 = text(t4_value);
-      t5 = text(" \u9879\u4EFB\u52A1");
-      t6 = space();
+      t5 = space();
       span3 = element("span");
       span3.textContent = "\xB7";
-      t8 = space();
+      t7 = space();
       span4 = element("span");
-      t9 = text(t9_value);
-      t10 = text(" \u4E2A\u5217\u8868");
-      t11 = space();
+      t8 = text(t8_value);
+      t9 = space();
       span5 = element("span");
       span5.textContent = "\xB7";
-      t13 = space();
+      t11 = space();
       span6 = element("span");
-      t14 = text(t14_value);
-      t15 = space();
+      t12 = text(t12_value);
+      t13 = space();
       div3 = element("div");
       button0 = element("button");
-      button0.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg> <span>\u8FD8\u539F</span>`;
-      t18 = space();
+      svg0 = svg_element("svg");
+      path0 = svg_element("path");
+      polyline0 = svg_element("polyline");
+      t14 = space();
+      span7 = element("span");
+      span7.textContent = `${t("restore")}`;
+      t16 = space();
       button1 = element("button");
       button1.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
-      t19 = space();
+      t17 = space();
       attr(span0, "class", "backup-badge");
       toggle_class(
         span0,
@@ -9109,10 +9384,18 @@ function create_each_block3(key_1, ctx) {
       attr(span5, "class", "backup-dot");
       attr(div1, "class", "backup-meta-desc");
       attr(div2, "class", "backup-item-info");
+      attr(path0, "d", "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8");
+      attr(polyline0, "points", "3 3 3 8 8 8");
+      attr(svg0, "width", "13");
+      attr(svg0, "height", "13");
+      attr(svg0, "viewBox", "0 0 24 24");
+      attr(svg0, "fill", "none");
+      attr(svg0, "stroke", "currentColor");
+      attr(svg0, "stroke-width", "2");
       attr(button0, "class", "backup-action-btn restore-btn");
-      attr(button0, "title", "\u8FD8\u539F\u6B64\u5FEB\u7167");
+      attr(button0, "title", button0_title_value = t("restore_snapshot_tooltip"));
       attr(button1, "class", "backup-action-btn delete-btn");
-      attr(button1, "title", "\u5220\u9664\u5907\u4EFD");
+      attr(button1, "title", button1_title_value = t("delete_backup_tooltip"));
       attr(div3, "class", "backup-item-actions");
       attr(div4, "class", "backup-item-row");
       toggle_class(
@@ -9136,24 +9419,27 @@ function create_each_block3(key_1, ctx) {
       append(div2, div1);
       append(div1, span2);
       append(span2, t4);
-      append(span2, t5);
-      append(div1, t6);
+      append(div1, t5);
       append(div1, span3);
-      append(div1, t8);
+      append(div1, t7);
       append(div1, span4);
-      append(span4, t9);
-      append(span4, t10);
-      append(div1, t11);
+      append(span4, t8);
+      append(div1, t9);
       append(div1, span5);
-      append(div1, t13);
+      append(div1, t11);
       append(div1, span6);
-      append(span6, t14);
-      append(div4, t15);
+      append(span6, t12);
+      append(div4, t13);
       append(div4, div3);
       append(div3, button0);
-      append(div3, t18);
+      append(button0, svg0);
+      append(svg0, path0);
+      append(svg0, polyline0);
+      append(button0, t14);
+      append(button0, span7);
+      append(div3, t16);
       append(div3, button1);
-      append(div4, t19);
+      append(div4, t17);
       if (!mounted) {
         dispose = [
           listen(button0, "click", click_handler_1),
@@ -9166,7 +9452,7 @@ function create_each_block3(key_1, ctx) {
       ctx = new_ctx;
       if (dirty & /*backups*/
       8 && t0_value !== (t0_value = /*b*/
-      ctx[22].isDaily ? "\u6BCF\u65E5\u5907\u4EFD" : "\u624B\u52A8\u5907\u4EFD"))
+      (ctx[22].isDaily ? t("daily_backup_badge") : t("manual_backup_badge")) + ""))
         set_data(t0, t0_value);
       if (dirty & /*backups*/
       8) {
@@ -9182,19 +9468,25 @@ function create_each_block3(key_1, ctx) {
       ctx[22].createdAtFormatted + ""))
         set_data(t2, t2_value);
       if (dirty & /*backups*/
-      8 && t4_value !== (t4_value = /*b*/
-      ctx[22].taskCount + ""))
+      8 && t4_value !== (t4_value = t(
+        "task_count_label",
+        /*b*/
+        ctx[22].taskCount
+      ) + ""))
         set_data(t4, t4_value);
       if (dirty & /*backups*/
-      8 && t9_value !== (t9_value = /*b*/
-      ctx[22].listsCount + ""))
-        set_data(t9, t9_value);
+      8 && t8_value !== (t8_value = t(
+        "list_count_label",
+        /*b*/
+        ctx[22].listsCount
+      ) + ""))
+        set_data(t8, t8_value);
       if (dirty & /*backups*/
-      8 && t14_value !== (t14_value = formatBytes(
+      8 && t12_value !== (t12_value = formatBytes(
         /*b*/
         ctx[22].sizeBytes
       ) + ""))
-        set_data(t14, t14_value);
+        set_data(t12, t12_value);
       if (dirty & /*backups*/
       8) {
         toggle_class(
@@ -9218,8 +9510,15 @@ function create_fragment3(ctx) {
   let div10;
   let div1;
   let div0;
+  let svg0;
+  let polyline0;
+  let rect;
+  let line0;
+  let t0;
+  let h2;
   let t2;
   let button0;
+  let button0_aria_label_value;
   let t4;
   let div5;
   let div4;
@@ -9227,6 +9526,9 @@ function create_fragment3(ctx) {
   let input0;
   let t5;
   let label;
+  let b_1;
+  let t7;
+  let span0;
   let t9;
   let div3;
   let button1;
@@ -9238,34 +9540,43 @@ function create_fragment3(ctx) {
   let span1;
   let t11_value = (
     /*isBackingUp*/
-    ctx[5] ? "\u5907\u4EFD\u4E2D..." : "\u73B0\u5728\u5907\u4EFD"
+    (ctx[5] ? t("backing_up") : t("backup_now")) + ""
   );
   let t11;
   let t12;
   let button2;
+  let svg2;
+  let path1;
+  let polyline3;
+  let line1;
+  let t13;
+  let span2;
   let t15;
   let input1;
   let t16;
   let div8;
   let div6;
   let h3;
-  let t17;
-  let t18_value = (
+  let t17_value = t(
+    "backup_history_title",
     /*backups*/
-    ctx[3].length + ""
-  );
+    ctx[3].length
+  ) + "";
+  let t17;
   let t18;
-  let t19;
-  let t20;
   let button3;
-  let t22;
+  let button3_title_value;
+  let t21;
   let div7;
   let button4;
+  let t22;
+  let t23_value = t("delete_all_backups") + "";
   let t23;
   let button4_disabled_value;
   let button4_title_value;
   let t24;
   let button5;
+  let button5_title_value;
   let t26;
   let div9;
   let mounted;
@@ -9290,7 +9601,13 @@ function create_fragment3(ctx) {
       div10 = element("div");
       div1 = element("div");
       div0 = element("div");
-      div0.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg> <h2>\u4EFB\u52A1\u6570\u636E\u5907\u4EFD\u5668</h2>`;
+      svg0 = svg_element("svg");
+      polyline0 = svg_element("polyline");
+      rect = svg_element("rect");
+      line0 = svg_element("line");
+      t0 = space();
+      h2 = element("h2");
+      h2.textContent = `${t("backup_modal_title")}`;
       t2 = space();
       button0 = element("button");
       button0.textContent = "\u2715";
@@ -9301,7 +9618,11 @@ function create_fragment3(ctx) {
       input0 = element("input");
       t5 = space();
       label = element("label");
-      label.innerHTML = `<b>\u6BCF\u65E5\u81EA\u52A8\u5907\u4EFD</b> <span>\u6BCF\u5929\u9996\u6B21\u6253\u5F00\u65F6\u81EA\u52A8\u5728\u672C\u5730\u751F\u6210\u5FEB\u7167</span>`;
+      b_1 = element("b");
+      b_1.textContent = `${t("daily_backup_title")}`;
+      t7 = space();
+      span0 = element("span");
+      span0.textContent = `${t("daily_backup_desc")}`;
       t9 = space();
       div3 = element("div");
       button1 = element("button");
@@ -9314,32 +9635,54 @@ function create_fragment3(ctx) {
       t11 = text(t11_value);
       t12 = space();
       button2 = element("button");
-      button2.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> <span>\u5BFC\u5165\u5907\u4EFD</span>`;
+      svg2 = svg_element("svg");
+      path1 = svg_element("path");
+      polyline3 = svg_element("polyline");
+      line1 = svg_element("line");
+      t13 = space();
+      span2 = element("span");
+      span2.textContent = `${t("import_backup")}`;
       t15 = space();
       input1 = element("input");
       t16 = space();
       div8 = element("div");
       div6 = element("div");
       h3 = element("h3");
-      t17 = text("\u5386\u53F2\u5907\u4EFD\u8BB0\u5F55 (");
-      t18 = text(t18_value);
-      t19 = text(")");
-      t20 = space();
+      t17 = text(t17_value);
+      t18 = space();
       button3 = element("button");
-      button3.textContent = "\u{1F4C2} \u6253\u5F00\u76EE\u5F55";
-      t22 = space();
+      button3.textContent = `\u{1F4C2} ${t("open_backup_folder")}`;
+      t21 = space();
       div7 = element("div");
       button4 = element("button");
-      t23 = text("\u{1F5D1}\uFE0F \u5220\u9664\u5168\u90E8\u5907\u4EFD");
+      t22 = text("\u{1F5D1}\uFE0F ");
+      t23 = text(t23_value);
       t24 = space();
       button5 = element("button");
       button5.textContent = "\u{1F504}";
       t26 = space();
       div9 = element("div");
       if_block.c();
+      attr(polyline0, "points", "21 8 21 21 3 21 3 8");
+      attr(rect, "x", "1");
+      attr(rect, "y", "3");
+      attr(rect, "width", "22");
+      attr(rect, "height", "5");
+      attr(line0, "x1", "10");
+      attr(line0, "y1", "12");
+      attr(line0, "x2", "14");
+      attr(line0, "y2", "12");
+      attr(svg0, "width", "20");
+      attr(svg0, "height", "20");
+      attr(svg0, "viewBox", "0 0 24 24");
+      attr(svg0, "fill", "none");
+      attr(svg0, "stroke", "currentColor");
+      attr(svg0, "stroke-width", "2");
+      attr(svg0, "stroke-linecap", "round");
+      attr(svg0, "stroke-linejoin", "round");
       attr(div0, "class", "backup-header-title-wrap");
       attr(button0, "class", "backup-close-btn");
-      attr(button0, "aria-label", "\u5173\u95ED");
+      attr(button0, "aria-label", button0_aria_label_value = t("cancel"));
       attr(div1, "class", "backup-modal-header");
       attr(input0, "type", "checkbox");
       attr(input0, "id", "daily-backup-checkbox");
@@ -9359,6 +9702,18 @@ function create_fragment3(ctx) {
       attr(button1, "class", "backup-btn backup-primary-btn");
       button1.disabled = /*isBackingUp*/
       ctx[5];
+      attr(path1, "d", "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4");
+      attr(polyline3, "points", "7 10 12 15 17 10");
+      attr(line1, "x1", "12");
+      attr(line1, "y1", "15");
+      attr(line1, "x2", "12");
+      attr(line1, "y2", "3");
+      attr(svg2, "width", "14");
+      attr(svg2, "height", "14");
+      attr(svg2, "viewBox", "0 0 24 24");
+      attr(svg2, "fill", "none");
+      attr(svg2, "stroke", "currentColor");
+      attr(svg2, "stroke-width", "2");
       attr(button2, "class", "backup-btn backup-secondary-btn");
       attr(input1, "type", "file");
       attr(input1, "accept", ".json");
@@ -9367,15 +9722,15 @@ function create_fragment3(ctx) {
       attr(div4, "class", "backup-row");
       attr(div5, "class", "backup-card");
       attr(button3, "class", "backup-link-btn");
-      attr(button3, "title", "\u5728\u6587\u4EF6\u7BA1\u7406\u5668\u4E2D\u6253\u5F00\u5907\u4EFD\u6240\u5728\u6587\u4EF6\u5939");
+      attr(button3, "title", button3_title_value = t("open_backup_folder_tooltip"));
       attr(div6, "class", "backup-header-left");
       attr(button4, "class", "backup-danger-btn");
       button4.disabled = button4_disabled_value = /*backups*/
       ctx[3].length === 0;
       attr(button4, "title", button4_title_value = /*backups*/
-      ctx[3].length === 0 ? "\u6682\u65E0\u5907\u4EFD\u53EF\u5220\u9664" : "\u6E05\u7A7A\u5E76\u5220\u9664\u5168\u90E8\u672C\u5730\u5907\u4EFD\u6587\u4EF6");
+      ctx[3].length === 0 ? t("no_backups_to_delete") : t("delete_all_backups_tooltip"));
       attr(button5, "class", "backup-refresh-btn");
-      attr(button5, "title", "\u5237\u65B0\u5217\u8868");
+      attr(button5, "title", button5_title_value = t("refresh_list"));
       attr(div7, "class", "backup-header-right");
       attr(div8, "class", "backup-list-header");
       attr(div9, "class", "backup-list-scrollable");
@@ -9385,6 +9740,12 @@ function create_fragment3(ctx) {
       insert(target, div10, anchor);
       append(div10, div1);
       append(div1, div0);
+      append(div0, svg0);
+      append(svg0, polyline0);
+      append(svg0, rect);
+      append(svg0, line0);
+      append(div0, t0);
+      append(div0, h2);
       append(div1, t2);
       append(div1, button0);
       append(div10, t4);
@@ -9394,6 +9755,9 @@ function create_fragment3(ctx) {
       append(div2, input0);
       append(div2, t5);
       append(div2, label);
+      append(label, b_1);
+      append(label, t7);
+      append(label, span0);
       append(div4, t9);
       append(div4, div3);
       append(div3, button1);
@@ -9406,6 +9770,12 @@ function create_fragment3(ctx) {
       append(span1, t11);
       append(div3, t12);
       append(div3, button2);
+      append(button2, svg2);
+      append(svg2, path1);
+      append(svg2, polyline3);
+      append(svg2, line1);
+      append(button2, t13);
+      append(button2, span2);
       append(div3, t15);
       append(div3, input1);
       ctx[17](input1);
@@ -9414,13 +9784,12 @@ function create_fragment3(ctx) {
       append(div8, div6);
       append(div6, h3);
       append(h3, t17);
-      append(h3, t18);
-      append(h3, t19);
-      append(div6, t20);
+      append(div6, t18);
       append(div6, button3);
-      append(div8, t22);
+      append(div8, t21);
       append(div8, div7);
       append(div7, button4);
+      append(button4, t22);
       append(button4, t23);
       append(div7, t24);
       append(div7, button5);
@@ -9491,7 +9860,7 @@ function create_fragment3(ctx) {
       }
       if (dirty & /*isBackingUp*/
       32 && t11_value !== (t11_value = /*isBackingUp*/
-      ctx[5] ? "\u5907\u4EFD\u4E2D..." : "\u73B0\u5728\u5907\u4EFD"))
+      (ctx[5] ? t("backing_up") : t("backup_now")) + ""))
         set_data(t11, t11_value);
       if (dirty & /*isBackingUp*/
       32) {
@@ -9499,9 +9868,12 @@ function create_fragment3(ctx) {
         ctx[5];
       }
       if (dirty & /*backups*/
-      8 && t18_value !== (t18_value = /*backups*/
-      ctx[3].length + ""))
-        set_data(t18, t18_value);
+      8 && t17_value !== (t17_value = t(
+        "backup_history_title",
+        /*backups*/
+        ctx[3].length
+      ) + ""))
+        set_data(t17, t17_value);
       if (dirty & /*backups*/
       8 && button4_disabled_value !== (button4_disabled_value = /*backups*/
       ctx[3].length === 0)) {
@@ -9509,7 +9881,7 @@ function create_fragment3(ctx) {
       }
       if (dirty & /*backups*/
       8 && button4_title_value !== (button4_title_value = /*backups*/
-      ctx[3].length === 0 ? "\u6682\u65E0\u5907\u4EFD\u53EF\u5220\u9664" : "\u6E05\u7A7A\u5E76\u5220\u9664\u5168\u90E8\u672C\u5730\u5907\u4EFD\u6587\u4EF6")) {
+      ctx[3].length === 0 ? t("no_backups_to_delete") : t("delete_all_backups_tooltip"))) {
         attr(button4, "title", button4_title_value);
       }
       if (current_block_type === (current_block_type = select_block_type(ctx, dirty)) && if_block) {
@@ -9573,7 +9945,7 @@ function instance3($$self, $$props, $$invalidate) {
     if (plugin == null ? void 0 : plugin.settings) {
       $$invalidate(15, plugin.settings.dailyBackupEnabled = dailyBackup, plugin);
       await plugin.saveSettings();
-      new import_obsidian10.Notice(dailyBackup ? "\u2705 \u5DF2\u5F00\u542F\u6BCF\u65E5\u81EA\u52A8\u5907\u4EFD" : "\u26A0\uFE0F \u5DF2\u5173\u95ED\u6BCF\u65E5\u81EA\u52A8\u5907\u4EFD");
+      new import_obsidian11.Notice(dailyBackup ? t("daily_backup_enabled") : t("daily_backup_disabled"));
     }
   }
   async function handleBackupNow() {
@@ -9582,10 +9954,10 @@ function instance3($$self, $$props, $$invalidate) {
     $$invalidate(5, isBackingUp = true);
     try {
       const res = await BackupService.createBackup(app, plugin, false);
-      new import_obsidian10.Notice(`\u6570\u636E\u5DF2\u4FDD\u5B58\u5230 ${res.filepath}`);
+      new import_obsidian11.Notice(t("data_saved_to", res.filepath));
       await refreshBackups();
     } catch (e) {
-      new import_obsidian10.Notice(`\u274C \u5907\u4EFD\u5931\u8D25: ${(e == null ? void 0 : e.message) || e}`);
+      new import_obsidian11.Notice(t("backup_failed", (e == null ? void 0 : e.message) || e));
     } finally {
       $$invalidate(5, isBackingUp = false);
     }
@@ -9626,8 +9998,7 @@ function instance3($$self, $$props, $$invalidate) {
     input.value = "";
   }
   async function handleRestore(b) {
-    if (confirm(`\u786E\u8BA4\u8FD8\u539F\u5907\u4EFD\u300C${b.createdAtFormatted}\u300D\uFF1F
-\u6B64\u64CD\u4F5C\u5C06\u7528\u5907\u4EFD\u4E2D\u7684\u6570\u636E\u6062\u590D\u6240\u6709\u4EFB\u52A1\u5217\u8868\u3002`)) {
+    if (confirm(t("confirm_restore_backup", b.createdAtFormatted))) {
       const ok = await BackupService.restoreBackup(app, plugin, b.filepath);
       if (ok) {
         closeModal();
@@ -9635,7 +10006,7 @@ function instance3($$self, $$props, $$invalidate) {
     }
   }
   async function handleDelete(b) {
-    if (confirm(`\u786E\u8BA4\u5220\u9664\u5907\u4EFD\u300C${b.filename}\u300D\uFF1F`)) {
+    if (confirm(t("confirm_delete_backup", b.filename))) {
       await BackupService.deleteBackup(app, b.filepath);
       await refreshBackups();
     }
@@ -9643,10 +10014,9 @@ function instance3($$self, $$props, $$invalidate) {
   async function handleDeleteAll() {
     if (backups.length === 0)
       return;
-    if (confirm(`\u26A0\uFE0F \u5371\u9669\u64CD\u4F5C\uFF1A\u786E\u8BA4\u6E05\u7A7A\u5E76\u5220\u9664\u5168\u90E8 ${backups.length} \u4E2A\u672C\u5730\u5907\u4EFD\u6587\u4EF6\uFF1F
-\u6B64\u64CD\u4F5C\u4E0D\u53EF\u64A4\u9500\uFF01`)) {
+    if (confirm(t("confirm_delete_all_backups", backups.length))) {
       const count = await BackupService.deleteAllBackups(app);
-      new import_obsidian10.Notice(`\u{1F5D1}\uFE0F \u5DF2\u6E05\u7A7A\u5220\u9664\u5168\u90E8 ${count} \u4E2A\u5907\u4EFD\u6587\u4EF6`);
+      new import_obsidian11.Notice(t("all_backups_deleted", count));
       await refreshBackups();
     }
   }
@@ -9707,7 +10077,7 @@ var BackupModalView = class extends SvelteComponent {
 var BackupModalView_default = BackupModalView;
 
 // src/modals/BackupModal.ts
-var BackupModal = class extends import_obsidian11.Modal {
+var BackupModal = class extends import_obsidian12.Modal {
   constructor(app, plugin, dataService) {
     super(app);
     this.component = null;
@@ -9849,8 +10219,12 @@ function create_if_block_20(ctx) {
   let span0;
   let t2;
   let span1;
+  let span1_aria_label_value;
+  let span1_title_value;
   let t3;
   let span2;
+  let span2_aria_label_value;
+  let span2_title_value;
   let t4;
   let div3;
   let span3;
@@ -9922,8 +10296,8 @@ function create_if_block_20(ctx) {
       attr(span1, "class", "icon-btn");
       attr(span1, "role", "button");
       attr(span1, "tabindex", "0");
-      attr(span1, "aria-label", "\u591A\u9009\u4EFB\u52A1 (\u6279\u91CF\u5220\u9664/\u6536\u85CF)");
-      attr(span1, "title", "\u591A\u9009\u4EFB\u52A1 (\u6279\u91CF\u5220\u9664/\u6536\u85CF)");
+      attr(span1, "aria-label", span1_aria_label_value = t("multi_select_tooltip"));
+      attr(span1, "title", span1_title_value = t("multi_select_tooltip"));
       toggle_class(
         span1,
         "is-active",
@@ -9933,8 +10307,8 @@ function create_if_block_20(ctx) {
       attr(span2, "class", "icon-btn");
       attr(span2, "role", "button");
       attr(span2, "tabindex", "0");
-      attr(span2, "aria-label", "\u6570\u636E\u5907\u4EFD\u5668");
-      attr(span2, "title", "\u6570\u636E\u5907\u4EFD\u5668");
+      attr(span2, "aria-label", span2_aria_label_value = t("backup_btn_tooltip"));
+      attr(span2, "title", span2_title_value = t("backup_btn_tooltip"));
       attr(div0, "class", "main-header-actions");
       set_style(div1, "display", "flex");
       set_style(div1, "align-items", "center");
@@ -10348,26 +10722,26 @@ function create_if_block_45(ctx) {
 }
 function create_if_block_44(ctx) {
   let span;
-  let t_value = (
+  let t_1_value = (
     /*task*/
     ctx[158].dueDate + ""
   );
-  let t;
+  let t_1;
   return {
     c() {
       span = element("span");
-      t = text(t_value);
+      t_1 = text(t_1_value);
       attr(span, "class", "task-meta due-date");
     },
     m(target, anchor) {
       insert(target, span, anchor);
-      append(span, t);
+      append(span, t_1);
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*incompleteTasks*/
-      64 && t_value !== (t_value = /*task*/
+      64 && t_1_value !== (t_1_value = /*task*/
       ctx2[158].dueDate + ""))
-        set_data(t, t_value);
+        set_data(t_1, t_1_value);
     },
     d(detaching) {
       if (detaching) {
@@ -10504,7 +10878,7 @@ function create_if_block_39(ctx) {
 }
 function create_if_block_40(ctx) {
   let span;
-  let t;
+  let t_1;
   let mounted;
   let dispose;
   function select_block_type_1(ctx2, dirty) {
@@ -10557,7 +10931,7 @@ function create_if_block_40(ctx) {
     c() {
       span = element("span");
       if_block.c();
-      t = space();
+      t_1 = space();
       attr(span, "class", "meta-badge svg-badge");
       attr(span, "role", "button");
       attr(span, "tabindex", "0");
@@ -10566,7 +10940,7 @@ function create_if_block_40(ctx) {
     m(target, anchor) {
       insert(target, span, anchor);
       if_block.m(span, null);
-      append(span, t);
+      append(span, t_1);
       if (!mounted) {
         dispose = [
           listen(span, "mouseenter", mouseenter_handler_3),
@@ -10591,7 +10965,7 @@ function create_if_block_40(ctx) {
         if_block = current_block_type(ctx);
         if (if_block) {
           if_block.c();
-          if_block.m(span, t);
+          if_block.m(span, t_1);
         }
       }
     },
@@ -10781,12 +11155,11 @@ function create_if_block_37(ctx) {
       attr(span, "class", "meta-badge note-badge");
       attr(span, "role", "button");
       attr(span, "tabindex", "0");
-      attr(span, "title", span_title_value = LinkedNoteService.isHardBoundNote(
+      attr(span, "title", span_title_value = t(
+        "linked_note_preview_tooltip",
         /*task*/
         ctx[158].note_link
-      ) ? `\u4E13\u5C5E\u94FE\u63A5\u7B14\u8BB0: ${/*task*/
-      ctx[158].note_link} (\u70B9\u51FB\u8DF3\u8F6C\uFF0C\u60AC\u505C\u9884\u89C8)` : `Linked note: ${/*task*/
-      ctx[158].note_link} (Click to open, hover to preview)`);
+      ));
       toggle_class(span, "hard-bound", LinkedNoteService.isHardBoundNote(
         /*task*/
         ctx[158].note_link
@@ -10815,12 +11188,11 @@ function create_if_block_37(ctx) {
         }
       }
       if (dirty[0] & /*incompleteTasks*/
-      64 && span_title_value !== (span_title_value = LinkedNoteService.isHardBoundNote(
+      64 && span_title_value !== (span_title_value = t(
+        "linked_note_preview_tooltip",
         /*task*/
         ctx[158].note_link
-      ) ? `\u4E13\u5C5E\u94FE\u63A5\u7B14\u8BB0: ${/*task*/
-      ctx[158].note_link} (\u70B9\u51FB\u8DF3\u8F6C\uFF0C\u60AC\u505C\u9884\u89C8)` : `Linked note: ${/*task*/
-      ctx[158].note_link} (Click to open, hover to preview)`)) {
+      ))) {
         attr(span, "title", span_title_value);
       }
       if (dirty[0] & /*incompleteTasks*/
@@ -12041,26 +12413,26 @@ function create_if_block_33(ctx) {
 }
 function create_if_block_32(ctx) {
   let span;
-  let t_value = (
+  let t_1_value = (
     /*task*/
     ctx[158].dueDate + ""
   );
-  let t;
+  let t_1;
   return {
     c() {
       span = element("span");
-      t = text(t_value);
+      t_1 = text(t_1_value);
       attr(span, "class", "task-meta due-date");
     },
     m(target, anchor) {
       insert(target, span, anchor);
-      append(span, t);
+      append(span, t_1);
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*completedTasks*/
-      128 && t_value !== (t_value = /*task*/
+      128 && t_1_value !== (t_1_value = /*task*/
       ctx2[158].dueDate + ""))
-        set_data(t, t_value);
+        set_data(t_1, t_1_value);
     },
     d(detaching) {
       if (detaching) {
@@ -12196,7 +12568,7 @@ function create_if_block_26(ctx) {
 }
 function create_if_block_27(ctx) {
   let span;
-  let t;
+  let t_1;
   let mounted;
   let dispose;
   function select_block_type_3(ctx2, dirty) {
@@ -12249,7 +12621,7 @@ function create_if_block_27(ctx) {
     c() {
       span = element("span");
       if_block.c();
-      t = space();
+      t_1 = space();
       attr(span, "class", "meta-badge svg-badge");
       attr(span, "role", "button");
       attr(span, "tabindex", "0");
@@ -12258,7 +12630,7 @@ function create_if_block_27(ctx) {
     m(target, anchor) {
       insert(target, span, anchor);
       if_block.m(span, null);
-      append(span, t);
+      append(span, t_1);
       if (!mounted) {
         dispose = [
           listen(span, "mouseenter", mouseenter_handler_9),
@@ -12283,7 +12655,7 @@ function create_if_block_27(ctx) {
         if_block = current_block_type(ctx);
         if (if_block) {
           if_block.c();
-          if_block.m(span, t);
+          if_block.m(span, t_1);
         }
       }
     },
@@ -12473,12 +12845,11 @@ function create_if_block_24(ctx) {
       attr(span, "class", "meta-badge note-badge");
       attr(span, "role", "button");
       attr(span, "tabindex", "0");
-      attr(span, "title", span_title_value = LinkedNoteService.isHardBoundNote(
+      attr(span, "title", span_title_value = t(
+        "linked_note_preview_tooltip",
         /*task*/
         ctx[158].note_link
-      ) ? `\u4E13\u5C5E\u94FE\u63A5\u7B14\u8BB0: ${/*task*/
-      ctx[158].note_link} (\u70B9\u51FB\u8DF3\u8F6C\uFF0C\u60AC\u505C\u9884\u89C8)` : `Linked note: ${/*task*/
-      ctx[158].note_link} (Click to open, hover to preview)`);
+      ));
       toggle_class(span, "hard-bound", LinkedNoteService.isHardBoundNote(
         /*task*/
         ctx[158].note_link
@@ -12507,12 +12878,11 @@ function create_if_block_24(ctx) {
         }
       }
       if (dirty[0] & /*completedTasks*/
-      128 && span_title_value !== (span_title_value = LinkedNoteService.isHardBoundNote(
+      128 && span_title_value !== (span_title_value = t(
+        "linked_note_preview_tooltip",
         /*task*/
         ctx[158].note_link
-      ) ? `\u4E13\u5C5E\u94FE\u63A5\u7B14\u8BB0: ${/*task*/
-      ctx[158].note_link} (\u70B9\u51FB\u8DF3\u8F6C\uFF0C\u60AC\u505C\u9884\u89C8)` : `Linked note: ${/*task*/
-      ctx[158].note_link} (Click to open, hover to preview)`)) {
+      ))) {
         attr(span, "title", span_title_value);
       }
       if (dirty[0] & /*completedTasks*/
@@ -13832,28 +14202,28 @@ function create_if_block_62(ctx) {
 }
 function create_if_block_18(ctx) {
   let span;
-  let t_value = getRelativeTime(
+  let t_1_value = getRelativeTime(
     /*popoverTask*/
     ctx[15].createdAt
   ) + "";
-  let t;
+  let t_1;
   return {
     c() {
       span = element("span");
-      t = text(t_value);
+      t_1 = text(t_1_value);
       attr(span, "class", "meta-popover-hint");
     },
     m(target, anchor) {
       insert(target, span, anchor);
-      append(span, t);
+      append(span, t_1);
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*popoverTask*/
-      32768 && t_value !== (t_value = getRelativeTime(
+      32768 && t_1_value !== (t_1_value = getRelativeTime(
         /*popoverTask*/
         ctx2[15].createdAt
       ) + ""))
-        set_data(t, t_value);
+        set_data(t_1, t_1_value);
     },
     d(detaching) {
       if (detaching) {
@@ -14150,7 +14520,7 @@ function create_if_block_15(ctx) {
 }
 function create_if_block_122(ctx) {
   let div;
-  let t;
+  let t_1;
   let if_block0 = (
     /*popoverTask*/
     ctx[15].dueDate && create_if_block_14(ctx)
@@ -14164,7 +14534,7 @@ function create_if_block_122(ctx) {
       div = element("div");
       if (if_block0)
         if_block0.c();
-      t = space();
+      t_1 = space();
       if (if_block1)
         if_block1.c();
       attr(div, "class", "meta-popover-footer-tags");
@@ -14173,7 +14543,7 @@ function create_if_block_122(ctx) {
       insert(target, div, anchor);
       if (if_block0)
         if_block0.m(div, null);
-      append(div, t);
+      append(div, t_1);
       if (if_block1)
         if_block1.m(div, null);
     },
@@ -14187,7 +14557,7 @@ function create_if_block_122(ctx) {
         } else {
           if_block0 = create_if_block_14(ctx2);
           if_block0.c();
-          if_block0.m(div, t);
+          if_block0.m(div, t_1);
         }
       } else if (if_block0) {
         if_block0.d(1);
@@ -14854,73 +15224,70 @@ function create_if_block_110(ctx) {
 function create_if_block4(ctx) {
   let div1;
   let div0;
+  let t0_value = t(
+    "selected_items_label",
+    /*selectedTaskIds*/
+    ctx[14].size
+  ) + "";
   let t0;
-  let b;
-  let t1_value = (
-    /*selectedTaskIds*/
-    ctx[14].size + ""
-  );
   let t1;
-  let t2;
-  let t3;
   let button0;
-  let t4_value = (
+  let t2_value = (
     /*selectedTaskIds*/
-    ctx[14].size === /*incompleteTasks*/
+    (ctx[14].size === /*incompleteTasks*/
     ctx[6].length + /*completedTasks*/
     ctx[7].length && /*incompleteTasks*/
     ctx[6].length + /*completedTasks*/
-    ctx[7].length > 0 ? "\u53D6\u6D88\u5168\u9009" : "\u5168\u9009"
+    ctx[7].length > 0 ? t("deselect_all") : t("select_all")) + ""
   );
-  let t4;
-  let t5;
+  let t2;
+  let t3;
   let button1;
   let svg0;
   let polygon;
-  let t6;
+  let t4;
   let span0;
   let button1_disabled_value;
-  let t8;
+  let t6;
   let button2;
   let svg1;
   let polyline;
   let path;
-  let t9;
+  let t7;
   let span1;
   let button2_disabled_value;
-  let t11;
+  let t9;
   let button3;
+  let span2;
   let mounted;
   let dispose;
   return {
     c() {
       div1 = element("div");
       div0 = element("div");
-      t0 = text("\u5DF2\u9009 ");
-      b = element("b");
-      t1 = text(t1_value);
-      t2 = text(" \u9879");
-      t3 = space();
+      t0 = text(t0_value);
+      t1 = space();
       button0 = element("button");
-      t4 = text(t4_value);
-      t5 = space();
+      t2 = text(t2_value);
+      t3 = space();
       button1 = element("button");
       svg0 = svg_element("svg");
       polygon = svg_element("polygon");
-      t6 = space();
+      t4 = space();
       span0 = element("span");
-      span0.textContent = "\u6279\u91CF\u6536\u85CF";
-      t8 = space();
+      span0.textContent = `${t("batch_star")}`;
+      t6 = space();
       button2 = element("button");
       svg1 = svg_element("svg");
       polyline = svg_element("polyline");
       path = svg_element("path");
-      t9 = space();
+      t7 = space();
       span1 = element("span");
-      span1.textContent = "\u6279\u91CF\u5220\u9664";
-      t11 = space();
+      span1.textContent = `${t("batch_delete")}`;
+      t9 = space();
       button3 = element("button");
-      button3.innerHTML = `<span>\u2715 \u9000\u51FA</span>`;
+      span2 = element("span");
+      span2.textContent = `${t("exit")}`;
       attr(div0, "class", "multi-select-count");
       attr(button0, "class", "multi-select-btn");
       attr(polygon, "points", "12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2");
@@ -14951,27 +15318,25 @@ function create_if_block4(ctx) {
       insert(target, div1, anchor);
       append(div1, div0);
       append(div0, t0);
-      append(div0, b);
-      append(b, t1);
-      append(div0, t2);
-      append(div1, t3);
+      append(div1, t1);
       append(div1, button0);
-      append(button0, t4);
-      append(div1, t5);
+      append(button0, t2);
+      append(div1, t3);
       append(div1, button1);
       append(button1, svg0);
       append(svg0, polygon);
-      append(button1, t6);
+      append(button1, t4);
       append(button1, span0);
-      append(div1, t8);
+      append(div1, t6);
       append(div1, button2);
       append(button2, svg1);
       append(svg1, polyline);
       append(svg1, path);
-      append(button2, t9);
+      append(button2, t7);
       append(button2, span1);
-      append(div1, t11);
+      append(div1, t9);
       append(div1, button3);
+      append(button3, span2);
       if (!mounted) {
         dispose = [
           listen(
@@ -15004,17 +15369,20 @@ function create_if_block4(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*selectedTaskIds*/
-      16384 && t1_value !== (t1_value = /*selectedTaskIds*/
-      ctx2[14].size + ""))
-        set_data(t1, t1_value);
+      16384 && t0_value !== (t0_value = t(
+        "selected_items_label",
+        /*selectedTaskIds*/
+        ctx2[14].size
+      ) + ""))
+        set_data(t0, t0_value);
       if (dirty[0] & /*selectedTaskIds, incompleteTasks, completedTasks*/
-      16576 && t4_value !== (t4_value = /*selectedTaskIds*/
-      ctx2[14].size === /*incompleteTasks*/
+      16576 && t2_value !== (t2_value = /*selectedTaskIds*/
+      (ctx2[14].size === /*incompleteTasks*/
       ctx2[6].length + /*completedTasks*/
       ctx2[7].length && /*incompleteTasks*/
       ctx2[6].length + /*completedTasks*/
-      ctx2[7].length > 0 ? "\u53D6\u6D88\u5168\u9009" : "\u5168\u9009"))
-        set_data(t4, t4_value);
+      ctx2[7].length > 0 ? t("deselect_all") : t("select_all")) + ""))
+        set_data(t2, t2_value);
       if (dirty[0] & /*selectedTaskIds*/
       16384 && button1_disabled_value !== (button1_disabled_value = /*selectedTaskIds*/
       ctx2[14].size === 0)) {
@@ -15385,13 +15753,13 @@ function instance4($$self, $$props, $$invalidate) {
   let hasComboModifierOrKey = false;
   let hoveredTitleTarget = null;
   function isControlKey(e) {
-    return import_obsidian12.Platform.isMacOS ? e.key === "Meta" || e.key === "Control" : e.key === "Control";
+    return import_obsidian13.Platform.isMacOS ? e.key === "Meta" || e.key === "Control" : e.key === "Control";
   }
   function isQuickPeekModifierPressed(e) {
     if (hasComboModifierOrKey || e.shiftKey || e.altKey) {
       return false;
     }
-    if (import_obsidian12.Platform.isMacOS) {
+    if (import_obsidian13.Platform.isMacOS) {
       return e.metaKey || e.ctrlKey;
     }
     return e.ctrlKey && !e.metaKey;
@@ -15541,8 +15909,8 @@ function instance4($$self, $$props, $$invalidate) {
     if (!currentCategory)
       return;
     const tasks2 = await dataService.getTasks(currentCategory.filepath);
-    $$invalidate(6, incompleteTasks = tasks2.filter((t) => !t.completed));
-    $$invalidate(7, completedTasks = tasks2.filter((t) => t.completed));
+    $$invalidate(6, incompleteTasks = tasks2.filter((t2) => !t2.completed));
+    $$invalidate(7, completedTasks = tasks2.filter((t2) => t2.completed));
   }
   async function loadCategory(cat) {
     $$invalidate(5, currentCategory = cat);
@@ -15564,7 +15932,7 @@ function instance4($$self, $$props, $$invalidate) {
     if (!payload.categoryFilepath || payload.categoryFilepath === (currentCategory == null ? void 0 : currentCategory.filepath)) {
       await loadTasks();
       if (payload.isExternal && selectedTaskId && currentCategory) {
-        const freshTask = incompleteTasks.find((t) => t.id === selectedTaskId) || completedTasks.find((t) => t.id === selectedTaskId);
+        const freshTask = incompleteTasks.find((t2) => t2.id === selectedTaskId) || completedTasks.find((t2) => t2.id === selectedTaskId);
         if (freshTask) {
           EventBus.emit("task:selected" /* TASK_SELECTED */, {
             task: freshTask,
@@ -15576,8 +15944,8 @@ function instance4($$self, $$props, $$invalidate) {
   }
   async function handleTaskMoved(payload) {
     if (payload.targetPath === (currentCategory == null ? void 0 : currentCategory.filepath)) {
-      const existsInIncomplete = incompleteTasks.find((t) => t.id === payload.task.id);
-      const existsInComplete = completedTasks.find((t) => t.id === payload.task.id);
+      const existsInIncomplete = incompleteTasks.find((t2) => t2.id === payload.task.id);
+      const existsInComplete = completedTasks.find((t2) => t2.id === payload.task.id);
       if (!existsInIncomplete && !existsInComplete) {
         if (payload.task.completed) {
           $$invalidate(7, completedTasks = [...completedTasks, payload.task]);
@@ -15586,8 +15954,8 @@ function instance4($$self, $$props, $$invalidate) {
         }
       }
     } else if (payload.sourcePath === (currentCategory == null ? void 0 : currentCategory.filepath)) {
-      $$invalidate(6, incompleteTasks = incompleteTasks.filter((t) => t.id !== payload.task.id));
-      $$invalidate(7, completedTasks = completedTasks.filter((t) => t.id !== payload.task.id));
+      $$invalidate(6, incompleteTasks = incompleteTasks.filter((t2) => t2.id !== payload.task.id));
+      $$invalidate(7, completedTasks = completedTasks.filter((t2) => t2.id !== payload.task.id));
     }
     setTimeout(
       async () => {
@@ -15599,8 +15967,8 @@ function instance4($$self, $$props, $$invalidate) {
   }
   async function handleTaskDeleted(payload) {
     if (payload.categoryFilepath === (currentCategory == null ? void 0 : currentCategory.filepath)) {
-      $$invalidate(6, incompleteTasks = incompleteTasks.filter((t) => t.id !== payload.task.id));
-      $$invalidate(7, completedTasks = completedTasks.filter((t) => t.id !== payload.task.id));
+      $$invalidate(6, incompleteTasks = incompleteTasks.filter((t2) => t2.id !== payload.task.id));
+      $$invalidate(7, completedTasks = completedTasks.filter((t2) => t2.id !== payload.task.id));
       if (selectedTaskId === payload.task.id) {
         $$invalidate(10, selectedTaskId = "");
       }
@@ -15625,11 +15993,11 @@ function instance4($$self, $$props, $$invalidate) {
     task.completed = !task.completed;
     if (task.completed) {
       task.completedAt = (/* @__PURE__ */ new Date()).toISOString();
-      $$invalidate(6, incompleteTasks = incompleteTasks.filter((t) => t.id !== task.id));
+      $$invalidate(6, incompleteTasks = incompleteTasks.filter((t2) => t2.id !== task.id));
       $$invalidate(7, completedTasks = [task, ...completedTasks]);
     } else {
       delete task.completedAt;
-      $$invalidate(7, completedTasks = completedTasks.filter((t) => t.id !== task.id));
+      $$invalidate(7, completedTasks = completedTasks.filter((t2) => t2.id !== task.id));
       $$invalidate(6, incompleteTasks = [...incompleteTasks, task]);
     }
     await dataService.updateTask(currentCategory.filepath, task);
@@ -15725,7 +16093,7 @@ function instance4($$self, $$props, $$invalidate) {
     else
       $$invalidate(7, completedTasks = e.detail.items);
     const draggedId = e.detail.info.id;
-    const task = (listType === "incomplete" ? incompleteTasks : completedTasks).find((t) => t.id === draggedId);
+    const task = (listType === "incomplete" ? incompleteTasks : completedTasks).find((t2) => t2.id === draggedId);
     if (task && currentCategory) {
       window.__mstodo_drag_data = {
         taskId: task.id,
@@ -15742,14 +16110,14 @@ function instance4($$self, $$props, $$invalidate) {
     const draggedId = e.detail.info.id;
     if (dragData && dragData.movedToTarget && dragData.movedToTarget !== (currentCategory == null ? void 0 : currentCategory.filepath)) {
       if (listType === "incomplete") {
-        $$invalidate(6, incompleteTasks = incompleteTasks.filter((t) => {
+        $$invalidate(6, incompleteTasks = incompleteTasks.filter((t2) => {
           var _a2;
-          return t.id !== draggedId && t.id !== ((_a2 = dragData.task) == null ? void 0 : _a2.id);
+          return t2.id !== draggedId && t2.id !== ((_a2 = dragData.task) == null ? void 0 : _a2.id);
         }));
       } else {
-        $$invalidate(7, completedTasks = completedTasks.filter((t) => {
+        $$invalidate(7, completedTasks = completedTasks.filter((t2) => {
           var _a2;
-          return t.id !== draggedId && t.id !== ((_a2 = dragData.task) == null ? void 0 : _a2.id);
+          return t2.id !== draggedId && t2.id !== ((_a2 = dragData.task) == null ? void 0 : _a2.id);
         }));
       }
       const domNode = document.getElementById("task-" + draggedId);
@@ -15769,8 +16137,8 @@ function instance4($$self, $$props, $$invalidate) {
     }
     const updatedItems = e.detail.items;
     const isCompletedList = listType === "completed";
-    updatedItems.forEach((t) => {
-      t.completed = isCompletedList;
+    updatedItems.forEach((t2) => {
+      t2.completed = isCompletedList;
     });
     if (listType === "incomplete")
       $$invalidate(6, incompleteTasks = updatedItems);
@@ -15795,7 +16163,7 @@ function instance4($$self, $$props, $$invalidate) {
     e.preventDefault();
     if (!currentCategory)
       return;
-    const menu = new import_obsidian12.Menu();
+    const menu = new import_obsidian13.Menu();
     const categories = await dataService.getCategories();
     for (const cat of categories) {
       if (cat.filepath === currentCategory.filepath)
@@ -15803,8 +16171,8 @@ function instance4($$self, $$props, $$invalidate) {
       menu.addItem((item) => {
         item.setTitle(`Move to "${cat.name}"`).setIcon("folder").onClick(async () => {
           injectDndGhostShield();
-          $$invalidate(6, incompleteTasks = incompleteTasks.filter((t) => t.id !== task.id));
-          $$invalidate(7, completedTasks = completedTasks.filter((t) => t.id !== task.id));
+          $$invalidate(6, incompleteTasks = incompleteTasks.filter((t2) => t2.id !== task.id));
+          $$invalidate(7, completedTasks = completedTasks.filter((t2) => t2.id !== task.id));
           await dataService.moveTask(task, currentCategory.filepath, cat.filepath);
           EventBus.emit("task:moved" /* TASK_MOVED */, {
             task,
@@ -15819,8 +16187,8 @@ function instance4($$self, $$props, $$invalidate) {
     menu.addItem((item) => {
       item.setTitle("Delete task").setIcon("trash").onClick(async () => {
         await promptDeleteTaskWithLinkedNote(plugin.app, task, currentCategory.filepath, dataService, () => {
-          $$invalidate(6, incompleteTasks = incompleteTasks.filter((t) => t.id !== task.id));
-          $$invalidate(7, completedTasks = completedTasks.filter((t) => t.id !== task.id));
+          $$invalidate(6, incompleteTasks = incompleteTasks.filter((t2) => t2.id !== task.id));
+          $$invalidate(7, completedTasks = completedTasks.filter((t2) => t2.id !== task.id));
         });
       });
     });
@@ -15838,7 +16206,7 @@ function instance4($$self, $$props, $$invalidate) {
       selectedTaskIds.clear();
       $$invalidate(14, selectedTaskIds);
     } else {
-      new import_obsidian12.Notice("\u2611\uFE0F \u591A\u9009\u6A21\u5F0F\u5DF2\u5F00\u542F\uFF1A\u53EF\u52FE\u9009\u4EFB\u52A1\u8FDB\u884C\u6279\u91CF\u64CD\u4F5C");
+      new import_obsidian13.Notice(t("multi_select_mode_enabled"));
     }
   }
   function openBackupModal() {
@@ -15857,8 +16225,8 @@ function instance4($$self, $$props, $$invalidate) {
     if (selectedTaskIds.size === all.length && all.length > 0) {
       selectedTaskIds.clear();
     } else {
-      for (const t of all) {
-        selectedTaskIds.add(t.id);
+      for (const t2 of all) {
+        selectedTaskIds.add(t2.id);
       }
     }
     $$invalidate(14, selectedTaskIds);
@@ -15867,31 +16235,31 @@ function instance4($$self, $$props, $$invalidate) {
     if (!currentCategory || selectedTaskIds.size === 0)
       return;
     const all = [...incompleteTasks, ...completedTasks];
-    const selected = all.filter((t) => selectedTaskIds.has(t.id));
+    const selected = all.filter((t2) => selectedTaskIds.has(t2.id));
     if (selected.length === 0)
       return;
-    const shouldStar = !selected.every((t) => t.starred);
-    for (const t of selected) {
-      t.starred = shouldStar;
+    const shouldStar = !selected.every((t2) => t2.starred);
+    for (const t2 of selected) {
+      t2.starred = shouldStar;
     }
     $$invalidate(6, incompleteTasks = [...incompleteTasks]);
     $$invalidate(7, completedTasks = [...completedTasks]);
     await dataService.saveTasks(currentCategory.filepath, [...incompleteTasks, ...completedTasks]);
-    new import_obsidian12.Notice(shouldStar ? `\u2B50 \u5DF2\u6536\u85CF\u9009\u4E2D\u7684 ${selected.length} \u9879\u4EFB\u52A1` : `\u5DF2\u53D6\u6D88\u6536\u85CF\u9009\u4E2D\u7684 ${selected.length} \u9879\u4EFB\u52A1`);
+    new import_obsidian13.Notice(shouldStar ? t("batch_starred_tasks", selected.length) : t("batch_unstarred_tasks", selected.length));
   }
   async function handleBatchDelete() {
     if (!currentCategory || selectedTaskIds.size === 0)
       return;
     const count = selectedTaskIds.size;
-    if (!confirm(`\u786E\u8BA4\u6279\u91CF\u5220\u9664\u9009\u4E2D\u7684 ${count} \u9879\u4EFB\u52A1\uFF1F\u6B64\u64CD\u4F5C\u4E0D\u53EF\u9006\u3002`))
+    if (!confirm(t("confirm_batch_delete_tasks", count)))
       return;
-    $$invalidate(6, incompleteTasks = incompleteTasks.filter((t) => !selectedTaskIds.has(t.id)));
-    $$invalidate(7, completedTasks = completedTasks.filter((t) => !selectedTaskIds.has(t.id)));
+    $$invalidate(6, incompleteTasks = incompleteTasks.filter((t2) => !selectedTaskIds.has(t2.id)));
+    $$invalidate(7, completedTasks = completedTasks.filter((t2) => !selectedTaskIds.has(t2.id)));
     await dataService.saveTasks(currentCategory.filepath, [...incompleteTasks, ...completedTasks]);
     selectedTaskIds.clear();
     $$invalidate(14, selectedTaskIds);
     $$invalidate(13, isMultiSelectMode = false);
-    new import_obsidian12.Notice(`\u{1F5D1}\uFE0F \u5DF2\u6279\u91CF\u5220\u9664 ${count} \u9879\u4EFB\u52A1`);
+    new import_obsidian13.Notice(t("batch_deleted_tasks_notice", count));
   }
   const contextmenu_handler = () => {
     if (popoverVisible)
@@ -16161,7 +16529,7 @@ var TaskMainView = class extends SvelteComponent {
 var TaskMainView_default = TaskMainView;
 
 // src/TaskDetailView.svelte
-var import_obsidian13 = require("obsidian");
+var import_obsidian14 = require("obsidian");
 function get_each_context5(ctx, list, i) {
   const child_ctx = ctx.slice();
   child_ctx[106] = list[i][0];
@@ -18655,26 +19023,26 @@ function create_if_block_92(ctx) {
 }
 function create_if_block_82(ctx) {
   let span;
-  let t_value = (
+  let t_1_value = (
     /*scheduleBadge*/
     ctx[17].letter + ""
   );
-  let t;
+  let t_1;
   return {
     c() {
       span = element("span");
-      t = text(t_value);
+      t_1 = text(t_1_value);
       attr(span, "class", "schedule-badge-letter");
     },
     m(target, anchor) {
       insert(target, span, anchor);
-      append(span, t);
+      append(span, t_1);
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*scheduleBadge*/
-      131072 && t_value !== (t_value = /*scheduleBadge*/
+      131072 && t_1_value !== (t_1_value = /*scheduleBadge*/
       ctx2[17].letter + ""))
-        set_data(t, t_value);
+        set_data(t_1, t_1_value);
     },
     d(detaching) {
       if (detaching) {
@@ -19642,37 +20010,37 @@ function instance5($$self, $$props, $$invalidate) {
       $$invalidate(7, showRepeatPicker = false);
     }
   }
-  function getScheduleBadge(t) {
-    if (!t)
+  function getScheduleBadge(t2) {
+    if (!t2)
       return {
         isOverdue: false,
         isActive: false,
         tooltip: "Due date & repeat"
       };
     const todayStr = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-    const isOverdue = !!(t.dueDate && t.dueDate < todayStr && !t.completed);
-    const isDueToday = !!(t.dueDate && t.dueDate === todayStr);
-    const hasRecurrence = !!t.recurrence;
-    const isActive = isOverdue || isDueToday || hasRecurrence || !!t.dueDate;
+    const isOverdue = !!(t2.dueDate && t2.dueDate < todayStr && !t2.completed);
+    const isDueToday = !!(t2.dueDate && t2.dueDate === todayStr);
+    const hasRecurrence = !!t2.recurrence;
+    const isActive = isOverdue || isDueToday || hasRecurrence || !!t2.dueDate;
     let letter = void 0;
     let tooltip = "Due date & repeat";
-    if (t.recurrence) {
-      const r = t.recurrence;
+    if (t2.recurrence) {
+      const r = t2.recurrence;
       if (r.type === "daily" && (r.interval === 1 || !r.interval)) {
         letter = "D";
-        tooltip = isOverdue ? `Overdue (Daily, due ${t.dueDate})` : "Repeats daily";
+        tooltip = isOverdue ? `Overdue (Daily, due ${t2.dueDate})` : "Repeats daily";
       } else if (r.type === "weekdays") {
         letter = "W";
-        tooltip = isOverdue ? `Overdue (Weekdays, due ${t.dueDate})` : "Repeats weekdays (Mon\u2013Fri)";
+        tooltip = isOverdue ? `Overdue (Weekdays, due ${t2.dueDate})` : "Repeats weekdays (Mon\u2013Fri)";
       } else if (r.type === "weekly" && r.daysOfWeek && r.daysOfWeek.length === 1) {
         const dayLetters = ["S", "M", "T", "W", "T", "F", "S"];
         letter = dayLetters[r.daysOfWeek[0]];
-        tooltip = isOverdue ? `Overdue (${DAY_LABELS[r.daysOfWeek[0]]}, due ${t.dueDate})` : `Repeats weekly on ${DAY_LABELS[r.daysOfWeek[0]]}`;
+        tooltip = isOverdue ? `Overdue (${DAY_LABELS[r.daysOfWeek[0]]}, due ${t2.dueDate})` : `Repeats weekly on ${DAY_LABELS[r.daysOfWeek[0]]}`;
       } else {
-        tooltip = isOverdue ? `Overdue (${t.dueDate})` : getRecurrenceLabel2(r);
+        tooltip = isOverdue ? `Overdue (${t2.dueDate})` : getRecurrenceLabel2(r);
       }
-    } else if (t.dueDate) {
-      tooltip = isOverdue ? `Overdue (${t.dueDate})` : isDueToday ? "Due today" : `Due ${t.dueDate}`;
+    } else if (t2.dueDate) {
+      tooltip = isOverdue ? `Overdue (${t2.dueDate})` : isDueToday ? "Due today" : `Due ${t2.dueDate}`;
     }
     return { letter, isOverdue, isActive, tooltip };
   }
@@ -19849,10 +20217,10 @@ function instance5($$self, $$props, $$invalidate) {
       void immediateSave();
     }
   });
-  function loadTask(t, filepath) {
+  function loadTask(t2, filepath) {
     $$invalidate(2, task = {
-      ...t,
-      steps: t.steps.map((s) => ({ ...s }))
+      ...t2,
+      steps: t2.steps.map((s) => ({ ...s }))
     });
     $$invalidate(4, categoryFilepath = filepath);
     $$invalidate(6, showScheduleSection = false);
@@ -19895,7 +20263,7 @@ function instance5($$self, $$props, $$invalidate) {
       }
       if (payload.isExternal) {
         const tasks2 = await dataService.getTasks(categoryFilepath);
-        const fresh = tasks2.find((t) => t.id === (task == null ? void 0 : task.id));
+        const fresh = tasks2.find((t2) => t2.id === (task == null ? void 0 : task.id));
         if (fresh) {
           $$invalidate(2, task = {
             ...fresh,
@@ -20000,7 +20368,7 @@ function instance5($$self, $$props, $$invalidate) {
         $$invalidate(2, task);
         await immediateSave();
         await LinkedNoteService.openLinkedNoteFile(plugin.app, res.file);
-        new import_obsidian13.Notice(`\u5DF2\u91CD\u65B0\u521B\u5EFA\u5E76\u6253\u5F00\u94FE\u63A5\u7B14\u8BB0: ${res.file.basename}`);
+        new import_obsidian14.Notice(t("linked_note_recreated", res.file.basename));
       }
     } else {
       const res = await LinkedNoteService.createOrGetLinkedNote(plugin.app, task, categoryFilepath);
@@ -20008,7 +20376,7 @@ function instance5($$self, $$props, $$invalidate) {
       $$invalidate(2, task);
       await immediateSave();
       await LinkedNoteService.openLinkedNoteFile(plugin.app, res.file);
-      new import_obsidian13.Notice(`\u5DF2\u521B\u5EFA\u5E76\u6253\u5F00\u94FE\u63A5\u7B14\u8BB0: ${res.file.basename}`);
+      new import_obsidian14.Notice(t("linked_note_created", res.file.basename));
     }
   }
   function handleLinkNoteContextMenu(e) {
@@ -20016,20 +20384,20 @@ function instance5($$self, $$props, $$invalidate) {
       return;
     e.preventDefault();
     e.stopPropagation();
-    const menu = new import_obsidian13.Menu();
+    const menu = new import_obsidian14.Menu();
     menu.addItem((item) => {
-      item.setTitle("\u6253\u5F00\u94FE\u63A5\u7B14\u8BB0").setIcon("file-text").onClick(() => {
+      item.setTitle(t("open_linked_note")).setIcon("file-text").onClick(() => {
         void handleLinkNoteClick(e);
       });
     });
     menu.addItem((item) => {
-      item.setTitle("\u53D6\u6D88\u5173\u8054\u7B14\u8BB0").setIcon("unlink").onClick(async () => {
+      item.setTitle(t("unlink_note")).setIcon("unlink").onClick(async () => {
         if (!task)
           return;
         delete task.note_link;
         $$invalidate(2, task);
         await immediateSave();
-        new import_obsidian13.Notice("\u5DF2\u53D6\u6D88\u7B14\u8BB0\u5173\u8054");
+        new import_obsidian14.Notice(t("unlink_note_success"));
       });
     });
     menu.showAtMouseEvent(e);
@@ -20304,7 +20672,7 @@ function instance5($$self, $$props, $$invalidate) {
     if ($$self.$$.dirty[0] & /*hasLinkedNote, task*/
     12) {
       $:
-        $$invalidate(16, linkNoteTooltip = hasLinkedNote ? `\u6253\u5F00\u94FE\u63A5\u7B14\u8BB0: ${task == null ? void 0 : task.note_link} (\u70B9\u51FB\u8DF3\u8F6C\uFF0C\u60AC\u505C\u9884\u89C8\uFF0C\u53F3\u952E\u7BA1\u7406)` : "\u94FE\u63A5\u4E13\u5C5E\u7B14\u8BB0 (\u70B9\u51FB\u81EA\u52A8\u521B\u5EFA\u5E76\u8DF3\u8F6C)");
+        $$invalidate(16, linkNoteTooltip = hasLinkedNote ? t("linked_note_tooltip_exists", (task == null ? void 0 : task.note_link) || "") : t("linked_note_tooltip_create"));
     }
   };
   return [
@@ -20431,7 +20799,7 @@ var TaskDetailView = class extends SvelteComponent {
 var TaskDetailView_default = TaskDetailView;
 
 // src/settings.ts
-var import_obsidian14 = require("obsidian");
+var import_obsidian15 = require("obsidian");
 var DEFAULT_SETTINGS = {
   accentColor: "#8b5cf6",
   openDetailInModal: false,
@@ -20450,7 +20818,7 @@ var DEFAULT_SETTINGS = {
   dailyBackupEnabled: true,
   lastDailyBackupDate: ""
 };
-var FluentTasksSettingTab = class extends import_obsidian14.PluginSettingTab {
+var FluentTasksSettingTab = class extends import_obsidian15.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
     this.plugin = plugin;
@@ -20458,7 +20826,7 @@ var FluentTasksSettingTab = class extends import_obsidian14.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    const colorSetting = new import_obsidian14.Setting(containerEl).setName("Accent Color").setDesc("Choose the primary accent color for the plugin (e.g., active borders, stars).").addColorPicker((color) => color.setValue(this.plugin.settings.accentColor).onChange(async (value) => {
+    const colorSetting = new import_obsidian15.Setting(containerEl).setName("Accent Color").setDesc("Choose the primary accent color for the plugin (e.g., active borders, stars).").addColorPicker((color) => color.setValue(this.plugin.settings.accentColor).onChange(async (value) => {
       this.plugin.settings.accentColor = value;
       await this.plugin.saveSettings();
       this.plugin.applySettings();
@@ -20472,7 +20840,7 @@ var FluentTasksSettingTab = class extends import_obsidian14.PluginSettingTab {
         this.plugin.applySettings();
       });
     }
-    new import_obsidian14.Setting(containerEl).setName("Open Task Details in Floating Modal").setDesc("Open task details in a centered floating modal instead of expanding the right sidebar panel.").addToggle((toggle) => {
+    new import_obsidian15.Setting(containerEl).setName("Open Task Details in Floating Modal").setDesc("Open task details in a centered floating modal instead of expanding the right sidebar panel.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.openDetailInModal) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.openDetailInModal = value;
@@ -20486,64 +20854,64 @@ var FluentTasksSettingTab = class extends import_obsidian14.PluginSettingTab {
         }
       });
     });
-    new import_obsidian14.Setting(containerEl).setName("Wrap Task Titles").setDesc("Wrap long task titles across multiple lines in the task list instead of truncating with ellipsis.").addToggle((toggle) => {
+    new import_obsidian15.Setting(containerEl).setName("Wrap Task Titles").setDesc("Wrap long task titles across multiple lines in the task list instead of truncating with ellipsis.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.wrapTaskTitles) != null ? _a : true).onChange(async (value) => {
         this.plugin.settings.wrapTaskTitles = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian14.Setting(containerEl).setName("Quick Task Modal Action").setDesc("Choose whether selecting a task/list in the Quick Task Modal manages it directly in the popup or navigates and reveals it in the main workspace.").addDropdown((dropdown) => {
+    new import_obsidian15.Setting(containerEl).setName("Quick Task Modal Action").setDesc("Choose whether selecting a task/list in the Quick Task Modal manages it directly in the popup or navigates and reveals it in the main workspace.").addDropdown((dropdown) => {
       var _a;
       return dropdown.addOption("direct", "Direct In-Modal Management (Toggle & Add in popup)").addOption("navigate", "Navigate Workspace (Open list & details in workspace)").setValue((_a = this.plugin.settings.quickModalAction) != null ? _a : "direct").onChange(async (value) => {
         this.plugin.settings.quickModalAction = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian14.Setting(containerEl).setName("Quick List Modal: Grid Board Layout").setDesc("Tile lists and groups across multi-column cards like a dashboard chart to fully display lists in the available screen space without scrolling. Turn off to revert to the classic single-column list.").addToggle((toggle) => {
+    new import_obsidian15.Setting(containerEl).setName("Quick List Modal: Grid Board Layout").setDesc("Tile lists and groups across multi-column cards like a dashboard chart to fully display lists in the available screen space without scrolling. Turn off to revert to the classic single-column list.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.quickListGridLayout) != null ? _a : true).onChange(async (value) => {
         this.plugin.settings.quickListGridLayout = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian14.Setting(containerEl).setName("Quick List Modal: Min Column Gap").setDesc("Minimum horizontal gap (in px) between columns in the Quick List grid board layout (default: 20px).").addSlider((slider) => {
+    new import_obsidian15.Setting(containerEl).setName("Quick List Modal: Min Column Gap").setDesc("Minimum horizontal gap (in px) between columns in the Quick List grid board layout (default: 20px).").addSlider((slider) => {
       var _a;
       return slider.setLimits(10, 64, 2).setValue((_a = this.plugin.settings.quickListMinColGap) != null ? _a : 20).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.quickListMinColGap = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian14.Setting(containerEl).setName("Quick List Modal: Min Row Gap").setDesc("Minimum vertical gap (in px) between stacked cards within the same column (default: 16px).").addSlider((slider) => {
+    new import_obsidian15.Setting(containerEl).setName("Quick List Modal: Min Row Gap").setDesc("Minimum vertical gap (in px) between stacked cards within the same column (default: 16px).").addSlider((slider) => {
       var _a;
       return slider.setLimits(8, 48, 2).setValue((_a = this.plugin.settings.quickListMinRowGap) != null ? _a : 16).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.quickListMinRowGap = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian14.Setting(containerEl).setName("Quick List Modal: Focus Center List on Open").setDesc("Automatically focus the visually centered list when opening the Quick List board instead of the top-left list, enabling immediate multi-directional arrow navigation.").addToggle((toggle) => {
+    new import_obsidian15.Setting(containerEl).setName("Quick List Modal: Focus Center List on Open").setDesc("Automatically focus the visually centered list when opening the Quick List board instead of the top-left list, enabling immediate multi-directional arrow navigation.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.quickListFocusCenter) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.quickListFocusCenter = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian14.Setting(containerEl).setName("Auto-Expand Sidebar on Focus").setDesc("Automatically expand the left sidebar list panel when switching to Fluent Tasks tab (via Ctrl+Tab, Ctrl+Shift+Tab, or clicking the tab).").addToggle((toggle) => toggle.setValue(this.plugin.settings.autoExpandSidebar).onChange(async (value) => {
+    new import_obsidian15.Setting(containerEl).setName("Auto-Expand Sidebar on Focus").setDesc("Automatically expand the left sidebar list panel when switching to Fluent Tasks tab (via Ctrl+Tab, Ctrl+Shift+Tab, or clicking the tab).").addToggle((toggle) => toggle.setValue(this.plugin.settings.autoExpandSidebar).onChange(async (value) => {
       this.plugin.settings.autoExpandSidebar = value;
       await this.plugin.saveSettings();
     }));
-    new import_obsidian14.Setting(containerEl).setName("Auto-Collapse Sidebar on Tab Switch").setDesc("Automatically collapse the sidebar when switching away to other tabs (notes, settings) if the sidebar is currently displaying Fluent Tasks.").addToggle((toggle) => {
+    new import_obsidian15.Setting(containerEl).setName("Auto-Collapse Sidebar on Tab Switch").setDesc("Automatically collapse the sidebar when switching away to other tabs (notes, settings) if the sidebar is currently displaying Fluent Tasks.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.autoCollapseSidebarOnSwitch) != null ? _a : true).onChange(async (value) => {
         this.plugin.settings.autoCollapseSidebarOnSwitch = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian14.Setting(containerEl).setName("Search: Hide Completed Tasks").setDesc("When searching, hide completed tasks by default. Can also be toggled directly in the search modal.").addToggle((toggle) => toggle.setValue(this.plugin.settings.searchHideCompleted).onChange(async (value) => {
+    new import_obsidian15.Setting(containerEl).setName("Search: Hide Completed Tasks").setDesc("When searching, hide completed tasks by default. Can also be toggled directly in the search modal.").addToggle((toggle) => toggle.setValue(this.plugin.settings.searchHideCompleted).onChange(async (value) => {
       this.plugin.settings.searchHideCompleted = value;
       await this.plugin.saveSettings();
     }));
-    new import_obsidian14.Setting(containerEl).setName("Hide Ribbon Icon").setDesc("Hide the Fluent Tasks icon in the left ribbon.").addToggle((toggle) => {
+    new import_obsidian15.Setting(containerEl).setName("Hide Ribbon Icon").setDesc("Hide the Fluent Tasks icon in the left ribbon.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.hideRibbonIcon) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.hideRibbonIcon = value;
@@ -20555,7 +20923,7 @@ var FluentTasksSettingTab = class extends import_obsidian14.PluginSettingTab {
 };
 
 // src/modals/QuickTaskModal.ts
-var import_obsidian16 = require("obsidian");
+var import_obsidian17 = require("obsidian");
 
 // src/utils/sidebarTreeUtils.ts
 function moveSidebarItem(items, movedItemId, targetId, position) {
@@ -20685,7 +21053,7 @@ function filterSidebarTree(items, query) {
 }
 
 // src/modals/QuickTaskModalView.svelte
-var import_obsidian15 = require("obsidian");
+var import_obsidian16 = require("obsidian");
 function get_each_context6(ctx, list, i) {
   const child_ctx = ctx.slice();
   child_ctx[149] = list[i];
@@ -20718,48 +21086,29 @@ function get_each_context_52(ctx, list, i) {
 }
 function create_if_block_302(ctx) {
   let div;
-  let t0;
-  let b;
-  let t2;
-  let code;
-  let t4;
-  let t5;
-  let t6;
+  let raw_value = t(
+    "quick_task_tip",
+    /*remainingTips*/
+    ctx[2]
+  ) + "";
   return {
     c() {
       div = element("div");
-      t0 = text("\u{1F4A1} \u63D0\u793A: \u5728 ");
-      b = element("b");
-      b.textContent = "\u8BBE\u7F6E \u2192 \u5FEB\u6377\u952E";
-      t2 = text(" \u4E2D\u4E3A ");
-      code = element("code");
-      code.textContent = "Fluent Tasks: Open Quick Task Modal";
-      t4 = text(" \u8BBE\u7F6E\u5FEB\u6377\u952E\u5373\u53EF\u79D2\u7EA7\u547C\u51FA (\u5269\u4F59 ");
-      t5 = text(
-        /*remainingTips*/
-        ctx[2]
-      );
-      t6 = text(" \u6B21\u63D0\u9192)");
       attr(div, "class", "quick-modal-tip-banner");
     },
     m(target, anchor) {
       insert(target, div, anchor);
-      append(div, t0);
-      append(div, b);
-      append(div, t2);
-      append(div, code);
-      append(div, t4);
-      append(div, t5);
-      append(div, t6);
+      div.innerHTML = raw_value;
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*remainingTips*/
-      4)
-        set_data(
-          t5,
-          /*remainingTips*/
-          ctx2[2]
-        );
+      4 && raw_value !== (raw_value = t(
+        "quick_task_tip",
+        /*remainingTips*/
+        ctx2[2]
+      ) + ""))
+        div.innerHTML = raw_value;
+      ;
     },
     d(detaching) {
       if (detaching) {
@@ -21298,26 +21647,26 @@ function create_if_block_224(ctx) {
 }
 function create_else_block_10(ctx) {
   let span;
-  let t_value = (
+  let t_1_value = (
     /*item*/
     ctx[160].name + ""
   );
-  let t;
+  let t_1;
   return {
     c() {
       span = element("span");
-      t = text(t_value);
+      t_1 = text(t_1_value);
       attr(span, "class", "quick-modal-list-name");
     },
     m(target, anchor) {
       insert(target, span, anchor);
-      append(span, t);
+      append(span, t_1);
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*sidebarItems*/
-      8 && t_value !== (t_value = /*item*/
+      8 && t_1_value !== (t_1_value = /*item*/
       ctx2[160].name + ""))
-        set_data(t, t_value);
+        set_data(t_1, t_1_value);
     },
     d(detaching) {
       if (detaching) {
@@ -21385,32 +21734,32 @@ function create_if_block_282(ctx) {
 }
 function create_if_block_272(ctx) {
   let span;
-  let t_value = (
+  let t_1_value = (
     /*taskCounts*/
     ctx[9][
       /*item*/
       ctx[160].filepath
     ] + ""
   );
-  let t;
+  let t_1;
   return {
     c() {
       span = element("span");
-      t = text(t_value);
+      t_1 = text(t_1_value);
       attr(span, "class", "quick-modal-badge");
     },
     m(target, anchor) {
       insert(target, span, anchor);
-      append(span, t);
+      append(span, t_1);
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*taskCounts, sidebarItems*/
-      520 && t_value !== (t_value = /*taskCounts*/
+      520 && t_1_value !== (t_1_value = /*taskCounts*/
       ctx2[9][
         /*item*/
         ctx2[160].filepath
       ] + ""))
-        set_data(t, t_value);
+        set_data(t_1, t_1_value);
     },
     d(detaching) {
       if (detaching) {
@@ -21421,11 +21770,11 @@ function create_if_block_272(ctx) {
 }
 function create_else_block_8(ctx) {
   let span;
-  let t_value = (
+  let t_1_value = (
     /*item*/
     ctx[160].name + ""
   );
-  let t;
+  let t_1;
   let mounted;
   let dispose;
   function click_handler_1() {
@@ -21440,12 +21789,12 @@ function create_else_block_8(ctx) {
   return {
     c() {
       span = element("span");
-      t = text(t_value);
+      t_1 = text(t_1_value);
       attr(span, "class", "quick-modal-group-title");
     },
     m(target, anchor) {
       insert(target, span, anchor);
-      append(span, t);
+      append(span, t_1);
       if (!mounted) {
         dispose = listen(span, "click", click_handler_1);
         mounted = true;
@@ -21454,9 +21803,9 @@ function create_else_block_8(ctx) {
     p(new_ctx, dirty) {
       ctx = new_ctx;
       if (dirty[0] & /*sidebarItems*/
-      8 && t_value !== (t_value = /*item*/
+      8 && t_1_value !== (t_1_value = /*item*/
       ctx[160].name + ""))
-        set_data(t, t_value);
+        set_data(t_1, t_1_value);
     },
     d(detaching) {
       if (detaching) {
@@ -21580,26 +21929,26 @@ function create_if_block_233(ctx) {
 }
 function create_else_block_7(ctx) {
   let span;
-  let t_value = (
+  let t_1_value = (
     /*child*/
     ctx[163].name + ""
   );
-  let t;
+  let t_1;
   return {
     c() {
       span = element("span");
-      t = text(t_value);
+      t_1 = text(t_1_value);
       attr(span, "class", "quick-modal-list-name");
     },
     m(target, anchor) {
       insert(target, span, anchor);
-      append(span, t);
+      append(span, t_1);
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*sidebarItems*/
-      8 && t_value !== (t_value = /*child*/
+      8 && t_1_value !== (t_1_value = /*child*/
       ctx2[163].name + ""))
-        set_data(t, t_value);
+        set_data(t_1, t_1_value);
     },
     d(detaching) {
       if (detaching) {
@@ -21667,32 +22016,32 @@ function create_if_block_252(ctx) {
 }
 function create_if_block_242(ctx) {
   let span;
-  let t_value = (
+  let t_1_value = (
     /*taskCounts*/
     ctx[9][
       /*child*/
       ctx[163].filepath
     ] + ""
   );
-  let t;
+  let t_1;
   return {
     c() {
       span = element("span");
-      t = text(t_value);
+      t_1 = text(t_1_value);
       attr(span, "class", "quick-modal-badge");
     },
     m(target, anchor) {
       insert(target, span, anchor);
-      append(span, t);
+      append(span, t_1);
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*taskCounts, sidebarItems*/
-      520 && t_value !== (t_value = /*taskCounts*/
+      520 && t_1_value !== (t_1_value = /*taskCounts*/
       ctx2[9][
         /*child*/
         ctx2[163].filepath
       ] + ""))
-        set_data(t, t_value);
+        set_data(t_1, t_1_value);
     },
     d(detaching) {
       if (detaching) {
@@ -22202,18 +22551,18 @@ function create_if_block_203(ctx) {
   };
 }
 function create_else_block_52(ctx) {
-  let t;
+  let t_1;
   return {
     c() {
-      t = text("Tasks");
+      t_1 = text("Tasks");
     },
     m(target, anchor) {
-      insert(target, t, anchor);
+      insert(target, t_1, anchor);
     },
     p: noop,
     d(detaching) {
       if (detaching) {
-        detach(t);
+        detach(t_1);
       }
     }
   };
@@ -22364,7 +22713,7 @@ function create_else_block_24(ctx) {
   let div;
   let each_blocks = [];
   let each_1_lookup = /* @__PURE__ */ new Map();
-  let t;
+  let t_1;
   let if_block_anchor;
   let each_value_3 = ensure_array_like(
     /*incompleteTasks*/
@@ -22389,7 +22738,7 @@ function create_else_block_24(ctx) {
       for (let i = 0; i < each_blocks.length; i += 1) {
         each_blocks[i].c();
       }
-      t = space();
+      t_1 = space();
       if (if_block)
         if_block.c();
       if_block_anchor = empty();
@@ -22402,7 +22751,7 @@ function create_else_block_24(ctx) {
           each_blocks[i].m(div, null);
         }
       }
-      insert(target, t, anchor);
+      insert(target, t_1, anchor);
       if (if_block)
         if_block.m(target, anchor);
       insert(target, if_block_anchor, anchor);
@@ -22437,7 +22786,7 @@ function create_else_block_24(ctx) {
     d(detaching) {
       if (detaching) {
         detach(div);
-        detach(t);
+        detach(t_1);
         detach(if_block_anchor);
       }
       for (let i = 0; i < each_blocks.length; i += 1) {
@@ -22689,12 +23038,11 @@ function create_if_block_134(ctx) {
       attr(span, "class", "meta-badge note-badge");
       attr(span, "role", "button");
       attr(span, "tabindex", "0");
-      attr(span, "title", span_title_value = LinkedNoteService.isHardBoundNote(
+      attr(span, "title", span_title_value = t(
+        "linked_note_preview_tooltip",
         /*task*/
         ctx[155].note_link
-      ) ? `\u4E13\u5C5E\u94FE\u63A5\u7B14\u8BB0: ${/*task*/
-      ctx[155].note_link} (\u70B9\u51FB\u8DF3\u8F6C\uFF0C\u60AC\u505C\u9884\u89C8)` : `Linked note: ${/*task*/
-      ctx[155].note_link} (Click to open, hover to preview)`);
+      ));
       toggle_class(span, "hard-bound", LinkedNoteService.isHardBoundNote(
         /*task*/
         ctx[155].note_link
@@ -22722,12 +23070,11 @@ function create_if_block_134(ctx) {
         }
       }
       if (dirty[0] & /*incompleteTasks*/
-      16 && span_title_value !== (span_title_value = LinkedNoteService.isHardBoundNote(
+      16 && span_title_value !== (span_title_value = t(
+        "linked_note_preview_tooltip",
         /*task*/
         ctx[155].note_link
-      ) ? `\u4E13\u5C5E\u94FE\u63A5\u7B14\u8BB0: ${/*task*/
-      ctx[155].note_link} (\u70B9\u51FB\u8DF3\u8F6C\uFF0C\u60AC\u505C\u9884\u89C8)` : `Linked note: ${/*task*/
-      ctx[155].note_link} (Click to open, hover to preview)`)) {
+      ))) {
         attr(span, "title", span_title_value);
       }
       if (dirty[0] & /*incompleteTasks*/
@@ -23350,12 +23697,11 @@ function create_if_block_93(ctx) {
       attr(span, "class", "meta-badge note-badge");
       attr(span, "role", "button");
       attr(span, "tabindex", "0");
-      attr(span, "title", span_title_value = LinkedNoteService.isHardBoundNote(
+      attr(span, "title", span_title_value = t(
+        "linked_note_preview_tooltip",
         /*task*/
         ctx[155].note_link
-      ) ? `\u4E13\u5C5E\u94FE\u63A5\u7B14\u8BB0: ${/*task*/
-      ctx[155].note_link} (\u70B9\u51FB\u8DF3\u8F6C\uFF0C\u60AC\u505C\u9884\u89C8)` : `Linked note: ${/*task*/
-      ctx[155].note_link} (Click to open, hover to preview)`);
+      ));
       toggle_class(span, "hard-bound", LinkedNoteService.isHardBoundNote(
         /*task*/
         ctx[155].note_link
@@ -23383,12 +23729,11 @@ function create_if_block_93(ctx) {
         }
       }
       if (dirty[0] & /*completedTasks*/
-      32 && span_title_value !== (span_title_value = LinkedNoteService.isHardBoundNote(
+      32 && span_title_value !== (span_title_value = t(
+        "linked_note_preview_tooltip",
         /*task*/
         ctx[155].note_link
-      ) ? `\u4E13\u5C5E\u94FE\u63A5\u7B14\u8BB0: ${/*task*/
-      ctx[155].note_link} (\u70B9\u51FB\u8DF3\u8F6C\uFF0C\u60AC\u505C\u9884\u89C8)` : `Linked note: ${/*task*/
-      ctx[155].note_link} (Click to open, hover to preview)`)) {
+      ))) {
         attr(span, "title", span_title_value);
       }
       if (dirty[0] & /*completedTasks*/
@@ -23871,12 +24216,11 @@ function create_if_block_54(ctx) {
       attr(span, "class", "meta-badge note-badge");
       attr(span, "role", "button");
       attr(span, "tabindex", "0");
-      attr(span, "title", span_title_value = LinkedNoteService.isHardBoundNote(
+      attr(span, "title", span_title_value = t(
+        "linked_note_preview_tooltip",
         /*result*/
         ctx[152].task.note_link
-      ) ? `\u4E13\u5C5E\u94FE\u63A5\u7B14\u8BB0: ${/*result*/
-      ctx[152].task.note_link} (\u70B9\u51FB\u8DF3\u8F6C\uFF0C\u60AC\u505C\u9884\u89C8)` : `Linked note: ${/*result*/
-      ctx[152].task.note_link} (Click to open, hover to preview)`);
+      ));
       toggle_class(span, "hard-bound", LinkedNoteService.isHardBoundNote(
         /*result*/
         ctx[152].task.note_link
@@ -23904,12 +24248,11 @@ function create_if_block_54(ctx) {
         }
       }
       if (dirty[0] & /*searchResults*/
-      128 && span_title_value !== (span_title_value = LinkedNoteService.isHardBoundNote(
+      128 && span_title_value !== (span_title_value = t(
+        "linked_note_preview_tooltip",
         /*result*/
         ctx[152].task.note_link
-      ) ? `\u4E13\u5C5E\u94FE\u63A5\u7B14\u8BB0: ${/*result*/
-      ctx[152].task.note_link} (\u70B9\u51FB\u8DF3\u8F6C\uFF0C\u60AC\u505C\u9884\u89C8)` : `Linked note: ${/*result*/
-      ctx[152].task.note_link} (Click to open, hover to preview)`)) {
+      ))) {
         attr(span, "title", span_title_value);
       }
       if (dirty[0] & /*searchResults*/
@@ -25164,7 +25507,7 @@ function instance6($$self, $$props, $$invalidate) {
     const countPromises = categories.map(async (cat) => {
       try {
         const catTasks = await dataService.getTasks(cat.filepath);
-        $$invalidate(9, taskCounts[cat.filepath] = catTasks.filter((t) => !t.completed).length, taskCounts);
+        $$invalidate(9, taskCounts[cat.filepath] = catTasks.filter((t2) => !t2.completed).length, taskCounts);
       } catch (e) {
         $$invalidate(9, taskCounts[cat.filepath] = 0, taskCounts);
       }
@@ -25186,8 +25529,8 @@ function instance6($$self, $$props, $$invalidate) {
   async function loadTasksForCategory(cat) {
     var _a;
     const rawTasks = await dataService.getTasks(cat.filepath);
-    $$invalidate(4, incompleteTasks = rawTasks.filter((t) => !t.completed));
-    $$invalidate(5, completedTasks = rawTasks.filter((t) => t.completed));
+    $$invalidate(4, incompleteTasks = rawTasks.filter((t2) => !t2.completed));
+    $$invalidate(5, completedTasks = rawTasks.filter((t2) => t2.completed));
     const all = incompleteTasks.concat(completedTasks);
     if (all.length > 0) {
       if (focusedTaskIndex >= all.length)
@@ -25325,7 +25668,7 @@ function instance6($$self, $$props, $$invalidate) {
       });
       EventBus.emit("task:updated" /* TASK_UPDATED */, { categoryFilepath: targetCat.filepath });
       await loadData();
-      new import_obsidian15.Notice(`Moved task to "${targetCat.name}"`);
+      new import_obsidian16.Notice(`Moved task to "${targetCat.name}"`);
     } catch (e) {
       console.error("[QuickTaskModal] Failed to move task:", e);
     }
@@ -25437,7 +25780,7 @@ function instance6($$self, $$props, $$invalidate) {
   function showItemContextMenu(e, item) {
     e.preventDefault();
     e.stopPropagation();
-    const menu = new import_obsidian15.Menu();
+    const menu = new import_obsidian16.Menu();
     menu.addItem((i) => {
       i.setTitle("Rename (F2)").setIcon("edit").onClick(() => startRenameItem(item));
     });
@@ -25475,7 +25818,7 @@ function instance6($$self, $$props, $$invalidate) {
       await loadData();
       await selectCategory(newCat);
     } catch (e) {
-      new import_obsidian15.Notice(`Failed to create list: ${e}`);
+      new import_obsidian16.Notice(`Failed to create list: ${e}`);
     }
     $$invalidate(16, isAddingList = false);
     $$invalidate(17, newListName = "");
@@ -25501,7 +25844,7 @@ function instance6($$self, $$props, $$invalidate) {
       await dataService.createGroup(name);
       await loadData();
     } catch (e) {
-      new import_obsidian15.Notice(`Failed to create group: ${e}`);
+      new import_obsidian16.Notice(`Failed to create group: ${e}`);
     }
     $$invalidate(18, isAddingGroup = false);
     $$invalidate(19, newGroupName = "");
@@ -26162,7 +26505,7 @@ function recordHotkeyTipShown(plugin) {
 }
 
 // src/modals/QuickTaskModal.ts
-var QuickTaskModal = class extends import_obsidian16.Modal {
+var QuickTaskModal = class extends import_obsidian17.Modal {
   constructor(app, plugin, dataService) {
     super(app);
     this.component = null;
@@ -26201,10 +26544,10 @@ var QuickTaskModal = class extends import_obsidian16.Modal {
 };
 
 // src/modals/QuickListModal.ts
-var import_obsidian18 = require("obsidian");
+var import_obsidian19 = require("obsidian");
 
 // src/modals/QuickListModalView.svelte
-var import_obsidian17 = require("obsidian");
+var import_obsidian18 = require("obsidian");
 var { Map: Map_12 } = globals;
 function get_each_context_43(ctx, list, i) {
   const child_ctx = ctx.slice();
@@ -26248,48 +26591,29 @@ function get_if_ctx2(ctx) {
 }
 function create_if_block_293(ctx) {
   let div;
-  let t0;
-  let b;
-  let t2;
-  let code;
-  let t4;
-  let t5;
-  let t6;
+  let raw_value = t(
+    "quick_list_tip",
+    /*remainingTips*/
+    ctx[2]
+  ) + "";
   return {
     c() {
       div = element("div");
-      t0 = text("\u{1F4A1} \u63D0\u793A: \u5728 ");
-      b = element("b");
-      b.textContent = "\u8BBE\u7F6E \u2192 \u5FEB\u6377\u952E";
-      t2 = text(" \u4E2D\u4E3A ");
-      code = element("code");
-      code.textContent = "Fluent Tasks: Open Quick List Modal";
-      t4 = text(" \u8BBE\u7F6E\u5FEB\u6377\u952E (\u5269\u4F59 ");
-      t5 = text(
-        /*remainingTips*/
-        ctx[2]
-      );
-      t6 = text(" \u6B21\u63D0\u9192)");
       attr(div, "class", "quick-modal-tip-banner");
     },
     m(target, anchor) {
       insert(target, div, anchor);
-      append(div, t0);
-      append(div, b);
-      append(div, t2);
-      append(div, code);
-      append(div, t4);
-      append(div, t5);
-      append(div, t6);
+      div.innerHTML = raw_value;
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*remainingTips*/
-      4)
-        set_data(
-          t5,
-          /*remainingTips*/
-          ctx2[2]
-        );
+      4 && raw_value !== (raw_value = t(
+        "quick_list_tip",
+        /*remainingTips*/
+        ctx2[2]
+      ) + ""))
+        div.innerHTML = raw_value;
+      ;
     },
     d(detaching) {
       if (detaching) {
@@ -26343,13 +26667,17 @@ function create_if_block_253(ctx) {
   let span;
   let t1_value = (
     /*isPickingDefaultFocus*/
-    ctx[10] ? "\u9009\u62E9\u76EE\u6807\u5217\u8868..." : (
+    (ctx[10] ? t("focus_picking_target") : (
       /*defaultFocusListName*/
-      ctx[28] ? `\u805A\u7126: ${/*defaultFocusListName*/
-      ctx[28]}` : "\u8BBE\u7F6E\u805A\u7126"
-    )
+      ctx[28] ? t(
+        "focus_target_label",
+        /*defaultFocusListName*/
+        ctx[28]
+      ) : t("focus_set_btn")
+    )) + ""
   );
   let t1;
+  let button_aria_label_value;
   let t2;
   let if_block_anchor;
   let mounted;
@@ -26404,7 +26732,7 @@ function create_if_block_253(ctx) {
       attr(svg, "stroke", "currentColor");
       attr(svg, "stroke-width", "2");
       attr(button, "class", "quick-modal-header-btn quick-modal-focus-picker-btn");
-      attr(button, "aria-label", "\u8BBE\u7F6E\u9ED8\u8BA4\u805A\u7126\u5217\u8868\uFF1A\u70B9\u51FB\u8FDB\u5165\u9009\u62E9\u6A21\u5F0F\uFF0C\u53F3\u952E\u53EF\u91CD\u7F6E\u4E3A\u5DE6\u4E0A\u89D2\u9996\u9879");
+      attr(button, "aria-label", button_aria_label_value = t("focus_btn_aria_label"));
       toggle_class(
         button,
         "is-active",
@@ -26459,11 +26787,14 @@ function create_if_block_253(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*isPickingDefaultFocus, defaultFocusListName*/
       268436480 && t1_value !== (t1_value = /*isPickingDefaultFocus*/
-      ctx2[10] ? "\u9009\u62E9\u76EE\u6807\u5217\u8868..." : (
+      (ctx2[10] ? t("focus_picking_target") : (
         /*defaultFocusListName*/
-        ctx2[28] ? `\u805A\u7126: ${/*defaultFocusListName*/
-        ctx2[28]}` : "\u8BBE\u7F6E\u805A\u7126"
-      )))
+        ctx2[28] ? t(
+          "focus_target_label",
+          /*defaultFocusListName*/
+          ctx2[28]
+        ) : t("focus_set_btn")
+      )) + ""))
         set_data(t1, t1_value);
       if (dirty[0] & /*isPickingDefaultFocus*/
       1024) {
@@ -26524,13 +26855,13 @@ function create_if_block_263(ctx) {
     c() {
       div3 = element("div");
       div0 = element("div");
-      div0.textContent = "\u{1F3AF} \u521D\u59CB\u9ED8\u8BA4\u805A\u7126\u8BBE\u7F6E";
+      div0.textContent = `${t("focus_popover_title")}`;
       t1 = space();
       div1 = element("div");
       if_block.c();
       t2 = space();
       div2 = element("div");
-      div2.textContent = "\u70B9\u51FB\u6309\u94AE\u8FDB\u5165\u9009\u62E9\u6A21\u5F0F\u540E\u70B9\u51FB\u76EE\u6807\u5217\u8868\uFF1B\u53F3\u952E\u6B64\u6309\u94AE\u53EF\u91CD\u7F6E\u4E3A\u5DE6\u4E0A\u89D2\u9996\u9879\u3002";
+      div2.textContent = `${t("focus_instruction_desc")}`;
       attr(div0, "class", "focus-popover-title");
       attr(div1, "class", "focus-popover-desc");
       attr(div2, "class", "focus-popover-hint");
@@ -26566,13 +26897,14 @@ function create_if_block_263(ctx) {
   };
 }
 function create_else_block_122(ctx) {
+  let t0_value = t("focus_unset_prefix") + "";
   let t0;
   let b;
   return {
     c() {
-      t0 = text("\u5F53\u524D\u672A\u8BBE\u7F6E\uFF0C\u9ED8\u8BA4\u805A\u7126\uFF1A");
+      t0 = text(t0_value);
       b = element("b");
-      b.textContent = "\u5DE6\u4E0A\u89D2\u9996\u9879";
+      b.textContent = `${t("focus_top_left_default")}`;
     },
     m(target, anchor) {
       insert(target, t0, anchor);
@@ -26588,12 +26920,13 @@ function create_else_block_122(ctx) {
   };
 }
 function create_if_block_273(ctx) {
+  let t0_value = t("focus_current_prefix") + "";
   let t0;
   let b;
   let t1;
   return {
     c() {
-      t0 = text("\u5F53\u524D\u9ED8\u8BA4\u805A\u7126\uFF1A");
+      t0 = text(t0_value);
       b = element("b");
       t1 = text(
         /*defaultFocusListName*/
@@ -27425,26 +27758,26 @@ function create_if_block_154(ctx) {
 }
 function create_else_block_102(ctx) {
   let span;
-  let t_value = (
+  let t_1_value = (
     /*item*/
     ctx[142].name + ""
   );
-  let t;
+  let t_1;
   return {
     c() {
       span = element("span");
-      t = text(t_value);
+      t_1 = text(t_1_value);
       attr(span, "class", "quick-modal-list-name");
     },
     m(target, anchor) {
       insert(target, span, anchor);
-      append(span, t);
+      append(span, t_1);
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*filteredItems*/
-      256 && t_value !== (t_value = /*item*/
+      256 && t_1_value !== (t_1_value = /*item*/
       ctx2[142].name + ""))
-        set_data(t, t_value);
+        set_data(t_1, t_1_value);
     },
     d(detaching) {
       if (detaching) {
@@ -27512,32 +27845,32 @@ function create_if_block_234(ctx) {
 }
 function create_if_block_225(ctx) {
   let span;
-  let t_value = (
+  let t_1_value = (
     /*taskCounts*/
     ctx[9][
       /*item*/
       ctx[142].filepath
     ] + ""
   );
-  let t;
+  let t_1;
   return {
     c() {
       span = element("span");
-      t = text(t_value);
+      t_1 = text(t_1_value);
       attr(span, "class", "quick-modal-badge");
     },
     m(target, anchor) {
       insert(target, span, anchor);
-      append(span, t);
+      append(span, t_1);
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*taskCounts, filteredItems*/
-      768 && t_value !== (t_value = /*taskCounts*/
+      768 && t_1_value !== (t_1_value = /*taskCounts*/
       ctx2[9][
         /*item*/
         ctx2[142].filepath
       ] + ""))
-        set_data(t, t_value);
+        set_data(t_1, t_1_value);
     },
     d(detaching) {
       if (detaching) {
@@ -27548,12 +27881,13 @@ function create_if_block_225(ctx) {
 }
 function create_if_block_216(ctx) {
   let span;
+  let span_title_value;
   return {
     c() {
       span = element("span");
       span.textContent = "\u{1F3AF}";
       attr(span, "class", "quick-modal-focus-tag");
-      attr(span, "title", "\u9ED8\u8BA4\u805A\u7126\u76EE\u6807");
+      attr(span, "title", span_title_value = t("focus_tag_tooltip"));
     },
     m(target, anchor) {
       insert(target, span, anchor);
@@ -27567,11 +27901,11 @@ function create_if_block_216(ctx) {
 }
 function create_else_block_82(ctx) {
   let span;
-  let t_value = (
+  let t_1_value = (
     /*item*/
     ctx[142].name + ""
   );
-  let t;
+  let t_1;
   let mounted;
   let dispose;
   function click_handler_6() {
@@ -27586,12 +27920,12 @@ function create_else_block_82(ctx) {
   return {
     c() {
       span = element("span");
-      t = text(t_value);
+      t_1 = text(t_1_value);
       attr(span, "class", "quick-modal-group-title");
     },
     m(target, anchor) {
       insert(target, span, anchor);
-      append(span, t);
+      append(span, t_1);
       if (!mounted) {
         dispose = listen(span, "click", click_handler_6);
         mounted = true;
@@ -27600,9 +27934,9 @@ function create_else_block_82(ctx) {
     p(new_ctx, dirty) {
       ctx = new_ctx;
       if (dirty[0] & /*filteredItems*/
-      256 && t_value !== (t_value = /*item*/
+      256 && t_1_value !== (t_1_value = /*item*/
       ctx[142].name + ""))
-        set_data(t, t_value);
+        set_data(t_1, t_1_value);
     },
     d(detaching) {
       if (detaching) {
@@ -27726,26 +28060,26 @@ function create_if_block_164(ctx) {
 }
 function create_else_block_72(ctx) {
   let span;
-  let t_value = (
+  let t_1_value = (
     /*child*/
     ctx[139].name + ""
   );
-  let t;
+  let t_1;
   return {
     c() {
       span = element("span");
-      t = text(t_value);
+      t_1 = text(t_1_value);
       attr(span, "class", "quick-modal-list-name");
     },
     m(target, anchor) {
       insert(target, span, anchor);
-      append(span, t);
+      append(span, t_1);
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*filteredItems*/
-      256 && t_value !== (t_value = /*child*/
+      256 && t_1_value !== (t_1_value = /*child*/
       ctx2[139].name + ""))
-        set_data(t, t_value);
+        set_data(t_1, t_1_value);
     },
     d(detaching) {
       if (detaching) {
@@ -27813,32 +28147,32 @@ function create_if_block_194(ctx) {
 }
 function create_if_block_184(ctx) {
   let span;
-  let t_value = (
+  let t_1_value = (
     /*taskCounts*/
     ctx[9][
       /*child*/
       ctx[139].filepath
     ] + ""
   );
-  let t;
+  let t_1;
   return {
     c() {
       span = element("span");
-      t = text(t_value);
+      t_1 = text(t_1_value);
       attr(span, "class", "quick-modal-badge");
     },
     m(target, anchor) {
       insert(target, span, anchor);
-      append(span, t);
+      append(span, t_1);
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*taskCounts, filteredItems*/
-      768 && t_value !== (t_value = /*taskCounts*/
+      768 && t_1_value !== (t_1_value = /*taskCounts*/
       ctx2[9][
         /*child*/
         ctx2[139].filepath
       ] + ""))
-        set_data(t, t_value);
+        set_data(t_1, t_1_value);
     },
     d(detaching) {
       if (detaching) {
@@ -27849,12 +28183,13 @@ function create_if_block_184(ctx) {
 }
 function create_if_block_174(ctx) {
   let span;
+  let span_title_value;
   return {
     c() {
       span = element("span");
       span.textContent = "\u{1F3AF}";
       attr(span, "class", "quick-modal-focus-tag");
-      attr(span, "title", "\u9ED8\u8BA4\u805A\u7126\u76EE\u6807");
+      attr(span, "title", span_title_value = t("focus_tag_tooltip"));
     },
     m(target, anchor) {
       insert(target, span, anchor);
@@ -28619,11 +28954,11 @@ function create_if_block_411(ctx) {
 }
 function create_else_block_44(ctx) {
   let span;
-  let t_value = (
+  let t_1_value = (
     /*group*/
     ctx[138].name + ""
   );
-  let t;
+  let t_1;
   let mounted;
   let dispose;
   function click_handler_3() {
@@ -28638,12 +28973,12 @@ function create_else_block_44(ctx) {
   return {
     c() {
       span = element("span");
-      t = text(t_value);
+      t_1 = text(t_1_value);
       attr(span, "class", "quick-grid-card-title");
     },
     m(target, anchor) {
       insert(target, span, anchor);
-      append(span, t);
+      append(span, t_1);
       if (!mounted) {
         dispose = listen(span, "click", click_handler_3);
         mounted = true;
@@ -28652,9 +28987,9 @@ function create_else_block_44(ctx) {
     p(new_ctx, dirty) {
       ctx = new_ctx;
       if (dirty[0] & /*layoutColumns*/
-      67108864 && t_value !== (t_value = /*group*/
+      67108864 && t_1_value !== (t_1_value = /*group*/
       ctx[138].name + ""))
-        set_data(t, t_value);
+        set_data(t_1, t_1_value);
     },
     d(detaching) {
       if (detaching) {
@@ -28778,29 +29113,29 @@ function create_if_block_94(ctx) {
 }
 function create_else_block_35(ctx) {
   let span;
-  let t_value = (
+  let t_1_value = (
     /*child*/
     ctx[139].name + ""
   );
-  let t;
+  let t_1;
   let span_title_value;
   return {
     c() {
       span = element("span");
-      t = text(t_value);
+      t_1 = text(t_1_value);
       attr(span, "class", "quick-modal-list-name");
       attr(span, "title", span_title_value = /*child*/
       ctx[139].name);
     },
     m(target, anchor) {
       insert(target, span, anchor);
-      append(span, t);
+      append(span, t_1);
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*layoutColumns*/
-      67108864 && t_value !== (t_value = /*child*/
+      67108864 && t_1_value !== (t_1_value = /*child*/
       ctx2[139].name + ""))
-        set_data(t, t_value);
+        set_data(t_1, t_1_value);
       if (dirty[0] & /*layoutColumns*/
       67108864 && span_title_value !== (span_title_value = /*child*/
       ctx2[139].name)) {
@@ -28873,32 +29208,32 @@ function create_if_block_125(ctx) {
 }
 function create_if_block_115(ctx) {
   let span;
-  let t_value = (
+  let t_1_value = (
     /*taskCounts*/
     ctx[9][
       /*child*/
       ctx[139].filepath
     ] + ""
   );
-  let t;
+  let t_1;
   return {
     c() {
       span = element("span");
-      t = text(t_value);
+      t_1 = text(t_1_value);
       attr(span, "class", "quick-modal-badge");
     },
     m(target, anchor) {
       insert(target, span, anchor);
-      append(span, t);
+      append(span, t_1);
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*taskCounts, layoutColumns*/
-      67109376 && t_value !== (t_value = /*taskCounts*/
+      67109376 && t_1_value !== (t_1_value = /*taskCounts*/
       ctx2[9][
         /*child*/
         ctx2[139].filepath
       ] + ""))
-        set_data(t, t_value);
+        set_data(t_1, t_1_value);
     },
     d(detaching) {
       if (detaching) {
@@ -28909,12 +29244,13 @@ function create_if_block_115(ctx) {
 }
 function create_if_block_104(ctx) {
   let span;
+  let span_title_value;
   return {
     c() {
       span = element("span");
       span.textContent = "\u{1F3AF}";
       attr(span, "class", "quick-modal-focus-tag");
-      attr(span, "title", "\u9ED8\u8BA4\u805A\u7126\u76EE\u6807");
+      attr(span, "title", span_title_value = t("focus_tag_tooltip"));
     },
     m(target, anchor) {
       insert(target, span, anchor);
@@ -29206,29 +29542,29 @@ function create_each_block_34(key_1, ctx) {
 }
 function create_else_block_25(ctx) {
   let span;
-  let t_value = (
+  let t_1_value = (
     /*cat*/
     ctx[135].name + ""
   );
-  let t;
+  let t_1;
   let span_title_value;
   return {
     c() {
       span = element("span");
-      t = text(t_value);
+      t_1 = text(t_1_value);
       attr(span, "class", "quick-modal-list-name");
       attr(span, "title", span_title_value = /*cat*/
       ctx[135].name);
     },
     m(target, anchor) {
       insert(target, span, anchor);
-      append(span, t);
+      append(span, t_1);
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*rootCategories*/
-      134217728 && t_value !== (t_value = /*cat*/
+      134217728 && t_1_value !== (t_1_value = /*cat*/
       ctx2[135].name + ""))
-        set_data(t, t_value);
+        set_data(t_1, t_1_value);
       if (dirty[0] & /*rootCategories*/
       134217728 && span_title_value !== (span_title_value = /*cat*/
       ctx2[135].name)) {
@@ -29301,32 +29637,32 @@ function create_if_block_75(ctx) {
 }
 function create_if_block_65(ctx) {
   let span;
-  let t_value = (
+  let t_1_value = (
     /*taskCounts*/
     ctx[9][
       /*cat*/
       ctx[135].filepath
     ] + ""
   );
-  let t;
+  let t_1;
   return {
     c() {
       span = element("span");
-      t = text(t_value);
+      t_1 = text(t_1_value);
       attr(span, "class", "quick-modal-badge");
     },
     m(target, anchor) {
       insert(target, span, anchor);
-      append(span, t);
+      append(span, t_1);
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*taskCounts, rootCategories*/
-      134218240 && t_value !== (t_value = /*taskCounts*/
+      134218240 && t_1_value !== (t_1_value = /*taskCounts*/
       ctx2[9][
         /*cat*/
         ctx2[135].filepath
       ] + ""))
-        set_data(t, t_value);
+        set_data(t_1, t_1_value);
     },
     d(detaching) {
       if (detaching) {
@@ -29337,12 +29673,13 @@ function create_if_block_65(ctx) {
 }
 function create_if_block_55(ctx) {
   let span;
+  let span_title_value;
   return {
     c() {
       span = element("span");
       span.textContent = "\u{1F3AF}";
       attr(span, "class", "quick-modal-focus-tag");
-      attr(span, "title", "\u9ED8\u8BA4\u805A\u7126\u76EE\u6807");
+      attr(span, "title", span_title_value = t("focus_tag_tooltip"));
     },
     m(target, anchor) {
       insert(target, span, anchor);
@@ -29700,7 +30037,7 @@ function create_each_block7(key_1, ctx) {
   let div;
   let each_blocks = [];
   let each_1_lookup = new Map_12();
-  let t;
+  let t_1;
   let each_value_1 = ensure_array_like(
     /*column*/
     ctx[129]
@@ -29722,7 +30059,7 @@ function create_each_block7(key_1, ctx) {
       for (let i = 0; i < each_blocks.length; i += 1) {
         each_blocks[i].c();
       }
-      t = space();
+      t_1 = space();
       attr(div, "class", "quick-grid-column");
       this.first = div;
     },
@@ -29733,7 +30070,7 @@ function create_each_block7(key_1, ctx) {
           each_blocks[i].m(div, null);
         }
       }
-      append(div, t);
+      append(div, t_1);
     },
     p(new_ctx, dirty) {
       ctx = new_ctx;
@@ -29744,7 +30081,7 @@ function create_each_block7(key_1, ctx) {
           /*column*/
           ctx[129]
         );
-        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx, each_value_1, each_1_lookup, div, destroy_block, create_each_block_15, t, get_each_context_15);
+        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx, each_value_1, each_1_lookup, div, destroy_block, create_each_block_15, t_1, get_each_context_15);
       }
     },
     d(detaching) {
@@ -30521,7 +30858,7 @@ function instance7($$self, $$props, $$invalidate) {
   function togglePickingDefaultFocus() {
     $$invalidate(10, isPickingDefaultFocus = !isPickingDefaultFocus);
     if (isPickingDefaultFocus) {
-      new import_obsidian17.Notice("\u{1F3AF} \u9009\u62E9\u6A21\u5F0F\u5DF2\u5F00\u542F\uFF1A\u8BF7\u70B9\u51FB\u60F3\u8981\u8BBE\u4E3A\u9ED8\u8BA4\u805A\u7126\u7684\u5217\u8868 (\u6309 ESC \u53D6\u6D88)");
+      new import_obsidian18.Notice(t("focus_pick_mode_enabled"));
     }
   }
   function showFocusTooltip() {
@@ -30538,7 +30875,7 @@ function instance7($$self, $$props, $$invalidate) {
         $$invalidate(0, plugin.settings.defaultQuickListFocusFilepath = cat.filepath, plugin);
         await plugin.saveSettings();
       }
-      new import_obsidian17.Notice(`\u{1F3AF} \u5DF2\u5C06 "${cat.name}" \u8BBE\u4E3A\u6253\u5F00\u65F6\u7684\u9ED8\u8BA4\u805A\u7126\u5217\u8868`);
+      new import_obsidian18.Notice(t("focus_default_set", cat.name));
       const idx = flatCategories.findIndex((c) => c.filepath === cat.filepath);
       if (idx !== -1) {
         $$invalidate(5, focusedIndex = idx);
@@ -30610,7 +30947,7 @@ function instance7($$self, $$props, $$invalidate) {
     const countPromises = categories.map(async (cat) => {
       try {
         const catTasks = await dataService.getTasks(cat.filepath);
-        $$invalidate(9, taskCounts[cat.filepath] = catTasks.filter((t) => !t.completed).length, taskCounts);
+        $$invalidate(9, taskCounts[cat.filepath] = catTasks.filter((t2) => !t2.completed).length, taskCounts);
       } catch (e) {
         $$invalidate(9, taskCounts[cat.filepath] = 0, taskCounts);
       }
@@ -30732,17 +31069,17 @@ function instance7($$self, $$props, $$invalidate) {
     var _a2;
     e.preventDefault();
     e.stopPropagation();
-    const menu = new import_obsidian17.Menu();
+    const menu = new import_obsidian18.Menu();
     if (item.type === "category" && item.filepath) {
       const isCurrentlyDefault = ((_a2 = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _a2.defaultQuickListFocusFilepath) === item.filepath;
       menu.addItem((i) => {
-        i.setTitle(isCurrentlyDefault ? "\u53D6\u6D88\u9ED8\u8BA4\u805A\u7126 (\u6062\u590D\u9996\u9879)" : "\u8BBE\u4E3A\u9ED8\u8BA4\u805A\u7126 (\u6253\u5F00\u65F6\u9996\u9009)").setIcon("target").onClick(async () => {
+        i.setTitle(isCurrentlyDefault ? t("focus_cancel_default") : t("focus_set_default")).setIcon("target").onClick(async () => {
           if (isCurrentlyDefault) {
             $$invalidate(0, plugin.settings.defaultQuickListFocusFilepath = "", plugin);
-            new import_obsidian17.Notice("\u5DF2\u6062\u590D\u9ED8\u8BA4\u805A\u7126 (\u5DE6\u4E0A\u89D2\u9996\u9879)");
+            new import_obsidian18.Notice(t("focus_restored_default"));
           } else {
             $$invalidate(0, plugin.settings.defaultQuickListFocusFilepath = item.filepath, plugin);
-            new import_obsidian17.Notice(`\u{1F3AF} \u5DF2\u5C06 "${item.name}" \u8BBE\u4E3A\u6253\u5F00\u65F6\u7684\u9ED8\u8BA4\u805A\u7126\u5217\u8868`);
+            new import_obsidian18.Notice(t("focus_default_set", item.name));
           }
           await plugin.saveSettings();
         });
@@ -30777,7 +31114,7 @@ function instance7($$self, $$props, $$invalidate) {
       await loadData();
       await openCategoryInCenterOnly(newCat);
     } catch (e) {
-      new import_obsidian17.Notice(`Failed to create list: ${e}`);
+      new import_obsidian18.Notice(`Failed to create list: ${e}`);
     }
     $$invalidate(12, isAddingList = false);
     $$invalidate(13, newListName = "");
@@ -30797,7 +31134,7 @@ function instance7($$self, $$props, $$invalidate) {
       await dataService.createGroup(name);
       await loadData();
     } catch (e) {
-      new import_obsidian17.Notice(`Failed to create group: ${e}`);
+      new import_obsidian18.Notice(`Failed to create group: ${e}`);
     }
     $$invalidate(14, isAddingGroup = false);
     $$invalidate(15, newGroupName = "");
@@ -31008,7 +31345,7 @@ function instance7($$self, $$props, $$invalidate) {
         e.preventDefault();
         e.stopPropagation();
         $$invalidate(10, isPickingDefaultFocus = false);
-        new import_obsidian17.Notice("\u5DF2\u53D6\u6D88\u9009\u62E9\u9ED8\u8BA4\u805A\u7126\u5217\u8868");
+        new import_obsidian18.Notice(t("focus_pick_cancelled"));
         return;
       }
       if (e.key === "Enter") {
@@ -31097,7 +31434,7 @@ function instance7($$self, $$props, $$invalidate) {
     if (plugin == null ? void 0 : plugin.settings) {
       $$invalidate(0, plugin.settings.defaultQuickListFocusFilepath = "", plugin);
       await plugin.saveSettings();
-      new import_obsidian17.Notice("\u{1F3AF} \u5DF2\u6062\u590D\u9ED8\u8BA4\u805A\u7126\uFF1A\u5DE6\u4E0A\u89D2\u9996\u9879");
+      new import_obsidian18.Notice(t("focus_restored_default_notice"));
       applyInitialFocus();
     }
   };
@@ -31474,7 +31811,7 @@ var QuickListModalView = class extends SvelteComponent {
 var QuickListModalView_default = QuickListModalView;
 
 // src/modals/QuickListModal.ts
-var QuickListModal = class extends import_obsidian18.Modal {
+var QuickListModal = class extends import_obsidian19.Modal {
   constructor(app, plugin, dataService) {
     super(app);
     this.component = null;
@@ -31520,8 +31857,8 @@ var QuickListModal = class extends import_obsidian18.Modal {
 };
 
 // src/modals/TaskDetailModal.ts
-var import_obsidian19 = require("obsidian");
-var TaskDetailModal = class extends import_obsidian19.Modal {
+var import_obsidian20 = require("obsidian");
+var TaskDetailModal = class extends import_obsidian20.Modal {
   constructor(app, plugin, dataService, task, categoryFilepath) {
     super(app);
     this.component = null;
@@ -31570,13 +31907,13 @@ var TaskDetailModal = class extends import_obsidian19.Modal {
 };
 
 // src/main.ts
-var TaskSidebarViewWrapper = class extends import_obsidian20.ItemView {
+var TaskSidebarViewWrapper = class extends import_obsidian21.ItemView {
   constructor(leaf, dataService, plugin) {
     super(leaf);
     this.component = null;
     this.dataService = dataService;
     this.plugin = plugin;
-    this.scope = new import_obsidian20.Scope(this.app.scope);
+    this.scope = new import_obsidian21.Scope(this.app.scope);
     this.scope.register([], "F2", (evt) => {
       var _a;
       if ((_a = this.component) == null ? void 0 : _a.triggerRenameHoveredOrActive()) {
@@ -31621,7 +31958,7 @@ var TaskSidebarViewWrapper = class extends import_obsidian20.ItemView {
     return this.component;
   }
 };
-var TaskMainViewWrapper = class extends import_obsidian20.ItemView {
+var TaskMainViewWrapper = class extends import_obsidian21.ItemView {
   // Enables Obsidian Leaf Navigation & History tracking
   constructor(leaf, dataService, plugin) {
     super(leaf);
@@ -31655,7 +31992,7 @@ var TaskMainViewWrapper = class extends import_obsidian20.ItemView {
     await super.setState(state, result);
     if (state && state.categoryFilepath) {
       const file = this.app.vault.getAbstractFileByPath(state.categoryFilepath);
-      if (file && file instanceof import_obsidian20.TFile) {
+      if (file && file instanceof import_obsidian21.TFile) {
         const cat = {
           id: state.categoryFilepath,
           type: "category",
@@ -31671,11 +32008,11 @@ var TaskMainViewWrapper = class extends import_obsidian20.ItemView {
     }
   }
   async onOpen() {
-    this.addAction("check-square", "\u591A\u9009\u4EFB\u52A1 (\u6279\u91CF\u5220\u9664/\u6536\u85CF)", () => {
+    this.addAction("check-square", t("action_multi_select"), () => {
       const comp = this.component;
       comp == null ? void 0 : comp.toggleMultiSelect();
     });
-    this.addAction("archive", "\u6570\u636E\u5907\u4EFD\u5668 (\u5FEB\u7167\u4E0E\u6062\u590D)", () => {
+    this.addAction("archive", t("action_backup_manager"), () => {
       const comp = this.component;
       comp == null ? void 0 : comp.openBackupModal();
     });
@@ -31700,7 +32037,7 @@ var TaskMainViewWrapper = class extends import_obsidian20.ItemView {
     const state = this.getState();
     if (state == null ? void 0 : state.categoryFilepath) {
       const file = this.app.vault.getAbstractFileByPath(state.categoryFilepath);
-      if (file && file instanceof import_obsidian20.TFile) {
+      if (file && file instanceof import_obsidian21.TFile) {
         const cat = {
           id: state.categoryFilepath,
           type: "category",
@@ -31726,13 +32063,13 @@ var TaskMainViewWrapper = class extends import_obsidian20.ItemView {
     const cat = (_a = this.component) == null ? void 0 : _a.getCurrentCategory();
     if (cat && cat.filepath) {
       const f = this.app.vault.getAbstractFileByPath(cat.filepath);
-      if (f instanceof import_obsidian20.TFile)
+      if (f instanceof import_obsidian21.TFile)
         return f;
     }
     return null;
   }
 };
-var TaskDetailViewWrapper = class extends import_obsidian20.ItemView {
+var TaskDetailViewWrapper = class extends import_obsidian21.ItemView {
   constructor(leaf, dataService, plugin) {
     super(leaf);
     this.component = null;
@@ -31766,7 +32103,7 @@ var TaskDetailViewWrapper = class extends import_obsidian20.ItemView {
     return this.component;
   }
 };
-var FluentTasksPlugin = class extends import_obsidian20.Plugin {
+var FluentTasksPlugin = class extends import_obsidian21.Plugin {
   constructor() {
     super(...arguments);
     this.ribbonIconEl = null;
@@ -31905,7 +32242,7 @@ var FluentTasksPlugin = class extends import_obsidian20.Plugin {
     });
     this.addCommand({
       id: "open-backup-modal",
-      name: "Open Backup Manager (\u6570\u636E\u5907\u4EFD\u4E0E\u8FD8\u539F)",
+      name: t("cmd_backup_manager"),
       callback: () => {
         new BackupModal(this.app, this, this.dataService).open();
       }
@@ -31917,7 +32254,7 @@ var FluentTasksPlugin = class extends import_obsidian20.Plugin {
         await this.loadSettings();
         this.applySettings();
         await BackupService.checkAndRunDailyBackup(this.app, this);
-        let lastActiveViewType = ((_a = this.app.workspace.getActiveViewOfType(import_obsidian20.ItemView)) == null ? void 0 : _a.getViewType()) || "";
+        let lastActiveViewType = ((_a = this.app.workspace.getActiveViewOfType(import_obsidian21.ItemView)) == null ? void 0 : _a.getViewType()) || "";
         this.registerEvent(
           this.app.workspace.on("active-leaf-change", (leaf) => {
             var _a2;
@@ -31970,7 +32307,7 @@ var FluentTasksPlugin = class extends import_obsidian20.Plugin {
         };
         this.registerEvent(
           this.app.vault.on("modify", (file) => {
-            if (!file || !(file instanceof import_obsidian20.TFile))
+            if (!file || !(file instanceof import_obsidian21.TFile))
               return;
             if (isCategoryFile(file.path)) {
               if (this.dataService.isInternalWrite(file.path)) {
@@ -31993,7 +32330,7 @@ var FluentTasksPlugin = class extends import_obsidian20.Plugin {
         this.registerEvent(
           this.app.vault.on("rename", (file, oldPath) => {
             handleCategoryVaultChange(file);
-            if (file instanceof import_obsidian20.TFile && file.extension === "md") {
+            if (file instanceof import_obsidian21.TFile && file.extension === "md") {
               if (!LinkedNoteService.isInternalRename(oldPath, file.path)) {
                 void LinkedNoteService.syncNoteRenameToTasks(
                   this.app,
@@ -32269,7 +32606,7 @@ var FluentTasksPlugin = class extends import_obsidian20.Plugin {
    */
   isPluginPageActive() {
     var _a;
-    const activeType = (_a = this.app.workspace.getActiveViewOfType(import_obsidian20.ItemView)) == null ? void 0 : _a.getViewType();
+    const activeType = (_a = this.app.workspace.getActiveViewOfType(import_obsidian21.ItemView)) == null ? void 0 : _a.getViewType();
     if (activeType === VIEW_TYPE_MAIN || activeType === VIEW_TYPE_SIDEBAR || activeType === VIEW_TYPE_DETAIL) {
       return true;
     }

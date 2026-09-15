@@ -1,6 +1,7 @@
 import { App, Notice, FileSystemAdapter, normalizePath } from "obsidian";
 import { DATA_FOLDER, EventName } from "../types";
 import { EventBus } from "../EventBus";
+import { t } from "../lang/helpers";
 
 export interface BackupFileInfo {
     filename: string;
@@ -74,7 +75,7 @@ export class BackupService {
         } catch (e) {
             console.warn("[BackupService] Failed to open folder in OS:", e);
         }
-        new Notice(`备份目录: ${this.BACKUP_FOLDER}`);
+        new Notice(t("backup_dir", this.BACKUP_FOLDER));
     }
 
     public static async createBackup(app: App, plugin?: any, isDaily: boolean = false): Promise<BackupFileInfo> {
@@ -203,7 +204,7 @@ export class BackupService {
     public static async restoreBackup(app: App, plugin: any, backupPath: string): Promise<boolean> {
         const normPath = normalizePath(backupPath);
         if (!(await app.vault.adapter.exists(normPath))) {
-            new Notice("未找到指定的备份文件");
+            new Notice(t("backup_file_not_found"));
             return false;
         }
 
@@ -215,7 +216,7 @@ export class BackupService {
         try {
             const payload: BackupDataPayload = JSON.parse(rawJson);
             if (!payload || typeof payload !== "object" || !payload.files) {
-                new Notice("❌ 备份文件格式无效：缺少 files 数据项");
+                new Notice(t("backup_invalid_format"));
                 return false;
             }
 
@@ -233,12 +234,12 @@ export class BackupService {
                 await app.vault.adapter.write(normalized, content);
             }
 
-            new Notice(`✅ 成功还原备份：共恢复 ${Object.keys(payload.files).length} 个文件，包含 ${payload.taskCount ?? 0} 项任务`);
+            new Notice(t("backup_restore_success", Object.keys(payload.files).length, payload.taskCount ?? 0));
             EventBus.emit(EventName.CATEGORY_LIST_CHANGED, {});
             return true;
         } catch (e) {
             console.error("[BackupService] Restore failed:", e);
-            new Notice(`❌ 还原失败: ${e}`);
+            new Notice(t("backup_restore_failed", String(e)));
             return false;
         }
     }
@@ -247,7 +248,7 @@ export class BackupService {
         const normPath = normalizePath(backupPath);
         if (await app.vault.adapter.exists(normPath)) {
             await app.vault.adapter.remove(normPath);
-            new Notice("🗑️ 备份已删除");
+            new Notice(t("backup_deleted"));
         }
     }
 
@@ -278,9 +279,9 @@ export class BackupService {
             if (dialog && typeof dialog.showOpenDialog === "function") {
                 const defaultFolder = this.getAbsoluteBackupFolderPath(app);
                 const res = await dialog.showOpenDialog({
-                    title: "选择要导入的备份文件",
+                    title: t("backup_import_dialog_title"),
                     defaultPath: defaultFolder,
-                    filters: [{ name: "Fluent Tasks 备份文件 (*.json)", extensions: ["json"] }],
+                    filters: [{ name: t("backup_file_filter_name"), extensions: ["json"] }],
                     properties: ["openFile"]
                 });
 

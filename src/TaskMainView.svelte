@@ -17,6 +17,7 @@
     import { promptDeleteTaskWithLinkedNote } from "./modals/ConfirmDeleteLinkedNoteModal";
     import { TaskStepsModal } from "./modals/TaskStepsModal";
     import { BackupModal } from "./modals/BackupModal";
+    import { t } from "./lang/helpers";
 
     // =============================================
     // Props
@@ -727,7 +728,7 @@
             selectedTaskIds.clear();
             selectedTaskIds = selectedTaskIds;
         } else {
-            new Notice("☑️ 多选模式已开启：可勾选任务进行批量操作");
+            new Notice(t("multi_select_mode_enabled"));
         }
     }
 
@@ -768,13 +769,13 @@
         incompleteTasks = [...incompleteTasks];
         completedTasks = [...completedTasks];
         await dataService.saveTasks(currentCategory.filepath, [...incompleteTasks, ...completedTasks]);
-        new Notice(shouldStar ? `⭐ 已收藏选中的 ${selected.length} 项任务` : `已取消收藏选中的 ${selected.length} 项任务`);
+        new Notice(shouldStar ? t("batch_starred_tasks", selected.length) : t("batch_unstarred_tasks", selected.length));
     }
 
     async function handleBatchDelete() {
         if (!currentCategory || selectedTaskIds.size === 0) return;
         const count = selectedTaskIds.size;
-        if (!confirm(`确认批量删除选中的 ${count} 项任务？此操作不可逆。`)) return;
+        if (!confirm(t("confirm_batch_delete_tasks", count))) return;
 
         incompleteTasks = incompleteTasks.filter(t => !selectedTaskIds.has(t.id));
         completedTasks = completedTasks.filter(t => !selectedTaskIds.has(t.id));
@@ -782,7 +783,7 @@
         selectedTaskIds.clear();
         selectedTaskIds = selectedTaskIds;
         isMultiSelectMode = false;
-        new Notice(`🗑️ 已批量删除 ${count} 项任务`);
+        new Notice(t("batch_deleted_tasks_notice", count));
     }
 
     export { scheduleHidePopover };
@@ -819,7 +820,7 @@
                     <!-- Multi-Select Toggle Button in Header -->
                     <span class="icon-btn" class:is-active={isMultiSelectMode}
                           on:click|stopPropagation={toggleMultiSelect}
-                          role="button" tabindex="0" aria-label="多选任务 (批量删除/收藏)" title="多选任务 (批量删除/收藏)"
+                          role="button" tabindex="0" aria-label={t("multi_select_tooltip")} title={t("multi_select_tooltip")}
                           on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleMultiSelect()}>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -831,7 +832,7 @@
                     <!-- Backup Manager Button in Header -->
                     <span class="icon-btn"
                           on:click|stopPropagation={openBackupModal}
-                          role="button" tabindex="0" aria-label="数据备份器" title="数据备份器"
+                          role="button" tabindex="0" aria-label={t("backup_btn_tooltip")} title={t("backup_btn_tooltip")}
                           on:keydown|stopPropagation={(e) => e.key === "Enter" && openBackupModal()}>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -993,9 +994,7 @@
                               on:click={(e) => handleNoteLinkClick(e, task.note_link)}
                               on:keydown={(e) => e.key === "Enter" && handleNoteLinkClick(e, task.note_link)}
                               role="button" tabindex="0"
-                              title={LinkedNoteService.isHardBoundNote(task.note_link)
-                                  ? `专属链接笔记: ${task.note_link} (点击跳转，悬停预览)`
-                                  : `Linked note: ${task.note_link} (Click to open, hover to preview)`}>
+                              title={t("linked_note_preview_tooltip", task.note_link)}>
                             {#if LinkedNoteService.isHardBoundNote(task.note_link)}
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1188,9 +1187,7 @@
                                           on:click={(e) => handleNoteLinkClick(e, task.note_link)}
                                           on:keydown={(e) => e.key === "Enter" && handleNoteLinkClick(e, task.note_link)}
                                           role="button" tabindex="0"
-                                          title={LinkedNoteService.isHardBoundNote(task.note_link)
-                                              ? `专属链接笔记: ${task.note_link} (点击跳转，悬停预览)`
-                                              : `Linked note: ${task.note_link} (Click to open, hover to preview)`}>
+                                          title={t("linked_note_preview_tooltip", task.note_link)}>
                                         {#if LinkedNoteService.isHardBoundNote(task.note_link)}
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                                                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1663,26 +1660,26 @@
     {#if isMultiSelectMode}
         <div class="multi-select-floating-toolbar">
             <div class="multi-select-count">
-                已选 <b>{selectedTaskIds.size}</b> 项
+                {t("selected_items_label", selectedTaskIds.size)}
             </div>
             <button class="multi-select-btn" on:click={selectAllTasks}>
-                {selectedTaskIds.size === (incompleteTasks.length + completedTasks.length) && (incompleteTasks.length + completedTasks.length) > 0 ? "取消全选" : "全选"}
+                {selectedTaskIds.size === (incompleteTasks.length + completedTasks.length) && (incompleteTasks.length + completedTasks.length) > 0 ? t("deselect_all") : t("select_all")}
             </button>
             <button class="multi-select-btn" on:click={handleBatchStar} disabled={selectedTaskIds.size === 0}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                 </svg>
-                <span>批量收藏</span>
+                <span>{t("batch_star")}</span>
             </button>
             <button class="multi-select-btn is-delete" on:click={handleBatchDelete} disabled={selectedTaskIds.size === 0}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3 6 5 6 21 6"></polyline>
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                 </svg>
-                <span>批量删除</span>
+                <span>{t("batch_delete")}</span>
             </button>
             <button class="multi-select-btn is-exit" on:click={() => { isMultiSelectMode = false; selectedTaskIds.clear(); selectedTaskIds = selectedTaskIds; }}>
-                <span>✕ 退出</span>
+                <span>{t("exit")}</span>
             </button>
         </div>
     {/if}
