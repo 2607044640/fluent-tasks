@@ -3917,86 +3917,77 @@ body .task-steps-floating-modal .modal-content.task-steps-modal-content {
     color: #ffffff;
 }
 
-.multi-select-floating-toolbar {
-    position: fixed;
-    bottom: 28px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--background-secondary, #222);
-    border: 1px solid var(--todo-accent, #8b5cf6);
-    border-radius: 10px;
-    padding: 8px 16px;
-    display: flex;
+.header-multi-select-group {
+    display: inline-flex;
     align-items: center;
-    gap: 12px;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
-    z-index: 999;
+    gap: 3px;
+    background: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    padding: 2px 4px;
+    margin-right: 4px;
     animation: meta-backdrop-fade 150ms ease-out;
 }
 
-.multi-select-count {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-normal);
-    padding-right: 8px;
-    border-right: 1px solid var(--background-modifier-border);
-}
-
-.multi-select-count b {
+.header-multi-select-count {
+    font-size: 11px;
+    font-weight: 700;
     color: var(--todo-accent, #8b5cf6);
-}
-
-.multi-select-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 5px 10px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 500;
-    background: var(--background-primary);
-    border: 1px solid var(--background-modifier-border);
-    color: var(--text-normal);
-    cursor: pointer;
-    transition: all 0.15s ease;
-}
-
-.multi-select-btn:hover:not(:disabled) {
-    background: var(--background-modifier-hover);
-    border-color: var(--todo-accent, #8b5cf6);
-}
-
-.multi-select-btn:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-}
-
-.multi-select-btn.is-delete:hover:not(:disabled) {
-    color: var(--text-error, #f87171);
-    border-color: var(--text-error, #f87171);
-}
-
-.multi-select-btn.is-exit {
-    background: transparent;
-    border-color: transparent;
-    color: var(--text-muted);
-}
-
-.multi-select-btn.is-exit:hover {
-    color: var(--text-normal);
-    background: var(--background-modifier-hover);
+    background: var(--todo-accent-light, rgba(139, 92, 246, 0.15));
+    border-radius: 4px;
+    padding: 2px 6px;
+    margin-right: 3px;
+    user-select: none;
+    line-height: 1.2;
 }
 
 .main-header-actions {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
+}
+
+.main-header-actions .icon-btn {
+    background: transparent;
+    border: none;
+    color: var(--todo-text-muted, var(--text-muted));
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 5px 6px;
+    border-radius: var(--todo-radius, 4px);
+    transition: all var(--todo-transition, 0.15s ease);
+}
+
+.main-header-actions .icon-btn:hover:not(.is-disabled) {
+    background-color: var(--todo-hover-bg, var(--background-modifier-hover));
+    color: var(--todo-text-main, var(--text-normal));
 }
 
 .main-header-actions .icon-btn.is-active {
     background: var(--todo-accent-light, rgba(139, 92, 246, 0.2));
     color: var(--todo-accent, #8b5cf6);
-    border-radius: 4px;
+}
+
+.main-header-actions .icon-btn.is-disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.main-header-actions .icon-btn.is-delete:hover:not(.is-disabled) {
+    color: var(--text-error, #f87171);
+    background-color: rgba(248, 113, 113, 0.15);
+}
+
+.main-header-actions .icon-btn.is-exit {
+    color: var(--text-muted);
+}
+
+.main-header-actions .icon-btn.is-exit:hover {
+    color: var(--text-normal);
+    background-color: var(--background-modifier-hover);
 }
 
 

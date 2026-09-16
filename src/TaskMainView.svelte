@@ -757,6 +757,36 @@
         selectedTaskIds = selectedTaskIds;
     }
 
+    function selectIncompleteTasks() {
+        const incompleteIds = incompleteTasks.map(t => t.id);
+        if (incompleteIds.length === 0) return;
+        const allIncompleteSelected = incompleteIds.every(id => selectedTaskIds.has(id)) && selectedTaskIds.size === incompleteIds.length;
+        if (allIncompleteSelected) {
+            selectedTaskIds.clear();
+        } else {
+            selectedTaskIds.clear();
+            for (const id of incompleteIds) {
+                selectedTaskIds.add(id);
+            }
+        }
+        selectedTaskIds = selectedTaskIds;
+    }
+
+    function selectCompletedTasks() {
+        const completedIds = completedTasks.map(t => t.id);
+        if (completedIds.length === 0) return;
+        const allCompletedSelected = completedIds.every(id => selectedTaskIds.has(id)) && selectedTaskIds.size === completedIds.length;
+        if (allCompletedSelected) {
+            selectedTaskIds.clear();
+        } else {
+            selectedTaskIds.clear();
+            for (const id of completedIds) {
+                selectedTaskIds.add(id);
+            }
+        }
+        selectedTaskIds = selectedTaskIds;
+    }
+
     async function handleBatchStar() {
         if (!currentCategory || selectedTaskIds.size === 0) return;
         const all = [...incompleteTasks, ...completedTasks];
@@ -804,44 +834,145 @@
     {#if currentCategory}
         <!-- Header -->
         <div class="main-header">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <h1 class="category-title">{currentCategory.name}</h1>
-                <div class="main-header-actions">
-                    <span class="icon-btn" on:click|stopPropagation={() => new TaskSearchModal(plugin.app, plugin, dataService, currentCategory?.filepath).open()}
-                          role="button" tabindex="0" aria-label="Search this list" title="Search this list"
-                          on:keydown|stopPropagation={(e) => e.key === "Enter" && new TaskSearchModal(plugin.app, plugin, dataService, currentCategory?.filepath).open()}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="11" cy="11" r="8"/>
-                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                        </svg>
-                    </span>
+            <h1 class="category-title">{currentCategory.name}</h1>
+            <div class="main-header-actions">
+                {#if isMultiSelectMode}
+                    <div class="header-multi-select-group">
+                        <span class="header-multi-select-count" title={t("selected_items_label", selectedTaskIds.size)}>
+                            {selectedTaskIds.size}
+                        </span>
 
-                    <!-- Multi-Select Toggle Button in Header -->
-                    <span class="icon-btn" class:is-active={isMultiSelectMode}
-                          on:click|stopPropagation={toggleMultiSelect}
-                          role="button" tabindex="0" aria-label={t("multi_select_tooltip")} title={t("multi_select_tooltip")}
-                          on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleMultiSelect()}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="9 11 12 14 22 4"></polyline>
-                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-                        </svg>
-                    </span>
+                        <!-- Select All / Deselect All -->
+                        <span class="icon-btn"
+                              class:is-active={selectedTaskIds.size > 0 && selectedTaskIds.size === (incompleteTasks.length + completedTasks.length)}
+                              on:click|stopPropagation={selectAllTasks}
+                              role="button" tabindex="0"
+                              aria-label={selectedTaskIds.size === (incompleteTasks.length + completedTasks.length) && (incompleteTasks.length + completedTasks.length) > 0 ? t("deselect_all") : t("select_all")}
+                              title={selectedTaskIds.size === (incompleteTasks.length + completedTasks.length) && (incompleteTasks.length + completedTasks.length) > 0 ? t("deselect_all") : t("select_all")}
+                              on:keydown|stopPropagation={(e) => e.key === "Enter" && selectAllTasks()}>
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 6L7 17l-5-5"/>
+                                <path d="M22 10l-7.5 7.5L13 16"/>
+                            </svg>
+                        </span>
 
-                    <!-- Backup Manager Button in Header -->
-                    <span class="icon-btn"
-                          on:click|stopPropagation={openBackupModal}
-                          role="button" tabindex="0" aria-label={t("backup_btn_tooltip")} title={t("backup_btn_tooltip")}
-                          on:keydown|stopPropagation={(e) => e.key === "Enter" && openBackupModal()}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="21 8 21 21 3 21 3 8"></polyline>
-                            <rect x="1" y="3" width="22" height="5"></rect>
-                            <line x1="10" y1="12" x2="14" y2="12"></line>
-                        </svg>
-                    </span>
-                </div>
+                        <!-- Select Incomplete Tasks -->
+                        <span class="icon-btn"
+                              class:is-active={incompleteTasks.length > 0 && incompleteTasks.every(t => selectedTaskIds.has(t.id)) && selectedTaskIds.size === incompleteTasks.length}
+                              on:click|stopPropagation={selectIncompleteTasks}
+                              role="button" tabindex="0"
+                              aria-label={t("select_incomplete_tasks")}
+                              title={t("select_incomplete_tasks")}
+                              on:keydown|stopPropagation={(e) => e.key === "Enter" && selectIncompleteTasks()}>
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="9"/>
+                            </svg>
+                        </span>
+
+                        <!-- Select Completed Tasks -->
+                        <span class="icon-btn"
+                              class:is-active={completedTasks.length > 0 && completedTasks.every(t => selectedTaskIds.has(t.id)) && selectedTaskIds.size === completedTasks.length}
+                              on:click|stopPropagation={selectCompletedTasks}
+                              role="button" tabindex="0"
+                              aria-label={t("select_completed_tasks")}
+                              title={t("select_completed_tasks")}
+                              on:keydown|stopPropagation={(e) => e.key === "Enter" && selectCompletedTasks()}>
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                <polyline points="22 4 12 14.01 9 11.01"/>
+                            </svg>
+                        </span>
+
+                        <!-- Batch Star -->
+                        <span class="icon-btn"
+                              class:is-disabled={selectedTaskIds.size === 0}
+                              on:click|stopPropagation={() => selectedTaskIds.size > 0 && handleBatchStar()}
+                              role="button" tabindex="0"
+                              aria-label={t("batch_star")}
+                              title={t("batch_star")}
+                              on:keydown|stopPropagation={(e) => e.key === "Enter" && selectedTaskIds.size > 0 && handleBatchStar()}>
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                            </svg>
+                        </span>
+
+                        <!-- Batch Delete -->
+                        <span class="icon-btn is-delete"
+                              class:is-disabled={selectedTaskIds.size === 0}
+                              on:click|stopPropagation={() => selectedTaskIds.size > 0 && handleBatchDelete()}
+                              role="button" tabindex="0"
+                              aria-label={t("batch_delete")}
+                              title={t("batch_delete")}
+                              on:keydown|stopPropagation={(e) => e.key === "Enter" && selectedTaskIds.size > 0 && handleBatchDelete()}>
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                        </span>
+
+                        <!-- Exit multi select mode -->
+                        <span class="icon-btn is-exit"
+                              on:click|stopPropagation={() => { isMultiSelectMode = false; selectedTaskIds.clear(); selectedTaskIds = selectedTaskIds; }}
+                              role="button" tabindex="0"
+                              aria-label={t("exit_multi_select")}
+                              title={t("exit_multi_select")}
+                              on:keydown|stopPropagation={(e) => e.key === "Enter" && (isMultiSelectMode = false, selectedTaskIds.clear(), selectedTaskIds = selectedTaskIds)}>
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </span>
+                    </div>
+                {/if}
+
+                <!-- Guide / Help Button in Header -->
+                <span class="icon-btn"
+                      on:click|stopPropagation={() => showHintsModal = true}
+                      role="button" tabindex="0" aria-label={t("guide_btn_tooltip")} title={t("guide_btn_tooltip")}
+                      on:keydown|stopPropagation={(e) => e.key === "Enter" && (showHintsModal = true)}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                </span>
+
+                <!-- Search this list -->
+                <span class="icon-btn" on:click|stopPropagation={() => new TaskSearchModal(plugin.app, plugin, dataService, currentCategory?.filepath).open()}
+                      role="button" tabindex="0" aria-label={t("search_list_tooltip")} title={t("search_list_tooltip")}
+                      on:keydown|stopPropagation={(e) => e.key === "Enter" && new TaskSearchModal(plugin.app, plugin, dataService, currentCategory?.filepath).open()}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"/>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                </span>
+
+                <!-- Backup Manager Button in Header -->
+                <span class="icon-btn"
+                      on:click|stopPropagation={openBackupModal}
+                      role="button" tabindex="0" aria-label={t("backup_btn_tooltip")} title={t("backup_btn_tooltip")}
+                      on:keydown|stopPropagation={(e) => e.key === "Enter" && openBackupModal()}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                        <rect x="1" y="3" width="22" height="5"></rect>
+                        <line x1="10" y1="12" x2="14" y2="12"></line>
+                    </svg>
+                </span>
+
+                <!-- Multi-Select Toggle Button in Header -->
+                <span class="icon-btn" class:is-active={isMultiSelectMode}
+                      on:click|stopPropagation={toggleMultiSelect}
+                      role="button" tabindex="0" aria-label={t("multi_select_tooltip")} title={t("multi_select_tooltip")}
+                      on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleMultiSelect()}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 11 12 14 22 4"></polyline>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                    </svg>
+                </span>
             </div>
         </div>
 
@@ -1653,34 +1784,6 @@
                     <button type="button" class="meta-btn-primary" on:click={() => showHintsModal = false}>Got it!</button>
                 </div>
             </div>
-        </div>
-    {/if}
-
-    <!-- Multi-Select Floating Action Toolbar -->
-    {#if isMultiSelectMode}
-        <div class="multi-select-floating-toolbar">
-            <div class="multi-select-count">
-                {t("selected_items_label", selectedTaskIds.size)}
-            </div>
-            <button class="multi-select-btn" on:click={selectAllTasks}>
-                {selectedTaskIds.size === (incompleteTasks.length + completedTasks.length) && (incompleteTasks.length + completedTasks.length) > 0 ? t("deselect_all") : t("select_all")}
-            </button>
-            <button class="multi-select-btn" on:click={handleBatchStar} disabled={selectedTaskIds.size === 0}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                </svg>
-                <span>{t("batch_star")}</span>
-            </button>
-            <button class="multi-select-btn is-delete" on:click={handleBatchDelete} disabled={selectedTaskIds.size === 0}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                </svg>
-                <span>{t("batch_delete")}</span>
-            </button>
-            <button class="multi-select-btn is-exit" on:click={() => { isMultiSelectMode = false; selectedTaskIds.clear(); selectedTaskIds = selectedTaskIds; }}>
-                <span>{t("exit")}</span>
-            </button>
         </div>
     {/if}
 </div>
