@@ -42,23 +42,59 @@ export class MarkdownParser {
 
     /**
      * Parse raw markdown content into a TaskItem array.
+     * Supports both single-line <br> encoded titles and legacy multi-line continuation lines.
      */
     static parseTasksFromMarkdown(content: string): TaskItem[] {
         const tasks: TaskItem[] = [];
-        const lines = content.split("\n");
+        const rawLines = content.split("\n");
 
-        for (const line of lines) {
-            const trimmed = line.trim();
-            const match = trimmed.match(TASK_LINE_REGEX);
-            if (!match) continue;
+        interface RawTaskBlock {
+            completed: boolean;
+            lines: string[];
+        }
 
-            const completed = match[1] === "x";
-            const rawContent = match[2].trim();
+        const blocks: RawTaskBlock[] = [];
+        let currentBlock: RawTaskBlock | null = null;
+        const TASK_START_REGEX = /^- \[([ x])\](?:\s+(.*))?$/;
+
+        for (const rawLine of rawLines) {
+            const trimmed = rawLine.trim();
+            const startMatch = trimmed.match(TASK_START_REGEX);
+
+            if (startMatch) {
+                if (currentBlock) {
+                    blocks.push(currentBlock);
+                }
+                currentBlock = {
+                    completed: startMatch[1] === "x",
+                    lines: [startMatch[2] || ""],
+                };
+            } else if (currentBlock) {
+                // Check if current block already completed its metadata
+                const blockHasMeta = currentBlock.lines.some(l => META_REGEX.test(l));
+                if (blockHasMeta) {
+                    // Current block already closed its metadata.
+                    // Subsequent lines do not belong to it.
+                    blocks.push(currentBlock);
+                    currentBlock = null;
+                } else if (trimmed.length > 0) {
+                    // Continuation line belonging to the unclosed task block
+                    currentBlock.lines.push(trimmed);
+                }
+            }
+        }
+
+        if (currentBlock) {
+            blocks.push(currentBlock);
+        }
+
+        for (const block of blocks) {
+            const joinedContent = block.lines.join("\n");
 
             // Extract metadata JSON from %%{...}%%
-            const metaMatch = trimmed.match(META_REGEX);
+            const metaMatch = joinedContent.match(META_REGEX);
             let meta: Record<string, unknown> = {};
-            let title = rawContent;
+            let rawTitle = joinedContent;
 
             if (metaMatch) {
                 try {
@@ -67,11 +103,12 @@ export class MarkdownParser {
                         meta = parsed as Record<string, unknown>;
                     }
                 } catch { /* swallow parse errors gracefully */ }
-                title = rawContent.replace(/\s*%%\{.*?\}%%/, "").trim();
+                rawTitle = joinedContent.replace(/\s*%%\{.*?\}%%/, "");
             }
 
             const createdAt = typeof meta.createdAt === "string" ? meta.createdAt : new Date().toISOString();
-            const cleanTitle = typeof title === "string" ? title.trim() : "";
+            // Decode <br> / <br/> / <br /> back to \n
+            const cleanTitle = rawTitle.replace(/<br\s*\/?>/gi, "\n").trim();
             const id = typeof meta.id === "string" ? meta.id : generateStableId(cleanTitle, createdAt);
 
             const cleanSteps: TaskStep[] = Array.isArray(meta.steps)
@@ -86,7 +123,7 @@ export class MarkdownParser {
             tasks.push({
                 id,
                 title: cleanTitle,
-                completed,
+                completed: block.completed,
                 starred: typeof meta.starred === "boolean" ? meta.starred : false,
                 steps: cleanSteps,
                 note: typeof meta.note === "string" ? meta.note : "",
@@ -108,6 +145,7 @@ export class MarkdownParser {
 
     /**
      * Serialize a TaskItem array back to markdown text.
+     * Encodes newlines in titles as <br> to ensure each task is a single physical line.
      */
     static serializeTasksToMarkdown(tasks: TaskItem[]): string {
         return tasks.map(task => {
@@ -128,7 +166,9 @@ export class MarkdownParser {
             if (task.svgs && task.svgs.length > 0) meta.svgs = task.svgs;
             if (task.note_link) meta.note_link = task.note_link;
             if (task.customMeta && Object.keys(task.customMeta).length > 0) meta.customMeta = task.customMeta;
-            return `- ${checkbox} ${task.title} %%${JSON.stringify(meta)}%%`;
+
+            const safeTitle = (task.title || "").replace(/\r?\n/g, "<br>");
+            return `- ${checkbox} ${safeTitle} %%${JSON.stringify(meta)}%%`;
         }).join("\n");
     }
 

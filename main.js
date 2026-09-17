@@ -450,7 +450,6 @@ var CategoryService = class {
 
 // src/MarkdownParser.ts
 var META_REGEX = /%%(\{.*?\})%%/;
-var TASK_LINE_REGEX = /^- \[([ x])\] (.+?)(?:\s*%%\{.*?\}%%)?$/;
 function generateStableId(title, createdAt) {
   const raw = title + createdAt;
   let hash2 = 0;
@@ -464,20 +463,43 @@ function generateStableId(title, createdAt) {
 var MarkdownParser = class {
   /**
    * Parse raw markdown content into a TaskItem array.
+   * Supports both single-line <br> encoded titles and legacy multi-line continuation lines.
    */
   static parseTasksFromMarkdown(content) {
     const tasks2 = [];
-    const lines = content.split("\n");
-    for (const line of lines) {
-      const trimmed = line.trim();
-      const match = trimmed.match(TASK_LINE_REGEX);
-      if (!match)
-        continue;
-      const completed = match[1] === "x";
-      const rawContent = match[2].trim();
-      const metaMatch = trimmed.match(META_REGEX);
+    const rawLines = content.split("\n");
+    const blocks = [];
+    let currentBlock = null;
+    const TASK_START_REGEX = /^- \[([ x])\](?:\s+(.*))?$/;
+    for (const rawLine of rawLines) {
+      const trimmed = rawLine.trim();
+      const startMatch = trimmed.match(TASK_START_REGEX);
+      if (startMatch) {
+        if (currentBlock) {
+          blocks.push(currentBlock);
+        }
+        currentBlock = {
+          completed: startMatch[1] === "x",
+          lines: [startMatch[2] || ""]
+        };
+      } else if (currentBlock) {
+        const blockHasMeta = currentBlock.lines.some((l) => META_REGEX.test(l));
+        if (blockHasMeta) {
+          blocks.push(currentBlock);
+          currentBlock = null;
+        } else if (trimmed.length > 0) {
+          currentBlock.lines.push(trimmed);
+        }
+      }
+    }
+    if (currentBlock) {
+      blocks.push(currentBlock);
+    }
+    for (const block of blocks) {
+      const joinedContent = block.lines.join("\n");
+      const metaMatch = joinedContent.match(META_REGEX);
       let meta = {};
-      let title = rawContent;
+      let rawTitle = joinedContent;
       if (metaMatch) {
         try {
           const parsed = JSON.parse(metaMatch[1]);
@@ -486,10 +508,10 @@ var MarkdownParser = class {
           }
         } catch (e) {
         }
-        title = rawContent.replace(/\s*%%\{.*?\}%%/, "").trim();
+        rawTitle = joinedContent.replace(/\s*%%\{.*?\}%%/, "");
       }
       const createdAt = typeof meta.createdAt === "string" ? meta.createdAt : (/* @__PURE__ */ new Date()).toISOString();
-      const cleanTitle = typeof title === "string" ? title.trim() : "";
+      const cleanTitle = rawTitle.replace(/<br\s*\/?>/gi, "\n").trim();
       const id = typeof meta.id === "string" ? meta.id : generateStableId(cleanTitle, createdAt);
       const cleanSteps = Array.isArray(meta.steps) ? meta.steps.filter((s) => !!s && typeof s === "object").map((s) => ({
         text: typeof s.text === "string" ? s.text.trimEnd() : "",
@@ -498,7 +520,7 @@ var MarkdownParser = class {
       tasks2.push({
         id,
         title: cleanTitle,
-        completed,
+        completed: block.completed,
         starred: typeof meta.starred === "boolean" ? meta.starred : false,
         steps: cleanSteps,
         note: typeof meta.note === "string" ? meta.note : "",
@@ -518,6 +540,7 @@ var MarkdownParser = class {
   }
   /**
    * Serialize a TaskItem array back to markdown text.
+   * Encodes newlines in titles as <br> to ensure each task is a single physical line.
    */
   static serializeTasksToMarkdown(tasks2) {
     return tasks2.map((task) => {
@@ -547,7 +570,8 @@ var MarkdownParser = class {
         meta.note_link = task.note_link;
       if (task.customMeta && Object.keys(task.customMeta).length > 0)
         meta.customMeta = task.customMeta;
-      return `- ${checkbox} ${task.title} %%${JSON.stringify(meta)}%%`;
+      const safeTitle = (task.title || "").replace(/\r?\n/g, "<br>");
+      return `- ${checkbox} ${safeTitle} %%${JSON.stringify(meta)}%%`;
     }).join("\n");
   }
   /**

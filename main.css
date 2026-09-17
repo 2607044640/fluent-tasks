@@ -485,7 +485,7 @@
 }
 
 .wrap-titles .task-title {
-    white-space: normal;
+    white-space: pre-wrap;
     overflow-wrap: anywhere;
     word-break: break-word;
     text-overflow: clip;
@@ -2586,6 +2586,7 @@ body .quick-modal-task-item.is-focused {
     color: var(--text-normal);
     line-height: 1.4;
     word-break: break-word;
+    white-space: pre-wrap;
 }
 
 .quick-modal-task-title.is-done {
