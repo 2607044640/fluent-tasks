@@ -7,7 +7,7 @@ Obsidian `ItemView` wrappers in `src/main.ts` mount Svelte 4 components. Cross-p
 | Component | Responsible For | MUST NOT Contain |
 |---|---|---|
 | `TaskSidebarView.svelte` | Tree of lists/groups, F2 rename, create list/group, drop radar for tasks, HTML5 reorder | Markdown parse |
-| `TaskMainView.svelte` | Task list, add/toggle/star, svelte-dnd-action reorder, popovers, SVG lightbox, hints modal | Settings tab DOM |
+| `TaskMainView.svelte` | Task list, add/toggle/star, svelte-dnd-action reorder, popovers, SVG lightbox, multi-select batch toolbar, bottom-right 5s undo toast, hints modal | Settings tab DOM |
 | `TaskDetailView.svelte` | Title/steps/note, schedule + recurrence UI, metadata modal, linked-note button, debounced save | Category tree |
 | `TaskSearchModal` | SuggestModal search (see [query-search](./query-search.md)) | — |
 | `QuickListModal` + `QuickListModalView.svelte` | Keyboard list board; `filterSidebarTree`; grid spacing via `quickListMinColGap` / `quickListMinRowGap`; open list in center | Task body editor |

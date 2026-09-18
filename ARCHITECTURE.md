@@ -1,10 +1,10 @@
 # fluent-tasks Architecture
 
-Fluent Tasks (`manifest.json` id `fluent-tasks`, v1.0.23) is an Obsidian plugin. Tasks are Markdown checklists under `TodoData/*.md`. Cross-view traffic uses the `EventBus` singleton. Vault I/O uses `DataService`. There is **no** Microsoft Graph / To Do sync client; `TaskItem.msGraphId` / `msGraphListId` are optional serialized fields only. Cross-pane drag uses `window.__mstodo_drag_data` (legacy name).
+Fluent Tasks (`manifest.json` id `fluent-tasks`, v1.0.25) is an Obsidian plugin. Tasks are Markdown checklists under `TodoData/*.md`. Cross-view traffic uses the `EventBus` singleton. Vault I/O uses `DataService`. There is **no** Microsoft Graph / To Do sync client; `TaskItem.msGraphId` / `msGraphListId` are optional serialized fields only. Cross-pane drag uses `window.__mstodo_drag_data` (legacy name).
 
 ## Global Invariants
 
-1. Flat `TodoData/*.md` files are the only task store. Sidebar grouping lives in `TodoData/.metadata.json` via `vault.adapter` (Obsidian Vault API ignores dotfiles). (Why chosen over a JSON/DB store: lists remain editable as ordinary checklists.)
+1. Flat `TodoData/*.md` files are the only task store. Sidebar grouping lives in `TodoData/.metadata.json` via `vault.adapter` (Obsidian Vault API ignores dotfiles). Each task occupies exactly one physical line; title newlines encode as `<br>` to ensure checklist metadata stays aligned. (Why chosen over a JSON/DB store: lists remain editable as ordinary checklists.)
 2. Views never call `vault.modify` themselves. Mutations go `UI → DataService → AtomicIOPipeline.processFile` (or adapter for metadata), then `EventBus` notifies peers. Internal-write windows suppress echo reloads. (Why chosen over per-view writes: concurrent edit + vault `modify` events would duplicate or drop tasks.)
 3. Recurrence uses local calendar dates (`YYYY-MM-DD` via `timeUtils`). Rollover runs inside `TaskService.getTasks`, on a 10s interval, and on window focus. (Why chosen over UTC `Date` math: due dates must not shift by timezone.)
 
