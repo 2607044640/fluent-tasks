@@ -72,7 +72,7 @@ export class LinkedNoteService {
             if (!item) {
                 try {
                     await app.vault.createFolder(current);
-                } catch (e) {
+                } catch {
                     // Folder may have been created concurrently
                 }
             }

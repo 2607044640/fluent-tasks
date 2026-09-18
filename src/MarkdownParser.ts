@@ -10,13 +10,12 @@
  * The %%{...}%% is an Obsidian invisible comment containing structured JSON metadata.
  */
 
-import { TaskItem, TaskStep, DATA_FOLDER, RecurrenceRule } from "./types";
+import { TaskItem, TaskStep, RecurrenceRule } from "./types";
 
 // =============================================
 // Internal Constants
 // =============================================
 const META_REGEX = /%%(\{.*?\})%%/;
-const TASK_LINE_REGEX = /^- \[([ x])\] (.+?)(?:\s*%%\{.*?\}%%)?$/;
 
 // =============================================
 // Helpers

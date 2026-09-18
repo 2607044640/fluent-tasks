@@ -1,11 +1,12 @@
 {
   "name": "fluent-tasks",
-  "version": "1.0.25",
+  "version": "1.0.26",
   "description": "A beautiful, drag-and-drop task manager inspired by Fluent Design.",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",
-    "build": "node esbuild.config.mjs production"
+    "build": "node esbuild.config.mjs production",
+    "lint": "eslint src"
   },
   "keywords": [],
   "author": "Jeff1024",
@@ -14,6 +15,8 @@
     "@types/node": "^20.11.0",
     "esbuild": "^0.20.0",
     "esbuild-svelte": "^0.8.0",
+    "eslint": "^9.39.5",
+    "eslint-plugin-obsidianmd": "^0.4.2",
     "obsidian": "latest",
     "svelte": "^4.2.0",
     "svelte-preprocess": "^5.1.0",

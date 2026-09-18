@@ -57,11 +57,11 @@ export function autosize(node: HTMLTextAreaElement, _value?: string) {
 
     node.addEventListener("input", resize);
     node.addEventListener("focus", resize);
-    requestAnimationFrame(resize);
+    window.requestAnimationFrame(resize);
 
     return {
         update(_newValue?: string) {
-            requestAnimationFrame(resize);
+            window.requestAnimationFrame(resize);
         },
         destroy() {
             node.removeEventListener("input", resize);

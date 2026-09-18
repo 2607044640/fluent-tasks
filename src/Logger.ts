@@ -16,9 +16,15 @@ export class Logger {
     static async log(...args: unknown[]): Promise<void> {
         if (!this.app) return;
         const timestamp = new Date().toISOString();
-        const message = args.map(a =>
-            typeof a === "object" ? JSON.stringify(a, null, 2) : String(a)
-        ).join(" ");
+        const message = args.map(a => {
+            if (typeof a === "string") return a;
+            if (typeof a === "number" || typeof a === "boolean" || typeof a === "bigint") return a.toString();
+            try {
+                return JSON.stringify(a, null, 2);
+            } catch {
+                return "[Unserializable]";
+            }
+        }).join(" ");
         const line = `[${timestamp}] ${message}\n`;
 
         try {

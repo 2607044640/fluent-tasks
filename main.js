@@ -101,9 +101,17 @@ var Logger = class {
     if (!this.app)
       return;
     const timestamp = (/* @__PURE__ */ new Date()).toISOString();
-    const message = args.map(
-      (a) => typeof a === "object" ? JSON.stringify(a, null, 2) : String(a)
-    ).join(" ");
+    const message = args.map((a) => {
+      if (typeof a === "string")
+        return a;
+      if (typeof a === "number" || typeof a === "boolean" || typeof a === "bigint")
+        return a.toString();
+      try {
+        return JSON.stringify(a, null, 2);
+      } catch (e) {
+        return "[Unserializable]";
+      }
+    }).join(" ");
     const line = `[${timestamp}] ${message}
 `;
     try {
@@ -7340,10 +7348,10 @@ function autosize(node, _value) {
   }
   node.addEventListener("input", resize);
   node.addEventListener("focus", resize);
-  requestAnimationFrame(resize);
+  window.requestAnimationFrame(resize);
   return {
     update(_newValue) {
-      requestAnimationFrame(resize);
+      window.requestAnimationFrame(resize);
     },
     destroy() {
       node.removeEventListener("input", resize);
@@ -7864,30 +7872,14 @@ var zh_cn_default = zhCn;
 
 // src/lang/helpers.ts
 function detectLanguage() {
-  var _a, _b, _c;
-  let lang = "";
   try {
-    if (typeof import_obsidian7.getLanguage === "function") {
-      lang = (0, import_obsidian7.getLanguage)();
+    const lang = (0, import_obsidian7.getLanguage)();
+    if (lang) {
+      return lang.toLowerCase();
     }
   } catch (e) {
   }
-  if (!lang) {
-    try {
-      lang = ((_a = window.localStorage) == null ? void 0 : _a.getItem("language")) || "";
-    } catch (e) {
-    }
-  }
-  if (!lang) {
-    try {
-      lang = ((_c = (_b = import_obsidian7.moment) == null ? void 0 : _b.locale) == null ? void 0 : _c.call(_b)) || "";
-    } catch (e) {
-    }
-  }
-  if (!lang && typeof navigator !== "undefined") {
-    lang = navigator.language || "";
-  }
-  return (lang || "en").toLowerCase();
+  return "en";
 }
 function isChinese() {
   const lang = detectLanguage();
@@ -7929,7 +7921,7 @@ var ConfirmDeleteLinkedNoteModal = class extends import_obsidian8.Modal {
     const { contentEl } = this;
     contentEl.empty();
     contentEl.addClass("fluent-tasks-delete-modal");
-    const heading = contentEl.createEl("h3", {
+    contentEl.createEl("h3", {
       text: t("confirm_delete_linked_note_title", this.task.title),
       cls: "fluent-tasks-delete-modal-heading"
     });
@@ -9201,9 +9193,9 @@ var BackupService = class {
       await this.createBackup(app, plugin, true);
       plugin.settings.lastDailyBackupDate = todayStr;
       await plugin.saveSettings();
-      console.log(`[BackupService] Completed daily automatic backup for ${todayStr}`);
+      Logger.log(`[BackupService] Completed daily automatic backup for ${todayStr}`);
     } catch (e) {
-      console.error("[BackupService] Daily backup failed:", e);
+      Logger.error("[BackupService] Daily backup failed:", e);
     }
   }
 };

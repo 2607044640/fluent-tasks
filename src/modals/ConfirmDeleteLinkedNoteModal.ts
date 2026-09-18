@@ -35,7 +35,7 @@ export class ConfirmDeleteLinkedNoteModal extends Modal {
         contentEl.empty();
         contentEl.addClass("fluent-tasks-delete-modal");
 
-        const heading = contentEl.createEl("h3", {
+        contentEl.createEl("h3", {
             text: t("confirm_delete_linked_note_title", this.task.title),
             cls: "fluent-tasks-delete-modal-heading",
         });

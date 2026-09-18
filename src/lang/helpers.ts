@@ -1,4 +1,4 @@
-import { getLanguage, moment } from "obsidian";
+import { getLanguage } from "obsidian";
 import en from "./locale/en";
 import zhCn from "./locale/zh-cn";
 
@@ -9,30 +9,16 @@ export type TranslationKey = keyof typeof en;
  * Follows official Obsidian guidelines (getLanguage API + fallbacks).
  */
 export function detectLanguage(): string {
-    let lang = "";
     try {
-        if (typeof getLanguage === "function") {
-            lang = getLanguage();
+        const lang = getLanguage();
+        if (lang) {
+            return lang.toLowerCase();
         }
-    } catch {}
-
-    if (!lang) {
-        try {
-            lang = (window as any).localStorage?.getItem("language") || "";
-        } catch {}
+    } catch {
+        // Fallback if environment lacks getLanguage
     }
 
-    if (!lang) {
-        try {
-            lang = (moment as any)?.locale?.() || "";
-        } catch {}
-    }
-
-    if (!lang && typeof navigator !== "undefined") {
-        lang = navigator.language || "";
-    }
-
-    return (lang || "en").toLowerCase();
+    return "en";
 }
 
 /**
@@ -60,7 +46,7 @@ export function getLocaleDict(): typeof en {
  */
 export function t(key: TranslationKey, ...params: (string | number)[]): string {
     const dict = getLocaleDict();
-    let text = dict[key] || en[key] || (key as string);
+    let text = dict[key] || en[key] || key;
     if (params && params.length > 0) {
         for (let i = 0; i < params.length; i++) {
             text = text.replace(new RegExp(`\\{${i}\\}`, "g"), String(params[i]));

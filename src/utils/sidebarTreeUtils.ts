@@ -94,7 +94,7 @@ export function moveSidebarItem(
         return nextList;
     };
 
-    return insertNextTo(tempItems, targetId, listToMove as SidebarItem, position);
+    return insertNextTo(tempItems, targetId, listToMove, position);
 }
 
 /**

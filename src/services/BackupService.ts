@@ -2,6 +2,7 @@ import { App, Notice, FileSystemAdapter, normalizePath } from "obsidian";
 import { DATA_FOLDER, EventName } from "../types";
 import { EventBus } from "../EventBus";
 import { t } from "../lang/helpers";
+import { Logger } from "../Logger";
 
 export interface BackupFileInfo {
     filename: string;
@@ -318,9 +319,9 @@ export class BackupService {
             await this.createBackup(app, plugin, true);
             plugin.settings.lastDailyBackupDate = todayStr;
             await plugin.saveSettings();
-            console.log(`[BackupService] Completed daily automatic backup for ${todayStr}`);
+            Logger.log(`[BackupService] Completed daily automatic backup for ${todayStr}`);
         } catch (e) {
-            console.error("[BackupService] Daily backup failed:", e);
+            Logger.error("[BackupService] Daily backup failed:", e);
         }
     }
 }

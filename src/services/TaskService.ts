@@ -91,7 +91,7 @@ export class TaskService {
         
         if (newTask) {
             Logger.log("Added task:", title, "to", filepath);
-            return newTask as TaskItem;
+            return newTask;
         }
         throw new Error("Failed to add task");
     }

@@ -64,7 +64,7 @@ export class FluentTasksSettingTab extends PluginSettingTab {
                 }));
 
         // Also hook the underlying native input for real-time dragging
-        const nativeInput = colorSetting.controlEl.querySelector('input[type="color"]') as HTMLInputElement | null;
+        const nativeInput = colorSetting.controlEl.querySelector('input[type="color"]');
         if (nativeInput) {
             nativeInput.addEventListener("input", async (e) => {
                 const value = (e.target as HTMLInputElement).value;
