@@ -277,7 +277,10 @@
     }
 
     function handleTaskDeleted(payload: any) {
-        if (task && payload.task.id === task.id) {
+        if (!task) return;
+        if (payload.task && payload.task.id === task.id) {
+            handleClose();
+        } else if (payload.tasks && Array.isArray(payload.tasks) && payload.tasks.some((t: any) => t.id === task?.id)) {
             handleClose();
         }
     }
@@ -498,11 +501,20 @@
         }
     }
 
-    function deleteStep(stepId?: string) {
+    async function deleteStep(stepId?: string) {
         if (!task || !stepId) return;
+        const index = task.steps.findIndex(s => s.id === stepId);
+        if (index === -1) return;
+        const deletedStep = { ...task.steps[index] };
         task.steps = task.steps.filter(s => s.id !== stepId);
         task = task;
-        scheduleSave();
+        await immediateSave();
+        EventBus.emit(EventName.STEP_DELETED, {
+            taskId: task.id,
+            categoryFilepath,
+            step: deletedStep,
+            index,
+        });
     }
 
     function handleDndConsider(e: CustomEvent<{ items: TaskStep[] }>) {

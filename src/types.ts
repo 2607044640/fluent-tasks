@@ -125,6 +125,7 @@ export enum EventName {
     TASK_UPDATED = "task:updated",
     TASK_MOVED = "task:moved",
     TASK_DELETED = "task:deleted",
+    STEP_DELETED = "step:deleted",
     TASK_COMPLETED = "task:completed",
     DETAIL_CLOSE = "detail:close",
     TASK_NAVIGATE = "task:navigate",
@@ -132,3 +133,11 @@ export enum EventName {
     TRIGGER_SIDEBAR_RENAME = "sidebar:trigger-rename",
     REVEAL_SIDEBAR_CATEGORY = "sidebar:reveal-category",
 }
+
+export interface StepDeletedPayload {
+    taskId: string;
+    categoryFilepath: string;
+    step: TaskStep;
+    index: number;
+}
+

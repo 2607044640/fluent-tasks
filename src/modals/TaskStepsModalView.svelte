@@ -84,9 +84,18 @@
     }
 
     async function deleteStep(stepId?: string) {
-        if (!stepId) return;
+        if (!stepId || !task) return;
+        const index = steps.findIndex(s => s.id === stepId);
+        if (index === -1) return;
+        const deletedStep = { ...steps[index] };
         steps = steps.filter(s => s.id !== stepId);
         await persistTask();
+        EventBus.emit(EventName.STEP_DELETED, {
+            taskId: task.id,
+            categoryFilepath,
+            step: deletedStep,
+            index,
+        });
     }
 
     function handleDndConsider(e: CustomEvent<{ items: TaskStep[] }>) {
@@ -136,12 +145,19 @@
     }
 
     // External disk/AI sync listener
-    function handleExternalTaskUpdate(payload: any) {
+    async function handleExternalTaskUpdate(payload: any) {
         if (!task || !categoryFilepath) return;
-        if (payload.categoryFilepath === categoryFilepath && payload.isExternal) {
+        if (!payload.categoryFilepath || payload.categoryFilepath === categoryFilepath) {
             if (payload.task && payload.task.id === task.id) {
                 task = payload.task;
                 steps = ensureStepIds(task.id, task.steps || []);
+            } else if (payload.isExternal) {
+                const tasks = await dataService.getTasks(categoryFilepath);
+                const fresh = tasks.find(t => t.id === task.id);
+                if (fresh) {
+                    task = fresh;
+                    steps = ensureStepIds(task.id, task.steps || []);
+                }
             }
         }
     }

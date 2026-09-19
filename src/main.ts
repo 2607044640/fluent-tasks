@@ -20,6 +20,7 @@ import { DataService } from "./DataService";
 import TaskSidebarView from "./TaskSidebarView.svelte";
 import TaskMainView from "./TaskMainView.svelte";
 import TaskDetailView from "./TaskDetailView.svelte";
+import UndoToastContainer from "./UndoToastContainer.svelte";
 import { FluentTasksSettings, DEFAULT_SETTINGS, FluentTasksSettingTab } from "./settings";
 import { TaskSearchModal } from "./TaskSearchModal";
 import { QuickTaskModal } from "./modals/QuickTaskModal";
@@ -276,6 +277,8 @@ export default class FluentTasksPlugin extends Plugin {
     public lastSelectedTask?: TaskItem;
     public lastSelectedCategoryFilepath?: string;
     private isUserClosingSidebar = false;
+    private undoContainerEl: HTMLElement | null = null;
+    private undoToastComponent: UndoToastContainer | null = null;
 
     openTaskDetailModal(task?: TaskItem, categoryFilepath?: string): void {
         if (task && categoryFilepath) {
@@ -326,6 +329,16 @@ export default class FluentTasksPlugin extends Plugin {
         this.registerView(VIEW_TYPE_SIDEBAR, (leaf) => new TaskSidebarViewWrapper(leaf, this.dataService, this));
         this.registerView(VIEW_TYPE_MAIN, (leaf) => new TaskMainViewWrapper(leaf, this.dataService, this));
         this.registerView(VIEW_TYPE_DETAIL, (leaf) => new TaskDetailViewWrapper(leaf, this.dataService, this));
+
+        // Mount global Undo Toast container to document.body
+        this.undoContainerEl = document.body.createDiv({ cls: "fluent-tasks-undo-root" });
+        this.undoToastComponent = new UndoToastContainer({
+            target: this.undoContainerEl,
+            props: {
+                plugin: this,
+                dataService: this.dataService,
+            },
+        });
 
         // Ribbon icon (controlled by hideRibbonIcon setting)
         this.refreshRibbonIcon();
@@ -698,6 +711,15 @@ export default class FluentTasksPlugin extends Plugin {
     }
 
     onunload(): void {
+        if (this.undoToastComponent) {
+            this.undoToastComponent.$destroy();
+            this.undoToastComponent = null;
+        }
+        if (this.undoContainerEl) {
+            this.undoContainerEl.remove();
+            this.undoContainerEl = null;
+        }
+
         if (this.ribbonIconEl) {
             this.ribbonIconEl.remove();
             this.ribbonIconEl = null;
@@ -1094,6 +1116,4 @@ export default class FluentTasksPlugin extends Plugin {
 
         return leaf;
     }
-
-
 }

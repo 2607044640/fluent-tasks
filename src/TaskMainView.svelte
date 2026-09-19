@@ -41,20 +41,6 @@
     let isMultiSelectMode: boolean = false;
     let selectedTaskIds: Set<string> = new Set();
 
-    // Undo Toast State
-    interface UndoToastItem {
-        id: string;
-        categoryFilepath: string;
-        tasks: TaskItem[];
-        message: string;
-        timer: any;
-        isBatch?: boolean;
-        durationSec: number;
-        expiresAt: number;
-        remainingMs?: number;
-    }
-    let undoToasts: UndoToastItem[] = [];
-
     // DND requires items to have an `id` field — our TaskItem already has it
     const DND_FLIP_DURATION = 200;
 
@@ -351,10 +337,6 @@
     onDestroy(() => {
         stopAutoScroll();
         if (popoverTimeout) clearTimeout(popoverTimeout);
-        undoToasts.forEach(t => {
-            if (t.timer) clearTimeout(t.timer);
-        });
-        undoToasts = [];
         window.removeEventListener('pointermove', handleDragPointerMove);
         window.removeEventListener('keydown', handleGlobalKeyDown, true);
         window.removeEventListener('keyup', handleGlobalKeyUp, true);
@@ -493,130 +475,15 @@
         }, DISK_SYNC_DELAY_MS);
     }
 
-    // =============================================
-    // Undo Toast Logic
-    // =============================================
-    function getUndoDurationSec(): number {
-        const configured = plugin?.settings?.undoDurationSeconds;
-        if (typeof configured === "number" && !isNaN(configured) && configured > 0) {
-            return configured;
-        }
-        return 3;
-    }
-
-    function pushUndoToast(categoryFilepath: string, tasks: TaskItem[], isBatch: boolean = false) {
-        if (!tasks || tasks.length === 0) return;
-        const id = "toast_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
-        const count = tasks.length;
-        
-        let message = "";
-        if (isBatch || count > 1) {
-            message = `Deleted ${count} tasks`;
-        } else {
-            const rawTitle = tasks[0].title ? tasks[0].title.trim() : "Untitled";
-            const truncated = rawTitle.length > 26 ? rawTitle.slice(0, 24) + "..." : rawTitle;
-            message = `Deleted "${truncated}"`;
-        }
-
-        const durationSec = getUndoDurationSec();
-        const durationMs = durationSec * 1000;
-
-        const timer = setTimeout(() => {
-            dismissToast(id);
-        }, durationMs);
-
-        const toast: UndoToastItem = {
-            id,
-            categoryFilepath,
-            tasks,
-            message,
-            timer,
-            isBatch: isBatch || count > 1,
-            durationSec,
-            expiresAt: Date.now() + durationMs,
-        };
-
-        undoToasts = [...undoToasts, toast];
-    }
-
-    function dismissToast(id: string) {
-        const target = undoToasts.find(t => t.id === id);
-        if (target?.timer) {
-            clearTimeout(target.timer);
-        }
-        undoToasts = undoToasts.filter(t => t.id !== id);
-    }
-
-    function pauseToastTimer(toast: UndoToastItem) {
-        if (toast.timer) {
-            clearTimeout(toast.timer);
-            toast.timer = null;
-            toast.remainingMs = Math.max(500, toast.expiresAt - Date.now());
-        }
-    }
-
-    function resumeToastTimer(toast: UndoToastItem) {
-        if (!toast.timer) {
-            const delay = toast.remainingMs || (toast.durationSec * 1000);
-            toast.expiresAt = Date.now() + delay;
-            toast.timer = setTimeout(() => {
-                dismissToast(toast.id);
-            }, delay);
-        }
-    }
-
-    async function executeUndo(toast: UndoToastItem) {
-        dismissToast(toast.id);
-        const tasksToRestore = toast.tasks;
-        if (!tasksToRestore || tasksToRestore.length === 0) return;
-
-        try {
-            // Read existing tasks from storage
-            const currentTasks = await dataService.getTasks(toast.categoryFilepath);
-            const existingIds = new Set(currentTasks.map(t => t.id));
-            const newRestores = tasksToRestore.filter(t => !existingIds.has(t.id));
-            if (newRestores.length === 0) return;
-
-            // Prepend restored tasks
-            const mergedTasks = [...newRestores, ...currentTasks];
-            await dataService.saveTasks(toast.categoryFilepath, mergedTasks);
-
-            // Optimistically update if in active view
-            if (currentCategory && currentCategory.filepath === toast.categoryFilepath) {
-                const restoredIncomplete = newRestores.filter(t => !t.completed);
-                const restoredCompleted = newRestores.filter(t => t.completed);
-                incompleteTasks = [...restoredIncomplete, ...incompleteTasks];
-                completedTasks = [...restoredCompleted, ...completedTasks];
-            }
-
-            // Notify other views/subscribers
-            EventBus.emit(EventName.TASK_UPDATED, {
-                categoryFilepath: toast.categoryFilepath,
-                isExternal: true
-            });
-
-            new Notice(
-                newRestores.length === 1 
-                    ? `Restored: "${newRestores[0].title}"` 
-                    : `Restored ${newRestores.length} tasks`
-            );
-        } catch (err) {
-            console.error("Failed to restore task(s):", err);
-            new Notice("Failed to undo task deletion.");
-        }
-    }
-
     async function handleTaskDeleted(payload: any) {
-        if (payload && payload.categoryFilepath) {
-            // Single deletion pops its own undo toast (batch delete creates a single consolidated toast)
-            if (payload.task && !payload.isBatch) {
-                pushUndoToast(payload.categoryFilepath, [payload.task], false);
-            }
-            if (payload.categoryFilepath === currentCategory?.filepath && payload.task) {
-                // Optimistically remove
-                incompleteTasks = incompleteTasks.filter(t => t.id !== payload.task.id);
-                completedTasks = completedTasks.filter(t => t.id !== payload.task.id);
-                if (selectedTaskId === payload.task.id) {
+        if (payload && payload.categoryFilepath === currentCategory?.filepath) {
+            const idsToDelete = new Set(
+                payload.tasks ? payload.tasks.map((t: any) => t.id) : (payload.task ? [payload.task.id] : [])
+            );
+            if (idsToDelete.size > 0) {
+                incompleteTasks = incompleteTasks.filter(t => !idsToDelete.has(t.id));
+                completedTasks = completedTasks.filter(t => !idsToDelete.has(t.id));
+                if (selectedTaskId && idsToDelete.has(selectedTaskId)) {
                     selectedTaskId = "";
                 }
             }
@@ -1006,7 +873,11 @@
         isMultiSelectMode = false;
 
         // Push a single consolidated undo toast for the batch deletion
-        pushUndoToast(currentCategory.filepath, toDelete, true);
+        EventBus.emit(EventName.TASK_DELETED, {
+            categoryFilepath: currentCategory.filepath,
+            tasks: toDelete,
+            isBatch: true,
+        });
     }
 
     export { scheduleHidePopover };
@@ -2059,40 +1930,6 @@
                     <button type="button" class="meta-btn-primary" on:click={() => showHintsModal = false}>Got it!</button>
                 </div>
             </div>
-        </div>
-    {/if}
-
-    <!-- Floating Undo Toasts (Bottom-Right) -->
-    {#if undoToasts.length > 0}
-        <div class="fluent-tasks-undo-container" use:portal>
-            {#each undoToasts as toast (toast.id)}
-                <div class="fluent-tasks-undo-toast" 
-                     style="--undo-duration: {toast.durationSec}s;"
-                     on:mouseenter={() => pauseToastTimer(toast)}
-                     on:mouseleave={() => resumeToastTimer(toast)}>
-                    <div class="undo-toast-body">
-                        <span class="undo-toast-icon">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="3 6 5 6 21 6"></polyline>
-                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                            </svg>
-                        </span>
-                        <span class="undo-toast-message" title={toast.message}>{toast.message}</span>
-                        <button type="button" class="undo-toast-btn" on:click={() => executeUndo(toast)}>
-                            Undo
-                        </button>
-                        <button type="button" class="undo-toast-close" on:click={() => dismissToast(toast.id)} title="Dismiss">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="18" y1="6" x2="6" y2="18"></line>
-                                <line x1="6" y1="6" x2="18" y2="18"></line>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="undo-toast-progress-track">
-                        <div class="undo-toast-progress-bar" style="animation-duration: {toast.durationSec}s;"></div>
-                    </div>
-                </div>
-            {/each}
         </div>
     {/if}
 </div>
