@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount, onDestroy } from "svelte";
     import { Notice } from "obsidian";
-    import type { TaskItem, StepDeletedPayload } from "./types";
+    import type { TaskItem, StepDeletedPayload, CategoryDeletedPayload } from "./types";
     import { EventName } from "./types";
     import { EventBus } from "./EventBus";
     import type { DataService } from "./DataService";
@@ -12,10 +12,11 @@
 
     interface UndoToastItem {
         id: string;
-        type: "task" | "step";
+        type: "task" | "step" | "category";
         categoryFilepath: string;
         tasks?: TaskItem[];
         stepPayload?: StepDeletedPayload;
+        categoryPayload?: CategoryDeletedPayload;
         message: string;
         timer: any;
         isBatch?: boolean;
@@ -31,7 +32,7 @@
         if (typeof configured === "number" && !isNaN(configured) && configured > 0) {
             return configured;
         }
-        return 3;
+        return 2.5;
     }
 
     function dismissToast(id: string) {
@@ -124,8 +125,50 @@
         undoToasts = [...undoToasts, toast];
     }
 
+    function pushCategoryUndoToast(payload: CategoryDeletedPayload) {
+        if (!payload || !payload.categoryName) return;
+        const id = "toast_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
+        const rawName = payload.categoryName.trim();
+        const truncated = rawName.length > 26 ? rawName.slice(0, 24) + "..." : rawName;
+        const message = `Deleted list "${truncated}"`;
+
+        const durationSec = getUndoDurationSec();
+        const durationMs = durationSec * 1000;
+
+        const timer = setTimeout(() => {
+            dismissToast(id);
+        }, durationMs);
+
+        const toast: UndoToastItem = {
+            id,
+            type: "category",
+            categoryFilepath: payload.categoryFilepath,
+            categoryPayload: payload,
+            message,
+            timer,
+            durationSec,
+            expiresAt: Date.now() + durationMs,
+        };
+
+        undoToasts = [...undoToasts, toast];
+    }
+
     async function executeUndo(toast: UndoToastItem) {
         dismissToast(toast.id);
+
+        if (toast.type === "category" && toast.categoryPayload) {
+            const { categoryName, categoryFilepath, fileContent, groupName, index } = toast.categoryPayload;
+            try {
+                await dataService.restoreCategory(categoryName, categoryFilepath, fileContent, groupName, index);
+                const rawName = categoryName.trim();
+                const truncated = rawName.length > 26 ? rawName.slice(0, 24) + "..." : rawName;
+                new Notice(`Restored list: "${truncated}"`);
+            } catch (err) {
+                console.error("Failed to restore list:", err);
+                new Notice("Failed to undo list deletion.");
+            }
+            return;
+        }
 
         if (toast.type === "step" && toast.stepPayload) {
             const { taskId, categoryFilepath, step, index } = toast.stepPayload;
@@ -203,14 +246,21 @@
         pushStepUndoToast(payload);
     }
 
+    function handleCategoryDeleted(payload: CategoryDeletedPayload) {
+        if (!payload || !payload.categoryName) return;
+        pushCategoryUndoToast(payload);
+    }
+
     onMount(() => {
         EventBus.on(EventName.TASK_DELETED, handleTaskDeleted);
         EventBus.on(EventName.STEP_DELETED, handleStepDeleted);
+        EventBus.on(EventName.CATEGORY_DELETED, handleCategoryDeleted);
     });
 
     onDestroy(() => {
         EventBus.off(EventName.TASK_DELETED, handleTaskDeleted);
         EventBus.off(EventName.STEP_DELETED, handleStepDeleted);
+        EventBus.off(EventName.CATEGORY_DELETED, handleCategoryDeleted);
         undoToasts.forEach(t => {
             if (t.timer) clearTimeout(t.timer);
         });

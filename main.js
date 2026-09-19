@@ -412,6 +412,35 @@ var CategoryService = class {
     var _a;
     const file = this.app.vault.getAbstractFileByPath(filepath);
     const basename = ((_a = filepath.split("/").pop()) == null ? void 0 : _a.replace(/\.md$/, "")) || "";
+    let fileContent = "";
+    if (file && file instanceof import_obsidian3.TFile) {
+      try {
+        fileContent = await this.app.vault.read(file);
+      } catch (e) {
+        console.error("Failed to read category file before deletion:", e);
+      }
+    }
+    let groupName;
+    let index = -1;
+    try {
+      const currentItems = await this.getSidebarItems();
+      for (let i = 0; i < currentItems.length; i++) {
+        const item = currentItems[i];
+        if (item.type === "category" && item.name === basename) {
+          index = i;
+          break;
+        } else if (item.type === "group" && item.items) {
+          const subIdx = item.items.findIndex((c) => c.name === basename);
+          if (subIdx !== -1) {
+            groupName = item.name;
+            index = subIdx;
+            break;
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Failed to locate category in sidebar before deletion:", e);
+    }
     if (file && file instanceof import_obsidian3.TFile) {
       this.io.markInternalWrite(filepath);
       await this.app.fileManager.trashFile(file);
@@ -432,7 +461,70 @@ var CategoryService = class {
       cleanup(items);
       await this.saveSidebarState(items);
       EventBus.emit("category:list-changed" /* CATEGORY_LIST_CHANGED */, { sidebarItems: items });
+      EventBus.emit("category:deleted" /* CATEGORY_DELETED */, {
+        categoryName: basename,
+        categoryFilepath: filepath,
+        fileContent,
+        groupName,
+        index
+      });
     }
+  }
+  async restoreCategory(categoryName, categoryFilepath, fileContent, groupName, index) {
+    await this.io.ensureDataFolder();
+    let file = this.app.vault.getAbstractFileByPath(categoryFilepath);
+    if (!file) {
+      this.io.markInternalWrite(categoryFilepath);
+      file = await this.app.vault.create(categoryFilepath, fileContent);
+      Logger.log("Restored category file from undo:", categoryFilepath);
+    } else if (file instanceof import_obsidian3.TFile) {
+      this.io.markInternalWrite(categoryFilepath);
+      await this.app.vault.modify(file, fileContent);
+      Logger.log("Overwrote category file from undo:", categoryFilepath);
+    }
+    const restoredCat = {
+      id: categoryFilepath,
+      type: "category",
+      name: categoryName,
+      filepath: categoryFilepath
+    };
+    const items = await this.getSidebarItems();
+    let existingItem = null;
+    for (let i = items.length - 1; i >= 0; i--) {
+      const item = items[i];
+      if (item.type === "category" && item.name === categoryName) {
+        existingItem = item;
+        items.splice(i, 1);
+        break;
+      } else if (item.type === "group" && item.items) {
+        const subIdx = item.items.findIndex((c) => c.name === categoryName);
+        if (subIdx !== -1) {
+          existingItem = item.items[subIdx];
+          item.items.splice(subIdx, 1);
+          break;
+        }
+      }
+    }
+    const catToInsert = existingItem || restoredCat;
+    if (groupName) {
+      const targetGroup = items.find((item) => item.type === "group" && item.name === groupName);
+      if (targetGroup && targetGroup.type === "group") {
+        if (!targetGroup.items)
+          targetGroup.items = [];
+        const insertIdx = typeof index === "number" && index >= 0 && index <= targetGroup.items.length ? index : targetGroup.items.length;
+        targetGroup.items.splice(insertIdx, 0, catToInsert);
+      } else {
+        const insertIdx = typeof index === "number" && index >= 0 && index <= items.length ? index : items.length;
+        items.splice(insertIdx, 0, catToInsert);
+      }
+    } else {
+      const insertIdx = typeof index === "number" && index >= 0 && index <= items.length ? index : items.length;
+      items.splice(insertIdx, 0, catToInsert);
+    }
+    await this.saveSidebarState(items);
+    EventBus.emit("category:list-changed" /* CATEGORY_LIST_CHANGED */, { sidebarItems: items });
+    EventBus.emit("category:selected" /* CATEGORY_SELECTED */, { category: restoredCat });
+    return restoredCat;
   }
   async renameCategory(filepath, newName) {
     const file = this.app.vault.getAbstractFileByPath(filepath);
@@ -1148,6 +1240,9 @@ var DataService = class {
   }
   async deleteCategory(filepath) {
     return this.categorySvc.deleteCategory(filepath);
+  }
+  async restoreCategory(categoryName, categoryFilepath, fileContent, groupName, index) {
+    return this.categorySvc.restoreCategory(categoryName, categoryFilepath, fileContent, groupName, index);
   }
   async renameCategory(filepath, newName) {
     return this.categorySvc.renameCategory(filepath, newName);
@@ -22076,7 +22171,7 @@ var TaskDetailView_default = TaskDetailView;
 var import_obsidian15 = require("obsidian");
 function get_each_context6(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[15] = list[i];
+  child_ctx[17] = list[i];
   return child_ctx;
 }
 function create_if_block6(ctx) {
@@ -22089,7 +22184,7 @@ function create_if_block6(ctx) {
   );
   const get_key = (ctx2) => (
     /*toast*/
-    ctx2[15].id
+    ctx2[17].id
   );
   for (let i = 0; i < each_value.length; i += 1) {
     let child_ctx = get_each_context6(ctx, each_value, i);
@@ -22140,7 +22235,7 @@ function create_each_block6(key_1, ctx) {
   let span1;
   let t1_value = (
     /*toast*/
-    ctx[15].message + ""
+    ctx[17].message + ""
   );
   let t1;
   let span1_title_value;
@@ -22159,7 +22254,7 @@ function create_each_block6(key_1, ctx) {
       /*click_handler*/
       ctx[6](
         /*toast*/
-        ctx[15]
+        ctx[17]
       )
     );
   }
@@ -22168,7 +22263,7 @@ function create_each_block6(key_1, ctx) {
       /*click_handler_1*/
       ctx[7](
         /*toast*/
-        ctx[15]
+        ctx[17]
       )
     );
   }
@@ -22177,7 +22272,7 @@ function create_each_block6(key_1, ctx) {
       /*mouseenter_handler*/
       ctx[8](
         /*toast*/
-        ctx[15]
+        ctx[17]
       )
     );
   }
@@ -22186,7 +22281,7 @@ function create_each_block6(key_1, ctx) {
       /*mouseleave_handler*/
       ctx[9](
         /*toast*/
-        ctx[15]
+        ctx[17]
       )
     );
   }
@@ -22214,7 +22309,7 @@ function create_each_block6(key_1, ctx) {
       attr(span0, "class", "undo-toast-icon");
       attr(span1, "class", "undo-toast-message");
       attr(span1, "title", span1_title_value = /*toast*/
-      ctx[15].message);
+      ctx[17].message);
       attr(button0, "type", "button");
       attr(button0, "class", "undo-toast-btn");
       attr(button1, "type", "button");
@@ -22226,7 +22321,7 @@ function create_each_block6(key_1, ctx) {
         div1,
         "animation-duration",
         /*toast*/
-        ctx[15].durationSec + "s"
+        ctx[17].durationSec + "s"
       );
       attr(div2, "class", "undo-toast-progress-track");
       attr(div3, "class", "fluent-tasks-undo-toast");
@@ -22234,7 +22329,7 @@ function create_each_block6(key_1, ctx) {
         div3,
         "--undo-duration",
         /*toast*/
-        ctx[15].durationSec + "s"
+        ctx[17].durationSec + "s"
       );
       this.first = div3;
     },
@@ -22267,11 +22362,11 @@ function create_each_block6(key_1, ctx) {
       ctx = new_ctx;
       if (dirty & /*undoToasts*/
       1 && t1_value !== (t1_value = /*toast*/
-      ctx[15].message + ""))
+      ctx[17].message + ""))
         set_data(t1, t1_value);
       if (dirty & /*undoToasts*/
       1 && span1_title_value !== (span1_title_value = /*toast*/
-      ctx[15].message)) {
+      ctx[17].message)) {
         attr(span1, "title", span1_title_value);
       }
       if (dirty & /*undoToasts*/
@@ -22280,7 +22375,7 @@ function create_each_block6(key_1, ctx) {
           div1,
           "animation-duration",
           /*toast*/
-          ctx[15].durationSec + "s"
+          ctx[17].durationSec + "s"
         );
       }
       if (dirty & /*undoToasts*/
@@ -22289,7 +22384,7 @@ function create_each_block6(key_1, ctx) {
           div3,
           "--undo-duration",
           /*toast*/
-          ctx[15].durationSec + "s"
+          ctx[17].durationSec + "s"
         );
       }
     },
@@ -22364,7 +22459,7 @@ function instance6($$self, $$props, $$invalidate) {
     if (typeof configured === "number" && !isNaN(configured) && configured > 0) {
       return configured;
     }
-    return 3;
+    return 2.5;
   }
   function dismissToast(id) {
     const target = undoToasts.find((t2) => t2.id === id);
@@ -22446,8 +22541,48 @@ function instance6($$self, $$props, $$invalidate) {
     };
     $$invalidate(0, undoToasts = [...undoToasts, toast]);
   }
+  function pushCategoryUndoToast(payload) {
+    if (!payload || !payload.categoryName)
+      return;
+    const id = "toast_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
+    const rawName = payload.categoryName.trim();
+    const truncated = rawName.length > 26 ? rawName.slice(0, 24) + "..." : rawName;
+    const message = `Deleted list "${truncated}"`;
+    const durationSec = getUndoDurationSec();
+    const durationMs = durationSec * 1e3;
+    const timer = setTimeout(
+      () => {
+        dismissToast(id);
+      },
+      durationMs
+    );
+    const toast = {
+      id,
+      type: "category",
+      categoryFilepath: payload.categoryFilepath,
+      categoryPayload: payload,
+      message,
+      timer,
+      durationSec,
+      expiresAt: Date.now() + durationMs
+    };
+    $$invalidate(0, undoToasts = [...undoToasts, toast]);
+  }
   async function executeUndo(toast) {
     dismissToast(toast.id);
+    if (toast.type === "category" && toast.categoryPayload) {
+      const { categoryName, categoryFilepath, fileContent, groupName, index } = toast.categoryPayload;
+      try {
+        await dataService.restoreCategory(categoryName, categoryFilepath, fileContent, groupName, index);
+        const rawName = categoryName.trim();
+        const truncated = rawName.length > 26 ? rawName.slice(0, 24) + "..." : rawName;
+        new import_obsidian15.Notice(`Restored list: "${truncated}"`);
+      } catch (err) {
+        console.error("Failed to restore list:", err);
+        new import_obsidian15.Notice("Failed to undo list deletion.");
+      }
+      return;
+    }
     if (toast.type === "step" && toast.stepPayload) {
       const { taskId, categoryFilepath, step, index } = toast.stepPayload;
       try {
@@ -22513,13 +22648,20 @@ function instance6($$self, $$props, $$invalidate) {
       return;
     pushStepUndoToast(payload);
   }
+  function handleCategoryDeleted(payload) {
+    if (!payload || !payload.categoryName)
+      return;
+    pushCategoryUndoToast(payload);
+  }
   onMount(() => {
     EventBus.on("task:deleted" /* TASK_DELETED */, handleTaskDeleted);
     EventBus.on("step:deleted" /* STEP_DELETED */, handleStepDeleted);
+    EventBus.on("category:deleted" /* CATEGORY_DELETED */, handleCategoryDeleted);
   });
   onDestroy(() => {
     EventBus.off("task:deleted" /* TASK_DELETED */, handleTaskDeleted);
     EventBus.off("step:deleted" /* STEP_DELETED */, handleStepDeleted);
+    EventBus.off("category:deleted" /* CATEGORY_DELETED */, handleCategoryDeleted);
     undoToasts.forEach((t2) => {
       if (t2.timer)
         clearTimeout(t2.timer);
@@ -22576,7 +22718,7 @@ var DEFAULT_SETTINGS = {
   defaultQuickListFocusFilepath: "",
   dailyBackupEnabled: true,
   lastDailyBackupDate: "",
-  undoDurationSeconds: 3,
+  undoDurationSeconds: 2.5,
   enableTaskWeightMode: false
 };
 var FluentTasksSettingTab = class extends import_obsidian16.PluginSettingTab {
@@ -22672,9 +22814,9 @@ var FluentTasksSettingTab = class extends import_obsidian16.PluginSettingTab {
       this.plugin.settings.searchHideCompleted = value;
       await this.plugin.saveSettings();
     }));
-    new import_obsidian16.Setting(containerEl).setName("Task deletion undo duration").setDesc("Duration in seconds that the floating undo toast remains visible after deleting a task (default: 3s).").addSlider((slider) => {
+    new import_obsidian16.Setting(containerEl).setName("Deletion undo duration").setDesc("Duration in seconds that the floating undo toast remains visible after deleting a task, step, or list (default: 2.5s).").addSlider((slider) => {
       var _a;
-      return slider.setLimits(1, 15, 1).setValue((_a = this.plugin.settings.undoDurationSeconds) != null ? _a : 3).onChange(async (value) => {
+      return slider.setLimits(1, 10, 0.5).setValue((_a = this.plugin.settings.undoDurationSeconds) != null ? _a : 2.5).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.undoDurationSeconds = value;
         await this.plugin.saveSettings();
       });

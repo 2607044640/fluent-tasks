@@ -253,6 +253,37 @@ export class CategoryService {
         const file = this.app.vault.getAbstractFileByPath(filepath);
         const basename = filepath.split("/").pop()?.replace(/\.md$/, "") || "";
 
+        let fileContent = "";
+        if (file && file instanceof TFile) {
+            try {
+                fileContent = await this.app.vault.read(file);
+            } catch (e) {
+                console.error("Failed to read category file before deletion:", e);
+            }
+        }
+
+        let groupName: string | undefined;
+        let index: number = -1;
+        try {
+            const currentItems = await this.getSidebarItems();
+            for (let i = 0; i < currentItems.length; i++) {
+                const item = currentItems[i];
+                if (item.type === "category" && item.name === basename) {
+                    index = i;
+                    break;
+                } else if (item.type === "group" && item.items) {
+                    const subIdx = item.items.findIndex(c => c.name === basename);
+                    if (subIdx !== -1) {
+                        groupName = item.name;
+                        index = subIdx;
+                        break;
+                    }
+                }
+            }
+        } catch (e) {
+            console.error("Failed to locate category in sidebar before deletion:", e);
+        }
+
         if (file && file instanceof TFile) {
             this.io.markInternalWrite(filepath);
             await this.app.fileManager.trashFile(file);
@@ -275,7 +306,91 @@ export class CategoryService {
             cleanup(items);
             await this.saveSidebarState(items);
             EventBus.emit(EventName.CATEGORY_LIST_CHANGED, { sidebarItems: items });
+
+            EventBus.emit(EventName.CATEGORY_DELETED, {
+                categoryName: basename,
+                categoryFilepath: filepath,
+                fileContent,
+                groupName,
+                index,
+            });
         }
+    }
+
+    async restoreCategory(
+        categoryName: string,
+        categoryFilepath: string,
+        fileContent: string,
+        groupName?: string,
+        index?: number
+    ): Promise<CategoryInfo> {
+        await this.io.ensureDataFolder();
+        let file = this.app.vault.getAbstractFileByPath(categoryFilepath);
+        if (!file) {
+            this.io.markInternalWrite(categoryFilepath);
+            file = await this.app.vault.create(categoryFilepath, fileContent);
+            Logger.log("Restored category file from undo:", categoryFilepath);
+        } else if (file instanceof TFile) {
+            this.io.markInternalWrite(categoryFilepath);
+            await this.app.vault.modify(file, fileContent);
+            Logger.log("Overwrote category file from undo:", categoryFilepath);
+        }
+
+        const restoredCat: CategoryInfo = {
+            id: categoryFilepath,
+            type: "category",
+            name: categoryName,
+            filepath: categoryFilepath,
+        };
+
+        const items = await this.getSidebarItems();
+
+        // Extract the category if it was appended as an orphan by getSidebarItems()
+        let existingItem: CategoryInfo | null = null;
+        for (let i = items.length - 1; i >= 0; i--) {
+            const item = items[i];
+            if (item.type === "category" && item.name === categoryName) {
+                existingItem = item;
+                items.splice(i, 1);
+                break;
+            } else if (item.type === "group" && item.items) {
+                const subIdx = item.items.findIndex(c => c.name === categoryName);
+                if (subIdx !== -1) {
+                    existingItem = item.items[subIdx];
+                    item.items.splice(subIdx, 1);
+                    break;
+                }
+            }
+        }
+
+        const catToInsert = existingItem || restoredCat;
+
+        if (groupName) {
+            const targetGroup = items.find(item => item.type === "group" && item.name === groupName);
+            if (targetGroup && targetGroup.type === "group") {
+                if (!targetGroup.items) targetGroup.items = [];
+                const insertIdx = typeof index === "number" && index >= 0 && index <= targetGroup.items.length
+                    ? index
+                    : targetGroup.items.length;
+                targetGroup.items.splice(insertIdx, 0, catToInsert);
+            } else {
+                const insertIdx = typeof index === "number" && index >= 0 && index <= items.length
+                    ? index
+                    : items.length;
+                items.splice(insertIdx, 0, catToInsert);
+            }
+        } else {
+            const insertIdx = typeof index === "number" && index >= 0 && index <= items.length
+                ? index
+                : items.length;
+            items.splice(insertIdx, 0, catToInsert);
+        }
+
+        await this.saveSidebarState(items);
+        EventBus.emit(EventName.CATEGORY_LIST_CHANGED, { sidebarItems: items });
+        EventBus.emit(EventName.CATEGORY_SELECTED, { category: restoredCat });
+
+        return restoredCat;
     }
 
     async renameCategory(filepath: string, newName: string): Promise<CategoryInfo> {

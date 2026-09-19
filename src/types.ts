@@ -121,6 +121,7 @@ export interface CategoryListChangedPayload {
 export enum EventName {
     CATEGORY_SELECTED = "category:selected",
     CATEGORY_LIST_CHANGED = "category:list-changed",
+    CATEGORY_DELETED = "category:deleted",
     TASK_SELECTED = "task:selected",
     TASK_UPDATED = "task:updated",
     TASK_MOVED = "task:moved",
@@ -139,5 +140,13 @@ export interface StepDeletedPayload {
     categoryFilepath: string;
     step: TaskStep;
     index: number;
+}
+
+export interface CategoryDeletedPayload {
+    categoryName: string;
+    categoryFilepath: string;
+    fileContent: string;
+    groupName?: string;
+    index?: number;
 }
 

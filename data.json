@@ -15,6 +15,6 @@
   "defaultQuickListFocusFilepath": "TodoData/Game！采集模拟器.md",
   "dailyBackupEnabled": true,
   "lastDailyBackupDate": "2026-09-20",
-  "undoDurationSeconds": 3,
+  "undoDurationSeconds": 2.5,
   "enableTaskWeightMode": false
 }

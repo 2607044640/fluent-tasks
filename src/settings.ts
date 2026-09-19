@@ -39,7 +39,7 @@ export const DEFAULT_SETTINGS: FluentTasksSettings = {
     defaultQuickListFocusFilepath: "",
     dailyBackupEnabled: true,
     lastDailyBackupDate: "",
-    undoDurationSeconds: 3,
+    undoDurationSeconds: 2.5,
     enableTaskWeightMode: false,
 }
 
@@ -194,11 +194,12 @@ export class FluentTasksSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(containerEl)
-            .setName("Task deletion undo duration")
-            .setDesc("Duration in seconds that the floating undo toast remains visible after deleting a task (default: 3s).")
+            .setName("Deletion undo duration")
+            .setDesc("Duration in seconds that the floating undo toast remains visible after deleting a task, step, or list (default: 2.5s).")
             .addSlider(slider => slider
-                .setLimits(1, 15, 1)
-                .setValue(this.plugin.settings.undoDurationSeconds ?? 3)
+                .setLimits(1, 10, 0.5)
+                .setValue(this.plugin.settings.undoDurationSeconds ?? 2.5)
+                .setDynamicTooltip()
                 .onChange(async (value) => {
                     this.plugin.settings.undoDurationSeconds = value;
                     await this.plugin.saveSettings();

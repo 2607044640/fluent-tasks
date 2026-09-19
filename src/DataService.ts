@@ -59,6 +59,15 @@ export class DataService {
     async deleteCategory(filepath: string): Promise<void> {
         return this.categorySvc.deleteCategory(filepath);
     }
+    async restoreCategory(
+        categoryName: string,
+        categoryFilepath: string,
+        fileContent: string,
+        groupName?: string,
+        index?: number
+    ): Promise<CategoryInfo> {
+        return this.categorySvc.restoreCategory(categoryName, categoryFilepath, fileContent, groupName, index);
+    }
     async renameCategory(filepath: string, newName: string): Promise<CategoryInfo> {
         return this.categorySvc.renameCategory(filepath, newName);
     }
