@@ -368,14 +368,61 @@
     });
 
     // =============================================
+    // Weight Mode (Priority 1-9)
+    // =============================================
+    function getTaskWeight(t: TaskItem): number {
+        if (typeof t.weight === "number" && !isNaN(t.weight) && t.weight >= 1 && t.weight <= 9) {
+            return t.weight;
+        }
+        return 5;
+    }
+
+    function applyWeightSort(items: TaskItem[]): TaskItem[] {
+        if (!plugin?.settings?.enableTaskWeightMode) {
+            return items;
+        }
+        // Stable sort: higher weight first; equal weights retain their original relative order
+        return items
+            .map((item, idx) => ({ item, idx }))
+            .sort((a, b) => {
+                const diff = getTaskWeight(b.item) - getTaskWeight(a.item);
+                if (diff !== 0) return diff;
+                return a.idx - b.idx;
+            })
+            .map(({ item }) => item);
+    }
+
+    async function changeTaskWeight(task: TaskItem, delta: number) {
+        if (!currentCategory) return;
+        const currentWeight = getTaskWeight(task);
+        const newWeight = Math.max(1, Math.min(9, currentWeight + delta));
+        if (newWeight === currentWeight) return;
+
+        task.weight = newWeight;
+
+        // Re-sort local arrays immediately for responsive optimistic UI
+        incompleteTasks = applyWeightSort(incompleteTasks);
+        completedTasks = applyWeightSort(completedTasks);
+
+        // Update task on disk
+        await dataService.updateTask(currentCategory.filepath, task);
+        EventBus.emit(EventName.TASK_UPDATED, {
+            task,
+            categoryFilepath: currentCategory.filepath,
+        });
+    }
+
+    // =============================================
     // Data Loading
     // =============================================
     async function loadTasks() {
         if (!currentCategory) return;
         const tasks = await dataService.getTasks(currentCategory.filepath);
         
-        incompleteTasks = tasks.filter(t => !t.completed);
-        completedTasks = tasks.filter(t => t.completed);
+        const inc = tasks.filter(t => !t.completed);
+        const comp = tasks.filter(t => t.completed);
+        incompleteTasks = applyWeightSort(inc);
+        completedTasks = applyWeightSort(comp);
     }
 
     // Called from main.ts when the view is activated directly
@@ -591,7 +638,7 @@
 
         // Optimistic UI: insert into local state immediately.
         // We do NOT call loadTasks() here because Obsidian's async I/O might cause a race condition.
-        incompleteTasks = [newTask, ...incompleteTasks];
+        incompleteTasks = applyWeightSort([newTask, ...incompleteTasks]);
     }
 
     function handleAddTaskKeydown(e: KeyboardEvent) {
@@ -607,11 +654,11 @@
         if (task.completed) {
             task.completedAt = new Date().toISOString();
             incompleteTasks = incompleteTasks.filter(t => t.id !== task.id);
-            completedTasks = [task, ...completedTasks];
+            completedTasks = applyWeightSort([task, ...completedTasks]);
         } else {
             delete task.completedAt;
             completedTasks = completedTasks.filter(t => t.id !== task.id);
-            incompleteTasks = [...incompleteTasks, task];
+            incompleteTasks = applyWeightSort([task, ...incompleteTasks]);
         }
 
         // Persist to disk
@@ -1314,6 +1361,47 @@
                             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                         </svg>
                     </span>
+
+                    <!-- Weight Control (Priority 1-9) -->
+                    {#if plugin?.settings?.enableTaskWeightMode}
+                        <!-- svelte-ignore a11y-click-events-have-key-events -->
+                        <div class="task-weight-control"
+                             on:click|stopPropagation
+                             on:pointerdown|stopPropagation
+                             title="Priority weight: {getTaskWeight(task)} (1-9)">
+                            <button
+                                type="button"
+                                class="weight-arrow-btn left"
+                                class:is-disabled={getTaskWeight(task) <= 1}
+                                disabled={getTaskWeight(task) <= 1}
+                                on:click|stopPropagation={() => changeTaskWeight(task, -1)}
+                                on:pointerdown|stopPropagation
+                                aria-label="Decrease weight"
+                                title="Decrease weight (-1)"
+                            >
+                                <svg width="6" height="8" viewBox="0 0 6 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="4.5 1.5 1.5 4 4.5 6.5"/>
+                                </svg>
+                            </button>
+                            <span class="weight-score-badge" class:high-weight={getTaskWeight(task) >= 7} class:low-weight={getTaskWeight(task) <= 3}>
+                                {getTaskWeight(task)}
+                            </span>
+                            <button
+                                type="button"
+                                class="weight-arrow-btn right"
+                                class:is-disabled={getTaskWeight(task) >= 9}
+                                disabled={getTaskWeight(task) >= 9}
+                                on:click|stopPropagation={() => changeTaskWeight(task, 1)}
+                                on:pointerdown|stopPropagation
+                                aria-label="Increase weight"
+                                title="Increase weight (+1)"
+                            >
+                                <svg width="6" height="8" viewBox="0 0 6 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="1.5 1.5 4.5 4 1.5 6.5"/>
+                                </svg>
+                            </button>
+                        </div>
+                    {/if}
                 </div>
             {/each}
         </div>
@@ -1506,6 +1594,47 @@
                                         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                                     </svg>
                                 </span>
+
+                                <!-- Weight Control (Priority 1-9) -->
+                                {#if plugin?.settings?.enableTaskWeightMode}
+                                    <!-- svelte-ignore a11y-click-events-have-key-events -->
+                                    <div class="task-weight-control"
+                                         on:click|stopPropagation
+                                         on:pointerdown|stopPropagation
+                                         title="Priority weight: {getTaskWeight(task)} (1-9)">
+                                        <button
+                                            type="button"
+                                            class="weight-arrow-btn left"
+                                            class:is-disabled={getTaskWeight(task) <= 1}
+                                            disabled={getTaskWeight(task) <= 1}
+                                            on:click|stopPropagation={() => changeTaskWeight(task, -1)}
+                                            on:pointerdown|stopPropagation
+                                            aria-label="Decrease weight"
+                                            title="Decrease weight (-1)"
+                                        >
+                                            <svg width="6" height="8" viewBox="0 0 6 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="4.5 1.5 1.5 4 4.5 6.5"/>
+                                            </svg>
+                                        </button>
+                                        <span class="weight-score-badge" class:high-weight={getTaskWeight(task) >= 7} class:low-weight={getTaskWeight(task) <= 3}>
+                                            {getTaskWeight(task)}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            class="weight-arrow-btn right"
+                                            class:is-disabled={getTaskWeight(task) >= 9}
+                                            disabled={getTaskWeight(task) >= 9}
+                                            on:click|stopPropagation={() => changeTaskWeight(task, 1)}
+                                            on:pointerdown|stopPropagation
+                                            aria-label="Increase weight"
+                                            title="Increase weight (+1)"
+                                        >
+                                            <svg width="6" height="8" viewBox="0 0 6 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="1.5 1.5 4.5 4 1.5 6.5"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                {/if}
                             </div>
                         {/each}
                     </div>

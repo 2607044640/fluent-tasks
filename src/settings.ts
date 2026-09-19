@@ -19,6 +19,7 @@ export interface FluentTasksSettings {
     dailyBackupEnabled: boolean;
     lastDailyBackupDate: string;
     undoDurationSeconds: number;
+    enableTaskWeightMode: boolean;
 }
 
 export const DEFAULT_SETTINGS: FluentTasksSettings = {
@@ -39,6 +40,7 @@ export const DEFAULT_SETTINGS: FluentTasksSettings = {
     dailyBackupEnabled: true,
     lastDailyBackupDate: "",
     undoDurationSeconds: 3,
+    enableTaskWeightMode: false,
 }
 
 export class FluentTasksSettingTab extends PluginSettingTab {
@@ -199,6 +201,16 @@ export class FluentTasksSettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.undoDurationSeconds ?? 3)
                 .onChange(async (value) => {
                     this.plugin.settings.undoDurationSeconds = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName("Task weight mode")
+            .setDesc("Enable 1-9 priority score ranking for tasks (9 is highest, default is 5). When enabled, tasks are dynamically prioritized by weight with increment/decrement arrows next to the star.")
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.enableTaskWeightMode ?? false)
+                .onChange(async (value) => {
+                    this.plugin.settings.enableTaskWeightMode = value;
                     await this.plugin.saveSettings();
                 }));
 

@@ -51,6 +51,8 @@ export interface TaskItem {
     note_link?: string;
     /** Arbitrary custom key-value metadata */
     customMeta?: Record<string, unknown>;
+    /** Priority weight score: 1 to 9, default 5 */
+    weight?: number;
 }
 
 export interface CategoryInfo {
