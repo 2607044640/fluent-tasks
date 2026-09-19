@@ -20,7 +20,7 @@ export function ensureStepIds(taskId: string, steps: TaskStep[]): TaskStep[] {
 export function persistableSteps(steps: TaskStep[]): TaskStep[] {
     return steps
         .filter((step) => {
-            const marker = (step as Record<string, unknown>)[SHADOW_ITEM_MARKER_PROPERTY_NAME];
+            const marker = (step as unknown as Record<string, unknown>)[SHADOW_ITEM_MARKER_PROPERTY_NAME];
             return marker !== true;
         })
         .map((step) => {

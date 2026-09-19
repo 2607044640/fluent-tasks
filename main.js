@@ -130,6 +130,9 @@ var Logger = class {
       console.error("[MStodo Logger]", e);
     }
   }
+  static async error(...args) {
+    return this.log("[ERROR]", ...args);
+  }
   static async clear() {
     if (!this.app)
       return;
@@ -521,9 +524,10 @@ var MarkdownParser = class {
       const createdAt = typeof meta.createdAt === "string" ? meta.createdAt : (/* @__PURE__ */ new Date()).toISOString();
       const cleanTitle = rawTitle.replace(/<br\s*\/?>/gi, "\n").trim();
       const id = typeof meta.id === "string" ? meta.id : generateStableId(cleanTitle, createdAt);
-      const cleanSteps = Array.isArray(meta.steps) ? meta.steps.filter((s) => !!s && typeof s === "object").map((s) => ({
+      const cleanSteps = Array.isArray(meta.steps) ? meta.steps.filter((s) => !!s && typeof s === "object").map((s, idx) => ({
         text: typeof s.text === "string" ? s.text.trimEnd() : "",
-        done: Boolean(s.done)
+        done: Boolean(s.done),
+        id: typeof s.id === "string" && s.id.length > 0 ? s.id : `${id}-step-${idx}`
       })) : [];
       tasks2.push({
         id,
@@ -7995,11 +7999,39 @@ async function promptDeleteTaskWithLinkedNote(app, task, categoryFilepath, dataS
 // src/modals/TaskStepsModal.ts
 var import_obsidian9 = require("obsidian");
 
+// src/utils/stepIds.ts
+function ensureStepIds(taskId, steps) {
+  const used = /* @__PURE__ */ new Set();
+  return steps.map((step, index) => {
+    const base = step.id && step.id.length > 0 ? step.id : `${taskId}-step-${index}`;
+    let unique = base;
+    let n = 0;
+    while (used.has(unique)) {
+      n += 1;
+      unique = `${base}-${n}`;
+    }
+    used.add(unique);
+    if (step.id === unique)
+      return step;
+    return { ...step, id: unique };
+  });
+}
+function persistableSteps(steps) {
+  return steps.filter((step) => {
+    const marker = step[SHADOW_ITEM_MARKER_PROPERTY_NAME];
+    return marker !== true;
+  }).map((step) => {
+    const out = { text: step.text, done: step.done };
+    if (step.id)
+      out.id = step.id;
+    return out;
+  });
+}
+
 // src/modals/TaskStepsModalView.svelte
 function get_each_context2(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[29] = list[i];
-  child_ctx[31] = i;
+  child_ctx[31] = list[i];
   return child_ctx;
 }
 function create_if_block_22(ctx) {
@@ -8044,13 +8076,16 @@ function create_else_block2(ctx) {
   let div;
   let each_blocks = [];
   let each_1_lookup = /* @__PURE__ */ new Map();
+  let dndzone_action;
+  let mounted;
+  let dispose;
   let each_value = ensure_array_like(
     /*steps*/
     ctx[2]
   );
   const get_key = (ctx2) => (
-    /*i*/
-    ctx2[31]
+    /*step*/
+    ctx2[31].id
   );
   for (let i = 0; i < each_value.length; i += 1) {
     let child_ctx = get_each_context2(ctx, each_value, i);
@@ -8072,6 +8107,34 @@ function create_else_block2(ctx) {
           each_blocks[i].m(div, null);
         }
       }
+      if (!mounted) {
+        dispose = [
+          action_destroyer(dndzone_action = dndzone.call(null, div, {
+            items: (
+              /*steps*/
+              ctx[2]
+            ),
+            flipDurationMs: DND_FLIP_DURATION,
+            dropAnimationDisabled: true,
+            dropTargetStyle: {},
+            type: "task-step-" + /*task*/
+            ctx[0].id
+          })),
+          listen(
+            div,
+            "consider",
+            /*handleDndConsider*/
+            ctx[12]
+          ),
+          listen(
+            div,
+            "finalize",
+            /*handleDndFinalize*/
+            ctx[13]
+          )
+        ];
+        mounted = true;
+      }
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*steps, deleteStep, handleStepInput, flushSaveSync, toggleStep*/
@@ -8080,8 +8143,25 @@ function create_else_block2(ctx) {
           /*steps*/
           ctx2[2]
         );
-        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value, each_1_lookup, div, destroy_block, create_each_block2, null, get_each_context2);
+        for (let i = 0; i < each_blocks.length; i += 1)
+          each_blocks[i].r();
+        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value, each_1_lookup, div, fix_and_destroy_block, create_each_block2, null, get_each_context2);
+        for (let i = 0; i < each_blocks.length; i += 1)
+          each_blocks[i].a();
       }
+      if (dndzone_action && is_function(dndzone_action.update) && dirty[0] & /*steps, task*/
+      5)
+        dndzone_action.update.call(null, {
+          items: (
+            /*steps*/
+            ctx2[2]
+          ),
+          flipDurationMs: DND_FLIP_DURATION,
+          dropAnimationDisabled: true,
+          dropTargetStyle: {},
+          type: "task-step-" + /*task*/
+          ctx2[0].id
+        });
     },
     d(detaching) {
       if (detaching) {
@@ -8090,6 +8170,8 @@ function create_else_block2(ctx) {
       for (let i = 0; i < each_blocks.length; i += 1) {
         each_blocks[i].d();
       }
+      mounted = false;
+      run_all(dispose);
     }
   };
 }
@@ -8176,21 +8258,25 @@ function create_if_block_12(ctx) {
 }
 function create_each_block2(key_1, ctx) {
   let div;
+  let span;
+  let t0;
   let button0;
   let button0_aria_label_value;
-  let t0;
+  let t1;
   let textarea;
   let textarea_value_value;
   let autosize_action;
-  let t1;
-  let button1;
   let t2;
+  let button1;
+  let t3;
+  let rect;
+  let stop_animation = noop;
   let mounted;
   let dispose;
   function select_block_type_1(ctx2, dirty) {
     if (
       /*step*/
-      ctx2[29].done
+      ctx2[31].done
     )
       return create_if_block_12;
     return create_else_block_12;
@@ -8200,8 +8286,8 @@ function create_each_block2(key_1, ctx) {
   function click_handler2() {
     return (
       /*click_handler*/
-      ctx[17](
-        /*i*/
+      ctx[19](
+        /*step*/
         ctx[31]
       )
     );
@@ -8209,8 +8295,8 @@ function create_each_block2(key_1, ctx) {
   function input_handler(...args) {
     return (
       /*input_handler*/
-      ctx[18](
-        /*i*/
+      ctx[20](
+        /*step*/
         ctx[31],
         ...args
       )
@@ -8219,8 +8305,8 @@ function create_each_block2(key_1, ctx) {
   function keydown_handler(...args) {
     return (
       /*keydown_handler*/
-      ctx[19](
-        /*i*/
+      ctx[21](
+        /*step*/
         ctx[31],
         ...args
       )
@@ -8229,8 +8315,8 @@ function create_each_block2(key_1, ctx) {
   function click_handler_1() {
     return (
       /*click_handler_1*/
-      ctx[20](
-        /*i*/
+      ctx[22](
+        /*step*/
         ctx[31]
       )
     );
@@ -8240,34 +8326,39 @@ function create_each_block2(key_1, ctx) {
     first: null,
     c() {
       div = element("div");
+      span = element("span");
+      span.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="5" r="1.8"></circle><circle cx="15" cy="5" r="1.8"></circle><circle cx="9" cy="12" r="1.8"></circle><circle cx="15" cy="12" r="1.8"></circle><circle cx="9" cy="19" r="1.8"></circle><circle cx="15" cy="19" r="1.8"></circle></svg>`;
+      t0 = space();
       button0 = element("button");
       if_block.c();
-      t0 = space();
-      textarea = element("textarea");
       t1 = space();
+      textarea = element("textarea");
+      t2 = space();
       button1 = element("button");
       button1.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
-      t2 = space();
+      t3 = space();
+      attr(span, "class", "steps-modal-drag-handle");
+      attr(span, "title", "Drag to reorder");
       attr(button0, "type", "button");
       attr(button0, "class", "steps-modal-checkbox");
       attr(button0, "aria-label", button0_aria_label_value = /*step*/
-      ctx[29].done ? "Mark step incomplete" : "Mark step complete");
+      ctx[31].done ? "Mark step incomplete" : "Mark step complete");
       toggle_class(
         button0,
         "checked",
         /*step*/
-        ctx[29].done
+        ctx[31].done
       );
       attr(textarea, "rows", "1");
       attr(textarea, "class", "steps-modal-textarea");
       textarea.value = textarea_value_value = /*step*/
-      ctx[29].text;
+      ctx[31].text;
       attr(textarea, "placeholder", "Step description...");
       toggle_class(
         textarea,
         "completed",
         /*step*/
-        ctx[29].done
+        ctx[31].done
       );
       attr(button1, "type", "button");
       attr(button1, "class", "steps-modal-delete-btn");
@@ -8278,27 +8369,29 @@ function create_each_block2(key_1, ctx) {
         div,
         "is-done",
         /*step*/
-        ctx[29].done
+        ctx[31].done
       );
       this.first = div;
     },
     m(target, anchor) {
       insert(target, div, anchor);
+      append(div, span);
+      append(div, t0);
       append(div, button0);
       if_block.m(button0, null);
-      append(div, t0);
-      append(div, textarea);
       append(div, t1);
-      append(div, button1);
+      append(div, textarea);
       append(div, t2);
+      append(div, button1);
+      append(div, t3);
       if (!mounted) {
         dispose = [
-          listen(button0, "click", click_handler2),
+          listen(button0, "click", stop_propagation(click_handler2)),
           action_destroyer(autosize_action = autosize.call(
             null,
             textarea,
             /*step*/
-            ctx[29].text
+            ctx[31].text
           )),
           listen(textarea, "input", input_handler),
           listen(
@@ -8308,7 +8401,7 @@ function create_each_block2(key_1, ctx) {
             ctx[1]
           ),
           listen(textarea, "keydown", keydown_handler),
-          listen(button1, "click", click_handler_1)
+          listen(button1, "click", stop_propagation(click_handler_1))
         ];
         mounted = true;
       }
@@ -8325,7 +8418,7 @@ function create_each_block2(key_1, ctx) {
       }
       if (dirty[0] & /*steps*/
       4 && button0_aria_label_value !== (button0_aria_label_value = /*step*/
-      ctx[29].done ? "Mark step incomplete" : "Mark step complete")) {
+      ctx[31].done ? "Mark step incomplete" : "Mark step complete")) {
         attr(button0, "aria-label", button0_aria_label_value);
       }
       if (dirty[0] & /*steps*/
@@ -8334,12 +8427,12 @@ function create_each_block2(key_1, ctx) {
           button0,
           "checked",
           /*step*/
-          ctx[29].done
+          ctx[31].done
         );
       }
       if (dirty[0] & /*steps*/
       4 && textarea_value_value !== (textarea_value_value = /*step*/
-      ctx[29].text)) {
+      ctx[31].text)) {
         textarea.value = textarea_value_value;
       }
       if (autosize_action && is_function(autosize_action.update) && dirty[0] & /*steps*/
@@ -8347,7 +8440,7 @@ function create_each_block2(key_1, ctx) {
         autosize_action.update.call(
           null,
           /*step*/
-          ctx[29].text
+          ctx[31].text
         );
       if (dirty[0] & /*steps*/
       4) {
@@ -8355,7 +8448,7 @@ function create_each_block2(key_1, ctx) {
           textarea,
           "completed",
           /*step*/
-          ctx[29].done
+          ctx[31].done
         );
       }
       if (dirty[0] & /*steps*/
@@ -8364,9 +8457,20 @@ function create_each_block2(key_1, ctx) {
           div,
           "is-done",
           /*step*/
-          ctx[29].done
+          ctx[31].done
         );
       }
+    },
+    r() {
+      rect = div.getBoundingClientRect();
+    },
+    f() {
+      fix_position(div);
+      stop_animation();
+    },
+    a() {
+      stop_animation();
+      stop_animation = create_animation(div, rect, flip, { duration: DND_FLIP_DURATION });
     },
     d(detaching) {
       if (detaching) {
@@ -8541,11 +8645,11 @@ function create_fragment2(ctx) {
         /*newStepText*/
         ctx[5]
       );
-      ctx[22](textarea);
+      ctx[24](textarea);
       append(div4, t13);
       append(div4, button);
       append(button, t14);
-      ctx[23](div5);
+      ctx[25](div5);
       if (!mounted) {
         dispose = [
           action_destroyer(autosize_action = autosize.call(
@@ -8558,19 +8662,19 @@ function create_fragment2(ctx) {
             textarea,
             "input",
             /*textarea_input_handler*/
-            ctx[21]
+            ctx[23]
           ),
           listen(
             textarea,
             "keydown",
             /*handleAddInputKeydown*/
-            ctx[13]
+            ctx[15]
           ),
           listen(
             button,
             "click",
             /*addStep*/
-            ctx[12]
+            ctx[14]
           )
         ];
         mounted = true;
@@ -8659,16 +8763,17 @@ function create_fragment2(ctx) {
       if (if_block0)
         if_block0.d();
       if_block1.d();
-      ctx[22](null);
-      ctx[23](null);
+      ctx[24](null);
+      ctx[25](null);
       mounted = false;
       run_all(dispose);
     }
   };
 }
 var SAVE_DEBOUNCE_MS2 = 400;
-function handleStepKeydown(e, index) {
-  if (e.isComposing || e.keyCode === 229)
+var DND_FLIP_DURATION = 150;
+function handleStepKeydown(e, stepId) {
+  if (!stepId || e.isComposing || e.keyCode === 229)
     return;
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
@@ -8684,7 +8789,7 @@ function instance2($$self, $$props, $$invalidate) {
   let { dataService } = $$props;
   let { closeModal = () => {
   } } = $$props;
-  let steps = task.steps ? task.steps.map((s) => ({ ...s })) : [];
+  let steps = task.steps ? ensureStepIds(task.id, task.steps) : [];
   let newStepText = "";
   let addInputEl;
   let modalBodyEl;
@@ -8696,7 +8801,7 @@ function instance2($$self, $$props, $$invalidate) {
     }
     if (!task || !categoryFilepath)
       return;
-    $$invalidate(0, task.steps = steps.map((s) => ({ ...s })), task);
+    $$invalidate(0, task.steps = persistableSteps(steps), task);
     await dataService.updateTask(categoryFilepath, task);
     EventBus.emit("task:updated" /* TASK_UPDATED */, { task, categoryFilepath });
   }
@@ -8714,36 +8819,53 @@ function instance2($$self, $$props, $$invalidate) {
     if (saveTimeout) {
       window.clearTimeout(saveTimeout);
       saveTimeout = null;
-      $$invalidate(0, task.steps = steps.map((s) => ({ ...s })), task);
+      $$invalidate(0, task.steps = persistableSteps(steps), task);
       void dataService.updateTask(categoryFilepath, task);
       EventBus.emit("task:updated" /* TASK_UPDATED */, { task, categoryFilepath });
     }
   }
-  async function toggleStep(index) {
-    if (index < 0 || index >= steps.length)
+  async function toggleStep(stepId) {
+    if (!stepId)
       return;
-    $$invalidate(2, steps[index].done = !steps[index].done, steps);
+    const step = steps.find((s) => s.id === stepId);
+    if (!step)
+      return;
+    step.done = !step.done;
     $$invalidate(2, steps = [...steps]);
     await persistTask();
   }
-  function handleStepInput(index, newText) {
-    if (index < 0 || index >= steps.length)
+  function handleStepInput(stepId, newText) {
+    if (!stepId)
       return;
-    $$invalidate(2, steps[index].text = newText, steps);
+    const step = steps.find((s) => s.id === stepId);
+    if (!step)
+      return;
+    step.text = newText;
     scheduleSave();
   }
-  async function deleteStep(index) {
-    if (index < 0 || index >= steps.length)
+  async function deleteStep(stepId) {
+    if (!stepId)
       return;
-    steps.splice(index, 1);
-    $$invalidate(2, steps = [...steps]);
+    $$invalidate(2, steps = steps.filter((s) => s.id !== stepId));
+    await persistTask();
+  }
+  function handleDndConsider(e) {
+    $$invalidate(2, steps = e.detail.items);
+  }
+  async function handleDndFinalize(e) {
+    $$invalidate(2, steps = persistableSteps(e.detail.items));
     await persistTask();
   }
   async function addStep() {
     const trimmed = newStepText.trim();
     if (!trimmed)
       return;
-    $$invalidate(2, steps = [...steps, { text: trimmed, done: false }]);
+    const newStep = {
+      id: `${task.id}-step-${Date.now()}-${steps.length}`,
+      text: trimmed,
+      done: false
+    };
+    $$invalidate(2, steps = [...steps, newStep]);
     $$invalidate(5, newStepText = "");
     await persistTask();
     await tick();
@@ -8771,7 +8893,7 @@ function instance2($$self, $$props, $$invalidate) {
     if (payload.categoryFilepath === categoryFilepath && payload.isExternal) {
       if (payload.task && payload.task.id === task.id) {
         $$invalidate(0, task = payload.task);
-        $$invalidate(2, steps = task.steps ? task.steps.map((s) => ({ ...s })) : []);
+        $$invalidate(2, steps = ensureStepIds(task.id, task.steps || []));
       }
     }
   }
@@ -8794,10 +8916,10 @@ function instance2($$self, $$props, $$invalidate) {
   onDestroy(() => {
     flushSaveSync();
   });
-  const click_handler2 = (i) => toggleStep(i);
-  const input_handler = (i, e) => handleStepInput(i, e.currentTarget.value);
-  const keydown_handler = (i, e) => handleStepKeydown(e, i);
-  const click_handler_1 = (i) => deleteStep(i);
+  const click_handler2 = (step) => toggleStep(step.id);
+  const input_handler = (step, e) => handleStepInput(step.id, e.currentTarget.value);
+  const keydown_handler = (step, e) => handleStepKeydown(e, step.id);
+  const click_handler_1 = (step) => deleteStep(step.id);
   function textarea_input_handler() {
     newStepText = this.value;
     $$invalidate(5, newStepText);
@@ -8818,11 +8940,11 @@ function instance2($$self, $$props, $$invalidate) {
     if ("task" in $$props2)
       $$invalidate(0, task = $$props2.task);
     if ("categoryFilepath" in $$props2)
-      $$invalidate(14, categoryFilepath = $$props2.categoryFilepath);
+      $$invalidate(16, categoryFilepath = $$props2.categoryFilepath);
     if ("dataService" in $$props2)
-      $$invalidate(15, dataService = $$props2.dataService);
+      $$invalidate(17, dataService = $$props2.dataService);
     if ("closeModal" in $$props2)
-      $$invalidate(16, closeModal = $$props2.closeModal);
+      $$invalidate(18, closeModal = $$props2.closeModal);
   };
   $$self.$$.update = () => {
     if ($$self.$$.dirty[0] & /*steps*/
@@ -8854,6 +8976,8 @@ function instance2($$self, $$props, $$invalidate) {
     toggleStep,
     handleStepInput,
     deleteStep,
+    handleDndConsider,
+    handleDndFinalize,
     addStep,
     handleAddInputKeydown,
     categoryFilepath,
@@ -8879,9 +9003,9 @@ var TaskStepsModalView = class extends SvelteComponent {
       safe_not_equal,
       {
         task: 0,
-        categoryFilepath: 14,
-        dataService: 15,
-        closeModal: 16,
+        categoryFilepath: 16,
+        dataService: 17,
+        closeModal: 18,
         flushSaveSync: 1
       },
       null,
@@ -10479,7 +10603,7 @@ function create_if_block_20(ctx) {
               /*incompleteTasks*/
               ctx[6]
             ),
-            flipDurationMs: DND_FLIP_DURATION,
+            flipDurationMs: DND_FLIP_DURATION2,
             dropAnimationDisabled: true,
             dropTargetStyle: {}
           })),
@@ -10557,7 +10681,7 @@ function create_if_block_20(ctx) {
             /*incompleteTasks*/
             ctx2[6]
           ),
-          flipDurationMs: DND_FLIP_DURATION,
+          flipDurationMs: DND_FLIP_DURATION2,
           dropAnimationDisabled: true,
           dropTargetStyle: {}
         });
@@ -12278,7 +12402,7 @@ function create_each_block_6(key_1, ctx) {
     },
     a() {
       stop_animation();
-      stop_animation = create_animation(div2, rect, flip, { duration: DND_FLIP_DURATION });
+      stop_animation = create_animation(div2, rect, flip, { duration: DND_FLIP_DURATION2 });
     },
     d(detaching) {
       if (detaching) {
@@ -12473,7 +12597,7 @@ function create_if_block_222(ctx) {
               /*completedTasks*/
               ctx[7]
             ),
-            flipDurationMs: DND_FLIP_DURATION,
+            flipDurationMs: DND_FLIP_DURATION2,
             dropAnimationDisabled: true,
             dropTargetStyle: {}
           })),
@@ -12514,7 +12638,7 @@ function create_if_block_222(ctx) {
             /*completedTasks*/
             ctx2[7]
           ),
-          flipDurationMs: DND_FLIP_DURATION,
+          flipDurationMs: DND_FLIP_DURATION2,
           dropAnimationDisabled: true,
           dropTargetStyle: {}
         });
@@ -13920,7 +14044,7 @@ function create_each_block_4(key_1, ctx) {
     },
     a() {
       stop_animation();
-      stop_animation = create_animation(div1, rect, flip, { duration: DND_FLIP_DURATION });
+      stop_animation = create_animation(div1, rect, flip, { duration: DND_FLIP_DURATION2 });
     },
     d(detaching) {
       if (detaching) {
@@ -16058,7 +16182,7 @@ function create_fragment4(ctx) {
     }
   };
 }
-var DND_FLIP_DURATION = 200;
+var DND_FLIP_DURATION2 = 200;
 var AUTO_SCROLL_EDGE_ZONE = 60;
 var AUTO_SCROLL_MAX_SPEED = 12;
 var AUTO_SCROLL_MIN_SPEED = 2;
@@ -17157,25 +17281,24 @@ var TaskMainView_default = TaskMainView;
 var import_obsidian14 = require("obsidian");
 function get_each_context5(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[106] = list[i][0];
-  child_ctx[107] = list[i][1];
+  child_ctx[108] = list[i][0];
+  child_ctx[109] = list[i][1];
   return child_ctx;
 }
 function get_each_context_13(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[110] = list[i];
+  child_ctx[112] = list[i];
   return child_ctx;
 }
 function get_each_context_22(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[106] = list[i][0];
-  child_ctx[107] = list[i][1];
+  child_ctx[108] = list[i][0];
+  child_ctx[109] = list[i][1];
   return child_ctx;
 }
 function get_each_context_32(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[115] = list[i];
-  child_ctx[117] = i;
+  child_ctx[117] = list[i];
   return child_ctx;
 }
 function create_else_block_42(ctx) {
@@ -17252,6 +17375,7 @@ function create_if_block5(ctx) {
   let line1;
   let t5;
   let input;
+  let dndzone_action;
   let t6;
   let div4;
   let textarea1;
@@ -17323,8 +17447,8 @@ function create_if_block5(ctx) {
     ctx[2].steps
   );
   const get_key = (ctx2) => (
-    /*i*/
-    ctx2[117]
+    /*step*/
+    ctx2[117].id
   );
   for (let i = 0; i < each_value_3.length; i += 1) {
     let child_ctx = get_each_context_32(ctx, each_value_3, i);
@@ -17570,7 +17694,7 @@ function create_if_block5(ctx) {
       append(div5, t7);
       if (if_block3)
         if_block3.m(div5, null);
-      ctx[66](div5);
+      ctx[68](div5);
       insert(target, t8, anchor);
       if (if_block4)
         if_block4.m(target, anchor);
@@ -17607,7 +17731,7 @@ function create_if_block5(ctx) {
             span0,
             "keydown",
             /*keydown_handler*/
-            ctx[48]
+            ctx[50]
           ),
           action_destroyer(autosize_action = autosize.call(
             null,
@@ -17619,7 +17743,7 @@ function create_if_block5(ctx) {
             textarea0,
             "input",
             /*textarea0_input_handler*/
-            ctx[49]
+            ctx[51]
           ),
           listen(
             textarea0,
@@ -17650,13 +17774,13 @@ function create_if_block5(ctx) {
             span1,
             "keydown",
             /*keydown_handler_1*/
-            ctx[50]
+            ctx[52]
           ),
           listen(
             input,
             "input",
             /*input_input_handler*/
-            ctx[57]
+            ctx[59]
           ),
           listen(
             input,
@@ -17664,17 +17788,40 @@ function create_if_block5(ctx) {
             /*handleStepKeydown*/
             ctx[32]
           ),
+          action_destroyer(dndzone_action = dndzone.call(null, div2, {
+            items: (
+              /*task*/
+              ctx[2].steps
+            ),
+            flipDurationMs: DND_FLIP_DURATION3,
+            dropAnimationDisabled: true,
+            dropTargetStyle: {},
+            type: "task-step-" + /*task*/
+            ctx[2].id
+          })),
+          listen(
+            div2,
+            "consider",
+            /*handleDndConsider*/
+            ctx[36]
+          ),
+          listen(
+            div2,
+            "finalize",
+            /*handleDndFinalize*/
+            ctx[37]
+          ),
           listen(
             textarea1,
             "input",
             /*textarea1_input_handler*/
-            ctx[58]
+            ctx[60]
           ),
           listen(
             textarea1,
             "input",
             /*handleNoteInput*/
-            ctx[36]
+            ctx[38]
           ),
           listen(
             span2,
@@ -17686,31 +17833,31 @@ function create_if_block5(ctx) {
             span2,
             "keydown",
             /*keydown_handler_9*/
-            ctx[77]
+            ctx[79]
           ),
           listen(
             span5,
             "click",
             /*openAddMetaModal*/
-            ctx[39]
+            ctx[41]
           ),
           listen(
             span5,
             "keydown",
             /*keydown_handler_10*/
-            ctx[78]
+            ctx[80]
           ),
           listen(
             span6,
             "click",
             /*deleteTask*/
-            ctx[38]
+            ctx[40]
           ),
           listen(
             span6,
             "keydown",
             /*keydown_handler_11*/
-            ctx[79]
+            ctx[81]
           )
         ];
         mounted = true;
@@ -17793,7 +17940,11 @@ function create_if_block5(ctx) {
           /*task*/
           ctx2[2].steps
         );
-        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_3, each_1_lookup, div2, destroy_block, create_each_block_32, t4, get_each_context_32);
+        for (let i = 0; i < each_blocks.length; i += 1)
+          each_blocks[i].r();
+        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_3, each_1_lookup, div2, fix_and_destroy_block, create_each_block_32, t4, get_each_context_32);
+        for (let i = 0; i < each_blocks.length; i += 1)
+          each_blocks[i].a();
       }
       if (dirty[0] & /*newStepText*/
       32 && input.value !== /*newStepText*/
@@ -17804,6 +17955,19 @@ function create_if_block5(ctx) {
           ctx2[5]
         );
       }
+      if (dndzone_action && is_function(dndzone_action.update) && dirty[0] & /*task*/
+      4)
+        dndzone_action.update.call(null, {
+          items: (
+            /*task*/
+            ctx2[2].steps
+          ),
+          flipDurationMs: DND_FLIP_DURATION3,
+          dropAnimationDisabled: true,
+          dropTargetStyle: {},
+          type: "task-step-" + /*task*/
+          ctx2[2].id
+        });
       if (dirty[0] & /*task*/
       4) {
         set_input_value(
@@ -17942,7 +18106,7 @@ function create_if_block5(ctx) {
       }
       if (if_block3)
         if_block3.d();
-      ctx[66](null);
+      ctx[68](null);
       if (if_block4)
         if_block4.d(detaching);
       if_block5.d();
@@ -17978,13 +18142,13 @@ function create_if_block_232(ctx) {
             span,
             "click",
             /*closePanel*/
-            ctx[37]
+            ctx[39]
           ),
           listen(
             span,
             "keydown",
             /*keydown_handler_13*/
-            ctx[93]
+            ctx[95]
           )
         ];
         mounted = true;
@@ -18159,13 +18323,13 @@ function create_if_block_202(ctx) {
             span,
             "click",
             /*closePanel*/
-            ctx[37]
+            ctx[39]
           ),
           listen(
             span,
             "keydown",
             /*keydown_handler_2*/
-            ctx[51]
+            ctx[53]
           )
         ];
         mounted = true;
@@ -18244,20 +18408,24 @@ function create_if_block_192(ctx) {
 function create_each_block_32(key_1, ctx) {
   let div;
   let span0;
-  let span0_aria_checked_value;
   let t0;
+  let span1;
+  let span1_aria_checked_value;
+  let t1;
   let textarea;
   let textarea_value_value;
   let autosize_action;
-  let t1;
-  let span1;
   let t2;
+  let span2;
+  let t3;
+  let rect;
+  let stop_animation = noop;
   let mounted;
   let dispose;
   function select_block_type_3(ctx2, dirty) {
     if (
       /*step*/
-      ctx2[115].done
+      ctx2[117].done
     )
       return create_if_block_192;
     return create_else_block_14;
@@ -18267,8 +18435,8 @@ function create_each_block_32(key_1, ctx) {
   function click_handler_1() {
     return (
       /*click_handler_1*/
-      ctx[52](
-        /*i*/
+      ctx[54](
+        /*step*/
         ctx[117]
       )
     );
@@ -18276,8 +18444,8 @@ function create_each_block_32(key_1, ctx) {
   function keydown_handler_3(...args) {
     return (
       /*keydown_handler_3*/
-      ctx[53](
-        /*i*/
+      ctx[55](
+        /*step*/
         ctx[117],
         ...args
       )
@@ -18286,8 +18454,8 @@ function create_each_block_32(key_1, ctx) {
   function input_handler(...args) {
     return (
       /*input_handler*/
-      ctx[54](
-        /*i*/
+      ctx[56](
+        /*step*/
         ctx[117],
         ...args
       )
@@ -18296,8 +18464,8 @@ function create_each_block_32(key_1, ctx) {
   function click_handler_22() {
     return (
       /*click_handler_2*/
-      ctx[55](
-        /*i*/
+      ctx[57](
+        /*step*/
         ctx[117]
       )
     );
@@ -18305,8 +18473,8 @@ function create_each_block_32(key_1, ctx) {
   function keydown_handler_5(...args) {
     return (
       /*keydown_handler_5*/
-      ctx[56](
-        /*i*/
+      ctx[58](
+        /*step*/
         ctx[117],
         ...args
       )
@@ -18318,57 +18486,64 @@ function create_each_block_32(key_1, ctx) {
     c() {
       div = element("div");
       span0 = element("span");
-      if_block.c();
+      span0.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="5" r="1.8"></circle><circle cx="15" cy="5" r="1.8"></circle><circle cx="9" cy="12" r="1.8"></circle><circle cx="15" cy="12" r="1.8"></circle><circle cx="9" cy="19" r="1.8"></circle><circle cx="15" cy="19" r="1.8"></circle></svg>`;
       t0 = space();
-      textarea = element("textarea");
-      t1 = space();
       span1 = element("span");
-      span1.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+      if_block.c();
+      t1 = space();
+      textarea = element("textarea");
       t2 = space();
-      attr(span0, "class", "checkbox");
-      attr(span0, "role", "checkbox");
-      attr(span0, "aria-checked", span0_aria_checked_value = /*step*/
-      ctx[115].done);
-      attr(span0, "tabindex", "0");
+      span2 = element("span");
+      span2.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+      t3 = space();
+      attr(span0, "class", "step-drag-handle");
+      attr(span0, "title", "Drag to reorder");
+      attr(span1, "class", "checkbox");
+      attr(span1, "role", "checkbox");
+      attr(span1, "aria-checked", span1_aria_checked_value = /*step*/
+      ctx[117].done);
+      attr(span1, "tabindex", "0");
       attr(textarea, "rows", "1");
       textarea.value = textarea_value_value = /*step*/
-      ctx[115].text;
+      ctx[117].text;
       attr(textarea, "placeholder", "Step text");
       toggle_class(
         textarea,
         "completed",
         /*step*/
-        ctx[115].done
+        ctx[117].done
       );
-      attr(span1, "class", "delete-step");
-      attr(span1, "role", "button");
-      attr(span1, "tabindex", "0");
+      attr(span2, "class", "delete-step");
+      attr(span2, "role", "button");
+      attr(span2, "tabindex", "0");
       attr(div, "class", "step-item");
       this.first = div;
     },
     m(target, anchor) {
       insert(target, div, anchor);
       append(div, span0);
-      if_block.m(span0, null);
       append(div, t0);
-      append(div, textarea);
-      append(div, t1);
       append(div, span1);
+      if_block.m(span1, null);
+      append(div, t1);
+      append(div, textarea);
       append(div, t2);
+      append(div, span2);
+      append(div, t3);
       if (!mounted) {
         dispose = [
-          listen(span0, "click", click_handler_1),
-          listen(span0, "keydown", keydown_handler_3),
+          listen(span1, "click", stop_propagation(click_handler_1)),
+          listen(span1, "keydown", stop_propagation(keydown_handler_3)),
           action_destroyer(autosize_action = autosize.call(
             null,
             textarea,
             /*step*/
-            ctx[115].text
+            ctx[117].text
           )),
           listen(textarea, "input", input_handler),
           listen(textarea, "keydown", keydown_handler_4),
-          listen(span1, "click", click_handler_22),
-          listen(span1, "keydown", keydown_handler_5)
+          listen(span2, "click", stop_propagation(click_handler_22)),
+          listen(span2, "keydown", stop_propagation(keydown_handler_5))
         ];
         mounted = true;
       }
@@ -18380,17 +18555,17 @@ function create_each_block_32(key_1, ctx) {
         if_block = current_block_type(ctx);
         if (if_block) {
           if_block.c();
-          if_block.m(span0, null);
+          if_block.m(span1, null);
         }
       }
       if (dirty[0] & /*task*/
-      4 && span0_aria_checked_value !== (span0_aria_checked_value = /*step*/
-      ctx[115].done)) {
-        attr(span0, "aria-checked", span0_aria_checked_value);
+      4 && span1_aria_checked_value !== (span1_aria_checked_value = /*step*/
+      ctx[117].done)) {
+        attr(span1, "aria-checked", span1_aria_checked_value);
       }
       if (dirty[0] & /*task*/
       4 && textarea_value_value !== (textarea_value_value = /*step*/
-      ctx[115].text)) {
+      ctx[117].text)) {
         textarea.value = textarea_value_value;
       }
       if (autosize_action && is_function(autosize_action.update) && dirty[0] & /*task*/
@@ -18398,7 +18573,7 @@ function create_each_block_32(key_1, ctx) {
         autosize_action.update.call(
           null,
           /*step*/
-          ctx[115].text
+          ctx[117].text
         );
       if (dirty[0] & /*task*/
       4) {
@@ -18406,9 +18581,20 @@ function create_each_block_32(key_1, ctx) {
           textarea,
           "completed",
           /*step*/
-          ctx[115].done
+          ctx[117].done
         );
       }
+    },
+    r() {
+      rect = div.getBoundingClientRect();
+    },
+    f() {
+      fix_position(div);
+      stop_animation();
+    },
+    a() {
+      stop_animation();
+      stop_animation = create_animation(div, rect, flip, { duration: DND_FLIP_DURATION3 });
     },
     d(detaching) {
       if (detaching) {
@@ -18600,13 +18786,13 @@ function create_if_block_182(ctx) {
         dispose = [
           listen(span2, "click", stop_propagation(
             /*click_handler_3*/
-            ctx[59]
+            ctx[61]
           )),
           listen(
             div,
             "click",
             /*click_handler_4*/
-            ctx[60]
+            ctx[62]
           )
         ];
         mounted = true;
@@ -18682,13 +18868,13 @@ function create_if_block_172(ctx) {
         dispose = [
           listen(span2, "click", stop_propagation(
             /*click_handler_5*/
-            ctx[61]
+            ctx[63]
           )),
           listen(
             div,
             "click",
             /*click_handler_6*/
-            ctx[62]
+            ctx[64]
           )
         ];
         mounted = true;
@@ -18770,13 +18956,13 @@ function create_if_block_162(ctx) {
         dispose = [
           listen(span2, "click", stop_propagation(
             /*click_handler_7*/
-            ctx[63]
+            ctx[65]
           )),
           listen(
             div,
             "click",
             /*click_handler_8*/
-            ctx[64]
+            ctx[66]
           )
         ];
         mounted = true;
@@ -18836,7 +19022,7 @@ function create_if_block_152(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*task*/
       4 | dirty[1] & /*deleteCustomKey*/
-      2048) {
+      8192) {
         each_value_2 = ensure_array_like(Object.entries(
           /*task*/
           ctx2[2].customMeta
@@ -18871,14 +19057,14 @@ function create_each_block_22(ctx) {
   let span0;
   let t0_value = (
     /*k*/
-    ctx[106] + ""
+    ctx[108] + ""
   );
   let t0;
   let t1;
   let span1;
   let t2_value = (
     /*v*/
-    ctx[107] + ""
+    ctx[109] + ""
   );
   let t2;
   let t3;
@@ -18892,9 +19078,9 @@ function create_each_block_22(ctx) {
   function click_handler_9() {
     return (
       /*click_handler_9*/
-      ctx[65](
+      ctx[67](
         /*k*/
-        ctx[106]
+        ctx[108]
       )
     );
   }
@@ -18916,11 +19102,11 @@ function create_each_block_22(ctx) {
       attr(span2, "role", "button");
       attr(span2, "tabindex", "0");
       attr(span2, "title", span2_title_value = `Remove ${/*k*/
-      ctx[106]}`);
+      ctx[108]}`);
       attr(div, "class", "meta-chip custom-chip");
       attr(div, "title", div_title_value = `${/*k*/
-      ctx[106]}: ${/*v*/
-      ctx[107]}`);
+      ctx[108]}: ${/*v*/
+      ctx[109]}`);
     },
     m(target, anchor) {
       insert(target, div, anchor);
@@ -18942,21 +19128,21 @@ function create_each_block_22(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*task*/
       4 && t0_value !== (t0_value = /*k*/
-      ctx[106] + ""))
+      ctx[108] + ""))
         set_data(t0, t0_value);
       if (dirty[0] & /*task*/
       4 && t2_value !== (t2_value = /*v*/
-      ctx[107] + ""))
+      ctx[109] + ""))
         set_data(t2, t2_value);
       if (dirty[0] & /*task*/
       4 && span2_title_value !== (span2_title_value = `Remove ${/*k*/
-      ctx[106]}`)) {
+      ctx[108]}`)) {
         attr(span2, "title", span2_title_value);
       }
       if (dirty[0] & /*task*/
       4 && div_title_value !== (div_title_value = `${/*k*/
-      ctx[106]}: ${/*v*/
-      ctx[107]}`)) {
+      ctx[108]}: ${/*v*/
+      ctx[109]}`)) {
         attr(div, "title", div_title_value);
       }
     },
@@ -19096,19 +19282,19 @@ function create_if_block_102(ctx) {
             input,
             "change",
             /*change_handler*/
-            ctx[67]
+            ctx[69]
           ),
           listen(
             div5,
             "click",
             /*click_handler_10*/
-            ctx[70]
+            ctx[72]
           ),
           listen(
             div5,
             "keydown",
             /*keydown_handler_8*/
-            ctx[71]
+            ctx[73]
           )
         ];
         mounted = true;
@@ -19220,7 +19406,7 @@ function create_if_block_133(ctx) {
             span,
             "keydown",
             /*keydown_handler_6*/
-            ctx[68]
+            ctx[70]
           )
         ];
         mounted = true;
@@ -19259,7 +19445,7 @@ function create_if_block_123(ctx) {
           )),
           listen(span, "keydown", stop_propagation(
             /*keydown_handler_7*/
-            ctx[69]
+            ctx[71]
           ))
         ];
         mounted = true;
@@ -19396,25 +19582,25 @@ function create_if_block_112(ctx) {
             button0,
             "click",
             /*click_handler_11*/
-            ctx[72]
+            ctx[74]
           ),
           listen(
             button1,
             "click",
             /*click_handler_12*/
-            ctx[73]
+            ctx[75]
           ),
           listen(
             button2,
             "click",
             /*click_handler_13*/
-            ctx[74]
+            ctx[76]
           ),
           listen(
             input,
             "change",
             /*change_handler_1*/
-            ctx[76]
+            ctx[78]
           )
         ];
         mounted = true;
@@ -19492,9 +19678,9 @@ function create_each_block_13(ctx) {
   function click_handler_14() {
     return (
       /*click_handler_14*/
-      ctx[75](
+      ctx[77](
         /*day*/
-        ctx[110]
+        ctx[112]
       )
     );
   }
@@ -19504,7 +19690,7 @@ function create_each_block_13(ctx) {
       button = element("button");
       button.textContent = `${DAY_LABELS[
         /*day*/
-        ctx[110]
+        ctx[112]
       ]} `;
       attr(button, "type", "button");
       attr(button, "class", "weekday-chip");
@@ -19514,7 +19700,7 @@ function create_each_block_13(ctx) {
         /*task*/
         (_b = (_a = ctx[2].recurrence) == null ? void 0 : _a.daysOfWeek) == null ? void 0 : _b.includes(
           /*day*/
-          ctx[110]
+          ctx[112]
         )
       );
     },
@@ -19536,7 +19722,7 @@ function create_each_block_13(ctx) {
           /*task*/
           (_b = (_a = ctx[2].recurrence) == null ? void 0 : _a.daysOfWeek) == null ? void 0 : _b.includes(
             /*day*/
-            ctx[110]
+            ctx[112]
           )
         );
       }
@@ -19842,58 +20028,58 @@ function create_if_block_111(ctx) {
             span1,
             "click",
             /*closeAddMetaModal*/
-            ctx[40]
+            ctx[42]
           ),
           listen(
             span1,
             "keydown",
             /*keydown_handler_12*/
-            ctx[80]
+            ctx[82]
           ),
           listen(
             button0,
             "click",
             /*click_handler_15*/
-            ctx[81]
+            ctx[83]
           ),
           listen(
             button1,
             "click",
             /*click_handler_16*/
-            ctx[82]
+            ctx[84]
           ),
           listen(
             button2,
             "click",
             /*click_handler_17*/
-            ctx[83]
+            ctx[85]
           ),
           listen(
             button3,
             "click",
             /*click_handler_18*/
-            ctx[84]
+            ctx[86]
           ),
           listen(
             button4,
             "click",
             /*closeAddMetaModal*/
-            ctx[40]
+            ctx[42]
           ),
           listen(
             button5,
             "click",
             /*saveMetadata*/
-            ctx[41]
+            ctx[43]
           ),
           listen(div5, "click", stop_propagation(
             /*click_handler*/
-            ctx[47]
+            ctx[49]
           )),
           action_destroyer(portal_action = portal.call(null, div6)),
           listen(div6, "click", stop_propagation(
             /*click_handler_21*/
-            ctx[92]
+            ctx[94]
           ))
         ];
         mounted = true;
@@ -20037,13 +20223,13 @@ function create_if_block_63(ctx) {
             input0,
             "input",
             /*input0_input_handler*/
-            ctx[90]
+            ctx[92]
           ),
           listen(
             input1,
             "input",
             /*input1_input_handler*/
-            ctx[91]
+            ctx[93]
           )
         ];
         mounted = true;
@@ -20145,7 +20331,7 @@ function create_if_block_53(ctx) {
           textarea,
           "input",
           /*textarea_input_handler_1*/
-          ctx[88]
+          ctx[90]
         );
         mounted = true;
       }
@@ -20225,7 +20411,7 @@ function create_if_block_311(ctx) {
           input,
           "input",
           /*input_input_handler_1*/
-          ctx[86]
+          ctx[88]
         );
         mounted = true;
       }
@@ -20304,7 +20490,7 @@ function create_if_block_211(ctx) {
           textarea,
           "input",
           /*textarea_input_handler*/
-          ctx[85]
+          ctx[87]
         );
         mounted = true;
       }
@@ -20387,7 +20573,7 @@ function create_if_block_73(ctx) {
         set_data(t1, t1_value);
       if (dirty[0] & /*task*/
       4 | dirty[1] & /*deleteCustomKey*/
-      2048) {
+      8192) {
         each_value = ensure_array_like(Object.entries(
           /*task*/
           ctx2[2].customMeta
@@ -20422,7 +20608,7 @@ function create_each_block5(ctx) {
   let span0;
   let t0_value = (
     /*k*/
-    ctx[106] + ""
+    ctx[108] + ""
   );
   let t0;
   let t1;
@@ -20430,7 +20616,7 @@ function create_each_block5(ctx) {
   let span1;
   let t3_value = (
     /*v*/
-    ctx[107] + ""
+    ctx[109] + ""
   );
   let t3;
   let t4;
@@ -20441,9 +20627,9 @@ function create_each_block5(ctx) {
   function click_handler_20() {
     return (
       /*click_handler_20*/
-      ctx[89](
+      ctx[91](
         /*k*/
-        ctx[106]
+        ctx[108]
       )
     );
   }
@@ -20488,11 +20674,11 @@ function create_each_block5(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*task*/
       4 && t0_value !== (t0_value = /*k*/
-      ctx[106] + ""))
+      ctx[108] + ""))
         set_data(t0, t0_value);
       if (dirty[0] & /*task*/
       4 && t3_value !== (t3_value = /*v*/
-      ctx[107] + ""))
+      ctx[109] + ""))
         set_data(t3, t3_value);
     },
     d(detaching) {
@@ -20526,7 +20712,7 @@ function create_if_block_410(ctx) {
           button,
           "click",
           /*click_handler_19*/
-          ctx[87]
+          ctx[89]
         );
         mounted = true;
       }
@@ -20598,6 +20784,7 @@ function create_fragment5(ctx) {
     }
   };
 }
+var DND_FLIP_DURATION3 = 150;
 function handleTitleKeydown(e) {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
@@ -20845,7 +21032,7 @@ function instance5($$self, $$props, $$invalidate) {
   function loadTask(t2, filepath) {
     $$invalidate(2, task = {
       ...t2,
-      steps: t2.steps.map((s) => ({ ...s }))
+      steps: ensureStepIds(t2.id, t2.steps ? t2.steps.map((s) => ({ ...s })) : [])
     });
     $$invalidate(4, categoryFilepath = filepath);
     $$invalidate(6, showScheduleSection = false);
@@ -20882,7 +21069,7 @@ function instance5($$self, $$props, $$invalidate) {
       if (payload.task && payload.task.id === task.id) {
         $$invalidate(2, task = {
           ...payload.task,
-          steps: payload.task.steps.map((s) => ({ ...s }))
+          steps: ensureStepIds(payload.task.id, payload.task.steps ? payload.task.steps.map((s) => ({ ...s })) : [])
         });
         return;
       }
@@ -20892,7 +21079,7 @@ function instance5($$self, $$props, $$invalidate) {
         if (fresh) {
           $$invalidate(2, task = {
             ...fresh,
-            steps: fresh.steps.map((s) => ({ ...s }))
+            steps: ensureStepIds(fresh.id, fresh.steps ? fresh.steps.map((s) => ({ ...s })) : [])
           });
         }
       }
@@ -20905,6 +21092,7 @@ function instance5($$self, $$props, $$invalidate) {
       async () => {
         if (!task || !categoryFilepath)
           return;
+        $$invalidate(2, task.steps = persistableSteps(task.steps), task);
         if (task.note_link && (plugin == null ? void 0 : plugin.app)) {
           const syncRes = await LinkedNoteService.syncTaskTitleToNote(plugin.app, task, categoryFilepath, dataService);
           if (syncRes.noteRenamed && syncRes.newNoteLink) {
@@ -20944,6 +21132,7 @@ function instance5($$self, $$props, $$invalidate) {
       clearTimeout(saveTimeout);
     if (!task || !categoryFilepath)
       return;
+    $$invalidate(2, task.steps = persistableSteps(task.steps), task);
     if (task.note_link && (plugin == null ? void 0 : plugin.app)) {
       const syncRes = await LinkedNoteService.syncTaskTitleToNote(plugin.app, task, categoryFilepath, dataService);
       if (syncRes.noteRenamed && syncRes.newNoteLink) {
@@ -21031,7 +21220,12 @@ function instance5($$self, $$props, $$invalidate) {
     const text2 = newStepText.trim();
     if (!text2 || !task)
       return;
-    $$invalidate(2, task.steps = [...task.steps, { text: text2, done: false }], task);
+    const newStep = {
+      id: `${task.id}-step-${Date.now()}-${task.steps.length}`,
+      text: text2,
+      done: false
+    };
+    $$invalidate(2, task.steps = [...task.steps, newStep], task);
     $$invalidate(5, newStepText = "");
     $$invalidate(2, task);
     scheduleSave();
@@ -21041,25 +21235,43 @@ function instance5($$self, $$props, $$invalidate) {
       addStep();
     }
   }
-  function toggleStepDone(index) {
-    if (!task)
+  function toggleStepDone(stepId) {
+    if (!task || !stepId)
       return;
-    $$invalidate(2, task.steps[index].done = !task.steps[index].done, task);
-    $$invalidate(2, task.steps = [...task.steps], task);
+    const step = task.steps.find((s) => s.id === stepId);
+    if (step) {
+      step.done = !step.done;
+      $$invalidate(2, task.steps = [...task.steps], task);
+      $$invalidate(2, task);
+      scheduleSave();
+    }
+  }
+  function updateStepText(stepId, newText) {
+    if (!task || !stepId)
+      return;
+    const step = task.steps.find((s) => s.id === stepId);
+    if (step) {
+      step.text = newText;
+      scheduleSave();
+    }
+  }
+  function deleteStep(stepId) {
+    if (!task || !stepId)
+      return;
+    $$invalidate(2, task.steps = task.steps.filter((s) => s.id !== stepId), task);
     $$invalidate(2, task);
     scheduleSave();
   }
-  function updateStepText(index, newText) {
+  function handleDndConsider(e) {
     if (!task)
       return;
-    $$invalidate(2, task.steps[index].text = newText, task);
-    scheduleSave();
+    $$invalidate(2, task.steps = e.detail.items, task);
+    $$invalidate(2, task);
   }
-  function deleteStep(index) {
+  function handleDndFinalize(e) {
     if (!task)
       return;
-    task.steps.splice(index, 1);
-    $$invalidate(2, task.steps = [...task.steps], task);
+    $$invalidate(2, task.steps = persistableSteps(e.detail.items), task);
     $$invalidate(2, task);
     scheduleSave();
   }
@@ -21187,11 +21399,11 @@ function instance5($$self, $$props, $$invalidate) {
   }
   const keydown_handler_1 = (e) => e.key === "Enter" && handleLinkNoteClick(e);
   const keydown_handler_2 = (e) => e.key === "Enter" && closePanel();
-  const click_handler_1 = (i) => toggleStepDone(i);
-  const keydown_handler_3 = (i, e) => e.key === "Enter" && toggleStepDone(i);
-  const input_handler = (i, e) => updateStepText(i, e.currentTarget.value);
-  const click_handler_22 = (i) => deleteStep(i);
-  const keydown_handler_5 = (i, e) => e.key === "Enter" && deleteStep(i);
+  const click_handler_1 = (step) => toggleStepDone(step.id);
+  const keydown_handler_3 = (step, e) => e.key === "Enter" && toggleStepDone(step.id);
+  const input_handler = (step, e) => updateStepText(step.id, e.currentTarget.value);
+  const click_handler_22 = (step) => deleteStep(step.id);
+  const keydown_handler_5 = (step, e) => e.key === "Enter" && deleteStep(step.id);
   function input_input_handler() {
     newStepText = this.value;
     $$invalidate(5, newStepText);
@@ -21275,13 +21487,13 @@ function instance5($$self, $$props, $$invalidate) {
   const keydown_handler_13 = (e) => e.key === "Enter" && closePanel();
   $$self.$$set = ($$props2) => {
     if ("dataService" in $$props2)
-      $$invalidate(44, dataService = $$props2.dataService);
+      $$invalidate(46, dataService = $$props2.dataService);
     if ("plugin" in $$props2)
       $$invalidate(0, plugin = $$props2.plugin);
     if ("isModal" in $$props2)
       $$invalidate(1, isModal = $$props2.isModal);
     if ("onCloseModal" in $$props2)
-      $$invalidate(45, onCloseModal = $$props2.onCloseModal);
+      $$invalidate(47, onCloseModal = $$props2.onCloseModal);
   };
   $$self.$$.update = () => {
     if ($$self.$$.dirty[0] & /*task*/
@@ -21337,6 +21549,8 @@ function instance5($$self, $$props, $$invalidate) {
     toggleStepDone,
     updateStepText,
     deleteStep,
+    handleDndConsider,
+    handleDndFinalize,
     handleNoteInput,
     closePanel,
     deleteTask,
@@ -21407,18 +21621,18 @@ var TaskDetailView = class extends SvelteComponent {
       create_fragment5,
       safe_not_equal,
       {
-        dataService: 44,
+        dataService: 46,
         plugin: 0,
         isModal: 1,
-        onCloseModal: 45,
-        loadTask: 46
+        onCloseModal: 47,
+        loadTask: 48
       },
       null,
       [-1, -1, -1, -1]
     );
   }
   get loadTask() {
-    return this.$$.ctx[46];
+    return this.$$.ctx[48];
   }
 };
 var TaskDetailView_default = TaskDetailView;

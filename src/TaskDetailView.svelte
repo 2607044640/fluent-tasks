@@ -1,15 +1,20 @@
 <script lang="ts">
     import { onMount, onDestroy } from "svelte";
+    import { dndzone } from "svelte-dnd-action";
+    import { flip } from "svelte/animate";
     import { EventBus } from "./EventBus";
     import { DataService } from "./DataService";
     import { EventName, type TaskItem, type TaskStep, type RecurrenceRule } from "./types";
     import { SAVE_DEBOUNCE_MS } from "./constants";
     import { portal, autosize } from "./utils/domUtils";
+    import { ensureStepIds, persistableSteps } from "./utils/stepIds";
     import { DAY_LABELS, formatExactTime, getRelativeTime, getRecurrenceLabel } from "./utils/timeUtils";
     import { LinkedNoteService } from "./services/LinkedNoteService";
     import { promptDeleteTaskWithLinkedNote } from "./modals/ConfirmDeleteLinkedNoteModal";
     import { Menu, Notice } from "obsidian";
     import { t } from "./lang/helpers";
+
+    const DND_FLIP_DURATION = 150;
 
     // =============================================
     // Props
@@ -241,7 +246,7 @@
 
     // Called from main.ts when the view is opened directly
     export function loadTask(t: TaskItem, filepath: string) {
-        task = { ...t, steps: t.steps.map(s => ({ ...s })) };
+        task = { ...t, steps: ensureStepIds(t.id, t.steps ? t.steps.map(s => ({ ...s })) : []) };
         categoryFilepath = filepath;
         showScheduleSection = false;
         showRepeatPicker = false;
@@ -281,7 +286,7 @@
         if (!task || !categoryFilepath) return;
         if (!payload.categoryFilepath || payload.categoryFilepath === categoryFilepath) {
             if (payload.task && payload.task.id === task.id) {
-                task = { ...payload.task, steps: payload.task.steps.map((s: any) => ({ ...s })) };
+                task = { ...payload.task, steps: ensureStepIds(payload.task.id, payload.task.steps ? payload.task.steps.map((s: any) => ({ ...s })) : []) };
                 return;
             }
             if (payload.isExternal) {
@@ -289,7 +294,7 @@
                 const tasks = await dataService.getTasks(categoryFilepath);
                 const fresh = tasks.find(t => t.id === task?.id);
                 if (fresh) {
-                    task = { ...fresh, steps: fresh.steps.map((s: any) => ({ ...s })) };
+                    task = { ...fresh, steps: ensureStepIds(fresh.id, fresh.steps ? fresh.steps.map((s: any) => ({ ...s })) : []) };
                 }
             }
         }
@@ -302,6 +307,7 @@
         if (saveTimeout) clearTimeout(saveTimeout);
         saveTimeout = setTimeout(async () => {
             if (!task || !categoryFilepath) return;
+            task.steps = persistableSteps(task.steps);
             if (task.note_link && plugin?.app) {
                 const syncRes = await LinkedNoteService.syncTaskTitleToNote(plugin.app, task, categoryFilepath, dataService);
                 if (syncRes.noteRenamed && syncRes.newNoteLink) {
@@ -352,6 +358,7 @@
     async function immediateSave() {
         if (saveTimeout) clearTimeout(saveTimeout);
         if (!task || !categoryFilepath) return;
+        task.steps = persistableSteps(task.steps);
         if (task.note_link && plugin?.app) {
             const syncRes = await LinkedNoteService.syncTaskTitleToNote(plugin.app, task, categoryFilepath, dataService);
             if (syncRes.noteRenamed && syncRes.newNoteLink) {
@@ -454,7 +461,12 @@
     function addStep() {
         const text = newStepText.trim();
         if (!text || !task) return;
-        task.steps = [...task.steps, { text, done: false }];
+        const newStep: TaskStep = {
+            id: `${task.id}-step-${Date.now()}-${task.steps.length}`,
+            text,
+            done: false
+        };
+        task.steps = [...task.steps, newStep];
         newStepText = "";
         task = task;
         scheduleSave();
@@ -466,24 +478,42 @@
         }
     }
 
-    function toggleStepDone(index: number) {
-        if (!task) return;
-        task.steps[index].done = !task.steps[index].done;
-        task.steps = [...task.steps]; // trigger reactivity
+    function toggleStepDone(stepId?: string) {
+        if (!task || !stepId) return;
+        const step = task.steps.find(s => s.id === stepId);
+        if (step) {
+            step.done = !step.done;
+            task.steps = [...task.steps]; // trigger reactivity
+            task = task;
+            scheduleSave();
+        }
+    }
+
+    function updateStepText(stepId: string | undefined, newText: string) {
+        if (!task || !stepId) return;
+        const step = task.steps.find(s => s.id === stepId);
+        if (step) {
+            step.text = newText;
+            scheduleSave();
+        }
+    }
+
+    function deleteStep(stepId?: string) {
+        if (!task || !stepId) return;
+        task.steps = task.steps.filter(s => s.id !== stepId);
         task = task;
         scheduleSave();
     }
 
-    function updateStepText(index: number, newText: string) {
+    function handleDndConsider(e: CustomEvent<{ items: TaskStep[] }>) {
         if (!task) return;
-        task.steps[index].text = newText;
-        scheduleSave();
+        task.steps = e.detail.items;
+        task = task;
     }
 
-    function deleteStep(index: number) {
+    function handleDndFinalize(e: CustomEvent<{ items: TaskStep[] }>) {
         if (!task) return;
-        task.steps.splice(index, 1);
-        task.steps = [...task.steps];
+        task.steps = persistableSteps(e.detail.items);
         task = task;
         scheduleSave();
     }
@@ -700,12 +730,33 @@
             </div>
 
             <!-- Steps -->
-            <div class="steps-container">
-                {#each task.steps as step, i (i)}
-                    <div class="step-item">
-                        <span class="checkbox" on:click={() => toggleStepDone(i)}
+            <div
+                class="steps-container"
+                use:dndzone={{
+                    items: task.steps,
+                    flipDurationMs: DND_FLIP_DURATION,
+                    dropAnimationDisabled: true,
+                    dropTargetStyle: {},
+                    type: 'task-step-' + task.id
+                }}
+                on:consider={handleDndConsider}
+                on:finalize={handleDndFinalize}
+            >
+                {#each task.steps as step (step.id)}
+                    <div class="step-item" animate:flip={{ duration: DND_FLIP_DURATION }}>
+                        <span class="step-drag-handle" title="Drag to reorder">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="9" cy="5" r="1.8"/>
+                                <circle cx="15" cy="5" r="1.8"/>
+                                <circle cx="9" cy="12" r="1.8"/>
+                                <circle cx="15" cy="12" r="1.8"/>
+                                <circle cx="9" cy="19" r="1.8"/>
+                                <circle cx="15" cy="19" r="1.8"/>
+                            </svg>
+                        </span>
+                        <span class="checkbox" on:click|stopPropagation={() => toggleStepDone(step.id)}
                               role="checkbox" aria-checked={step.done} tabindex="0"
-                              on:keydown={(e) => e.key === "Enter" && toggleStepDone(i)}>
+                              on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleStepDone(step.id)}>
                             {#if step.done}
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
                                      stroke="var(--todo-accent)" stroke-width="2">
@@ -724,7 +775,7 @@
                             rows="1"
                             value={step.text}
                             class:completed={step.done}
-                            on:input={(e) => updateStepText(i, e.currentTarget.value)}
+                            on:input={(e) => updateStepText(step.id, e.currentTarget.value)}
                             on:keydown={(e) => {
                                 if (e.key === "Enter" && !e.shiftKey) {
                                     e.preventDefault();
@@ -733,9 +784,9 @@
                             }}
                             placeholder="Step text"
                         />
-                        <span class="delete-step" on:click={() => deleteStep(i)}
+                        <span class="delete-step" on:click|stopPropagation={() => deleteStep(step.id)}
                               role="button" tabindex="0"
-                              on:keydown={(e) => e.key === "Enter" && deleteStep(i)}>
+                              on:keydown|stopPropagation={(e) => e.key === "Enter" && deleteStep(step.id)}>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                                  stroke="currentColor" stroke-width="2">
                                 <line x1="18" y1="6" x2="6" y2="18"/>

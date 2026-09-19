@@ -113,10 +113,10 @@ export class MarkdownParser {
             const cleanSteps: TaskStep[] = Array.isArray(meta.steps)
                 ? (meta.steps as unknown[])
                     .filter((s): s is Record<string, unknown> => !!s && typeof s === "object")
-                    .map((s) => ({
+                    .map((s, idx) => ({
                         text: typeof s.text === "string" ? s.text.trimEnd() : "",
                         done: Boolean(s.done),
-                        ...(typeof s.id === "string" && s.id.length > 0 ? { id: s.id } : {}),
+                        id: typeof s.id === "string" && s.id.length > 0 ? s.id : `${id}-step-${idx}`,
                     }))
                 : [];
 

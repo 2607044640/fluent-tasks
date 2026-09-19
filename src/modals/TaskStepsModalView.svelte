@@ -1,10 +1,13 @@
 <script lang="ts">
     import { onMount, onDestroy, tick } from "svelte";
-    import type { TaskItem } from "../types";
+    import { dndzone } from "svelte-dnd-action";
+    import { flip } from "svelte/animate";
+    import type { TaskItem, TaskStep } from "../types";
     import { EventName } from "../types";
     import { EventBus } from "../EventBus";
     import { autosize } from "../utils/domUtils";
     import type { DataService } from "../DataService";
+    import { ensureStepIds, persistableSteps } from "../utils/stepIds";
 
     // =============================================
     // Props
@@ -17,12 +20,13 @@
     // =============================================
     // Local State
     // =============================================
-    let steps: { text: string; done: boolean }[] = task.steps ? task.steps.map(s => ({ ...s })) : [];
+    let steps: TaskStep[] = task.steps ? ensureStepIds(task.id, task.steps) : [];
     let newStepText: string = "";
     let addInputEl: HTMLTextAreaElement;
     let modalBodyEl: HTMLElement;
     let saveTimeout: any = null;
     const SAVE_DEBOUNCE_MS = 400;
+    const DND_FLIP_DURATION = 150;
 
     $: completedCount = steps.filter(s => s.done).length;
     $: totalCount = steps.length;
@@ -37,7 +41,7 @@
             saveTimeout = null;
         }
         if (!task || !categoryFilepath) return;
-        task.steps = steps.map(s => ({ ...s }));
+        task.steps = persistableSteps(steps);
         await dataService.updateTask(categoryFilepath, task);
         EventBus.emit(EventName.TASK_UPDATED, { task, categoryFilepath });
     }
@@ -53,39 +57,56 @@
         if (saveTimeout) {
             window.clearTimeout(saveTimeout);
             saveTimeout = null;
-            task.steps = steps.map(s => ({ ...s }));
+            task.steps = persistableSteps(steps);
             void dataService.updateTask(categoryFilepath, task);
             EventBus.emit(EventName.TASK_UPDATED, { task, categoryFilepath });
         }
     }
 
     // =============================================
-    // Step Actions
+    // Step Actions & Drag-and-Drop
     // =============================================
-    async function toggleStep(index: number) {
-        if (index < 0 || index >= steps.length) return;
-        steps[index].done = !steps[index].done;
+    async function toggleStep(stepId?: string) {
+        if (!stepId) return;
+        const step = steps.find(s => s.id === stepId);
+        if (!step) return;
+        step.done = !step.done;
         steps = [...steps];
         await persistTask();
     }
 
-    function handleStepInput(index: number, newText: string) {
-        if (index < 0 || index >= steps.length) return;
-        steps[index].text = newText;
+    function handleStepInput(stepId: string | undefined, newText: string) {
+        if (!stepId) return;
+        const step = steps.find(s => s.id === stepId);
+        if (!step) return;
+        step.text = newText;
         scheduleSave();
     }
 
-    async function deleteStep(index: number) {
-        if (index < 0 || index >= steps.length) return;
-        steps.splice(index, 1);
-        steps = [...steps];
+    async function deleteStep(stepId?: string) {
+        if (!stepId) return;
+        steps = steps.filter(s => s.id !== stepId);
+        await persistTask();
+    }
+
+    function handleDndConsider(e: CustomEvent<{ items: TaskStep[] }>) {
+        steps = e.detail.items;
+    }
+
+    async function handleDndFinalize(e: CustomEvent<{ items: TaskStep[] }>) {
+        steps = persistableSteps(e.detail.items);
         await persistTask();
     }
 
     async function addStep() {
         const trimmed = newStepText.trim();
         if (!trimmed) return;
-        steps = [...steps, { text: trimmed, done: false }];
+        const newStep: TaskStep = {
+            id: `${task.id}-step-${Date.now()}-${steps.length}`,
+            text: trimmed,
+            done: false
+        };
+        steps = [...steps, newStep];
         newStepText = "";
         await persistTask();
         await tick();
@@ -93,8 +114,8 @@
         modalBodyEl?.scrollTo({ top: modalBodyEl.scrollHeight, behavior: 'smooth' });
     }
 
-    function handleStepKeydown(e: KeyboardEvent, index: number) {
-        if (e.isComposing || e.keyCode === 229) return;
+    function handleStepKeydown(e: KeyboardEvent, stepId?: string) {
+        if (!stepId || e.isComposing || e.keyCode === 229) return;
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
             (e.currentTarget as HTMLElement).blur();
@@ -120,7 +141,7 @@
         if (payload.categoryFilepath === categoryFilepath && payload.isExternal) {
             if (payload.task && payload.task.id === task.id) {
                 task = payload.task;
-                steps = task.steps ? task.steps.map((s: any) => ({ ...s })) : [];
+                steps = ensureStepIds(task.id, task.steps || []);
             }
         }
     }
@@ -185,15 +206,42 @@
                 <p>No subtasks yet. Add one below to break down this task.</p>
             </div>
         {:else}
-            <div class="task-steps-list">
-                {#each steps as step, i (i)}
-                    <div class="steps-modal-item" class:is-done={step.done}>
+            <div
+                class="task-steps-list"
+                use:dndzone={{
+                    items: steps,
+                    flipDurationMs: DND_FLIP_DURATION,
+                    dropAnimationDisabled: true,
+                    dropTargetStyle: {},
+                    type: 'task-step-' + task.id
+                }}
+                on:consider={handleDndConsider}
+                on:finalize={handleDndFinalize}
+            >
+                {#each steps as step (step.id)}
+                    <div
+                        class="steps-modal-item"
+                        class:is-done={step.done}
+                        animate:flip={{ duration: DND_FLIP_DURATION }}
+                    >
+                        <!-- Drag handle -->
+                        <span class="steps-modal-drag-handle" title="Drag to reorder">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="9" cy="5" r="1.8" />
+                                <circle cx="15" cy="5" r="1.8" />
+                                <circle cx="9" cy="12" r="1.8" />
+                                <circle cx="15" cy="12" r="1.8" />
+                                <circle cx="9" cy="19" r="1.8" />
+                                <circle cx="15" cy="19" r="1.8" />
+                            </svg>
+                        </span>
+
                         <!-- Checkbox -->
                         <button
                             type="button"
                             class="steps-modal-checkbox"
                             class:checked={step.done}
-                            on:click={() => toggleStep(i)}
+                            on:click|stopPropagation={() => toggleStep(step.id)}
                             aria-label={step.done ? "Mark step incomplete" : "Mark step complete"}
                         >
                             {#if step.done}
@@ -216,16 +264,16 @@
                             class:completed={step.done}
                             value={step.text}
                             placeholder="Step description..."
-                            on:input={(e) => handleStepInput(i, e.currentTarget.value)}
+                            on:input={(e) => handleStepInput(step.id, e.currentTarget.value)}
                             on:blur={flushSaveSync}
-                            on:keydown={(e) => handleStepKeydown(e, i)}
+                            on:keydown={(e) => handleStepKeydown(e, step.id)}
                         />
 
                         <!-- Delete step button -->
                         <button
                             type="button"
                             class="steps-modal-delete-btn"
-                            on:click={() => deleteStep(i)}
+                            on:click|stopPropagation={() => deleteStep(step.id)}
                             title="Delete step"
                             aria-label="Delete step"
                         >

@@ -45,6 +45,10 @@ export class Logger {
         }
     }
 
+    static async error(...args: unknown[]): Promise<void> {
+        return this.log("[ERROR]", ...args);
+    }
+
     static async clear(): Promise<void> {
         if (!this.app) return;
         try {

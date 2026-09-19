@@ -723,6 +723,33 @@
     padding: 10px 15px 10px 40px;
 }
 
+.steps-container:focus {
+    outline: none;
+}
+
+.step-drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    color: var(--todo-text-muted, #888);
+    opacity: 0.35;
+    transition: opacity 0.15s ease, color 0.15s ease;
+    margin-top: 4px;
+    flex-shrink: 0;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.step-item:hover .step-drag-handle {
+    opacity: 0.85;
+    color: var(--todo-accent, #0078d4);
+}
+
+.step-drag-handle:active {
+    cursor: grabbing;
+}
+
 .step-item {
     display: flex;
     align-items: flex-start;
@@ -3289,6 +3316,33 @@ body .task-steps-floating-modal .modal-content.task-steps-modal-content {
     display: flex;
     flex-direction: column;
     gap: 8px;
+}
+
+.task-steps-list:focus {
+    outline: none;
+}
+
+.steps-modal-drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    color: var(--todo-text-muted, var(--text-muted, #888));
+    opacity: 0.35;
+    transition: opacity 0.15s ease, color 0.15s ease;
+    margin-top: 5px;
+    flex-shrink: 0;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.steps-modal-item:hover .steps-modal-drag-handle {
+    opacity: 0.85;
+    color: var(--todo-accent, #0078d4);
+}
+
+.steps-modal-drag-handle:active {
+    cursor: grabbing;
 }
 
 .steps-modal-item {
