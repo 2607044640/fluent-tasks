@@ -7,12 +7,13 @@
     import { EventName, type TaskItem, type TaskStep, type RecurrenceRule } from "./types";
     import { SAVE_DEBOUNCE_MS } from "./constants";
     import { portal, autosize } from "./utils/domUtils";
-    import { ensureStepIds, persistableSteps } from "./utils/stepIds";
+    import { ensureStepIds, persistableSteps, reconcileDndSteps } from "./utils/stepIds";
     import { DAY_LABELS, formatExactTime, getRelativeTime, getRecurrenceLabel } from "./utils/timeUtils";
     import { LinkedNoteService } from "./services/LinkedNoteService";
     import { promptDeleteTaskWithLinkedNote } from "./modals/ConfirmDeleteLinkedNoteModal";
     import { Menu, Notice } from "obsidian";
     import { t } from "./lang/helpers";
+    import { Logger } from "./Logger";
 
     const DND_FLIP_DURATION = 150;
 
@@ -33,6 +34,8 @@
     let showScheduleSection: boolean = false;
     let showRepeatPicker: boolean = false;
     let detailBodyEl: HTMLElement | null = null;
+    let isDraggingSteps: boolean = false;
+    let preDndSteps: TaskStep[] = [];
 
     function handleContainerWheel(e: WheelEvent) {
         if (detailBodyEl && e.target && !detailBodyEl.contains(e.target as Node)) {
@@ -286,7 +289,7 @@
     }
 
     async function handleExternalTaskUpdate(payload: any) {
-        if (!task || !categoryFilepath) return;
+        if (!task || !categoryFilepath || isDraggingSteps) return;
         if (!payload.categoryFilepath || payload.categoryFilepath === categoryFilepath) {
             if (payload.task && payload.task.id === task.id) {
                 task = { ...payload.task, steps: ensureStepIds(payload.task.id, payload.task.steps ? payload.task.steps.map((s: any) => ({ ...s })) : []) };
@@ -307,9 +310,13 @@
     // Auto-Save (Debounced)
     // =============================================
     function scheduleSave() {
+        if (isDraggingSteps) {
+            void Logger.log(`[DND Detail] scheduleSave suppressed during active drag`);
+            return;
+        }
         if (saveTimeout) clearTimeout(saveTimeout);
         saveTimeout = setTimeout(async () => {
-            if (!task || !categoryFilepath) return;
+            if (!task || !categoryFilepath || isDraggingSteps) return;
             task.steps = persistableSteps(task.steps);
             if (task.note_link && plugin?.app) {
                 const syncRes = await LinkedNoteService.syncTaskTitleToNote(plugin.app, task, categoryFilepath, dataService);
@@ -360,7 +367,7 @@
 
     async function immediateSave() {
         if (saveTimeout) clearTimeout(saveTimeout);
-        if (!task || !categoryFilepath) return;
+        if (!task || !categoryFilepath || isDraggingSteps) return;
         task.steps = persistableSteps(task.steps);
         if (task.note_link && plugin?.app) {
             const syncRes = await LinkedNoteService.syncTaskTitleToNote(plugin.app, task, categoryFilepath, dataService);
@@ -472,6 +479,8 @@
         task.steps = [...task.steps, newStep];
         newStepText = "";
         task = task;
+        void Logger.log(`[DND Detail] Added step: taskId=${task.id}, stepId=${newStep.id}, text="${newStep.text}", totalSteps=${task.steps.length}`);
+        console.log(`[FluentTasks] Added step: taskId=${task.id}, stepId=${newStep.id}, total=${task.steps.length}`);
         scheduleSave();
     }
 
@@ -488,6 +497,8 @@
             step.done = !step.done;
             task.steps = [...task.steps]; // trigger reactivity
             task = task;
+            void Logger.log(`[DND Detail] Toggled step done: taskId=${task.id}, stepId=${stepId}, done=${step.done}`);
+            console.log(`[FluentTasks] Toggled step: taskId=${task.id}, stepId=${stepId}, done=${step.done}`);
             scheduleSave();
         }
     }
@@ -508,6 +519,8 @@
         const deletedStep = { ...task.steps[index] };
         task.steps = task.steps.filter(s => s.id !== stepId);
         task = task;
+        void Logger.log(`[DND Detail] Deleted step: taskId=${task.id}, stepId=${stepId}, text="${deletedStep.text}", remaining=${task.steps.length}`);
+        console.log(`[FluentTasks] Deleted step: taskId=${task.id}, stepId=${stepId}, remaining=${task.steps.length}`);
         await immediateSave();
         EventBus.emit(EventName.STEP_DELETED, {
             taskId: task.id,
@@ -517,16 +530,44 @@
         });
     }
 
-    function handleDndConsider(e: CustomEvent<{ items: TaskStep[] }>) {
+    function handleDndConsider(e: CustomEvent<{ items: TaskStep[]; info: any }>) {
         if (!task) return;
-        task.steps = e.detail.items;
+        const trigger = e.detail.info?.trigger || "unknown";
+        const incoming = e.detail.items || [];
+
+        if (!isDraggingSteps) {
+            isDraggingSteps = true;
+            preDndSteps = task.steps ? task.steps.map(s => ({ ...s })) : [];
+            if (saveTimeout) {
+                clearTimeout(saveTimeout);
+                saveTimeout = null;
+            }
+            void Logger.log(`[DND Detail] Drag started: taskId="${task.id}", preCount=${preDndSteps.length}, trigger=${trigger}`, {
+                stepIds: preDndSteps.map(s => s.id)
+            });
+            console.log(`[FluentTasks DND] Drag started: taskId=${task.id}, count=${preDndSteps.length}, trigger=${trigger}`);
+        }
+
+        void Logger.log(`[DND Detail] Consider: trigger=${trigger}, incomingCount=${incoming.length}`);
+        task.steps = incoming;
         task = task;
     }
 
-    function handleDndFinalize(e: CustomEvent<{ items: TaskStep[] }>) {
+    function handleDndFinalize(e: CustomEvent<{ items: TaskStep[]; info: any }>) {
         if (!task) return;
-        task.steps = persistableSteps(e.detail.items);
+        const trigger = e.detail.info?.trigger || "unknown";
+        const incoming = e.detail.items || [];
+
+        void Logger.log(`[DND Detail] Finalize initiated: trigger=${trigger}, incomingCount=${incoming.length}, preCount=${preDndSteps.length}`);
+        console.log(`[FluentTasks DND] Finalize: trigger=${trigger}, incoming=${incoming.length}, preCount=${preDndSteps.length}`);
+
+        const safeSteps = reconcileDndSteps(preDndSteps, incoming, trigger);
+        task.steps = safeSteps;
         task = task;
+        isDraggingSteps = false;
+        preDndSteps = [];
+
+        void Logger.log(`[DND Detail] Finalize completed: finalCount=${safeSteps.length}, stepIds=${safeSteps.map(s => s.id).join(",")}`);
         scheduleSave();
     }
 
@@ -742,73 +783,77 @@
             </div>
 
             <!-- Steps -->
-            <div
-                class="steps-container"
-                use:dndzone={{
-                    items: task.steps,
-                    flipDurationMs: DND_FLIP_DURATION,
-                    dropAnimationDisabled: true,
-                    dropTargetStyle: {},
-                    type: 'task-step-' + task.id
-                }}
-                on:consider={handleDndConsider}
-                on:finalize={handleDndFinalize}
-            >
-                {#each task.steps as step (step.id)}
-                    <div class="step-item" animate:flip={{ duration: DND_FLIP_DURATION }}>
-                        <span class="step-drag-handle" title="Drag to reorder">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                                <circle cx="9" cy="5" r="1.8"/>
-                                <circle cx="15" cy="5" r="1.8"/>
-                                <circle cx="9" cy="12" r="1.8"/>
-                                <circle cx="15" cy="12" r="1.8"/>
-                                <circle cx="9" cy="19" r="1.8"/>
-                                <circle cx="15" cy="19" r="1.8"/>
-                            </svg>
-                        </span>
-                        <span class="checkbox" on:click|stopPropagation={() => toggleStepDone(step.id)}
-                              role="checkbox" aria-checked={step.done} tabindex="0"
-                              on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleStepDone(step.id)}>
-                            {#if step.done}
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                     stroke="var(--todo-accent)" stroke-width="2">
-                                    <circle cx="12" cy="12" r="10"/>
-                                    <polyline points="8 12 11 15 16 9"/>
-                                </svg>
-                            {:else}
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                     stroke="currentColor" stroke-width="2">
-                                    <circle cx="12" cy="12" r="10"/>
-                                </svg>
-                            {/if}
-                        </span>
-                        <textarea
-                            use:autosize={step.text}
-                            rows="1"
-                            value={step.text}
-                            class:completed={step.done}
-                            on:input={(e) => updateStepText(step.id, e.currentTarget.value)}
-                            on:keydown={(e) => {
-                                if (e.key === "Enter" && !e.shiftKey) {
-                                    e.preventDefault();
-                                    e.currentTarget.blur();
-                                }
-                            }}
-                            placeholder="Step text"
-                        />
-                        <span class="delete-step" on:click|stopPropagation={() => deleteStep(step.id)}
-                              role="button" tabindex="0"
-                              on:keydown|stopPropagation={(e) => e.key === "Enter" && deleteStep(step.id)}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                 stroke="currentColor" stroke-width="2">
-                                <line x1="18" y1="6" x2="6" y2="18"/>
-                                <line x1="6" y1="6" x2="18" y2="18"/>
-                            </svg>
-                        </span>
+            <div class="steps-container">
+                {#if task.steps && task.steps.length > 0}
+                    <div
+                        class="steps-dnd-zone"
+                        use:dndzone={{
+                            items: task.steps,
+                            flipDurationMs: DND_FLIP_DURATION,
+                            dropAnimationDisabled: true,
+                            dropTargetStyle: {},
+                            type: 'task-step-' + task.id
+                        }}
+                        on:consider={handleDndConsider}
+                        on:finalize={handleDndFinalize}
+                    >
+                        {#each task.steps as step (step.id)}
+                            <div class="step-item" animate:flip={{ duration: DND_FLIP_DURATION }}>
+                                <span class="step-drag-handle" title="Drag to reorder">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                                        <circle cx="9" cy="5" r="1.8"/>
+                                        <circle cx="15" cy="5" r="1.8"/>
+                                        <circle cx="9" cy="12" r="1.8"/>
+                                        <circle cx="15" cy="12" r="1.8"/>
+                                        <circle cx="9" cy="19" r="1.8"/>
+                                        <circle cx="15" cy="19" r="1.8"/>
+                                    </svg>
+                                </span>
+                                <span class="checkbox" on:click|stopPropagation={() => toggleStepDone(step.id)}
+                                      role="checkbox" aria-checked={step.done} tabindex="0"
+                                      on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleStepDone(step.id)}>
+                                    {#if step.done}
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                             stroke="var(--todo-accent)" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"/>
+                                            <polyline points="8 12 11 15 16 9"/>
+                                        </svg>
+                                    {:else}
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                             stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"/>
+                                        </svg>
+                                    {/if}
+                                </span>
+                                <textarea
+                                    use:autosize={step.text}
+                                    rows="1"
+                                    value={step.text}
+                                    class:completed={step.done}
+                                    on:input={(e) => updateStepText(step.id, e.currentTarget.value)}
+                                    on:keydown={(e) => {
+                                        if (e.key === "Enter" && !e.shiftKey) {
+                                            e.preventDefault();
+                                            e.currentTarget.blur();
+                                        }
+                                    }}
+                                    placeholder="Step text"
+                                />
+                                <span class="delete-step" on:click|stopPropagation={() => deleteStep(step.id)}
+                                      role="button" tabindex="0"
+                                      on:keydown|stopPropagation={(e) => e.key === "Enter" && deleteStep(step.id)}>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                         stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"/>
+                                        <line x1="6" y1="6" x2="18" y2="18"/>
+                                    </svg>
+                                </span>
+                            </div>
+                        {/each}
                     </div>
-                {/each}
+                {/if}
 
-                <!-- Add step row -->
+                <!-- Add step row (kept outside dndzone so dndzone children strictly equal items) -->
                 <div class="add-step-row">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

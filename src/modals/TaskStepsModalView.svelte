@@ -7,7 +7,8 @@
     import { EventBus } from "../EventBus";
     import { autosize } from "../utils/domUtils";
     import type { DataService } from "../DataService";
-    import { ensureStepIds, persistableSteps } from "../utils/stepIds";
+    import { ensureStepIds, persistableSteps, reconcileDndSteps } from "../utils/stepIds";
+    import { Logger } from "../Logger";
 
     // =============================================
     // Props
@@ -25,6 +26,8 @@
     let addInputEl: HTMLTextAreaElement;
     let modalBodyEl: HTMLElement;
     let saveTimeout: any = null;
+    let isDraggingSteps: boolean = false;
+    let preDndSteps: TaskStep[] = [];
     const SAVE_DEBOUNCE_MS = 400;
     const DND_FLIP_DURATION = 150;
 
@@ -40,13 +43,17 @@
             window.clearTimeout(saveTimeout);
             saveTimeout = null;
         }
-        if (!task || !categoryFilepath) return;
+        if (!task || !categoryFilepath || isDraggingSteps) return;
         task.steps = persistableSteps(steps);
         await dataService.updateTask(categoryFilepath, task);
         EventBus.emit(EventName.TASK_UPDATED, { task, categoryFilepath });
     }
 
     function scheduleSave() {
+        if (isDraggingSteps) {
+            void Logger.log(`[DND Modal] scheduleSave suppressed during active drag`);
+            return;
+        }
         if (saveTimeout) window.clearTimeout(saveTimeout);
         saveTimeout = window.setTimeout(async () => {
             await persistTask();
@@ -89,6 +96,8 @@
         if (index === -1) return;
         const deletedStep = { ...steps[index] };
         steps = steps.filter(s => s.id !== stepId);
+        void Logger.log(`[DND Modal] Deleted step: taskId=${task.id}, stepId=${stepId}, text="${deletedStep.text}", remaining=${steps.length}`);
+        console.log(`[FluentTasks Modal] Deleted step: taskId=${task.id}, stepId=${stepId}, remaining=${steps.length}`);
         await persistTask();
         EventBus.emit(EventName.STEP_DELETED, {
             taskId: task.id,
@@ -98,12 +107,42 @@
         });
     }
 
-    function handleDndConsider(e: CustomEvent<{ items: TaskStep[] }>) {
-        steps = e.detail.items;
+    function handleDndConsider(e: CustomEvent<{ items: TaskStep[]; info: any }>) {
+        if (!task) return;
+        const trigger = e.detail.info?.trigger || "unknown";
+        const incoming = e.detail.items || [];
+
+        if (!isDraggingSteps) {
+            isDraggingSteps = true;
+            preDndSteps = steps ? steps.map(s => ({ ...s })) : [];
+            if (saveTimeout) {
+                window.clearTimeout(saveTimeout);
+                saveTimeout = null;
+            }
+            void Logger.log(`[DND Modal] Drag started: taskId="${task.id}", preCount=${preDndSteps.length}, trigger=${trigger}`, {
+                stepIds: preDndSteps.map(s => s.id)
+            });
+            console.log(`[FluentTasks DND Modal] Drag started: taskId=${task.id}, count=${preDndSteps.length}, trigger=${trigger}`);
+        }
+
+        void Logger.log(`[DND Modal] Consider: trigger=${trigger}, incomingCount=${incoming.length}`);
+        steps = incoming;
     }
 
-    async function handleDndFinalize(e: CustomEvent<{ items: TaskStep[] }>) {
-        steps = persistableSteps(e.detail.items);
+    async function handleDndFinalize(e: CustomEvent<{ items: TaskStep[]; info: any }>) {
+        if (!task) return;
+        const trigger = e.detail.info?.trigger || "unknown";
+        const incoming = e.detail.items || [];
+
+        void Logger.log(`[DND Modal] Finalize initiated: trigger=${trigger}, incomingCount=${incoming.length}, preCount=${preDndSteps.length}`);
+        console.log(`[FluentTasks DND Modal] Finalize: trigger=${trigger}, incoming=${incoming.length}, preCount=${preDndSteps.length}`);
+
+        const safeSteps = reconcileDndSteps(preDndSteps, incoming, trigger);
+        steps = safeSteps;
+        isDraggingSteps = false;
+        preDndSteps = [];
+
+        void Logger.log(`[DND Modal] Finalize completed: finalCount=${safeSteps.length}, stepIds=${safeSteps.map(s => s.id).join(",")}`);
         await persistTask();
     }
 
@@ -117,6 +156,8 @@
         };
         steps = [...steps, newStep];
         newStepText = "";
+        void Logger.log(`[DND Modal] Added step: taskId=${task.id}, stepId=${newStep.id}, text="${newStep.text}", totalSteps=${steps.length}`);
+        console.log(`[FluentTasks Modal] Added step: taskId=${task.id}, stepId=${newStep.id}, total=${steps.length}`);
         await persistTask();
         await tick();
         addInputEl?.focus();
@@ -146,7 +187,7 @@
 
     // External disk/AI sync listener
     async function handleExternalTaskUpdate(payload: any) {
-        if (!task || !categoryFilepath) return;
+        if (!task || !categoryFilepath || isDraggingSteps) return;
         if (!payload.categoryFilepath || payload.categoryFilepath === categoryFilepath) {
             if (payload.task && payload.task.id === task.id) {
                 task = payload.task;

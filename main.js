@@ -8030,11 +8030,57 @@ function persistableSteps(steps) {
     return out;
   });
 }
+function reconcileDndSteps(preDragSteps, incomingItems, trigger) {
+  var _a, _b;
+  const preMap = /* @__PURE__ */ new Map();
+  for (const s of preDragSteps) {
+    if (s.id)
+      preMap.set(s.id, s);
+  }
+  const result = [];
+  const seenIds = /* @__PURE__ */ new Set();
+  for (const item of incomingItems) {
+    const id = item.id;
+    if (!id)
+      continue;
+    if (seenIds.has(id))
+      continue;
+    const original = preMap.get(id);
+    const isShadow = item[SHADOW_ITEM_MARKER_PROPERTY_NAME] === true;
+    if (isShadow && original) {
+      result.push({ text: original.text, done: original.done, id: original.id });
+      seenIds.add(id);
+    } else if (original) {
+      result.push({ text: (_a = item.text) != null ? _a : original.text, done: (_b = item.done) != null ? _b : original.done, id });
+      seenIds.add(id);
+    } else {
+      result.push({ text: item.text, done: item.done, id });
+      seenIds.add(id);
+    }
+  }
+  const missing = [];
+  for (const orig of preDragSteps) {
+    if (orig.id && !seenIds.has(orig.id)) {
+      missing.push({ text: orig.text, done: orig.done, id: orig.id });
+      seenIds.add(orig.id);
+    }
+  }
+  if (missing.length > 0) {
+    console.warn(`[FluentTasks DND Guard] Recovered ${missing.length} lost step(s):`, {
+      trigger,
+      missing,
+      preCount: preDragSteps.length,
+      incomingCount: incomingItems.length
+    });
+    result.push(...missing);
+  }
+  return result;
+}
 
 // src/modals/TaskStepsModalView.svelte
 function get_each_context2(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[31] = list[i];
+  child_ctx[33] = list[i];
   return child_ctx;
 }
 function create_if_block_22(ctx) {
@@ -8088,7 +8134,7 @@ function create_else_block2(ctx) {
   );
   const get_key = (ctx2) => (
     /*step*/
-    ctx2[31].id
+    ctx2[33].id
   );
   for (let i = 0; i < each_value.length; i += 1) {
     let child_ctx = get_each_context2(ctx, each_value, i);
@@ -8279,7 +8325,7 @@ function create_each_block2(key_1, ctx) {
   function select_block_type_1(ctx2, dirty) {
     if (
       /*step*/
-      ctx2[31].done
+      ctx2[33].done
     )
       return create_if_block_12;
     return create_else_block_12;
@@ -8291,7 +8337,7 @@ function create_each_block2(key_1, ctx) {
       /*click_handler*/
       ctx[19](
         /*step*/
-        ctx[31]
+        ctx[33]
       )
     );
   }
@@ -8300,7 +8346,7 @@ function create_each_block2(key_1, ctx) {
       /*input_handler*/
       ctx[20](
         /*step*/
-        ctx[31],
+        ctx[33],
         ...args
       )
     );
@@ -8310,7 +8356,7 @@ function create_each_block2(key_1, ctx) {
       /*keydown_handler*/
       ctx[21](
         /*step*/
-        ctx[31],
+        ctx[33],
         ...args
       )
     );
@@ -8320,7 +8366,7 @@ function create_each_block2(key_1, ctx) {
       /*click_handler_1*/
       ctx[22](
         /*step*/
-        ctx[31]
+        ctx[33]
       )
     );
   }
@@ -8345,23 +8391,23 @@ function create_each_block2(key_1, ctx) {
       attr(button0, "type", "button");
       attr(button0, "class", "steps-modal-checkbox");
       attr(button0, "aria-label", button0_aria_label_value = /*step*/
-      ctx[31].done ? "Mark step incomplete" : "Mark step complete");
+      ctx[33].done ? "Mark step incomplete" : "Mark step complete");
       toggle_class(
         button0,
         "checked",
         /*step*/
-        ctx[31].done
+        ctx[33].done
       );
       attr(textarea, "rows", "1");
       attr(textarea, "class", "steps-modal-textarea");
       textarea.value = textarea_value_value = /*step*/
-      ctx[31].text;
+      ctx[33].text;
       attr(textarea, "placeholder", "Step description...");
       toggle_class(
         textarea,
         "completed",
         /*step*/
-        ctx[31].done
+        ctx[33].done
       );
       attr(button1, "type", "button");
       attr(button1, "class", "steps-modal-delete-btn");
@@ -8372,7 +8418,7 @@ function create_each_block2(key_1, ctx) {
         div,
         "is-done",
         /*step*/
-        ctx[31].done
+        ctx[33].done
       );
       this.first = div;
     },
@@ -8394,7 +8440,7 @@ function create_each_block2(key_1, ctx) {
             null,
             textarea,
             /*step*/
-            ctx[31].text
+            ctx[33].text
           )),
           listen(textarea, "input", input_handler),
           listen(
@@ -8421,7 +8467,7 @@ function create_each_block2(key_1, ctx) {
       }
       if (dirty[0] & /*steps*/
       4 && button0_aria_label_value !== (button0_aria_label_value = /*step*/
-      ctx[31].done ? "Mark step incomplete" : "Mark step complete")) {
+      ctx[33].done ? "Mark step incomplete" : "Mark step complete")) {
         attr(button0, "aria-label", button0_aria_label_value);
       }
       if (dirty[0] & /*steps*/
@@ -8430,12 +8476,12 @@ function create_each_block2(key_1, ctx) {
           button0,
           "checked",
           /*step*/
-          ctx[31].done
+          ctx[33].done
         );
       }
       if (dirty[0] & /*steps*/
       4 && textarea_value_value !== (textarea_value_value = /*step*/
-      ctx[31].text)) {
+      ctx[33].text)) {
         textarea.value = textarea_value_value;
       }
       if (autosize_action && is_function(autosize_action.update) && dirty[0] & /*steps*/
@@ -8443,7 +8489,7 @@ function create_each_block2(key_1, ctx) {
         autosize_action.update.call(
           null,
           /*step*/
-          ctx[31].text
+          ctx[33].text
         );
       if (dirty[0] & /*steps*/
       4) {
@@ -8451,7 +8497,7 @@ function create_each_block2(key_1, ctx) {
           textarea,
           "completed",
           /*step*/
-          ctx[31].done
+          ctx[33].done
         );
       }
       if (dirty[0] & /*steps*/
@@ -8460,7 +8506,7 @@ function create_each_block2(key_1, ctx) {
           div,
           "is-done",
           /*step*/
-          ctx[31].done
+          ctx[33].done
         );
       }
     },
@@ -8797,18 +8843,24 @@ function instance2($$self, $$props, $$invalidate) {
   let addInputEl;
   let modalBodyEl;
   let saveTimeout = null;
+  let isDraggingSteps = false;
+  let preDndSteps = [];
   async function persistTask() {
     if (saveTimeout) {
       window.clearTimeout(saveTimeout);
       saveTimeout = null;
     }
-    if (!task || !categoryFilepath)
+    if (!task || !categoryFilepath || isDraggingSteps)
       return;
     $$invalidate(0, task.steps = persistableSteps(steps), task);
     await dataService.updateTask(categoryFilepath, task);
     EventBus.emit("task:updated" /* TASK_UPDATED */, { task, categoryFilepath });
   }
   function scheduleSave() {
+    if (isDraggingSteps) {
+      void Logger.log(`[DND Modal] scheduleSave suppressed during active drag`);
+      return;
+    }
     if (saveTimeout)
       window.clearTimeout(saveTimeout);
     saveTimeout = window.setTimeout(
@@ -8854,6 +8906,8 @@ function instance2($$self, $$props, $$invalidate) {
       return;
     const deletedStep = { ...steps[index] };
     $$invalidate(2, steps = steps.filter((s) => s.id !== stepId));
+    void Logger.log(`[DND Modal] Deleted step: taskId=${task.id}, stepId=${stepId}, text="${deletedStep.text}", remaining=${steps.length}`);
+    console.log(`[FluentTasks Modal] Deleted step: taskId=${task.id}, stepId=${stepId}, remaining=${steps.length}`);
     await persistTask();
     EventBus.emit("step:deleted" /* STEP_DELETED */, {
       taskId: task.id,
@@ -8863,10 +8917,37 @@ function instance2($$self, $$props, $$invalidate) {
     });
   }
   function handleDndConsider(e) {
-    $$invalidate(2, steps = e.detail.items);
+    var _a;
+    if (!task)
+      return;
+    const trigger = ((_a = e.detail.info) == null ? void 0 : _a.trigger) || "unknown";
+    const incoming = e.detail.items || [];
+    if (!isDraggingSteps) {
+      isDraggingSteps = true;
+      preDndSteps = steps ? steps.map((s) => ({ ...s })) : [];
+      if (saveTimeout) {
+        window.clearTimeout(saveTimeout);
+        saveTimeout = null;
+      }
+      void Logger.log(`[DND Modal] Drag started: taskId="${task.id}", preCount=${preDndSteps.length}, trigger=${trigger}`, { stepIds: preDndSteps.map((s) => s.id) });
+      console.log(`[FluentTasks DND Modal] Drag started: taskId=${task.id}, count=${preDndSteps.length}, trigger=${trigger}`);
+    }
+    void Logger.log(`[DND Modal] Consider: trigger=${trigger}, incomingCount=${incoming.length}`);
+    $$invalidate(2, steps = incoming);
   }
   async function handleDndFinalize(e) {
-    $$invalidate(2, steps = persistableSteps(e.detail.items));
+    var _a;
+    if (!task)
+      return;
+    const trigger = ((_a = e.detail.info) == null ? void 0 : _a.trigger) || "unknown";
+    const incoming = e.detail.items || [];
+    void Logger.log(`[DND Modal] Finalize initiated: trigger=${trigger}, incomingCount=${incoming.length}, preCount=${preDndSteps.length}`);
+    console.log(`[FluentTasks DND Modal] Finalize: trigger=${trigger}, incoming=${incoming.length}, preCount=${preDndSteps.length}`);
+    const safeSteps = reconcileDndSteps(preDndSteps, incoming, trigger);
+    $$invalidate(2, steps = safeSteps);
+    isDraggingSteps = false;
+    preDndSteps = [];
+    void Logger.log(`[DND Modal] Finalize completed: finalCount=${safeSteps.length}, stepIds=${safeSteps.map((s) => s.id).join(",")}`);
     await persistTask();
   }
   async function addStep() {
@@ -8880,6 +8961,8 @@ function instance2($$self, $$props, $$invalidate) {
     };
     $$invalidate(2, steps = [...steps, newStep]);
     $$invalidate(5, newStepText = "");
+    void Logger.log(`[DND Modal] Added step: taskId=${task.id}, stepId=${newStep.id}, text="${newStep.text}", totalSteps=${steps.length}`);
+    console.log(`[FluentTasks Modal] Added step: taskId=${task.id}, stepId=${newStep.id}, total=${steps.length}`);
     await persistTask();
     await tick();
     addInputEl == null ? void 0 : addInputEl.focus();
@@ -8901,7 +8984,7 @@ function instance2($$self, $$props, $$invalidate) {
     closeModal();
   }
   async function handleExternalTaskUpdate(payload) {
-    if (!task || !categoryFilepath)
+    if (!task || !categoryFilepath || isDraggingSteps)
       return;
     if (!payload.categoryFilepath || payload.categoryFilepath === categoryFilepath) {
       if (payload.task && payload.task.id === task.id) {
@@ -17529,24 +17612,24 @@ var TaskMainView_default = TaskMainView;
 var import_obsidian14 = require("obsidian");
 function get_each_context5(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[108] = list[i][0];
-  child_ctx[109] = list[i][1];
+  child_ctx[110] = list[i][0];
+  child_ctx[111] = list[i][1];
   return child_ctx;
 }
 function get_each_context_13(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[112] = list[i];
+  child_ctx[114] = list[i];
   return child_ctx;
 }
 function get_each_context_22(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[108] = list[i][0];
-  child_ctx[109] = list[i][1];
+  child_ctx[110] = list[i][0];
+  child_ctx[111] = list[i][1];
   return child_ctx;
 }
 function get_each_context_32(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[117] = list[i];
+  child_ctx[119] = list[i];
   return child_ctx;
 }
 function create_else_block_42(ctx) {
@@ -17555,7 +17638,7 @@ function create_else_block_42(ctx) {
   let span;
   let if_block = (
     /*isModal*/
-    ctx[1] && create_if_block_232(ctx)
+    ctx[1] && create_if_block_242(ctx)
   );
   return {
     c() {
@@ -17582,7 +17665,7 @@ function create_else_block_42(ctx) {
         if (if_block) {
           if_block.p(ctx2, dirty);
         } else {
-          if_block = create_if_block_232(ctx2);
+          if_block = create_if_block_242(ctx2);
           if_block.c();
           if_block.m(div, t0);
         }
@@ -17614,8 +17697,6 @@ function create_if_block5(ctx) {
   let t2;
   let t3;
   let div2;
-  let each_blocks = [];
-  let each_1_lookup = /* @__PURE__ */ new Map();
   let t4;
   let div1;
   let svg0;
@@ -17623,7 +17704,6 @@ function create_if_block5(ctx) {
   let line1;
   let t5;
   let input;
-  let dndzone_action;
   let t6;
   let div4;
   let textarea1;
@@ -17663,7 +17743,7 @@ function create_if_block5(ctx) {
   let t14;
   let span6;
   let t15;
-  let if_block6_anchor;
+  let if_block7_anchor;
   let mounted;
   let dispose;
   function select_block_type_1(ctx2, dirty) {
@@ -17671,7 +17751,7 @@ function create_if_block5(ctx) {
       /*task*/
       ctx2[2].completed
     )
-      return create_if_block_223;
+      return create_if_block_232;
     return create_else_block_33;
   }
   let current_block_type = select_block_type_1(ctx, [-1, -1, -1, -1]);
@@ -17681,30 +17761,22 @@ function create_if_block5(ctx) {
       /*hasLinkedNote*/
       ctx2[3]
     )
-      return create_if_block_212;
+      return create_if_block_223;
     return create_else_block_23;
   }
   let current_block_type_1 = select_block_type_2(ctx, [-1, -1, -1, -1]);
   let if_block1 = current_block_type_1(ctx);
   let if_block2 = (
     /*isModal*/
-    ctx[1] && create_if_block_202(ctx)
+    ctx[1] && create_if_block_212(ctx)
   );
-  let each_value_3 = ensure_array_like(
+  let if_block3 = (
     /*task*/
-    ctx[2].steps
+    ctx[2].steps && /*task*/
+    ctx[2].steps.length > 0 && create_if_block_192(ctx)
   );
-  const get_key = (ctx2) => (
-    /*step*/
-    ctx2[117].id
-  );
-  for (let i = 0; i < each_value_3.length; i += 1) {
-    let child_ctx = get_each_context_32(ctx, each_value_3, i);
-    let key = get_key(child_ctx);
-    each_1_lookup.set(key, each_blocks[i] = create_each_block_32(key, child_ctx));
-  }
-  let if_block3 = show_if && create_if_block_142(ctx);
-  let if_block4 = (
+  let if_block4 = show_if && create_if_block_142(ctx);
+  let if_block5 = (
     /*showScheduleSection*/
     ctx[6] && create_if_block_102(ctx)
   );
@@ -17722,8 +17794,8 @@ function create_if_block5(ctx) {
     return create_else_block5;
   }
   let current_block_type_2 = select_block_type_4(ctx, [-1, -1, -1, -1]);
-  let if_block5 = current_block_type_2(ctx);
-  let if_block6 = (
+  let if_block6 = current_block_type_2(ctx);
+  let if_block7 = (
     /*showAddMetaModal*/
     ctx[9] && create_if_block_111(ctx)
   );
@@ -17744,9 +17816,8 @@ function create_if_block5(ctx) {
         if_block2.c();
       t3 = space();
       div2 = element("div");
-      for (let i = 0; i < each_blocks.length; i += 1) {
-        each_blocks[i].c();
-      }
+      if (if_block3)
+        if_block3.c();
       t4 = space();
       div1 = element("div");
       svg0 = svg_element("svg");
@@ -17758,15 +17829,15 @@ function create_if_block5(ctx) {
       div4 = element("div");
       textarea1 = element("textarea");
       t7 = space();
-      if (if_block3)
-        if_block3.c();
-      t8 = space();
       if (if_block4)
         if_block4.c();
+      t8 = space();
+      if (if_block5)
+        if_block5.c();
       t9 = space();
       div7 = element("div");
       span2 = element("span");
-      if_block5.c();
+      if_block6.c();
       t10 = space();
       div6 = element("div");
       span4 = element("span");
@@ -17783,9 +17854,9 @@ function create_if_block5(ctx) {
       span6 = element("span");
       span6.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
       t15 = space();
-      if (if_block6)
-        if_block6.c();
-      if_block6_anchor = empty();
+      if (if_block7)
+        if_block7.c();
+      if_block7_anchor = empty();
       attr(span0, "class", "checkbox");
       attr(span0, "role", "checkbox");
       attr(span0, "aria-checked", span0_aria_checked_value = /*task*/
@@ -17914,11 +17985,8 @@ function create_if_block5(ctx) {
         if_block2.m(div0, null);
       append(div3, t3);
       append(div3, div2);
-      for (let i = 0; i < each_blocks.length; i += 1) {
-        if (each_blocks[i]) {
-          each_blocks[i].m(div2, null);
-        }
-      }
+      if (if_block3)
+        if_block3.m(div2, null);
       append(div2, t4);
       append(div2, div1);
       append(div1, svg0);
@@ -17940,16 +18008,16 @@ function create_if_block5(ctx) {
         ctx[2].note
       );
       append(div5, t7);
-      if (if_block3)
-        if_block3.m(div5, null);
+      if (if_block4)
+        if_block4.m(div5, null);
       ctx[68](div5);
       insert(target, t8, anchor);
-      if (if_block4)
-        if_block4.m(target, anchor);
+      if (if_block5)
+        if_block5.m(target, anchor);
       insert(target, t9, anchor);
       insert(target, div7, anchor);
       append(div7, span2);
-      if_block5.m(span2, null);
+      if_block6.m(span2, null);
       append(div7, t10);
       append(div7, div6);
       append(div6, span4);
@@ -17964,9 +18032,9 @@ function create_if_block5(ctx) {
       append(div7, t14);
       append(div7, span6);
       insert(target, t15, anchor);
-      if (if_block6)
-        if_block6.m(target, anchor);
-      insert(target, if_block6_anchor, anchor);
+      if (if_block7)
+        if_block7.m(target, anchor);
+      insert(target, if_block7_anchor, anchor);
       if (!mounted) {
         dispose = [
           listen(
@@ -18035,29 +18103,6 @@ function create_if_block5(ctx) {
             "keydown",
             /*handleStepKeydown*/
             ctx[32]
-          ),
-          action_destroyer(dndzone_action = dndzone.call(null, div2, {
-            items: (
-              /*task*/
-              ctx[2].steps
-            ),
-            flipDurationMs: DND_FLIP_DURATION3,
-            dropAnimationDisabled: true,
-            dropTargetStyle: {},
-            type: "task-step-" + /*task*/
-            ctx[2].id
-          })),
-          listen(
-            div2,
-            "consider",
-            /*handleDndConsider*/
-            ctx[36]
-          ),
-          listen(
-            div2,
-            "finalize",
-            /*handleDndFinalize*/
-            ctx[37]
           ),
           listen(
             textarea1,
@@ -18173,7 +18218,7 @@ function create_if_block5(ctx) {
         if (if_block2) {
           if_block2.p(ctx2, dirty);
         } else {
-          if_block2 = create_if_block_202(ctx2);
+          if_block2 = create_if_block_212(ctx2);
           if_block2.c();
           if_block2.m(div0, null);
         }
@@ -18181,18 +18226,21 @@ function create_if_block5(ctx) {
         if_block2.d(1);
         if_block2 = null;
       }
-      if (dirty[0] & /*task*/
-      4 | dirty[1] & /*deleteStep, updateStepText, toggleStepDone*/
-      28) {
-        each_value_3 = ensure_array_like(
-          /*task*/
-          ctx2[2].steps
-        );
-        for (let i = 0; i < each_blocks.length; i += 1)
-          each_blocks[i].r();
-        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_3, each_1_lookup, div2, fix_and_destroy_block, create_each_block_32, t4, get_each_context_32);
-        for (let i = 0; i < each_blocks.length; i += 1)
-          each_blocks[i].a();
+      if (
+        /*task*/
+        ctx2[2].steps && /*task*/
+        ctx2[2].steps.length > 0
+      ) {
+        if (if_block3) {
+          if_block3.p(ctx2, dirty);
+        } else {
+          if_block3 = create_if_block_192(ctx2);
+          if_block3.c();
+          if_block3.m(div2, t4);
+        }
+      } else if (if_block3) {
+        if_block3.d(1);
+        if_block3 = null;
       }
       if (dirty[0] & /*newStepText*/
       32 && input.value !== /*newStepText*/
@@ -18203,19 +18251,6 @@ function create_if_block5(ctx) {
           ctx2[5]
         );
       }
-      if (dndzone_action && is_function(dndzone_action.update) && dirty[0] & /*task*/
-      4)
-        dndzone_action.update.call(null, {
-          items: (
-            /*task*/
-            ctx2[2].steps
-          ),
-          flipDurationMs: DND_FLIP_DURATION3,
-          dropAnimationDisabled: true,
-          dropTargetStyle: {},
-          type: "task-step-" + /*task*/
-          ctx2[2].id
-        });
       if (dirty[0] & /*task*/
       4) {
         set_input_value(
@@ -18236,40 +18271,40 @@ function create_if_block5(ctx) {
           ctx2[2].customMeta
         ).length > 0;
       if (show_if) {
-        if (if_block3) {
-          if_block3.p(ctx2, dirty);
-        } else {
-          if_block3 = create_if_block_142(ctx2);
-          if_block3.c();
-          if_block3.m(div5, null);
-        }
-      } else if (if_block3) {
-        if_block3.d(1);
-        if_block3 = null;
-      }
-      if (
-        /*showScheduleSection*/
-        ctx2[6]
-      ) {
         if (if_block4) {
           if_block4.p(ctx2, dirty);
         } else {
-          if_block4 = create_if_block_102(ctx2);
+          if_block4 = create_if_block_142(ctx2);
           if_block4.c();
-          if_block4.m(t9.parentNode, t9);
+          if_block4.m(div5, null);
         }
       } else if (if_block4) {
         if_block4.d(1);
         if_block4 = null;
       }
-      if (current_block_type_2 === (current_block_type_2 = select_block_type_4(ctx2, dirty)) && if_block5) {
-        if_block5.p(ctx2, dirty);
-      } else {
-        if_block5.d(1);
-        if_block5 = current_block_type_2(ctx2);
+      if (
+        /*showScheduleSection*/
+        ctx2[6]
+      ) {
         if (if_block5) {
+          if_block5.p(ctx2, dirty);
+        } else {
+          if_block5 = create_if_block_102(ctx2);
           if_block5.c();
-          if_block5.m(span2, null);
+          if_block5.m(t9.parentNode, t9);
+        }
+      } else if (if_block5) {
+        if_block5.d(1);
+        if_block5 = null;
+      }
+      if (current_block_type_2 === (current_block_type_2 = select_block_type_4(ctx2, dirty)) && if_block6) {
+        if_block6.p(ctx2, dirty);
+      } else {
+        if_block6.d(1);
+        if_block6 = current_block_type_2(ctx2);
+        if (if_block6) {
+          if_block6.c();
+          if_block6.m(span2, null);
         }
       }
       if (dirty[0] & /*scheduleBadge*/
@@ -18324,16 +18359,16 @@ function create_if_block5(ctx) {
         /*showAddMetaModal*/
         ctx2[9]
       ) {
-        if (if_block6) {
-          if_block6.p(ctx2, dirty);
+        if (if_block7) {
+          if_block7.p(ctx2, dirty);
         } else {
-          if_block6 = create_if_block_111(ctx2);
-          if_block6.c();
-          if_block6.m(if_block6_anchor.parentNode, if_block6_anchor);
+          if_block7 = create_if_block_111(ctx2);
+          if_block7.c();
+          if_block7.m(if_block7_anchor.parentNode, if_block7_anchor);
         }
-      } else if (if_block6) {
-        if_block6.d(1);
-        if_block6 = null;
+      } else if (if_block7) {
+        if_block7.d(1);
+        if_block7 = null;
       }
     },
     d(detaching) {
@@ -18343,29 +18378,28 @@ function create_if_block5(ctx) {
         detach(t9);
         detach(div7);
         detach(t15);
-        detach(if_block6_anchor);
+        detach(if_block7_anchor);
       }
       if_block0.d();
       if_block1.d();
       if (if_block2)
         if_block2.d();
-      for (let i = 0; i < each_blocks.length; i += 1) {
-        each_blocks[i].d();
-      }
       if (if_block3)
         if_block3.d();
-      ctx[68](null);
       if (if_block4)
-        if_block4.d(detaching);
-      if_block5.d();
-      if (if_block6)
-        if_block6.d(detaching);
+        if_block4.d();
+      ctx[68](null);
+      if (if_block5)
+        if_block5.d(detaching);
+      if_block6.d();
+      if (if_block7)
+        if_block7.d(detaching);
       mounted = false;
       run_all(dispose);
     }
   };
 }
-function create_if_block_232(ctx) {
+function create_if_block_242(ctx) {
   let div;
   let span;
   let mounted;
@@ -18440,7 +18474,7 @@ function create_else_block_33(ctx) {
     }
   };
 }
-function create_if_block_223(ctx) {
+function create_if_block_232(ctx) {
   let svg;
   let circle;
   let polyline;
@@ -18518,7 +18552,7 @@ function create_else_block_23(ctx) {
     }
   };
 }
-function create_if_block_212(ctx) {
+function create_if_block_223(ctx) {
   let svg;
   let path0;
   let path1;
@@ -18550,7 +18584,7 @@ function create_if_block_212(ctx) {
     }
   };
 }
-function create_if_block_202(ctx) {
+function create_if_block_212(ctx) {
   let span;
   let mounted;
   let dispose;
@@ -18593,6 +18627,110 @@ function create_if_block_202(ctx) {
     }
   };
 }
+function create_if_block_192(ctx) {
+  let div;
+  let each_blocks = [];
+  let each_1_lookup = /* @__PURE__ */ new Map();
+  let dndzone_action;
+  let mounted;
+  let dispose;
+  let each_value_3 = ensure_array_like(
+    /*task*/
+    ctx[2].steps
+  );
+  const get_key = (ctx2) => (
+    /*step*/
+    ctx2[119].id
+  );
+  for (let i = 0; i < each_value_3.length; i += 1) {
+    let child_ctx = get_each_context_32(ctx, each_value_3, i);
+    let key = get_key(child_ctx);
+    each_1_lookup.set(key, each_blocks[i] = create_each_block_32(key, child_ctx));
+  }
+  return {
+    c() {
+      div = element("div");
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        each_blocks[i].c();
+      }
+      attr(div, "class", "steps-dnd-zone");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        if (each_blocks[i]) {
+          each_blocks[i].m(div, null);
+        }
+      }
+      if (!mounted) {
+        dispose = [
+          action_destroyer(dndzone_action = dndzone.call(null, div, {
+            items: (
+              /*task*/
+              ctx[2].steps
+            ),
+            flipDurationMs: DND_FLIP_DURATION3,
+            dropAnimationDisabled: true,
+            dropTargetStyle: {},
+            type: "task-step-" + /*task*/
+            ctx[2].id
+          })),
+          listen(
+            div,
+            "consider",
+            /*handleDndConsider*/
+            ctx[36]
+          ),
+          listen(
+            div,
+            "finalize",
+            /*handleDndFinalize*/
+            ctx[37]
+          )
+        ];
+        mounted = true;
+      }
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*task*/
+      4 | dirty[1] & /*deleteStep, updateStepText, toggleStepDone*/
+      28) {
+        each_value_3 = ensure_array_like(
+          /*task*/
+          ctx2[2].steps
+        );
+        for (let i = 0; i < each_blocks.length; i += 1)
+          each_blocks[i].r();
+        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_3, each_1_lookup, div, fix_and_destroy_block, create_each_block_32, null, get_each_context_32);
+        for (let i = 0; i < each_blocks.length; i += 1)
+          each_blocks[i].a();
+      }
+      if (dndzone_action && is_function(dndzone_action.update) && dirty[0] & /*task*/
+      4)
+        dndzone_action.update.call(null, {
+          items: (
+            /*task*/
+            ctx2[2].steps
+          ),
+          flipDurationMs: DND_FLIP_DURATION3,
+          dropAnimationDisabled: true,
+          dropTargetStyle: {},
+          type: "task-step-" + /*task*/
+          ctx2[2].id
+        });
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        each_blocks[i].d();
+      }
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
 function create_else_block_14(ctx) {
   let svg;
   let circle;
@@ -18621,7 +18759,7 @@ function create_else_block_14(ctx) {
     }
   };
 }
-function create_if_block_192(ctx) {
+function create_if_block_202(ctx) {
   let svg;
   let circle;
   let polyline;
@@ -18673,9 +18811,9 @@ function create_each_block_32(key_1, ctx) {
   function select_block_type_3(ctx2, dirty) {
     if (
       /*step*/
-      ctx2[117].done
+      ctx2[119].done
     )
-      return create_if_block_192;
+      return create_if_block_202;
     return create_else_block_14;
   }
   let current_block_type = select_block_type_3(ctx, [-1, -1, -1, -1]);
@@ -18685,7 +18823,7 @@ function create_each_block_32(key_1, ctx) {
       /*click_handler_1*/
       ctx[54](
         /*step*/
-        ctx[117]
+        ctx[119]
       )
     );
   }
@@ -18694,7 +18832,7 @@ function create_each_block_32(key_1, ctx) {
       /*keydown_handler_3*/
       ctx[55](
         /*step*/
-        ctx[117],
+        ctx[119],
         ...args
       )
     );
@@ -18704,7 +18842,7 @@ function create_each_block_32(key_1, ctx) {
       /*input_handler*/
       ctx[56](
         /*step*/
-        ctx[117],
+        ctx[119],
         ...args
       )
     );
@@ -18714,7 +18852,7 @@ function create_each_block_32(key_1, ctx) {
       /*click_handler_2*/
       ctx[57](
         /*step*/
-        ctx[117]
+        ctx[119]
       )
     );
   }
@@ -18723,7 +18861,7 @@ function create_each_block_32(key_1, ctx) {
       /*keydown_handler_5*/
       ctx[58](
         /*step*/
-        ctx[117],
+        ctx[119],
         ...args
       )
     );
@@ -18749,17 +18887,17 @@ function create_each_block_32(key_1, ctx) {
       attr(span1, "class", "checkbox");
       attr(span1, "role", "checkbox");
       attr(span1, "aria-checked", span1_aria_checked_value = /*step*/
-      ctx[117].done);
+      ctx[119].done);
       attr(span1, "tabindex", "0");
       attr(textarea, "rows", "1");
       textarea.value = textarea_value_value = /*step*/
-      ctx[117].text;
+      ctx[119].text;
       attr(textarea, "placeholder", "Step text");
       toggle_class(
         textarea,
         "completed",
         /*step*/
-        ctx[117].done
+        ctx[119].done
       );
       attr(span2, "class", "delete-step");
       attr(span2, "role", "button");
@@ -18786,7 +18924,7 @@ function create_each_block_32(key_1, ctx) {
             null,
             textarea,
             /*step*/
-            ctx[117].text
+            ctx[119].text
           )),
           listen(textarea, "input", input_handler),
           listen(textarea, "keydown", keydown_handler_4),
@@ -18808,12 +18946,12 @@ function create_each_block_32(key_1, ctx) {
       }
       if (dirty[0] & /*task*/
       4 && span1_aria_checked_value !== (span1_aria_checked_value = /*step*/
-      ctx[117].done)) {
+      ctx[119].done)) {
         attr(span1, "aria-checked", span1_aria_checked_value);
       }
       if (dirty[0] & /*task*/
       4 && textarea_value_value !== (textarea_value_value = /*step*/
-      ctx[117].text)) {
+      ctx[119].text)) {
         textarea.value = textarea_value_value;
       }
       if (autosize_action && is_function(autosize_action.update) && dirty[0] & /*task*/
@@ -18821,7 +18959,7 @@ function create_each_block_32(key_1, ctx) {
         autosize_action.update.call(
           null,
           /*step*/
-          ctx[117].text
+          ctx[119].text
         );
       if (dirty[0] & /*task*/
       4) {
@@ -18829,7 +18967,7 @@ function create_each_block_32(key_1, ctx) {
           textarea,
           "completed",
           /*step*/
-          ctx[117].done
+          ctx[119].done
         );
       }
     },
@@ -19305,14 +19443,14 @@ function create_each_block_22(ctx) {
   let span0;
   let t0_value = (
     /*k*/
-    ctx[108] + ""
+    ctx[110] + ""
   );
   let t0;
   let t1;
   let span1;
   let t2_value = (
     /*v*/
-    ctx[109] + ""
+    ctx[111] + ""
   );
   let t2;
   let t3;
@@ -19328,7 +19466,7 @@ function create_each_block_22(ctx) {
       /*click_handler_9*/
       ctx[67](
         /*k*/
-        ctx[108]
+        ctx[110]
       )
     );
   }
@@ -19350,11 +19488,11 @@ function create_each_block_22(ctx) {
       attr(span2, "role", "button");
       attr(span2, "tabindex", "0");
       attr(span2, "title", span2_title_value = `Remove ${/*k*/
-      ctx[108]}`);
+      ctx[110]}`);
       attr(div, "class", "meta-chip custom-chip");
       attr(div, "title", div_title_value = `${/*k*/
-      ctx[108]}: ${/*v*/
-      ctx[109]}`);
+      ctx[110]}: ${/*v*/
+      ctx[111]}`);
     },
     m(target, anchor) {
       insert(target, div, anchor);
@@ -19376,21 +19514,21 @@ function create_each_block_22(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*task*/
       4 && t0_value !== (t0_value = /*k*/
-      ctx[108] + ""))
+      ctx[110] + ""))
         set_data(t0, t0_value);
       if (dirty[0] & /*task*/
       4 && t2_value !== (t2_value = /*v*/
-      ctx[109] + ""))
+      ctx[111] + ""))
         set_data(t2, t2_value);
       if (dirty[0] & /*task*/
       4 && span2_title_value !== (span2_title_value = `Remove ${/*k*/
-      ctx[108]}`)) {
+      ctx[110]}`)) {
         attr(span2, "title", span2_title_value);
       }
       if (dirty[0] & /*task*/
       4 && div_title_value !== (div_title_value = `${/*k*/
-      ctx[108]}: ${/*v*/
-      ctx[109]}`)) {
+      ctx[110]}: ${/*v*/
+      ctx[111]}`)) {
         attr(div, "title", div_title_value);
       }
     },
@@ -19928,7 +20066,7 @@ function create_each_block_13(ctx) {
       /*click_handler_14*/
       ctx[77](
         /*day*/
-        ctx[112]
+        ctx[114]
       )
     );
   }
@@ -19938,7 +20076,7 @@ function create_each_block_13(ctx) {
       button = element("button");
       button.textContent = `${DAY_LABELS[
         /*day*/
-        ctx[112]
+        ctx[114]
       ]} `;
       attr(button, "type", "button");
       attr(button, "class", "weekday-chip");
@@ -19948,7 +20086,7 @@ function create_each_block_13(ctx) {
         /*task*/
         (_b = (_a = ctx[2].recurrence) == null ? void 0 : _a.daysOfWeek) == null ? void 0 : _b.includes(
           /*day*/
-          ctx[112]
+          ctx[114]
         )
       );
     },
@@ -19970,7 +20108,7 @@ function create_each_block_13(ctx) {
           /*task*/
           (_b = (_a = ctx[2].recurrence) == null ? void 0 : _a.daysOfWeek) == null ? void 0 : _b.includes(
             /*day*/
-            ctx[112]
+            ctx[114]
           )
         );
       }
@@ -20856,7 +20994,7 @@ function create_each_block5(ctx) {
   let span0;
   let t0_value = (
     /*k*/
-    ctx[108] + ""
+    ctx[110] + ""
   );
   let t0;
   let t1;
@@ -20864,7 +21002,7 @@ function create_each_block5(ctx) {
   let span1;
   let t3_value = (
     /*v*/
-    ctx[109] + ""
+    ctx[111] + ""
   );
   let t3;
   let t4;
@@ -20877,7 +21015,7 @@ function create_each_block5(ctx) {
       /*click_handler_20*/
       ctx[91](
         /*k*/
-        ctx[108]
+        ctx[110]
       )
     );
   }
@@ -20922,11 +21060,11 @@ function create_each_block5(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*task*/
       4 && t0_value !== (t0_value = /*k*/
-      ctx[108] + ""))
+      ctx[110] + ""))
         set_data(t0, t0_value);
       if (dirty[0] & /*task*/
       4 && t3_value !== (t3_value = /*v*/
-      ctx[109] + ""))
+      ctx[111] + ""))
         set_data(t3, t3_value);
     },
     d(detaching) {
@@ -21059,6 +21197,8 @@ function instance5($$self, $$props, $$invalidate) {
   let showScheduleSection = false;
   let showRepeatPicker = false;
   let detailBodyEl = null;
+  let isDraggingSteps = false;
+  let preDndSteps = [];
   function handleContainerWheel(e) {
     if (detailBodyEl && e.target && !detailBodyEl.contains(e.target)) {
       $$invalidate(8, detailBodyEl.scrollTop += e.deltaY, detailBodyEl);
@@ -21315,7 +21455,7 @@ function instance5($$self, $$props, $$invalidate) {
     }
   }
   async function handleExternalTaskUpdate(payload) {
-    if (!task || !categoryFilepath)
+    if (!task || !categoryFilepath || isDraggingSteps)
       return;
     if (!payload.categoryFilepath || payload.categoryFilepath === categoryFilepath) {
       if (payload.task && payload.task.id === task.id) {
@@ -21338,11 +21478,15 @@ function instance5($$self, $$props, $$invalidate) {
     }
   }
   function scheduleSave() {
+    if (isDraggingSteps) {
+      void Logger.log(`[DND Detail] scheduleSave suppressed during active drag`);
+      return;
+    }
     if (saveTimeout)
       clearTimeout(saveTimeout);
     saveTimeout = setTimeout(
       async () => {
-        if (!task || !categoryFilepath)
+        if (!task || !categoryFilepath || isDraggingSteps)
           return;
         $$invalidate(2, task.steps = persistableSteps(task.steps), task);
         if (task.note_link && (plugin == null ? void 0 : plugin.app)) {
@@ -21382,7 +21526,7 @@ function instance5($$self, $$props, $$invalidate) {
   async function immediateSave() {
     if (saveTimeout)
       clearTimeout(saveTimeout);
-    if (!task || !categoryFilepath)
+    if (!task || !categoryFilepath || isDraggingSteps)
       return;
     $$invalidate(2, task.steps = persistableSteps(task.steps), task);
     if (task.note_link && (plugin == null ? void 0 : plugin.app)) {
@@ -21480,6 +21624,8 @@ function instance5($$self, $$props, $$invalidate) {
     $$invalidate(2, task.steps = [...task.steps, newStep], task);
     $$invalidate(5, newStepText = "");
     $$invalidate(2, task);
+    void Logger.log(`[DND Detail] Added step: taskId=${task.id}, stepId=${newStep.id}, text="${newStep.text}", totalSteps=${task.steps.length}`);
+    console.log(`[FluentTasks] Added step: taskId=${task.id}, stepId=${newStep.id}, total=${task.steps.length}`);
     scheduleSave();
   }
   function handleStepKeydown2(e) {
@@ -21495,6 +21641,8 @@ function instance5($$self, $$props, $$invalidate) {
       step.done = !step.done;
       $$invalidate(2, task.steps = [...task.steps], task);
       $$invalidate(2, task);
+      void Logger.log(`[DND Detail] Toggled step done: taskId=${task.id}, stepId=${stepId}, done=${step.done}`);
+      console.log(`[FluentTasks] Toggled step: taskId=${task.id}, stepId=${stepId}, done=${step.done}`);
       scheduleSave();
     }
   }
@@ -21516,6 +21664,8 @@ function instance5($$self, $$props, $$invalidate) {
     const deletedStep = { ...task.steps[index] };
     $$invalidate(2, task.steps = task.steps.filter((s) => s.id !== stepId), task);
     $$invalidate(2, task);
+    void Logger.log(`[DND Detail] Deleted step: taskId=${task.id}, stepId=${stepId}, text="${deletedStep.text}", remaining=${task.steps.length}`);
+    console.log(`[FluentTasks] Deleted step: taskId=${task.id}, stepId=${stepId}, remaining=${task.steps.length}`);
     await immediateSave();
     EventBus.emit("step:deleted" /* STEP_DELETED */, {
       taskId: task.id,
@@ -21525,16 +21675,39 @@ function instance5($$self, $$props, $$invalidate) {
     });
   }
   function handleDndConsider(e) {
+    var _a;
     if (!task)
       return;
-    $$invalidate(2, task.steps = e.detail.items, task);
+    const trigger = ((_a = e.detail.info) == null ? void 0 : _a.trigger) || "unknown";
+    const incoming = e.detail.items || [];
+    if (!isDraggingSteps) {
+      isDraggingSteps = true;
+      preDndSteps = task.steps ? task.steps.map((s) => ({ ...s })) : [];
+      if (saveTimeout) {
+        clearTimeout(saveTimeout);
+        saveTimeout = null;
+      }
+      void Logger.log(`[DND Detail] Drag started: taskId="${task.id}", preCount=${preDndSteps.length}, trigger=${trigger}`, { stepIds: preDndSteps.map((s) => s.id) });
+      console.log(`[FluentTasks DND] Drag started: taskId=${task.id}, count=${preDndSteps.length}, trigger=${trigger}`);
+    }
+    void Logger.log(`[DND Detail] Consider: trigger=${trigger}, incomingCount=${incoming.length}`);
+    $$invalidate(2, task.steps = incoming, task);
     $$invalidate(2, task);
   }
   function handleDndFinalize(e) {
+    var _a;
     if (!task)
       return;
-    $$invalidate(2, task.steps = persistableSteps(e.detail.items), task);
+    const trigger = ((_a = e.detail.info) == null ? void 0 : _a.trigger) || "unknown";
+    const incoming = e.detail.items || [];
+    void Logger.log(`[DND Detail] Finalize initiated: trigger=${trigger}, incomingCount=${incoming.length}, preCount=${preDndSteps.length}`);
+    console.log(`[FluentTasks DND] Finalize: trigger=${trigger}, incoming=${incoming.length}, preCount=${preDndSteps.length}`);
+    const safeSteps = reconcileDndSteps(preDndSteps, incoming, trigger);
+    $$invalidate(2, task.steps = safeSteps, task);
     $$invalidate(2, task);
+    isDraggingSteps = false;
+    preDndSteps = [];
+    void Logger.log(`[DND Detail] Finalize completed: finalCount=${safeSteps.length}, stepIds=${safeSteps.map((s) => s.id).join(",")}`);
     scheduleSave();
   }
   function handleNoteInput() {
@@ -23489,7 +23662,7 @@ function create_if_block_252(ctx) {
     }
   };
 }
-function create_if_block_242(ctx) {
+function create_if_block_243(ctx) {
   let span;
   let t_1_value = (
     /*taskCounts*/
@@ -23550,7 +23723,7 @@ function create_each_block_52(key_1, ctx) {
     ((_a = ctx[9][
       /*child*/
       ctx[163].filepath
-    ]) != null ? _a : 0) > 0 && create_if_block_242(ctx)
+    ]) != null ? _a : 0) > 0 && create_if_block_243(ctx)
   );
   function dragstart_handler_1(...args) {
     return (
@@ -23715,7 +23888,7 @@ function create_each_block_52(key_1, ctx) {
         if (if_block1) {
           if_block1.p(ctx, dirty);
         } else {
-          if_block1 = create_if_block_242(ctx);
+          if_block1 = create_if_block_243(ctx);
           if_block1.c();
           if_block1.m(div, t3);
         }
@@ -28503,7 +28676,7 @@ function create_else_block_11(ctx) {
     }
   };
 }
-function create_if_block_243(ctx) {
+function create_if_block_244(ctx) {
   let svg;
   let rect0;
   let rect1;
@@ -31786,7 +31959,7 @@ function create_fragment8(ctx) {
       /*isGridLayout*/
       ctx2[6]
     )
-      return create_if_block_243;
+      return create_if_block_244;
     return create_else_block_11;
   }
   let current_block_type = select_block_type_1(ctx, [-1, -1, -1, -1, -1]);

@@ -794,6 +794,16 @@
     outline: none;
 }
 
+.steps-dnd-zone {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.steps-dnd-zone:focus {
+    outline: none;
+}
+
 .step-drag-handle {
     display: flex;
     align-items: center;
