@@ -17,6 +17,8 @@ export const DATA_FOLDER = "TodoData";
 // Data Models
 // =============================================
 export interface TaskStep {
+    /** Stable key for in-list DnD; optional so legacy JSON still parses */
+    id?: string;
     text: string;
     done: boolean;
 }

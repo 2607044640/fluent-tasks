@@ -116,6 +116,7 @@ export class MarkdownParser {
                     .map((s) => ({
                         text: typeof s.text === "string" ? s.text.trimEnd() : "",
                         done: Boolean(s.done),
+                        ...(typeof s.id === "string" && s.id.length > 0 ? { id: s.id } : {}),
                     }))
                 : [];
 
