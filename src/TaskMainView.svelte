@@ -49,7 +49,9 @@
         message: string;
         timer: any;
         isBatch?: boolean;
+        durationSec: number;
         expiresAt: number;
+        remainingMs?: number;
     }
     let undoToasts: UndoToastItem[] = [];
 
@@ -447,6 +449,14 @@
     // =============================================
     // Undo Toast Logic
     // =============================================
+    function getUndoDurationSec(): number {
+        const configured = plugin?.settings?.undoDurationSeconds;
+        if (typeof configured === "number" && !isNaN(configured) && configured > 0) {
+            return configured;
+        }
+        return 3;
+    }
+
     function pushUndoToast(categoryFilepath: string, tasks: TaskItem[], isBatch: boolean = false) {
         if (!tasks || tasks.length === 0) return;
         const id = "toast_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
@@ -461,9 +471,12 @@
             message = `Deleted "${truncated}"`;
         }
 
+        const durationSec = getUndoDurationSec();
+        const durationMs = durationSec * 1000;
+
         const timer = setTimeout(() => {
             dismissToast(id);
-        }, 5000);
+        }, durationMs);
 
         const toast: UndoToastItem = {
             id,
@@ -472,7 +485,8 @@
             message,
             timer,
             isBatch: isBatch || count > 1,
-            expiresAt: Date.now() + 5000,
+            durationSec,
+            expiresAt: Date.now() + durationMs,
         };
 
         undoToasts = [...undoToasts, toast];
@@ -490,14 +504,17 @@
         if (toast.timer) {
             clearTimeout(toast.timer);
             toast.timer = null;
+            toast.remainingMs = Math.max(500, toast.expiresAt - Date.now());
         }
     }
 
     function resumeToastTimer(toast: UndoToastItem) {
         if (!toast.timer) {
+            const delay = toast.remainingMs || (toast.durationSec * 1000);
+            toast.expiresAt = Date.now() + delay;
             toast.timer = setTimeout(() => {
                 dismissToast(toast.id);
-            }, 3000);
+            }, delay);
         }
     }
 
@@ -1921,6 +1938,7 @@
         <div class="fluent-tasks-undo-container" use:portal>
             {#each undoToasts as toast (toast.id)}
                 <div class="fluent-tasks-undo-toast" 
+                     style="--undo-duration: {toast.durationSec}s;"
                      on:mouseenter={() => pauseToastTimer(toast)}
                      on:mouseleave={() => resumeToastTimer(toast)}>
                     <div class="undo-toast-body">
@@ -1942,7 +1960,7 @@
                         </button>
                     </div>
                     <div class="undo-toast-progress-track">
-                        <div class="undo-toast-progress-bar"></div>
+                        <div class="undo-toast-progress-bar" style="animation-duration: {toast.durationSec}s;"></div>
                     </div>
                 </div>
             {/each}

@@ -4163,7 +4163,7 @@ body .task-steps-floating-modal .modal-content.task-steps-modal-content {
     height: 100%;
     width: 100%;
     background: var(--interactive-accent, #6366f1);
-    animation: undo-toast-progress 5s linear forwards;
+    animation: undo-toast-progress var(--undo-duration, 3s) linear forwards;
     transform-origin: left center;
 }
 
