@@ -8200,7 +8200,7 @@ function reconcileDndSteps(preDragSteps, incomingItems, trigger) {
 // src/modals/TaskStepsModalView.svelte
 function get_each_context2(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[33] = list[i];
+  child_ctx[35] = list[i];
   return child_ctx;
 }
 function create_if_block_22(ctx) {
@@ -8254,7 +8254,7 @@ function create_else_block2(ctx) {
   );
   const get_key = (ctx2) => (
     /*step*/
-    ctx2[33].id
+    ctx2[35].id
   );
   for (let i = 0; i < each_value.length; i += 1) {
     let child_ctx = get_each_context2(ctx, each_value, i);
@@ -8427,16 +8427,17 @@ function create_if_block_12(ctx) {
 }
 function create_each_block2(key_1, ctx) {
   let div;
-  let span;
+  let span0;
   let t0;
-  let button0;
-  let button0_aria_label_value;
+  let span1;
+  let span1_aria_checked_value;
+  let span1_aria_label_value;
   let t1;
   let textarea;
   let textarea_value_value;
   let autosize_action;
   let t2;
-  let button1;
+  let span2;
   let t3;
   let rect;
   let stop_animation = noop;
@@ -8445,7 +8446,7 @@ function create_each_block2(key_1, ctx) {
   function select_block_type_1(ctx2, dirty) {
     if (
       /*step*/
-      ctx2[33].done
+      ctx2[35].done
     )
       return create_if_block_12;
     return create_else_block_12;
@@ -8457,26 +8458,36 @@ function create_each_block2(key_1, ctx) {
       /*click_handler*/
       ctx[19](
         /*step*/
-        ctx[33]
-      )
-    );
-  }
-  function input_handler(...args) {
-    return (
-      /*input_handler*/
-      ctx[20](
-        /*step*/
-        ctx[33],
-        ...args
+        ctx[35]
       )
     );
   }
   function keydown_handler(...args) {
     return (
       /*keydown_handler*/
+      ctx[20](
+        /*step*/
+        ctx[35],
+        ...args
+      )
+    );
+  }
+  function input_handler(...args) {
+    return (
+      /*input_handler*/
       ctx[21](
         /*step*/
-        ctx[33],
+        ctx[35],
+        ...args
+      )
+    );
+  }
+  function keydown_handler_1(...args) {
+    return (
+      /*keydown_handler_1*/
+      ctx[22](
+        /*step*/
+        ctx[35],
         ...args
       )
     );
@@ -8484,9 +8495,19 @@ function create_each_block2(key_1, ctx) {
   function click_handler_1() {
     return (
       /*click_handler_1*/
-      ctx[22](
+      ctx[23](
         /*step*/
-        ctx[33]
+        ctx[35]
+      )
+    );
+  }
+  function keydown_handler_2(...args) {
+    return (
+      /*keydown_handler_2*/
+      ctx[24](
+        /*step*/
+        ctx[35],
+        ...args
       )
     );
   }
@@ -8495,72 +8516,77 @@ function create_each_block2(key_1, ctx) {
     first: null,
     c() {
       div = element("div");
-      span = element("span");
-      span.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="5" r="1.8"></circle><circle cx="15" cy="5" r="1.8"></circle><circle cx="9" cy="12" r="1.8"></circle><circle cx="15" cy="12" r="1.8"></circle><circle cx="9" cy="19" r="1.8"></circle><circle cx="15" cy="19" r="1.8"></circle></svg>`;
+      span0 = element("span");
+      span0.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="5" r="1.8"></circle><circle cx="15" cy="5" r="1.8"></circle><circle cx="9" cy="12" r="1.8"></circle><circle cx="15" cy="12" r="1.8"></circle><circle cx="9" cy="19" r="1.8"></circle><circle cx="15" cy="19" r="1.8"></circle></svg>`;
       t0 = space();
-      button0 = element("button");
+      span1 = element("span");
       if_block.c();
       t1 = space();
       textarea = element("textarea");
       t2 = space();
-      button1 = element("button");
-      button1.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+      span2 = element("span");
+      span2.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
       t3 = space();
-      attr(span, "class", "steps-modal-drag-handle");
-      attr(span, "title", "Drag to reorder");
-      attr(button0, "type", "button");
-      attr(button0, "class", "steps-modal-checkbox");
-      attr(button0, "aria-label", button0_aria_label_value = /*step*/
-      ctx[33].done ? "Mark step incomplete" : "Mark step complete");
+      attr(span0, "class", "steps-modal-drag-handle");
+      attr(span0, "title", "Drag to reorder");
+      attr(span1, "class", "steps-modal-checkbox");
+      attr(span1, "role", "checkbox");
+      attr(span1, "aria-checked", span1_aria_checked_value = /*step*/
+      ctx[35].done);
+      attr(span1, "tabindex", "0");
+      attr(span1, "aria-label", span1_aria_label_value = /*step*/
+      ctx[35].done ? "Mark step incomplete" : "Mark step complete");
       toggle_class(
-        button0,
+        span1,
         "checked",
         /*step*/
-        ctx[33].done
+        ctx[35].done
       );
       attr(textarea, "rows", "1");
       attr(textarea, "class", "steps-modal-textarea");
       textarea.value = textarea_value_value = /*step*/
-      ctx[33].text;
+      ctx[35].text;
       attr(textarea, "placeholder", "Step description...");
       toggle_class(
         textarea,
         "completed",
         /*step*/
-        ctx[33].done
+        ctx[35].done
       );
-      attr(button1, "type", "button");
-      attr(button1, "class", "steps-modal-delete-btn");
-      attr(button1, "title", "Delete step");
-      attr(button1, "aria-label", "Delete step");
+      attr(span2, "class", "steps-modal-delete-btn");
+      attr(span2, "role", "button");
+      attr(span2, "tabindex", "0");
+      attr(span2, "title", "Delete step");
+      attr(span2, "aria-label", "Delete step");
       attr(div, "class", "steps-modal-item");
       toggle_class(
         div,
         "is-done",
         /*step*/
-        ctx[33].done
+        ctx[35].done
       );
       this.first = div;
     },
     m(target, anchor) {
       insert(target, div, anchor);
-      append(div, span);
+      append(div, span0);
       append(div, t0);
-      append(div, button0);
-      if_block.m(button0, null);
+      append(div, span1);
+      if_block.m(span1, null);
       append(div, t1);
       append(div, textarea);
       append(div, t2);
-      append(div, button1);
+      append(div, span2);
       append(div, t3);
       if (!mounted) {
         dispose = [
-          listen(button0, "click", stop_propagation(click_handler2)),
+          listen(span1, "click", stop_propagation(click_handler2)),
+          listen(span1, "keydown", stop_propagation(keydown_handler)),
           action_destroyer(autosize_action = autosize.call(
             null,
             textarea,
             /*step*/
-            ctx[33].text
+            ctx[35].text
           )),
           listen(textarea, "input", input_handler),
           listen(
@@ -8569,8 +8595,9 @@ function create_each_block2(key_1, ctx) {
             /*flushSaveSync*/
             ctx[1]
           ),
-          listen(textarea, "keydown", keydown_handler),
-          listen(button1, "click", stop_propagation(click_handler_1))
+          listen(textarea, "keydown", keydown_handler_1),
+          listen(span2, "click", stop_propagation(click_handler_1)),
+          listen(span2, "keydown", stop_propagation(keydown_handler_2))
         ];
         mounted = true;
       }
@@ -8582,26 +8609,31 @@ function create_each_block2(key_1, ctx) {
         if_block = current_block_type(ctx);
         if (if_block) {
           if_block.c();
-          if_block.m(button0, null);
+          if_block.m(span1, null);
         }
       }
       if (dirty[0] & /*steps*/
-      4 && button0_aria_label_value !== (button0_aria_label_value = /*step*/
-      ctx[33].done ? "Mark step incomplete" : "Mark step complete")) {
-        attr(button0, "aria-label", button0_aria_label_value);
+      4 && span1_aria_checked_value !== (span1_aria_checked_value = /*step*/
+      ctx[35].done)) {
+        attr(span1, "aria-checked", span1_aria_checked_value);
+      }
+      if (dirty[0] & /*steps*/
+      4 && span1_aria_label_value !== (span1_aria_label_value = /*step*/
+      ctx[35].done ? "Mark step incomplete" : "Mark step complete")) {
+        attr(span1, "aria-label", span1_aria_label_value);
       }
       if (dirty[0] & /*steps*/
       4) {
         toggle_class(
-          button0,
+          span1,
           "checked",
           /*step*/
-          ctx[33].done
+          ctx[35].done
         );
       }
       if (dirty[0] & /*steps*/
       4 && textarea_value_value !== (textarea_value_value = /*step*/
-      ctx[33].text)) {
+      ctx[35].text)) {
         textarea.value = textarea_value_value;
       }
       if (autosize_action && is_function(autosize_action.update) && dirty[0] & /*steps*/
@@ -8609,7 +8641,7 @@ function create_each_block2(key_1, ctx) {
         autosize_action.update.call(
           null,
           /*step*/
-          ctx[33].text
+          ctx[35].text
         );
       if (dirty[0] & /*steps*/
       4) {
@@ -8617,7 +8649,7 @@ function create_each_block2(key_1, ctx) {
           textarea,
           "completed",
           /*step*/
-          ctx[33].done
+          ctx[35].done
         );
       }
       if (dirty[0] & /*steps*/
@@ -8626,7 +8658,7 @@ function create_each_block2(key_1, ctx) {
           div,
           "is-done",
           /*step*/
-          ctx[33].done
+          ctx[35].done
         );
       }
     },
@@ -8814,11 +8846,11 @@ function create_fragment2(ctx) {
         /*newStepText*/
         ctx[5]
       );
-      ctx[24](textarea);
+      ctx[26](textarea);
       append(div4, t13);
       append(div4, button);
       append(button, t14);
-      ctx[25](div5);
+      ctx[27](div5);
       if (!mounted) {
         dispose = [
           action_destroyer(autosize_action = autosize.call(
@@ -8831,7 +8863,7 @@ function create_fragment2(ctx) {
             textarea,
             "input",
             /*textarea_input_handler*/
-            ctx[23]
+            ctx[25]
           ),
           listen(
             textarea,
@@ -8932,8 +8964,8 @@ function create_fragment2(ctx) {
       if (if_block0)
         if_block0.d();
       if_block1.d();
-      ctx[24](null);
-      ctx[25](null);
+      ctx[26](null);
+      ctx[27](null);
       mounted = false;
       run_all(dispose);
     }
@@ -9140,9 +9172,11 @@ function instance2($$self, $$props, $$invalidate) {
     flushSaveSync();
   });
   const click_handler2 = (step) => toggleStep(step.id);
+  const keydown_handler = (step, e) => (e.key === "Enter" || e.key === " ") && toggleStep(step.id);
   const input_handler = (step, e) => handleStepInput(step.id, e.currentTarget.value);
-  const keydown_handler = (step, e) => handleStepKeydown(e, step.id);
+  const keydown_handler_1 = (step, e) => handleStepKeydown(e, step.id);
   const click_handler_1 = (step) => deleteStep(step.id);
+  const keydown_handler_2 = (step, e) => e.key === "Enter" && deleteStep(step.id);
   function textarea_input_handler() {
     newStepText = this.value;
     $$invalidate(5, newStepText);
@@ -9207,9 +9241,11 @@ function instance2($$self, $$props, $$invalidate) {
     dataService,
     closeModal,
     click_handler2,
-    input_handler,
     keydown_handler,
+    input_handler,
+    keydown_handler_1,
     click_handler_1,
+    keydown_handler_2,
     textarea_input_handler,
     textarea_binding,
     div5_binding

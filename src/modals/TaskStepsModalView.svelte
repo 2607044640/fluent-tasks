@@ -294,11 +294,15 @@
                         </span>
 
                         <!-- Checkbox -->
-                        <button
-                            type="button"
+                        <!-- svelte-ignore a11y-click-events-have-key-events -->
+                        <span
                             class="steps-modal-checkbox"
                             class:checked={step.done}
+                            role="checkbox"
+                            aria-checked={step.done}
+                            tabindex="0"
                             on:click|stopPropagation={() => toggleStep(step.id)}
+                            on:keydown|stopPropagation={(e) => (e.key === "Enter" || e.key === " ") && toggleStep(step.id)}
                             aria-label={step.done ? "Mark step incomplete" : "Mark step complete"}
                         >
                             {#if step.done}
@@ -311,7 +315,7 @@
                                     <circle cx="12" cy="12" r="10" />
                                 </svg>
                             {/if}
-                        </button>
+                        </span>
 
                         <!-- Multi-line auto-resizing textarea with large font -->
                         <textarea
@@ -327,10 +331,13 @@
                         />
 
                         <!-- Delete step button -->
-                        <button
-                            type="button"
+                        <!-- svelte-ignore a11y-click-events-have-key-events -->
+                        <span
                             class="steps-modal-delete-btn"
+                            role="button"
+                            tabindex="0"
                             on:click|stopPropagation={() => deleteStep(step.id)}
+                            on:keydown|stopPropagation={(e) => e.key === "Enter" && deleteStep(step.id)}
                             title="Delete step"
                             aria-label="Delete step"
                         >
@@ -338,7 +345,7 @@
                                 <line x1="18" y1="6" x2="6" y2="18"/>
                                 <line x1="6" y1="6" x2="18" y2="18"/>
                             </svg>
-                        </button>
+                        </span>
                     </div>
                 {/each}
             </div>
