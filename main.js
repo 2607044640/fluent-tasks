@@ -2382,6 +2382,9 @@ var ANTI_FLICKER_DURATION_MS = 250;
 var SAVE_DEBOUNCE_MS = 600;
 var DND_RESCUE_DELAY_MS = 50;
 var POPOVER_HIDE_DELAY_MS = 150;
+var DEFAULT_TASK_WEIGHT = 5;
+var MIN_TASK_WEIGHT = 1;
+var MAX_TASK_WEIGHT = 9;
 
 // src/TaskSidebarView.svelte
 var import_obsidian5 = require("obsidian");
@@ -7473,6 +7476,28 @@ function calculatePopoverPosition(targetEl, type) {
   const x = Math.max(estimatedHalfWidth + 16, Math.min(window.innerWidth - estimatedHalfWidth - 16, centerX));
   const y = fitsAbove ? rect.top - 8 : rect.bottom + 8;
   return { placement, x, y };
+}
+
+// src/utils/taskUtils.ts
+function getTaskWeight(task) {
+  if (typeof task.weight === "number" && !isNaN(task.weight) && task.weight >= MIN_TASK_WEIGHT && task.weight <= MAX_TASK_WEIGHT) {
+    return task.weight;
+  }
+  return DEFAULT_TASK_WEIGHT;
+}
+function clampTaskWeight(weight) {
+  return Math.max(MIN_TASK_WEIGHT, Math.min(MAX_TASK_WEIGHT, weight));
+}
+function applyWeightSort(items, enableWeightMode = false) {
+  if (!enableWeightMode) {
+    return items;
+  }
+  return items.map((item, idx) => ({ item, idx })).sort((a, b) => {
+    const diff = getTaskWeight(b.item) - getTaskWeight(a.item);
+    if (diff !== 0)
+      return diff;
+    return a.idx - b.idx;
+  }).map(({ item }) => item);
 }
 
 // src/TaskMainView.svelte
@@ -16633,12 +16658,6 @@ var DND_FLIP_DURATION2 = 200;
 var AUTO_SCROLL_EDGE_ZONE = 60;
 var AUTO_SCROLL_MAX_SPEED = 12;
 var AUTO_SCROLL_MIN_SPEED = 2;
-function getTaskWeight(t2) {
-  if (typeof t2.weight === "number" && !isNaN(t2.weight) && t2.weight >= 1 && t2.weight <= 9) {
-    return t2.weight;
-  }
-  return 5;
-}
 var func_2 = (s) => s.done;
 var func_3 = (s) => s.done;
 var func_4 = (s) => s.done;
@@ -16912,6 +16931,8 @@ function instance4($$self, $$props, $$invalidate) {
   function handleSettingsChanged() {
     var _a2, _b2;
     $$invalidate(12, wrapTaskTitles = (_b2 = (_a2 = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _a2.wrapTaskTitles) != null ? _b2 : true);
+    $$invalidate(6, incompleteTasks = sortTasksByWeight(incompleteTasks));
+    $$invalidate(7, completedTasks = sortTasksByWeight(completedTasks));
   }
   onMount(() => {
     EventBus.on("category:selected" /* CATEGORY_SELECTED */, handleCategorySelected);
@@ -16940,28 +16961,20 @@ function instance4($$self, $$props, $$invalidate) {
     EventBus.off("task:navigate" /* TASK_NAVIGATE */, handleTaskNavigate);
     EventBus.off("settings:changed" /* SETTINGS_CHANGED */, handleSettingsChanged);
   });
-  function applyWeightSort(items) {
+  function sortTasksByWeight(items) {
     var _a2;
-    if (!((_a2 = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _a2.enableTaskWeightMode)) {
-      return items;
-    }
-    return items.map((item, idx) => ({ item, idx })).sort((a, b) => {
-      const diff = getTaskWeight(b.item) - getTaskWeight(a.item);
-      if (diff !== 0)
-        return diff;
-      return a.idx - b.idx;
-    }).map(({ item }) => item);
+    return applyWeightSort(items, !!((_a2 = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _a2.enableTaskWeightMode));
   }
   async function changeTaskWeight(task, delta) {
     if (!currentCategory)
       return;
     const currentWeight = getTaskWeight(task);
-    const newWeight = Math.max(1, Math.min(9, currentWeight + delta));
+    const newWeight = clampTaskWeight(currentWeight + delta);
     if (newWeight === currentWeight)
       return;
     task.weight = newWeight;
-    $$invalidate(6, incompleteTasks = applyWeightSort(incompleteTasks));
-    $$invalidate(7, completedTasks = applyWeightSort(completedTasks));
+    $$invalidate(6, incompleteTasks = sortTasksByWeight(incompleteTasks));
+    $$invalidate(7, completedTasks = sortTasksByWeight(completedTasks));
     await dataService.updateTask(currentCategory.filepath, task);
     EventBus.emit("task:updated" /* TASK_UPDATED */, {
       task,
@@ -16974,8 +16987,8 @@ function instance4($$self, $$props, $$invalidate) {
     const tasks2 = await dataService.getTasks(currentCategory.filepath);
     const inc = tasks2.filter((t2) => !t2.completed);
     const comp = tasks2.filter((t2) => t2.completed);
-    $$invalidate(6, incompleteTasks = applyWeightSort(inc));
-    $$invalidate(7, completedTasks = applyWeightSort(comp));
+    $$invalidate(6, incompleteTasks = sortTasksByWeight(inc));
+    $$invalidate(7, completedTasks = sortTasksByWeight(comp));
   }
   async function loadCategory(cat) {
     $$invalidate(5, currentCategory = cat);
@@ -22171,7 +22184,7 @@ var TaskDetailView_default = TaskDetailView;
 var import_obsidian15 = require("obsidian");
 function get_each_context6(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[17] = list[i];
+  child_ctx[18] = list[i];
   return child_ctx;
 }
 function create_if_block6(ctx) {
@@ -22184,7 +22197,7 @@ function create_if_block6(ctx) {
   );
   const get_key = (ctx2) => (
     /*toast*/
-    ctx2[17].id
+    ctx2[18].id
   );
   for (let i = 0; i < each_value.length; i += 1) {
     let child_ctx = get_each_context6(ctx, each_value, i);
@@ -22235,7 +22248,7 @@ function create_each_block6(key_1, ctx) {
   let span1;
   let t1_value = (
     /*toast*/
-    ctx[17].message + ""
+    ctx[18].message + ""
   );
   let t1;
   let span1_title_value;
@@ -22254,7 +22267,7 @@ function create_each_block6(key_1, ctx) {
       /*click_handler*/
       ctx[6](
         /*toast*/
-        ctx[17]
+        ctx[18]
       )
     );
   }
@@ -22263,7 +22276,7 @@ function create_each_block6(key_1, ctx) {
       /*click_handler_1*/
       ctx[7](
         /*toast*/
-        ctx[17]
+        ctx[18]
       )
     );
   }
@@ -22272,7 +22285,7 @@ function create_each_block6(key_1, ctx) {
       /*mouseenter_handler*/
       ctx[8](
         /*toast*/
-        ctx[17]
+        ctx[18]
       )
     );
   }
@@ -22281,7 +22294,7 @@ function create_each_block6(key_1, ctx) {
       /*mouseleave_handler*/
       ctx[9](
         /*toast*/
-        ctx[17]
+        ctx[18]
       )
     );
   }
@@ -22309,7 +22322,7 @@ function create_each_block6(key_1, ctx) {
       attr(span0, "class", "undo-toast-icon");
       attr(span1, "class", "undo-toast-message");
       attr(span1, "title", span1_title_value = /*toast*/
-      ctx[17].message);
+      ctx[18].message);
       attr(button0, "type", "button");
       attr(button0, "class", "undo-toast-btn");
       attr(button1, "type", "button");
@@ -22321,7 +22334,7 @@ function create_each_block6(key_1, ctx) {
         div1,
         "animation-duration",
         /*toast*/
-        ctx[17].durationSec + "s"
+        ctx[18].durationSec + "s"
       );
       attr(div2, "class", "undo-toast-progress-track");
       attr(div3, "class", "fluent-tasks-undo-toast");
@@ -22329,7 +22342,7 @@ function create_each_block6(key_1, ctx) {
         div3,
         "--undo-duration",
         /*toast*/
-        ctx[17].durationSec + "s"
+        ctx[18].durationSec + "s"
       );
       this.first = div3;
     },
@@ -22362,11 +22375,11 @@ function create_each_block6(key_1, ctx) {
       ctx = new_ctx;
       if (dirty & /*undoToasts*/
       1 && t1_value !== (t1_value = /*toast*/
-      ctx[17].message + ""))
+      ctx[18].message + ""))
         set_data(t1, t1_value);
       if (dirty & /*undoToasts*/
       1 && span1_title_value !== (span1_title_value = /*toast*/
-      ctx[17].message)) {
+      ctx[18].message)) {
         attr(span1, "title", span1_title_value);
       }
       if (dirty & /*undoToasts*/
@@ -22375,7 +22388,7 @@ function create_each_block6(key_1, ctx) {
           div1,
           "animation-duration",
           /*toast*/
-          ctx[17].durationSec + "s"
+          ctx[18].durationSec + "s"
         );
       }
       if (dirty & /*undoToasts*/
@@ -22384,7 +22397,7 @@ function create_each_block6(key_1, ctx) {
           div3,
           "--undo-duration",
           /*toast*/
-          ctx[17].durationSec + "s"
+          ctx[18].durationSec + "s"
         );
       }
     },
@@ -22442,6 +22455,13 @@ function create_fragment6(ctx) {
     }
   };
 }
+function formatToastTitle(text2, maxLength = 26) {
+  const raw = (text2 || "").trim() || "Untitled";
+  if (raw.length > maxLength) {
+    return raw.slice(0, maxLength - 2) + "...";
+  }
+  return raw;
+}
 function pauseToastTimer(toast) {
   if (toast.timer) {
     clearTimeout(toast.timer);
@@ -22480,19 +22500,8 @@ function instance6($$self, $$props, $$invalidate) {
       );
     }
   }
-  function pushTaskUndoToast(categoryFilepath, tasks2, isBatch = false) {
-    if (!tasks2 || tasks2.length === 0)
-      return;
+  function pushUndoToast(params) {
     const id = "toast_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
-    const count = tasks2.length;
-    let message = "";
-    if (isBatch || count > 1) {
-      message = `Deleted ${count} tasks`;
-    } else {
-      const rawTitle = tasks2[0].title ? tasks2[0].title.trim() : "Untitled";
-      const truncated = rawTitle.length > 26 ? rawTitle.slice(0, 24) + "..." : rawTitle;
-      message = `Deleted "${truncated}"`;
-    }
     const durationSec = getUndoDurationSec();
     const durationMs = durationSec * 1e3;
     const timer = setTimeout(
@@ -22502,71 +22511,46 @@ function instance6($$self, $$props, $$invalidate) {
       durationMs
     );
     const toast = {
+      ...params,
       id,
+      timer,
+      durationSec,
+      expiresAt: Date.now() + durationMs
+    };
+    $$invalidate(0, undoToasts = [...undoToasts, toast]);
+  }
+  function pushTaskUndoToast(categoryFilepath, tasks2, isBatch = false) {
+    if (!tasks2 || tasks2.length === 0)
+      return;
+    const count = tasks2.length;
+    const message = isBatch || count > 1 ? `Deleted ${count} tasks` : `Deleted "${formatToastTitle(tasks2[0].title)}"`;
+    pushUndoToast({
       type: "task",
       categoryFilepath,
       tasks: tasks2,
       message,
-      timer,
-      isBatch: isBatch || count > 1,
-      durationSec,
-      expiresAt: Date.now() + durationMs
-    };
-    $$invalidate(0, undoToasts = [...undoToasts, toast]);
+      isBatch: isBatch || count > 1
+    });
   }
   function pushStepUndoToast(payload) {
     if (!payload || !payload.step)
       return;
-    const id = "toast_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
-    const rawText = payload.step.text ? payload.step.text.trim() : "Untitled";
-    const truncated = rawText.length > 26 ? rawText.slice(0, 24) + "..." : rawText;
-    const message = `Deleted step "${truncated}"`;
-    const durationSec = getUndoDurationSec();
-    const durationMs = durationSec * 1e3;
-    const timer = setTimeout(
-      () => {
-        dismissToast(id);
-      },
-      durationMs
-    );
-    const toast = {
-      id,
+    pushUndoToast({
       type: "step",
       categoryFilepath: payload.categoryFilepath,
       stepPayload: payload,
-      message,
-      timer,
-      durationSec,
-      expiresAt: Date.now() + durationMs
-    };
-    $$invalidate(0, undoToasts = [...undoToasts, toast]);
+      message: `Deleted step "${formatToastTitle(payload.step.text)}"`
+    });
   }
   function pushCategoryUndoToast(payload) {
     if (!payload || !payload.categoryName)
       return;
-    const id = "toast_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
-    const rawName = payload.categoryName.trim();
-    const truncated = rawName.length > 26 ? rawName.slice(0, 24) + "..." : rawName;
-    const message = `Deleted list "${truncated}"`;
-    const durationSec = getUndoDurationSec();
-    const durationMs = durationSec * 1e3;
-    const timer = setTimeout(
-      () => {
-        dismissToast(id);
-      },
-      durationMs
-    );
-    const toast = {
-      id,
+    pushUndoToast({
       type: "category",
       categoryFilepath: payload.categoryFilepath,
       categoryPayload: payload,
-      message,
-      timer,
-      durationSec,
-      expiresAt: Date.now() + durationMs
-    };
-    $$invalidate(0, undoToasts = [...undoToasts, toast]);
+      message: `Deleted list "${formatToastTitle(payload.categoryName)}"`
+    });
   }
   async function executeUndo(toast) {
     dismissToast(toast.id);
@@ -22574,9 +22558,7 @@ function instance6($$self, $$props, $$invalidate) {
       const { categoryName, categoryFilepath, fileContent, groupName, index } = toast.categoryPayload;
       try {
         await dataService.restoreCategory(categoryName, categoryFilepath, fileContent, groupName, index);
-        const rawName = categoryName.trim();
-        const truncated = rawName.length > 26 ? rawName.slice(0, 24) + "..." : rawName;
-        new import_obsidian15.Notice(`Restored list: "${truncated}"`);
+        new import_obsidian15.Notice(`Restored list: "${formatToastTitle(categoryName)}"`);
       } catch (err) {
         console.error("Failed to restore list:", err);
         new import_obsidian15.Notice("Failed to undo list deletion.");
@@ -22602,9 +22584,7 @@ function instance6($$self, $$props, $$invalidate) {
           categoryFilepath,
           isExternal: true
         });
-        const rawText = step.text ? step.text.trim() : "Untitled";
-        const truncated = rawText.length > 26 ? rawText.slice(0, 24) + "..." : rawText;
-        new import_obsidian15.Notice(`Restored step: "${truncated}"`);
+        new import_obsidian15.Notice(`Restored step: "${formatToastTitle(step.text)}"`);
       } catch (err) {
         console.error("Failed to restore step:", err);
         new import_obsidian15.Notice("Failed to undo step deletion.");
@@ -22627,7 +22607,7 @@ function instance6($$self, $$props, $$invalidate) {
           categoryFilepath: toast.categoryFilepath,
           isExternal: true
         });
-        new import_obsidian15.Notice(newRestores.length === 1 ? `Restored: "${newRestores[0].title}"` : `Restored ${newRestores.length} tasks`);
+        new import_obsidian15.Notice(newRestores.length === 1 ? `Restored: "${formatToastTitle(newRestores[0].title)}"` : `Restored ${newRestores.length} tasks`);
       } catch (err) {
         console.error("Failed to restore task(s):", err);
         new import_obsidian15.Notice("Failed to undo task deletion.");

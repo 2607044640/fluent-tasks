@@ -35,6 +35,14 @@
         return 2.5;
     }
 
+    function formatToastTitle(text?: string, maxLength: number = 26): string {
+        const raw = (text || "").trim() || "Untitled";
+        if (raw.length > maxLength) {
+            return raw.slice(0, maxLength - 2) + "...";
+        }
+        return raw;
+    }
+
     function dismissToast(id: string) {
         const target = undoToasts.find(t => t.id === id);
         if (target?.timer) {
@@ -61,20 +69,8 @@
         }
     }
 
-    function pushTaskUndoToast(categoryFilepath: string, tasks: TaskItem[], isBatch: boolean = false) {
-        if (!tasks || tasks.length === 0) return;
+    function pushUndoToast(params: Omit<UndoToastItem, "id" | "timer" | "durationSec" | "expiresAt">) {
         const id = "toast_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
-        const count = tasks.length;
-
-        let message = "";
-        if (isBatch || count > 1) {
-            message = `Deleted ${count} tasks`;
-        } else {
-            const rawTitle = tasks[0].title ? tasks[0].title.trim() : "Untitled";
-            const truncated = rawTitle.length > 26 ? rawTitle.slice(0, 24) + "..." : rawTitle;
-            message = `Deleted "${truncated}"`;
-        }
-
         const durationSec = getUndoDurationSec();
         const durationMs = durationSec * 1000;
 
@@ -83,74 +79,50 @@
         }, durationMs);
 
         const toast: UndoToastItem = {
+            ...params,
             id,
+            timer,
+            durationSec,
+            expiresAt: Date.now() + durationMs,
+        };
+
+        undoToasts = [...undoToasts, toast];
+    }
+
+    function pushTaskUndoToast(categoryFilepath: string, tasks: TaskItem[], isBatch: boolean = false) {
+        if (!tasks || tasks.length === 0) return;
+        const count = tasks.length;
+        const message = (isBatch || count > 1) 
+            ? `Deleted ${count} tasks`
+            : `Deleted "${formatToastTitle(tasks[0].title)}"`;
+
+        pushUndoToast({
             type: "task",
             categoryFilepath,
             tasks,
             message,
-            timer,
             isBatch: isBatch || count > 1,
-            durationSec,
-            expiresAt: Date.now() + durationMs,
-        };
-
-        undoToasts = [...undoToasts, toast];
+        });
     }
 
     function pushStepUndoToast(payload: StepDeletedPayload) {
         if (!payload || !payload.step) return;
-        const id = "toast_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
-        const rawText = payload.step.text ? payload.step.text.trim() : "Untitled";
-        const truncated = rawText.length > 26 ? rawText.slice(0, 24) + "..." : rawText;
-        const message = `Deleted step "${truncated}"`;
-
-        const durationSec = getUndoDurationSec();
-        const durationMs = durationSec * 1000;
-
-        const timer = setTimeout(() => {
-            dismissToast(id);
-        }, durationMs);
-
-        const toast: UndoToastItem = {
-            id,
+        pushUndoToast({
             type: "step",
             categoryFilepath: payload.categoryFilepath,
             stepPayload: payload,
-            message,
-            timer,
-            durationSec,
-            expiresAt: Date.now() + durationMs,
-        };
-
-        undoToasts = [...undoToasts, toast];
+            message: `Deleted step "${formatToastTitle(payload.step.text)}"`,
+        });
     }
 
     function pushCategoryUndoToast(payload: CategoryDeletedPayload) {
         if (!payload || !payload.categoryName) return;
-        const id = "toast_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
-        const rawName = payload.categoryName.trim();
-        const truncated = rawName.length > 26 ? rawName.slice(0, 24) + "..." : rawName;
-        const message = `Deleted list "${truncated}"`;
-
-        const durationSec = getUndoDurationSec();
-        const durationMs = durationSec * 1000;
-
-        const timer = setTimeout(() => {
-            dismissToast(id);
-        }, durationMs);
-
-        const toast: UndoToastItem = {
-            id,
+        pushUndoToast({
             type: "category",
             categoryFilepath: payload.categoryFilepath,
             categoryPayload: payload,
-            message,
-            timer,
-            durationSec,
-            expiresAt: Date.now() + durationMs,
-        };
-
-        undoToasts = [...undoToasts, toast];
+            message: `Deleted list "${formatToastTitle(payload.categoryName)}"`,
+        });
     }
 
     async function executeUndo(toast: UndoToastItem) {
@@ -160,9 +132,7 @@
             const { categoryName, categoryFilepath, fileContent, groupName, index } = toast.categoryPayload;
             try {
                 await dataService.restoreCategory(categoryName, categoryFilepath, fileContent, groupName, index);
-                const rawName = categoryName.trim();
-                const truncated = rawName.length > 26 ? rawName.slice(0, 24) + "..." : rawName;
-                new Notice(`Restored list: "${truncated}"`);
+                new Notice(`Restored list: "${formatToastTitle(categoryName)}"`);
             } catch (err) {
                 console.error("Failed to restore list:", err);
                 new Notice("Failed to undo list deletion.");
@@ -192,9 +162,7 @@
                     isExternal: true,
                 });
 
-                const rawText = step.text ? step.text.trim() : "Untitled";
-                const truncated = rawText.length > 26 ? rawText.slice(0, 24) + "..." : rawText;
-                new Notice(`Restored step: "${truncated}"`);
+                new Notice(`Restored step: "${formatToastTitle(step.text)}"`);
             } catch (err) {
                 console.error("Failed to restore step:", err);
                 new Notice("Failed to undo step deletion.");
@@ -222,7 +190,7 @@
 
                 new Notice(
                     newRestores.length === 1 
-                        ? `Restored: "${newRestores[0].title}"` 
+                        ? `Restored: "${formatToastTitle(newRestores[0].title)}"` 
                         : `Restored ${newRestores.length} tasks`
                 );
             } catch (err) {

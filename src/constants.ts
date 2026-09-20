@@ -27,3 +27,8 @@ export const DND_RESCUE_DELAY_MS = 50;
 
 // Delay before hiding hover popover after mouseleave (reduced to 150ms for snappy dismiss)
 export const POPOVER_HIDE_DELAY_MS = 150;
+
+// Task priority weight constants (1-9 score range)
+export const DEFAULT_TASK_WEIGHT = 5;
+export const MIN_TASK_WEIGHT = 1;
+export const MAX_TASK_WEIGHT = 9;

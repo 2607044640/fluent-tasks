@@ -9,6 +9,7 @@
     import { portal } from "./utils/domUtils";
     import { calculatePopoverPosition, type PopoverContentType } from "./utils/popoverUtils";
     import { getRelativeTime, getRecurrenceLabel } from "./utils/timeUtils";
+    import { getTaskWeight, clampTaskWeight, applyWeightSort } from "./utils/taskUtils";
     import { DISK_SYNC_DELAY_MS, ANTI_FLICKER_DURATION_MS, POPOVER_HIDE_DELAY_MS } from "./constants";
     import { Menu, setIcon, Platform, Notice, type App } from "obsidian";
     import { TaskSearchModal } from "./TaskSearchModal";
@@ -316,6 +317,8 @@
 
     function handleSettingsChanged() {
         wrapTaskTitles = plugin?.settings?.wrapTaskTitles ?? true;
+        incompleteTasks = sortTasksByWeight(incompleteTasks);
+        completedTasks = sortTasksByWeight(completedTasks);
     }
 
     // =============================================
@@ -352,39 +355,21 @@
     // =============================================
     // Weight Mode (Priority 1-9)
     // =============================================
-    function getTaskWeight(t: TaskItem): number {
-        if (typeof t.weight === "number" && !isNaN(t.weight) && t.weight >= 1 && t.weight <= 9) {
-            return t.weight;
-        }
-        return 5;
-    }
-
-    function applyWeightSort(items: TaskItem[]): TaskItem[] {
-        if (!plugin?.settings?.enableTaskWeightMode) {
-            return items;
-        }
-        // Stable sort: higher weight first; equal weights retain their original relative order
-        return items
-            .map((item, idx) => ({ item, idx }))
-            .sort((a, b) => {
-                const diff = getTaskWeight(b.item) - getTaskWeight(a.item);
-                if (diff !== 0) return diff;
-                return a.idx - b.idx;
-            })
-            .map(({ item }) => item);
+    function sortTasksByWeight(items: TaskItem[]): TaskItem[] {
+        return applyWeightSort(items, !!plugin?.settings?.enableTaskWeightMode);
     }
 
     async function changeTaskWeight(task: TaskItem, delta: number) {
         if (!currentCategory) return;
         const currentWeight = getTaskWeight(task);
-        const newWeight = Math.max(1, Math.min(9, currentWeight + delta));
+        const newWeight = clampTaskWeight(currentWeight + delta);
         if (newWeight === currentWeight) return;
 
         task.weight = newWeight;
 
         // Re-sort local arrays immediately for responsive optimistic UI
-        incompleteTasks = applyWeightSort(incompleteTasks);
-        completedTasks = applyWeightSort(completedTasks);
+        incompleteTasks = sortTasksByWeight(incompleteTasks);
+        completedTasks = sortTasksByWeight(completedTasks);
 
         // Update task on disk
         await dataService.updateTask(currentCategory.filepath, task);
@@ -403,8 +388,8 @@
         
         const inc = tasks.filter(t => !t.completed);
         const comp = tasks.filter(t => t.completed);
-        incompleteTasks = applyWeightSort(inc);
-        completedTasks = applyWeightSort(comp);
+        incompleteTasks = sortTasksByWeight(inc);
+        completedTasks = sortTasksByWeight(comp);
     }
 
     // Called from main.ts when the view is activated directly
