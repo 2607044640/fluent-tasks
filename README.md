@@ -1,6 +1,6 @@
 # Fluent Tasks
 
-Obsidian plugin: a three-pane, drag-and-drop task manager inspired by Microsoft To Do, Todoist, and TickTick. Version **1.0.25** (`manifest.json`). Desktop and mobile (`isDesktopOnly: false`). Minimum Obsidian **1.7.2**.
+Obsidian plugin: a three-pane, drag-and-drop task manager inspired by Microsoft To Do, Todoist, and TickTick. Version **1.0.27** (`manifest.json`). Desktop and mobile (`isDesktopOnly: false`). Minimum Obsidian **1.8.7**.
 
 Architecture documentation: [ARCHITECTURE.md](./ARCHITECTURE.md).
 
@@ -18,16 +18,17 @@ All lists are stored as ordinary Markdown files inside your vault:
 
 - Sidebar groups and list ordering: `TodoData/.metadata.json`
 - Dedicated linked notes: `TodoData/<ListName>/<TaskTitle>.md` with frontmatter `taskId`
-- Plugin options: Obsidian plugin data (`accentColor`, modal/sidebar toggles, Quick List grid settings, backup toggles)
+- Plugin options: Obsidian plugin data (`accentColor`, modal/sidebar toggles, Quick List grid settings, backup toggles, undo durations, task weight mode)
 
 There is no cloud lock-in or external server dependency. All data remains 100% local in your Obsidian vault.
 
 ## Key Features
 
 - **Lists & Groups**: Create custom lists and organize them into collapsible groups. Drag-and-drop lists into groups or reorder them freely. Press **F2** to rename hovered or active lists.
-- **Task Management**: Inline task creation, completion toggles, star/pin priority, drag-and-drop task reordering, and moving tasks between lists.
+- **Task Management & Priority Weight Scoring**: Inline task creation, completion toggles, star/pin priority, drag-and-drop task reordering, and moving tasks between lists. Optional 1-9 priority score weighting with stepper controls and dynamic stable sorting.
 - **Batch Operations & Multi-Select**: Toggle multi-select mode to select multiple tasks and perform batch star/unstar or batch deletion.
-- **Subtasks & Notes**: Dedicated detail panel for step checklists and inline notes. Create linked Markdown notes directly from tasks.
+- **Subtasks & Step Drag-and-Drop**: Dedicated detail panel and floating modal for step checklists. Full vertical drag-and-drop step reordering with zero-loss safety reconciliation.
+- **Multi-Tier Deletion Undo**: Instant floating toast undo mechanism for deleted tasks (single or batch), subtasks, and lists, with configurable undo timer in settings.
 - **Due Dates & Recurrence**: Schedule tasks with smart presets (today, tomorrow, next week) and flexible recurrence rules (daily, weekdays, weekly, custom). Overdue recurring tasks automatically roll over.
 - **Quick Modals & Dashboard Grid**: Access Quick List board (`Ctrl+Shift+L` or command) and Quick Task popup for rapid task capture and navigation. Configurable grid layouts, elastic gaps, and default focus list options.
 - **Automatic & Manual Backups**: Built-in Backup Manager with automatic daily snapshots, manual export, import, and backup history management.
