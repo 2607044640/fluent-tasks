@@ -3,7 +3,7 @@
   "openDetailInModal": false,
   "autoExpandSidebar": true,
   "autoCollapseSidebarOnSwitch": true,
-  "searchHideCompleted": false,
+  "searchHideCompleted": true,
   "hideRibbonIcon": true,
   "wrapTaskTitles": true,
   "quickModalAction": "direct",
