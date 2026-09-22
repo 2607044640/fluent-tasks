@@ -535,58 +535,59 @@
 .task-weight-control {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
+    min-width: 22px;
     height: 20px;
     margin-left: 6px;
     background: var(--background-modifier-form-field, rgba(255, 255, 255, 0.04));
     border: 1px solid var(--background-modifier-border, rgba(255, 255, 255, 0.12));
     border-radius: 4px;
-    padding: 0 1px;
+    padding: 0 4px;
     user-select: none;
     -webkit-user-select: none;
     flex-shrink: 0;
     box-sizing: border-box;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.weight-arrow-btn {
-    width: 13px;
+.task-weight-control:hover {
+    background: var(--background-modifier-hover, rgba(255, 255, 255, 0.08));
+    border-color: var(--background-modifier-border-hover, rgba(255, 255, 255, 0.25));
+}
+
+.task-weight-control.is-editing {
+    border-color: var(--interactive-accent, #0078d4);
+    background: var(--background-primary, rgba(0, 0, 0, 0.2));
+    cursor: text;
+}
+
+.task-weight-input {
+    width: 14px;
     height: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: transparent;
-    border: none;
-    border-radius: 2px;
     padding: 0;
     margin: 0;
-    cursor: pointer;
-    color: var(--text-muted, #888);
-    transition: background 0.12s ease, color 0.12s ease;
-}
-
-.weight-arrow-btn:hover:not(:disabled) {
-    background: var(--background-modifier-hover, rgba(255, 255, 255, 0.12));
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 16px;
+    text-align: center;
     color: var(--text-normal, #fff);
-}
-
-.weight-arrow-btn:active:not(:disabled) {
-    background: var(--background-modifier-active-hover, rgba(255, 255, 255, 0.2));
-}
-
-.weight-arrow-btn:disabled,
-.weight-arrow-btn.is-disabled {
-    opacity: 0.25;
-    cursor: default;
-    pointer-events: none;
+    background: transparent;
+    border: none;
+    outline: none;
+    box-shadow: none;
+    user-select: text;
+    -webkit-user-select: text;
 }
 
 .weight-score-badge {
-    min-width: 14px;
+    min-width: 12px;
     text-align: center;
     font-size: 11px;
     font-weight: 600;
     line-height: 1;
     color: var(--text-muted, #aaa);
-    padding: 0 1px;
+    padding: 0;
 }
 
 .weight-score-badge.high-weight {

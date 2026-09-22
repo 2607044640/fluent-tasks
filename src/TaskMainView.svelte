@@ -42,6 +42,11 @@
     let isMultiSelectMode: boolean = false;
     let selectedTaskIds: Set<string> = new Set();
 
+    // Weight Mode State
+    let editingWeightTaskId: string | null = null;
+    let editingWeightValue: string = "";
+    let pendingWeightReSort: boolean = false;
+
     // DND requires items to have an `id` field — our TaskItem already has it
     const DND_FLIP_DURATION = 200;
 
@@ -359,24 +364,96 @@
         return applyWeightSort(items, !!plugin?.settings?.enableTaskWeightMode);
     }
 
-    async function changeTaskWeight(task: TaskItem, delta: number) {
+    async function handleWeightWheel(e: WheelEvent, task: TaskItem) {
+        e.preventDefault();
+        e.stopPropagation();
         if (!currentCategory) return;
+
+        const delta = e.deltaY < 0 ? 1 : -1;
         const currentWeight = getTaskWeight(task);
         const newWeight = clampTaskWeight(currentWeight + delta);
         if (newWeight === currentWeight) return;
 
         task.weight = newWeight;
+        // Trigger Svelte reactive re-render without reordering the list while hovering
+        incompleteTasks = [...incompleteTasks];
+        completedTasks = [...completedTasks];
+        pendingWeightReSort = true;
 
-        // Re-sort local arrays immediately for responsive optimistic UI
-        incompleteTasks = sortTasksByWeight(incompleteTasks);
-        completedTasks = sortTasksByWeight(completedTasks);
-
-        // Update task on disk
+        // Persist to disk
         await dataService.updateTask(currentCategory.filepath, task);
         EventBus.emit(EventName.TASK_UPDATED, {
             task,
             categoryFilepath: currentCategory.filepath,
         });
+    }
+
+    function handleWeightMouseLeave() {
+        if (editingWeightTaskId) return;
+        if (pendingWeightReSort) {
+            pendingWeightReSort = false;
+            incompleteTasks = sortTasksByWeight(incompleteTasks);
+            completedTasks = sortTasksByWeight(completedTasks);
+        }
+    }
+
+    async function startEditingWeight(task: TaskItem) {
+        editingWeightTaskId = task.id;
+        editingWeightValue = String(getTaskWeight(task));
+        await tick();
+        const inputEl = document.querySelector(`.task-weight-input[data-task-id="${task.id}"]`) as HTMLInputElement | null;
+        if (inputEl) {
+            inputEl.focus();
+            inputEl.select();
+        }
+    }
+
+    async function commitWeightEdit(task: TaskItem) {
+        if (editingWeightTaskId !== task.id) return;
+        editingWeightTaskId = null;
+
+        const parsed = parseInt(editingWeightValue.trim(), 10);
+        const newWeight = isNaN(parsed) ? getTaskWeight(task) : clampTaskWeight(parsed);
+
+        if (task.weight !== newWeight) {
+            task.weight = newWeight;
+            if (currentCategory) {
+                await dataService.updateTask(currentCategory.filepath, task);
+                EventBus.emit(EventName.TASK_UPDATED, {
+                    task,
+                    categoryFilepath: currentCategory.filepath,
+                });
+            }
+        }
+
+        pendingWeightReSort = false;
+        incompleteTasks = sortTasksByWeight(incompleteTasks);
+        completedTasks = sortTasksByWeight(completedTasks);
+    }
+
+    function handleWeightInputKeydown(e: KeyboardEvent, task: TaskItem) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            e.stopPropagation();
+            void commitWeightEdit(task);
+        } else if (e.key === "Escape") {
+            e.preventDefault();
+            e.stopPropagation();
+            editingWeightTaskId = null;
+            if (pendingWeightReSort) {
+                pendingWeightReSort = false;
+                incompleteTasks = sortTasksByWeight(incompleteTasks);
+                completedTasks = sortTasksByWeight(completedTasks);
+            }
+        } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            const cur = parseInt(editingWeightValue, 10) || getTaskWeight(task);
+            editingWeightValue = String(clampTaskWeight(cur + 1));
+        } else if (e.key === "ArrowDown") {
+            e.preventDefault();
+            const cur = parseInt(editingWeightValue, 10) || getTaskWeight(task);
+            editingWeightValue = String(clampTaskWeight(cur - 1));
+        }
     }
 
     // =============================================
@@ -1222,40 +1299,29 @@
                     {#if plugin?.settings?.enableTaskWeightMode}
                         <!-- svelte-ignore a11y-click-events-have-key-events -->
                         <div class="task-weight-control"
-                             on:click|stopPropagation
+                             class:is-editing={editingWeightTaskId === task.id}
+                             on:click|stopPropagation={() => startEditingWeight(task)}
                              on:pointerdown|stopPropagation
-                             title="Priority weight: {getTaskWeight(task)} (1-9)">
-                            <button
-                                type="button"
-                                class="weight-arrow-btn left"
-                                class:is-disabled={getTaskWeight(task) <= 1}
-                                disabled={getTaskWeight(task) <= 1}
-                                on:click|stopPropagation={() => changeTaskWeight(task, -1)}
-                                on:pointerdown|stopPropagation
-                                aria-label="Decrease weight"
-                                title="Decrease weight (-1)"
-                            >
-                                <svg width="6" height="8" viewBox="0 0 6 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <polyline points="4.5 1.5 1.5 4 4.5 6.5"/>
-                                </svg>
-                            </button>
-                            <span class="weight-score-badge" class:high-weight={getTaskWeight(task) >= 7} class:low-weight={getTaskWeight(task) <= 3}>
-                                {getTaskWeight(task)}
-                            </span>
-                            <button
-                                type="button"
-                                class="weight-arrow-btn right"
-                                class:is-disabled={getTaskWeight(task) >= 9}
-                                disabled={getTaskWeight(task) >= 9}
-                                on:click|stopPropagation={() => changeTaskWeight(task, 1)}
-                                on:pointerdown|stopPropagation
-                                aria-label="Increase weight"
-                                title="Increase weight (+1)"
-                            >
-                                <svg width="6" height="8" viewBox="0 0 6 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <polyline points="1.5 1.5 4.5 4 1.5 6.5"/>
-                                </svg>
-                            </button>
+                             on:wheel={(e) => handleWeightWheel(e, task)}
+                             on:mouseleave={handleWeightMouseLeave}
+                             title="Priority: {getTaskWeight(task)} (Scroll or click to edit 1-9)">
+                            {#if editingWeightTaskId === task.id}
+                                <input
+                                    type="text"
+                                    class="task-weight-input"
+                                    data-task-id={task.id}
+                                    maxlength="1"
+                                    bind:value={editingWeightValue}
+                                    on:blur={() => commitWeightEdit(task)}
+                                    on:keydown={(e) => handleWeightInputKeydown(e, task)}
+                                    on:click|stopPropagation
+                                    on:pointerdown|stopPropagation
+                                />
+                            {:else}
+                                <span class="weight-score-badge" class:high-weight={getTaskWeight(task) >= 7} class:low-weight={getTaskWeight(task) <= 3}>
+                                    {getTaskWeight(task)}
+                                </span>
+                            {/if}
                         </div>
                     {/if}
                 </div>
@@ -1455,40 +1521,29 @@
                                 {#if plugin?.settings?.enableTaskWeightMode}
                                     <!-- svelte-ignore a11y-click-events-have-key-events -->
                                     <div class="task-weight-control"
-                                         on:click|stopPropagation
+                                         class:is-editing={editingWeightTaskId === task.id}
+                                         on:click|stopPropagation={() => startEditingWeight(task)}
                                          on:pointerdown|stopPropagation
-                                         title="Priority weight: {getTaskWeight(task)} (1-9)">
-                                        <button
-                                            type="button"
-                                            class="weight-arrow-btn left"
-                                            class:is-disabled={getTaskWeight(task) <= 1}
-                                            disabled={getTaskWeight(task) <= 1}
-                                            on:click|stopPropagation={() => changeTaskWeight(task, -1)}
-                                            on:pointerdown|stopPropagation
-                                            aria-label="Decrease weight"
-                                            title="Decrease weight (-1)"
-                                        >
-                                            <svg width="6" height="8" viewBox="0 0 6 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                                <polyline points="4.5 1.5 1.5 4 4.5 6.5"/>
-                                            </svg>
-                                        </button>
-                                        <span class="weight-score-badge" class:high-weight={getTaskWeight(task) >= 7} class:low-weight={getTaskWeight(task) <= 3}>
-                                            {getTaskWeight(task)}
-                                        </span>
-                                        <button
-                                            type="button"
-                                            class="weight-arrow-btn right"
-                                            class:is-disabled={getTaskWeight(task) >= 9}
-                                            disabled={getTaskWeight(task) >= 9}
-                                            on:click|stopPropagation={() => changeTaskWeight(task, 1)}
-                                            on:pointerdown|stopPropagation
-                                            aria-label="Increase weight"
-                                            title="Increase weight (+1)"
-                                        >
-                                            <svg width="6" height="8" viewBox="0 0 6 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                                <polyline points="1.5 1.5 4.5 4 1.5 6.5"/>
-                                            </svg>
-                                        </button>
+                                         on:wheel={(e) => handleWeightWheel(e, task)}
+                                         on:mouseleave={handleWeightMouseLeave}
+                                         title="Priority: {getTaskWeight(task)} (Scroll or click to edit 1-9)">
+                                        {#if editingWeightTaskId === task.id}
+                                            <input
+                                                type="text"
+                                                class="task-weight-input"
+                                                data-task-id={task.id}
+                                                maxlength="1"
+                                                bind:value={editingWeightValue}
+                                                on:blur={() => commitWeightEdit(task)}
+                                                on:keydown={(e) => handleWeightInputKeydown(e, task)}
+                                                on:click|stopPropagation
+                                                on:pointerdown|stopPropagation
+                                            />
+                                        {:else}
+                                            <span class="weight-score-badge" class:high-weight={getTaskWeight(task) >= 7} class:low-weight={getTaskWeight(task) <= 3}>
+                                                {getTaskWeight(task)}
+                                            </span>
+                                        {/if}
                                     </div>
                                 {/if}
                             </div>

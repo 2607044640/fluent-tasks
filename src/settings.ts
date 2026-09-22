@@ -207,7 +207,7 @@ export class FluentTasksSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName("Task weight mode")
-            .setDesc("Enable 1-9 priority score ranking for tasks (9 is highest, default is 5). When enabled, tasks are dynamically prioritized by weight with increment/decrement arrows next to the star.")
+            .setDesc("Enable 1-9 priority score ranking for tasks (9 is highest, default is 5). When enabled, tasks are dynamically prioritized by weight. Use mouse wheel or click the badge to edit the weight directly.")
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.enableTaskWeightMode ?? false)
                 .onChange(async (value) => {
