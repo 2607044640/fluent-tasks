@@ -30,7 +30,7 @@ export function clampTaskWeight(weight: number): number {
  */
 export function applyWeightSort(items: TaskItem[], enableWeightMode: boolean = false): TaskItem[] {
     if (!enableWeightMode) {
-        return items;
+        return [...items];
     }
     return items
         .map((item, idx) => ({ item, idx }))

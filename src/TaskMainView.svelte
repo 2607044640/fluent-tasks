@@ -30,6 +30,8 @@
     // State
     // =============================================
     let currentCategory: CategoryInfo | null = null;
+    let rawIncompleteTasks: TaskItem[] = [];
+    let rawCompletedTasks: TaskItem[] = [];
     let incompleteTasks: TaskItem[] = [];
     let completedTasks: TaskItem[] = [];
     let newTaskTitle: string = "";
@@ -237,8 +239,8 @@
         hoveredTitleTarget = null;
         if (pendingWeightReSort && !editingWeightTaskId) {
             pendingWeightReSort = false;
-            incompleteTasks = sortTasksByWeight(incompleteTasks);
-            completedTasks = sortTasksByWeight(completedTasks);
+            incompleteTasks = applyWeightSort(rawIncompleteTasks, !!plugin?.settings?.enableTaskWeightMode);
+            completedTasks = applyWeightSort(rawCompletedTasks, !!plugin?.settings?.enableTaskWeightMode);
         }
     }
 
@@ -327,8 +329,8 @@
 
     function handleSettingsChanged() {
         wrapTaskTitles = plugin?.settings?.wrapTaskTitles ?? true;
-        incompleteTasks = sortTasksByWeight(incompleteTasks);
-        completedTasks = sortTasksByWeight(completedTasks);
+        incompleteTasks = applyWeightSort(rawIncompleteTasks, !!plugin?.settings?.enableTaskWeightMode);
+        completedTasks = applyWeightSort(rawCompletedTasks, !!plugin?.settings?.enableTaskWeightMode);
     }
 
     // =============================================
@@ -380,6 +382,11 @@
         if (newWeight === currentWeight) return;
 
         task.weight = newWeight;
+        const rawInc = rawIncompleteTasks.find(t => t.id === task.id);
+        if (rawInc) rawInc.weight = newWeight;
+        const rawComp = rawCompletedTasks.find(t => t.id === task.id);
+        if (rawComp) rawComp.weight = newWeight;
+
         // Trigger Svelte reactive re-render without reordering the list while hovering
         incompleteTasks = [...incompleteTasks];
         completedTasks = [...completedTasks];
@@ -398,8 +405,8 @@
         if (editingWeightTaskId) return;
         if (pendingWeightReSort) {
             pendingWeightReSort = false;
-            incompleteTasks = sortTasksByWeight(incompleteTasks);
-            completedTasks = sortTasksByWeight(completedTasks);
+            incompleteTasks = applyWeightSort(rawIncompleteTasks, !!plugin?.settings?.enableTaskWeightMode);
+            completedTasks = applyWeightSort(rawCompletedTasks, !!plugin?.settings?.enableTaskWeightMode);
         }
     }
 
@@ -423,6 +430,11 @@
 
         if (task.weight !== newWeight) {
             task.weight = newWeight;
+            const rawInc = rawIncompleteTasks.find(t => t.id === task.id);
+            if (rawInc) rawInc.weight = newWeight;
+            const rawComp = rawCompletedTasks.find(t => t.id === task.id);
+            if (rawComp) rawComp.weight = newWeight;
+
             if (currentCategory) {
                 await dataService.updateTask(currentCategory.filepath, task);
                 EventBus.emit(EventName.TASK_UPDATED, {
@@ -434,8 +446,8 @@
         }
 
         pendingWeightReSort = false;
-        incompleteTasks = sortTasksByWeight(incompleteTasks);
-        completedTasks = sortTasksByWeight(completedTasks);
+        incompleteTasks = applyWeightSort(rawIncompleteTasks, !!plugin?.settings?.enableTaskWeightMode);
+        completedTasks = applyWeightSort(rawCompletedTasks, !!plugin?.settings?.enableTaskWeightMode);
     }
 
     function handleWeightInputKeydown(e: KeyboardEvent, task: TaskItem) {
@@ -449,8 +461,8 @@
             editingWeightTaskId = null;
             if (pendingWeightReSort) {
                 pendingWeightReSort = false;
-                incompleteTasks = sortTasksByWeight(incompleteTasks);
-                completedTasks = sortTasksByWeight(completedTasks);
+                incompleteTasks = applyWeightSort(rawIncompleteTasks, !!plugin?.settings?.enableTaskWeightMode);
+                completedTasks = applyWeightSort(rawCompletedTasks, !!plugin?.settings?.enableTaskWeightMode);
             }
         } else if (e.key === "ArrowUp") {
             e.preventDefault();
@@ -470,10 +482,10 @@
         if (!currentCategory) return;
         const tasks = await dataService.getTasks(currentCategory.filepath);
         
-        const inc = tasks.filter(t => !t.completed);
-        const comp = tasks.filter(t => t.completed);
-        incompleteTasks = sortTasksByWeight(inc);
-        completedTasks = sortTasksByWeight(comp);
+        rawIncompleteTasks = tasks.filter(t => !t.completed);
+        rawCompletedTasks = tasks.filter(t => t.completed);
+        incompleteTasks = applyWeightSort(rawIncompleteTasks, !!plugin?.settings?.enableTaskWeightMode);
+        completedTasks = applyWeightSort(rawCompletedTasks, !!plugin?.settings?.enableTaskWeightMode);
     }
 
     // Called from main.ts when the view is activated directly
@@ -529,19 +541,23 @@
     async function handleTaskMoved(payload: any) {
         if (payload.targetPath === currentCategory?.filepath) {
             // Task moved TO this category. Add it optimistically.
-            const existsInIncomplete = incompleteTasks.find(t => t.id === payload.task.id);
-            const existsInComplete = completedTasks.find(t => t.id === payload.task.id);
+            const existsInIncomplete = rawIncompleteTasks.find(t => t.id === payload.task.id);
+            const existsInComplete = rawCompletedTasks.find(t => t.id === payload.task.id);
             if (!existsInIncomplete && !existsInComplete) {
                 if (payload.task.completed) {
-                    completedTasks = [...completedTasks, payload.task];
+                    rawCompletedTasks = [...rawCompletedTasks, payload.task];
                 } else {
-                    incompleteTasks = [...incompleteTasks, payload.task];
+                    rawIncompleteTasks = [...rawIncompleteTasks, payload.task];
                 }
+                incompleteTasks = applyWeightSort(rawIncompleteTasks, !!plugin?.settings?.enableTaskWeightMode);
+                completedTasks = applyWeightSort(rawCompletedTasks, !!plugin?.settings?.enableTaskWeightMode);
             }
         } else if (payload.sourcePath === currentCategory?.filepath) {
             // Task moved FROM this category. Ensure it's removed optimistically.
-            incompleteTasks = incompleteTasks.filter(t => t.id !== payload.task.id);
-            completedTasks = completedTasks.filter(t => t.id !== payload.task.id);
+            rawIncompleteTasks = rawIncompleteTasks.filter(t => t.id !== payload.task.id);
+            rawCompletedTasks = rawCompletedTasks.filter(t => t.id !== payload.task.id);
+            incompleteTasks = applyWeightSort(rawIncompleteTasks, !!plugin?.settings?.enableTaskWeightMode);
+            completedTasks = applyWeightSort(rawCompletedTasks, !!plugin?.settings?.enableTaskWeightMode);
         }
 
         // Sync with disk after Obsidian has time to flush its cache
@@ -556,8 +572,10 @@
                 payload.tasks ? payload.tasks.map((t: any) => t.id) : (payload.task ? [payload.task.id] : [])
             );
             if (idsToDelete.size > 0) {
-                incompleteTasks = incompleteTasks.filter(t => !idsToDelete.has(t.id));
-                completedTasks = completedTasks.filter(t => !idsToDelete.has(t.id));
+                rawIncompleteTasks = rawIncompleteTasks.filter(t => !idsToDelete.has(t.id));
+                rawCompletedTasks = rawCompletedTasks.filter(t => !idsToDelete.has(t.id));
+                incompleteTasks = applyWeightSort(rawIncompleteTasks, !!plugin?.settings?.enableTaskWeightMode);
+                completedTasks = applyWeightSort(rawCompletedTasks, !!plugin?.settings?.enableTaskWeightMode);
                 if (selectedTaskId && idsToDelete.has(selectedTaskId)) {
                     selectedTaskId = "";
                 }
@@ -569,8 +587,6 @@
     // Task Actions
     // =============================================
 
-
-
     async function addTask() {
         const title = newTaskTitle.trim();
         if (!title || !currentCategory) return;
@@ -580,7 +596,8 @@
 
         // Optimistic UI: insert into local state immediately.
         // We do NOT call loadTasks() here because Obsidian's async I/O might cause a race condition.
-        incompleteTasks = applyWeightSort([newTask, ...incompleteTasks]);
+        rawIncompleteTasks = [newTask, ...rawIncompleteTasks];
+        incompleteTasks = applyWeightSort(rawIncompleteTasks, !!plugin?.settings?.enableTaskWeightMode);
     }
 
     function handleAddTaskKeydown(e: KeyboardEvent) {
@@ -595,25 +612,34 @@
         task.completed = !task.completed;
         if (task.completed) {
             task.completedAt = new Date().toISOString();
-            incompleteTasks = incompleteTasks.filter(t => t.id !== task.id);
-            completedTasks = applyWeightSort([task, ...completedTasks]);
+            rawIncompleteTasks = rawIncompleteTasks.filter(t => t.id !== task.id);
+            rawCompletedTasks = [task, ...rawCompletedTasks];
         } else {
             delete task.completedAt;
-            completedTasks = completedTasks.filter(t => t.id !== task.id);
-            incompleteTasks = applyWeightSort([task, ...incompleteTasks]);
+            rawCompletedTasks = rawCompletedTasks.filter(t => t.id !== task.id);
+            rawIncompleteTasks = [task, ...rawIncompleteTasks];
         }
+
+        incompleteTasks = applyWeightSort(rawIncompleteTasks, !!plugin?.settings?.enableTaskWeightMode);
+        completedTasks = applyWeightSort(rawCompletedTasks, !!plugin?.settings?.enableTaskWeightMode);
 
         // Persist to disk
         await dataService.updateTask(currentCategory.filepath, task);
         EventBus.emit(EventName.TASK_UPDATED, {
             task,
             categoryFilepath: currentCategory.filepath,
+            source: 'main-view',
         });
     }
 
     async function toggleStar(task: TaskItem) {
         if (!currentCategory) return;
         task.starred = !task.starred;
+
+        const rawInc = rawIncompleteTasks.find(t => t.id === task.id);
+        if (rawInc) rawInc.starred = task.starred;
+        const rawComp = rawCompletedTasks.find(t => t.id === task.id);
+        if (rawComp) rawComp.starred = task.starred;
 
         // Update local arrays to trigger reactivity
         incompleteTasks = [...incompleteTasks];
@@ -623,6 +649,7 @@
         EventBus.emit(EventName.TASK_UPDATED, {
             task,
             categoryFilepath: currentCategory.filepath,
+            source: 'main-view',
         });
     }
 
@@ -742,8 +769,10 @@
             // CRITICAL: Filter out from local state and DO NOT call saveTasks() on currentCategory
             // because moveTask has already removed it from disk.
             if (listType === 'incomplete') {
+                rawIncompleteTasks = rawIncompleteTasks.filter(t => t.id !== draggedId && t.id !== dragData.task?.id);
                 incompleteTasks = incompleteTasks.filter(t => t.id !== draggedId && t.id !== dragData.task?.id);
             } else {
+                rawCompletedTasks = rawCompletedTasks.filter(t => t.id !== draggedId && t.id !== dragData.task?.id);
                 completedTasks = completedTasks.filter(t => t.id !== draggedId && t.id !== dragData.task?.id);
             }
 
@@ -768,12 +797,17 @@
         const isCompletedList = listType === 'completed';
         updatedItems.forEach(t => { t.completed = isCompletedList; });
 
-        if (listType === 'incomplete') incompleteTasks = updatedItems;
-        else completedTasks = updatedItems;
+        if (listType === 'incomplete') {
+            incompleteTasks = updatedItems;
+            rawIncompleteTasks = updatedItems;
+        } else {
+            completedTasks = updatedItems;
+            rawCompletedTasks = updatedItems;
+        }
 
         if (!currentCategory) return;
         // Persist the new order
-        const allTasks = [...incompleteTasks, ...completedTasks];
+        const allTasks = [...rawIncompleteTasks, ...rawCompletedTasks];
         await dataService.saveTasks(currentCategory.filepath, allTasks);
     }
 
