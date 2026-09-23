@@ -39,6 +39,7 @@
     let selectedTaskId: string = "";
     let addTaskInputEl: HTMLInputElement;
     let wrapTaskTitles: boolean = plugin?.settings?.wrapTaskTitles ?? true;
+    let enableTaskWeightMode: boolean = plugin?.settings?.enableTaskWeightMode ?? false;
 
     // Multi-Select Mode State
     let isMultiSelectMode: boolean = false;
@@ -329,8 +330,9 @@
 
     function handleSettingsChanged() {
         wrapTaskTitles = plugin?.settings?.wrapTaskTitles ?? true;
-        incompleteTasks = applyWeightSort(rawIncompleteTasks, !!plugin?.settings?.enableTaskWeightMode);
-        completedTasks = applyWeightSort(rawCompletedTasks, !!plugin?.settings?.enableTaskWeightMode);
+        enableTaskWeightMode = plugin?.settings?.enableTaskWeightMode ?? false;
+        incompleteTasks = applyWeightSort(rawIncompleteTasks, enableTaskWeightMode);
+        completedTasks = applyWeightSort(rawCompletedTasks, enableTaskWeightMode);
     }
 
     // =============================================
@@ -368,7 +370,7 @@
     // Weight Mode (Priority 1-9)
     // =============================================
     function sortTasksByWeight(items: TaskItem[]): TaskItem[] {
-        return applyWeightSort(items, !!plugin?.settings?.enableTaskWeightMode);
+        return applyWeightSort(items, enableTaskWeightMode);
     }
 
     async function handleWeightWheel(e: WheelEvent, task: TaskItem) {
@@ -405,8 +407,8 @@
         if (editingWeightTaskId) return;
         if (pendingWeightReSort) {
             pendingWeightReSort = false;
-            incompleteTasks = applyWeightSort(rawIncompleteTasks, !!plugin?.settings?.enableTaskWeightMode);
-            completedTasks = applyWeightSort(rawCompletedTasks, !!plugin?.settings?.enableTaskWeightMode);
+            incompleteTasks = applyWeightSort(rawIncompleteTasks, enableTaskWeightMode);
+            completedTasks = applyWeightSort(rawCompletedTasks, enableTaskWeightMode);
         }
     }
 
@@ -446,8 +448,8 @@
         }
 
         pendingWeightReSort = false;
-        incompleteTasks = applyWeightSort(rawIncompleteTasks, !!plugin?.settings?.enableTaskWeightMode);
-        completedTasks = applyWeightSort(rawCompletedTasks, !!plugin?.settings?.enableTaskWeightMode);
+        incompleteTasks = applyWeightSort(rawIncompleteTasks, enableTaskWeightMode);
+        completedTasks = applyWeightSort(rawCompletedTasks, enableTaskWeightMode);
     }
 
     function handleWeightInputKeydown(e: KeyboardEvent, task: TaskItem) {
@@ -461,8 +463,8 @@
             editingWeightTaskId = null;
             if (pendingWeightReSort) {
                 pendingWeightReSort = false;
-                incompleteTasks = applyWeightSort(rawIncompleteTasks, !!plugin?.settings?.enableTaskWeightMode);
-                completedTasks = applyWeightSort(rawCompletedTasks, !!plugin?.settings?.enableTaskWeightMode);
+                incompleteTasks = applyWeightSort(rawIncompleteTasks, enableTaskWeightMode);
+                completedTasks = applyWeightSort(rawCompletedTasks, enableTaskWeightMode);
             }
         } else if (e.key === "ArrowUp") {
             e.preventDefault();
@@ -484,8 +486,8 @@
         
         rawIncompleteTasks = tasks.filter(t => !t.completed);
         rawCompletedTasks = tasks.filter(t => t.completed);
-        incompleteTasks = applyWeightSort(rawIncompleteTasks, !!plugin?.settings?.enableTaskWeightMode);
-        completedTasks = applyWeightSort(rawCompletedTasks, !!plugin?.settings?.enableTaskWeightMode);
+        incompleteTasks = applyWeightSort(rawIncompleteTasks, enableTaskWeightMode);
+        completedTasks = applyWeightSort(rawCompletedTasks, enableTaskWeightMode);
     }
 
     // Called from main.ts when the view is activated directly
@@ -493,6 +495,7 @@
         currentCategory = cat;
         selectedTaskId = "";
         showCompleted = false;
+        enableTaskWeightMode = plugin?.settings?.enableTaskWeightMode ?? false;
         await loadTasks();
     }
 
@@ -1343,7 +1346,7 @@
                     </span>
 
                     <!-- Weight Control (Priority 1-9) -->
-                    {#if plugin?.settings?.enableTaskWeightMode}
+                    {#if enableTaskWeightMode}
                         <!-- svelte-ignore a11y-click-events-have-key-events -->
                         <div class="task-weight-control"
                              class:is-editing={editingWeightTaskId === task.id}
@@ -1565,7 +1568,7 @@
                                 </span>
 
                                 <!-- Weight Control (Priority 1-9) -->
-                                {#if plugin?.settings?.enableTaskWeightMode}
+                                {#if enableTaskWeightMode}
                                     <!-- svelte-ignore a11y-click-events-have-key-events -->
                                     <div class="task-weight-control"
                                          class:is-editing={editingWeightTaskId === task.id}
