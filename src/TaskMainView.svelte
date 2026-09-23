@@ -235,6 +235,11 @@
         isCtrlPressed = false;
         hasComboModifierOrKey = false;
         hoveredTitleTarget = null;
+        if (pendingWeightReSort && !editingWeightTaskId) {
+            pendingWeightReSort = false;
+            incompleteTasks = sortTasksByWeight(incompleteTasks);
+            completedTasks = sortTasksByWeight(completedTasks);
+        }
     }
 
     function handleTitleHover(e: MouseEvent, task: TaskItem) {
@@ -380,11 +385,12 @@
         completedTasks = [...completedTasks];
         pendingWeightReSort = true;
 
-        // Persist to disk
+        // Persist to disk without triggering local list reload
         await dataService.updateTask(currentCategory.filepath, task);
         EventBus.emit(EventName.TASK_UPDATED, {
             task,
             categoryFilepath: currentCategory.filepath,
+            source: 'main-view-weight-wheel',
         });
     }
 
@@ -422,6 +428,7 @@
                 EventBus.emit(EventName.TASK_UPDATED, {
                     task,
                     categoryFilepath: currentCategory.filepath,
+                    source: 'main-view-weight-edit',
                 });
             }
         }
@@ -499,6 +506,12 @@
     }
 
     async function handleTaskUpdated(payload: any) {
+        if (payload?.source === 'main-view-weight-wheel' || payload?.source === 'main-view-weight-edit') {
+            return;
+        }
+        if (pendingWeightReSort || editingWeightTaskId) {
+            return;
+        }
         if (!payload.categoryFilepath || payload.categoryFilepath === currentCategory?.filepath) {
             await loadTasks();
             if (payload.isExternal && selectedTaskId && currentCategory) {

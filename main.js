@@ -16978,6 +16978,11 @@ function instance4($$self, $$props, $$invalidate) {
     isCtrlPressed = false;
     hasComboModifierOrKey = false;
     hoveredTitleTarget = null;
+    if (pendingWeightReSort && !editingWeightTaskId) {
+      pendingWeightReSort = false;
+      $$invalidate(6, incompleteTasks = sortTasksByWeight(incompleteTasks));
+      $$invalidate(7, completedTasks = sortTasksByWeight(completedTasks));
+    }
   }
   function handleTitleHover(e, task) {
     hoveredTitleTarget = { element: e.currentTarget, task };
@@ -17109,7 +17114,8 @@ function instance4($$self, $$props, $$invalidate) {
     await dataService.updateTask(currentCategory.filepath, task);
     EventBus.emit("task:updated" /* TASK_UPDATED */, {
       task,
-      categoryFilepath: currentCategory.filepath
+      categoryFilepath: currentCategory.filepath,
+      source: "main-view-weight-wheel"
     });
   }
   function handleWeightMouseLeave() {
@@ -17143,7 +17149,8 @@ function instance4($$self, $$props, $$invalidate) {
         await dataService.updateTask(currentCategory.filepath, task);
         EventBus.emit("task:updated" /* TASK_UPDATED */, {
           task,
-          categoryFilepath: currentCategory.filepath
+          categoryFilepath: currentCategory.filepath,
+          source: "main-view-weight-edit"
         });
       }
     }
@@ -17206,6 +17213,12 @@ function instance4($$self, $$props, $$invalidate) {
     }
   }
   async function handleTaskUpdated(payload) {
+    if ((payload == null ? void 0 : payload.source) === "main-view-weight-wheel" || (payload == null ? void 0 : payload.source) === "main-view-weight-edit") {
+      return;
+    }
+    if (pendingWeightReSort || editingWeightTaskId) {
+      return;
+    }
     if (!payload.categoryFilepath || payload.categoryFilepath === (currentCategory == null ? void 0 : currentCategory.filepath)) {
       await loadTasks();
       if (payload.isExternal && selectedTaskId && currentCategory) {
