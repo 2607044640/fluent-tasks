@@ -172,6 +172,12 @@
                             isInline: true,
                             content: processed,
                         };
+                        svgResolveCache.set(svgStr, {
+                            isInline: true,
+                            content: processed,
+                            srcUrl: res.srcUrl,
+                            cleanPath: file.path,
+                        });
                     }
                 }).catch((err: any) => console.error("Failed to read SVG file for lightbox:", err));
             }
@@ -1911,7 +1917,19 @@
              on:click={handleLightboxClick}
              on:contextmenu|preventDefault={closeSvgLightbox}
              role="presentation">
-            <div class="svg-lightbox-modal" role="dialog" aria-modal="true" tabindex="-1">
+            <div class="svg-lightbox-modal" role="dialog" aria-modal="true" tabindex="-1"
+                 on:keydown={(e) => {
+                     if (e.key === "Escape") {
+                         closeSvgLightbox();
+                     } else if (e.key === "F2" || (e.ctrlKey && e.altKey && e.shiftKey && (e.key.toLowerCase() === "i" || e.code === "KeyI"))) {
+                         e.preventDefault();
+                         e.stopPropagation();
+                         const quickEditor = (window as any).a1SvgQuickEditor;
+                         if (quickEditor?.executeEditSvgText) {
+                             void quickEditor.executeEditSvgText();
+                         }
+                     }
+                 }}>
                 <div class="svg-lightbox-header">
                     <div class="svg-lightbox-title-row">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--todo-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1939,7 +1957,13 @@
                 </div>
                 <div class="svg-lightbox-body">
                     {#if lightboxData.isInline}
-                        <div class="svg-lightbox-content">
+                        <div class="svg-lightbox-content"
+                             on:dblclick|stopPropagation={() => {
+                                 const quickEditor = (window as any).a1SvgQuickEditor;
+                                 if (quickEditor?.executeEditSvgText) {
+                                     void quickEditor.executeEditSvgText();
+                                 }
+                             }}>
                             {@html lightboxData.content}
                         </div>
                     {:else}
