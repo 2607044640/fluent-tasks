@@ -1661,6 +1661,7 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     min-height: 0;
     min-width: 0;
     background: #000000;
+    pointer-events: auto;
 }
 
 .svg-lightbox-content {
@@ -1672,6 +1673,7 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    pointer-events: auto;
 }
 
 .svg-lightbox-content svg,
@@ -1682,6 +1684,11 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     max-height: 100% !important;
     object-fit: contain;
     display: block;
+    pointer-events: auto;
+}
+
+.svg-lightbox-content svg * {
+    pointer-events: auto;
 }
 
 /* =============================================

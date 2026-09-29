@@ -125,13 +125,22 @@
         if (popoverTimeout) clearTimeout(popoverTimeout);
         popoverVisible = false;
         const res = resolveSvgItem(svgStr);
+        let content = res.content;
+        if (res.cleanPath && content.includes("<svg") && !content.includes("data-a1-svg-path")) {
+            content = content.replace(/<svg\b/i, `<svg data-a1-svg-path="${res.cleanPath}"`);
+        }
         lightboxData = {
             isInline: res.isInline,
-            content: res.content,
+            content,
             srcUrl: res.srcUrl,
             title,
             cleanPath: res.cleanPath,
         };
+
+        void tick().then(() => {
+            const modalEl = document.querySelector('.svg-lightbox-modal') as HTMLElement | null;
+            modalEl?.focus();
+        });
 
         // If it's a standalone .svg vault file, read raw markup and inject data-a1-svg-path for live editing
         if (!res.isInline && res.cleanPath && res.cleanPath.toLowerCase().endsWith('.svg') && plugin?.app) {
