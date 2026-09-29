@@ -95,8 +95,8 @@
     let resizeObserver: ResizeObserver | null = null;
     let isAdjustingSpacing: boolean = false;
 
-    $: isFiltering = !!searchQuery.trim();
-    $: filteredItems = filterSidebarTree(sidebarItems, searchQuery);
+    $: isFiltering = (searchMode === 'list') && !!searchQuery.trim();
+    $: filteredItems = (searchMode === 'list' && searchQuery.trim()) ? filterSidebarTree(sidebarItems, searchQuery) : sidebarItems;
     $: flatCategories = getFlatCategories(filteredItems);
     $: groupItems = filteredItems.filter(i => i.type === "group") as GroupInfo[];
     $: rootCategories = filteredItems.filter(i => i.type === "category") as CategoryInfo[];
@@ -105,7 +105,7 @@
     $: if (focusedIndex >= flatCategories.length) {
         focusedIndex = Math.max(0, flatCategories.length - 1);
     }
-    $: if (searchQuery !== prevSearchQuery) {
+    $: if (searchMode === 'list' && searchQuery !== prevSearchQuery) {
         prevSearchQuery = searchQuery;
         if (searchQuery.trim()) {
             focusedIndex = 0;
@@ -936,7 +936,7 @@
             return;
         }
 
-        if (searchMode === 'task') {
+        if (searchMode === 'task' && searchQuery.trim().length > 0) {
             if (e.key === "ArrowDown") {
                 e.preventDefault();
                 e.stopPropagation();
@@ -969,13 +969,9 @@
             if (e.key === "Escape") {
                 e.preventDefault();
                 e.stopPropagation();
-                if (searchQuery) {
-                    searchQuery = "";
-                    taskSearchResults = [];
-                    taskFocusedIndex = 0;
-                    return;
-                }
-                closeModal();
+                searchQuery = "";
+                taskSearchResults = [];
+                taskFocusedIndex = 0;
                 return;
             }
 
@@ -1197,137 +1193,120 @@
             {/if}
         </button>
 
-        {#if searchMode === 'list'}
+        {#if isGridLayout}
+            <button 
+                class="quick-modal-header-btn quick-modal-focus-picker-btn"
+                class:is-active={isPickingDefaultFocus}
+                aria-label={t("focus_btn_aria_label")}
+                on:click={togglePickingDefaultFocus}
+                on:contextmenu|preventDefault={async () => {
+                    if (plugin?.settings) {
+                        plugin.settings.defaultQuickListFocusFilepath = "";
+                        await plugin.saveSettings();
+                        new Notice(t("focus_restored_default_notice"));
+                        applyInitialFocus();
+                    }
+                }}
+                on:mouseenter={showFocusTooltip}
+                on:mouseleave={hideFocusTooltip}
+            >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <line x1="12" y1="2" x2="12" y2="5"></line>
+                    <line x1="12" y1="19" x2="12" y2="22"></line>
+                    <line x1="2" y1="12" x2="5" y2="12"></line>
+                    <line x1="19" y1="12" x2="22" y2="12"></line>
+                </svg>
+                <span>{isPickingDefaultFocus ? t("focus_picking_target") : (defaultFocusListName ? t("focus_target_label", defaultFocusListName) : t("focus_set_btn"))}</span>
+            </button>
+            {#if showFocusPopover}
+                <div class="quick-modal-focus-popover">
+                    <div class="focus-popover-title">{t("focus_popover_title")}</div>
+                    <div class="focus-popover-desc">
+                        {#if defaultFocusListName}
+                            {t("focus_current_prefix")}<b>{defaultFocusListName}</b>
+                        {:else}
+                            {t("focus_unset_prefix")}<b>{t("focus_top_left_default")}</b>
+                        {/if}
+                    </div>
+                    <div class="focus-popover-hint">
+                        {t("focus_instruction_desc")}
+                    </div>
+                </div>
+            {/if}
+        {/if}
+
+        <button 
+            class="quick-modal-header-btn quick-modal-layout-toggle-btn"
+            title={isGridLayout ? "Switch to Classic Single-Column List" : "Switch to Grid Board Layout"}
+            on:click={toggleLayoutMode}
+        >
             {#if isGridLayout}
-                <button 
-                    class="quick-modal-header-btn quick-modal-focus-picker-btn"
-                    class:is-active={isPickingDefaultFocus}
-                    aria-label={t("focus_btn_aria_label")}
-                    on:click={togglePickingDefaultFocus}
-                    on:contextmenu|preventDefault={async () => {
-                        if (plugin?.settings) {
-                            plugin.settings.defaultQuickListFocusFilepath = "";
-                            await plugin.saveSettings();
-                            new Notice(t("focus_restored_default_notice"));
-                            applyInitialFocus();
-                        }
-                    }}
-                    on:mouseenter={showFocusTooltip}
-                    on:mouseleave={hideFocusTooltip}
-                >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <line x1="12" y1="2" x2="12" y2="5"></line>
-                        <line x1="12" y1="19" x2="12" y2="22"></line>
-                        <line x1="2" y1="12" x2="5" y2="12"></line>
-                        <line x1="19" y1="12" x2="22" y2="12"></line>
-                    </svg>
-                    <span>{isPickingDefaultFocus ? t("focus_picking_target") : (defaultFocusListName ? t("focus_target_label", defaultFocusListName) : t("focus_set_btn"))}</span>
-                </button>
-                {#if showFocusPopover}
-                    <div class="quick-modal-focus-popover">
-                        <div class="focus-popover-title">{t("focus_popover_title")}</div>
-                        <div class="focus-popover-desc">
-                            {#if defaultFocusListName}
-                                {t("focus_current_prefix")}<b>{defaultFocusListName}</b>
-                            {:else}
-                                {t("focus_unset_prefix")}<b>{t("focus_top_left_default")}</b>
-                            {/if}
-                        </div>
-                        <div class="focus-popover-hint">
-                            {t("focus_instruction_desc")}
-                        </div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                <span>Grid</span>
+            {:else}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                </svg>
+                <span>List</span>
+            {/if}
+        </button>
+
+        {#if searchMode === 'task' && searchQuery.trim().length > 0}
+            <!-- Floating Task Search Results Dropdown Overlay (Does not unmount or alter the list board below) -->
+            <div class="quick-modal-task-dropdown" bind:this={taskResultsContainerEl}>
+                {#if isSearchingTasks}
+                    <div class="quick-modal-task-dropdown-status">Searching tasks...</div>
+                {:else if taskSearchResults.length === 0}
+                    <div class="quick-modal-task-dropdown-status">{t("quick_list_task_search_no_results") || "No matching tasks found."}</div>
+                {:else}
+                    <div class="quick-modal-task-dropdown-list" role="listbox">
+                        {#each taskSearchResults as item, idx (item.task.id)}
+                            <div 
+                                class="quick-modal-task-item"
+                                class:is-focused={taskFocusedIndex === idx}
+                                class:is-completed={item.task.completed}
+                                role="option"
+                                aria-selected={taskFocusedIndex === idx}
+                                tabindex="0"
+                                on:mouseenter={() => { taskFocusedIndex = idx; }}
+                                on:click={() => openTaskInCenter(item)}
+                            >
+                                <div class="quick-modal-task-main">
+                                    <span class="quick-modal-task-check" class:is-done={item.task.completed}>
+                                        {#if item.task.completed}✓{/if}
+                                    </span>
+                                    <span class="quick-modal-task-title">{item.task.title}</span>
+                                </div>
+                                <div class="quick-modal-task-meta">
+                                    <span class="quick-modal-task-cat">{item.category.name}</span>
+                                    <span class="quick-modal-task-dot">·</span>
+                                    <span class="quick-modal-task-match">Match: {item.matchField}</span>
+                                    {#if item.task.completed}
+                                        <span class="quick-modal-task-dot">·</span>
+                                        <span class="quick-modal-task-completed-tag">Completed</span>
+                                    {/if}
+                                </div>
+                            </div>
+                        {/each}
                     </div>
                 {/if}
-            {/if}
-
-            <button 
-                class="quick-modal-header-btn quick-modal-layout-toggle-btn"
-                title={isGridLayout ? "Switch to Classic Single-Column List" : "Switch to Grid Board Layout"}
-                on:click={toggleLayoutMode}
-            >
-                {#if isGridLayout}
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="7" height="7"></rect>
-                        <rect x="14" y="3" width="7" height="7"></rect>
-                        <rect x="14" y="14" width="7" height="7"></rect>
-                        <rect x="3" y="14" width="7" height="7"></rect>
-                    </svg>
-                    <span>Grid</span>
-                {:else}
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="8" y1="6" x2="21" y2="6"></line>
-                        <line x1="8" y1="12" x2="21" y2="12"></line>
-                        <line x1="8" y1="18" x2="21" y2="18"></line>
-                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                    </svg>
-                    <span>List</span>
-                {/if}
-            </button>
+            </div>
         {/if}
     </div>
 
-    {#if searchMode === 'task'}
-        <!-- =============================================
-             Task Search Results View
-             ============================================= -->
-        <div class="quick-modal-task-search-view" bind:this={taskResultsContainerEl}>
-            {#if isSearchingTasks}
-                <div class="quick-modal-task-empty-state">
-                    <div class="quick-modal-task-empty-title">Searching...</div>
-                </div>
-            {:else if !searchQuery.trim()}
-                <div class="quick-modal-task-empty-state">
-                    <div class="quick-modal-task-empty-icon">
-                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                        </svg>
-                    </div>
-                    <div class="quick-modal-task-empty-title">{t("quick_list_task_search_title") || "Search all tasks"}</div>
-                    <div class="quick-modal-task-empty-desc">{t("quick_list_task_search_empty_hint") || "Type keywords to search across task titles, checklist steps, and notes."}</div>
-                </div>
-            {:else if taskSearchResults.length === 0}
-                <div class="quick-modal-task-empty-state">
-                    <div class="quick-modal-task-empty-title">{t("quick_list_task_search_no_results") || "No results found."}</div>
-                </div>
-            {:else}
-                <div class="quick-modal-task-results-list" role="listbox">
-                    {#each taskSearchResults as item, idx (item.task.id)}
-                        <div 
-                            class="quick-modal-task-item"
-                            class:is-focused={taskFocusedIndex === idx}
-                            class:is-completed={item.task.completed}
-                            role="option"
-                            aria-selected={taskFocusedIndex === idx}
-                            tabindex="0"
-                            on:mouseenter={() => { taskFocusedIndex = idx; }}
-                            on:click={() => openTaskInCenter(item)}
-                        >
-                            <div class="quick-modal-task-main">
-                                <span class="quick-modal-task-check" class:is-done={item.task.completed}>
-                                    {#if item.task.completed}✓{/if}
-                                </span>
-                                <span class="quick-modal-task-title">{item.task.title}</span>
-                            </div>
-                            <div class="quick-modal-task-meta">
-                                <span class="quick-modal-task-cat">{item.category.name}</span>
-                                <span class="quick-modal-task-dot">·</span>
-                                <span class="quick-modal-task-match">Match: {item.matchField}</span>
-                                {#if item.task.completed}
-                                    <span class="quick-modal-task-dot">·</span>
-                                    <span class="quick-modal-task-completed-tag">Completed</span>
-                                {/if}
-                            </div>
-                        </div>
-                    {/each}
-                </div>
-            {/if}
-        </div>
-    {:else if isGridLayout}
+    {#if isGridLayout}
         <!-- =============================================
              Grid Board / Dashboard Card Layout (图表平铺看板 - 横向滑动 + 纵向换列)
              ============================================= -->
@@ -1628,51 +1607,41 @@
     {/if}
 
     <!-- Bottom Action Bar & Status Bar Footer -->
-    {#if searchMode !== 'task'}
-        <div class="quick-modal-list-pane-footer">
-            {#if isAddingList}
-                <div class="quick-modal-footer-add-wrap">
-                    <input 
-                        type="text" 
-                        class="quick-modal-inline-add-input"
-                        placeholder="New list name (Enter to save, Esc to cancel)..."
-                        bind:value={newListName}
-                        bind:this={addListInputEl}
-                        on:blur={commitAddList}
-                    />
-                </div>
-            {:else if isAddingGroup}
-                <div class="quick-modal-footer-add-wrap">
-                    <input 
-                        type="text" 
-                        class="quick-modal-inline-add-input"
-                        placeholder="New group name (Enter to save, Esc to cancel)..."
-                        bind:value={newGroupName}
-                        bind:this={addGroupInputEl}
-                        on:blur={commitAddGroup}
-                    />
-                </div>
-            {:else}
-                <button class="quick-modal-bottom-btn" on:click={startAddList}>+ New list</button>
-                <button class="quick-modal-bottom-btn" on:click={startAddGroup}>+ New group</button>
-            {/if}
-        </div>
-    {/if}
+    <div class="quick-modal-list-pane-footer">
+        {#if isAddingList}
+            <div class="quick-modal-footer-add-wrap">
+                <input 
+                    type="text" 
+                    class="quick-modal-inline-add-input"
+                    placeholder="New list name (Enter to save, Esc to cancel)..."
+                    bind:value={newListName}
+                    bind:this={addListInputEl}
+                    on:blur={commitAddList}
+                />
+            </div>
+        {:else if isAddingGroup}
+            <div class="quick-modal-footer-add-wrap">
+                <input 
+                    type="text" 
+                    class="quick-modal-inline-add-input"
+                    placeholder="New group name (Enter to save, Esc to cancel)..."
+                    bind:value={newGroupName}
+                    bind:this={addGroupInputEl}
+                    on:blur={commitAddGroup}
+                />
+            </div>
+        {:else}
+            <button class="quick-modal-bottom-btn" on:click={startAddList}>+ New list</button>
+            <button class="quick-modal-bottom-btn" on:click={startAddGroup}>+ New group</button>
+        {/if}
+    </div>
 
     <div class="quick-modal-status-bar">
-        {#if searchMode === 'task'}
-            <span><b>↑↓</b> Navigate</span>
-            <span><b>Enter</b> Open Task</span>
-            <span><b>Tab</b> Switch to Lists</span>
-            <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <span class="quick-status-close-btn" on:click={closeModal} role="button" tabindex="0" title="Close (Esc)"><b>Esc</b> Close</span>
-        {:else}
-            <span><b>↑↓←→</b> Navigate</span>
-            <span><b>F2</b> Rename</span>
-            <span><b>Enter</b> Open in Center View</span>
-            <span><b>Tab</b> Switch to Tasks</span>
-            <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <span class="quick-status-close-btn" on:click={closeModal} role="button" tabindex="0" title="Close (Esc)"><b>Esc</b> Close</span>
-        {/if}
+        <span><b>↑↓←→</b> Navigate</span>
+        <span><b>F2</b> Rename</span>
+        <span><b>Enter</b> Open in Center View</span>
+        <span><b>Tab</b> Switch to {searchMode === 'task' ? 'Lists' : 'Tasks'}</span>
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <span class="quick-status-close-btn" on:click={closeModal} role="button" tabindex="0" title="Close (Esc)"><b>Esc</b> Close</span>
     </div>
 </div>
