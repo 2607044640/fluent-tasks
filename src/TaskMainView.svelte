@@ -132,6 +132,41 @@
             title,
             cleanPath: res.cleanPath,
         };
+
+        // If it's a standalone .svg vault file, read raw markup and inject data-a1-svg-path for live editing
+        if (!res.isInline && res.cleanPath && res.cleanPath.toLowerCase().endsWith('.svg') && plugin?.app) {
+            let file: any = null;
+            if (plugin.app.metadataCache) {
+                file = plugin.app.metadataCache.getFirstLinkpathDest(res.cleanPath, currentCategory?.filepath || "");
+            }
+            if (!file && plugin.app.vault) {
+                file = plugin.app.vault.getAbstractFileByPath(res.cleanPath);
+            }
+            if (!file && plugin.app.vault) {
+                const all = plugin.app.vault.getFiles();
+                file = all.find((f: any) => f.path === res.cleanPath || f.name === res.cleanPath || f.path.endsWith("/" + res.cleanPath)) || null;
+            }
+            if (file) {
+                plugin.app.vault.read(file).then((rawXml: string) => {
+                    let processed = rawXml.trim();
+                    if (!processed.includes("viewBox") && !processed.includes("viewbox")) {
+                        const widthMatch = processed.match(/width=["']?(\d+(?:\.\d+)?)px?["']?/i);
+                        const heightMatch = processed.match(/height=["']?(\d+(?:\.\d+)?)px?["']?/i);
+                        if (widthMatch && heightMatch) {
+                            processed = processed.replace(/<svg\b/i, `<svg viewBox="0 0 ${widthMatch[1]} ${heightMatch[1]}"`);
+                        }
+                    }
+                    processed = processed.replace(/<svg\b/i, `<svg data-a1-svg-path="${file.path}"`);
+                    if (lightboxData && (lightboxData.cleanPath === res.cleanPath || lightboxData.cleanPath === file.path)) {
+                        lightboxData = {
+                            ...lightboxData,
+                            isInline: true,
+                            content: processed,
+                        };
+                    }
+                }).catch((err: any) => console.error("Failed to read SVG file for lightbox:", err));
+            }
+        }
     }
 
     function closeSvgLightbox() {
@@ -140,9 +175,10 @@
 
     function handleLightboxClick(e: MouseEvent) {
         const target = e.target as HTMLElement | null;
-        if (!target?.closest('.svg-lightbox-action-btn')) {
-            closeSvgLightbox();
-        }
+        if (!target) return;
+        // Do not close if clicking inside the dialog, inside the SVG DOM, or inside the text edit overlay
+        if (target.closest('.svg-lightbox-modal, .a1-svg-edit, svg')) return;
+        closeSvgLightbox();
     }
 
     function openSvgInVault(cleanPath: string) {
@@ -335,6 +371,19 @@
         completedTasks = applyWeightSort(rawCompletedTasks, enableTaskWeightMode);
     }
 
+    function handleSvgUpdated(e: any) {
+        const { path, content } = e?.detail || {};
+        if (path) {
+            svgResolveCache.clear();
+            if (lightboxData && (lightboxData.cleanPath === path || lightboxData.cleanPath.endsWith(path))) {
+                lightboxData = {
+                    ...lightboxData,
+                    content: content || lightboxData.content,
+                };
+            }
+        }
+    }
+
     // =============================================
     // Lifecycle
     // =============================================
@@ -349,6 +398,7 @@
         window.addEventListener('keydown', handleGlobalKeyDown, true);
         window.addEventListener('keyup', handleGlobalKeyUp, true);
         window.addEventListener('blur', handleWindowBlur);
+        window.addEventListener('a1-svg-updated', handleSvgUpdated);
     });
 
     onDestroy(() => {
@@ -358,6 +408,7 @@
         window.removeEventListener('keydown', handleGlobalKeyDown, true);
         window.removeEventListener('keyup', handleGlobalKeyUp, true);
         window.removeEventListener('blur', handleWindowBlur);
+        window.removeEventListener('a1-svg-updated', handleSvgUpdated);
         EventBus.off(EventName.CATEGORY_SELECTED, handleCategorySelected);
         EventBus.off(EventName.TASK_UPDATED, handleTaskUpdated);
         EventBus.off(EventName.TASK_MOVED, handleTaskMoved);
@@ -1860,6 +1911,11 @@
                             <polyline points="21 15 16 10 5 21"/>
                         </svg>
                         <span class="svg-lightbox-title">{lightboxData.title || "Visual Memory Aid"}</span>
+                        <div class="svg-lightbox-hints" style="font-size: 11px; opacity: 0.85; display: inline-flex; gap: 6px; align-items: center; margin-left: 10px;">
+                            <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">F2 / 双击文字编辑</span>
+                            <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">清空文字即删UI框</span>
+                            <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Alt+拖拽复制</span>
+                        </div>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
                         {#if lightboxData.cleanPath}
