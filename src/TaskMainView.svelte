@@ -188,6 +188,31 @@
         lightboxData = null;
     }
 
+    function handleLightboxKeydown(e: KeyboardEvent) {
+        if (e.key === "Escape") {
+            closeSvgLightbox();
+            return;
+        }
+        const quickEditor = (window as any).a1SvgQuickEditor;
+        const isMatch = e.key === "F2" ||
+            (quickEditor?.isSvgEditHotkey && quickEditor.isSvgEditHotkey(e)) ||
+            (e.ctrlKey && e.altKey && e.shiftKey && (e.key.toLowerCase() === "i" || e.code === "KeyI"));
+        if (isMatch) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (quickEditor?.executeEditSvgText) {
+                void quickEditor.executeEditSvgText();
+            }
+        }
+    }
+
+    function handleLightboxDblClick() {
+        const quickEditor = (window as any).a1SvgQuickEditor;
+        if (quickEditor?.executeEditSvgText) {
+            void quickEditor.executeEditSvgText();
+        }
+    }
+
     function handleLightboxClick(e: MouseEvent) {
         const target = e.target as HTMLElement | null;
         if (!target) return;
@@ -1918,18 +1943,7 @@
              on:contextmenu|preventDefault={closeSvgLightbox}
              role="presentation">
             <div class="svg-lightbox-modal" role="dialog" aria-modal="true" tabindex="-1"
-                 on:keydown={(e) => {
-                     if (e.key === "Escape") {
-                         closeSvgLightbox();
-                     } else if (e.key === "F2" || (e.ctrlKey && e.altKey && e.shiftKey && (e.key.toLowerCase() === "i" || e.code === "KeyI"))) {
-                         e.preventDefault();
-                         e.stopPropagation();
-                         const quickEditor = (window as any).a1SvgQuickEditor;
-                         if (quickEditor?.executeEditSvgText) {
-                             void quickEditor.executeEditSvgText();
-                         }
-                     }
-                 }}>
+                 on:keydown={handleLightboxKeydown}>
                 <div class="svg-lightbox-header">
                     <div class="svg-lightbox-title-row">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--todo-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1958,12 +1972,7 @@
                 <div class="svg-lightbox-body">
                     {#if lightboxData.isInline}
                         <div class="svg-lightbox-content"
-                             on:dblclick|stopPropagation={() => {
-                                 const quickEditor = (window as any).a1SvgQuickEditor;
-                                 if (quickEditor?.executeEditSvgText) {
-                                     void quickEditor.executeEditSvgText();
-                                 }
-                             }}>
+                             on:dblclick|stopPropagation={handleLightboxDblClick}>
                             {@html lightboxData.content}
                         </div>
                     {:else}
