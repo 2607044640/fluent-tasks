@@ -18,7 +18,7 @@
     import { promptDeleteTaskWithLinkedNote } from "./modals/ConfirmDeleteLinkedNoteModal";
     import { TaskStepsModal } from "./modals/TaskStepsModal";
     import { BackupModal } from "./modals/BackupModal";
-    import { t } from "./lang/helpers";
+    import { t, isChinese } from "./lang/helpers";
 
     // =============================================
     // Props
@@ -1953,9 +1953,15 @@
                         </svg>
                         <span class="svg-lightbox-title">{lightboxData.title || "Visual Memory Aid"}</span>
                         <div class="svg-lightbox-hints" style="font-size: 11px; opacity: 0.85; display: inline-flex; gap: 6px; align-items: center; margin-left: 10px;">
-                            <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">F2 / 双击文字编辑</span>
-                            <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">清空文字即删UI框</span>
-                            <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Alt+拖拽复制</span>
+                            {#if isChinese()}
+                                <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">F2 / 双击文字编辑</span>
+                                <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">清空文字即删UI框</span>
+                                <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Alt+拖拽复制</span>
+                            {:else}
+                                <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">F2 / Double-click to Edit</span>
+                                <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Clear Text to Delete Box</span>
+                                <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Alt+Drag to Duplicate</span>
+                            {/if}
                         </div>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
