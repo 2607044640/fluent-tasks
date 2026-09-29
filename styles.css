@@ -3178,6 +3178,142 @@ body .quick-modal-list-item.is-grid-item.is-focused {
 }
 
 /* =============================================
+   Quick List Modal: Task Search Mode
+   ============================================= */
+.quick-modal-header-btn.quick-modal-search-mode-btn.is-task-mode {
+    border-color: var(--todo-accent, #8b5cf6);
+    color: var(--todo-accent, #8b5cf6);
+    background: rgba(139, 92, 246, 0.12);
+}
+
+.quick-modal-task-search-view {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.quick-modal-task-results-list {
+    width: 100%;
+    max-width: 860px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.quick-modal-task-item {
+    display: flex;
+    flex-direction: column;
+    padding: 10px 14px;
+    border-radius: 6px;
+    background: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    cursor: pointer;
+    transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.quick-modal-task-item:hover,
+.quick-modal-task-item.is-focused {
+    background: var(--background-modifier-hover);
+    border-color: var(--todo-accent, #8b5cf6);
+}
+
+.quick-modal-task-main {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.quick-modal-task-check {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 1px solid var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: bold;
+    flex-shrink: 0;
+    color: transparent;
+}
+
+.quick-modal-task-check.is-done {
+    background: var(--todo-accent, #8b5cf6);
+    border-color: var(--todo-accent, #8b5cf6);
+    color: #ffffff;
+}
+
+.quick-modal-task-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-normal);
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.quick-modal-task-item.is-completed .quick-modal-task-title {
+    color: var(--text-muted);
+    text-decoration: line-through;
+}
+
+.quick-modal-task-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+    margin-left: 26px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.quick-modal-task-dot {
+    opacity: 0.5;
+}
+
+.quick-modal-task-match {
+    color: var(--todo-accent, #8b5cf6);
+    font-weight: 500;
+}
+
+.quick-modal-task-completed-tag {
+    color: var(--text-faint);
+}
+
+.quick-modal-task-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.quick-modal-task-empty-icon {
+    font-size: 32px;
+    margin-bottom: 12px;
+    opacity: 0.6;
+}
+
+.quick-modal-task-empty-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-normal);
+    margin-bottom: 6px;
+}
+
+.quick-modal-task-empty-desc {
+    font-size: 13px;
+    max-width: 440px;
+    line-height: 1.5;
+    color: var(--text-muted);
+}
+
+/* =============================================
    Floating Task Detail Modal (Tier 1)
    ============================================= */
 body .task-detail-floating-modal {

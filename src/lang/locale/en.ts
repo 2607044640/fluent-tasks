@@ -108,6 +108,14 @@ const en = {
     focus_top_left_default: "Top-left first item",
     focus_instruction_desc: "Click button to enter selection mode then click target list; right click button to reset to top-left.",
     focus_tag_tooltip: "Default focus target",
+    quick_list_search_mode_list: "Lists",
+    quick_list_search_mode_task: "Tasks",
+    quick_list_search_mode_title_to_task: "Currently searching lists. Click to permanently switch to task search.",
+    quick_list_search_mode_title_to_list: "Currently searching tasks. Click to permanently switch to list search.",
+    quick_list_task_search_placeholder: "Search all tasks (title, steps, notes)...",
+    quick_list_task_search_no_results: "No results found.",
+    quick_list_task_search_title: "Search all tasks",
+    quick_list_task_search_empty_hint: "Type keywords to search across task titles, checklist steps, and notes.",
 };
 
 export default en;

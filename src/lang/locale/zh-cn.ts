@@ -110,6 +110,14 @@ const zhCn: typeof en = {
     focus_top_left_default: "左上角首项",
     focus_instruction_desc: "点击按钮进入选择模式后点击目标列表；右键此按钮可重置为左上角首项。",
     focus_tag_tooltip: "默认聚焦目标",
+    quick_list_search_mode_list: "搜列表",
+    quick_list_search_mode_task: "搜任务",
+    quick_list_search_mode_title_to_task: "当前模式：搜列表。点击永久切换为搜任务。",
+    quick_list_search_mode_title_to_list: "当前模式：搜任务。点击永久切换为搜列表。",
+    quick_list_task_search_placeholder: "搜索所有任务 (标题、步骤、备注)...",
+    quick_list_task_search_no_results: "未找到匹配任务。",
+    quick_list_task_search_title: "搜索所有任务",
+    quick_list_task_search_empty_hint: "输入关键词以搜索所有任务的标题、子步骤或详细备注。",
 };
 
 export default zhCn;

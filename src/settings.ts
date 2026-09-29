@@ -20,6 +20,7 @@ export interface FluentTasksSettings {
     lastDailyBackupDate: string;
     undoDurationSeconds: number;
     enableTaskWeightMode: boolean;
+    quickListSearchMode: 'list' | 'task';
 }
 
 export const DEFAULT_SETTINGS: FluentTasksSettings = {
@@ -41,6 +42,7 @@ export const DEFAULT_SETTINGS: FluentTasksSettings = {
     lastDailyBackupDate: "",
     undoDurationSeconds: 2.5,
     enableTaskWeightMode: false,
+    quickListSearchMode: 'list',
 }
 
 export class FluentTasksSettingTab extends PluginSettingTab {
@@ -160,6 +162,18 @@ export class FluentTasksSettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.quickListFocusCenter ?? false)
                 .onChange(async (value) => {
                     this.plugin.settings.quickListFocusCenter = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName("Quick List Modal: Search Mode")
+            .setDesc("Choose whether the search bar in the Quick List modal searches lists or tasks by default.")
+            .addDropdown(dropdown => dropdown
+                .addOption("list", "Search Lists")
+                .addOption("task", "Search Tasks")
+                .setValue(this.plugin.settings.quickListSearchMode ?? "list")
+                .onChange(async (value: string) => {
+                    this.plugin.settings.quickListSearchMode = value as "list" | "task";
                     await this.plugin.saveSettings();
                 }));
 
