@@ -21,6 +21,7 @@ export interface FluentTasksSettings {
     undoDurationSeconds: number;
     enableTaskWeightMode: boolean;
     quickListSearchMode: 'list' | 'task';
+    centerAlignTasks: boolean;
 }
 
 export const DEFAULT_SETTINGS: FluentTasksSettings = {
@@ -31,6 +32,7 @@ export const DEFAULT_SETTINGS: FluentTasksSettings = {
     searchHideCompleted: true,
     hideRibbonIcon: false,
     wrapTaskTitles: true,
+    centerAlignTasks: false,
     quickModalAction: 'direct',
     quickModalTipCount: 0,
     quickListGridLayout: true,
@@ -106,6 +108,16 @@ export class FluentTasksSettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.wrapTaskTitles ?? true)
                 .onChange(async (value) => {
                     this.plugin.settings.wrapTaskTitles = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName("Center-Align Tasks")
+            .setDesc("Display task titles, steps, and metadata centered in the task list.")
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.centerAlignTasks ?? false)
+                .onChange(async (value) => {
+                    this.plugin.settings.centerAlignTasks = value;
                     await this.plugin.saveSettings();
                 }));
 

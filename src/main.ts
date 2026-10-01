@@ -160,30 +160,6 @@ class TaskMainViewWrapper extends ItemView {
     }
 
     async onOpen(): Promise<void> {
-        this.addAction("check-square", t("action_multi_select"), () => {
-            const comp = this.component;
-            comp?.toggleMultiSelect();
-        });
-
-        this.addAction("archive", t("action_backup_manager"), () => {
-            const comp = this.component;
-            comp?.openBackupModal();
-        });
-
-        const guideAction = this.addAction("help-circle", "Features & shortcuts guide", () => {
-            const comp = this.component;
-            comp?.openHintsModal();
-        });
-
-        guideAction.addEventListener("mouseenter", (e: MouseEvent) => {
-            const comp = this.component;
-            comp?.showGuidePopover(e);
-        });
-        guideAction.addEventListener("mouseleave", () => {
-            const comp = this.component;
-            comp?.scheduleHidePopover();
-        });
-
         const container = this.containerEl.children[1] as HTMLElement;
         container.empty();
         this.component = new TaskMainView({

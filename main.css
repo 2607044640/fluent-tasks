@@ -492,6 +492,33 @@
     overflow: visible;
 }
 
+.task-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* Center-Align Tasks Mode */
+.center-tasks .task-content,
+.task-item.is-center-aligned .task-content {
+    align-items: center;
+    text-align: center;
+}
+
+.center-tasks .task-title,
+.task-item.is-center-aligned .task-title {
+    text-align: center;
+    width: 100%;
+}
+
+.center-tasks .task-meta-row,
+.task-item.is-center-aligned .task-meta-row {
+    justify-content: center;
+    text-align: center;
+    width: 100%;
+}
+
 .task-meta {
     font-size: 12px;
     color: var(--todo-text-muted);

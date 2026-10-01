@@ -40,6 +40,7 @@
     let addTaskInputEl: HTMLInputElement;
     let wrapTaskTitles: boolean = plugin?.settings?.wrapTaskTitles ?? true;
     let enableTaskWeightMode: boolean = plugin?.settings?.enableTaskWeightMode ?? false;
+    let centerAlignTasks: boolean = plugin?.settings?.centerAlignTasks ?? false;
 
     // Multi-Select Mode State
     let isMultiSelectMode: boolean = false;
@@ -567,6 +568,7 @@
     function handleSettingsChanged() {
         wrapTaskTitles = plugin?.settings?.wrapTaskTitles ?? true;
         enableTaskWeightMode = plugin?.settings?.enableTaskWeightMode ?? false;
+        centerAlignTasks = plugin?.settings?.centerAlignTasks ?? false;
         incompleteTasks = applyWeightSort(rawIncompleteTasks, enableTaskWeightMode);
         completedTasks = applyWeightSort(rawCompletedTasks, enableTaskWeightMode);
     }
@@ -1243,6 +1245,76 @@
         });
     }
 
+    async function toggleCenterAlignTasks() {
+        centerAlignTasks = !centerAlignTasks;
+        if (plugin?.settings) {
+            plugin.settings.centerAlignTasks = centerAlignTasks;
+            await plugin.saveSettings();
+        }
+    }
+
+    function openHeaderMoreMenu(e: MouseEvent | KeyboardEvent) {
+        e.preventDefault();
+        e.stopPropagation();
+        const menu = new Menu();
+
+        // 1. Center-align tasks toggle
+        menu.addItem((item) => {
+            item.setTitle(centerAlignTasks ? "Align tasks: Left" : "Align tasks: Center")
+                .setIcon(centerAlignTasks ? "align-left" : "align-center")
+                .setChecked(centerAlignTasks)
+                .onClick(() => {
+                    void toggleCenterAlignTasks();
+                });
+        });
+
+        menu.addSeparator();
+
+        // 2. Search in list
+        menu.addItem((item) => {
+            item.setTitle("Search in list")
+                .setIcon("search")
+                .onClick(() => {
+                    new TaskSearchModal(plugin.app, plugin, dataService, currentCategory?.filepath).open();
+                });
+        });
+
+        // 3. Multi-select mode
+        menu.addItem((item) => {
+            item.setTitle("Multi-select mode")
+                .setIcon("check-square")
+                .onClick(() => {
+                    toggleMultiSelect();
+                });
+        });
+
+        // 4. Backup manager
+        menu.addItem((item) => {
+            item.setTitle("Backup manager")
+                .setIcon("archive")
+                .onClick(() => {
+                    openBackupModal();
+                });
+        });
+
+        // 5. Features & shortcuts guide
+        menu.addItem((item) => {
+            item.setTitle("Features & shortcuts guide")
+                .setIcon("help-circle")
+                .onClick(() => {
+                    showHintsModal = true;
+                });
+        });
+
+        if (e instanceof MouseEvent) {
+            menu.showAtMouseEvent(e);
+        } else {
+            const target = e.currentTarget as HTMLElement;
+            const rect = target.getBoundingClientRect();
+            menu.showAtPosition({ x: rect.left, y: rect.bottom + 4 });
+        }
+    }
+
     export { scheduleHidePopover };
 </script>
 
@@ -1257,7 +1329,7 @@
     }}
 />
 
-<div class="main-container" class:wrap-titles={wrapTaskTitles} role="application">
+<div class="main-container" class:wrap-titles={wrapTaskTitles} class:center-tasks={centerAlignTasks} role="application">
     {#if currentCategory}
         <!-- Header -->
         <div class="main-header">
@@ -1350,56 +1422,21 @@
                             </svg>
                         </span>
                     </div>
+                {:else}
+                    <!-- More options menu (three vertical dots) -->
+                    <span class="icon-btn"
+                          on:click|stopPropagation={openHeaderMoreMenu}
+                          role="button" tabindex="0"
+                          aria-label="More options"
+                          title="More options"
+                          on:keydown|stopPropagation={(e) => (e.key === "Enter" || e.key === " ") && openHeaderMoreMenu(e)}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                            <circle cx="12" cy="12" r="2"/>
+                            <circle cx="12" cy="5" r="2"/>
+                            <circle cx="12" cy="19" r="2"/>
+                        </svg>
+                    </span>
                 {/if}
-
-                <!-- Guide / Help Button in Header -->
-                <span class="icon-btn"
-                      on:click|stopPropagation={() => showHintsModal = true}
-                      role="button" tabindex="0" aria-label={t("guide_btn_tooltip")} title={t("guide_btn_tooltip")}
-                      on:keydown|stopPropagation={(e) => e.key === "Enter" && (showHintsModal = true)}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"/>
-                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                        <line x1="12" y1="17" x2="12.01" y2="17"/>
-                    </svg>
-                </span>
-
-                <!-- Search this list -->
-                <span class="icon-btn" on:click|stopPropagation={() => new TaskSearchModal(plugin.app, plugin, dataService, currentCategory?.filepath).open()}
-                      role="button" tabindex="0" aria-label={t("search_list_tooltip")} title={t("search_list_tooltip")}
-                      on:keydown|stopPropagation={(e) => e.key === "Enter" && new TaskSearchModal(plugin.app, plugin, dataService, currentCategory?.filepath).open()}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="11" cy="11" r="8"/>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                    </svg>
-                </span>
-
-                <!-- Backup Manager Button in Header -->
-                <span class="icon-btn"
-                      on:click|stopPropagation={openBackupModal}
-                      role="button" tabindex="0" aria-label={t("backup_btn_tooltip")} title={t("backup_btn_tooltip")}
-                      on:keydown|stopPropagation={(e) => e.key === "Enter" && openBackupModal()}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="21 8 21 21 3 21 3 8"></polyline>
-                        <rect x="1" y="3" width="22" height="5"></rect>
-                        <line x1="10" y1="12" x2="14" y2="12"></line>
-                    </svg>
-                </span>
-
-                <!-- Multi-Select Toggle Button in Header -->
-                <span class="icon-btn" class:is-active={isMultiSelectMode}
-                      on:click|stopPropagation={toggleMultiSelect}
-                      role="button" tabindex="0" aria-label={t("multi_select_tooltip")} title={t("multi_select_tooltip")}
-                      on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleMultiSelect()}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="9 11 12 14 22 4"></polyline>
-                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-                    </svg>
-                </span>
             </div>
         </div>
 
@@ -1433,6 +1470,7 @@
                     id={'task-' + task.id}
                     animate:flip={{duration: DND_FLIP_DURATION}}
                     class="task-item"
+                    class:is-center-aligned={centerAlignTasks}
                     class:selected={selectedTaskId === task.id}
                     class:is-multi-selected={isMultiSelectMode && selectedTaskIds.has(task.id)}
                     on:pointerdown={() => handleTaskPointerDown(task)}
@@ -1656,6 +1694,7 @@
                                 id={'task-' + task.id}
                                 animate:flip={{duration: DND_FLIP_DURATION}}
                                 class="task-item completed"
+                                class:is-center-aligned={centerAlignTasks}
                                 class:selected={selectedTaskId === task.id}
                                 class:is-multi-selected={isMultiSelectMode && selectedTaskIds.has(task.id)}
                                 on:pointerdown={() => handleTaskPointerDown(task)}
