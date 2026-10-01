@@ -16502,7 +16502,7 @@ function create_else_block_32(ctx) {
       line = svg_element("line");
       t0 = space();
       span = element("span");
-      span.textContent = `${isChinese() ? "\u26A1 \u60F3\u8981\u7F16\u8F91\u56FE\u7247\uFF1F\u5B89\u88C5/\u5F00\u542F A1 SVG Quick Editor \u63D2\u4EF6" : "\u26A1 Want to edit? Get A1 SVG Quick Editor Plugin"}`;
+      span.textContent = `${isChinese() ? "\u26A1 \u60F3\u8981\u7F16\u8F91\u56FE\u7247\uFF1F\u5B89\u88C5/\u5F00\u542F SVG Quick Editor \u63D2\u4EF6" : "\u26A1 Want to edit? Get SVG Quick Editor Plugin"}`;
       attr(path, "d", "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4");
       attr(polyline, "points", "7 10 12 15 17 10");
       attr(line, "x1", "12");
@@ -16978,7 +16978,7 @@ function create_if_block_110(ctx) {
       line1 = svg_element("line");
       t0 = space();
       span0 = element("span");
-      span0.textContent = `${isChinese() ? "\u83B7\u53D6 A1 SVG Quick Editor \u914D\u5957\u63D2\u4EF6" : "Get A1 SVG Quick Editor Companion"}`;
+      span0.textContent = `${isChinese() ? "\u83B7\u53D6 SVG Quick Editor \u914D\u5957\u63D2\u4EF6" : "Get SVG Quick Editor Companion"}`;
       t2 = space();
       div1 = element("div");
       if_block0.c();
@@ -17219,7 +17219,7 @@ function create_else_block4(ctx) {
       b3.textContent = "Ctrl+Z/Y undo/redo";
       t8 = text(", please install or enable the companion plugin ");
       b4 = element("b");
-      b4.textContent = "A1 SVG Quick Editor";
+      b4.textContent = "SVG Quick Editor";
       t10 = text(".");
     },
     m(target, anchor) {
@@ -17280,7 +17280,7 @@ function create_if_block_310(ctx) {
       b3.textContent = "Ctrl+Z/Y \u64A4\u9500\u91CD\u505A";
       t8 = text("\u7B49\u9AD8\u7EA7\u4EA4\u4E92\u529F\u80FD\uFF0C\u8BF7\u5B89\u88C5\u6216\u542F\u7528\u914D\u5957\u63D2\u4EF6 ");
       b4 = element("b");
-      b4.textContent = "A1 SVG Quick Editor";
+      b4.textContent = "SVG Quick Editor";
       t10 = text("\u3002");
     },
     m(target, anchor) {
@@ -17799,12 +17799,13 @@ function instance4($$self, $$props, $$invalidate) {
       cleanPath: res.cleanPath
     });
     void tick().then(() => {
-      var _a2, _b2;
+      var _a2;
       const modalEl = document.querySelector(".svg-lightbox-modal");
       modalEl == null ? void 0 : modalEl.focus();
       const svgEl = document.querySelector(".svg-lightbox-content svg");
       if (svgEl) {
-        (_b2 = (_a2 = window.a1SvgQuickEditor) == null ? void 0 : _a2.registerActiveSvg) == null ? void 0 : _b2.call(_a2, svgEl);
+        const editor = window.svgQuickEditor || window.a1SvgQuickEditor;
+        (_a2 = editor == null ? void 0 : editor.registerActiveSvg) == null ? void 0 : _a2.call(editor, svgEl);
       }
     });
     if (!res.isInline && res.cleanPath && res.cleanPath.toLowerCase().endsWith(".svg") && (plugin == null ? void 0 : plugin.app)) {
@@ -17843,10 +17844,11 @@ function instance4($$self, $$props, $$invalidate) {
               cleanPath: file.path
             });
             void tick().then(() => {
-              var _a2, _b2;
+              var _a2;
               const svgEl = document.querySelector(".svg-lightbox-content svg");
               if (svgEl) {
-                (_b2 = (_a2 = window.a1SvgQuickEditor) == null ? void 0 : _a2.registerActiveSvg) == null ? void 0 : _b2.call(_a2, svgEl);
+                const editor = window.svgQuickEditor || window.a1SvgQuickEditor;
+                (_a2 = editor == null ? void 0 : editor.registerActiveSvg) == null ? void 0 : _a2.call(editor, svgEl);
               }
             });
           }
@@ -17855,8 +17857,8 @@ function instance4($$self, $$props, $$invalidate) {
     }
   }
   function isSvgQuickEditorInstalled() {
-    var _a2, _b2, _c2;
-    return !!window.a1SvgQuickEditor || !!((_c2 = (_b2 = (_a2 = plugin == null ? void 0 : plugin.app) == null ? void 0 : _a2.plugins) == null ? void 0 : _b2.getPlugin) == null ? void 0 : _c2.call(_b2, "a1-svg-quick-editor"));
+    var _a2, _b2, _c2, _d2, _e, _f;
+    return !!window.svgQuickEditor || !!window.a1SvgQuickEditor || !!((_c2 = (_b2 = (_a2 = plugin == null ? void 0 : plugin.app) == null ? void 0 : _a2.plugins) == null ? void 0 : _b2.getPlugin) == null ? void 0 : _c2.call(_b2, "svg-quick-editor")) || !!((_f = (_e = (_d2 = plugin == null ? void 0 : plugin.app) == null ? void 0 : _d2.plugins) == null ? void 0 : _e.getPlugin) == null ? void 0 : _f.call(_e, "a1-svg-quick-editor"));
   }
   function openObsidianPluginSettings() {
     const appAny = plugin == null ? void 0 : plugin.app;
@@ -17866,16 +17868,16 @@ function instance4($$self, $$props, $$invalidate) {
     }
     copyPluginName();
     const NoticeCtor = window.Notice || import_obsidian13.Notice;
-    new NoticeCtor(isChinese() ? "\u5DF2\u6253\u5F00\u793E\u533A\u63D2\u4EF6\u8BBE\u7F6E\uFF0C\u5E76\u5DF2\u590D\u5236\u300CA1 SVG Quick Editor\u300D\u5230\u526A\u8D34\u677F\uFF0C\u8BF7\u70B9\u51FB\u201C\u6D4F\u89C8\u201D\u76F4\u63A5\u7C98\u8D34\u641C\u7D22\uFF01" : "Opened Community Plugins settings and copied 'A1 SVG Quick Editor' to clipboard. Click 'Browse' and paste to search!");
+    new NoticeCtor(isChinese() ? "\u5DF2\u6253\u5F00\u793E\u533A\u63D2\u4EF6\u8BBE\u7F6E\uFF0C\u5E76\u5DF2\u590D\u5236\u300CSVG Quick Editor\u300D\u5230\u526A\u8D34\u677F\uFF0C\u8BF7\u70B9\u51FB\u201C\u6D4F\u89C8\u201D\u76F4\u63A5\u7C98\u8D34\u641C\u7D22\uFF01" : "Opened Community Plugins settings and copied 'SVG Quick Editor' to clipboard. Click 'Browse' and paste to search!");
     $$invalidate(27, showPluginDownloadModal = false);
   }
   function openPluginGithub() {
-    const url = "https://github.com/2607044640/ObsidianDev/tree/main/plugins/A1SvgQuickEditor";
+    const url = "https://github.com/2607044640/svg-quick-editor";
     window.open(url, "_blank");
     $$invalidate(27, showPluginDownloadModal = false);
   }
   function copyPluginName() {
-    const name = "A1 SVG Quick Editor";
+    const name = "SVG Quick Editor";
     try {
       navigator.clipboard.writeText(name);
     } catch (e) {
@@ -17904,7 +17906,7 @@ function instance4($$self, $$props, $$invalidate) {
     $$invalidate(28, nameCopiedHint = false);
     if (nameCopiedTimer)
       clearTimeout(nameCopiedTimer);
-    const quickEditor = window.a1SvgQuickEditor;
+    const quickEditor = window.svgQuickEditor || window.a1SvgQuickEditor;
     (_a2 = quickEditor == null ? void 0 : quickEditor.clearSvgHistory) == null ? void 0 : _a2.call(quickEditor);
   }
   function requestCloseSvgLightbox() {
@@ -17913,7 +17915,7 @@ function instance4($$self, $$props, $$invalidate) {
       $$invalidate(27, showPluginDownloadModal = false);
       return;
     }
-    const quickEditor = window.a1SvgQuickEditor;
+    const quickEditor = window.svgQuickEditor || window.a1SvgQuickEditor;
     (_a2 = quickEditor == null ? void 0 : quickEditor.clearHover) == null ? void 0 : _a2.call(quickEditor);
     const isDirty = (quickEditor == null ? void 0 : quickEditor.isSvgDirty) ? quickEditor.isSvgDirty() : false;
     if (isDirty) {
@@ -17923,7 +17925,7 @@ function instance4($$self, $$props, $$invalidate) {
     }
   }
   async function saveAndCloseSvgLightbox() {
-    const quickEditor = window.a1SvgQuickEditor;
+    const quickEditor = window.svgQuickEditor || window.a1SvgQuickEditor;
     if (quickEditor == null ? void 0 : quickEditor.saveCurrentSvg) {
       await quickEditor.saveCurrentSvg();
     }
@@ -17931,7 +17933,7 @@ function instance4($$self, $$props, $$invalidate) {
     closeSvgLightbox();
   }
   function discardAndCloseSvgLightbox() {
-    const quickEditor = window.a1SvgQuickEditor;
+    const quickEditor = window.svgQuickEditor || window.a1SvgQuickEditor;
     if (quickEditor == null ? void 0 : quickEditor.discardCurrentSvg) {
       quickEditor.discardCurrentSvg();
     }

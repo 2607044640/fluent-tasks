@@ -146,7 +146,8 @@
             modalEl?.focus();
             const svgEl = document.querySelector('.svg-lightbox-content svg') as SVGSVGElement | null;
             if (svgEl) {
-                (window as any).a1SvgQuickEditor?.registerActiveSvg?.(svgEl);
+                const editor = (window as any).svgQuickEditor || (window as any).a1SvgQuickEditor;
+                editor?.registerActiveSvg?.(svgEl);
             }
         });
 
@@ -189,7 +190,8 @@
                         void tick().then(() => {
                             const svgEl = document.querySelector('.svg-lightbox-content svg') as SVGSVGElement | null;
                             if (svgEl) {
-                                (window as any).a1SvgQuickEditor?.registerActiveSvg?.(svgEl);
+                                const editor = (window as any).svgQuickEditor || (window as any).a1SvgQuickEditor;
+                                editor?.registerActiveSvg?.(svgEl);
                             }
                         });
                     }
@@ -199,7 +201,10 @@
     }
 
     function isSvgQuickEditorInstalled(): boolean {
-        return !!(window as any).a1SvgQuickEditor || !!(plugin?.app as any)?.plugins?.getPlugin?.("a1-svg-quick-editor");
+        return !!(window as any).svgQuickEditor ||
+               !!(window as any).a1SvgQuickEditor ||
+               !!(plugin?.app as any)?.plugins?.getPlugin?.("svg-quick-editor") ||
+               !!(plugin?.app as any)?.plugins?.getPlugin?.("a1-svg-quick-editor");
     }
 
     function openObsidianPluginSettings() {
@@ -211,19 +216,19 @@
         copyPluginName();
         const NoticeCtor = (window as any).Notice || Notice;
         new NoticeCtor(isChinese()
-            ? "已打开社区插件设置，并已复制「A1 SVG Quick Editor」到剪贴板，请点击“浏览”直接粘贴搜索！"
-            : "Opened Community Plugins settings and copied 'A1 SVG Quick Editor' to clipboard. Click 'Browse' and paste to search!");
+            ? "已打开社区插件设置，并已复制「SVG Quick Editor」到剪贴板，请点击“浏览”直接粘贴搜索！"
+            : "Opened Community Plugins settings and copied 'SVG Quick Editor' to clipboard. Click 'Browse' and paste to search!");
         showPluginDownloadModal = false;
     }
 
     function openPluginGithub() {
-        const url = "https://github.com/2607044640/ObsidianDev/tree/main/plugins/A1SvgQuickEditor";
+        const url = "https://github.com/2607044640/svg-quick-editor";
         window.open(url, "_blank");
         showPluginDownloadModal = false;
     }
 
     function copyPluginName() {
-        const name = "A1 SVG Quick Editor";
+        const name = "SVG Quick Editor";
         try {
             navigator.clipboard.writeText(name);
         } catch {
@@ -247,7 +252,7 @@
         showPluginDownloadModal = false;
         nameCopiedHint = false;
         if (nameCopiedTimer) clearTimeout(nameCopiedTimer);
-        const quickEditor = (window as any).a1SvgQuickEditor;
+        const quickEditor = (window as any).svgQuickEditor || (window as any).a1SvgQuickEditor;
         quickEditor?.clearSvgHistory?.();
     }
 
@@ -256,7 +261,7 @@
             showPluginDownloadModal = false;
             return;
         }
-        const quickEditor = (window as any).a1SvgQuickEditor;
+        const quickEditor = (window as any).svgQuickEditor || (window as any).a1SvgQuickEditor;
         quickEditor?.clearHover?.();
         const isDirty = quickEditor?.isSvgDirty ? quickEditor.isSvgDirty() : false;
         if (isDirty) {
@@ -267,7 +272,7 @@
     }
 
     async function saveAndCloseSvgLightbox() {
-        const quickEditor = (window as any).a1SvgQuickEditor;
+        const quickEditor = (window as any).svgQuickEditor || (window as any).a1SvgQuickEditor;
         if (quickEditor?.saveCurrentSvg) {
             await quickEditor.saveCurrentSvg();
         }
@@ -276,7 +281,7 @@
     }
 
     function discardAndCloseSvgLightbox() {
-        const quickEditor = (window as any).a1SvgQuickEditor;
+        const quickEditor = (window as any).svgQuickEditor || (window as any).a1SvgQuickEditor;
         if (quickEditor?.discardCurrentSvg) {
             quickEditor.discardCurrentSvg();
         }
@@ -2127,7 +2132,7 @@
                                         <polyline points="7 10 12 15 17 10"/>
                                         <line x1="12" y1="15" x2="12" y2="3"/>
                                     </svg>
-                                    <span>{isChinese() ? "⚡ 想要编辑图片？安装/开启 A1 SVG Quick Editor 插件" : "⚡ Want to edit? Get A1 SVG Quick Editor Plugin"}</span>
+                                    <span>{isChinese() ? "⚡ 想要编辑图片？安装/开启 SVG Quick Editor 插件" : "⚡ Want to edit? Get SVG Quick Editor Plugin"}</span>
                                 </button>
                             {/if}
                         </div>
@@ -2193,13 +2198,13 @@
                         <line x1="12" y1="16" x2="12" y2="12"/>
                         <line x1="12" y1="8" x2="12.01" y2="8"/>
                     </svg>
-                    <span>{isChinese() ? "获取 A1 SVG Quick Editor 配套插件" : "Get A1 SVG Quick Editor Companion"}</span>
+                    <span>{isChinese() ? "获取 SVG Quick Editor 配套插件" : "Get SVG Quick Editor Companion"}</span>
                 </div>
                 <div class="svg-confirm-desc" style="line-height: 1.6; font-size: 13px; color: var(--text-muted, #9ca3af); margin-top: 8px;">
                     {#if isChinese()}
-                        Fluent Tasks 专注轻量纯净展示。若需开启<b>双击/F2 即时文字编辑</b>、<b>清空删框</b>、<b>Alt+拖拽克隆UI框</b>与 <b>Ctrl+Z/Y 撤销重做</b>等高级交互功能，请安装或启用配套插件 <b>A1 SVG Quick Editor</b>。
+                        Fluent Tasks 专注轻量纯净展示。若需开启<b>双击/F2 即时文字编辑</b>、<b>清空删框</b>、<b>Alt+拖拽克隆UI框</b>与 <b>Ctrl+Z/Y 撤销重做</b>等高级交互功能，请安装或启用配套插件 <b>SVG Quick Editor</b>。
                     {:else}
-                        Fluent Tasks focuses on pure visual presentation. To unlock <b>F2/Double-click inline text editing</b>, <b>empty-text box removal</b>, <b>Alt+drag card duplication</b>, and <b>Ctrl+Z/Y undo/redo</b>, please install or enable the companion plugin <b>A1 SVG Quick Editor</b>.
+                        Fluent Tasks focuses on pure visual presentation. To unlock <b>F2/Double-click inline text editing</b>, <b>empty-text box removal</b>, <b>Alt+drag card duplication</b>, and <b>Ctrl+Z/Y undo/redo</b>, please install or enable the companion plugin <b>SVG Quick Editor</b>.
                     {/if}
                 </div>
                 <div class="svg-download-actions" style="display: flex; flex-direction: column; gap: 10px; margin-top: 18px;">
