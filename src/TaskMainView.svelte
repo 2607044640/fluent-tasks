@@ -76,6 +76,7 @@
 
     // Lightbox modal state for full-screen / zoom SVG view
     let lightboxData: { isInline: boolean; content: string; srcUrl: string; title: string; cleanPath: string } | null = null;
+    let showSvgSaveConfirmModal: boolean = false;
     const svgResolveCache = new Map<string, { isInline: boolean; content: string; srcUrl: string; cleanPath: string }>();
 
     function resolveSvgItem(svgStr: string): { isInline: boolean; content: string; srcUrl: string; cleanPath: string } {
@@ -186,14 +187,86 @@
 
     function closeSvgLightbox() {
         lightboxData = null;
+        showSvgSaveConfirmModal = false;
+        const quickEditor = (window as any).a1SvgQuickEditor;
+        quickEditor?.clearSvgHistory?.();
+    }
+
+    function requestCloseSvgLightbox() {
+        const quickEditor = (window as any).a1SvgQuickEditor;
+        const isDirty = quickEditor?.isSvgDirty ? quickEditor.isSvgDirty() : false;
+        if (isDirty) {
+            showSvgSaveConfirmModal = true;
+        } else {
+            closeSvgLightbox();
+        }
+    }
+
+    async function saveAndCloseSvgLightbox() {
+        const quickEditor = (window as any).a1SvgQuickEditor;
+        if (quickEditor?.saveCurrentSvg) {
+            await quickEditor.saveCurrentSvg();
+        }
+        showSvgSaveConfirmModal = false;
+        closeSvgLightbox();
+    }
+
+    function discardAndCloseSvgLightbox() {
+        const quickEditor = (window as any).a1SvgQuickEditor;
+        if (quickEditor?.discardCurrentSvg) {
+            quickEditor.discardCurrentSvg();
+        }
+        showSvgSaveConfirmModal = false;
+        closeSvgLightbox();
+    }
+
+    function cancelSvgSavePrompt() {
+        showSvgSaveConfirmModal = false;
     }
 
     function handleLightboxKeydown(e: KeyboardEvent) {
+        if (showSvgSaveConfirmModal) {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                e.stopPropagation();
+                void saveAndCloseSvgLightbox();
+                return;
+            }
+            if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                cancelSvgSavePrompt();
+                return;
+            }
+        }
+
         if (e.key === "Escape") {
-            closeSvgLightbox();
+            requestCloseSvgLightbox();
             return;
         }
+
         const quickEditor = (window as any).a1SvgQuickEditor;
+
+        // Undo (Ctrl+Z) and Redo (Ctrl+Y / Ctrl+Shift+Z)
+        if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+            if (e.key === "z" || e.key === "Z") {
+                e.preventDefault();
+                e.stopPropagation();
+                if (e.shiftKey) {
+                    quickEditor?.redo?.();
+                } else {
+                    quickEditor?.undo?.();
+                }
+                return;
+            }
+            if (e.key === "y" || e.key === "Y") {
+                e.preventDefault();
+                e.stopPropagation();
+                quickEditor?.redo?.();
+                return;
+            }
+        }
+
         const isMatch = e.key === "F2" ||
             (quickEditor?.isSvgEditHotkey && quickEditor.isSvgEditHotkey(e)) ||
             (e.ctrlKey && e.altKey && e.shiftKey && (e.key.toLowerCase() === "i" || e.code === "KeyI"));
@@ -214,17 +287,18 @@
     }
 
     function handleLightboxClick(e: MouseEvent) {
+        if (showSvgSaveConfirmModal) return;
         const target = e.target as HTMLElement | null;
         if (!target) return;
         // Do not close if clicking inside the dialog, inside the SVG DOM, or inside the text edit overlay
-        if (target.closest('.svg-lightbox-modal, .a1-svg-edit, svg')) return;
-        closeSvgLightbox();
+        if (target.closest('.svg-lightbox-modal, .a1-svg-edit, svg, .svg-confirm-modal')) return;
+        requestCloseSvgLightbox();
     }
 
     function openSvgInVault(cleanPath: string) {
         if (!cleanPath || !plugin?.app) return;
         plugin.app.workspace.openLinkText(cleanPath, currentCategory?.filepath || "", false);
-        closeSvgLightbox();
+        requestCloseSvgLightbox();
     }
 
     let popoverPlacement: 'top' | 'bottom' = 'top';
@@ -1940,7 +2014,7 @@
         <div use:portal
              class="svg-lightbox-backdrop"
              on:click={handleLightboxClick}
-             on:contextmenu|preventDefault={closeSvgLightbox}
+             on:contextmenu|preventDefault={requestCloseSvgLightbox}
              role="presentation">
             <div class="svg-lightbox-modal" role="dialog" aria-modal="true" tabindex="-1"
                  on:keydown={handleLightboxKeydown}>
@@ -1957,10 +2031,12 @@
                                 <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">F2 / 双击文字编辑</span>
                                 <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">清空文字即删UI框</span>
                                 <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Alt+拖拽复制</span>
+                                <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Ctrl+Z/Y 撤销重做</span>
                             {:else}
                                 <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">F2 / Double-click to Edit</span>
                                 <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Clear Text to Delete Box</span>
                                 <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Alt+Drag to Duplicate</span>
+                                <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Ctrl+Z/Y Undo/Redo</span>
                             {/if}
                         </div>
                     </div>
@@ -1970,8 +2046,8 @@
                                 Open in Tab
                             </button>
                         {/if}
-                        <span class="svg-lightbox-close" on:click={closeSvgLightbox}
-                              on:keydown={(e) => e.key === "Enter" && closeSvgLightbox()}
+                        <span class="svg-lightbox-close" on:click={requestCloseSvgLightbox}
+                              on:keydown={(e) => e.key === "Enter" && requestCloseSvgLightbox()}
                               role="button" tabindex="0">✕</span>
                     </div>
                 </div>
@@ -1984,6 +2060,31 @@
                     {:else}
                         <img src={lightboxData.srcUrl} alt="Visual memory" class="svg-lightbox-img" />
                     {/if}
+                </div>
+            </div>
+        </div>
+    {/if}
+
+    <!-- Save Confirmation Modal on Right-click/Close ("是否保存？") -->
+    {#if showSvgSaveConfirmModal}
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <!-- svelte-ignore a11y-no-static-element-interactions -->
+        <div use:portal class="svg-confirm-backdrop" on:click|self={cancelSvgSavePrompt} role="presentation">
+            <div class="svg-confirm-modal" role="dialog" aria-modal="true" tabindex="-1">
+                <div class="svg-confirm-title">{isChinese() ? "是否保存？" : "Save changes?"}</div>
+                <div class="svg-confirm-desc">
+                    {isChinese() ? "当前 SVG 图像已有改动，退出前是否保存更改？" : "The SVG image has been modified. Do you want to save changes before exiting?"}
+                </div>
+                <div class="svg-confirm-actions">
+                    <button type="button" class="svg-btn svg-btn-primary" on:click={saveAndCloseSvgLightbox}>
+                        {isChinese() ? "保存 (Enter)" : "Save (Enter)"}
+                    </button>
+                    <button type="button" class="svg-btn svg-btn-warning" on:click={discardAndCloseSvgLightbox}>
+                        {isChinese() ? "不保存 / 放弃" : "Don't Save"}
+                    </button>
+                    <button type="button" class="svg-btn svg-btn-ghost" on:click={cancelSvgSavePrompt}>
+                        {isChinese() ? "继续编辑 (Esc)" : "Keep Editing (Esc)"}
+                    </button>
                 </div>
             </div>
         </div>

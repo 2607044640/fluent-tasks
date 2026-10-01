@@ -1692,6 +1692,95 @@ body.is-dragging-ghost #dnd-action-dragged-el {
 }
 
 /* =============================================
+   SVG Save Confirmation Dialog ("是否保存？")
+   ============================================= */
+.svg-confirm-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 100030;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.svg-confirm-modal {
+    width: min(90vw, 420px);
+    background: var(--background-primary, #1e2029);
+    border: 1px solid var(--background-modifier-border, #3b4252);
+    border-radius: 10px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.svg-confirm-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-normal, #f3f4f6);
+}
+
+.svg-confirm-desc {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text-muted, #9ca3af);
+}
+
+.svg-confirm-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.svg-confirm-actions button {
+    padding: 6px 14px;
+    font-size: 13px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.svg-btn-primary {
+    background: var(--interactive-accent, #7c9cff);
+    color: var(--text-on-accent, #ffffff);
+    border: 1px solid transparent;
+}
+
+.svg-btn-primary:hover {
+    background: var(--interactive-accent-hover, #688bf5);
+}
+
+.svg-btn-warning {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.svg-btn-warning:hover {
+    background: rgba(239, 68, 68, 0.25);
+}
+
+.svg-btn-ghost {
+    background: transparent;
+    color: var(--text-muted, #9ca3af);
+    border: 1px solid var(--background-modifier-border, #3b4252);
+}
+
+.svg-btn-ghost:hover {
+    background: var(--background-modifier-hover, rgba(255, 255, 255, 0.08));
+    color: var(--text-normal, #ffffff);
+}
+
+
+/* =============================================
    Task Metadata Modal Dialog
    ============================================= */
 .meta-modal-backdrop {
