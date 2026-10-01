@@ -1,6 +1,6 @@
 # Fluent Tasks
 
-Obsidian plugin: a three-pane, drag-and-drop task manager inspired by Microsoft To Do, Todoist, and TickTick. Version **1.0.27** (`manifest.json`). Desktop and mobile (`isDesktopOnly: false`). Minimum Obsidian **1.8.7**.
+Obsidian plugin: a three-pane, drag-and-drop task manager inspired by Microsoft To Do, Todoist, and TickTick. Version **1.0.30** (`manifest.json`). Desktop and mobile (`isDesktopOnly: false`). Minimum Obsidian **1.8.7**.
 
 Architecture documentation: [ARCHITECTURE.md](./ARCHITECTURE.md).
 
@@ -18,7 +18,7 @@ All lists are stored as ordinary Markdown files inside your vault:
 
 - Sidebar groups and list ordering: `TodoData/.metadata.json`
 - Dedicated linked notes: `TodoData/<ListName>/<TaskTitle>.md` with frontmatter `taskId`
-- Plugin options: Obsidian plugin data (`accentColor`, modal/sidebar toggles, Quick List grid settings, backup toggles, undo durations, task weight mode)
+- Plugin options: Obsidian plugin data (`accentColor`, modal/sidebar toggles, Quick List grid settings, backup toggles, undo durations, task weight mode, center align tasks mode)
 
 There is no cloud lock-in or external server dependency. All data remains 100% local in your Obsidian vault.
 
@@ -26,7 +26,8 @@ There is no cloud lock-in or external server dependency. All data remains 100% l
 
 - **Lists & Groups**: Create custom lists and organize them into collapsible groups. Drag-and-drop lists into groups or reorder them freely. Press **F2** to rename hovered or active lists.
 - **Task Management & Priority Weight Scoring**: Inline task creation, completion toggles, star/pin priority, drag-and-drop task reordering, and moving tasks between lists. Optional 1-9 priority score weighting with stepper controls and dynamic stable sorting.
-- **Batch Operations & Multi-Select**: Toggle multi-select mode to select multiple tasks and perform batch star/unstar or batch deletion.
+- **More Options Menu & Batch Operations**: Clean three-dots header menu consolidating list search, multi-select mode, backup manager, shortcuts guide, and display alignment. Multi-select supports batch star/unstar and batch deletion.
+- **Center-Align Tasks Mode**: Toggle center alignment for task titles, steps counters, and wrapped multi-line text directly from the more options menu or plugin settings.
 - **Subtasks & Step Drag-and-Drop**: Dedicated detail panel and floating modal for step checklists. Full vertical drag-and-drop step reordering with zero-loss safety reconciliation.
 - **Multi-Tier Deletion Undo**: Instant floating toast undo mechanism for deleted tasks (single or batch), subtasks, and lists, with configurable undo timer in settings.
 - **Due Dates & Recurrence**: Schedule tasks with smart presets (today, tomorrow, next week) and flexible recurrence rules (daily, weekdays, weekly, custom). Overdue recurring tasks automatically roll over.
@@ -58,7 +59,7 @@ Copy `main.js`, `manifest.json`, and `styles.css` into `<vault>/.obsidian/plugin
 | Detail as floating modal | Settings -> **Open Task Details in Floating Modal** |
 | Jump to a list | Command Palette `Z-Jump to list: <name>` (registered per list) |
 | Quick List Board | Command **Open Quick List Modal (List only)** |
-| Backup Manager | Command **Open Backup Manager** or header archive button |
+| Backup Manager | Command **Open Backup Manager** or header more options menu |
 
 ## Commands
 

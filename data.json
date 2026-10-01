@@ -6,6 +6,7 @@
   "searchHideCompleted": true,
   "hideRibbonIcon": true,
   "wrapTaskTitles": true,
+  "centerAlignTasks": true,
   "quickModalAction": "direct",
   "quickModalTipCount": 0,
   "quickListGridLayout": true,
