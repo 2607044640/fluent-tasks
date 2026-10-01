@@ -3,7 +3,7 @@
   "openDetailInModal": false,
   "autoExpandSidebar": true,
   "autoCollapseSidebarOnSwitch": true,
-  "searchHideCompleted": false,
+  "searchHideCompleted": true,
   "hideRibbonIcon": true,
   "wrapTaskTitles": true,
   "quickModalAction": "direct",
@@ -12,10 +12,10 @@
   "quickListMinColGap": 20,
   "quickListMinRowGap": 16,
   "quickListFocusCenter": false,
-  "defaultQuickListFocusFilepath": "TodoData/Game！采集模拟器.md",
+  "defaultQuickListFocusFilepath": "TodoData/具体.md",
   "dailyBackupEnabled": true,
   "lastDailyBackupDate": "2026-10-01",
   "undoDurationSeconds": 2.5,
   "enableTaskWeightMode": true,
-  "quickListSearchMode": "list"
+  "quickListSearchMode": "task"
 }
