@@ -78,6 +78,8 @@
     let lightboxData: { isInline: boolean; content: string; srcUrl: string; title: string; cleanPath: string } | null = null;
     let showSvgSaveConfirmModal: boolean = false;
     let showPluginDownloadModal: boolean = false;
+    let nameCopiedHint: boolean = false;
+    let nameCopiedTimer: any = null;
     const svgResolveCache = new Map<string, { isInline: boolean; content: string; srcUrl: string; cleanPath: string }>();
 
     function resolveSvgItem(svgStr: string): { isInline: boolean; content: string; srcUrl: string; cleanPath: string } {
@@ -206,7 +208,7 @@
             appAny.setting.open();
             appAny.setting.openTabById("community-plugins");
         }
-        copyPluginName(false);
+        copyPluginName();
         const NoticeCtor = (window as any).Notice || Notice;
         new NoticeCtor(isChinese()
             ? "已打开社区插件设置，并已复制「A1 SVG Quick Editor」到剪贴板，请点击“浏览”直接粘贴搜索！"
@@ -220,7 +222,7 @@
         showPluginDownloadModal = false;
     }
 
-    function copyPluginName(showNotice = true) {
+    function copyPluginName() {
         const name = "A1 SVG Quick Editor";
         try {
             navigator.clipboard.writeText(name);
@@ -232,16 +234,19 @@
             document.execCommand("copy");
             ta.remove();
         }
-        if (showNotice) {
-            const NoticeCtor = (window as any).Notice || Notice;
-            new NoticeCtor(isChinese() ? "已复制插件名称：A1 SVG Quick Editor" : "Copied plugin name: A1 SVG Quick Editor");
-        }
+        nameCopiedHint = true;
+        if (nameCopiedTimer) clearTimeout(nameCopiedTimer);
+        nameCopiedTimer = setTimeout(() => {
+            nameCopiedHint = false;
+        }, 6000);
     }
 
     function closeSvgLightbox() {
         lightboxData = null;
         showSvgSaveConfirmModal = false;
         showPluginDownloadModal = false;
+        nameCopiedHint = false;
+        if (nameCopiedTimer) clearTimeout(nameCopiedTimer);
         const quickEditor = (window as any).a1SvgQuickEditor;
         quickEditor?.clearSvgHistory?.();
     }
@@ -2210,14 +2215,28 @@
                             <span>{isChinese() ? "GitHub 网页跳转" : "GitHub Page"}</span>
                         </button>
                         <!-- 3. 复制插件名称 -->
-                        <button type="button" class="svg-btn svg-btn-ghost" on:click={() => copyPluginName(true)} style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 10px;">
-                            <span>📋</span>
-                            <span>{isChinese() ? "复制插件名称" : "Copy Name"}</span>
+                        <button type="button" class="svg-btn svg-btn-ghost" on:click={copyPluginName} style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 10px;">
+                            <span>{nameCopiedHint ? "✅" : "📋"}</span>
+                            <span>{nameCopiedHint ? (isChinese() ? "已复制！" : "Copied!") : (isChinese() ? "复制插件名称" : "Copy Name")}</span>
                         </button>
                     </div>
                 </div>
+
+                {#if nameCopiedHint}
+                    <div class="svg-copy-embedded-hint" style="display: flex; align-items: center; gap: 8px; margin-top: 14px; padding: 10px 14px; border-radius: 8px; background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.35); color: #4ade80; font-size: 12.5px; line-height: 1.45;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        <span>
+                            {isChinese()
+                                ? "插件名称已复制，到插件市场（社区插件）粘贴搜索下载即可。"
+                                : "Plugin name copied! Open Settings -> Community Plugins to search & install."}
+                        </span>
+                    </div>
+                {/if}
+
                 <div style="margin-top: 16px; text-align: right;">
-                    <button type="button" class="svg-btn svg-btn-ghost" on:click={() => showPluginDownloadModal = false}>
+                    <button type="button" class="svg-btn svg-btn-ghost" on:click={() => { showPluginDownloadModal = false; nameCopiedHint = false; }}>
                         {isChinese() ? "知道了 (Esc)" : "Close (Esc)"}
                     </button>
                 </div>
