@@ -118,6 +118,9 @@ const zhCn: typeof en = {
     quick_list_task_search_no_results: "未找到匹配任务。",
     quick_list_task_search_title: "搜索所有任务",
     quick_list_task_search_empty_hint: "输入关键词以搜索所有任务的标题、子步骤或详细备注。",
+    quick_list_search_filter_active_only: "仅未完成",
+    quick_list_search_filter_all_tasks: "所有任务",
+    quick_list_search_filter_tooltip: "切换是否包含已完成任务",
 };
 
 export default zhCn;

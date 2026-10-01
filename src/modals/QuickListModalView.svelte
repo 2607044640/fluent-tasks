@@ -30,6 +30,7 @@
     let focusedIndex: number = 0;
     let isGridLayout: boolean = plugin?.settings?.quickListGridLayout ?? true;
     let searchMode: 'list' | 'task' = plugin?.settings?.quickListSearchMode ?? 'list';
+    let hideCompleted: boolean = plugin?.settings?.searchHideCompleted ?? true;
     let taskSearchResults: Array<{ task: TaskItem; category: CategoryInfo; matchField: string }> = [];
     let taskFocusedIndex: number = 0;
     let isSearchingTasks: boolean = false;
@@ -508,7 +509,10 @@
         searchDebounceTimer = setTimeout(async () => {
             isSearchingTasks = true;
             try {
-                const results = await dataService.searchTasks(q, null);
+                let results = await dataService.searchTasks(q, null);
+                if (hideCompleted) {
+                    results = results.filter(r => !r.task.completed);
+                }
                 taskSearchResults = results;
                 taskFocusedIndex = 0;
             } catch (err) {
@@ -518,6 +522,22 @@
                 isSearchingTasks = false;
             }
         }, 50);
+    }
+
+    async function toggleHideCompleted(e?: MouseEvent) {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        hideCompleted = !hideCompleted;
+        if (plugin?.settings) {
+            plugin.settings.searchHideCompleted = hideCompleted;
+            await plugin.saveSettings();
+        }
+        if (searchMode === 'task' && searchQuery.trim().length > 0) {
+            runTaskSearch(searchQuery);
+        }
+        searchInputEl?.focus();
     }
 
     async function toggleSearchMode() {
@@ -1164,6 +1184,21 @@
         />
         {#if searchQuery}
             <button class="quick-modal-filter-clear" on:click={() => { searchQuery = ""; if (searchMode === 'task') taskSearchResults = []; searchInputEl?.focus(); }}>✕</button>
+        {/if}
+
+        {#if searchMode === 'task'}
+            <button 
+                class="quick-modal-header-btn todo-search-filter-btn"
+                class:is-active={hideCompleted}
+                aria-label={t("quick_list_search_filter_tooltip") || "Toggle completed tasks filter"}
+                title={t("quick_list_search_filter_tooltip") || "Toggle completed tasks filter"}
+                tabindex="-1"
+                on:click={toggleHideCompleted}
+            >
+                {hideCompleted 
+                    ? (t("quick_list_search_filter_active_only") || "Active only") 
+                    : (t("quick_list_search_filter_all_tasks") || "All tasks")}
+            </button>
         {/if}
 
         <button 

@@ -116,6 +116,9 @@ const en = {
     quick_list_task_search_no_results: "No results found.",
     quick_list_task_search_title: "Search all tasks",
     quick_list_task_search_empty_hint: "Type keywords to search across task titles, checklist steps, and notes.",
+    quick_list_search_filter_active_only: "Active only",
+    quick_list_search_filter_all_tasks: "All tasks",
+    quick_list_search_filter_tooltip: "Toggle completed tasks filter",
 };
 
 export default en;

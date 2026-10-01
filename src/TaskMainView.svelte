@@ -77,6 +77,7 @@
     // Lightbox modal state for full-screen / zoom SVG view
     let lightboxData: { isInline: boolean; content: string; srcUrl: string; title: string; cleanPath: string } | null = null;
     let showSvgSaveConfirmModal: boolean = false;
+    let showPluginDownloadModal: boolean = false;
     const svgResolveCache = new Map<string, { isInline: boolean; content: string; srcUrl: string; cleanPath: string }>();
 
     function resolveSvgItem(svgStr: string): { isInline: boolean; content: string; srcUrl: string; cleanPath: string } {
@@ -195,15 +196,63 @@
         }
     }
 
+    function isSvgQuickEditorInstalled(): boolean {
+        return !!(window as any).a1SvgQuickEditor || !!(plugin?.app as any)?.plugins?.getPlugin?.("a1-svg-quick-editor");
+    }
+
+    function openObsidianPluginSettings() {
+        const appAny = plugin?.app as any;
+        if (appAny?.setting) {
+            appAny.setting.open();
+            appAny.setting.openTabById("community-plugins");
+        }
+        copyPluginName(false);
+        const NoticeCtor = (window as any).Notice || Notice;
+        new NoticeCtor(isChinese()
+            ? "已打开社区插件设置，并已复制「A1 SVG Quick Editor」到剪贴板，请点击“浏览”直接粘贴搜索！"
+            : "Opened Community Plugins settings and copied 'A1 SVG Quick Editor' to clipboard. Click 'Browse' and paste to search!");
+        showPluginDownloadModal = false;
+    }
+
+    function openPluginGithub() {
+        const url = "https://github.com/2607044640/ObsidianDev/tree/main/plugins/A1SvgQuickEditor";
+        window.open(url, "_blank");
+        showPluginDownloadModal = false;
+    }
+
+    function copyPluginName(showNotice = true) {
+        const name = "A1 SVG Quick Editor";
+        try {
+            navigator.clipboard.writeText(name);
+        } catch {
+            const ta = document.createElement("textarea");
+            ta.value = name;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            ta.remove();
+        }
+        if (showNotice) {
+            const NoticeCtor = (window as any).Notice || Notice;
+            new NoticeCtor(isChinese() ? "已复制插件名称：A1 SVG Quick Editor" : "Copied plugin name: A1 SVG Quick Editor");
+        }
+    }
+
     function closeSvgLightbox() {
         lightboxData = null;
         showSvgSaveConfirmModal = false;
+        showPluginDownloadModal = false;
         const quickEditor = (window as any).a1SvgQuickEditor;
         quickEditor?.clearSvgHistory?.();
     }
 
     function requestCloseSvgLightbox() {
+        if (showPluginDownloadModal) {
+            showPluginDownloadModal = false;
+            return;
+        }
         const quickEditor = (window as any).a1SvgQuickEditor;
+        quickEditor?.clearHover?.();
         const isDirty = quickEditor?.isSvgDirty ? quickEditor.isSvgDirty() : false;
         if (isDirty) {
             showSvgSaveConfirmModal = true;
@@ -235,6 +284,15 @@
     }
 
     function handleLightboxKeydown(e: KeyboardEvent) {
+        if (showPluginDownloadModal) {
+            if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                showPluginDownloadModal = false;
+                return;
+            }
+        }
+
         if (showSvgSaveConfirmModal) {
             if (e.key === "Enter") {
                 e.preventDefault();
@@ -283,21 +341,29 @@
         if (isMatch) {
             e.preventDefault();
             e.stopPropagation();
-            if (quickEditor?.executeEditSvgText) {
-                void quickEditor.executeEditSvgText();
+            if (isSvgQuickEditorInstalled()) {
+                if (quickEditor?.executeEditSvgText) {
+                    void quickEditor.executeEditSvgText();
+                }
+            } else {
+                showPluginDownloadModal = true;
             }
         }
     }
 
     function handleLightboxDblClick() {
-        const quickEditor = (window as any).a1SvgQuickEditor;
-        if (quickEditor?.executeEditSvgText) {
-            void quickEditor.executeEditSvgText();
+        if (isSvgQuickEditorInstalled()) {
+            const quickEditor = (window as any).a1SvgQuickEditor;
+            if (quickEditor?.executeEditSvgText) {
+                void quickEditor.executeEditSvgText();
+            }
+        } else {
+            showPluginDownloadModal = true;
         }
     }
 
     function handleLightboxClick(e: MouseEvent) {
-        if (showSvgSaveConfirmModal) return;
+        if (showSvgSaveConfirmModal || showPluginDownloadModal) return;
         const target = e.target as HTMLElement | null;
         if (!target) return;
         // Do not close if clicking inside the dialog, inside the SVG DOM, or inside the text edit overlay
@@ -2037,16 +2103,27 @@
                         </svg>
                         <span class="svg-lightbox-title">{lightboxData.title || "Visual Memory Aid"}</span>
                         <div class="svg-lightbox-hints" style="font-size: 11px; opacity: 0.85; display: inline-flex; gap: 6px; align-items: center; margin-left: 10px;">
-                            {#if isChinese()}
-                                <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">F2 / 双击文字编辑</span>
-                                <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">清空文字即删UI框</span>
-                                <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Alt+拖拽复制</span>
-                                <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Ctrl+Z/Y 撤销重做</span>
+                            {#if isSvgQuickEditorInstalled()}
+                                {#if isChinese()}
+                                    <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">F2 / 双击文字编辑</span>
+                                    <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">清空文字即删UI框</span>
+                                    <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Alt+拖拽复制</span>
+                                    <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Ctrl+Z/Y 撤销重做</span>
+                                {:else}
+                                    <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">F2 / Double-click to Edit</span>
+                                    <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Clear Text to Delete Box</span>
+                                    <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Alt+Drag to Duplicate</span>
+                                    <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Ctrl+Z/Y Undo/Redo</span>
+                                {/if}
                             {:else}
-                                <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">F2 / Double-click to Edit</span>
-                                <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Clear Text to Delete Box</span>
-                                <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Alt+Drag to Duplicate</span>
-                                <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Ctrl+Z/Y Undo/Redo</span>
+                                <button type="button" class="svg-plugin-download-btn" on:click={() => showPluginDownloadModal = true}>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="7 10 12 15 17 10"/>
+                                        <line x1="12" y1="15" x2="12" y2="3"/>
+                                    </svg>
+                                    <span>{isChinese() ? "⚡ 想要编辑图片？安装/开启 A1 SVG Quick Editor 插件" : "⚡ Want to edit? Get A1 SVG Quick Editor Plugin"}</span>
+                                </button>
                             {/if}
                         </div>
                     </div>
@@ -2057,8 +2134,7 @@
                             </button>
                         {/if}
                         <span class="svg-lightbox-close" on:click={requestCloseSvgLightbox}
-                              on:keydown={(e) => e.key === "Enter" && requestCloseSvgLightbox()}
-                              role="button" tabindex="0">✕</span>
+                              role="button" tabindex="-1">✕</span>
                     </div>
                 </div>
                 <div class="svg-lightbox-body">
@@ -2094,6 +2170,55 @@
                     </button>
                     <button type="button" class="svg-btn svg-btn-ghost" on:click={cancelSvgSavePrompt}>
                         {isChinese() ? "继续编辑 (Esc)" : "Keep Editing (Esc)"}
+                    </button>
+                </div>
+            </div>
+        </div>
+    {/if}
+
+    <!-- Companion Plugin Downloader Guide Modal ("获取 A1 SVG Quick Editor 插件") -->
+    {#if showPluginDownloadModal}
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <!-- svelte-ignore a11y-no-static-element-interactions -->
+        <div use:portal class="svg-confirm-backdrop" on:click|self={() => showPluginDownloadModal = false} role="presentation">
+            <div class="svg-confirm-modal" role="dialog" aria-modal="true" tabindex="-1" style="max-width: 480px;">
+                <div class="svg-confirm-title" style="display: flex; align-items: center; gap: 8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--todo-accent, #7c9cff)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="16" x2="12" y2="12"/>
+                        <line x1="12" y1="8" x2="12.01" y2="8"/>
+                    </svg>
+                    <span>{isChinese() ? "获取 A1 SVG Quick Editor 配套插件" : "Get A1 SVG Quick Editor Companion"}</span>
+                </div>
+                <div class="svg-confirm-desc" style="line-height: 1.6; font-size: 13px; color: var(--text-muted, #9ca3af); margin-top: 8px;">
+                    {#if isChinese()}
+                        Fluent Tasks 专注轻量纯净展示。若需开启<b>双击/F2 即时文字编辑</b>、<b>清空删框</b>、<b>Alt+拖拽克隆UI框</b>与 <b>Ctrl+Z/Y 撤销重做</b>等高级交互功能，请安装或启用配套插件 <b>A1 SVG Quick Editor</b>。
+                    {:else}
+                        Fluent Tasks focuses on pure visual presentation. To unlock <b>F2/Double-click inline text editing</b>, <b>empty-text box removal</b>, <b>Alt+drag card duplication</b>, and <b>Ctrl+Z/Y undo/redo</b>, please install or enable the companion plugin <b>A1 SVG Quick Editor</b>.
+                    {/if}
+                </div>
+                <div class="svg-download-actions" style="display: flex; flex-direction: column; gap: 10px; margin-top: 18px;">
+                    <!-- 1. 打开社区插件设置并搜索 -->
+                    <button type="button" class="svg-btn svg-btn-primary" on:click={openObsidianPluginSettings} style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 14px;">
+                        <span>⚙️</span>
+                        <span>{isChinese() ? "打开插件设置并搜索下载" : "Open Settings & Search Plugin"}</span>
+                    </button>
+                    <div style="display: flex; gap: 10px;">
+                        <!-- 2. GitHub 网页跳转 -->
+                        <button type="button" class="svg-btn svg-btn-ghost" on:click={openPluginGithub} style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 10px;">
+                            <span>🌐</span>
+                            <span>{isChinese() ? "GitHub 网页跳转" : "GitHub Page"}</span>
+                        </button>
+                        <!-- 3. 复制插件名称 -->
+                        <button type="button" class="svg-btn svg-btn-ghost" on:click={() => copyPluginName(true)} style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 10px;">
+                            <span>📋</span>
+                            <span>{isChinese() ? "复制插件名称" : "Copy Name"}</span>
+                        </button>
+                    </div>
+                </div>
+                <div style="margin-top: 16px; text-align: right;">
+                    <button type="button" class="svg-btn svg-btn-ghost" on:click={() => showPluginDownloadModal = false}>
+                        {isChinese() ? "知道了 (Esc)" : "Close (Esc)"}
                     </button>
                 </div>
             </div>

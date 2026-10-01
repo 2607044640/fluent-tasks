@@ -4,6 +4,7 @@ import type { TaskItem, CategoryInfo } from "./types";
 import { EventBus } from "./EventBus";
 import { EventName } from "./types";
 import type FluentTasksPlugin from "./main";
+import { t } from "./lang/helpers";
 
 export interface TaskSearchResult {
     task: TaskItem;
@@ -40,7 +41,10 @@ export class TaskSearchModal extends SuggestModal<TaskSearchResult> {
         if (promptEl) {
             this.toggleEl = promptEl.createEl("button", {
                 cls: "todo-search-filter-btn",
-                attr: { "aria-label": "Toggle completed tasks filter" },
+                attr: { 
+                    "aria-label": t("quick_list_search_filter_tooltip") || "Toggle completed tasks filter",
+                    "title": t("quick_list_search_filter_tooltip") || "Toggle completed tasks filter"
+                },
             });
             this.updateToggleLabel();
             this.toggleEl.addEventListener("click", (e) => {
@@ -59,8 +63,12 @@ export class TaskSearchModal extends SuggestModal<TaskSearchResult> {
 
     private updateToggleLabel(): void {
         if (!this.toggleEl) return;
-        this.toggleEl.textContent = this.hideCompleted ? "Active only" : "All tasks";
+        this.toggleEl.textContent = this.hideCompleted 
+            ? (t("quick_list_search_filter_active_only") || "Active only") 
+            : (t("quick_list_search_filter_all_tasks") || "All tasks");
         this.toggleEl.toggleClass("is-active", this.hideCompleted);
+        this.toggleEl.setAttribute("aria-label", t("quick_list_search_filter_tooltip") || "Toggle completed tasks filter");
+        this.toggleEl.setAttribute("title", t("quick_list_search_filter_tooltip") || "Toggle completed tasks filter");
     }
 
     async getSuggestions(query: string): Promise<TaskSearchResult[]> {
