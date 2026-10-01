@@ -17,5 +17,5 @@
   "lastDailyBackupDate": "2026-10-01",
   "undoDurationSeconds": 2.5,
   "enableTaskWeightMode": true,
-  "quickListSearchMode": "task"
+  "quickListSearchMode": "list"
 }
