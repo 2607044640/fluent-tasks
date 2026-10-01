@@ -17211,8 +17211,13 @@ function instance4($$self, $$props, $$invalidate) {
       cleanPath: res.cleanPath
     });
     void tick().then(() => {
+      var _a2, _b2;
       const modalEl = document.querySelector(".svg-lightbox-modal");
       modalEl == null ? void 0 : modalEl.focus();
+      const svgEl = document.querySelector(".svg-lightbox-content svg");
+      if (svgEl) {
+        (_b2 = (_a2 = window.a1SvgQuickEditor) == null ? void 0 : _a2.registerActiveSvg) == null ? void 0 : _b2.call(_a2, svgEl);
+      }
     });
     if (!res.isInline && res.cleanPath && res.cleanPath.toLowerCase().endsWith(".svg") && (plugin == null ? void 0 : plugin.app)) {
       let file = null;
@@ -17248,6 +17253,13 @@ function instance4($$self, $$props, $$invalidate) {
               content: processed,
               srcUrl: res.srcUrl,
               cleanPath: file.path
+            });
+            void tick().then(() => {
+              var _a2, _b2;
+              const svgEl = document.querySelector(".svg-lightbox-content svg");
+              if (svgEl) {
+                (_b2 = (_a2 = window.a1SvgQuickEditor) == null ? void 0 : _a2.registerActiveSvg) == null ? void 0 : _b2.call(_a2, svgEl);
+              }
             });
           }
         }).catch((err) => console.error("Failed to read SVG file for lightbox:", err));

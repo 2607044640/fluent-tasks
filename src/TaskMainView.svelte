@@ -141,6 +141,10 @@
         void tick().then(() => {
             const modalEl = document.querySelector('.svg-lightbox-modal') as HTMLElement | null;
             modalEl?.focus();
+            const svgEl = document.querySelector('.svg-lightbox-content svg') as SVGSVGElement | null;
+            if (svgEl) {
+                (window as any).a1SvgQuickEditor?.registerActiveSvg?.(svgEl);
+            }
         });
 
         // If it's a standalone .svg vault file, read raw markup and inject data-a1-svg-path for live editing
@@ -178,6 +182,12 @@
                             content: processed,
                             srcUrl: res.srcUrl,
                             cleanPath: file.path,
+                        });
+                        void tick().then(() => {
+                            const svgEl = document.querySelector('.svg-lightbox-content svg') as SVGSVGElement | null;
+                            if (svgEl) {
+                                (window as any).a1SvgQuickEditor?.registerActiveSvg?.(svgEl);
+                            }
                         });
                     }
                 }).catch((err: any) => console.error("Failed to read SVG file for lightbox:", err));
