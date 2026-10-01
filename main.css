@@ -4559,3 +4559,43 @@ body .task-steps-floating-modal .steps-modal-delete-btn:hover {
     color: #ffffff;
     box-shadow: 0 0 8px color-mix(in srgb, var(--interactive-accent, #7c9cff) 40%, transparent);
 }
+
+/* =============================================
+   Quick List Modal: Centered Titles Mode
+   ============================================= */
+.quick-modal-container.is-centered-titles .quick-modal-list-name {
+    text-align: center;
+}
+
+.quick-modal-container.is-centered-titles .quick-grid-card-title-wrap {
+    justify-content: center;
+}
+
+.quick-modal-container.is-centered-titles .quick-grid-card-title {
+    text-align: center;
+}
+
+.quick-modal-container.is-centered-titles .quick-modal-group-header {
+    justify-content: center;
+}
+
+.quick-modal-container.is-centered-titles .quick-modal-group-title {
+    text-align: center;
+}
+
+.quick-modal-container.is-centered-titles .quick-list-info {
+    justify-content: center;
+}
+
+.quick-modal-container.is-centered-titles .quick-list-title {
+    text-align: center;
+}
+
+.quick-modal-container.is-centered-titles .quick-modal-inline-rename-input {
+    text-align: center;
+}
+
+.quick-modal-container.is-centered-titles .quick-modal-pane-title {
+    text-align: center;
+}
+

@@ -41,6 +41,7 @@
     let prevSearchQuery: string = "";
     let isPickingDefaultFocus: boolean = false;
     let showFocusPopover: boolean = false;
+    let titleAlignment: 'center' | 'left' = plugin?.settings?.quickListTitleAlignment ?? 'center';
 
     function handleBoardWheel(e: WheelEvent) {
         if (e.deltaY !== 0 && !e.shiftKey) {
@@ -398,6 +399,7 @@
         await loadData();
         EventBus.on(EventName.CATEGORY_LIST_CHANGED, handleExternalListChanged);
         EventBus.on(EventName.TASK_UPDATED, handleExternalTaskUpdated);
+        EventBus.on(EventName.SETTINGS_CHANGED, handleSettingsChanged);
 
         searchInputEl?.focus();
         if (isGridLayout) {
@@ -428,11 +430,20 @@
         }
         EventBus.off(EventName.CATEGORY_LIST_CHANGED, handleExternalListChanged);
         EventBus.off(EventName.TASK_UPDATED, handleExternalTaskUpdated);
+        EventBus.off(EventName.SETTINGS_CHANGED, handleSettingsChanged);
         if (resizeObserver) {
             resizeObserver.disconnect();
             resizeObserver = null;
         }
     });
+
+    function handleSettingsChanged(payload?: any) {
+        if (payload?.settings?.quickListTitleAlignment !== undefined) {
+            titleAlignment = payload.settings.quickListTitleAlignment;
+        } else if (plugin?.settings?.quickListTitleAlignment !== undefined) {
+            titleAlignment = plugin.settings.quickListTitleAlignment;
+        }
+    }
 
     function handleExternalListChanged() {
         void loadData();
@@ -1151,6 +1162,7 @@
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions a11y-no-noninteractive-tabindex a11y-click-events-have-key-events -->
 <div 
     class="quick-modal-container quick-list-only-container"
+    class:is-centered-titles={titleAlignment === 'center'}
     class:is-picking-focus={isPickingDefaultFocus}
     bind:this={modalContainerEl}
     on:keydown={handleKeydown}

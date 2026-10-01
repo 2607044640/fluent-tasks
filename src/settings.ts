@@ -22,6 +22,7 @@ export interface FluentTasksSettings {
     enableTaskWeightMode: boolean;
     quickListSearchMode: 'list' | 'task';
     centerAlignTasks: boolean;
+    quickListTitleAlignment: 'center' | 'left';
 }
 
 export const DEFAULT_SETTINGS: FluentTasksSettings = {
@@ -45,6 +46,7 @@ export const DEFAULT_SETTINGS: FluentTasksSettings = {
     undoDurationSeconds: 2.5,
     enableTaskWeightMode: false,
     quickListSearchMode: 'list',
+    quickListTitleAlignment: 'center',
 }
 
 export class FluentTasksSettingTab extends PluginSettingTab {
@@ -186,6 +188,18 @@ export class FluentTasksSettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.quickListSearchMode ?? "list")
                 .onChange(async (value: string) => {
                     this.plugin.settings.quickListSearchMode = value as "list" | "task";
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName("Quick List Modal: Title Alignment")
+            .setDesc("Choose whether list and group titles in the Quick List modal are centered or aligned to the left.")
+            .addDropdown(dropdown => dropdown
+                .addOption("center", "Center (Default)")
+                .addOption("left", "Left")
+                .setValue(this.plugin.settings.quickListTitleAlignment ?? "center")
+                .onChange(async (value: string) => {
+                    this.plugin.settings.quickListTitleAlignment = value as "center" | "left";
                     await this.plugin.saveSettings();
                 }));
 

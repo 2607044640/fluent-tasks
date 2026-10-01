@@ -59,6 +59,7 @@
     let editingItemType: string = "category";
     let editingName: string = "";
     let renameInputEl: HTMLInputElement;
+    let titleAlignment: 'center' | 'left' = plugin?.settings?.quickListTitleAlignment ?? 'center';
 
     // DOM Element Bindings
     let searchInputEl: HTMLInputElement;
@@ -91,6 +92,7 @@
         await loadData();
         EventBus.on(EventName.CATEGORY_LIST_CHANGED, handleExternalListChanged);
         EventBus.on(EventName.TASK_UPDATED, handleExternalTaskUpdated);
+        EventBus.on(EventName.SETTINGS_CHANGED, handleSettingsChanged);
 
         setTimeout(() => {
             if (searchInputEl) searchInputEl.focus();
@@ -100,7 +102,16 @@
     onDestroy(() => {
         EventBus.off(EventName.CATEGORY_LIST_CHANGED, handleExternalListChanged);
         EventBus.off(EventName.TASK_UPDATED, handleExternalTaskUpdated);
+        EventBus.off(EventName.SETTINGS_CHANGED, handleSettingsChanged);
     });
+
+    function handleSettingsChanged(payload?: any) {
+        if (payload?.settings?.quickListTitleAlignment !== undefined) {
+            titleAlignment = payload.settings.quickListTitleAlignment;
+        } else if (plugin?.settings?.quickListTitleAlignment !== undefined) {
+            titleAlignment = plugin.settings.quickListTitleAlignment;
+        }
+    }
 
     function handleExternalListChanged() {
         void loadData();
@@ -848,6 +859,7 @@
 
 <div 
     class="quick-modal-container"
+    class:is-centered-titles={titleAlignment === 'center'}
     bind:this={modalContainerEl}
     on:keydown={handleKeydown}
     tabindex="0"
