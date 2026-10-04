@@ -16550,6 +16550,8 @@ function create_else_block_22(ctx) {
   let span2;
   let t5;
   let span3;
+  let t7;
+  let span4;
   return {
     c() {
       span0 = element("span");
@@ -16559,10 +16561,13 @@ function create_else_block_22(ctx) {
       span1.textContent = "Clear Text to Delete Box";
       t3 = space();
       span2 = element("span");
-      span2.textContent = "Alt+Drag to Duplicate";
+      span2.textContent = "Shift+Drag to Move";
       t5 = space();
       span3 = element("span");
-      span3.textContent = "Ctrl+Z/Y Undo/Redo";
+      span3.textContent = "Alt+Drag to Duplicate";
+      t7 = space();
+      span4 = element("span");
+      span4.textContent = "Ctrl+Z/Y Undo/Redo";
       set_style(span0, "background", "rgba(124, 156, 255, 0.16)");
       set_style(span0, "border", "1px solid rgba(124, 156, 255, 0.35)");
       set_style(span0, "padding", "1px 6px");
@@ -16583,6 +16588,11 @@ function create_else_block_22(ctx) {
       set_style(span3, "padding", "1px 6px");
       set_style(span3, "border-radius", "4px");
       set_style(span3, "color", "var(--text-normal, #e5e7eb)");
+      set_style(span4, "background", "rgba(124, 156, 255, 0.16)");
+      set_style(span4, "border", "1px solid rgba(124, 156, 255, 0.35)");
+      set_style(span4, "padding", "1px 6px");
+      set_style(span4, "border-radius", "4px");
+      set_style(span4, "color", "var(--text-normal, #e5e7eb)");
     },
     m(target, anchor) {
       insert(target, span0, anchor);
@@ -16592,6 +16602,8 @@ function create_else_block_22(ctx) {
       insert(target, span2, anchor);
       insert(target, t5, anchor);
       insert(target, span3, anchor);
+      insert(target, t7, anchor);
+      insert(target, span4, anchor);
     },
     d(detaching) {
       if (detaching) {
@@ -16602,6 +16614,8 @@ function create_else_block_22(ctx) {
         detach(span2);
         detach(t5);
         detach(span3);
+        detach(t7);
+        detach(span4);
       }
     }
   };
@@ -16614,6 +16628,8 @@ function create_if_block_9(ctx) {
   let span2;
   let t5;
   let span3;
+  let t7;
+  let span4;
   return {
     c() {
       span0 = element("span");
@@ -16623,10 +16639,13 @@ function create_if_block_9(ctx) {
       span1.textContent = "\u6E05\u7A7A\u6587\u5B57\u5373\u5220UI\u6846";
       t3 = space();
       span2 = element("span");
-      span2.textContent = "Alt+\u62D6\u62FD\u590D\u5236";
+      span2.textContent = "Shift+\u62D6\u62FD\u79FB\u52A8";
       t5 = space();
       span3 = element("span");
-      span3.textContent = "Ctrl+Z/Y \u64A4\u9500\u91CD\u505A";
+      span3.textContent = "Alt+\u62D6\u62FD\u590D\u5236";
+      t7 = space();
+      span4 = element("span");
+      span4.textContent = "Ctrl+Z/Y \u64A4\u9500\u91CD\u505A";
       set_style(span0, "background", "rgba(124, 156, 255, 0.16)");
       set_style(span0, "border", "1px solid rgba(124, 156, 255, 0.35)");
       set_style(span0, "padding", "1px 6px");
@@ -16647,6 +16666,11 @@ function create_if_block_9(ctx) {
       set_style(span3, "padding", "1px 6px");
       set_style(span3, "border-radius", "4px");
       set_style(span3, "color", "var(--text-normal, #e5e7eb)");
+      set_style(span4, "background", "rgba(124, 156, 255, 0.16)");
+      set_style(span4, "border", "1px solid rgba(124, 156, 255, 0.35)");
+      set_style(span4, "padding", "1px 6px");
+      set_style(span4, "border-radius", "4px");
+      set_style(span4, "color", "var(--text-normal, #e5e7eb)");
     },
     m(target, anchor) {
       insert(target, span0, anchor);
@@ -16656,6 +16680,8 @@ function create_if_block_9(ctx) {
       insert(target, span2, anchor);
       insert(target, t5, anchor);
       insert(target, span3, anchor);
+      insert(target, t7, anchor);
+      insert(target, span4, anchor);
     },
     d(detaching) {
       if (detaching) {
@@ -16666,6 +16692,8 @@ function create_if_block_9(ctx) {
         detach(span2);
         detach(t5);
         detach(span3);
+        detach(t7);
+        detach(span4);
       }
     }
   };
@@ -17168,6 +17196,8 @@ function create_else_block4(ctx) {
   let t8;
   let b4;
   let t10;
+  let b5;
+  let t12;
   return {
     c() {
       t0 = text("Fluent Tasks focuses on pure visual presentation. To unlock ");
@@ -17178,14 +17208,17 @@ function create_else_block4(ctx) {
       b1.textContent = "empty-text box removal";
       t4 = text(", ");
       b2 = element("b");
-      b2.textContent = "Alt+drag card duplication";
-      t6 = text(", and ");
+      b2.textContent = "Shift+drag card move";
+      t6 = text(", ");
       b3 = element("b");
-      b3.textContent = "Ctrl+Z/Y undo/redo";
-      t8 = text(", please install or enable the companion plugin ");
+      b3.textContent = "Alt+drag card duplication";
+      t8 = text(", and ");
       b4 = element("b");
-      b4.textContent = "SVG Quick Editor";
-      t10 = text(".");
+      b4.textContent = "Ctrl+Z/Y undo/redo";
+      t10 = text(", please install or enable the companion plugin ");
+      b5 = element("b");
+      b5.textContent = "SVG Quick Editor";
+      t12 = text("\u3002");
     },
     m(target, anchor) {
       insert(target, t0, anchor);
@@ -17199,6 +17232,8 @@ function create_else_block4(ctx) {
       insert(target, t8, anchor);
       insert(target, b4, anchor);
       insert(target, t10, anchor);
+      insert(target, b5, anchor);
+      insert(target, t12, anchor);
     },
     d(detaching) {
       if (detaching) {
@@ -17213,6 +17248,8 @@ function create_else_block4(ctx) {
         detach(t8);
         detach(b4);
         detach(t10);
+        detach(b5);
+        detach(t12);
       }
     }
   };
@@ -17229,6 +17266,8 @@ function create_if_block_310(ctx) {
   let t8;
   let b4;
   let t10;
+  let b5;
+  let t12;
   return {
     c() {
       t0 = text("Fluent Tasks \u4E13\u6CE8\u8F7B\u91CF\u7EAF\u51C0\u5C55\u793A\u3002\u82E5\u9700\u5F00\u542F");
@@ -17239,14 +17278,17 @@ function create_if_block_310(ctx) {
       b1.textContent = "\u6E05\u7A7A\u5220\u6846";
       t4 = text("\u3001");
       b2 = element("b");
-      b2.textContent = "Alt+\u62D6\u62FD\u514B\u9686UI\u6846";
-      t6 = text("\u4E0E ");
+      b2.textContent = "Shift+\u62D6\u62FD\u79FB\u52A8UI\u6846";
+      t6 = text("\u3001");
       b3 = element("b");
-      b3.textContent = "Ctrl+Z/Y \u64A4\u9500\u91CD\u505A";
-      t8 = text("\u7B49\u9AD8\u7EA7\u4EA4\u4E92\u529F\u80FD\uFF0C\u8BF7\u5B89\u88C5\u6216\u542F\u7528\u914D\u5957\u63D2\u4EF6 ");
+      b3.textContent = "Alt+\u62D6\u62FD\u514B\u9686UI\u6846";
+      t8 = text("\u4E0E ");
       b4 = element("b");
-      b4.textContent = "SVG Quick Editor";
-      t10 = text("\u3002");
+      b4.textContent = "Ctrl+Z/Y \u64A4\u9500\u91CD\u505A";
+      t10 = text("\u7B49\u9AD8\u7EA7\u4EA4\u4E92\u529F\u80FD\uFF0C\u8BF7\u5B89\u88C5\u6216\u542F\u7528\u914D\u5957\u63D2\u4EF6 ");
+      b5 = element("b");
+      b5.textContent = "SVG Quick Editor";
+      t12 = text("\u3002");
     },
     m(target, anchor) {
       insert(target, t0, anchor);
@@ -17260,6 +17302,8 @@ function create_if_block_310(ctx) {
       insert(target, t8, anchor);
       insert(target, b4, anchor);
       insert(target, t10, anchor);
+      insert(target, b5, anchor);
+      insert(target, t12, anchor);
     },
     d(detaching) {
       if (detaching) {
@@ -17274,6 +17318,8 @@ function create_if_block_310(ctx) {
         detach(t8);
         detach(b4);
         detach(t10);
+        detach(b5);
+        detach(t12);
       }
     }
   };
