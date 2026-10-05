@@ -82,27 +82,107 @@ export class LinkedNoteService {
     }
 
     /**
-     * Resolve a note link string (e.g. [[Path/Note|Alias]] or Path/Note) to a physical TFile
+     * Search for a note file by its YAML frontmatter taskId in category's folder or all DATA_FOLDER
      */
-    static resolveLinkedNoteFile(app: App, noteLink?: string, sourcePath?: string): TFile | null {
-        if (!noteLink || !app) return null;
-        const clean = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
-        if (!clean) return null;
+    static findFileByTaskId(app: App, taskId: string, categoryFilepath?: string): TFile | null {
+        if (!app || !taskId) return null;
 
-        // 1. Direct path lookup
-        let file = app.vault.getAbstractFileByPath(clean);
-        if (file instanceof TFile) return file;
-
-        // 2. Direct path with .md extension
-        if (!clean.endsWith(".md")) {
-            file = app.vault.getAbstractFileByPath(`${clean}.md`);
-            if (file instanceof TFile) return file;
+        // 1. Search in category's dedicated notes folder first (fastest & most targeted)
+        if (categoryFilepath) {
+            const folderPath = this.getTaskNotesFolder(categoryFilepath).replace(/\\/g, "/");
+            const folder = app.vault.getAbstractFileByPath(folderPath);
+            if (folder && folder instanceof TFolder) {
+                for (const child of folder.children) {
+                    if (child instanceof TFile && child.extension === "md") {
+                        const cache = app.metadataCache?.getFileCache(child);
+                        if (cache?.frontmatter?.taskId === taskId) {
+                            return child;
+                        }
+                    }
+                }
+            }
         }
 
-        // 3. Resolve via Obsidian metadataCache
-        if (app.metadataCache) {
-            const cached = app.metadataCache.getFirstLinkpathDest(clean, sourcePath || "");
-            if (cached instanceof TFile) return cached;
+        // 2. Fallback: Search all markdown files in DATA_FOLDER
+        const dataFolder = app.vault.getAbstractFileByPath(DATA_FOLDER);
+        if (dataFolder && dataFolder instanceof TFolder) {
+            const stack: TFolder[] = [dataFolder];
+            while (stack.length > 0) {
+                const cur = stack.pop()!;
+                for (const child of cur.children) {
+                    if (child instanceof TFolder) {
+                        stack.push(child);
+                    } else if (child instanceof TFile && child.extension === "md") {
+                        const cache = app.metadataCache?.getFileCache(child);
+                        if (cache?.frontmatter?.taskId === taskId) {
+                            return child;
+                        }
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Async fallback for findFileByTaskId checking file contents directly if metadataCache is stale
+     */
+    static async findFileByTaskIdAsync(app: App, taskId: string, categoryFilepath?: string): Promise<TFile | null> {
+        const syncMatch = this.findFileByTaskId(app, taskId, categoryFilepath);
+        if (syncMatch) return syncMatch;
+
+        if (categoryFilepath && app) {
+            const folderPath = this.getTaskNotesFolder(categoryFilepath).replace(/\\/g, "/");
+            const folder = app.vault.getAbstractFileByPath(folderPath);
+            if (folder && folder instanceof TFolder) {
+                for (const child of folder.children) {
+                    if (child instanceof TFile && child.extension === "md") {
+                        try {
+                            const content = await app.vault.read(child);
+                            const match = content.slice(0, 300).match(/^---\r?\n[\s\S]*?taskId:\s*["']?([^"'\r\n]+)["']?[\s\S]*?\r?\n---/);
+                            if (match && match[1].trim() === taskId) {
+                                return child;
+                            }
+                        } catch { /* ignore */ }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Resolve a note link string (e.g. [[Path/Note|Alias]] or Path/Note) to a physical TFile,
+     * with automatic fallback to taskId matching if link is stale or broken.
+     */
+    static resolveLinkedNoteFile(app: App, noteLink?: string, sourcePath?: string, taskId?: string): TFile | null {
+        if (!app) return null;
+        if (noteLink) {
+            const clean = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
+            if (clean) {
+                // 1. Direct path lookup
+                let file = app.vault.getAbstractFileByPath(clean);
+                if (file instanceof TFile) return file;
+
+                // 2. Direct path with .md extension
+                if (!clean.endsWith(".md")) {
+                    file = app.vault.getAbstractFileByPath(`${clean}.md`);
+                    if (file instanceof TFile) return file;
+                }
+
+                // 3. Resolve via Obsidian metadataCache
+                if (app.metadataCache) {
+                    const cached = app.metadataCache.getFirstLinkpathDest(clean, sourcePath || "");
+                    if (cached instanceof TFile) return cached;
+                }
+            }
+        }
+
+        // 4. Fallback: Search by taskId if provided
+        if (taskId) {
+            const fileByTaskId = this.findFileByTaskId(app, taskId, sourcePath);
+            if (fileByTaskId) return fileByTaskId;
         }
 
         return null;
@@ -168,16 +248,17 @@ export class LinkedNoteService {
         task: TaskItem,
         categoryFilepath: string
     ): Promise<{ file: TFile; noteLink: string; cleanPath: string }> {
-        // 1. If task already has a valid linked note on disk, return it
-        if (task.note_link) {
-            const existingFile = this.resolveLinkedNoteFile(app, task.note_link, categoryFilepath);
-            if (existingFile) {
-                return {
-                    file: existingFile,
-                    noteLink: task.note_link,
-                    cleanPath: existingFile.path.replace(/\.md$/, ""),
-                };
-            }
+        // 1. If task already has a valid linked note on disk (or resolvable by taskId), return it
+        const existingFile = this.resolveLinkedNoteFile(app, task.note_link, categoryFilepath, task.id)
+            || (task.id ? await this.findFileByTaskIdAsync(app, task.id, categoryFilepath) : null);
+        if (existingFile) {
+            const cleanPath = existingFile.path.replace(/\.md$/, "");
+            const noteLink = `[[${cleanPath}]]`;
+            return {
+                file: existingFile,
+                noteLink,
+                cleanPath,
+            };
         }
 
         // 2. Ensure target folder exists
@@ -213,28 +294,45 @@ export class LinkedNoteService {
         categoryFilepath: string,
         dataService?: DataService
     ): Promise<{ newNoteLink?: string; noteRenamed: boolean }> {
-        if (!task.note_link) return { noteRenamed: false };
+        if (!task.note_link && !task.id) return { noteRenamed: false };
 
-        const file = this.resolveLinkedNoteFile(app, task.note_link, categoryFilepath);
+        let file = this.resolveLinkedNoteFile(app, task.note_link, categoryFilepath, task.id);
+        if (!file && task.id) {
+            file = await this.findFileByTaskIdAsync(app, task.id, categoryFilepath);
+        }
         if (!file) return { noteRenamed: false };
+
+        // Auto-heal task.note_link if it pointed to a stale/broken path
+        const currentCleanPath = file.path.replace(/\.md$/, "");
+        const expectedNoteLink = `[[${currentCleanPath}]]`;
+        let linkHealed = false;
+        if (task.note_link !== expectedNoteLink) {
+            task.note_link = expectedNoteLink;
+            linkHealed = true;
+        }
 
         const cleanNewTitle = this.sanitizeNoteTitle(task.title);
         const baseExistingTitle = this.stripCollisionSuffix(file.basename);
 
         // If base title matches (even if disambiguated with (1), (2)), task title did NOT change
         if (!cleanNewTitle || file.basename === cleanNewTitle || baseExistingTitle === cleanNewTitle) {
-            return { noteRenamed: false };
+            return { newNoteLink: linkHealed ? expectedNoteLink : undefined, noteRenamed: false };
         }
 
         const parentFolder = file.parent ? file.parent.path : this.getTaskNotesFolder(categoryFilepath);
         const newPath = this.getAvailableNotePath(app, parentFolder, cleanNewTitle, file.path);
 
-        if (newPath === file.path) return { noteRenamed: false };
+        if (newPath === file.path) {
+            return { newNoteLink: linkHealed ? expectedNoteLink : undefined, noteRenamed: false };
+        }
 
         this.markInternalRename(file.path, newPath);
         if (dataService) {
             dataService.markInternalWrite(file.path, 3000);
             dataService.markInternalWrite(newPath, 3000);
+            if (categoryFilepath) {
+                dataService.markInternalWrite(categoryFilepath, 3000);
+            }
         }
 
         try {
@@ -245,7 +343,13 @@ export class LinkedNoteService {
             return { newNoteLink, noteRenamed: true };
         } catch (err) {
             void Logger.log("Failed to rename linked note file:", err);
-            return { noteRenamed: false };
+            // Check if file was already renamed on disk despite link update error (e.g. EBUSY on category file)
+            const checkFile = app.vault.getAbstractFileByPath(newPath);
+            if (checkFile instanceof TFile) {
+                const cleanPath = newPath.replace(/\.md$/, "");
+                return { newNoteLink: `[[${cleanPath}]]`, noteRenamed: true };
+            }
+            return { newNoteLink: linkHealed ? expectedNoteLink : undefined, noteRenamed: false };
         }
     }
 
@@ -315,7 +419,18 @@ export class LinkedNoteService {
                 }
 
                 if (isMatch) {
-                    task.title = this.stripCollisionSuffix(newTitle) || newTitle;
+                    const cleanNewTitle = this.stripCollisionSuffix(newTitle) || newTitle;
+
+                    // Preserve multi-line structure: if existing task has line breaks (\n or <br>), update only line 1
+                    const hasLineBreaks = task.title && (task.title.includes("\n") || /<br\s*\/?>/i.test(task.title));
+                    if (hasLineBreaks) {
+                        const lines = task.title.split(/\r?\n|<br\s*\/?>/i);
+                        lines[0] = cleanNewTitle;
+                        task.title = lines.join("\n");
+                    } else {
+                        task.title = cleanNewTitle;
+                    }
+
                     task.note_link = `[[${newClean}]]`;
                     anyUpdated = true;
 

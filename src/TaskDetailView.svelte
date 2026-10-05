@@ -254,6 +254,19 @@
         showScheduleSection = false;
         showRepeatPicker = false;
         showAddMetaModal = false;
+
+        // Auto-heal note_link if pointing to broken/stale path
+        if (task && (task.note_link || task.id) && plugin?.app) {
+            const resolved = LinkedNoteService.resolveLinkedNoteFile(plugin.app, task.note_link, categoryFilepath, task.id);
+            if (resolved) {
+                const currentClean = resolved.path.replace(/\.md$/, "");
+                const expected = `[[${currentClean}]]`;
+                if (task.note_link !== expected) {
+                    task.note_link = expected;
+                    void dataService.updateTask(categoryFilepath, task);
+                }
+            }
+        }
     }
 
     // =============================================
