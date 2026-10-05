@@ -613,6 +613,16 @@ export default class FluentTasksPlugin extends Plugin {
                         return;
                     }
 
+                    // If user is currently editing an external file (e.g. Markdown note) and not on Fluent Tasks,
+                    // update task in the background without popping open or expanding the right sidebar
+                    if (!this.isPluginPageActive()) {
+                        const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_DETAIL);
+                        if (leaves.length > 0 && leaves[0].view instanceof TaskDetailViewWrapper) {
+                            leaves[0].view.getComponent()?.loadTask(p.task, p.categoryFilepath);
+                        }
+                        return;
+                    }
+
                     const leaf = await this.activateView(VIEW_TYPE_DETAIL, "right");
                     if (leaf && leaf.view instanceof TaskDetailViewWrapper) {
                         const comp = leaf.view.getComponent();

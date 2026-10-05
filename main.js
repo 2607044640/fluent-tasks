@@ -18459,12 +18459,14 @@ function instance4($$self, $$props, $$invalidate) {
     if (!payload.categoryFilepath || payload.categoryFilepath === (currentCategory == null ? void 0 : currentCategory.filepath)) {
       await loadTasks();
       if (payload.isExternal && selectedTaskId && currentCategory) {
-        const freshTask = incompleteTasks.find((t2) => t2.id === selectedTaskId) || completedTasks.find((t2) => t2.id === selectedTaskId);
-        if (freshTask) {
-          EventBus.emit("task:selected" /* TASK_SELECTED */, {
-            task: freshTask,
-            categoryFilepath: currentCategory.filepath
-          });
+        if (!(plugin == null ? void 0 : plugin.isPluginPageActive) || plugin.isPluginPageActive()) {
+          const freshTask = incompleteTasks.find((t2) => t2.id === selectedTaskId) || completedTasks.find((t2) => t2.id === selectedTaskId);
+          if (freshTask) {
+            EventBus.emit("task:selected" /* TASK_SELECTED */, {
+              task: freshTask,
+              categoryFilepath: currentCategory.filepath
+            });
+          }
         }
       }
     }
@@ -36790,6 +36792,7 @@ var FluentTasksPlugin = class extends import_obsidian22.Plugin {
           this.lastSelectedTask = p.task;
           this.lastSelectedCategoryFilepath = p.categoryFilepath;
           void (async () => {
+            var _a2;
             if (this.settings.openDetailInModal) {
               const wasRightActive = this.isPluginRightSidebarActive();
               const rightSplit = this.app.workspace.rightSplit;
@@ -36797,6 +36800,13 @@ var FluentTasksPlugin = class extends import_obsidian22.Plugin {
                 rightSplit.collapse();
               }
               this.openTaskDetailModal(p.task, p.categoryFilepath);
+              return;
+            }
+            if (!this.isPluginPageActive()) {
+              const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_DETAIL);
+              if (leaves.length > 0 && leaves[0].view instanceof TaskDetailViewWrapper) {
+                (_a2 = leaves[0].view.getComponent()) == null ? void 0 : _a2.loadTask(p.task, p.categoryFilepath);
+              }
               return;
             }
             const leaf = await this.activateView(VIEW_TYPE_DETAIL, "right");
