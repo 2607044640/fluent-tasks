@@ -421,7 +421,8 @@
 
     function handleLinkNoteHover(e: MouseEvent) {
         if (!hasLinkedNote || !task?.note_link || !plugin?.app) return;
-        const cleanLink = task.note_link.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
+        const file = LinkedNoteService.resolveLinkedNoteFile(plugin.app, task.note_link, categoryFilepath, task?.id);
+        const cleanLink = file ? file.path.replace(/\.md$/, "") : task.note_link.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
         if (!cleanLink) return;
 
         const proxiedEvent = new Proxy(e, {
@@ -448,8 +449,18 @@
 
         if (hasLinkedNote && task.note_link) {
             // Already has note link: reveal existing note
-            const file = LinkedNoteService.resolveLinkedNoteFile(plugin.app, task.note_link, categoryFilepath);
+            let file = LinkedNoteService.resolveLinkedNoteFile(plugin.app, task.note_link, categoryFilepath, task.id);
+            if (!file && task.id) {
+                file = await LinkedNoteService.findFileByTaskIdAsync(plugin.app, task.id, categoryFilepath);
+            }
             if (file) {
+                const clean = file.path.replace(/\.md$/, "");
+                const expected = `[[${clean}]]`;
+                if (task.note_link !== expected) {
+                    task.note_link = expected;
+                    task = task;
+                    await immediateSave();
+                }
                 await LinkedNoteService.openLinkedNoteFile(plugin.app, file);
             } else {
                 // Re-create note if file was removed
@@ -765,6 +776,9 @@
                     rows="1"
                     bind:value={task.title}
                     on:input={handleTitleInput}
+                    on:compositionstart={handleTitleCompositionStart}
+                    on:compositionend={handleTitleCompositionEnd}
+                    on:blur={handleTitleBlur}
                     on:keydown={handleTitleKeydown}
                     placeholder="Task title"
                 />

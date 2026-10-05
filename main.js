@@ -7851,26 +7851,101 @@ var LinkedNoteService = class {
     }
   }
   /**
-   * Resolve a note link string (e.g. [[Path/Note|Alias]] or Path/Note) to a physical TFile
+   * Search for a note file by its YAML frontmatter taskId in category's folder or all DATA_FOLDER
    */
-  static resolveLinkedNoteFile(app, noteLink, sourcePath) {
-    if (!noteLink || !app)
+  static findFileByTaskId(app, taskId, categoryFilepath) {
+    var _a, _b, _c, _d;
+    if (!app || !taskId)
       return null;
-    const clean = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
-    if (!clean)
-      return null;
-    let file = app.vault.getAbstractFileByPath(clean);
-    if (file instanceof import_obsidian7.TFile)
-      return file;
-    if (!clean.endsWith(".md")) {
-      file = app.vault.getAbstractFileByPath(`${clean}.md`);
-      if (file instanceof import_obsidian7.TFile)
-        return file;
+    if (categoryFilepath) {
+      const folderPath = this.getTaskNotesFolder(categoryFilepath).replace(/\\/g, "/");
+      const folder = app.vault.getAbstractFileByPath(folderPath);
+      if (folder && folder instanceof import_obsidian7.TFolder) {
+        for (const child of folder.children) {
+          if (child instanceof import_obsidian7.TFile && child.extension === "md") {
+            const cache = (_a = app.metadataCache) == null ? void 0 : _a.getFileCache(child);
+            if (((_b = cache == null ? void 0 : cache.frontmatter) == null ? void 0 : _b.taskId) === taskId) {
+              return child;
+            }
+          }
+        }
+      }
     }
-    if (app.metadataCache) {
-      const cached = app.metadataCache.getFirstLinkpathDest(clean, sourcePath || "");
-      if (cached instanceof import_obsidian7.TFile)
-        return cached;
+    const dataFolder = app.vault.getAbstractFileByPath(DATA_FOLDER);
+    if (dataFolder && dataFolder instanceof import_obsidian7.TFolder) {
+      const stack = [dataFolder];
+      while (stack.length > 0) {
+        const cur = stack.pop();
+        for (const child of cur.children) {
+          if (child instanceof import_obsidian7.TFolder) {
+            stack.push(child);
+          } else if (child instanceof import_obsidian7.TFile && child.extension === "md") {
+            const cache = (_c = app.metadataCache) == null ? void 0 : _c.getFileCache(child);
+            if (((_d = cache == null ? void 0 : cache.frontmatter) == null ? void 0 : _d.taskId) === taskId) {
+              return child;
+            }
+          }
+        }
+      }
+    }
+    return null;
+  }
+  /**
+   * Async fallback for findFileByTaskId checking file contents directly if metadataCache is stale
+   */
+  static async findFileByTaskIdAsync(app, taskId, categoryFilepath) {
+    const syncMatch = this.findFileByTaskId(app, taskId, categoryFilepath);
+    if (syncMatch)
+      return syncMatch;
+    if (categoryFilepath && app) {
+      const folderPath = this.getTaskNotesFolder(categoryFilepath).replace(/\\/g, "/");
+      const folder = app.vault.getAbstractFileByPath(folderPath);
+      if (folder && folder instanceof import_obsidian7.TFolder) {
+        for (const child of folder.children) {
+          if (child instanceof import_obsidian7.TFile && child.extension === "md") {
+            try {
+              const content = await app.vault.read(child);
+              const match = content.slice(0, 300).match(/^---\r?\n[\s\S]*?taskId:\s*["']?([^"'\r\n]+)["']?[\s\S]*?\r?\n---/);
+              if (match && match[1].trim() === taskId) {
+                return child;
+              }
+            } catch (e) {
+            }
+          }
+        }
+      }
+    }
+    return null;
+  }
+  /**
+   * Resolve a note link string (e.g. [[Path/Note|Alias]] or Path/Note) to a physical TFile,
+   * with automatic fallback to taskId matching if link is stale or broken.
+   */
+  static resolveLinkedNoteFile(app, noteLink, sourcePath, taskId) {
+    if (!app)
+      return null;
+    if (noteLink) {
+      const clean = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
+      if (clean) {
+        let file = app.vault.getAbstractFileByPath(clean);
+        if (file instanceof import_obsidian7.TFile)
+          return file;
+        if (!clean.endsWith(".md")) {
+          file = app.vault.getAbstractFileByPath(`${clean}.md`);
+          if (file instanceof import_obsidian7.TFile)
+            return file;
+        }
+        if (app.metadataCache) {
+          const cached = app.metadataCache.getFirstLinkpathDest(clean, sourcePath || "");
+          if (cached instanceof import_obsidian7.TFile)
+            return cached;
+        }
+      }
+    }
+    if (taskId) {
+      const fileByTaskId = this.findFileByTaskId(app, taskId, sourcePath);
+      if (fileByTaskId)
+        return fileByTaskId;
     }
     return null;
   }
@@ -7930,15 +8005,15 @@ var LinkedNoteService = class {
    * Create or retrieve the linked note for a task
    */
   static async createOrGetLinkedNote(app, task, categoryFilepath) {
-    if (task.note_link) {
-      const existingFile = this.resolveLinkedNoteFile(app, task.note_link, categoryFilepath);
-      if (existingFile) {
-        return {
-          file: existingFile,
-          noteLink: task.note_link,
-          cleanPath: existingFile.path.replace(/\.md$/, "")
-        };
-      }
+    const existingFile = this.resolveLinkedNoteFile(app, task.note_link, categoryFilepath, task.id) || (task.id ? await this.findFileByTaskIdAsync(app, task.id, categoryFilepath) : null);
+    if (existingFile) {
+      const cleanPath2 = existingFile.path.replace(/\.md$/, "");
+      const noteLink2 = `[[${cleanPath2}]]`;
+      return {
+        file: existingFile,
+        noteLink: noteLink2,
+        cleanPath: cleanPath2
+      };
     }
     const targetFolder = this.getTaskNotesFolder(categoryFilepath);
     await this.ensureFolderExists(app, targetFolder);
@@ -7966,24 +8041,38 @@ taskId: "${task.id}"
    * When task title is modified in Fluent Tasks, renames note file
    */
   static async syncTaskTitleToNote(app, task, categoryFilepath, dataService) {
-    if (!task.note_link)
+    if (!task.note_link && !task.id)
       return { noteRenamed: false };
-    const file = this.resolveLinkedNoteFile(app, task.note_link, categoryFilepath);
+    let file = this.resolveLinkedNoteFile(app, task.note_link, categoryFilepath, task.id);
+    if (!file && task.id) {
+      file = await this.findFileByTaskIdAsync(app, task.id, categoryFilepath);
+    }
     if (!file)
       return { noteRenamed: false };
+    const currentCleanPath = file.path.replace(/\.md$/, "");
+    const expectedNoteLink = `[[${currentCleanPath}]]`;
+    let linkHealed = false;
+    if (task.note_link !== expectedNoteLink) {
+      task.note_link = expectedNoteLink;
+      linkHealed = true;
+    }
     const cleanNewTitle = this.sanitizeNoteTitle(task.title);
     const baseExistingTitle = this.stripCollisionSuffix(file.basename);
     if (!cleanNewTitle || file.basename === cleanNewTitle || baseExistingTitle === cleanNewTitle) {
-      return { noteRenamed: false };
+      return { newNoteLink: linkHealed ? expectedNoteLink : void 0, noteRenamed: false };
     }
     const parentFolder = file.parent ? file.parent.path : this.getTaskNotesFolder(categoryFilepath);
     const newPath = this.getAvailableNotePath(app, parentFolder, cleanNewTitle, file.path);
-    if (newPath === file.path)
-      return { noteRenamed: false };
+    if (newPath === file.path) {
+      return { newNoteLink: linkHealed ? expectedNoteLink : void 0, noteRenamed: false };
+    }
     this.markInternalRename(file.path, newPath);
     if (dataService) {
       dataService.markInternalWrite(file.path, 3e3);
       dataService.markInternalWrite(newPath, 3e3);
+      if (categoryFilepath) {
+        dataService.markInternalWrite(categoryFilepath, 3e3);
+      }
     }
     try {
       await app.fileManager.renameFile(file, newPath);
@@ -7992,7 +8081,12 @@ taskId: "${task.id}"
       return { newNoteLink, noteRenamed: true };
     } catch (err) {
       void Logger.log("Failed to rename linked note file:", err);
-      return { noteRenamed: false };
+      const checkFile = app.vault.getAbstractFileByPath(newPath);
+      if (checkFile instanceof import_obsidian7.TFile) {
+        const cleanPath = newPath.replace(/\.md$/, "");
+        return { newNoteLink: `[[${cleanPath}]]`, noteRenamed: true };
+      }
+      return { newNoteLink: linkHealed ? expectedNoteLink : void 0, noteRenamed: false };
     }
   }
   /**
@@ -8045,7 +8139,15 @@ taskId: "${task.id}"
           }
         }
         if (isMatch) {
-          task.title = this.stripCollisionSuffix(newTitle) || newTitle;
+          const cleanNewTitle = this.stripCollisionSuffix(newTitle) || newTitle;
+          const hasLineBreaks = task.title && (task.title.includes("\n") || /<br\s*\/?>/i.test(task.title));
+          if (hasLineBreaks) {
+            const lines = task.title.split(/\r?\n|<br\s*\/?>/i);
+            lines[0] = cleanNewTitle;
+            task.title = lines.join("\n");
+          } else {
+            task.title = cleanNewTitle;
+          }
           task.note_link = `[[${newClean}]]`;
           anyUpdated = true;
           await dataService.updateTask(cat.filepath, task);
@@ -19364,24 +19466,24 @@ var TaskMainView_default = TaskMainView;
 var import_obsidian14 = require("obsidian");
 function get_each_context5(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[110] = list[i][0];
-  child_ctx[111] = list[i][1];
+  child_ctx[114] = list[i][0];
+  child_ctx[115] = list[i][1];
   return child_ctx;
 }
 function get_each_context_13(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[114] = list[i];
+  child_ctx[118] = list[i];
   return child_ctx;
 }
 function get_each_context_22(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[110] = list[i][0];
-  child_ctx[111] = list[i][1];
+  child_ctx[114] = list[i][0];
+  child_ctx[115] = list[i][1];
   return child_ctx;
 }
 function get_each_context_32(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[119] = list[i];
+  child_ctx[123] = list[i];
   return child_ctx;
 }
 function create_else_block_42(ctx) {
@@ -19506,7 +19608,7 @@ function create_if_block5(ctx) {
       return create_if_block_232;
     return create_else_block_33;
   }
-  let current_block_type = select_block_type_1(ctx, [-1, -1, -1, -1]);
+  let current_block_type = select_block_type_1(ctx, [-1, -1, -1, -1, -1]);
   let if_block0 = current_block_type(ctx);
   function select_block_type_2(ctx2, dirty) {
     if (
@@ -19516,7 +19618,7 @@ function create_if_block5(ctx) {
       return create_if_block_223;
     return create_else_block_23;
   }
-  let current_block_type_1 = select_block_type_2(ctx, [-1, -1, -1, -1]);
+  let current_block_type_1 = select_block_type_2(ctx, [-1, -1, -1, -1, -1]);
   let if_block1 = current_block_type_1(ctx);
   let if_block2 = (
     /*isModal*/
@@ -19545,7 +19647,7 @@ function create_if_block5(ctx) {
       return create_if_block_92;
     return create_else_block5;
   }
-  let current_block_type_2 = select_block_type_4(ctx, [-1, -1, -1, -1]);
+  let current_block_type_2 = select_block_type_4(ctx, [-1, -1, -1, -1, -1]);
   let if_block6 = current_block_type_2(ctx);
   let if_block7 = (
     /*showAddMetaModal*/
@@ -20392,7 +20494,7 @@ function create_if_block_192(ctx) {
   );
   const get_key = (ctx2) => (
     /*step*/
-    ctx2[119].id
+    ctx2[123].id
   );
   for (let i = 0; i < each_value_3.length; i += 1) {
     let child_ctx = get_each_context_32(ctx, each_value_3, i);
@@ -20563,19 +20665,19 @@ function create_each_block_32(key_1, ctx) {
   function select_block_type_3(ctx2, dirty) {
     if (
       /*step*/
-      ctx2[119].done
+      ctx2[123].done
     )
       return create_if_block_202;
     return create_else_block_14;
   }
-  let current_block_type = select_block_type_3(ctx, [-1, -1, -1, -1]);
+  let current_block_type = select_block_type_3(ctx, [-1, -1, -1, -1, -1]);
   let if_block = current_block_type(ctx);
   function click_handler_1() {
     return (
       /*click_handler_1*/
       ctx[54](
         /*step*/
-        ctx[119]
+        ctx[123]
       )
     );
   }
@@ -20584,7 +20686,7 @@ function create_each_block_32(key_1, ctx) {
       /*keydown_handler_3*/
       ctx[55](
         /*step*/
-        ctx[119],
+        ctx[123],
         ...args
       )
     );
@@ -20594,7 +20696,7 @@ function create_each_block_32(key_1, ctx) {
       /*input_handler*/
       ctx[56](
         /*step*/
-        ctx[119],
+        ctx[123],
         ...args
       )
     );
@@ -20604,7 +20706,7 @@ function create_each_block_32(key_1, ctx) {
       /*click_handler_2*/
       ctx[57](
         /*step*/
-        ctx[119]
+        ctx[123]
       )
     );
   }
@@ -20613,7 +20715,7 @@ function create_each_block_32(key_1, ctx) {
       /*keydown_handler_5*/
       ctx[58](
         /*step*/
-        ctx[119],
+        ctx[123],
         ...args
       )
     );
@@ -20639,17 +20741,17 @@ function create_each_block_32(key_1, ctx) {
       attr(span1, "class", "checkbox");
       attr(span1, "role", "checkbox");
       attr(span1, "aria-checked", span1_aria_checked_value = /*step*/
-      ctx[119].done);
+      ctx[123].done);
       attr(span1, "tabindex", "0");
       attr(textarea, "rows", "1");
       textarea.value = textarea_value_value = /*step*/
-      ctx[119].text;
+      ctx[123].text;
       attr(textarea, "placeholder", "Step text");
       toggle_class(
         textarea,
         "completed",
         /*step*/
-        ctx[119].done
+        ctx[123].done
       );
       attr(span2, "class", "delete-step");
       attr(span2, "role", "button");
@@ -20676,7 +20778,7 @@ function create_each_block_32(key_1, ctx) {
             null,
             textarea,
             /*step*/
-            ctx[119].text
+            ctx[123].text
           )),
           listen(textarea, "input", input_handler),
           listen(textarea, "keydown", keydown_handler_4),
@@ -20698,12 +20800,12 @@ function create_each_block_32(key_1, ctx) {
       }
       if (dirty[0] & /*task*/
       4 && span1_aria_checked_value !== (span1_aria_checked_value = /*step*/
-      ctx[119].done)) {
+      ctx[123].done)) {
         attr(span1, "aria-checked", span1_aria_checked_value);
       }
       if (dirty[0] & /*task*/
       4 && textarea_value_value !== (textarea_value_value = /*step*/
-      ctx[119].text)) {
+      ctx[123].text)) {
         textarea.value = textarea_value_value;
       }
       if (autosize_action && is_function(autosize_action.update) && dirty[0] & /*task*/
@@ -20711,7 +20813,7 @@ function create_each_block_32(key_1, ctx) {
         autosize_action.update.call(
           null,
           /*step*/
-          ctx[119].text
+          ctx[123].text
         );
       if (dirty[0] & /*task*/
       4) {
@@ -20719,7 +20821,7 @@ function create_each_block_32(key_1, ctx) {
           textarea,
           "completed",
           /*step*/
-          ctx[119].done
+          ctx[123].done
         );
       }
     },
@@ -21195,14 +21297,14 @@ function create_each_block_22(ctx) {
   let span0;
   let t0_value = (
     /*k*/
-    ctx[110] + ""
+    ctx[114] + ""
   );
   let t0;
   let t1;
   let span1;
   let t2_value = (
     /*v*/
-    ctx[111] + ""
+    ctx[115] + ""
   );
   let t2;
   let t3;
@@ -21218,7 +21320,7 @@ function create_each_block_22(ctx) {
       /*click_handler_9*/
       ctx[67](
         /*k*/
-        ctx[110]
+        ctx[114]
       )
     );
   }
@@ -21240,11 +21342,11 @@ function create_each_block_22(ctx) {
       attr(span2, "role", "button");
       attr(span2, "tabindex", "0");
       attr(span2, "title", span2_title_value = `Remove ${/*k*/
-      ctx[110]}`);
+      ctx[114]}`);
       attr(div, "class", "meta-chip custom-chip");
       attr(div, "title", div_title_value = `${/*k*/
-      ctx[110]}: ${/*v*/
-      ctx[111]}`);
+      ctx[114]}: ${/*v*/
+      ctx[115]}`);
     },
     m(target, anchor) {
       insert(target, div, anchor);
@@ -21266,21 +21368,21 @@ function create_each_block_22(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*task*/
       4 && t0_value !== (t0_value = /*k*/
-      ctx[110] + ""))
+      ctx[114] + ""))
         set_data(t0, t0_value);
       if (dirty[0] & /*task*/
       4 && t2_value !== (t2_value = /*v*/
-      ctx[111] + ""))
+      ctx[115] + ""))
         set_data(t2, t2_value);
       if (dirty[0] & /*task*/
       4 && span2_title_value !== (span2_title_value = `Remove ${/*k*/
-      ctx[110]}`)) {
+      ctx[114]}`)) {
         attr(span2, "title", span2_title_value);
       }
       if (dirty[0] & /*task*/
       4 && div_title_value !== (div_title_value = `${/*k*/
-      ctx[110]}: ${/*v*/
-      ctx[111]}`)) {
+      ctx[114]}: ${/*v*/
+      ctx[115]}`)) {
         attr(div, "title", div_title_value);
       }
     },
@@ -21818,7 +21920,7 @@ function create_each_block_13(ctx) {
       /*click_handler_14*/
       ctx[77](
         /*day*/
-        ctx[114]
+        ctx[118]
       )
     );
   }
@@ -21828,7 +21930,7 @@ function create_each_block_13(ctx) {
       button = element("button");
       button.textContent = `${DAY_LABELS[
         /*day*/
-        ctx[114]
+        ctx[118]
       ]} `;
       attr(button, "type", "button");
       attr(button, "class", "weekday-chip");
@@ -21838,7 +21940,7 @@ function create_each_block_13(ctx) {
         /*task*/
         (_b = (_a = ctx[2].recurrence) == null ? void 0 : _a.daysOfWeek) == null ? void 0 : _b.includes(
           /*day*/
-          ctx[114]
+          ctx[118]
         )
       );
     },
@@ -21860,7 +21962,7 @@ function create_each_block_13(ctx) {
           /*task*/
           (_b = (_a = ctx[2].recurrence) == null ? void 0 : _a.daysOfWeek) == null ? void 0 : _b.includes(
             /*day*/
-            ctx[114]
+            ctx[118]
           )
         );
       }
@@ -22048,7 +22150,7 @@ function create_if_block_111(ctx) {
     )
       return create_if_block_63;
   }
-  let current_block_type = select_block_type_5(ctx, [-1, -1, -1, -1]);
+  let current_block_type = select_block_type_5(ctx, [-1, -1, -1, -1, -1]);
   let if_block = current_block_type && current_block_type(ctx);
   return {
     c() {
@@ -22746,7 +22848,7 @@ function create_each_block5(ctx) {
   let span0;
   let t0_value = (
     /*k*/
-    ctx[110] + ""
+    ctx[114] + ""
   );
   let t0;
   let t1;
@@ -22754,7 +22856,7 @@ function create_each_block5(ctx) {
   let span1;
   let t3_value = (
     /*v*/
-    ctx[111] + ""
+    ctx[115] + ""
   );
   let t3;
   let t4;
@@ -22767,7 +22869,7 @@ function create_each_block5(ctx) {
       /*click_handler_20*/
       ctx[91](
         /*k*/
-        ctx[110]
+        ctx[114]
       )
     );
   }
@@ -22812,11 +22914,11 @@ function create_each_block5(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*task*/
       4 && t0_value !== (t0_value = /*k*/
-      ctx[110] + ""))
+      ctx[114] + ""))
         set_data(t0, t0_value);
       if (dirty[0] & /*task*/
       4 && t3_value !== (t3_value = /*v*/
-      ctx[111] + ""))
+      ctx[115] + ""))
         set_data(t3, t3_value);
     },
     d(detaching) {
@@ -22877,7 +22979,7 @@ function create_fragment5(ctx) {
       return create_if_block5;
     return create_else_block_42;
   }
-  let current_block_type = select_block_type(ctx, [-1, -1, -1, -1]);
+  let current_block_type = select_block_type(ctx, [-1, -1, -1, -1, -1]);
   let if_block = current_block_type(ctx);
   return {
     c() {
@@ -23178,6 +23280,17 @@ function instance5($$self, $$props, $$invalidate) {
     $$invalidate(6, showScheduleSection = false);
     $$invalidate(7, showRepeatPicker = false);
     $$invalidate(9, showAddMetaModal = false);
+    if (task && (task.note_link || task.id) && (plugin == null ? void 0 : plugin.app)) {
+      const resolved = LinkedNoteService.resolveLinkedNoteFile(plugin.app, task.note_link, categoryFilepath, task.id);
+      if (resolved) {
+        const currentClean = resolved.path.replace(/\.md$/, "");
+        const expected = `[[${currentClean}]]`;
+        if (task.note_link !== expected) {
+          $$invalidate(2, task.note_link = expected, task);
+          void dataService.updateTask(categoryFilepath, task);
+        }
+      }
+    }
   }
   function handleTaskSelected(payload) {
     loadTask(payload.task, payload.categoryFilepath);
@@ -23253,8 +23366,24 @@ function instance5($$self, $$props, $$invalidate) {
       SAVE_DEBOUNCE_MS
     );
   }
-  function handleTitleInput() {
+  let isComposingTitle = false;
+  function handleTitleCompositionStart() {
+    isComposingTitle = true;
+  }
+  function handleTitleCompositionEnd() {
+    isComposingTitle = false;
     scheduleSave();
+  }
+  function handleTitleInput() {
+    if (isComposingTitle)
+      return;
+    scheduleSave();
+  }
+  function handleTitleBlur() {
+    if (isComposingTitle) {
+      isComposingTitle = false;
+    }
+    void immediateSave();
   }
   async function toggleComplete() {
     if (!task)
@@ -23293,7 +23422,8 @@ function instance5($$self, $$props, $$invalidate) {
   function handleLinkNoteHover(e) {
     if (!hasLinkedNote || !(task == null ? void 0 : task.note_link) || !(plugin == null ? void 0 : plugin.app))
       return;
-    const cleanLink = task.note_link.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
+    const file = LinkedNoteService.resolveLinkedNoteFile(plugin.app, task.note_link, categoryFilepath, task == null ? void 0 : task.id);
+    const cleanLink = file ? file.path.replace(/\.md$/, "") : task.note_link.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
     if (!cleanLink)
       return;
     const proxiedEvent = new Proxy(
@@ -23321,8 +23451,18 @@ function instance5($$self, $$props, $$invalidate) {
     if (!task || !categoryFilepath || !(plugin == null ? void 0 : plugin.app))
       return;
     if (hasLinkedNote && task.note_link) {
-      const file = LinkedNoteService.resolveLinkedNoteFile(plugin.app, task.note_link, categoryFilepath);
+      let file = LinkedNoteService.resolveLinkedNoteFile(plugin.app, task.note_link, categoryFilepath, task.id);
+      if (!file && task.id) {
+        file = await LinkedNoteService.findFileByTaskIdAsync(plugin.app, task.id, categoryFilepath);
+      }
       if (file) {
+        const clean = file.path.replace(/\.md$/, "");
+        const expected = `[[${clean}]]`;
+        if (task.note_link !== expected) {
+          $$invalidate(2, task.note_link = expected, task);
+          $$invalidate(2, task);
+          await immediateSave();
+        }
         await LinkedNoteService.openLinkedNoteFile(plugin.app, file);
       } else {
         const res = await LinkedNoteService.createOrGetLinkedNote(plugin.app, task, categoryFilepath);
@@ -23815,7 +23955,7 @@ var TaskDetailView = class extends SvelteComponent {
         loadTask: 48
       },
       null,
-      [-1, -1, -1, -1]
+      [-1, -1, -1, -1, -1]
     );
   }
   get loadTask() {
