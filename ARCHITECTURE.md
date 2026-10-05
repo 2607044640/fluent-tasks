@@ -1,6 +1,6 @@
 # fluent-tasks Architecture
 
-Fluent Tasks (`manifest.json` id `fluent-tasks`, v1.0.26) is an Obsidian plugin. Tasks are Markdown checklists under `TodoData/*.md`. Cross-view traffic uses the `EventBus` singleton. Vault I/O uses `DataService`. There is **no** Microsoft Graph / To Do sync client; `TaskItem.msGraphId` / `msGraphListId` are optional serialized fields only. Cross-pane drag uses `window.__mstodo_drag_data` (legacy name).
+Fluent Tasks (`manifest.json` id `fluent-tasks`, v1.0.31) is an Obsidian plugin. Tasks are Markdown checklists under `TodoData/*.md`. Cross-view traffic uses the `EventBus` singleton. Vault I/O uses `DataService`. There is **no** Microsoft Graph / To Do sync client; `TaskItem.msGraphId` / `msGraphListId` are optional serialized fields only. Cross-pane drag uses `window.__mstodo_drag_data` (legacy name).
 
 ## Global Invariants
 
@@ -31,7 +31,7 @@ Static commands: `open-all-views`, `open-sidebar`, `open-main-view`, `open-detai
 
 Models in `src/types.ts`: `TaskItem`, `TaskStep`, `RecurrenceRule` (`daily` | `weekdays` | `weekly` | `custom`), `CategoryInfo`, `GroupInfo`, `SidebarItem`. Timing: `src/constants.ts`.
 
-On disk: `TodoData/<List>.md` (tasks), `TodoData/.metadata.json` (tree), `TodoData/<List>/<title>.md` (optional bound notes), `TodoData/debug.log` (`Logger`). Plugin options: Obsidian `saveData` (`FluentTasksSettings`).
+On disk: `TodoData/<List>.md` (tasks), `TodoData/.metadata.json` (tree), `TodoData/<List>/<List> <taskId>.md` (bound notes with frontmatter title property), `TodoData/debug.log` (`Logger`). Plugin options: Obsidian `saveData` (`FluentTasksSettings`).
 
 `onload` (sync): `new DataService(app)`, setting tab, `Logger.init`, `loadSettings`, `registerView` ×3, ribbon, commands. `onLayoutReady`: `ensureDataFolder`, vault `modify`/`create`/`delete`/`rename`, EventBus wiring, `registerCategoryCommands`, `checkRecurringTasksRollover(true)` then 10s interval + `focus`. `onunload`: ribbon off, `EventBus.destroy()`, clear `__mstodo_drag_data`.
 
