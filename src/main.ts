@@ -546,6 +546,16 @@ export default class FluentTasksPlugin extends Plugin {
                 this.app.vault.on("rename", (file, oldPath) => {
                     handleCategoryVaultChange(file);
 
+                    // If a category list file was renamed externally
+                    if (isCategoryFile(oldPath) && file && isCategoryFile(file.path)) {
+                        void LinkedNoteService.handleCategoryRename(
+                            this.app,
+                            this.dataService,
+                            oldPath,
+                            file.path
+                        );
+                    }
+
                     // Hot-sync note rename to task if linked
                     if (file instanceof TFile && file.extension === "md") {
                         if (!LinkedNoteService.isInternalRename(oldPath, file.path)) {

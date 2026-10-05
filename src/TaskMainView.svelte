@@ -874,6 +874,9 @@
         showCompleted = false;
         enableTaskWeightMode = plugin?.settings?.enableTaskWeightMode ?? false;
         await loadTasks();
+        if (plugin?.app && cat?.filepath) {
+            void LinkedNoteService.autoSyncCategoryLinkedNotes(plugin.app, dataService, cat.filepath);
+        }
     }
 
     export function getCurrentCategory() {
@@ -889,6 +892,9 @@
         selectedTaskId = "";
         showCompleted = false;
         await loadTasks();
+        if (plugin?.app && payload.category.filepath) {
+            void LinkedNoteService.autoSyncCategoryLinkedNotes(plugin.app, dataService, payload.category.filepath);
+        }
 
         // Auto-focus the "Add a task" input when triggered by a jump command
         if (payload.focusInput) {

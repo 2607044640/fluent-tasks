@@ -1025,6 +1025,892 @@ var TaskService = class {
   }
 };
 
+// src/services/LinkedNoteService.ts
+var import_obsidian4 = require("obsidian");
+var LinkedNoteService = class {
+  /** Mark a file rename as internal to prevent echo update loops */
+  static markInternalRename(oldPath, newPath, windowMs = 2e3) {
+    const expiry = Date.now() + windowMs;
+    this.internalRenames.set(`${oldPath}->${newPath}`, expiry);
+    this.internalRenames.set(oldPath, expiry);
+    this.internalRenames.set(newPath, expiry);
+  }
+  /** Check if a rename was triggered internally */
+  static isInternalRename(oldPath, newPath) {
+    const key = `${oldPath}->${newPath}`;
+    const now2 = Date.now();
+    const expKey = this.internalRenames.get(key);
+    if (expKey && now2 <= expKey)
+      return true;
+    const expOld = this.internalRenames.get(oldPath);
+    if (expOld && now2 <= expOld)
+      return true;
+    const expNew = this.internalRenames.get(newPath);
+    if (expNew && now2 <= expNew)
+      return true;
+    return false;
+  }
+  /**
+   * Sanitize task title into a safe Windows / Obsidian filename
+   * Strips <br>, HTML tags, \r, \n and illegal characters / \\ : * ? " < > |
+   */
+  static sanitizeNoteTitle(title) {
+    if (!title)
+      return "Untitled Note";
+    const cleaned = title.replace(/<br\s*\/?>/gi, " ").replace(/<[^>]+>/g, " ").replace(/[\r\n]+/g, " ").replace(/[\\/:*?"<>|]/g, " ").replace(/\s+/g, " ").replace(/^[\s.-]+|[\s.-]+$/g, "").trim();
+    return cleaned.slice(0, 100) || "Untitled Note";
+  }
+  /**
+   * Extract category name from category filepath
+   * e.g. TodoData/编程.md -> 编程
+   */
+  static getCategoryName(categoryFilepath) {
+    var _a;
+    return ((_a = categoryFilepath.replace(/\\/g, "/").split("/").pop()) == null ? void 0 : _a.replace(/\.md$/, "")) || "General";
+  }
+  /**
+   * Determine dedicated note directory for a category list
+   * e.g. TodoData/安全中转待办.md -> TodoData/安全中转待办
+   */
+  static getTaskNotesFolder(categoryFilepath) {
+    const listName = this.getCategoryName(categoryFilepath);
+    return `${DATA_FOLDER}/${listName}`;
+  }
+  /**
+   * Determine standard note path for a task: TodoData/<CategoryName>/<CategoryName> <taskId>.md
+   * e.g. TodoData/编程/编程 ge20uj.md
+   */
+  static getStandardNotePath(categoryFilepath, taskId) {
+    const categoryName = this.getCategoryName(categoryFilepath);
+    const targetFolder = `${DATA_FOLDER}/${categoryName}`;
+    return `${targetFolder}/${categoryName} ${taskId}.md`;
+  }
+  /**
+   * Extract task ID from note filename
+   * Matches `<CategoryName> <taskId>` where taskId is the last space-separated token
+   */
+  static extractTaskIdFromFilename(basename) {
+    const clean = basename.replace(/\.md$/, "").trim();
+    const lastSpace = clean.lastIndexOf(" ");
+    if (lastSpace === -1)
+      return null;
+    const candidate = clean.slice(lastSpace + 1).trim();
+    return candidate || null;
+  }
+  /**
+   * Ensure a vault folder exists, creating parents if missing
+   */
+  static async ensureFolderExists(app, folderPath) {
+    const cleanPath = folderPath.replace(/\\/g, "/").replace(/\/+$/, "");
+    const existing = app.vault.getAbstractFileByPath(cleanPath);
+    if (existing && existing instanceof import_obsidian4.TFolder)
+      return;
+    const parts = cleanPath.split("/");
+    let current = "";
+    for (const part of parts) {
+      current = current ? `${current}/${part}` : part;
+      const item = app.vault.getAbstractFileByPath(current);
+      if (!item) {
+        try {
+          await app.vault.createFolder(current);
+        } catch (e) {
+        }
+      }
+    }
+  }
+  /**
+   * Search for a note file by taskId (checking standard filename ending or YAML frontmatter taskId)
+   */
+  static findFileByTaskId(app, taskId, categoryFilepath) {
+    var _a, _b, _c, _d;
+    if (!app || !taskId)
+      return null;
+    if (categoryFilepath) {
+      const stdPath = this.getStandardNotePath(categoryFilepath, taskId);
+      const file = app.vault.getAbstractFileByPath(stdPath);
+      if (file instanceof import_obsidian4.TFile)
+        return file;
+    }
+    if (categoryFilepath) {
+      const folderPath = this.getTaskNotesFolder(categoryFilepath).replace(/\\/g, "/");
+      const folder = app.vault.getAbstractFileByPath(folderPath);
+      if (folder && folder instanceof import_obsidian4.TFolder) {
+        for (const child of folder.children) {
+          if (child instanceof import_obsidian4.TFile && child.extension === "md") {
+            if (child.basename.endsWith(` ${taskId}`)) {
+              return child;
+            }
+            const cache = (_a = app.metadataCache) == null ? void 0 : _a.getFileCache(child);
+            if (((_b = cache == null ? void 0 : cache.frontmatter) == null ? void 0 : _b.taskId) === taskId) {
+              return child;
+            }
+          }
+        }
+      }
+    }
+    const dataFolder = app.vault.getAbstractFileByPath(DATA_FOLDER);
+    if (dataFolder && dataFolder instanceof import_obsidian4.TFolder) {
+      const stack = [dataFolder];
+      while (stack.length > 0) {
+        const cur = stack.pop();
+        for (const child of cur.children) {
+          if (child instanceof import_obsidian4.TFolder) {
+            stack.push(child);
+          } else if (child instanceof import_obsidian4.TFile && child.extension === "md") {
+            if (child.basename.endsWith(` ${taskId}`)) {
+              return child;
+            }
+            const cache = (_c = app.metadataCache) == null ? void 0 : _c.getFileCache(child);
+            if (((_d = cache == null ? void 0 : cache.frontmatter) == null ? void 0 : _d.taskId) === taskId) {
+              return child;
+            }
+          }
+        }
+      }
+    }
+    return null;
+  }
+  /**
+   * Async fallback for findFileByTaskId checking file contents directly if metadataCache is stale
+   */
+  static async findFileByTaskIdAsync(app, taskId, categoryFilepath) {
+    const syncMatch = this.findFileByTaskId(app, taskId, categoryFilepath);
+    if (syncMatch)
+      return syncMatch;
+    if (categoryFilepath && app) {
+      const folderPath = this.getTaskNotesFolder(categoryFilepath).replace(/\\/g, "/");
+      const folder = app.vault.getAbstractFileByPath(folderPath);
+      if (folder && folder instanceof import_obsidian4.TFolder) {
+        for (const child of folder.children) {
+          if (child instanceof import_obsidian4.TFile && child.extension === "md") {
+            if (child.basename.endsWith(` ${taskId}`)) {
+              return child;
+            }
+            try {
+              const content = await app.vault.read(child);
+              const match = content.slice(0, 300).match(/^---\r?\n[\s\S]*?taskId:\s*["']?([^"'\r\n]+)["']?[\s\S]*?\r?\n---/);
+              if (match && match[1].trim() === taskId) {
+                return child;
+              }
+            } catch (e) {
+            }
+          }
+        }
+      }
+    }
+    return null;
+  }
+  /**
+   * Resolve a note link string (e.g. [[Path/Note|Alias]] or Path/Note) to a physical TFile,
+   * with automatic fallback to taskId matching if link is stale or broken.
+   */
+  static resolveLinkedNoteFile(app, noteLink, sourcePath, taskId) {
+    if (!app)
+      return null;
+    if (sourcePath && taskId) {
+      const stdPath = this.getStandardNotePath(sourcePath, taskId);
+      const stdFile = app.vault.getAbstractFileByPath(stdPath);
+      if (stdFile instanceof import_obsidian4.TFile)
+        return stdFile;
+    }
+    if (noteLink) {
+      const clean = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
+      if (clean) {
+        let file = app.vault.getAbstractFileByPath(clean);
+        if (file instanceof import_obsidian4.TFile)
+          return file;
+        if (!clean.endsWith(".md")) {
+          file = app.vault.getAbstractFileByPath(`${clean}.md`);
+          if (file instanceof import_obsidian4.TFile)
+            return file;
+        }
+        if (app.metadataCache) {
+          const cached = app.metadataCache.getFirstLinkpathDest(clean, sourcePath || "");
+          if (cached instanceof import_obsidian4.TFile)
+            return cached;
+        }
+      }
+    }
+    if (taskId) {
+      const fileByTaskId = this.findFileByTaskId(app, taskId, sourcePath);
+      if (fileByTaskId)
+        return fileByTaskId;
+    }
+    return null;
+  }
+  /**
+   * Strip collision disambiguation suffix like ' (1)', ' (2)'
+   */
+  static stripCollisionSuffix(title) {
+    return title.replace(/\s+\(\d+\)$/, "").trim();
+  }
+  /**
+   * Check if a note link is a dedicated hard-bound task note under TodoData/
+   */
+  static isHardBoundNote(noteLink) {
+    if (!noteLink)
+      return false;
+    const clean = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
+    return clean.startsWith(`${DATA_FOLDER}/`) || clean.startsWith(`${DATA_FOLDER}\\`);
+  }
+  /**
+   * Open or focus a linked note file in a tab without displacing active view
+   */
+  static async openLinkedNoteFile(app, file) {
+    const leaves = app.workspace.getLeavesOfType("markdown");
+    const existingLeaf = leaves.find((l) => {
+      var _a, _b;
+      return ((_b = (_a = l.view) == null ? void 0 : _a.file) == null ? void 0 : _b.path) === (file == null ? void 0 : file.path);
+    });
+    if (existingLeaf) {
+      app.workspace.setActiveLeaf(existingLeaf, { focus: true });
+    } else {
+      const leaf = app.workspace.getLeaf("tab");
+      await leaf.openFile(file);
+      app.workspace.setActiveLeaf(leaf, { focus: true });
+    }
+  }
+  /**
+   * Generate an available non-colliding file path in the target folder
+   * Appends (1), (2), etc. if title collisions occur. Ignores currentFilePath if specified.
+   */
+  static getAvailableNotePath(app, targetFolder, baseTitle, currentFilePath) {
+    const candidate = `${targetFolder}/${baseTitle}.md`;
+    const existingFirst = app.vault.getAbstractFileByPath(candidate);
+    if (!existingFirst || currentFilePath && existingFirst.path === currentFilePath) {
+      return candidate;
+    }
+    let counter = 1;
+    while (true) {
+      const numberedCandidate = `${targetFolder}/${baseTitle} (${counter}).md`;
+      const existingNumbered = app.vault.getAbstractFileByPath(numberedCandidate);
+      if (!existingNumbered || currentFilePath && existingNumbered.path === currentFilePath) {
+        return numberedCandidate;
+      }
+      counter++;
+    }
+  }
+  /**
+   * Update frontmatter title property in note file, removing legacy taskId property
+   */
+  static async updateNoteFrontmatterTitle(app, file, title) {
+    try {
+      await app.fileManager.processFrontMatter(file, (fm) => {
+        fm.title = title;
+        if ("taskId" in fm) {
+          delete fm.taskId;
+        }
+      });
+    } catch (err) {
+      await app.vault.process(file, (content) => {
+        const fmRegex = /^---\r?\n([\s\S]*?)\r?\n---/;
+        const match = content.match(fmRegex);
+        const escapedTitle = JSON.stringify(title);
+        if (match) {
+          let lines = match[1].split(/\r?\n/).filter((l) => !l.trim().startsWith("taskId:"));
+          const titleIdx = lines.findIndex((l) => l.trim().startsWith("title:"));
+          if (titleIdx >= 0) {
+            lines[titleIdx] = `title: ${escapedTitle}`;
+          } else {
+            lines.push(`title: ${escapedTitle}`);
+          }
+          return content.replace(fmRegex, `---
+${lines.join("\n")}
+---`);
+        } else {
+          return `---
+title: ${escapedTitle}
+---
+
+${content}`;
+        }
+      });
+    }
+  }
+  /**
+   * Create or retrieve the linked note for a task.
+   * Note file format: TodoData/<CategoryName>/<CategoryName> <taskId>.md
+   * Frontmatter contains `title: <taskTitle>` property.
+   */
+  static async createOrGetLinkedNote(app, task, categoryFilepath) {
+    const categoryName = this.getCategoryName(categoryFilepath);
+    const standardPath = this.getStandardNotePath(categoryFilepath, task.id);
+    const stdFile = app.vault.getAbstractFileByPath(standardPath);
+    if (stdFile instanceof import_obsidian4.TFile) {
+      const cleanPath2 = stdFile.path.replace(/\.md$/, "");
+      const noteLink2 = `[[${cleanPath2}]]`;
+      return { file: stdFile, noteLink: noteLink2, cleanPath: cleanPath2 };
+    }
+    const existingFile = this.resolveLinkedNoteFile(app, task.note_link, categoryFilepath, task.id) || (task.id ? await this.findFileByTaskIdAsync(app, task.id, categoryFilepath) : null);
+    if (existingFile) {
+      if (existingFile.path !== standardPath) {
+        await this.ensureFolderExists(app, this.getTaskNotesFolder(categoryFilepath));
+        this.markInternalRename(existingFile.path, standardPath);
+        try {
+          await app.fileManager.renameFile(existingFile, standardPath);
+          const renamedFile = app.vault.getAbstractFileByPath(standardPath);
+          if (renamedFile instanceof import_obsidian4.TFile) {
+            await this.updateNoteFrontmatterTitle(app, renamedFile, task.title);
+            const cleanPath3 = standardPath.replace(/\.md$/, "");
+            const noteLink3 = `[[${cleanPath3}]]`;
+            return { file: renamedFile, noteLink: noteLink3, cleanPath: cleanPath3 };
+          }
+        } catch (err) {
+          void Logger.log(`[LinkedNote] Failed to rename old note to standard path:`, err);
+        }
+      }
+      const cleanPath2 = existingFile.path.replace(/\.md$/, "");
+      const noteLink2 = `[[${cleanPath2}]]`;
+      return { file: existingFile, noteLink: noteLink2, cleanPath: cleanPath2 };
+    }
+    const targetFolder = this.getTaskNotesFolder(categoryFilepath);
+    await this.ensureFolderExists(app, targetFolder);
+    const escapedTitle = JSON.stringify(task.title || "");
+    const noteBody = task.note ? task.note.trim() : "";
+    const content = noteBody ? `---
+title: ${escapedTitle}
+---
+
+${noteBody}
+` : `---
+title: ${escapedTitle}
+---
+
+`;
+    const file = await app.vault.create(standardPath, content);
+    const cleanPath = standardPath.replace(/\.md$/, "");
+    const noteLink = `[[${cleanPath}]]`;
+    void Logger.log(`[LinkedNote] Created note at ${standardPath} for task ${task.id}`);
+    return { file, noteLink, cleanPath };
+  }
+  /**
+   * Synchronize Task Title -> Note Property
+   * When task title is modified in Fluent Tasks:
+   * - Does NOT rename the note file on disk! (Filename stays `<Category> <taskId>.md`)
+   * - Only updates the YAML frontmatter `title` property in the note.
+   * - Auto-migrates legacy non-standard notes if found.
+   */
+  static async syncTaskTitleToNote(app, task, categoryFilepath, dataService) {
+    if (!task.note_link && !task.id)
+      return { noteRenamed: false };
+    const standardPath = this.getStandardNotePath(categoryFilepath, task.id);
+    let file = this.resolveLinkedNoteFile(app, task.note_link, categoryFilepath, task.id);
+    if (!file && task.id) {
+      file = await this.findFileByTaskIdAsync(app, task.id, categoryFilepath);
+    }
+    if (!file)
+      return { noteRenamed: false };
+    let noteRenamed = false;
+    if (file.path !== standardPath) {
+      const targetFolder = this.getTaskNotesFolder(categoryFilepath);
+      await this.ensureFolderExists(app, targetFolder);
+      this.markInternalRename(file.path, standardPath);
+      if (dataService) {
+        dataService.markInternalWrite(file.path, 3e3);
+        dataService.markInternalWrite(standardPath, 3e3);
+        if (categoryFilepath)
+          dataService.markInternalWrite(categoryFilepath, 3e3);
+      }
+      try {
+        await app.fileManager.renameFile(file, standardPath);
+        const renamed = app.vault.getAbstractFileByPath(standardPath);
+        if (renamed instanceof import_obsidian4.TFile)
+          file = renamed;
+        noteRenamed = true;
+      } catch (err) {
+        void Logger.log("[LinkedNote] Failed to rename old note to standard path:", err);
+      }
+    }
+    const cleanPath = file.path.replace(/\.md$/, "");
+    const expectedNoteLink = `[[${cleanPath}]]`;
+    let linkHealed = false;
+    if (task.note_link !== expectedNoteLink) {
+      task.note_link = expectedNoteLink;
+      linkHealed = true;
+    }
+    if (dataService) {
+      dataService.markInternalWrite(file.path, 3e3);
+    }
+    await this.updateNoteFrontmatterTitle(app, file, task.title);
+    return {
+      newNoteLink: noteRenamed || linkHealed ? expectedNoteLink : void 0,
+      noteRenamed
+    };
+  }
+  /**
+   * Synchronize Note Rename -> Task Title
+   * When note is renamed in Obsidian, updates task title & note_link in real-time
+   */
+  static async syncNoteRenameToTasks(app, dataService, oldPath, newFile) {
+    var _a, _b, _c, _d, _e, _f;
+    if (!newFile || newFile.extension !== "md")
+      return false;
+    const oldClean = oldPath.replace(/\.md$/, "");
+    const newClean = newFile.path.replace(/\.md$/, "");
+    const newTitle = newFile.basename;
+    const normalizedOldClean = oldClean.replace(/\\/g, "/");
+    const normalizedOldPath = oldPath.replace(/\\/g, "/");
+    let frontmatterTaskId = (_c = (_b = (_a = app.metadataCache) == null ? void 0 : _a.getFileCache(newFile)) == null ? void 0 : _b.frontmatter) == null ? void 0 : _c.taskId;
+    if (!frontmatterTaskId) {
+      try {
+        const content = await app.vault.read(newFile);
+        const match = content.match(/^---\r?\n[\s\S]*?taskId:\s*["']?([^"'\r\n]+)["']?[\s\S]*?\r?\n---/);
+        if (match) {
+          frontmatterTaskId = match[1].trim();
+        }
+      } catch (e) {
+      }
+    }
+    const categories = await dataService.getCategories();
+    let anyUpdated = false;
+    for (const cat of categories) {
+      let tasks2;
+      try {
+        tasks2 = await dataService.getTasks(cat.filepath);
+      } catch (e) {
+        continue;
+      }
+      const categoryNotesFolder = this.getTaskNotesFolder(cat.filepath).replace(/\\/g, "/");
+      for (const task of tasks2) {
+        let isMatch = false;
+        if (frontmatterTaskId && task.id === frontmatterTaskId) {
+          isMatch = true;
+        } else if (task.note_link) {
+          const taskClean = task.note_link.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim().replace(/\\/g, "/");
+          if (taskClean === normalizedOldClean || taskClean === normalizedOldPath || `${taskClean}.md` === normalizedOldPath) {
+            isMatch = true;
+          } else if (!taskClean.includes("/") && normalizedOldPath.startsWith(categoryNotesFolder + "/")) {
+            const oldBase = normalizedOldClean.split("/").pop();
+            if (taskClean === oldBase) {
+              isMatch = true;
+            }
+          }
+        }
+        if (isMatch) {
+          const fmTitle = (_f = (_e = (_d = app.metadataCache) == null ? void 0 : _d.getFileCache(newFile)) == null ? void 0 : _e.frontmatter) == null ? void 0 : _f.title;
+          const isStandardIdFilename = newTitle.endsWith(` ${task.id}`);
+          if (!isStandardIdFilename && fmTitle === void 0) {
+            const cleanNewTitle = this.stripCollisionSuffix(newTitle) || newTitle;
+            const hasLineBreaks = task.title && (task.title.includes("\n") || /<br\s*\/?>/i.test(task.title));
+            if (hasLineBreaks) {
+              const lines = task.title.split(/\r?\n|<br\s*\/?>/i);
+              lines[0] = cleanNewTitle;
+              task.title = lines.join("\n");
+            } else {
+              task.title = cleanNewTitle;
+            }
+          } else if (fmTitle && typeof fmTitle === "string" && fmTitle.trim() && task.title !== fmTitle.trim()) {
+            task.title = fmTitle.trim();
+          }
+          task.note_link = `[[${newClean}]]`;
+          anyUpdated = true;
+          await dataService.updateTask(cat.filepath, task);
+          EventBus.emit("task:updated" /* TASK_UPDATED */, {
+            task,
+            categoryFilepath: cat.filepath
+          });
+        }
+      }
+    }
+    return anyUpdated;
+  }
+  /**
+   * Synchronize Note Frontmatter Property -> Task Title
+   * When note frontmatter is modified in Obsidian, updates task.title in real-time
+   */
+  static async syncNotePropertyToTask(app, dataService, file) {
+    var _a, _b, _c, _d, _e, _f;
+    if (!file || file.extension !== "md")
+      return false;
+    const normalizedPath = file.path.replace(/\\/g, "/");
+    if (!normalizedPath.startsWith(DATA_FOLDER + "/"))
+      return false;
+    const parts = normalizedPath.slice(DATA_FOLDER.length + 1).split("/");
+    if (parts.length < 2)
+      return false;
+    const categoryName = parts[0];
+    const categoryFilepath = `${DATA_FOLDER}/${categoryName}.md`;
+    let noteTitle = (_c = (_b = (_a = app.metadataCache) == null ? void 0 : _a.getFileCache(file)) == null ? void 0 : _b.frontmatter) == null ? void 0 : _c.title;
+    let oldTaskId = (_f = (_e = (_d = app.metadataCache) == null ? void 0 : _d.getFileCache(file)) == null ? void 0 : _e.frontmatter) == null ? void 0 : _f.taskId;
+    if (noteTitle === void 0 && oldTaskId === void 0) {
+      try {
+        const raw = await app.vault.read(file);
+        const matchTitle = raw.match(/^---\r?\n[\s\S]*?title:\s*["']?([^"'\r\n]+)["']?[\s\S]*?\r?\n---/);
+        if (matchTitle)
+          noteTitle = matchTitle[1].trim();
+        const matchTask = raw.match(/^---\r?\n[\s\S]*?taskId:\s*["']?([^"'\r\n]+)["']?[\s\S]*?\r?\n---/);
+        if (matchTask)
+          oldTaskId = matchTask[1].trim();
+      } catch (e) {
+        return false;
+      }
+    }
+    if (noteTitle === void 0)
+      return false;
+    const taskId = oldTaskId || this.extractTaskIdFromFilename(file.basename);
+    if (!taskId)
+      return false;
+    let tasks2;
+    try {
+      tasks2 = await dataService.getTasks(categoryFilepath);
+    } catch (e) {
+      return false;
+    }
+    let targetTask = tasks2.find((t2) => t2.id === taskId);
+    let targetCatPath = categoryFilepath;
+    if (!targetTask) {
+      const categories = await dataService.getCategories();
+      for (const cat of categories) {
+        if (cat.filepath === categoryFilepath)
+          continue;
+        try {
+          const catTasks = await dataService.getTasks(cat.filepath);
+          const found = catTasks.find((t2) => t2.id === taskId);
+          if (found) {
+            targetTask = found;
+            targetCatPath = cat.filepath;
+            break;
+          }
+        } catch (e) {
+        }
+      }
+    }
+    if (!targetTask)
+      return false;
+    if (targetTask.title !== noteTitle) {
+      targetTask.title = noteTitle;
+      dataService.markInternalWrite(targetCatPath, 3e3);
+      await dataService.updateTask(targetCatPath, targetTask);
+      EventBus.emit("task:updated" /* TASK_UPDATED */, {
+        task: targetTask,
+        categoryFilepath: targetCatPath
+      });
+      void Logger.log(`[LinkedNote] Synced note frontmatter title "${noteTitle}" to task ${targetTask.id}`);
+      return true;
+    }
+    return false;
+  }
+  /**
+   * Handle category list rename:
+   * When a list (Category) name changes from OldName to NewName:
+   * 1. Renames dedicated note folder TodoData/OldName -> TodoData/NewName
+   * 2. Renames all notes inside from `<OldName> <taskId>.md` -> `<NewName> <taskId>.md`
+   * 3. Updates `note_link` in tasks of the renamed category file
+   * 4. Updates open markdown tabs if any were open
+   */
+  static async handleCategoryRename(app, dataService, oldCategoryFilepath, newCategoryFilepath) {
+    const oldName = this.getCategoryName(oldCategoryFilepath);
+    const newName = this.getCategoryName(newCategoryFilepath);
+    if (oldName === newName)
+      return { renamedNotesCount: 0, updatedTasksCount: 0 };
+    const oldNotesFolderPath = `${DATA_FOLDER}/${oldName}`.replace(/\\/g, "/");
+    const newNotesFolderPath = `${DATA_FOLDER}/${newName}`.replace(/\\/g, "/");
+    let renamedNotesCount = 0;
+    let updatedTasksCount = 0;
+    const oldFolder = app.vault.getAbstractFileByPath(oldNotesFolderPath);
+    const newFolder = app.vault.getAbstractFileByPath(newNotesFolderPath);
+    if (oldFolder && oldFolder instanceof import_obsidian4.TFolder) {
+      if (!newFolder) {
+        this.markInternalRename(oldNotesFolderPath, newNotesFolderPath);
+        dataService.markInternalWrite(oldNotesFolderPath, 4e3);
+        dataService.markInternalWrite(newNotesFolderPath, 4e3);
+        try {
+          await app.fileManager.renameFile(oldFolder, newNotesFolderPath);
+          void Logger.log(`[LinkedNote] Renamed category folder: ${oldNotesFolderPath} -> ${newNotesFolderPath}`);
+        } catch (e) {
+          void Logger.log(`[LinkedNote] Error renaming folder ${oldNotesFolderPath} to ${newNotesFolderPath}:`, e);
+        }
+      } else if (newFolder instanceof import_obsidian4.TFolder) {
+        const children2 = [...oldFolder.children];
+        for (const child of children2) {
+          if (child instanceof import_obsidian4.TFile && child.extension === "md") {
+            const targetPath = `${newNotesFolderPath}/${child.name}`;
+            this.markInternalRename(child.path, targetPath);
+            dataService.markInternalWrite(child.path, 4e3);
+            dataService.markInternalWrite(targetPath, 4e3);
+            try {
+              await app.fileManager.renameFile(child, targetPath);
+            } catch (e) {
+              void Logger.log(`[LinkedNote] Error moving child file ${child.path}:`, e);
+            }
+          }
+        }
+        if (oldFolder.children.length === 0) {
+          try {
+            await app.fileManager.trashFile(oldFolder);
+          } catch (e) {
+          }
+        }
+      }
+    }
+    const syncRes = await this.autoSyncCategoryLinkedNotes(app, dataService, newCategoryFilepath);
+    renamedNotesCount += syncRes.healedNotesCount;
+    updatedTasksCount += syncRes.updatedTasksCount;
+    return { renamedNotesCount, updatedTasksCount };
+  }
+  /**
+   * Auto-detect and heal all tasks and linked notes in a category:
+   * - Scans all tasks in the category file
+   * - For each task with a linked note (or matching taskId):
+   *   Ensures the note file is named `<CategoryName> <taskId>.md` inside `TodoData/<CategoryName>/`
+   *   If named after an old list name or in an old folder, renames it to standard path
+   *   Ensures `task.note_link` points to standard wikilink `[[TodoData/<CategoryName>/<CategoryName> <taskId>]]`
+   * - Scans `TodoData/<CategoryName>/` folder for any notes with stale list prefixes and updates them
+   */
+  static async autoSyncCategoryLinkedNotes(app, dataService, categoryFilepath) {
+    var _a, _b, _c, _d;
+    const categoryName = this.getCategoryName(categoryFilepath);
+    const targetFolderPath = this.getTaskNotesFolder(categoryFilepath).replace(/\\/g, "/");
+    let healedNotesCount = 0;
+    let updatedTasksCount = 0;
+    let tasks2;
+    try {
+      tasks2 = await dataService.getTasks(categoryFilepath);
+    } catch (e) {
+      return { healedNotesCount: 0, updatedTasksCount: 0 };
+    }
+    let tasksChanged = false;
+    for (const task of tasks2) {
+      const standardPath = this.getStandardNotePath(categoryFilepath, task.id);
+      const standardClean = standardPath.replace(/\.md$/, "");
+      const standardNoteLink = `[[${standardClean}]]`;
+      let noteFile = app.vault.getAbstractFileByPath(standardPath);
+      if (!(noteFile instanceof import_obsidian4.TFile)) {
+        noteFile = this.resolveLinkedNoteFile(app, task.note_link, categoryFilepath, task.id) || (task.id ? await this.findFileByTaskIdAsync(app, task.id, categoryFilepath) : null);
+      }
+      if (noteFile instanceof import_obsidian4.TFile) {
+        if (noteFile.path !== standardPath) {
+          await this.ensureFolderExists(app, targetFolderPath);
+          this.markInternalRename(noteFile.path, standardPath);
+          dataService.markInternalWrite(noteFile.path, 4e3);
+          dataService.markInternalWrite(standardPath, 4e3);
+          dataService.markInternalWrite(categoryFilepath, 4e3);
+          try {
+            await app.fileManager.renameFile(noteFile, standardPath);
+            healedNotesCount++;
+            void Logger.log(`[LinkedNote AutoSync] Renamed note: ${noteFile.path} -> ${standardPath}`);
+          } catch (e) {
+            void Logger.log(`[LinkedNote AutoSync] Failed to rename ${noteFile.path} to ${standardPath}:`, e);
+          }
+        }
+        if (task.note_link !== standardNoteLink) {
+          task.note_link = standardNoteLink;
+          tasksChanged = true;
+          updatedTasksCount++;
+        }
+        const freshFile = app.vault.getAbstractFileByPath(standardPath);
+        if (freshFile instanceof import_obsidian4.TFile) {
+          const cache = (_a = app.metadataCache) == null ? void 0 : _a.getFileCache(freshFile);
+          if (((_b = cache == null ? void 0 : cache.frontmatter) == null ? void 0 : _b.title) === void 0 && task.title) {
+            await this.updateNoteFrontmatterTitle(app, freshFile, task.title);
+          }
+        }
+      }
+    }
+    const targetFolder = app.vault.getAbstractFileByPath(targetFolderPath);
+    if (targetFolder && targetFolder instanceof import_obsidian4.TFolder) {
+      const children2 = [...targetFolder.children];
+      for (const child of children2) {
+        if (!(child instanceof import_obsidian4.TFile) || child.extension !== "md")
+          continue;
+        let taskId = this.extractTaskIdFromFilename(child.basename);
+        if (!taskId) {
+          const cache = (_c = app.metadataCache) == null ? void 0 : _c.getFileCache(child);
+          taskId = ((_d = cache == null ? void 0 : cache.frontmatter) == null ? void 0 : _d.taskId) || null;
+        }
+        if (!taskId) {
+          try {
+            const raw = await app.vault.read(child);
+            const m = raw.slice(0, 500).match(/^---\r?\n[\s\S]*?taskId:\s*["']?([^"'\r\n]+)["']?[\s\S]*?\r?\n---/);
+            if (m)
+              taskId = m[1].trim();
+          } catch (e) {
+          }
+        }
+        if (taskId) {
+          const expectedBasename = `${categoryName} ${taskId}`;
+          const expectedPath = `${targetFolderPath}/${expectedBasename}.md`;
+          if (child.path !== expectedPath) {
+            this.markInternalRename(child.path, expectedPath);
+            dataService.markInternalWrite(child.path, 4e3);
+            dataService.markInternalWrite(expectedPath, 4e3);
+            try {
+              await app.fileManager.renameFile(child, expectedPath);
+              healedNotesCount++;
+              void Logger.log(`[LinkedNote AutoSync] Re-aligned folder note: ${child.path} -> ${expectedPath}`);
+            } catch (e) {
+              void Logger.log(`[LinkedNote AutoSync] Error re-aligning ${child.path}:`, e);
+            }
+          }
+          const matchingTask = tasks2.find((t2) => t2.id === taskId);
+          if (matchingTask) {
+            const cleanPath = expectedPath.replace(/\.md$/, "");
+            const expectedLink = `[[${cleanPath}]]`;
+            if (matchingTask.note_link !== expectedLink) {
+              matchingTask.note_link = expectedLink;
+              tasksChanged = true;
+              updatedTasksCount++;
+            }
+          }
+        }
+      }
+    }
+    if (tasksChanged) {
+      dataService.markInternalWrite(categoryFilepath, 4e3);
+      await dataService.saveTasks(categoryFilepath, tasks2);
+      EventBus.emit("task:updated" /* TASK_UPDATED */, { categoryFilepath });
+    }
+    return { healedNotesCount, updatedTasksCount };
+  }
+  /**
+   * Handle moving a task from one category to another:
+   * If the task has a linked note, moves/renames it from:
+   * TodoData/<SourceCategory>/<SourceCategory> <taskId>.md ->
+   * TodoData/<TargetCategory>/<TargetCategory> <taskId>.md
+   * And updates task.note_link accordingly.
+   */
+  static async handleTaskMove(app, dataService, task, sourceCategoryFilepath, targetCategoryFilepath) {
+    if (sourceCategoryFilepath === targetCategoryFilepath)
+      return false;
+    const sourceCatName = this.getCategoryName(sourceCategoryFilepath);
+    const targetCatName = this.getCategoryName(targetCategoryFilepath);
+    if (sourceCatName === targetCatName)
+      return false;
+    const noteFile = this.resolveLinkedNoteFile(app, task.note_link, sourceCategoryFilepath, task.id) || (task.id ? await this.findFileByTaskIdAsync(app, task.id, sourceCategoryFilepath) : null);
+    if (!noteFile || !(noteFile instanceof import_obsidian4.TFile))
+      return false;
+    const targetFolder = this.getTaskNotesFolder(targetCategoryFilepath);
+    await this.ensureFolderExists(app, targetFolder);
+    const newStandardPath = this.getStandardNotePath(targetCategoryFilepath, task.id);
+    if (noteFile.path === newStandardPath)
+      return false;
+    this.markInternalRename(noteFile.path, newStandardPath);
+    dataService.markInternalWrite(noteFile.path, 4e3);
+    dataService.markInternalWrite(newStandardPath, 4e3);
+    try {
+      await app.fileManager.renameFile(noteFile, newStandardPath);
+      const cleanPath = newStandardPath.replace(/\.md$/, "");
+      task.note_link = `[[${cleanPath}]]`;
+      void Logger.log(`[LinkedNote] Moved task note: ${noteFile.path} -> ${newStandardPath}`);
+      return true;
+    } catch (e) {
+      void Logger.log(`[LinkedNote] Failed to move note on task move:`, e);
+      return false;
+    }
+  }
+  /**
+   * Automatically scan and migrate legacy linked notes:
+   * - Detects old documents by checking if frontmatter has `taskId`
+   * - Replaces `taskId` with `title: <taskTitle>` in YAML frontmatter
+   * - Renames file to standard format: `<CategoryName> <taskId>.md`
+   * - Updates corresponding task's `note_link` to standard wikilink
+   * - Auto-syncs all categories to ensure note filenames match current category names
+   */
+  static async migrateOldLinkedNotes(app, dataService) {
+    var _a, _b, _c, _d, _e;
+    const details = [];
+    let migratedCount = 0;
+    const dataFolder = app.vault.getAbstractFileByPath(DATA_FOLDER);
+    if (!dataFolder || !(dataFolder instanceof import_obsidian4.TFolder)) {
+      return { migratedCount: 0, details: [] };
+    }
+    for (const child of dataFolder.children) {
+      if (!(child instanceof import_obsidian4.TFolder))
+        continue;
+      const categoryName = child.name;
+      const categoryFilepath = `${DATA_FOLDER}/${categoryName}.md`;
+      for (const noteFile of child.children) {
+        if (!(noteFile instanceof import_obsidian4.TFile) || noteFile.extension !== "md")
+          continue;
+        let oldTaskId = (_d = (_c = (_b = (_a = app.metadataCache) == null ? void 0 : _a.getFileCache(noteFile)) == null ? void 0 : _b.frontmatter) == null ? void 0 : _c.taskId) != null ? _d : null;
+        if (!oldTaskId) {
+          try {
+            const raw = await app.vault.read(noteFile);
+            const m = raw.slice(0, 500).match(/^---\r?\n[\s\S]*?taskId:\s*["']?([^"'\r\n]+)["']?[\s\S]*?\r?\n---/);
+            if (m)
+              oldTaskId = m[1].trim();
+          } catch (e) {
+          }
+        }
+        if (!oldTaskId)
+          continue;
+        const standardFilename = `${categoryName} ${oldTaskId}.md`;
+        const standardPath = `${child.path}/${standardFilename}`;
+        let targetTask = null;
+        let targetCatPath = categoryFilepath;
+        try {
+          const tasks2 = await dataService.getTasks(categoryFilepath);
+          targetTask = (_e = tasks2.find((t2) => t2.id === oldTaskId)) != null ? _e : null;
+        } catch (e) {
+        }
+        if (!targetTask) {
+          const allCats = await dataService.getCategories();
+          for (const cat of allCats) {
+            if (cat.filepath === categoryFilepath)
+              continue;
+            try {
+              const tasks2 = await dataService.getTasks(cat.filepath);
+              const found = tasks2.find((t2) => t2.id === oldTaskId);
+              if (found) {
+                targetTask = found;
+                targetCatPath = cat.filepath;
+                break;
+              }
+            } catch (e) {
+            }
+          }
+        }
+        const taskTitle = targetTask ? targetTask.title : noteFile.basename;
+        await this.updateNoteFrontmatterTitle(app, noteFile, taskTitle);
+        let finalFile = noteFile;
+        if (noteFile.path !== standardPath) {
+          this.markInternalRename(noteFile.path, standardPath);
+          dataService.markInternalWrite(noteFile.path, 4e3);
+          dataService.markInternalWrite(standardPath, 4e3);
+          try {
+            await app.fileManager.renameFile(noteFile, standardPath);
+            const renamed = app.vault.getAbstractFileByPath(standardPath);
+            if (renamed instanceof import_obsidian4.TFile)
+              finalFile = renamed;
+          } catch (err) {
+            void Logger.log(`[LinkedNote Migration] Failed to rename ${noteFile.path} to ${standardPath}:`, err);
+          }
+        }
+        if (targetTask) {
+          const cleanPath = finalFile.path.replace(/\.md$/, "");
+          const newNoteLink = `[[${cleanPath}]]`;
+          if (targetTask.note_link !== newNoteLink) {
+            targetTask.note_link = newNoteLink;
+            dataService.markInternalWrite(targetCatPath, 4e3);
+            await dataService.updateTask(targetCatPath, targetTask);
+            EventBus.emit("task:updated" /* TASK_UPDATED */, {
+              task: targetTask,
+              categoryFilepath: targetCatPath
+            });
+          }
+        }
+        migratedCount++;
+        details.push(`${noteFile.path} -> ${finalFile.path} (title: "${taskTitle}")`);
+        void Logger.log(`[LinkedNote Migration] Migrated old note: ${noteFile.path} -> ${finalFile.path}`);
+      }
+    }
+    try {
+      const categories = await dataService.getCategories();
+      for (const cat of categories) {
+        const res = await this.autoSyncCategoryLinkedNotes(app, dataService, cat.filepath);
+        if (res.healedNotesCount > 0) {
+          migratedCount += res.healedNotesCount;
+          details.push(`Auto-synced ${res.healedNotesCount} note(s) in category "${cat.name}"`);
+        }
+      }
+    } catch (e) {
+      void Logger.log("[LinkedNote Migration] Error running autoSyncCategoryLinkedNotes across categories:", e);
+    }
+    return { migratedCount, details };
+  }
+};
+LinkedNoteService.internalRenames = /* @__PURE__ */ new Map();
+
 // src/utils/sidebarTreeUtils.ts
 function moveSidebarItem(items, movedItemId, targetId, position) {
   if (!movedItemId || !targetId || movedItemId === targetId)
@@ -1202,6 +2088,7 @@ function filterSidebarTree(items, query) {
 // src/DataService.ts
 var DataService = class {
   constructor(app) {
+    this.app = app;
     this.io = new AtomicIOPipeline(app);
     this.categorySvc = new CategoryService(app, this.io);
     this.taskSvc = new TaskService(this.io);
@@ -1245,7 +2132,10 @@ var DataService = class {
     return this.categorySvc.restoreCategory(categoryName, categoryFilepath, fileContent, groupName, index);
   }
   async renameCategory(filepath, newName) {
-    return this.categorySvc.renameCategory(filepath, newName);
+    const oldFilepath = filepath;
+    const newCat = await this.categorySvc.renameCategory(filepath, newName);
+    await LinkedNoteService.handleCategoryRename(this.app, this, oldFilepath, newCat.filepath);
+    return newCat;
   }
   // Task Operations
   async getTasks(categoryFilepath) {
@@ -1264,6 +2154,7 @@ var DataService = class {
     return this.taskSvc.deleteTask(categoryFilepath, task);
   }
   async moveTask(task, sourceFilepath, targetFilepath) {
+    await LinkedNoteService.handleTaskMove(this.app, this, task, sourceFilepath, targetFilepath);
     return this.taskSvc.moveTask(task, sourceFilepath, targetFilepath);
   }
   /** Deep search across tasks — matches title, steps text, and note content */
@@ -2393,13 +3284,13 @@ var MIN_TASK_WEIGHT = 1;
 var MAX_TASK_WEIGHT = 9;
 
 // src/TaskSidebarView.svelte
-var import_obsidian6 = require("obsidian");
+var import_obsidian7 = require("obsidian");
 
 // src/TaskSearchModal.ts
-var import_obsidian5 = require("obsidian");
+var import_obsidian6 = require("obsidian");
 
 // src/lang/helpers.ts
-var import_obsidian4 = require("obsidian");
+var import_obsidian5 = require("obsidian");
 
 // src/lang/locale/en.ts
 var en = {
@@ -2638,7 +3529,7 @@ var zh_cn_default = zhCn;
 // src/lang/helpers.ts
 function detectLanguage() {
   try {
-    const lang = (0, import_obsidian4.getLanguage)();
+    const lang = (0, import_obsidian5.getLanguage)();
     if (lang) {
       return lang.toLowerCase();
     }
@@ -2668,7 +3559,7 @@ function t(key, ...params) {
 }
 
 // src/TaskSearchModal.ts
-var TaskSearchModal = class extends import_obsidian5.SuggestModal {
+var TaskSearchModal = class extends import_obsidian6.SuggestModal {
   constructor(app, plugin, dataService, scopeFilepath) {
     super(app);
     this.toggleEl = null;
@@ -4888,7 +5779,7 @@ function instance($$self, $$props, $$invalidate) {
   }
   async function handleCategoryContextMenu(e, cat) {
     e.preventDefault();
-    const menu = new import_obsidian6.Menu();
+    const menu = new import_obsidian7.Menu();
     menu.addItem((item) => {
       item.setTitle("Rename List (F2)").setIcon("edit").onClick(() => {
         startRenaming({
@@ -4923,7 +5814,7 @@ function instance($$self, $$props, $$invalidate) {
     if (group.type !== "group")
       return;
     e.preventDefault();
-    const menu = new import_obsidian6.Menu();
+    const menu = new import_obsidian7.Menu();
     menu.addItem((item) => {
       item.setTitle("Rename Group (F2)").setIcon("edit").onClick(() => {
         startRenaming({
@@ -7784,665 +8675,6 @@ function applyWeightSort(items, enableWeightMode = false) {
 
 // src/TaskMainView.svelte
 var import_obsidian13 = require("obsidian");
-
-// src/services/LinkedNoteService.ts
-var import_obsidian7 = require("obsidian");
-var LinkedNoteService = class {
-  /** Mark a file rename as internal to prevent echo update loops */
-  static markInternalRename(oldPath, newPath, windowMs = 2e3) {
-    const expiry = Date.now() + windowMs;
-    this.internalRenames.set(`${oldPath}->${newPath}`, expiry);
-    this.internalRenames.set(oldPath, expiry);
-    this.internalRenames.set(newPath, expiry);
-  }
-  /** Check if a rename was triggered internally */
-  static isInternalRename(oldPath, newPath) {
-    const key = `${oldPath}->${newPath}`;
-    const now2 = Date.now();
-    const expKey = this.internalRenames.get(key);
-    if (expKey && now2 <= expKey)
-      return true;
-    const expOld = this.internalRenames.get(oldPath);
-    if (expOld && now2 <= expOld)
-      return true;
-    const expNew = this.internalRenames.get(newPath);
-    if (expNew && now2 <= expNew)
-      return true;
-    return false;
-  }
-  /**
-   * Sanitize task title into a safe Windows / Obsidian filename
-   * Strips <br>, HTML tags, \r, \n and illegal characters / \\ : * ? " < > |
-   */
-  static sanitizeNoteTitle(title) {
-    if (!title)
-      return "Untitled Note";
-    const cleaned = title.replace(/<br\s*\/?>/gi, " ").replace(/<[^>]+>/g, " ").replace(/[\r\n]+/g, " ").replace(/[\\/:*?"<>|]/g, " ").replace(/\s+/g, " ").replace(/^[\s.-]+|[\s.-]+$/g, "").trim();
-    return cleaned.slice(0, 100) || "Untitled Note";
-  }
-  /**
-   * Extract category name from category filepath
-   * e.g. TodoData/编程.md -> 编程
-   */
-  static getCategoryName(categoryFilepath) {
-    var _a;
-    return ((_a = categoryFilepath.replace(/\\/g, "/").split("/").pop()) == null ? void 0 : _a.replace(/\.md$/, "")) || "General";
-  }
-  /**
-   * Determine dedicated note directory for a category list
-   * e.g. TodoData/安全中转待办.md -> TodoData/安全中转待办
-   */
-  static getTaskNotesFolder(categoryFilepath) {
-    const listName = this.getCategoryName(categoryFilepath);
-    return `${DATA_FOLDER}/${listName}`;
-  }
-  /**
-   * Determine standard note path for a task: TodoData/<CategoryName>/<CategoryName> <taskId>.md
-   * e.g. TodoData/编程/编程 ge20uj.md
-   */
-  static getStandardNotePath(categoryFilepath, taskId) {
-    const categoryName = this.getCategoryName(categoryFilepath);
-    const targetFolder = `${DATA_FOLDER}/${categoryName}`;
-    return `${targetFolder}/${categoryName} ${taskId}.md`;
-  }
-  /**
-   * Extract task ID from note filename
-   * Matches `<CategoryName> <taskId>` where taskId is the last space-separated token
-   */
-  static extractTaskIdFromFilename(basename) {
-    const clean = basename.replace(/\.md$/, "").trim();
-    const lastSpace = clean.lastIndexOf(" ");
-    if (lastSpace === -1)
-      return null;
-    const candidate = clean.slice(lastSpace + 1).trim();
-    return candidate || null;
-  }
-  /**
-   * Ensure a vault folder exists, creating parents if missing
-   */
-  static async ensureFolderExists(app, folderPath) {
-    const cleanPath = folderPath.replace(/\\/g, "/").replace(/\/+$/, "");
-    const existing = app.vault.getAbstractFileByPath(cleanPath);
-    if (existing && existing instanceof import_obsidian7.TFolder)
-      return;
-    const parts = cleanPath.split("/");
-    let current = "";
-    for (const part of parts) {
-      current = current ? `${current}/${part}` : part;
-      const item = app.vault.getAbstractFileByPath(current);
-      if (!item) {
-        try {
-          await app.vault.createFolder(current);
-        } catch (e) {
-        }
-      }
-    }
-  }
-  /**
-   * Search for a note file by taskId (checking standard filename ending or YAML frontmatter taskId)
-   */
-  static findFileByTaskId(app, taskId, categoryFilepath) {
-    var _a, _b, _c, _d;
-    if (!app || !taskId)
-      return null;
-    if (categoryFilepath) {
-      const stdPath = this.getStandardNotePath(categoryFilepath, taskId);
-      const file = app.vault.getAbstractFileByPath(stdPath);
-      if (file instanceof import_obsidian7.TFile)
-        return file;
-    }
-    if (categoryFilepath) {
-      const folderPath = this.getTaskNotesFolder(categoryFilepath).replace(/\\/g, "/");
-      const folder = app.vault.getAbstractFileByPath(folderPath);
-      if (folder && folder instanceof import_obsidian7.TFolder) {
-        for (const child of folder.children) {
-          if (child instanceof import_obsidian7.TFile && child.extension === "md") {
-            if (child.basename.endsWith(` ${taskId}`)) {
-              return child;
-            }
-            const cache = (_a = app.metadataCache) == null ? void 0 : _a.getFileCache(child);
-            if (((_b = cache == null ? void 0 : cache.frontmatter) == null ? void 0 : _b.taskId) === taskId) {
-              return child;
-            }
-          }
-        }
-      }
-    }
-    const dataFolder = app.vault.getAbstractFileByPath(DATA_FOLDER);
-    if (dataFolder && dataFolder instanceof import_obsidian7.TFolder) {
-      const stack = [dataFolder];
-      while (stack.length > 0) {
-        const cur = stack.pop();
-        for (const child of cur.children) {
-          if (child instanceof import_obsidian7.TFolder) {
-            stack.push(child);
-          } else if (child instanceof import_obsidian7.TFile && child.extension === "md") {
-            if (child.basename.endsWith(` ${taskId}`)) {
-              return child;
-            }
-            const cache = (_c = app.metadataCache) == null ? void 0 : _c.getFileCache(child);
-            if (((_d = cache == null ? void 0 : cache.frontmatter) == null ? void 0 : _d.taskId) === taskId) {
-              return child;
-            }
-          }
-        }
-      }
-    }
-    return null;
-  }
-  /**
-   * Async fallback for findFileByTaskId checking file contents directly if metadataCache is stale
-   */
-  static async findFileByTaskIdAsync(app, taskId, categoryFilepath) {
-    const syncMatch = this.findFileByTaskId(app, taskId, categoryFilepath);
-    if (syncMatch)
-      return syncMatch;
-    if (categoryFilepath && app) {
-      const folderPath = this.getTaskNotesFolder(categoryFilepath).replace(/\\/g, "/");
-      const folder = app.vault.getAbstractFileByPath(folderPath);
-      if (folder && folder instanceof import_obsidian7.TFolder) {
-        for (const child of folder.children) {
-          if (child instanceof import_obsidian7.TFile && child.extension === "md") {
-            if (child.basename.endsWith(` ${taskId}`)) {
-              return child;
-            }
-            try {
-              const content = await app.vault.read(child);
-              const match = content.slice(0, 300).match(/^---\r?\n[\s\S]*?taskId:\s*["']?([^"'\r\n]+)["']?[\s\S]*?\r?\n---/);
-              if (match && match[1].trim() === taskId) {
-                return child;
-              }
-            } catch (e) {
-            }
-          }
-        }
-      }
-    }
-    return null;
-  }
-  /**
-   * Resolve a note link string (e.g. [[Path/Note|Alias]] or Path/Note) to a physical TFile,
-   * with automatic fallback to taskId matching if link is stale or broken.
-   */
-  static resolveLinkedNoteFile(app, noteLink, sourcePath, taskId) {
-    if (!app)
-      return null;
-    if (sourcePath && taskId) {
-      const stdPath = this.getStandardNotePath(sourcePath, taskId);
-      const stdFile = app.vault.getAbstractFileByPath(stdPath);
-      if (stdFile instanceof import_obsidian7.TFile)
-        return stdFile;
-    }
-    if (noteLink) {
-      const clean = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
-      if (clean) {
-        let file = app.vault.getAbstractFileByPath(clean);
-        if (file instanceof import_obsidian7.TFile)
-          return file;
-        if (!clean.endsWith(".md")) {
-          file = app.vault.getAbstractFileByPath(`${clean}.md`);
-          if (file instanceof import_obsidian7.TFile)
-            return file;
-        }
-        if (app.metadataCache) {
-          const cached = app.metadataCache.getFirstLinkpathDest(clean, sourcePath || "");
-          if (cached instanceof import_obsidian7.TFile)
-            return cached;
-        }
-      }
-    }
-    if (taskId) {
-      const fileByTaskId = this.findFileByTaskId(app, taskId, sourcePath);
-      if (fileByTaskId)
-        return fileByTaskId;
-    }
-    return null;
-  }
-  /**
-   * Strip collision disambiguation suffix like ' (1)', ' (2)'
-   */
-  static stripCollisionSuffix(title) {
-    return title.replace(/\s+\(\d+\)$/, "").trim();
-  }
-  /**
-   * Check if a note link is a dedicated hard-bound task note under TodoData/
-   */
-  static isHardBoundNote(noteLink) {
-    if (!noteLink)
-      return false;
-    const clean = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
-    return clean.startsWith(`${DATA_FOLDER}/`) || clean.startsWith(`${DATA_FOLDER}\\`);
-  }
-  /**
-   * Open or focus a linked note file in a tab without displacing active view
-   */
-  static async openLinkedNoteFile(app, file) {
-    const leaves = app.workspace.getLeavesOfType("markdown");
-    const existingLeaf = leaves.find((l) => {
-      var _a, _b;
-      return ((_b = (_a = l.view) == null ? void 0 : _a.file) == null ? void 0 : _b.path) === (file == null ? void 0 : file.path);
-    });
-    if (existingLeaf) {
-      app.workspace.setActiveLeaf(existingLeaf, { focus: true });
-    } else {
-      const leaf = app.workspace.getLeaf("tab");
-      await leaf.openFile(file);
-      app.workspace.setActiveLeaf(leaf, { focus: true });
-    }
-  }
-  /**
-   * Generate an available non-colliding file path in the target folder
-   * Appends (1), (2), etc. if title collisions occur. Ignores currentFilePath if specified.
-   */
-  static getAvailableNotePath(app, targetFolder, baseTitle, currentFilePath) {
-    const candidate = `${targetFolder}/${baseTitle}.md`;
-    const existingFirst = app.vault.getAbstractFileByPath(candidate);
-    if (!existingFirst || currentFilePath && existingFirst.path === currentFilePath) {
-      return candidate;
-    }
-    let counter = 1;
-    while (true) {
-      const numberedCandidate = `${targetFolder}/${baseTitle} (${counter}).md`;
-      const existingNumbered = app.vault.getAbstractFileByPath(numberedCandidate);
-      if (!existingNumbered || currentFilePath && existingNumbered.path === currentFilePath) {
-        return numberedCandidate;
-      }
-      counter++;
-    }
-  }
-  /**
-   * Update frontmatter title property in note file, removing legacy taskId property
-   */
-  static async updateNoteFrontmatterTitle(app, file, title) {
-    try {
-      await app.fileManager.processFrontMatter(file, (fm) => {
-        fm.title = title;
-        if ("taskId" in fm) {
-          delete fm.taskId;
-        }
-      });
-    } catch (err) {
-      await app.vault.process(file, (content) => {
-        const fmRegex = /^---\r?\n([\s\S]*?)\r?\n---/;
-        const match = content.match(fmRegex);
-        const escapedTitle = JSON.stringify(title);
-        if (match) {
-          let lines = match[1].split(/\r?\n/).filter((l) => !l.trim().startsWith("taskId:"));
-          const titleIdx = lines.findIndex((l) => l.trim().startsWith("title:"));
-          if (titleIdx >= 0) {
-            lines[titleIdx] = `title: ${escapedTitle}`;
-          } else {
-            lines.push(`title: ${escapedTitle}`);
-          }
-          return content.replace(fmRegex, `---
-${lines.join("\n")}
----`);
-        } else {
-          return `---
-title: ${escapedTitle}
----
-
-${content}`;
-        }
-      });
-    }
-  }
-  /**
-   * Create or retrieve the linked note for a task.
-   * Note file format: TodoData/<CategoryName>/<CategoryName> <taskId>.md
-   * Frontmatter contains `title: <taskTitle>` property.
-   */
-  static async createOrGetLinkedNote(app, task, categoryFilepath) {
-    const categoryName = this.getCategoryName(categoryFilepath);
-    const standardPath = this.getStandardNotePath(categoryFilepath, task.id);
-    const stdFile = app.vault.getAbstractFileByPath(standardPath);
-    if (stdFile instanceof import_obsidian7.TFile) {
-      const cleanPath2 = stdFile.path.replace(/\.md$/, "");
-      const noteLink2 = `[[${cleanPath2}]]`;
-      return { file: stdFile, noteLink: noteLink2, cleanPath: cleanPath2 };
-    }
-    const existingFile = this.resolveLinkedNoteFile(app, task.note_link, categoryFilepath, task.id) || (task.id ? await this.findFileByTaskIdAsync(app, task.id, categoryFilepath) : null);
-    if (existingFile) {
-      if (existingFile.path !== standardPath) {
-        await this.ensureFolderExists(app, this.getTaskNotesFolder(categoryFilepath));
-        this.markInternalRename(existingFile.path, standardPath);
-        try {
-          await app.fileManager.renameFile(existingFile, standardPath);
-          const renamedFile = app.vault.getAbstractFileByPath(standardPath);
-          if (renamedFile instanceof import_obsidian7.TFile) {
-            await this.updateNoteFrontmatterTitle(app, renamedFile, task.title);
-            const cleanPath3 = standardPath.replace(/\.md$/, "");
-            const noteLink3 = `[[${cleanPath3}]]`;
-            return { file: renamedFile, noteLink: noteLink3, cleanPath: cleanPath3 };
-          }
-        } catch (err) {
-          void Logger.log(`[LinkedNote] Failed to rename old note to standard path:`, err);
-        }
-      }
-      const cleanPath2 = existingFile.path.replace(/\.md$/, "");
-      const noteLink2 = `[[${cleanPath2}]]`;
-      return { file: existingFile, noteLink: noteLink2, cleanPath: cleanPath2 };
-    }
-    const targetFolder = this.getTaskNotesFolder(categoryFilepath);
-    await this.ensureFolderExists(app, targetFolder);
-    const escapedTitle = JSON.stringify(task.title || "");
-    const noteBody = task.note ? task.note.trim() : "";
-    const content = noteBody ? `---
-title: ${escapedTitle}
----
-
-${noteBody}
-` : `---
-title: ${escapedTitle}
----
-
-`;
-    const file = await app.vault.create(standardPath, content);
-    const cleanPath = standardPath.replace(/\.md$/, "");
-    const noteLink = `[[${cleanPath}]]`;
-    void Logger.log(`[LinkedNote] Created note at ${standardPath} for task ${task.id}`);
-    return { file, noteLink, cleanPath };
-  }
-  /**
-   * Synchronize Task Title -> Note Property
-   * When task title is modified in Fluent Tasks:
-   * - Does NOT rename the note file on disk! (Filename stays `<Category> <taskId>.md`)
-   * - Only updates the YAML frontmatter `title` property in the note.
-   * - Auto-migrates legacy non-standard notes if found.
-   */
-  static async syncTaskTitleToNote(app, task, categoryFilepath, dataService) {
-    if (!task.note_link && !task.id)
-      return { noteRenamed: false };
-    const standardPath = this.getStandardNotePath(categoryFilepath, task.id);
-    let file = this.resolveLinkedNoteFile(app, task.note_link, categoryFilepath, task.id);
-    if (!file && task.id) {
-      file = await this.findFileByTaskIdAsync(app, task.id, categoryFilepath);
-    }
-    if (!file)
-      return { noteRenamed: false };
-    let noteRenamed = false;
-    if (file.path !== standardPath) {
-      const targetFolder = this.getTaskNotesFolder(categoryFilepath);
-      await this.ensureFolderExists(app, targetFolder);
-      this.markInternalRename(file.path, standardPath);
-      if (dataService) {
-        dataService.markInternalWrite(file.path, 3e3);
-        dataService.markInternalWrite(standardPath, 3e3);
-        if (categoryFilepath)
-          dataService.markInternalWrite(categoryFilepath, 3e3);
-      }
-      try {
-        await app.fileManager.renameFile(file, standardPath);
-        const renamed = app.vault.getAbstractFileByPath(standardPath);
-        if (renamed instanceof import_obsidian7.TFile)
-          file = renamed;
-        noteRenamed = true;
-      } catch (err) {
-        void Logger.log("[LinkedNote] Failed to rename old note to standard path:", err);
-      }
-    }
-    const cleanPath = file.path.replace(/\.md$/, "");
-    const expectedNoteLink = `[[${cleanPath}]]`;
-    let linkHealed = false;
-    if (task.note_link !== expectedNoteLink) {
-      task.note_link = expectedNoteLink;
-      linkHealed = true;
-    }
-    if (dataService) {
-      dataService.markInternalWrite(file.path, 3e3);
-    }
-    await this.updateNoteFrontmatterTitle(app, file, task.title);
-    return {
-      newNoteLink: noteRenamed || linkHealed ? expectedNoteLink : void 0,
-      noteRenamed
-    };
-  }
-  /**
-   * Synchronize Note Rename -> Task Title
-   * When note is renamed in Obsidian, updates task title & note_link in real-time
-   */
-  static async syncNoteRenameToTasks(app, dataService, oldPath, newFile) {
-    var _a, _b, _c;
-    if (!newFile || newFile.extension !== "md")
-      return false;
-    const oldClean = oldPath.replace(/\.md$/, "");
-    const newClean = newFile.path.replace(/\.md$/, "");
-    const newTitle = newFile.basename;
-    const normalizedOldClean = oldClean.replace(/\\/g, "/");
-    const normalizedOldPath = oldPath.replace(/\\/g, "/");
-    let frontmatterTaskId = (_c = (_b = (_a = app.metadataCache) == null ? void 0 : _a.getFileCache(newFile)) == null ? void 0 : _b.frontmatter) == null ? void 0 : _c.taskId;
-    if (!frontmatterTaskId) {
-      try {
-        const content = await app.vault.read(newFile);
-        const match = content.match(/^---\r?\n[\s\S]*?taskId:\s*["']?([^"'\r\n]+)["']?[\s\S]*?\r?\n---/);
-        if (match) {
-          frontmatterTaskId = match[1].trim();
-        }
-      } catch (e) {
-      }
-    }
-    const categories = await dataService.getCategories();
-    let anyUpdated = false;
-    for (const cat of categories) {
-      let tasks2;
-      try {
-        tasks2 = await dataService.getTasks(cat.filepath);
-      } catch (e) {
-        continue;
-      }
-      const categoryNotesFolder = this.getTaskNotesFolder(cat.filepath).replace(/\\/g, "/");
-      for (const task of tasks2) {
-        let isMatch = false;
-        if (frontmatterTaskId && task.id === frontmatterTaskId) {
-          isMatch = true;
-        } else if (task.note_link) {
-          const taskClean = task.note_link.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim().replace(/\\/g, "/");
-          if (taskClean === normalizedOldClean || taskClean === normalizedOldPath || `${taskClean}.md` === normalizedOldPath) {
-            isMatch = true;
-          } else if (!taskClean.includes("/") && normalizedOldPath.startsWith(categoryNotesFolder + "/")) {
-            const oldBase = normalizedOldClean.split("/").pop();
-            if (taskClean === oldBase) {
-              isMatch = true;
-            }
-          }
-        }
-        if (isMatch) {
-          const cleanNewTitle = this.stripCollisionSuffix(newTitle) || newTitle;
-          const hasLineBreaks = task.title && (task.title.includes("\n") || /<br\s*\/?>/i.test(task.title));
-          if (hasLineBreaks) {
-            const lines = task.title.split(/\r?\n|<br\s*\/?>/i);
-            lines[0] = cleanNewTitle;
-            task.title = lines.join("\n");
-          } else {
-            task.title = cleanNewTitle;
-          }
-          task.note_link = `[[${newClean}]]`;
-          anyUpdated = true;
-          await dataService.updateTask(cat.filepath, task);
-          EventBus.emit("task:updated" /* TASK_UPDATED */, {
-            task,
-            categoryFilepath: cat.filepath
-          });
-        }
-      }
-    }
-    return anyUpdated;
-  }
-  /**
-   * Synchronize Note Frontmatter Property -> Task Title
-   * When note frontmatter is modified in Obsidian, updates task.title in real-time
-   */
-  static async syncNotePropertyToTask(app, dataService, file) {
-    var _a, _b, _c, _d, _e, _f;
-    if (!file || file.extension !== "md")
-      return false;
-    const normalizedPath = file.path.replace(/\\/g, "/");
-    if (!normalizedPath.startsWith(DATA_FOLDER + "/"))
-      return false;
-    const parts = normalizedPath.slice(DATA_FOLDER.length + 1).split("/");
-    if (parts.length < 2)
-      return false;
-    const categoryName = parts[0];
-    const categoryFilepath = `${DATA_FOLDER}/${categoryName}.md`;
-    let noteTitle = (_c = (_b = (_a = app.metadataCache) == null ? void 0 : _a.getFileCache(file)) == null ? void 0 : _b.frontmatter) == null ? void 0 : _c.title;
-    let oldTaskId = (_f = (_e = (_d = app.metadataCache) == null ? void 0 : _d.getFileCache(file)) == null ? void 0 : _e.frontmatter) == null ? void 0 : _f.taskId;
-    if (noteTitle === void 0 && oldTaskId === void 0) {
-      try {
-        const raw = await app.vault.read(file);
-        const matchTitle = raw.match(/^---\r?\n[\s\S]*?title:\s*["']?([^"'\r\n]+)["']?[\s\S]*?\r?\n---/);
-        if (matchTitle)
-          noteTitle = matchTitle[1].trim();
-        const matchTask = raw.match(/^---\r?\n[\s\S]*?taskId:\s*["']?([^"'\r\n]+)["']?[\s\S]*?\r?\n---/);
-        if (matchTask)
-          oldTaskId = matchTask[1].trim();
-      } catch (e) {
-        return false;
-      }
-    }
-    if (noteTitle === void 0)
-      return false;
-    const taskId = oldTaskId || this.extractTaskIdFromFilename(file.basename);
-    if (!taskId)
-      return false;
-    let tasks2;
-    try {
-      tasks2 = await dataService.getTasks(categoryFilepath);
-    } catch (e) {
-      return false;
-    }
-    let targetTask = tasks2.find((t2) => t2.id === taskId);
-    let targetCatPath = categoryFilepath;
-    if (!targetTask) {
-      const categories = await dataService.getCategories();
-      for (const cat of categories) {
-        if (cat.filepath === categoryFilepath)
-          continue;
-        try {
-          const catTasks = await dataService.getTasks(cat.filepath);
-          const found = catTasks.find((t2) => t2.id === taskId);
-          if (found) {
-            targetTask = found;
-            targetCatPath = cat.filepath;
-            break;
-          }
-        } catch (e) {
-        }
-      }
-    }
-    if (!targetTask)
-      return false;
-    if (targetTask.title !== noteTitle) {
-      targetTask.title = noteTitle;
-      dataService.markInternalWrite(targetCatPath, 3e3);
-      await dataService.updateTask(targetCatPath, targetTask);
-      EventBus.emit("task:updated" /* TASK_UPDATED */, {
-        task: targetTask,
-        categoryFilepath: targetCatPath
-      });
-      void Logger.log(`[LinkedNote] Synced note frontmatter title "${noteTitle}" to task ${targetTask.id}`);
-      return true;
-    }
-    return false;
-  }
-  /**
-   * Automatically scan and migrate legacy linked notes:
-   * - Detects old documents by checking if frontmatter has `taskId`
-   * - Replaces `taskId` with `title: <taskTitle>` in YAML frontmatter
-   * - Renames file to standard format: `<CategoryName> <taskId>.md`
-   * - Updates corresponding task's `note_link` to standard wikilink
-   */
-  static async migrateOldLinkedNotes(app, dataService) {
-    var _a, _b, _c, _d, _e;
-    const details = [];
-    let migratedCount = 0;
-    const dataFolder = app.vault.getAbstractFileByPath(DATA_FOLDER);
-    if (!dataFolder || !(dataFolder instanceof import_obsidian7.TFolder)) {
-      return { migratedCount: 0, details: [] };
-    }
-    for (const child of dataFolder.children) {
-      if (!(child instanceof import_obsidian7.TFolder))
-        continue;
-      const categoryName = child.name;
-      const categoryFilepath = `${DATA_FOLDER}/${categoryName}.md`;
-      for (const noteFile of child.children) {
-        if (!(noteFile instanceof import_obsidian7.TFile) || noteFile.extension !== "md")
-          continue;
-        let oldTaskId = (_d = (_c = (_b = (_a = app.metadataCache) == null ? void 0 : _a.getFileCache(noteFile)) == null ? void 0 : _b.frontmatter) == null ? void 0 : _c.taskId) != null ? _d : null;
-        if (!oldTaskId) {
-          try {
-            const raw = await app.vault.read(noteFile);
-            const m = raw.slice(0, 500).match(/^---\r?\n[\s\S]*?taskId:\s*["']?([^"'\r\n]+)["']?[\s\S]*?\r?\n---/);
-            if (m)
-              oldTaskId = m[1].trim();
-          } catch (e) {
-          }
-        }
-        if (!oldTaskId)
-          continue;
-        const standardFilename = `${categoryName} ${oldTaskId}.md`;
-        const standardPath = `${child.path}/${standardFilename}`;
-        let targetTask = null;
-        let targetCatPath = categoryFilepath;
-        try {
-          const tasks2 = await dataService.getTasks(categoryFilepath);
-          targetTask = (_e = tasks2.find((t2) => t2.id === oldTaskId)) != null ? _e : null;
-        } catch (e) {
-        }
-        if (!targetTask) {
-          const allCats = await dataService.getCategories();
-          for (const cat of allCats) {
-            if (cat.filepath === categoryFilepath)
-              continue;
-            try {
-              const tasks2 = await dataService.getTasks(cat.filepath);
-              const found = tasks2.find((t2) => t2.id === oldTaskId);
-              if (found) {
-                targetTask = found;
-                targetCatPath = cat.filepath;
-                break;
-              }
-            } catch (e) {
-            }
-          }
-        }
-        const taskTitle = targetTask ? targetTask.title : noteFile.basename;
-        await this.updateNoteFrontmatterTitle(app, noteFile, taskTitle);
-        let finalFile = noteFile;
-        if (noteFile.path !== standardPath) {
-          this.markInternalRename(noteFile.path, standardPath);
-          dataService.markInternalWrite(noteFile.path, 3e3);
-          dataService.markInternalWrite(standardPath, 3e3);
-          try {
-            await app.fileManager.renameFile(noteFile, standardPath);
-            const renamed = app.vault.getAbstractFileByPath(standardPath);
-            if (renamed instanceof import_obsidian7.TFile)
-              finalFile = renamed;
-          } catch (err) {
-            void Logger.log(`[LinkedNote Migration] Failed to rename ${noteFile.path} to ${standardPath}:`, err);
-          }
-        }
-        if (targetTask) {
-          const cleanPath = finalFile.path.replace(/\.md$/, "");
-          const newNoteLink = `[[${cleanPath}]]`;
-          if (targetTask.note_link !== newNoteLink) {
-            targetTask.note_link = newNoteLink;
-            dataService.markInternalWrite(targetCatPath, 3e3);
-            await dataService.updateTask(targetCatPath, targetTask);
-            EventBus.emit("task:updated" /* TASK_UPDATED */, {
-              task: targetTask,
-              categoryFilepath: targetCatPath
-            });
-          }
-        }
-        migratedCount++;
-        details.push(`${noteFile.path} -> ${finalFile.path} (title: "${taskTitle}")`);
-        void Logger.log(`[LinkedNote Migration] Migrated old note: ${noteFile.path} -> ${finalFile.path}`);
-      }
-    }
-    return { migratedCount, details };
-  }
-};
-LinkedNoteService.internalRenames = /* @__PURE__ */ new Map();
 
 // src/modals/ConfirmDeleteLinkedNoteModal.ts
 var import_obsidian8 = require("obsidian");
@@ -18910,6 +19142,9 @@ function instance4($$self, $$props, $$invalidate) {
     $$invalidate(5, showCompleted = false);
     $$invalidate(9, enableTaskWeightMode = (_b2 = (_a2 = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _a2.enableTaskWeightMode) != null ? _b2 : false);
     await loadTasks();
+    if ((plugin == null ? void 0 : plugin.app) && (cat == null ? void 0 : cat.filepath)) {
+      void LinkedNoteService.autoSyncCategoryLinkedNotes(plugin.app, dataService, cat.filepath);
+    }
   }
   function getCurrentCategory() {
     return currentCategory;
@@ -18921,6 +19156,9 @@ function instance4($$self, $$props, $$invalidate) {
     $$invalidate(6, selectedTaskId = "");
     $$invalidate(5, showCompleted = false);
     await loadTasks();
+    if ((plugin == null ? void 0 : plugin.app) && payload.category.filepath) {
+      void LinkedNoteService.autoSyncCategoryLinkedNotes(plugin.app, dataService, payload.category.filepath);
+    }
     if (payload.focusInput) {
       await tick();
       addTaskInputEl == null ? void 0 : addTaskInputEl.focus();
@@ -37279,6 +37517,14 @@ var FluentTasksPlugin = class extends import_obsidian22.Plugin {
         this.registerEvent(
           this.app.vault.on("rename", (file, oldPath) => {
             handleCategoryVaultChange(file);
+            if (isCategoryFile(oldPath) && file && isCategoryFile(file.path)) {
+              void LinkedNoteService.handleCategoryRename(
+                this.app,
+                this.dataService,
+                oldPath,
+                file.path
+              );
+            }
             if (file instanceof import_obsidian22.TFile && file.extension === "md") {
               if (!LinkedNoteService.isInternalRename(oldPath, file.path)) {
                 void LinkedNoteService.syncNoteRenameToTasks(

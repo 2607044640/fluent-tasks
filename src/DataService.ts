@@ -3,6 +3,7 @@ import { TaskItem, CategoryInfo, SidebarItem, GroupInfo } from "./types";
 import { AtomicIOPipeline } from "./services/AtomicIOPipeline";
 import { CategoryService } from "./services/CategoryService";
 import { TaskService } from "./services/TaskService";
+import { LinkedNoteService } from "./services/LinkedNoteService";
 import { getFlatCategories } from "./utils/sidebarTreeUtils";
 
 /**
@@ -10,11 +11,13 @@ import { getFlatCategories } from "./utils/sidebarTreeUtils";
  * Facade pattern bridging the old monolithic DataService to the new atomic microservices.
  */
 export class DataService {
+    private app: App;
     private io: AtomicIOPipeline;
     private categorySvc: CategoryService;
     private taskSvc: TaskService;
 
     constructor(app: App) {
+        this.app = app;
         this.io = new AtomicIOPipeline(app);
         this.categorySvc = new CategoryService(app, this.io);
         this.taskSvc = new TaskService(this.io);
@@ -69,7 +72,10 @@ export class DataService {
         return this.categorySvc.restoreCategory(categoryName, categoryFilepath, fileContent, groupName, index);
     }
     async renameCategory(filepath: string, newName: string): Promise<CategoryInfo> {
-        return this.categorySvc.renameCategory(filepath, newName);
+        const oldFilepath = filepath;
+        const newCat = await this.categorySvc.renameCategory(filepath, newName);
+        await LinkedNoteService.handleCategoryRename(this.app, this, oldFilepath, newCat.filepath);
+        return newCat;
     }
 
     // Task Operations
@@ -89,6 +95,7 @@ export class DataService {
         return this.taskSvc.deleteTask(categoryFilepath, task);
     }
     async moveTask(task: TaskItem, sourceFilepath: string, targetFilepath: string): Promise<void> {
+        await LinkedNoteService.handleTaskMove(this.app, this, task, sourceFilepath, targetFilepath);
         return this.taskSvc.moveTask(task, sourceFilepath, targetFilepath);
     }
 
