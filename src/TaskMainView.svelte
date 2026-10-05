@@ -81,6 +81,17 @@
     let showPluginDownloadModal: boolean = false;
     let nameCopiedHint: boolean = false;
     let nameCopiedTimer: any = null;
+    let isAutoAlignActive: boolean = true;
+
+    function toggleAutoAlign() {
+        isAutoAlignActive = !isAutoAlignActive;
+        const quickEditor = (window as any).svgQuickEditor || (window as any).a1SvgQuickEditor;
+        if (quickEditor?.setAutoAlign) {
+            quickEditor.setAutoAlign(isAutoAlignActive);
+        } else if (quickEditor) {
+            quickEditor.autoAlign = isAutoAlignActive;
+        }
+    }
     const svgResolveCache = new Map<string, { isInline: boolean; content: string; srcUrl: string; cleanPath: string }>();
 
     function resolveSvgItem(svgStr: string): { isInline: boolean; content: string; srcUrl: string; cleanPath: string } {
@@ -134,6 +145,15 @@
         if (res.cleanPath && content.includes("<svg") && !content.includes("data-a1-svg-path")) {
             content = content.replace(/<svg\b/i, `<svg data-a1-svg-path="${res.cleanPath}"`);
         }
+        const quickEditor = (window as any).svgQuickEditor || (window as any).a1SvgQuickEditor;
+        if (quickEditor?.getAutoAlign) {
+            isAutoAlignActive = quickEditor.getAutoAlign();
+        } else if (quickEditor?.autoAlign !== undefined) {
+            isAutoAlignActive = !!quickEditor.autoAlign;
+        } else {
+            isAutoAlignActive = true;
+        }
+
         lightboxData = {
             isInline: res.isInline,
             content,
@@ -2179,6 +2199,13 @@
                         </div>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
+                        <button type="button"
+                                class="svg-lightbox-action-btn"
+                                class:is-active={isAutoAlignActive}
+                                on:click|stopPropagation={toggleAutoAlign}
+                                title={isChinese() ? "拖动时在很小的范围内自动对齐上下左右" : "Snap to edges and centers while dragging"}>
+                            Auto Align
+                        </button>
                         {#if lightboxData.cleanPath}
                             <button type="button" class="svg-lightbox-action-btn" on:click|stopPropagation={() => lightboxData && openSvgInVault(lightboxData.cleanPath)} title="Open note/file in Obsidian">
                                 Open in Tab

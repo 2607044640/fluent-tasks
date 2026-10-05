@@ -1665,6 +1665,12 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     color: #ffffff;
 }
 
+.svg-lightbox-action-btn.is-active {
+    background: var(--todo-accent);
+    color: #ffffff;
+    border-color: var(--todo-accent);
+}
+
 .svg-lightbox-close {
     cursor: pointer;
     font-size: 16px;
