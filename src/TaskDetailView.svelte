@@ -348,8 +348,27 @@
     // =============================================
     // Task Actions
     // =============================================
-    function handleTitleInput() {
+    let isComposingTitle = false;
+
+    function handleTitleCompositionStart() {
+        isComposingTitle = true;
+    }
+
+    function handleTitleCompositionEnd() {
+        isComposingTitle = false;
         scheduleSave();
+    }
+
+    function handleTitleInput() {
+        if (isComposingTitle) return;
+        scheduleSave();
+    }
+
+    function handleTitleBlur() {
+        if (isComposingTitle) {
+            isComposingTitle = false;
+        }
+        void immediateSave();
     }
 
     function handleTitleKeydown(e: KeyboardEvent) {
