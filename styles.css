@@ -3169,7 +3169,7 @@ body .quick-modal-task-item.is-focused {
     height: 0;
     max-height: 100%;
     overflow-x: auto;
-    overflow-y: hidden;
+    overflow-y: auto;
     display: flex;
     flex-direction: row;
     justify-content: center;
@@ -3179,8 +3179,9 @@ body .quick-modal-task-item.is-focused {
     box-sizing: border-box;
 }
 
-/* Horizontal scrollbar styling */
+/* Horizontal & Vertical scrollbar styling */
 .quick-list-grid-board::-webkit-scrollbar {
+    width: 8px;
     height: 8px;
 }
 .quick-list-grid-board::-webkit-scrollbar-track {
@@ -3199,9 +3200,9 @@ body .quick-modal-task-item.is-focused {
     display: flex;
     flex-direction: column;
     gap: var(--quick-grid-row-gap, 14px);
-    width: var(--quick-grid-card-w, 220px);
-    min-width: 195px;
-    max-width: 260px;
+    width: var(--quick-grid-card-w, 280px);
+    min-width: 180px;
+    max-width: 520px;
     flex-shrink: 0;
 }
 

@@ -134,6 +134,7 @@
 
     let layoutColumns: GridCardData[][] = [];
     let rafId: number | null = null;
+    let isRefining = false;
 
     function scheduleAdjustSpacing() {
         if (!isGridLayout) return;
@@ -164,7 +165,16 @@
     function updateLayoutColumns() {
         if (!isGridLayout) return;
 
-        // 1. Gather all cards with initial estimated heights
+        // 1. Live base font size and scale detection (relative to standard 14px)
+        const baseFontSize = boardEl
+            ? parseFloat(window.getComputedStyle(boardEl).fontSize) || 14
+            : (modalContainerEl ? parseFloat(window.getComputedStyle(modalContainerEl).fontSize) || 14 : 14);
+        const fontScale = Math.max(0.75, Math.min(2.5, baseFontSize / 14));
+
+        const estimatedItemH = Math.round(28 * fontScale);
+        const estimatedHeaderH = Math.round(38 * fontScale);
+
+        // 2. Gather all cards with font-scaled initial estimated heights
         const cards: GridCardData[] = [];
         if (rootCategories.length > 0) {
             cards.push({
@@ -172,7 +182,7 @@
                 type: "root",
                 name: "Lists",
                 items: rootCategories,
-                height: 40 + rootCategories.length * 30
+                height: estimatedHeaderH + rootCategories.length * estimatedItemH
             });
         }
         for (const group of groupItems) {
@@ -183,7 +193,7 @@
                 name: group.name,
                 group: group,
                 items: group.items,
-                height: group.isExpanded ? (40 + itemCount * 30) : 40
+                height: group.isExpanded ? (estimatedHeaderH + itemCount * estimatedItemH) : estimatedHeaderH
             });
         }
 
@@ -192,37 +202,48 @@
             return;
         }
 
-        // 2. Measure actual DOM heights if available
+        // 3. Measure actual rendered DOM heights if available
+        let needsRefine = false;
         if (boardEl) {
             for (const c of cards) {
                 const el = boardEl.querySelector<HTMLElement>(`.quick-grid-card[data-card-id="${c.id}"]`);
                 if (el && el.offsetHeight > 0) {
+                    if (Math.abs(c.height - el.offsetHeight) > 8) {
+                        needsRefine = true;
+                    }
                     c.height = el.offsetHeight;
                 }
             }
         }
 
-        // 3. Compute available dimensions and bounds
+        // 4. Compute available dimensions and bounds
         const availW = boardEl ? boardEl.clientWidth : 1200;
         const availH = boardEl ? boardEl.clientHeight : 540;
-        const minPadX = 28;
-        const minPadY = 24;
-        const minCardW = 205;
-        const maxCardW = 245;
-        const minColGap = 20;
-        const maxColGap = 32;
-        const rowGap = 14;
 
-        const availContentW = availW - minPadX * 2;
+        const minColGap = plugin?.settings?.quickListMinColGap ?? 16;
+        const minRowGap = plugin?.settings?.quickListMinRowGap ?? 12;
+        const maxColGap = Math.max(minColGap, Math.round(28 * fontScale));
+        const rowGap = minRowGap;
+
+        const minPadX = Math.round(24 * fontScale);
+        const minPadY = Math.max(12, Math.round(16 * fontScale));
+        const configuredMaxPadY = plugin?.settings?.quickListMaxPadY ?? 48;
+        const maxPadY = Math.max(minPadY, Math.round(configuredMaxPadY * fontScale));
+
+        const configuredMaxCardW = plugin?.settings?.quickListMaxCardWidth ?? 320;
+        const minCardW = Math.max(180, Math.round(200 * fontScale));
+        const maxCardW = Math.max(minCardW + 20, Math.round(configuredMaxCardW * Math.min(1.4, fontScale)));
+
+        const availContentW = Math.max(100, availW - minPadX * 2);
         const maxColsByW = Math.max(1, Math.floor((availContentW + minColGap) / (minCardW + minColGap)));
         const maxCandidateK = Math.min(cards.length, maxColsByW);
 
-        // Desired maximum column height should stay close to tallest single card
-        // to leave generous, comfortable ~90-100px top and bottom margins (matching user's red lines)
+        // Target peak height and maximum usable vertical bounds without overflow
+        const maxUsableH = Math.max(160, availH - minPadY * 2);
         const maxSingleH = Math.max(...cards.map(c => c.height));
-        const targetPeakH = Math.max(maxSingleH, Math.floor(availH * 0.62));
+        const targetPeakH = Math.min(maxUsableH, Math.max(maxSingleH, Math.floor(availH * 0.72)));
 
-        // 4. Find optimal K (smarter height-capped distribution)
+        // 5. Find optimal K (smarter height-capped distribution avoiding vertical cut-offs)
         let bestK = 1;
         let bestBins: { items: GridCardData[]; h: number }[] | null = null;
         let bestScore = Infinity;
@@ -243,14 +264,19 @@
             }
 
             const peakH = Math.max(...bins.map(b => b.h));
+
+            // Heavy penalty if columns exceed usable screen height to prevent bottom cut-offs
+            const overflow = Math.max(0, peakH - maxUsableH);
+            const overflowPenalty = overflow * 20000;
+
             const excess = Math.max(0, peakH - targetPeakH);
-            const excessPenalty = excess * 200;
-            const shortPenalty = Math.max(0, 260 - peakH) * 50;
+            const excessPenalty = excess * 150;
+            const shortPenalty = Math.max(0, Math.round(180 * fontScale) - peakH) * 40;
             const avgH = bins.reduce((sum, b) => sum + b.h, 0) / k;
             const variance = bins.reduce((sum, b) => sum + (b.h - avgH) ** 2, 0) / k;
-            const kBonus = (maxCandidateK - k) * 300;
+            const kBonus = (maxCandidateK - k) * 60;
 
-            const score = excessPenalty + shortPenalty + Math.sqrt(variance) * 5 + kBonus;
+            const score = overflowPenalty + excessPenalty + shortPenalty + Math.sqrt(variance) * 5 + kBonus;
 
             if (score < bestScore) {
                 bestScore = score;
@@ -264,8 +290,7 @@
             bestK = maxCandidateK;
         }
 
-        // Sort columns so that taller/anchor cards are balanced
-        // Order bins by their first item's natural order
+        // Sort columns so that taller/anchor cards are balanced by initial order
         const cardOrderMap = new Map(cards.map((c, i) => [c.id, i]));
         bestBins.sort((a, b) => {
             const orderA = cardOrderMap.get(a.items[0]?.id || "") ?? 0;
@@ -273,14 +298,15 @@
             return orderA - orderB;
         });
 
-        // 5. Update layoutColumns
+        // 6. Update layoutColumns
         layoutColumns = bestBins.map(b => b.items);
 
-        // 6. Calculate elastic card width, column gap, and symmetrical top/bottom padding
+        // 7. Calculate elastic card width, column gap, and capped top/bottom padding
         const peakH = Math.max(...bestBins.map(b => b.h));
-        const padY = Math.max(minPadY, Math.floor((availH - peakH) / 2));
+        const rawPadY = Math.floor((availH - peakH) / 2);
+        const padY = Math.max(minPadY, Math.min(maxPadY, rawPadY));
 
-        const colGap = Math.min(maxColGap, Math.max(minColGap, 26));
+        const colGap = Math.min(maxColGap, Math.max(minColGap, Math.round(20 * fontScale)));
         const totalGapsW = (bestK - 1) * colGap;
         const actualCardW = Math.min(maxCardW, Math.max(minCardW, Math.floor((availContentW - totalGapsW) / bestK)));
         const totalW = bestK * actualCardW + totalGapsW;
@@ -300,6 +326,15 @@
             } else {
                 boardEl.style.justifyContent = "center";
             }
+        }
+
+        // 8. One follow-up refinement pass if DOM heights differed from estimation
+        if (needsRefine && !isRefining) {
+            isRefining = true;
+            requestAnimationFrame(() => {
+                isRefining = false;
+                updateLayoutColumns();
+            });
         }
 
         if (!hasInitializedFocus && flatCategories.length > 0) {
@@ -411,6 +446,8 @@
             }
         }
 
+        window.addEventListener("resize", scheduleAdjustSpacing);
+
         if (typeof ResizeObserver !== "undefined" && modalContainerEl) {
             resizeObserver = new ResizeObserver(() => {
                 scheduleAdjustSpacing();
@@ -428,6 +465,7 @@
             cancelAnimationFrame(rafId);
             rafId = null;
         }
+        window.removeEventListener("resize", scheduleAdjustSpacing);
         EventBus.off(EventName.CATEGORY_LIST_CHANGED, handleExternalListChanged);
         EventBus.off(EventName.TASK_UPDATED, handleExternalTaskUpdated);
         EventBus.off(EventName.SETTINGS_CHANGED, handleSettingsChanged);
@@ -442,6 +480,9 @@
             titleAlignment = payload.settings.quickListTitleAlignment;
         } else if (plugin?.settings?.quickListTitleAlignment !== undefined) {
             titleAlignment = plugin.settings.quickListTitleAlignment;
+        }
+        if (isGridLayout) {
+            scheduleAdjustSpacing();
         }
     }
 
