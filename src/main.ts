@@ -422,6 +422,13 @@ export default class FluentTasksPlugin extends Plugin {
                 // Check and run daily backup if enabled
                 await BackupService.checkAndRunDailyBackup(this.app, this);
 
+                // Auto-migrate legacy linked notes (replace taskId frontmatter with title and rename to <Category> <taskId>.md)
+                void LinkedNoteService.migrateOldLinkedNotes(this.app, this.dataService).then((res) => {
+                    if (res.migratedCount > 0) {
+                        void Logger.log(`[LinkedNote] Auto-migrated ${res.migratedCount} legacy linked note(s):`, res.details);
+                    }
+                });
+
                 // Track active view type to expand sidebar ONLY when switching from external tabs (Ctrl+Tab, Ctrl+Shift+Tab, etc.)
                 let lastActiveViewType = this.app.workspace.getActiveViewOfType(ItemView)?.getViewType() || "";
 
@@ -509,6 +516,20 @@ export default class FluentTasksPlugin extends Plugin {
                             categoryFilepath: file.path,
                             isExternal: true,
                         });
+                    } else if (file.path.startsWith(DATA_FOLDER + "/") && file.extension === "md") {
+                        if (!this.dataService.isInternalWrite(file.path)) {
+                            void LinkedNoteService.syncNotePropertyToTask(this.app, this.dataService, file);
+                        }
+                    }
+                })
+            );
+
+            this.registerEvent(
+                this.app.metadataCache.on("changed", (file) => {
+                    if (file instanceof TFile && file.path.startsWith(DATA_FOLDER + "/") && file.extension === "md" && !isCategoryFile(file.path)) {
+                        if (!this.dataService.isInternalWrite(file.path)) {
+                            void LinkedNoteService.syncNotePropertyToTask(this.app, this.dataService, file);
+                        }
                     }
                 })
             );

@@ -46,16 +46,46 @@ export class LinkedNoteService {
     }
 
     /**
-     * Determine dedicated note directory for a category list
-     * e.g. TodoData/安全中转待办.md -> TodoData/安全中转待办
+     * Extract category name from category filepath
+     * e.g. TodoData/编程.md -> 编程
      */
-    static getTaskNotesFolder(categoryFilepath: string): string {
-        const listName = categoryFilepath
+    static getCategoryName(categoryFilepath: string): string {
+        return categoryFilepath
             .replace(/\\/g, "/")
             .split("/")
             .pop()
             ?.replace(/\.md$/, "") || "General";
+    }
+
+    /**
+     * Determine dedicated note directory for a category list
+     * e.g. TodoData/安全中转待办.md -> TodoData/安全中转待办
+     */
+    static getTaskNotesFolder(categoryFilepath: string): string {
+        const listName = this.getCategoryName(categoryFilepath);
         return `${DATA_FOLDER}/${listName}`;
+    }
+
+    /**
+     * Determine standard note path for a task: TodoData/<CategoryName>/<CategoryName> <taskId>.md
+     * e.g. TodoData/编程/编程 ge20uj.md
+     */
+    static getStandardNotePath(categoryFilepath: string, taskId: string): string {
+        const categoryName = this.getCategoryName(categoryFilepath);
+        const targetFolder = `${DATA_FOLDER}/${categoryName}`;
+        return `${targetFolder}/${categoryName} ${taskId}.md`;
+    }
+
+    /**
+     * Extract task ID from note filename
+     * Matches `<CategoryName> <taskId>` where taskId is the last space-separated token
+     */
+    static extractTaskIdFromFilename(basename: string): string | null {
+        const clean = basename.replace(/\.md$/, "").trim();
+        const lastSpace = clean.lastIndexOf(" ");
+        if (lastSpace === -1) return null;
+        const candidate = clean.slice(lastSpace + 1).trim();
+        return candidate || null;
     }
 
     /**
@@ -82,18 +112,28 @@ export class LinkedNoteService {
     }
 
     /**
-     * Search for a note file by its YAML frontmatter taskId in category's folder or all DATA_FOLDER
+     * Search for a note file by taskId (checking standard filename ending or YAML frontmatter taskId)
      */
     static findFileByTaskId(app: App, taskId: string, categoryFilepath?: string): TFile | null {
         if (!app || !taskId) return null;
 
-        // 1. Search in category's dedicated notes folder first (fastest & most targeted)
+        // 1. Direct standard path lookup if categoryFilepath is provided (O(1))
+        if (categoryFilepath) {
+            const stdPath = this.getStandardNotePath(categoryFilepath, taskId);
+            const file = app.vault.getAbstractFileByPath(stdPath);
+            if (file instanceof TFile) return file;
+        }
+
+        // 2. Search in category's dedicated notes folder first (fastest & most targeted)
         if (categoryFilepath) {
             const folderPath = this.getTaskNotesFolder(categoryFilepath).replace(/\\/g, "/");
             const folder = app.vault.getAbstractFileByPath(folderPath);
             if (folder && folder instanceof TFolder) {
                 for (const child of folder.children) {
                     if (child instanceof TFile && child.extension === "md") {
+                        if (child.basename.endsWith(` ${taskId}`)) {
+                            return child;
+                        }
                         const cache = app.metadataCache?.getFileCache(child);
                         if (cache?.frontmatter?.taskId === taskId) {
                             return child;
@@ -103,7 +143,7 @@ export class LinkedNoteService {
             }
         }
 
-        // 2. Fallback: Search all markdown files in DATA_FOLDER
+        // 3. Fallback: Search all markdown files in DATA_FOLDER
         const dataFolder = app.vault.getAbstractFileByPath(DATA_FOLDER);
         if (dataFolder && dataFolder instanceof TFolder) {
             const stack: TFolder[] = [dataFolder];
@@ -113,6 +153,9 @@ export class LinkedNoteService {
                     if (child instanceof TFolder) {
                         stack.push(child);
                     } else if (child instanceof TFile && child.extension === "md") {
+                        if (child.basename.endsWith(` ${taskId}`)) {
+                            return child;
+                        }
                         const cache = app.metadataCache?.getFileCache(child);
                         if (cache?.frontmatter?.taskId === taskId) {
                             return child;
@@ -138,6 +181,9 @@ export class LinkedNoteService {
             if (folder && folder instanceof TFolder) {
                 for (const child of folder.children) {
                     if (child instanceof TFile && child.extension === "md") {
+                        if (child.basename.endsWith(` ${taskId}`)) {
+                            return child;
+                        }
                         try {
                             const content = await app.vault.read(child);
                             const match = content.slice(0, 300).match(/^---\r?\n[\s\S]*?taskId:\s*["']?([^"'\r\n]+)["']?[\s\S]*?\r?\n---/);
@@ -158,20 +204,26 @@ export class LinkedNoteService {
      */
     static resolveLinkedNoteFile(app: App, noteLink?: string, sourcePath?: string, taskId?: string): TFile | null {
         if (!app) return null;
+
+        // 1. Direct standard path lookup if sourcePath and taskId are known (O(1))
+        if (sourcePath && taskId) {
+            const stdPath = this.getStandardNotePath(sourcePath, taskId);
+            const stdFile = app.vault.getAbstractFileByPath(stdPath);
+            if (stdFile instanceof TFile) return stdFile;
+        }
+
+        // 2. Direct path lookup
         if (noteLink) {
             const clean = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
             if (clean) {
-                // 1. Direct path lookup
                 let file = app.vault.getAbstractFileByPath(clean);
                 if (file instanceof TFile) return file;
 
-                // 2. Direct path with .md extension
                 if (!clean.endsWith(".md")) {
                     file = app.vault.getAbstractFileByPath(`${clean}.md`);
                     if (file instanceof TFile) return file;
                 }
 
-                // 3. Resolve via Obsidian metadataCache
                 if (app.metadataCache) {
                     const cached = app.metadataCache.getFirstLinkpathDest(clean, sourcePath || "");
                     if (cached instanceof TFile) return cached;
@@ -179,7 +231,7 @@ export class LinkedNoteService {
             }
         }
 
-        // 4. Fallback: Search by taskId if provided
+        // 3. Fallback: Search by taskId if provided
         if (taskId) {
             const fileByTaskId = this.findFileByTaskId(app, taskId, sourcePath);
             if (fileByTaskId) return fileByTaskId;
@@ -241,52 +293,112 @@ export class LinkedNoteService {
     }
 
     /**
-     * Create or retrieve the linked note for a task
+     * Update frontmatter title property in note file, removing legacy taskId property
+     */
+    static async updateNoteFrontmatterTitle(app: App, file: TFile, title: string): Promise<void> {
+        try {
+            await app.fileManager.processFrontMatter(file, (fm) => {
+                fm.title = title;
+                if ("taskId" in fm) {
+                    delete fm.taskId;
+                }
+            });
+        } catch (err) {
+            // Fallback via vault.process if processFrontMatter throws
+            await app.vault.process(file, (content) => {
+                const fmRegex = /^---\r?\n([\s\S]*?)\r?\n---/;
+                const match = content.match(fmRegex);
+                const escapedTitle = JSON.stringify(title);
+                if (match) {
+                    let lines = match[1].split(/\r?\n/).filter(l => !l.trim().startsWith("taskId:"));
+                    const titleIdx = lines.findIndex(l => l.trim().startsWith("title:"));
+                    if (titleIdx >= 0) {
+                        lines[titleIdx] = `title: ${escapedTitle}`;
+                    } else {
+                        lines.push(`title: ${escapedTitle}`);
+                    }
+                    return content.replace(fmRegex, `---\n${lines.join("\n")}\n---`);
+                } else {
+                    return `---\ntitle: ${escapedTitle}\n---\n\n${content}`;
+                }
+            });
+        }
+    }
+
+    /**
+     * Create or retrieve the linked note for a task.
+     * Note file format: TodoData/<CategoryName>/<CategoryName> <taskId>.md
+     * Frontmatter contains `title: <taskTitle>` property.
      */
     static async createOrGetLinkedNote(
         app: App,
         task: TaskItem,
         categoryFilepath: string
     ): Promise<{ file: TFile; noteLink: string; cleanPath: string }> {
-        // 1. If task already has a valid linked note on disk (or resolvable by taskId), return it
-        const existingFile = this.resolveLinkedNoteFile(app, task.note_link, categoryFilepath, task.id)
-            || (task.id ? await this.findFileByTaskIdAsync(app, task.id, categoryFilepath) : null);
-        if (existingFile) {
-            const cleanPath = existingFile.path.replace(/\.md$/, "");
+        const categoryName = this.getCategoryName(categoryFilepath);
+        const standardPath = this.getStandardNotePath(categoryFilepath, task.id);
+
+        // 1. Check if standard note file already exists
+        const stdFile = app.vault.getAbstractFileByPath(standardPath);
+        if (stdFile instanceof TFile) {
+            const cleanPath = stdFile.path.replace(/\.md$/, "");
             const noteLink = `[[${cleanPath}]]`;
-            return {
-                file: existingFile,
-                noteLink,
-                cleanPath,
-            };
+            return { file: stdFile, noteLink, cleanPath };
         }
 
-        // 2. Ensure target folder exists
+        // 2. Check if an existing note exists via link or taskId (e.g. old note format)
+        const existingFile = this.resolveLinkedNoteFile(app, task.note_link, categoryFilepath, task.id)
+            || (task.id ? await this.findFileByTaskIdAsync(app, task.id, categoryFilepath) : null);
+
+        if (existingFile) {
+            // If it's an old note with a non-standard path, migrate it to standardPath!
+            if (existingFile.path !== standardPath) {
+                await this.ensureFolderExists(app, this.getTaskNotesFolder(categoryFilepath));
+                this.markInternalRename(existingFile.path, standardPath);
+                try {
+                    await app.fileManager.renameFile(existingFile, standardPath);
+                    const renamedFile = app.vault.getAbstractFileByPath(standardPath);
+                    if (renamedFile instanceof TFile) {
+                        await this.updateNoteFrontmatterTitle(app, renamedFile, task.title);
+                        const cleanPath = standardPath.replace(/\.md$/, "");
+                        const noteLink = `[[${cleanPath}]]`;
+                        return { file: renamedFile, noteLink, cleanPath };
+                    }
+                } catch (err) {
+                    void Logger.log(`[LinkedNote] Failed to rename old note to standard path:`, err);
+                }
+            }
+            const cleanPath = existingFile.path.replace(/\.md$/, "");
+            const noteLink = `[[${cleanPath}]]`;
+            return { file: existingFile, noteLink, cleanPath };
+        }
+
+        // 3. Ensure target folder exists
         const targetFolder = this.getTaskNotesFolder(categoryFilepath);
         await this.ensureFolderExists(app, targetFolder);
 
-        // 3. Determine unique filename with collision avoidance
-        const baseTitle = this.sanitizeNoteTitle(task.title);
-        const finalPath = this.getAvailableNotePath(app, targetFolder, baseTitle);
-
-        // 4. Initial note content with frontmatter metadata
+        // 4. Initial note content with frontmatter title property
+        const escapedTitle = JSON.stringify(task.title || "");
         const noteBody = task.note ? task.note.trim() : "";
         const content = noteBody
-            ? `---\ntaskId: "${task.id}"\n---\n\n${noteBody}\n`
-            : `---\ntaskId: "${task.id}"\n---\n\n`;
+            ? `---\ntitle: ${escapedTitle}\n---\n\n${noteBody}\n`
+            : `---\ntitle: ${escapedTitle}\n---\n\n`;
 
-        // 5. Create note file in vault
-        const file = await app.vault.create(finalPath, content);
-        const cleanPath = finalPath.replace(/\.md$/, "");
+        // 5. Create note file in vault at standardPath
+        const file = await app.vault.create(standardPath, content);
+        const cleanPath = standardPath.replace(/\.md$/, "");
         const noteLink = `[[${cleanPath}]]`;
 
-        void Logger.log(`[LinkedNote] Created note at ${finalPath} for task ${task.id}`);
+        void Logger.log(`[LinkedNote] Created note at ${standardPath} for task ${task.id}`);
         return { file, noteLink, cleanPath };
     }
 
     /**
-     * Synchronize Task Title -> Note Title
-     * When task title is modified in Fluent Tasks, renames note file
+     * Synchronize Task Title -> Note Property
+     * When task title is modified in Fluent Tasks:
+     * - Does NOT rename the note file on disk! (Filename stays `<Category> <taskId>.md`)
+     * - Only updates the YAML frontmatter `title` property in the note.
+     * - Auto-migrates legacy non-standard notes if found.
      */
     static async syncTaskTitleToNote(
         app: App,
@@ -296,61 +408,53 @@ export class LinkedNoteService {
     ): Promise<{ newNoteLink?: string; noteRenamed: boolean }> {
         if (!task.note_link && !task.id) return { noteRenamed: false };
 
+        const standardPath = this.getStandardNotePath(categoryFilepath, task.id);
         let file = this.resolveLinkedNoteFile(app, task.note_link, categoryFilepath, task.id);
         if (!file && task.id) {
             file = await this.findFileByTaskIdAsync(app, task.id, categoryFilepath);
         }
         if (!file) return { noteRenamed: false };
 
-        // Auto-heal task.note_link if it pointed to a stale/broken path
-        const currentCleanPath = file.path.replace(/\.md$/, "");
-        const expectedNoteLink = `[[${currentCleanPath}]]`;
+        let noteRenamed = false;
+        // If file is an old note at a non-standard path, rename to standardPath
+        if (file.path !== standardPath) {
+            const targetFolder = this.getTaskNotesFolder(categoryFilepath);
+            await this.ensureFolderExists(app, targetFolder);
+            this.markInternalRename(file.path, standardPath);
+            if (dataService) {
+                dataService.markInternalWrite(file.path, 3000);
+                dataService.markInternalWrite(standardPath, 3000);
+                if (categoryFilepath) dataService.markInternalWrite(categoryFilepath, 3000);
+            }
+            try {
+                await app.fileManager.renameFile(file, standardPath);
+                const renamed = app.vault.getAbstractFileByPath(standardPath);
+                if (renamed instanceof TFile) file = renamed;
+                noteRenamed = true;
+            } catch (err) {
+                void Logger.log("[LinkedNote] Failed to rename old note to standard path:", err);
+            }
+        }
+
+        // Auto-heal task.note_link to standard link
+        const cleanPath = file.path.replace(/\.md$/, "");
+        const expectedNoteLink = `[[${cleanPath}]]`;
         let linkHealed = false;
         if (task.note_link !== expectedNoteLink) {
             task.note_link = expectedNoteLink;
             linkHealed = true;
         }
 
-        const cleanNewTitle = this.sanitizeNoteTitle(task.title);
-        const baseExistingTitle = this.stripCollisionSuffix(file.basename);
-
-        // If base title matches (even if disambiguated with (1), (2)), task title did NOT change
-        if (!cleanNewTitle || file.basename === cleanNewTitle || baseExistingTitle === cleanNewTitle) {
-            return { newNoteLink: linkHealed ? expectedNoteLink : undefined, noteRenamed: false };
-        }
-
-        const parentFolder = file.parent ? file.parent.path : this.getTaskNotesFolder(categoryFilepath);
-        const newPath = this.getAvailableNotePath(app, parentFolder, cleanNewTitle, file.path);
-
-        if (newPath === file.path) {
-            return { newNoteLink: linkHealed ? expectedNoteLink : undefined, noteRenamed: false };
-        }
-
-        this.markInternalRename(file.path, newPath);
+        // Update YAML frontmatter title property (No disk file rename needed!)
         if (dataService) {
             dataService.markInternalWrite(file.path, 3000);
-            dataService.markInternalWrite(newPath, 3000);
-            if (categoryFilepath) {
-                dataService.markInternalWrite(categoryFilepath, 3000);
-            }
         }
+        await this.updateNoteFrontmatterTitle(app, file, task.title);
 
-        try {
-            await app.fileManager.renameFile(file, newPath);
-
-            const cleanPath = newPath.replace(/\.md$/, "");
-            const newNoteLink = `[[${cleanPath}]]`;
-            return { newNoteLink, noteRenamed: true };
-        } catch (err) {
-            void Logger.log("Failed to rename linked note file:", err);
-            // Check if file was already renamed on disk despite link update error (e.g. EBUSY on category file)
-            const checkFile = app.vault.getAbstractFileByPath(newPath);
-            if (checkFile instanceof TFile) {
-                const cleanPath = newPath.replace(/\.md$/, "");
-                return { newNoteLink: `[[${cleanPath}]]`, noteRenamed: true };
-            }
-            return { newNoteLink: linkHealed ? expectedNoteLink : undefined, noteRenamed: false };
-        }
+        return {
+            newNoteLink: (noteRenamed || linkHealed) ? expectedNoteLink : undefined,
+            noteRenamed,
+        };
     }
 
     /**
@@ -445,5 +549,201 @@ export class LinkedNoteService {
         }
 
         return anyUpdated;
+    }
+
+    /**
+     * Synchronize Note Frontmatter Property -> Task Title
+     * When note frontmatter is modified in Obsidian, updates task.title in real-time
+     */
+    static async syncNotePropertyToTask(
+        app: App,
+        dataService: DataService,
+        file: TFile
+    ): Promise<boolean> {
+        if (!file || file.extension !== "md") return false;
+        const normalizedPath = file.path.replace(/\\/g, "/");
+        if (!normalizedPath.startsWith(DATA_FOLDER + "/")) return false;
+        const parts = normalizedPath.slice(DATA_FOLDER.length + 1).split("/");
+        if (parts.length < 2) return false; // Directly in TodoData root (category list file) -> skip
+
+        const categoryName = parts[0];
+        const categoryFilepath = `${DATA_FOLDER}/${categoryName}.md`;
+
+        // 1. Get note frontmatter title property
+        let noteTitle: string | undefined = app.metadataCache?.getFileCache(file)?.frontmatter?.title;
+        let oldTaskId: string | undefined = app.metadataCache?.getFileCache(file)?.frontmatter?.taskId;
+
+        if (noteTitle === undefined && oldTaskId === undefined) {
+            try {
+                const raw = await app.vault.read(file);
+                const matchTitle = raw.match(/^---\r?\n[\s\S]*?title:\s*["']?([^"'\r\n]+)["']?[\s\S]*?\r?\n---/);
+                if (matchTitle) noteTitle = matchTitle[1].trim();
+                const matchTask = raw.match(/^---\r?\n[\s\S]*?taskId:\s*["']?([^"'\r\n]+)["']?[\s\S]*?\r?\n---/);
+                if (matchTask) oldTaskId = matchTask[1].trim();
+            } catch {
+                return false;
+            }
+        }
+
+        if (noteTitle === undefined) return false;
+
+        // 2. Identify task ID: either from frontmatter taskId (old) or filename ending (new)
+        const taskId = oldTaskId || this.extractTaskIdFromFilename(file.basename);
+        if (!taskId) return false;
+
+        // 3. Find the task in category
+        let tasks: TaskItem[];
+        try {
+            tasks = await dataService.getTasks(categoryFilepath);
+        } catch {
+            return false;
+        }
+
+        let targetTask = tasks.find(t => t.id === taskId);
+        let targetCatPath = categoryFilepath;
+
+        if (!targetTask) {
+            const categories = await dataService.getCategories();
+            for (const cat of categories) {
+                if (cat.filepath === categoryFilepath) continue;
+                try {
+                    const catTasks = await dataService.getTasks(cat.filepath);
+                    const found = catTasks.find(t => t.id === taskId);
+                    if (found) {
+                        targetTask = found;
+                        targetCatPath = cat.filepath;
+                        break;
+                    }
+                } catch { /* ignore */ }
+            }
+        }
+
+        if (!targetTask) return false;
+
+        // 4. If title differs, update task title
+        if (targetTask.title !== noteTitle) {
+            targetTask.title = noteTitle;
+            dataService.markInternalWrite(targetCatPath, 3000);
+            await dataService.updateTask(targetCatPath, targetTask);
+            EventBus.emit(EventName.TASK_UPDATED, {
+                task: targetTask,
+                categoryFilepath: targetCatPath,
+            });
+            void Logger.log(`[LinkedNote] Synced note frontmatter title "${noteTitle}" to task ${targetTask.id}`);
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Automatically scan and migrate legacy linked notes:
+     * - Detects old documents by checking if frontmatter has `taskId`
+     * - Replaces `taskId` with `title: <taskTitle>` in YAML frontmatter
+     * - Renames file to standard format: `<CategoryName> <taskId>.md`
+     * - Updates corresponding task's `note_link` to standard wikilink
+     */
+    static async migrateOldLinkedNotes(
+        app: App,
+        dataService: DataService
+    ): Promise<{ migratedCount: number; details: string[] }> {
+        const details: string[] = [];
+        let migratedCount = 0;
+
+        const dataFolder = app.vault.getAbstractFileByPath(DATA_FOLDER);
+        if (!dataFolder || !(dataFolder instanceof TFolder)) {
+            return { migratedCount: 0, details: [] };
+        }
+
+        for (const child of dataFolder.children) {
+            if (!(child instanceof TFolder)) continue; // skip root category files
+            const categoryName = child.name;
+            const categoryFilepath = `${DATA_FOLDER}/${categoryName}.md`;
+
+            for (const noteFile of child.children) {
+                if (!(noteFile instanceof TFile) || noteFile.extension !== "md") continue;
+
+                // Check if file has taskId in frontmatter
+                let oldTaskId: string | null = app.metadataCache?.getFileCache(noteFile)?.frontmatter?.taskId ?? null;
+                if (!oldTaskId) {
+                    try {
+                        const raw = await app.vault.read(noteFile);
+                        const m = raw.slice(0, 500).match(/^---\r?\n[\s\S]*?taskId:\s*["']?([^"'\r\n]+)["']?[\s\S]*?\r?\n---/);
+                        if (m) oldTaskId = m[1].trim();
+                    } catch { /* ignore */ }
+                }
+
+                if (!oldTaskId) continue; // Not a legacy document with taskId
+
+                // LEGACY DOCUMENT DETECTED!
+                const standardFilename = `${categoryName} ${oldTaskId}.md`;
+                const standardPath = `${child.path}/${standardFilename}`;
+
+                // 1. Locate corresponding task
+                let targetTask: TaskItem | null = null;
+                let targetCatPath = categoryFilepath;
+                try {
+                    const tasks = await dataService.getTasks(categoryFilepath);
+                    targetTask = tasks.find(t => t.id === oldTaskId) ?? null;
+                } catch { /* ignore */ }
+
+                if (!targetTask) {
+                    const allCats = await dataService.getCategories();
+                    for (const cat of allCats) {
+                        if (cat.filepath === categoryFilepath) continue;
+                        try {
+                            const tasks = await dataService.getTasks(cat.filepath);
+                            const found = tasks.find(t => t.id === oldTaskId);
+                            if (found) {
+                                targetTask = found;
+                                targetCatPath = cat.filepath;
+                                break;
+                            }
+                        } catch { /* ignore */ }
+                    }
+                }
+
+                const taskTitle = targetTask ? targetTask.title : noteFile.basename;
+
+                // 2. Update frontmatter: replace taskId with title
+                await this.updateNoteFrontmatterTitle(app, noteFile, taskTitle);
+
+                // 3. Rename file if path differs
+                let finalFile = noteFile;
+                if (noteFile.path !== standardPath) {
+                    this.markInternalRename(noteFile.path, standardPath);
+                    dataService.markInternalWrite(noteFile.path, 3000);
+                    dataService.markInternalWrite(standardPath, 3000);
+                    try {
+                        await app.fileManager.renameFile(noteFile, standardPath);
+                        const renamed = app.vault.getAbstractFileByPath(standardPath);
+                        if (renamed instanceof TFile) finalFile = renamed;
+                    } catch (err) {
+                        void Logger.log(`[LinkedNote Migration] Failed to rename ${noteFile.path} to ${standardPath}:`, err);
+                    }
+                }
+
+                // 4. Update task note_link
+                if (targetTask) {
+                    const cleanPath = finalFile.path.replace(/\.md$/, "");
+                    const newNoteLink = `[[${cleanPath}]]`;
+                    if (targetTask.note_link !== newNoteLink) {
+                        targetTask.note_link = newNoteLink;
+                        dataService.markInternalWrite(targetCatPath, 3000);
+                        await dataService.updateTask(targetCatPath, targetTask);
+                        EventBus.emit(EventName.TASK_UPDATED, {
+                            task: targetTask,
+                            categoryFilepath: targetCatPath,
+                        });
+                    }
+                }
+
+                migratedCount++;
+                details.push(`${noteFile.path} -> ${finalFile.path} (title: "${taskTitle}")`);
+                void Logger.log(`[LinkedNote Migration] Migrated old note: ${noteFile.path} -> ${finalFile.path}`);
+            }
+        }
+
+        return { migratedCount, details };
     }
 }
