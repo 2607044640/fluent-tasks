@@ -17,12 +17,13 @@ Optional hard-bound Markdown notes under `TodoData/<ListName>/` with YAML `taskI
 2. Plugin-driven renames call `markInternalRename` (default 2000ms) + `markInternalWrite` so vault `rename` does not bounce the title back. (Why chosen over a lock file: short TTL map.)
 3. `isHardBoundNote(note_link)` is true when the cleaned path starts with `TodoData/`. Soft wikilinks elsewhere are still stored on `TaskItem.note_link` but delete-prompt / sync treat missing files as “no physical note”. (Why chosen over requiring every link to be hard-bound: users can paste `[[Note]]`.)
 4. Non-intrusive rename sync: when a linked note's title is renamed outside Fluent Tasks (e.g. in Obsidian Markdown editor), task metadata and wikilinks synchronize in the background without popping open the right detail sidebar (`isPluginPageActive` check).
+5. Multi-line preservation & self-healing: task titles with `<br>` or `\n` line breaks are sanitized to spaces for filenames without `-br-` artifacts; note renames preserve sub-line structure; severed/stale `note_link` values auto-heal by matching YAML frontmatter `taskId`. IME composition suppresses premature keystroke renames.
 
 ## Numbered Data Flow
 
-1. Detail (or empty `note_link`) click → `createOrGetLinkedNote`: if existing file resolves, return it; else `ensureFolderExists`, `getAvailableNotePath` (suffix ` (1)`, ` (2)`, …), `vault.create` with optional `task.note` body, set `note_link` to `[[pathWithoutMd]]`, `immediateSave`, `openLinkedNoteFile`.
-2. Task title save → `syncTaskTitleToNote`: if hard file basename (minus collision suffix) differs, `fileManager.renameFile` and return new wikilink.
-3. User renames the note in Obsidian → plugin `rename` listener → `syncNoteRenameToTasks`: match `frontmatter.taskId` or `note_link` path (including short links only if the old file sat in that list’s notes folder) → set `task.title` (strip ` (n)`) and `note_link` → `updateTask` → `TASK_UPDATED`.
+1. Detail (or empty `note_link`) click → `createOrGetLinkedNote`: if existing file resolves (via path or `taskId`), return it; else `ensureFolderExists`, `getAvailableNotePath` (suffix ` (1)`, ` (2)`, …), `vault.create` with optional `task.note` body, set `note_link` to `[[pathWithoutMd]]`, `immediateSave`, `openLinkedNoteFile`.
+2. Task title save → `syncTaskTitleToNote`: if hard file basename (minus collision suffix) differs, `fileManager.renameFile` with `categoryFilepath` lock protection, recover from EBUSY, and return healed/new wikilink.
+3. User renames the note in Obsidian → plugin `rename` listener → `syncNoteRenameToTasks`: match `frontmatter.taskId` or `note_link` path (including short links only if the old file sat in that list’s notes folder) → update first line of `task.title` preserving multi-line breaks, set `note_link` → `updateTask` → `TASK_UPDATED`.
 4. Delete task → `promptDeleteTaskWithLinkedNote`: no file → delete task immediately; else modal: cancel / task only / task+trash note.
 
 ## Side-effects API
@@ -30,15 +31,16 @@ Optional hard-bound Markdown notes under `TodoData/<ListName>/` with YAML `taskI
 | Method | Signature | Side-Effects |
 |---|---|---|
 | `markInternalRename` / `isInternalRename` | `(oldPath, newPath, windowMs?): void` / `(old, new): boolean` | In-memory TTL map |
-| `sanitizeNoteTitle` | `(title: string): string` | None (pure) |
+| `sanitizeNoteTitle` | `(title: string): string` | Strips `<br>`, HTML, illegal characters |
 | `getTaskNotesFolder` | `(categoryFilepath: string): string` | None (pure) |
 | `ensureFolderExists` | `(app, folderPath): Promise<void>` | May `vault.createFolder` per segment |
-| `resolveLinkedNoteFile` | `(app, noteLink?, sourcePath?): TFile \| null` | None (lookup) |
+| `findFileByTaskId` / `findFileByTaskIdAsync` | `(app, taskId, categoryFilepath?): TFile \| null` | Metadata / vault frontmatter lookup |
+| `resolveLinkedNoteFile` | `(app, noteLink?, sourcePath?, taskId?): TFile \| null` | Path lookup with `taskId` fallback |
 | `openLinkedNoteFile` | `(app, file): Promise<void>` | Focus existing markdown leaf or `getLeaf("tab").openFile` |
 | `getAvailableNotePath` | `(app, folder, baseTitle, currentFilePath?): string` | None (lookup) |
 | `createOrGetLinkedNote` | `(app, task, categoryFilepath)` | May create folder + `.md` |
-| `syncTaskTitleToNote` | `(app, task, categoryFilepath, dataService?)` | May `renameFile` |
-| `syncNoteRenameToTasks` | `(app, dataService, oldPath, newFile)` | May `updateTask` + EventBus |
+| `syncTaskTitleToNote` | `(app, task, categoryFilepath, dataService?)` | May `renameFile`, auto-heals `note_link` |
+| `syncNoteRenameToTasks` | `(app, dataService, oldPath, newFile)` | May `updateTask` + EventBus, preserves lines |
 | `promptDeleteTaskWithLinkedNote` | `(app, task, categoryFilepath, dataService, onDeleted?)` | Modal; optional `trashFile`; `deleteTask`; `TASK_DELETED` |
 
 ## Recipes
