@@ -1,6 +1,6 @@
 # Fluent Tasks
 
-Obsidian plugin: a three-pane, drag-and-drop task manager inspired by Microsoft To Do, Todoist, and TickTick. Version **1.0.31** (`manifest.json`). Desktop and mobile (`isDesktopOnly: false`). Minimum Obsidian **1.8.7**.
+Obsidian plugin: a three-pane, drag-and-drop task manager inspired by Microsoft To Do, Todoist, and TickTick. Version **1.0.32** (`manifest.json`). Desktop and mobile (`isDesktopOnly: false`). Minimum Obsidian **1.8.7**.
 
 Architecture documentation: [ARCHITECTURE.md](./ARCHITECTURE.md).
 
@@ -26,7 +26,7 @@ There is no cloud lock-in or external server dependency. All data remains 100% l
 
 - **Lists & Groups**: Create custom lists and organize them into collapsible groups. Drag-and-drop lists into groups or reorder them freely. Press **F2** to rename hovered or active lists.
 - **Task Management & Priority Weight Scoring**: Inline task creation, completion toggles, star/pin priority, drag-and-drop task reordering, and moving tasks between lists. Optional 1-9 priority score weighting with stepper controls and dynamic stable sorting.
-- **Linked Notes & Frontmatter Synchronization**: One-click linked note creation per task. Files use clean immutable paths (`<ListName> <taskId>.md`) and two-way synchronize the task title via the note's YAML frontmatter `title` property without risk of file rename collisions or broken wikilinks. Automatic migration of legacy notes.
+- **Linked Notes & Frontmatter Synchronization**: One-click linked note creation per task. Files use clean immutable paths (`<ListName> <taskId>.md`) and two-way synchronize the task title via the note's YAML frontmatter `title` property. Renaming a list automatically renames note folders, note filenames, and note links across all tasks with full auto-healing. Automatic migration of legacy notes.
 - **More Options Menu & Batch Operations**: Clean three-dots header menu consolidating list search, multi-select mode, backup manager, shortcuts guide, and display alignment. Multi-select supports batch star/unstar and batch deletion.
 - **Center-Align Tasks Mode**: Toggle center alignment for task titles, steps counters, and wrapped multi-line text directly from the more options menu or plugin settings.
 - **Subtasks & Step Drag-and-Drop**: Dedicated detail panel and floating modal for step checklists. Full vertical drag-and-drop step reordering with zero-loss safety reconciliation.
