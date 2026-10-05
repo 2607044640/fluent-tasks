@@ -227,8 +227,6 @@
 
         const minPadX = Math.round(24 * fontScale);
         const minPadY = Math.max(12, Math.round(16 * fontScale));
-        const configuredMaxPadY = plugin?.settings?.quickListMaxPadY ?? 48;
-        const maxPadY = Math.max(minPadY, Math.round(configuredMaxPadY * fontScale));
 
         const configuredMaxCardW = plugin?.settings?.quickListMaxCardWidth ?? 320;
         const minCardW = Math.max(180, Math.round(200 * fontScale));
@@ -301,10 +299,9 @@
         // 6. Update layoutColumns
         layoutColumns = bestBins.map(b => b.items);
 
-        // 7. Calculate elastic card width, column gap, and capped top/bottom padding
+        // 7. Calculate elastic card width, column gap, and symmetrical top/bottom padding to center vertically
         const peakH = Math.max(...bestBins.map(b => b.h));
-        const rawPadY = Math.floor((availH - peakH) / 2);
-        const padY = Math.max(minPadY, Math.min(maxPadY, rawPadY));
+        const padY = Math.max(minPadY, Math.floor((availH - peakH) / 2));
 
         const colGap = Math.min(maxColGap, Math.max(minColGap, Math.round(20 * fontScale)));
         const totalGapsW = (bestK - 1) * colGap;

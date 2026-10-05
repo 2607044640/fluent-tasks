@@ -24,7 +24,6 @@ export interface FluentTasksSettings {
     centerAlignTasks: boolean;
     quickListTitleAlignment: 'center' | 'left';
     quickListMaxCardWidth: number;
-    quickListMaxPadY: number;
 }
 
 export const DEFAULT_SETTINGS: FluentTasksSettings = {
@@ -42,7 +41,6 @@ export const DEFAULT_SETTINGS: FluentTasksSettings = {
     quickListMinColGap: 16,
     quickListMinRowGap: 12,
     quickListMaxCardWidth: 320,
-    quickListMaxPadY: 48,
     quickListFocusCenter: false,
     defaultQuickListFocusFilepath: "",
     dailyBackupEnabled: true,
@@ -182,18 +180,6 @@ export class FluentTasksSettingTab extends PluginSettingTab {
                 .setDynamicTooltip()
                 .onChange(async (value) => {
                     this.plugin.settings.quickListMaxCardWidth = value;
-                    await this.plugin.saveSettings();
-                }));
-
-        new Setting(containerEl)
-            .setName("Quick List Modal: Max Vertical Padding")
-            .setDesc("Maximum vertical margin (in px) above and below cards in the Quick List grid layout. Prevents cards from clustering in the center with huge top/bottom voids (default: 48px).")
-            .addSlider(slider => slider
-                .setLimits(16, 160, 4)
-                .setValue(this.plugin.settings.quickListMaxPadY ?? 48)
-                .setDynamicTooltip()
-                .onChange(async (value) => {
-                    this.plugin.settings.quickListMaxPadY = value;
                     await this.plugin.saveSettings();
                 }));
 

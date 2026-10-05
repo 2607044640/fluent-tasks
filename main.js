@@ -24247,7 +24247,6 @@ var DEFAULT_SETTINGS = {
   quickListMinColGap: 16,
   quickListMinRowGap: 12,
   quickListMaxCardWidth: 320,
-  quickListMaxPadY: 48,
   quickListFocusCenter: false,
   defaultQuickListFocusFilepath: "",
   dailyBackupEnabled: true,
@@ -24339,13 +24338,6 @@ var FluentTasksSettingTab = class extends import_obsidian16.PluginSettingTab {
       var _a;
       return slider.setLimits(220, 520, 10).setValue((_a = this.plugin.settings.quickListMaxCardWidth) != null ? _a : 320).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.quickListMaxCardWidth = value;
-        await this.plugin.saveSettings();
-      });
-    });
-    new import_obsidian16.Setting(containerEl).setName("Quick List Modal: Max Vertical Padding").setDesc("Maximum vertical margin (in px) above and below cards in the Quick List grid layout. Prevents cards from clustering in the center with huge top/bottom voids (default: 48px).").addSlider((slider) => {
-      var _a;
-      return slider.setLimits(16, 160, 4).setValue((_a = this.plugin.settings.quickListMaxPadY) != null ? _a : 48).setDynamicTooltip().onChange(async (value) => {
-        this.plugin.settings.quickListMaxPadY = value;
         await this.plugin.saveSettings();
       });
     });
@@ -34888,7 +34880,7 @@ function instance8($$self, $$props, $$invalidate) {
     });
   }
   function updateLayoutColumns() {
-    var _a2, _b2, _c2, _d2, _e2, _f2, _g2, _h2;
+    var _a2, _b2, _c2, _d2, _e2, _f2;
     if (!isGridLayout)
       return;
     const baseFontSize = boardEl ? parseFloat(window.getComputedStyle(boardEl).fontSize) || 14 : modalContainerEl ? parseFloat(window.getComputedStyle(modalContainerEl).fontSize) || 14 : 14;
@@ -34940,9 +34932,7 @@ function instance8($$self, $$props, $$invalidate) {
     const rowGap = minRowGap;
     const minPadX = Math.round(24 * fontScale);
     const minPadY = Math.max(12, Math.round(16 * fontScale));
-    const configuredMaxPadY = (_f2 = (_e2 = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _e2.quickListMaxPadY) != null ? _f2 : 48;
-    const maxPadY = Math.max(minPadY, Math.round(configuredMaxPadY * fontScale));
-    const configuredMaxCardW = (_h2 = (_g2 = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _g2.quickListMaxCardWidth) != null ? _h2 : 320;
+    const configuredMaxCardW = (_f2 = (_e2 = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _e2.quickListMaxCardWidth) != null ? _f2 : 320;
     const minCardW = Math.max(180, Math.round(200 * fontScale));
     const maxCardW = Math.max(minCardW + 20, Math.round(configuredMaxCardW * Math.min(1.4, fontScale)));
     const availContentW = Math.max(100, availW - minPadX * 2);
@@ -34994,8 +34984,7 @@ function instance8($$self, $$props, $$invalidate) {
     });
     $$invalidate(33, layoutColumns = bestBins.map((b) => b.items));
     const peakH = Math.max(...bestBins.map((b) => b.h));
-    const rawPadY = Math.floor((availH - peakH) / 2);
-    const padY = Math.max(minPadY, Math.min(maxPadY, rawPadY));
+    const padY = Math.max(minPadY, Math.floor((availH - peakH) / 2));
     const colGap = Math.min(maxColGap, Math.max(minColGap, Math.round(20 * fontScale)));
     const totalGapsW = (bestK - 1) * colGap;
     const actualCardW = Math.min(maxCardW, Math.max(minCardW, Math.floor((availContentW - totalGapsW) / bestK)));
