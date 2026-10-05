@@ -636,13 +636,16 @@
         });
     }
 
-    async function handleNoteLinkClick(e: MouseEvent | KeyboardEvent, noteLink?: string) {
+    async function handleNoteLinkClick(e: MouseEvent | KeyboardEvent, noteLink?: string, taskId?: string) {
         e.stopPropagation();
-        if (!noteLink || !plugin?.app) return;
-        const file = LinkedNoteService.resolveLinkedNoteFile(plugin.app, noteLink, currentCategory?.filepath);
+        if ((!noteLink && !taskId) || !plugin?.app) return;
+        let file = LinkedNoteService.resolveLinkedNoteFile(plugin.app, noteLink, currentCategory?.filepath, taskId);
+        if (!file && taskId) {
+            file = await LinkedNoteService.findFileByTaskIdAsync(plugin.app, taskId, currentCategory?.filepath);
+        }
         if (file) {
             await LinkedNoteService.openLinkedNoteFile(plugin.app, file);
-        } else {
+        } else if (noteLink) {
             const cleanLink = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
             if (cleanLink) {
                 plugin.app.workspace.openLinkText(
@@ -1710,8 +1713,8 @@
                         <span class="meta-badge note-badge"
                               class:hard-bound={LinkedNoteService.isHardBoundNote(task.note_link)}
                               on:mouseenter={(e) => handleNoteLinkHover(e, task.note_link)}
-                              on:click={(e) => handleNoteLinkClick(e, task.note_link)}
-                              on:keydown={(e) => e.key === "Enter" && handleNoteLinkClick(e, task.note_link)}
+                              on:click={(e) => handleNoteLinkClick(e, task.note_link, task.id)}
+                              on:keydown={(e) => e.key === "Enter" && handleNoteLinkClick(e, task.note_link, task.id)}
                               role="button" tabindex="0"
                               title={t("linked_note_preview_tooltip", task.note_link)}>
                             {#if LinkedNoteService.isHardBoundNote(task.note_link)}
@@ -1934,8 +1937,8 @@
                                     <span class="meta-badge note-badge"
                                           class:hard-bound={LinkedNoteService.isHardBoundNote(task.note_link)}
                                           on:mouseenter={(e) => handleNoteLinkHover(e, task.note_link)}
-                                          on:click={(e) => handleNoteLinkClick(e, task.note_link)}
-                                          on:keydown={(e) => e.key === "Enter" && handleNoteLinkClick(e, task.note_link)}
+                                          on:click={(e) => handleNoteLinkClick(e, task.note_link, task.id)}
+                                          on:keydown={(e) => e.key === "Enter" && handleNoteLinkClick(e, task.note_link, task.id)}
                                           role="button" tabindex="0"
                                           title={t("linked_note_preview_tooltip", task.note_link)}>
                                         {#if LinkedNoteService.isHardBoundNote(task.note_link)}

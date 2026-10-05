@@ -259,12 +259,15 @@
         });
     }
 
-    async function handleNoteLinkClick(e: MouseEvent, noteLink?: string) {
-        if (!noteLink || !plugin || !plugin.app) return;
-        const file = LinkedNoteService.resolveLinkedNoteFile(plugin.app, noteLink, selectedCategory?.filepath);
+    async function handleNoteLinkClick(e: MouseEvent, noteLink?: string, taskId?: string) {
+        if ((!noteLink && !taskId) || !plugin || !plugin.app) return;
+        let file = LinkedNoteService.resolveLinkedNoteFile(plugin.app, noteLink, selectedCategory?.filepath, taskId);
+        if (!file && taskId) {
+            file = await LinkedNoteService.findFileByTaskIdAsync(plugin.app, taskId, selectedCategory?.filepath);
+        }
         if (file) {
             await LinkedNoteService.openLinkedNoteFile(plugin.app, file);
-        } else {
+        } else if (noteLink) {
             const cleanLink = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
             if (cleanLink) {
                 plugin.app.workspace.openLinkText(cleanLink, selectedCategory?.filepath || "", e.ctrlKey || e.metaKey || "tab");
@@ -1099,7 +1102,7 @@
                                             class="meta-badge note-badge"
                                             class:hard-bound={LinkedNoteService.isHardBoundNote(result.task.note_link)}
                                             on:mouseenter={(e) => handleNoteLinkHover(e, result.task.note_link)}
-                                            on:click|stopPropagation={(e) => handleNoteLinkClick(e, result.task.note_link)}
+                                            on:click|stopPropagation={(e) => handleNoteLinkClick(e, result.task.note_link, result.task.id)}
                                             role="button" tabindex="0"
                                             title={t("linked_note_preview_tooltip", result.task.note_link)}
                                         >
@@ -1182,7 +1185,7 @@
                                             class="meta-badge note-badge"
                                             class:hard-bound={LinkedNoteService.isHardBoundNote(task.note_link)}
                                             on:mouseenter={(e) => handleNoteLinkHover(e, task.note_link)}
-                                            on:click|stopPropagation={(e) => handleNoteLinkClick(e, task.note_link)}
+                                            on:click|stopPropagation={(e) => handleNoteLinkClick(e, task.note_link, task.id)}
                                             role="button" tabindex="0"
                                             title={t("linked_note_preview_tooltip", task.note_link)}
                                         >
@@ -1264,7 +1267,7 @@
                                                 class="meta-badge note-badge"
                                                 class:hard-bound={LinkedNoteService.isHardBoundNote(task.note_link)}
                                                 on:mouseenter={(e) => handleNoteLinkHover(e, task.note_link)}
-                                                on:click|stopPropagation={(e) => handleNoteLinkClick(e, task.note_link)}
+                                                on:click|stopPropagation={(e) => handleNoteLinkClick(e, task.note_link, task.id)}
                                                 role="button" tabindex="0"
                                                 title={t("linked_note_preview_tooltip", task.note_link)}
                                             >

@@ -8223,7 +8223,7 @@ var ConfirmDeleteLinkedNoteModal = class extends import_obsidian8.Modal {
   }
 };
 async function promptDeleteTaskWithLinkedNote(app, task, categoryFilepath, dataService, onDeleted) {
-  const noteFile = LinkedNoteService.resolveLinkedNoteFile(app, task.note_link, categoryFilepath);
+  const noteFile = LinkedNoteService.resolveLinkedNoteFile(app, task.note_link, categoryFilepath, task.id);
   if (!noteFile) {
     await dataService.deleteTask(categoryFilepath, task);
     EventBus.emit("task:deleted" /* TASK_DELETED */, { task, categoryFilepath });
@@ -18418,14 +18418,17 @@ function instance4($$self, $$props, $$invalidate) {
       sourcePath: (currentCategory == null ? void 0 : currentCategory.filepath) || ""
     });
   }
-  async function handleNoteLinkClick(e, noteLink) {
+  async function handleNoteLinkClick(e, noteLink, taskId) {
     e.stopPropagation();
-    if (!noteLink || !(plugin == null ? void 0 : plugin.app))
+    if (!noteLink && !taskId || !(plugin == null ? void 0 : plugin.app))
       return;
-    const file = LinkedNoteService.resolveLinkedNoteFile(plugin.app, noteLink, currentCategory == null ? void 0 : currentCategory.filepath);
+    let file = LinkedNoteService.resolveLinkedNoteFile(plugin.app, noteLink, currentCategory == null ? void 0 : currentCategory.filepath, taskId);
+    if (!file && taskId) {
+      file = await LinkedNoteService.findFileByTaskIdAsync(plugin.app, taskId, currentCategory == null ? void 0 : currentCategory.filepath);
+    }
     if (file) {
       await LinkedNoteService.openLinkedNoteFile(plugin.app, file);
-    } else {
+    } else if (noteLink) {
       const cleanLink = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
       if (cleanLink) {
         plugin.app.workspace.openLinkText(cleanLink, (currentCategory == null ? void 0 : currentCategory.filepath) || "", "tab");
@@ -19166,8 +19169,8 @@ function instance4($$self, $$props, $$invalidate) {
   const click_handler_8 = (svgContent, task, e) => openSvgLightbox(e, svgContent, task.title);
   const keydown_handler_10 = (svgContent, task, e) => e.key === "Enter" && openSvgLightbox(e, svgContent, task.title);
   const mouseenter_handler_4 = (task, e) => handleNoteLinkHover(e, task.note_link);
-  const click_handler_9 = (task, e) => handleNoteLinkClick(e, task.note_link);
-  const keydown_handler_11 = (task, e) => e.key === "Enter" && handleNoteLinkClick(e, task.note_link);
+  const click_handler_9 = (task, e) => handleNoteLinkClick(e, task.note_link, task.id);
+  const keydown_handler_11 = (task, e) => e.key === "Enter" && handleNoteLinkClick(e, task.note_link, task.id);
   const mouseenter_handler_5 = (task, e) => showPopover(e, task, "custom");
   const click_handler_10 = (task) => toggleStar(task);
   const keydown_handler_12 = (task, e) => e.key === "Enter" && toggleStar(task);
@@ -19199,8 +19202,8 @@ function instance4($$self, $$props, $$invalidate) {
   const click_handler_16 = (svgContent, task, e) => openSvgLightbox(e, svgContent, task.title);
   const keydown_handler_18 = (svgContent, task, e) => e.key === "Enter" && openSvgLightbox(e, svgContent, task.title);
   const mouseenter_handler_10 = (task, e) => handleNoteLinkHover(e, task.note_link);
-  const click_handler_17 = (task, e) => handleNoteLinkClick(e, task.note_link);
-  const keydown_handler_19 = (task, e) => e.key === "Enter" && handleNoteLinkClick(e, task.note_link);
+  const click_handler_17 = (task, e) => handleNoteLinkClick(e, task.note_link, task.id);
+  const keydown_handler_19 = (task, e) => e.key === "Enter" && handleNoteLinkClick(e, task.note_link, task.id);
   const mouseenter_handler_11 = (task, e) => showPopover(e, task, "custom");
   const click_handler_18 = (task) => toggleStar(task);
   const keydown_handler_20 = (task, e) => e.key === "Enter" && toggleStar(task);
@@ -19864,7 +19867,7 @@ function create_if_block5(ctx) {
       append(div5, t7);
       if (if_block4)
         if_block4.m(div5, null);
-      ctx[68](div5);
+      ctx[71](div5);
       insert(target, t8, anchor);
       if (if_block5)
         if_block5.m(target, anchor);
@@ -19895,13 +19898,13 @@ function create_if_block5(ctx) {
             span0,
             "click",
             /*toggleComplete*/
-            ctx[28]
+            ctx[31]
           ),
           listen(
             span0,
             "keydown",
             /*keydown_handler*/
-            ctx[50]
+            ctx[53]
           ),
           action_destroyer(autosize_action = autosize.call(
             null,
@@ -19913,62 +19916,80 @@ function create_if_block5(ctx) {
             textarea0,
             "input",
             /*textarea0_input_handler*/
-            ctx[51]
+            ctx[54]
           ),
           listen(
             textarea0,
             "input",
             /*handleTitleInput*/
+            ctx[29]
+          ),
+          listen(
+            textarea0,
+            "compositionstart",
+            /*handleTitleCompositionStart*/
             ctx[27]
+          ),
+          listen(
+            textarea0,
+            "compositionend",
+            /*handleTitleCompositionEnd*/
+            ctx[28]
+          ),
+          listen(
+            textarea0,
+            "blur",
+            /*handleTitleBlur*/
+            ctx[30]
           ),
           listen(textarea0, "keydown", handleTitleKeydown),
           listen(
             span1,
             "click",
             /*handleLinkNoteClick*/
-            ctx[30]
+            ctx[33]
           ),
           listen(
             span1,
             "mouseenter",
             /*handleLinkNoteHover*/
-            ctx[29]
+            ctx[32]
           ),
           listen(
             span1,
             "contextmenu",
             /*handleLinkNoteContextMenu*/
-            ctx[31]
+            ctx[34]
           ),
           listen(
             span1,
             "keydown",
             /*keydown_handler_1*/
-            ctx[52]
+            ctx[55]
           ),
           listen(
             input,
             "input",
             /*input_input_handler*/
-            ctx[59]
+            ctx[62]
           ),
           listen(
             input,
             "keydown",
             /*handleStepKeydown*/
-            ctx[32]
+            ctx[35]
           ),
           listen(
             textarea1,
             "input",
             /*textarea1_input_handler*/
-            ctx[60]
+            ctx[63]
           ),
           listen(
             textarea1,
             "input",
             /*handleNoteInput*/
-            ctx[38]
+            ctx[41]
           ),
           listen(
             span2,
@@ -19980,31 +20001,31 @@ function create_if_block5(ctx) {
             span2,
             "keydown",
             /*keydown_handler_9*/
-            ctx[79]
+            ctx[82]
           ),
           listen(
             span5,
             "click",
             /*openAddMetaModal*/
-            ctx[41]
+            ctx[44]
           ),
           listen(
             span5,
             "keydown",
             /*keydown_handler_10*/
-            ctx[80]
+            ctx[83]
           ),
           listen(
             span6,
             "click",
             /*deleteTask*/
-            ctx[40]
+            ctx[43]
           ),
           listen(
             span6,
             "keydown",
             /*keydown_handler_11*/
-            ctx[81]
+            ctx[84]
           )
         ];
         mounted = true;
@@ -20242,7 +20263,7 @@ function create_if_block5(ctx) {
         if_block3.d();
       if (if_block4)
         if_block4.d();
-      ctx[68](null);
+      ctx[71](null);
       if (if_block5)
         if_block5.d(detaching);
       if_block6.d();
@@ -20278,13 +20299,13 @@ function create_if_block_242(ctx) {
             span,
             "click",
             /*closePanel*/
-            ctx[39]
+            ctx[42]
           ),
           listen(
             span,
             "keydown",
             /*keydown_handler_13*/
-            ctx[95]
+            ctx[98]
           )
         ];
         mounted = true;
@@ -20459,13 +20480,13 @@ function create_if_block_212(ctx) {
             span,
             "click",
             /*closePanel*/
-            ctx[39]
+            ctx[42]
           ),
           listen(
             span,
             "keydown",
             /*keydown_handler_2*/
-            ctx[53]
+            ctx[56]
           )
         ];
         mounted = true;
@@ -20533,13 +20554,13 @@ function create_if_block_192(ctx) {
             div,
             "consider",
             /*handleDndConsider*/
-            ctx[36]
+            ctx[39]
           ),
           listen(
             div,
             "finalize",
             /*handleDndFinalize*/
-            ctx[37]
+            ctx[40]
           )
         ];
         mounted = true;
@@ -20548,7 +20569,7 @@ function create_if_block_192(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*task*/
       4 | dirty[1] & /*deleteStep, updateStepText, toggleStepDone*/
-      28) {
+      224) {
         each_value_3 = ensure_array_like(
           /*task*/
           ctx2[2].steps
@@ -20675,7 +20696,7 @@ function create_each_block_32(key_1, ctx) {
   function click_handler_1() {
     return (
       /*click_handler_1*/
-      ctx[54](
+      ctx[57](
         /*step*/
         ctx[123]
       )
@@ -20684,7 +20705,7 @@ function create_each_block_32(key_1, ctx) {
   function keydown_handler_3(...args) {
     return (
       /*keydown_handler_3*/
-      ctx[55](
+      ctx[58](
         /*step*/
         ctx[123],
         ...args
@@ -20694,7 +20715,7 @@ function create_each_block_32(key_1, ctx) {
   function input_handler(...args) {
     return (
       /*input_handler*/
-      ctx[56](
+      ctx[59](
         /*step*/
         ctx[123],
         ...args
@@ -20704,7 +20725,7 @@ function create_each_block_32(key_1, ctx) {
   function click_handler_22() {
     return (
       /*click_handler_2*/
-      ctx[57](
+      ctx[60](
         /*step*/
         ctx[123]
       )
@@ -20713,7 +20734,7 @@ function create_each_block_32(key_1, ctx) {
   function keydown_handler_5(...args) {
     return (
       /*keydown_handler_5*/
-      ctx[58](
+      ctx[61](
         /*step*/
         ctx[123],
         ...args
@@ -21026,13 +21047,13 @@ function create_if_block_182(ctx) {
         dispose = [
           listen(span2, "click", stop_propagation(
             /*click_handler_3*/
-            ctx[61]
+            ctx[64]
           )),
           listen(
             div,
             "click",
             /*click_handler_4*/
-            ctx[62]
+            ctx[65]
           )
         ];
         mounted = true;
@@ -21108,13 +21129,13 @@ function create_if_block_172(ctx) {
         dispose = [
           listen(span2, "click", stop_propagation(
             /*click_handler_5*/
-            ctx[63]
+            ctx[66]
           )),
           listen(
             div,
             "click",
             /*click_handler_6*/
-            ctx[64]
+            ctx[67]
           )
         ];
         mounted = true;
@@ -21196,13 +21217,13 @@ function create_if_block_162(ctx) {
         dispose = [
           listen(span2, "click", stop_propagation(
             /*click_handler_7*/
-            ctx[65]
+            ctx[68]
           )),
           listen(
             div,
             "click",
             /*click_handler_8*/
-            ctx[66]
+            ctx[69]
           )
         ];
         mounted = true;
@@ -21262,7 +21283,7 @@ function create_if_block_152(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*task*/
       4 | dirty[1] & /*deleteCustomKey*/
-      8192) {
+      65536) {
         each_value_2 = ensure_array_like(Object.entries(
           /*task*/
           ctx2[2].customMeta
@@ -21318,7 +21339,7 @@ function create_each_block_22(ctx) {
   function click_handler_9() {
     return (
       /*click_handler_9*/
-      ctx[67](
+      ctx[70](
         /*k*/
         ctx[114]
       )
@@ -21522,19 +21543,19 @@ function create_if_block_102(ctx) {
             input,
             "change",
             /*change_handler*/
-            ctx[69]
+            ctx[72]
           ),
           listen(
             div5,
             "click",
             /*click_handler_10*/
-            ctx[72]
+            ctx[75]
           ),
           listen(
             div5,
             "keydown",
             /*keydown_handler_8*/
-            ctx[73]
+            ctx[76]
           )
         ];
         mounted = true;
@@ -21646,7 +21667,7 @@ function create_if_block_133(ctx) {
             span,
             "keydown",
             /*keydown_handler_6*/
-            ctx[70]
+            ctx[73]
           )
         ];
         mounted = true;
@@ -21685,7 +21706,7 @@ function create_if_block_123(ctx) {
           )),
           listen(span, "keydown", stop_propagation(
             /*keydown_handler_7*/
-            ctx[71]
+            ctx[74]
           ))
         ];
         mounted = true;
@@ -21822,25 +21843,25 @@ function create_if_block_112(ctx) {
             button0,
             "click",
             /*click_handler_11*/
-            ctx[74]
+            ctx[77]
           ),
           listen(
             button1,
             "click",
             /*click_handler_12*/
-            ctx[75]
+            ctx[78]
           ),
           listen(
             button2,
             "click",
             /*click_handler_13*/
-            ctx[76]
+            ctx[79]
           ),
           listen(
             input,
             "change",
             /*change_handler_1*/
-            ctx[78]
+            ctx[81]
           )
         ];
         mounted = true;
@@ -21918,7 +21939,7 @@ function create_each_block_13(ctx) {
   function click_handler_14() {
     return (
       /*click_handler_14*/
-      ctx[77](
+      ctx[80](
         /*day*/
         ctx[118]
       )
@@ -22268,58 +22289,58 @@ function create_if_block_111(ctx) {
             span1,
             "click",
             /*closeAddMetaModal*/
-            ctx[42]
+            ctx[45]
           ),
           listen(
             span1,
             "keydown",
             /*keydown_handler_12*/
-            ctx[82]
+            ctx[85]
           ),
           listen(
             button0,
             "click",
             /*click_handler_15*/
-            ctx[83]
+            ctx[86]
           ),
           listen(
             button1,
             "click",
             /*click_handler_16*/
-            ctx[84]
+            ctx[87]
           ),
           listen(
             button2,
             "click",
             /*click_handler_17*/
-            ctx[85]
+            ctx[88]
           ),
           listen(
             button3,
             "click",
             /*click_handler_18*/
-            ctx[86]
+            ctx[89]
           ),
           listen(
             button4,
             "click",
             /*closeAddMetaModal*/
-            ctx[42]
+            ctx[45]
           ),
           listen(
             button5,
             "click",
             /*saveMetadata*/
-            ctx[43]
+            ctx[46]
           ),
           listen(div5, "click", stop_propagation(
             /*click_handler*/
-            ctx[49]
+            ctx[52]
           )),
           action_destroyer(portal_action = portal.call(null, div6)),
           listen(div6, "click", stop_propagation(
             /*click_handler_21*/
-            ctx[94]
+            ctx[97]
           ))
         ];
         mounted = true;
@@ -22463,13 +22484,13 @@ function create_if_block_63(ctx) {
             input0,
             "input",
             /*input0_input_handler*/
-            ctx[92]
+            ctx[95]
           ),
           listen(
             input1,
             "input",
             /*input1_input_handler*/
-            ctx[93]
+            ctx[96]
           )
         ];
         mounted = true;
@@ -22571,7 +22592,7 @@ function create_if_block_59(ctx) {
           textarea,
           "input",
           /*textarea_input_handler_1*/
-          ctx[90]
+          ctx[93]
         );
         mounted = true;
       }
@@ -22651,7 +22672,7 @@ function create_if_block_311(ctx) {
           input,
           "input",
           /*input_input_handler_1*/
-          ctx[88]
+          ctx[91]
         );
         mounted = true;
       }
@@ -22730,7 +22751,7 @@ function create_if_block_211(ctx) {
           textarea,
           "input",
           /*textarea_input_handler*/
-          ctx[87]
+          ctx[90]
         );
         mounted = true;
       }
@@ -22813,7 +22834,7 @@ function create_if_block_73(ctx) {
         set_data(t1, t1_value);
       if (dirty[0] & /*task*/
       4 | dirty[1] & /*deleteCustomKey*/
-      8192) {
+      65536) {
         each_value = ensure_array_like(Object.entries(
           /*task*/
           ctx2[2].customMeta
@@ -22867,7 +22888,7 @@ function create_each_block5(ctx) {
   function click_handler_20() {
     return (
       /*click_handler_20*/
-      ctx[91](
+      ctx[94](
         /*k*/
         ctx[114]
       )
@@ -22952,7 +22973,7 @@ function create_if_block_411(ctx) {
           button,
           "click",
           /*click_handler_19*/
-          ctx[89]
+          ctx[92]
         );
         mounted = true;
       }
@@ -23814,13 +23835,13 @@ function instance5($$self, $$props, $$invalidate) {
   const keydown_handler_13 = (e) => e.key === "Enter" && closePanel();
   $$self.$$set = ($$props2) => {
     if ("dataService" in $$props2)
-      $$invalidate(46, dataService = $$props2.dataService);
+      $$invalidate(49, dataService = $$props2.dataService);
     if ("plugin" in $$props2)
       $$invalidate(0, plugin = $$props2.plugin);
     if ("isModal" in $$props2)
       $$invalidate(1, isModal = $$props2.isModal);
     if ("onCloseModal" in $$props2)
-      $$invalidate(47, onCloseModal = $$props2.onCloseModal);
+      $$invalidate(50, onCloseModal = $$props2.onCloseModal);
   };
   $$self.$$.update = () => {
     if ($$self.$$.dirty[0] & /*task*/
@@ -23867,7 +23888,10 @@ function instance5($$self, $$props, $$invalidate) {
     handleWeekdayClick,
     setCustomInterval,
     scheduleSave,
+    handleTitleCompositionStart,
+    handleTitleCompositionEnd,
     handleTitleInput,
+    handleTitleBlur,
     toggleComplete,
     handleLinkNoteHover,
     handleLinkNoteClick,
@@ -23948,18 +23972,18 @@ var TaskDetailView = class extends SvelteComponent {
       create_fragment5,
       safe_not_equal,
       {
-        dataService: 46,
+        dataService: 49,
         plugin: 0,
         isModal: 1,
-        onCloseModal: 47,
-        loadTask: 48
+        onCloseModal: 50,
+        loadTask: 51
       },
       null,
       [-1, -1, -1, -1, -1]
     );
   }
   get loadTask() {
-    return this.$$.ctx[48];
+    return this.$$.ctx[51];
   }
 };
 var TaskDetailView_default = TaskDetailView;
@@ -29240,13 +29264,16 @@ function instance7($$self, $$props, $$invalidate) {
       sourcePath: (selectedCategory == null ? void 0 : selectedCategory.filepath) || ""
     });
   }
-  async function handleNoteLinkClick(e, noteLink) {
-    if (!noteLink || !plugin || !plugin.app)
+  async function handleNoteLinkClick(e, noteLink, taskId) {
+    if (!noteLink && !taskId || !plugin || !plugin.app)
       return;
-    const file = LinkedNoteService.resolveLinkedNoteFile(plugin.app, noteLink, selectedCategory == null ? void 0 : selectedCategory.filepath);
+    let file = LinkedNoteService.resolveLinkedNoteFile(plugin.app, noteLink, selectedCategory == null ? void 0 : selectedCategory.filepath, taskId);
+    if (!file && taskId) {
+      file = await LinkedNoteService.findFileByTaskIdAsync(plugin.app, taskId, selectedCategory == null ? void 0 : selectedCategory.filepath);
+    }
     if (file) {
       await LinkedNoteService.openLinkedNoteFile(plugin.app, file);
-    } else {
+    } else if (noteLink) {
       const cleanLink = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
       if (cleanLink) {
         plugin.app.workspace.openLinkText(cleanLink, (selectedCategory == null ? void 0 : selectedCategory.filepath) || "", e.ctrlKey || e.metaKey || "tab");
@@ -29893,7 +29920,7 @@ function instance7($$self, $$props, $$invalidate) {
   }
   const click_handler_42 = (result) => toggleTaskCompletion(result.task);
   const mouseenter_handler = (result, e) => handleNoteLinkHover(e, result.task.note_link);
-  const click_handler_5 = (result, e) => handleNoteLinkClick(e, result.task.note_link);
+  const click_handler_5 = (result, e) => handleNoteLinkClick(e, result.task.note_link, result.task.id);
   const click_handler_6 = (result) => toggleTaskStar(result.task);
   const click_handler_7 = (result) => toggleTaskCompletion(result.task);
   const click_handler_8 = (task) => toggleTaskCompletion(task);
@@ -29901,7 +29928,7 @@ function instance7($$self, $$props, $$invalidate) {
   const mouseenter_handler_1 = (task, e) => showPopover(e, task, "steps");
   const mouseenter_handler_2 = (task, e) => showPopover(e, task, "why");
   const mouseenter_handler_3 = (task, e) => handleNoteLinkHover(e, task.note_link);
-  const click_handler_10 = (task, e) => handleNoteLinkClick(e, task.note_link);
+  const click_handler_10 = (task, e) => handleNoteLinkClick(e, task.note_link, task.id);
   const click_handler_11 = (task) => toggleTaskStar(task);
   const dragstart_handler_3 = (task, e) => handleTaskDragStart(e, task);
   const click_handler_12 = (task) => toggleTaskCompletion(task);
@@ -29910,7 +29937,7 @@ function instance7($$self, $$props, $$invalidate) {
   const mouseenter_handler_4 = (task, e) => showPopover(e, task, "steps");
   const mouseenter_handler_5 = (task, e) => showPopover(e, task, "why");
   const mouseenter_handler_6 = (task, e) => handleNoteLinkHover(e, task.note_link);
-  const click_handler_15 = (task, e) => handleNoteLinkClick(e, task.note_link);
+  const click_handler_15 = (task, e) => handleNoteLinkClick(e, task.note_link, task.id);
   const click_handler_16 = (task) => toggleTaskStar(task);
   const dragstart_handler_4 = (task, e) => handleTaskDragStart(e, task);
   const click_handler_17 = (task) => toggleTaskCompletion(task);

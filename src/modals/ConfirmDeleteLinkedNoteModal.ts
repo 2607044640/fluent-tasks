@@ -97,7 +97,7 @@ export async function promptDeleteTaskWithLinkedNote(
     dataService: DataService,
     onDeleted?: () => void | Promise<void>
 ): Promise<boolean> {
-    const noteFile = LinkedNoteService.resolveLinkedNoteFile(app, task.note_link, categoryFilepath);
+    const noteFile = LinkedNoteService.resolveLinkedNoteFile(app, task.note_link, categoryFilepath, task.id);
 
     if (!noteFile) {
         // No linked physical note file exists on disk, delete task directly
