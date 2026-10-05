@@ -125,7 +125,8 @@
         if (!file && plugin?.app?.vault) {
             file = plugin.app.vault.getAbstractFileByPath(cleanPath);
         }
-        const srcUrl = file && plugin?.app?.vault?.adapter ? plugin.app.vault.adapter.getResourcePath(file.path) : cleanPath;
+        const rawSrc = file && plugin?.app?.vault?.adapter ? plugin.app.vault.adapter.getResourcePath(file.path) : cleanPath;
+        const srcUrl = rawSrc ? (rawSrc.includes("?") ? `${rawSrc}&t=${Date.now()}` : `${rawSrc}?t=${Date.now()}`) : "";
         const res = {
             isInline: false,
             content: trimmed,
@@ -136,10 +137,75 @@
         return res;
     }
 
+    async function refreshActiveLightboxFromDisk(targetPath?: string) {
+        if (!lightboxData || !lightboxData.cleanPath || !plugin?.app) return;
+        const targetClean = targetPath ? targetPath.replace(/\\/g, "/") : "";
+        const currentClean = lightboxData.cleanPath.replace(/\\/g, "/");
+
+        if (targetClean && !currentClean.endsWith(targetClean) && !targetClean.endsWith(currentClean)) {
+            return;
+        }
+
+        const quickEditor = (window as any).svgQuickEditor || (window as any).a1SvgQuickEditor;
+        if (quickEditor?.isSvgDirty && quickEditor.isSvgDirty()) {
+            return;
+        }
+
+        let file: any = null;
+        if (plugin.app.metadataCache) {
+            file = plugin.app.metadataCache.getFirstLinkpathDest(lightboxData.cleanPath, currentCategory?.filepath || "");
+        }
+        if (!file && plugin.app.vault) {
+            file = plugin.app.vault.getAbstractFileByPath(lightboxData.cleanPath);
+        }
+        if (!file && plugin.app.vault) {
+            const all = plugin.app.vault.getFiles();
+            file = all.find((f: any) => f.path === lightboxData!.cleanPath || f.name === lightboxData!.cleanPath || f.path.endsWith("/" + lightboxData!.cleanPath)) || null;
+        }
+
+        if (file) {
+            try {
+                let rawXml = "";
+                if (await plugin.app.vault.adapter.exists(file.path)) {
+                    rawXml = await plugin.app.vault.adapter.read(file.path);
+                } else {
+                    rawXml = await plugin.app.vault.read(file);
+                }
+                let processed = rawXml.trim();
+                if (!processed.includes("viewBox") && !processed.includes("viewbox")) {
+                    const widthMatch = processed.match(/width=["']?(\d+(?:\.\d+)?)px?["']?/i);
+                    const heightMatch = processed.match(/height=["']?(\d+(?:\.\d+)?)px?["']?/i);
+                    if (widthMatch && heightMatch) {
+                        processed = processed.replace(/<svg\b/i, `<svg viewBox="0 0 ${widthMatch[1]} ${heightMatch[1]}"`);
+                    }
+                }
+                processed = processed.replace(/<svg\b/i, `<svg data-a1-svg-path="${file.path}"`);
+
+                if (lightboxData && lightboxData.content !== processed) {
+                    lightboxData = {
+                        ...lightboxData,
+                        isInline: true,
+                        content: processed,
+                    };
+                    svgResolveCache.clear();
+                    await tick();
+                    const svgEl = document.querySelector('.svg-lightbox-content svg') as SVGSVGElement | null;
+                    if (svgEl) {
+                        quickEditor?.registerActiveSvg?.(svgEl);
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to hot-reload active SVG lightbox:", err);
+            }
+        }
+    }
+
     function openSvgLightbox(e: MouseEvent | KeyboardEvent, svgStr: string, title: string = "Visual Memory Aid") {
         e.stopPropagation();
         if (popoverTimeout) clearTimeout(popoverTimeout);
         popoverVisible = false;
+        // Invalidate resolve cache for this SVG item so any external edits are loaded fresh
+        svgResolveCache.delete(svgStr);
         const res = resolveSvgItem(svgStr);
         let content = res.content;
         if (res.cleanPath && content.includes("<svg") && !content.includes("data-a1-svg-path")) {
@@ -172,8 +238,8 @@
             }
         });
 
-        // If it's a standalone .svg vault file, read raw markup and inject data-a1-svg-path for live editing
-        if (!res.isInline && res.cleanPath && res.cleanPath.toLowerCase().endsWith('.svg') && plugin?.app) {
+        // Always read fresh markup from disk if it's an .svg vault file
+        if (res.cleanPath && res.cleanPath.toLowerCase().endsWith('.svg') && plugin?.app) {
             let file: any = null;
             if (plugin.app.metadataCache) {
                 file = plugin.app.metadataCache.getFirstLinkpathDest(res.cleanPath, currentCategory?.filepath || "");
@@ -186,7 +252,10 @@
                 file = all.find((f: any) => f.path === res.cleanPath || f.name === res.cleanPath || f.path.endsWith("/" + res.cleanPath)) || null;
             }
             if (file) {
-                plugin.app.vault.read(file).then((rawXml: string) => {
+                const readPromise = plugin.app.vault.adapter.exists(file.path)
+                    ? plugin.app.vault.adapter.read(file.path)
+                    : plugin.app.vault.read(file);
+                readPromise.then((rawXml: string) => {
                     let processed = rawXml.trim();
                     if (!processed.includes("viewBox") && !processed.includes("viewbox")) {
                         const widthMatch = processed.match(/width=["']?(\d+(?:\.\d+)?)px?["']?/i);
@@ -595,14 +664,29 @@
 
     function handleSvgUpdated(e: any) {
         const { path, content } = e?.detail || {};
+        svgResolveCache.clear();
         if (path) {
-            svgResolveCache.clear();
-            if (lightboxData && (lightboxData.cleanPath === path || lightboxData.cleanPath.endsWith(path))) {
-                lightboxData = {
-                    ...lightboxData,
-                    content: content || lightboxData.content,
-                };
+            if (content) {
+                if (lightboxData && (lightboxData.cleanPath === path || lightboxData.cleanPath.endsWith(path))) {
+                    lightboxData = {
+                        ...lightboxData,
+                        content,
+                    };
+                }
+            } else {
+                void refreshActiveLightboxFromDisk(path);
             }
+        } else {
+            void refreshActiveLightboxFromDisk();
+        }
+    }
+
+    let vaultModifyRef: any = null;
+
+    function handleWindowFocusOrVisibility() {
+        if (document.visibilityState === "visible") {
+            svgResolveCache.clear();
+            void refreshActiveLightboxFromDisk();
         }
     }
 
@@ -621,6 +705,17 @@
         window.addEventListener('keyup', handleGlobalKeyUp, true);
         window.addEventListener('blur', handleWindowBlur);
         window.addEventListener('a1-svg-updated', handleSvgUpdated);
+
+        if (plugin?.app?.vault) {
+            vaultModifyRef = plugin.app.vault.on("modify", (file: any) => {
+                if (file?.path?.toLowerCase().endsWith(".svg")) {
+                    svgResolveCache.clear();
+                    void refreshActiveLightboxFromDisk(file.path);
+                }
+            });
+        }
+        window.addEventListener('focus', handleWindowFocusOrVisibility);
+        document.addEventListener('visibilitychange', handleWindowFocusOrVisibility);
     });
 
     onDestroy(() => {
@@ -631,6 +726,12 @@
         window.removeEventListener('keyup', handleGlobalKeyUp, true);
         window.removeEventListener('blur', handleWindowBlur);
         window.removeEventListener('a1-svg-updated', handleSvgUpdated);
+        if (vaultModifyRef && plugin?.app?.vault) {
+            plugin.app.vault.offref(vaultModifyRef);
+            vaultModifyRef = null;
+        }
+        window.removeEventListener('focus', handleWindowFocusOrVisibility);
+        document.removeEventListener('visibilitychange', handleWindowFocusOrVisibility);
         EventBus.off(EventName.CATEGORY_SELECTED, handleCategorySelected);
         EventBus.off(EventName.TASK_UPDATED, handleTaskUpdated);
         EventBus.off(EventName.TASK_MOVED, handleTaskMoved);

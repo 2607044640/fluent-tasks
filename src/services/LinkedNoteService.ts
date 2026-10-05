@@ -30,13 +30,15 @@ export class LinkedNoteService {
 
     /**
      * Sanitize task title into a safe Windows / Obsidian filename
-     * Removes / \\ : * ? " < > | \r \n and cleans whitespace
+     * Strips <br>, HTML tags, \r, \n and illegal characters / \\ : * ? " < > |
      */
     static sanitizeNoteTitle(title: string): string {
         if (!title) return "Untitled Note";
         const cleaned = title
+            .replace(/<br\s*\/?>/gi, " ")
+            .replace(/<[^>]+>/g, " ")
             .replace(/[\r\n]+/g, " ")
-            .replace(/[\\/:*?"<>|]/g, "-")
+            .replace(/[\\/:*?"<>|]/g, " ")
             .replace(/\s+/g, " ")
             .replace(/^[\s.-]+|[\s.-]+$/g, "")
             .trim();
