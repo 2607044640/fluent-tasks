@@ -199,36 +199,240 @@ export class LinkedNoteService {
     }
 
     /**
-     * Resolve a note link string (e.g. [[Path/Note|Alias]] or Path/Note) to a physical TFile,
+     * Sanitize a linkpath string to ensure it contains no illegal characters like drive letters (C:)
+     * or backslashes before being passed to Obsidian workspace APIs.
+     */
+    static sanitizeLinkpath(raw?: string): string {
+        if (!raw) return "";
+        let clean = raw.trim()
+            .replace(/^\[\[/, "")
+            .replace(/\]\]$/, "")
+            .split("|")[0]
+            .trim()
+            .replace(/\\/g, "/")
+            .replace(/\/+/g, "/")
+            .replace(/^["']|["']$/g, "")
+            .replace(/^[\s\-—–_•*#~]+\s*/, "")
+            .trim();
+
+        // If it starts with Windows drive letter like C:/, strip it
+        clean = clean.replace(/^[a-zA-Z]:\//, "");
+        return clean;
+    }
+
+    /**
+     * Normalize a note link input for saving in task metadata:
+     * Returns a clean wikilink `[[path]]`.
+     */
+    static normalizeNoteLinkInput(raw?: string): string {
+        if (!raw) return "";
+        const clean = this.sanitizeLinkpath(raw);
+        if (!clean) return "";
+        const noExt = clean.replace(/\.md$/, "");
+        return `[[${noExt}]]`;
+    }
+
+    /**
+     * Internal multi-stage resolution from raw note link string or filename query
+     */
+    static resolveNoteLinkInternal(app: App, raw: string, sourcePath?: string): TFile | null {
+        if (!app || !raw) return null;
+
+        // 1. Clean brackets, aliases, anchors, and normalize slashes
+        let cleaned = raw.trim();
+        // Extract from markdown link [title](path) if present
+        const mdLinkMatch = cleaned.match(/^\[(.*?)\]\((.*?)\)$/);
+        if (mdLinkMatch) {
+            cleaned = mdLinkMatch[2].trim() || mdLinkMatch[1].trim();
+        }
+        // Strip wikilink brackets
+        cleaned = cleaned.replace(/^\[\[/, "").replace(/\]\]$/, "").trim();
+        // Strip alias
+        cleaned = cleaned.split("|")[0].trim();
+        // Strip heading anchor or block anchor
+        cleaned = cleaned.split("#")[0].split("^")[0].trim();
+        // Replace Windows backslashes with forward slashes
+        cleaned = cleaned.replace(/\\/g, "/");
+        // Collapse multiple slashes
+        cleaned = cleaned.replace(/\/+/g, "/");
+        // Strip outer quotes
+        cleaned = cleaned.replace(/^["']|["']$/g, "").trim();
+
+        if (!cleaned) return null;
+
+        // 2. Strip Absolute Filesystem Root (Vault Base Path or Drive Letters)
+        let relativeCandidate = cleaned;
+        try {
+            const adapter = app.vault.adapter as any;
+            const basePath = (adapter?.basePath || adapter?.path || "").replace(/\\/g, "/").replace(/\/+$/, "");
+            if (basePath && relativeCandidate.toLowerCase().startsWith(basePath.toLowerCase())) {
+                relativeCandidate = relativeCandidate.slice(basePath.length).replace(/^\/+/, "");
+            } else {
+                // Check for Windows drive letter e.g. C:/...
+                const driveMatch = relativeCandidate.match(/^[a-zA-Z]:\/(.*)$/);
+                if (driveMatch) {
+                    const afterDrive = driveMatch[1];
+                    const vaultName = app.vault.getName();
+                    if (vaultName && afterDrive.toLowerCase().startsWith(`${vaultName.toLowerCase()}/`)) {
+                        relativeCandidate = afterDrive.slice(vaultName.length + 1).replace(/^\/+/, "");
+                    } else {
+                        relativeCandidate = afterDrive;
+                    }
+                }
+            }
+        } catch {
+            // fallback if adapter throws
+        }
+        relativeCandidate = relativeCandidate.replace(/^\/+/, "");
+
+        // 3. Stage 1: Direct vault path lookup (O(1))
+        if (relativeCandidate) {
+            let file = app.vault.getAbstractFileByPath(relativeCandidate);
+            if (file instanceof TFile) return file;
+
+            if (!relativeCandidate.endsWith(".md")) {
+                file = app.vault.getAbstractFileByPath(`${relativeCandidate}.md`);
+                if (file instanceof TFile) return file;
+            } else {
+                file = app.vault.getAbstractFileByPath(relativeCandidate.replace(/\.md$/, ""));
+                if (file instanceof TFile) return file;
+            }
+        }
+
+        // 4. Stage 2: Obsidian metadataCache linkpath lookup
+        if (app.metadataCache && relativeCandidate) {
+            let cached = app.metadataCache.getFirstLinkpathDest(relativeCandidate, sourcePath || "");
+            if (cached instanceof TFile) return cached;
+
+            const noExt = relativeCandidate.replace(/\.md$/, "");
+            if (noExt !== relativeCandidate) {
+                cached = app.metadataCache.getFirstLinkpathDest(noExt, sourcePath || "");
+                if (cached instanceof TFile) return cached;
+            }
+        }
+
+        // 5. Stage 3: Handle stripped prefix candidates (leading -, ——, —, •, *, #, ~)
+        const strippedPrefix = relativeCandidate.replace(/^[\s\-—–_•*#~]+\s*/, "").trim();
+        if (strippedPrefix && strippedPrefix !== relativeCandidate) {
+            let file = app.vault.getAbstractFileByPath(strippedPrefix);
+            if (file instanceof TFile) return file;
+            if (!strippedPrefix.endsWith(".md")) {
+                file = app.vault.getAbstractFileByPath(`${strippedPrefix}.md`);
+                if (file instanceof TFile) return file;
+            }
+            if (app.metadataCache) {
+                const cached = app.metadataCache.getFirstLinkpathDest(strippedPrefix, sourcePath || "");
+                if (cached instanceof TFile) return cached;
+            }
+        }
+
+        // 6. Stage 4: Vault-wide scan across all markdown files ("自动寻找第一个找到的笔记")
+        const allMdFiles = app.vault.getMarkdownFiles();
+        if (!allMdFiles || allMdFiles.length === 0) return null;
+
+        // Extract segments for comparison
+        const lastSegment = relativeCandidate.split("/").pop() || relativeCandidate;
+        const candidateBasename = lastSegment.replace(/\.md$/i, "").trim();
+        const cleanCandidateBasename = candidateBasename.replace(/^[\s\-—–_•*#~]+\s*/, "").trim();
+        const lowerCleanBasename = cleanCandidateBasename.toLowerCase();
+        const lowerRelative = relativeCandidate.toLowerCase().replace(/\.md$/i, "");
+
+        // 6a. Priority A: Path ending match (e.g. C:/ObsidianNote/OneNote/... ends with file.path)
+        if (relativeCandidate.includes("/")) {
+            for (const file of allMdFiles) {
+                const filePathLower = file.path.toLowerCase();
+                const filePathNoExt = filePathLower.replace(/\.md$/, "");
+                if (filePathLower === lowerRelative || filePathNoExt === lowerRelative) {
+                    return file;
+                }
+                if (cleaned.toLowerCase().endsWith(filePathLower) || cleaned.toLowerCase().endsWith(filePathNoExt)) {
+                    return file;
+                }
+                if (filePathLower.endsWith(lowerRelative) || filePathNoExt.endsWith(lowerRelative)) {
+                    return file;
+                }
+            }
+        }
+
+        // 6b. Priority B: Exact basename match
+        if (cleanCandidateBasename) {
+            for (const file of allMdFiles) {
+                if (file.basename === cleanCandidateBasename || file.basename === candidateBasename) {
+                    return file;
+                }
+            }
+        }
+
+        // 6c. Priority C: Case-insensitive basename match
+        if (lowerCleanBasename) {
+            for (const file of allMdFiles) {
+                if (file.basename.toLowerCase() === lowerCleanBasename || file.basename.toLowerCase() === candidateBasename.toLowerCase()) {
+                    return file;
+                }
+            }
+        }
+
+        // 6d. Priority D: Normalized CJK / Punctuation match (ignoring colons, dashes, spaces, full-width vs half-width)
+        // e.g. "休闲采集与猫咪料理循环设计：轻量星露谷时钟" vs "休闲采集与猫咪料理循环设计:轻量星露谷时钟"
+        const normTarget = cleanCandidateBasename.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+        if (normTarget && normTarget.length >= 2) {
+            for (const file of allMdFiles) {
+                const normFile = file.basename.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+                if (normFile === normTarget) {
+                    return file;
+                }
+            }
+        }
+
+        // 6e. Priority E: Substring match (either file.basename contains target or target contains file.basename)
+        if (lowerCleanBasename && lowerCleanBasename.length >= 3) {
+            for (const file of allMdFiles) {
+                const fileBaseLower = file.basename.toLowerCase();
+                if (fileBaseLower.includes(lowerCleanBasename)) {
+                    return file;
+                }
+            }
+            for (const file of allMdFiles) {
+                const fileBaseLower = file.basename.toLowerCase();
+                if (fileBaseLower.length >= 4 && lowerCleanBasename.includes(fileBaseLower)) {
+                    return file;
+                }
+            }
+        }
+
+        if (normTarget && normTarget.length >= 4) {
+            for (const file of allMdFiles) {
+                const normFile = file.basename.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+                if (normFile.length >= 4 && (normFile.includes(normTarget) || normTarget.includes(normFile))) {
+                    return file;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Resolve a note link string (e.g. [[Path/Note|Alias]] or Path/Note or bare note title) to a physical TFile,
      * with automatic fallback to taskId matching if link is stale or broken.
      */
     static resolveLinkedNoteFile(app: App, noteLink?: string, sourcePath?: string, taskId?: string): TFile | null {
         if (!app) return null;
 
-        // 1. Direct standard path lookup if sourcePath and taskId are known (O(1))
+        // 1. If noteLink is provided, attempt multi-stage resolution first (highest priority)
+        if (noteLink && typeof noteLink === "string") {
+            const raw = noteLink.trim();
+            if (raw) {
+                const resolved = this.resolveNoteLinkInternal(app, raw, sourcePath);
+                if (resolved) return resolved;
+            }
+        }
+
+        // 2. Fallback: Direct standard path lookup if sourcePath and taskId are known (O(1))
         if (sourcePath && taskId) {
             const stdPath = this.getStandardNotePath(sourcePath, taskId);
             const stdFile = app.vault.getAbstractFileByPath(stdPath);
             if (stdFile instanceof TFile) return stdFile;
-        }
-
-        // 2. Direct path lookup
-        if (noteLink) {
-            const clean = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
-            if (clean) {
-                let file = app.vault.getAbstractFileByPath(clean);
-                if (file instanceof TFile) return file;
-
-                if (!clean.endsWith(".md")) {
-                    file = app.vault.getAbstractFileByPath(`${clean}.md`);
-                    if (file instanceof TFile) return file;
-                }
-
-                if (app.metadataCache) {
-                    const cached = app.metadataCache.getFirstLinkpathDest(clean, sourcePath || "");
-                    if (cached instanceof TFile) return cached;
-                }
-            }
         }
 
         // 3. Fallback: Search by taskId if provided
@@ -351,8 +555,8 @@ export class LinkedNoteService {
             || (task.id ? await this.findFileByTaskIdAsync(app, task.id, categoryFilepath) : null);
 
         if (existingFile) {
-            // If it's an old note with a non-standard path, migrate it to standardPath!
-            if (existingFile.path !== standardPath) {
+            // If it's an internal note under DATA_FOLDER with a non-standard path, migrate it to standardPath!
+            if (existingFile.path.startsWith(`${DATA_FOLDER}/`) && existingFile.path !== standardPath) {
                 await this.ensureFolderExists(app, this.getTaskNotesFolder(categoryFilepath));
                 this.markInternalRename(existingFile.path, standardPath);
                 try {
@@ -416,8 +620,8 @@ export class LinkedNoteService {
         if (!file) return { noteRenamed: false };
 
         let noteRenamed = false;
-        // If file is an old note at a non-standard path, rename to standardPath
-        if (file.path !== standardPath) {
+        // If file is an internal note under DATA_FOLDER at a non-standard path, rename to standardPath
+        if (file.path.startsWith(`${DATA_FOLDER}/`) && file.path !== standardPath) {
             const targetFolder = this.getTaskNotesFolder(categoryFilepath);
             await this.ensureFolderExists(app, targetFolder);
             this.markInternalRename(file.path, standardPath);
@@ -436,23 +640,25 @@ export class LinkedNoteService {
             }
         }
 
-        // Auto-heal task.note_link to standard link
-        const cleanPath = file.path.replace(/\.md$/, "");
-        const expectedNoteLink = `[[${cleanPath}]]`;
+        // Auto-heal task.note_link to standard link ONLY for internal notes
         let linkHealed = false;
-        if (task.note_link !== expectedNoteLink) {
-            task.note_link = expectedNoteLink;
-            linkHealed = true;
-        }
+        if (file.path.startsWith(`${DATA_FOLDER}/`)) {
+            const cleanPath = file.path.replace(/\.md$/, "");
+            const expectedNoteLink = `[[${cleanPath}]]`;
+            if (task.note_link !== expectedNoteLink) {
+                task.note_link = expectedNoteLink;
+                linkHealed = true;
+            }
 
-        // Update YAML frontmatter title property (No disk file rename needed!)
-        if (dataService) {
-            dataService.markInternalWrite(file.path, 3000);
+            // Update YAML frontmatter title property (No disk file rename needed!)
+            if (dataService) {
+                dataService.markInternalWrite(file.path, 3000);
+            }
+            await this.updateNoteFrontmatterTitle(app, file, task.title);
         }
-        await this.updateNoteFrontmatterTitle(app, file, task.title);
 
         return {
-            newNoteLink: (noteRenamed || linkHealed) ? expectedNoteLink : undefined,
+            newNoteLink: (noteRenamed || linkHealed) ? task.note_link : undefined,
             noteRenamed,
         };
     }
@@ -744,6 +950,11 @@ export class LinkedNoteService {
 
         // 1. Check each task in category
         for (const task of tasks) {
+            // CRITICAL: Skip external linked notes (e.g. in OneNote/) - never rename or move them
+            if (task.note_link && !this.isHardBoundNote(task.note_link)) {
+                continue;
+            }
+
             const standardPath = this.getStandardNotePath(categoryFilepath, task.id);
             const standardClean = standardPath.replace(/\.md$/, "");
             const standardNoteLink = `[[${standardClean}]]`;
@@ -754,7 +965,7 @@ export class LinkedNoteService {
                     || (task.id ? await this.findFileByTaskIdAsync(app, task.id, categoryFilepath) : null);
             }
 
-            if (noteFile instanceof TFile) {
+            if (noteFile instanceof TFile && noteFile.path.startsWith(`${DATA_FOLDER}/`)) {
                 if (noteFile.path !== standardPath) {
                     await this.ensureFolderExists(app, targetFolderPath);
                     this.markInternalRename(noteFile.path, standardPath);
@@ -864,10 +1075,15 @@ export class LinkedNoteService {
         const targetCatName = this.getCategoryName(targetCategoryFilepath);
         if (sourceCatName === targetCatName) return false;
 
+        // CRITICAL: Skip external linked notes (e.g. in OneNote/) - never rename or move them
+        if (task.note_link && !this.isHardBoundNote(task.note_link)) {
+            return false;
+        }
+
         const noteFile = this.resolveLinkedNoteFile(app, task.note_link, sourceCategoryFilepath, task.id)
             || (task.id ? await this.findFileByTaskIdAsync(app, task.id, sourceCategoryFilepath) : null);
 
-        if (!noteFile || !(noteFile instanceof TFile)) return false;
+        if (!noteFile || !(noteFile instanceof TFile) || !noteFile.path.startsWith(`${DATA_FOLDER}/`)) return false;
 
         const targetFolder = this.getTaskNotesFolder(targetCategoryFilepath);
         await this.ensureFolderExists(app, targetFolder);

@@ -422,8 +422,8 @@
     function handleLinkNoteHover(e: MouseEvent) {
         if (!hasLinkedNote || !task?.note_link || !plugin?.app) return;
         const file = LinkedNoteService.resolveLinkedNoteFile(plugin.app, task.note_link, categoryFilepath, task?.id);
-        const cleanLink = file ? file.path.replace(/\.md$/, "") : task.note_link.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
-        if (!cleanLink) return;
+        const cleanLink = file ? file.path.replace(/\.md$/, "") : LinkedNoteService.sanitizeLinkpath(task.note_link);
+        if (!cleanLink || cleanLink.includes(":")) return;
 
         const proxiedEvent = new Proxy(e, {
             get(target, prop) {
@@ -462,17 +462,19 @@
                     await immediateSave();
                 }
                 await LinkedNoteService.openLinkedNoteFile(plugin.app, file);
-            } else {
-                // Re-create note if file was removed
+            } else if (LinkedNoteService.isHardBoundNote(task.note_link)) {
+                // Re-create dedicated note if file was removed
                 const res = await LinkedNoteService.createOrGetLinkedNote(plugin.app, task, categoryFilepath);
                 task.note_link = res.noteLink;
                 task = task;
                 await immediateSave();
                 await LinkedNoteService.openLinkedNoteFile(plugin.app, res.file);
                 new Notice(t("linked_note_recreated", res.file.basename));
+            } else {
+                new Notice(`Linked note "${task.note_link}" not found in vault.`);
             }
         } else {
-            // Create brand new linked note and jump to it
+            // Create brand new dedicated linked note and jump to it
             const res = await LinkedNoteService.createOrGetLinkedNote(plugin.app, task, categoryFilepath);
             task.note_link = res.noteLink;
             task = task;
@@ -679,6 +681,30 @@
         showAddMetaModal = false;
     }
 
+    $: resolvedHintFile = (metaNoteLinkVal && plugin?.app)
+        ? LinkedNoteService.resolveLinkedNoteFile(plugin.app, metaNoteLinkVal, categoryFilepath)
+        : null;
+
+    async function handleTestOpenNote(val: string) {
+        if (!val || !plugin?.app) return;
+        const file = LinkedNoteService.resolveLinkedNoteFile(plugin.app, val, categoryFilepath);
+        if (file) {
+            await LinkedNoteService.openLinkedNoteFile(plugin.app, file);
+            new Notice(`Opened note: ${file.basename}`);
+        } else {
+            const clean = LinkedNoteService.sanitizeLinkpath(val);
+            if (clean && !clean.includes(":")) {
+                try {
+                    plugin.app.workspace.openLinkText(clean, categoryFilepath, false);
+                    return;
+                } catch (e) {
+                    void Logger.log("[TaskDetail] openLinkText failed:", e);
+                }
+            }
+            new Notice(`Cannot find note in vault matching "${val.trim()}"`);
+        }
+    }
+
     async function saveMetadata() {
         if (!task) return;
         if (metaFormType === "why") {
@@ -687,8 +713,17 @@
             else delete task.why;
         } else if (metaFormType === "note_link") {
             const val = metaNoteLinkVal.trim();
-            if (val) task.note_link = val;
-            else delete task.note_link;
+            if (val) {
+                const resolvedFile = LinkedNoteService.resolveLinkedNoteFile(plugin.app, val, categoryFilepath);
+                if (resolvedFile) {
+                    const cleanPath = resolvedFile.path.replace(/\.md$/, "");
+                    task.note_link = `[[${cleanPath}]]`;
+                } else {
+                    task.note_link = LinkedNoteService.normalizeNoteLinkInput(val);
+                }
+            } else {
+                delete task.note_link;
+            }
         } else if (metaFormType === "svg") {
             const val = metaSvgVal.trim();
             if (val) task.svgs = [val];
@@ -1201,13 +1236,18 @@
                                 <span class="meta-field-label">Linked Obsidian / OneNote Note</span>
                                 <input class="meta-form-input" type="text" placeholder="e.g. [[My Note]] or OneNote/Domain/Section/Topic.md"
                                        bind:value={metaNoteLinkVal} />
-                                <span class="meta-form-hint">Hovering badge in main view will preview this note. Clicking will open it.</span>
+                                <span class="meta-form-hint">
+                                    {#if resolvedHintFile}
+                                        <span style="color: var(--text-success, #48c774); font-weight: 500;">✓ Matched: {resolvedHintFile.path}</span>
+                                    {:else if metaNoteLinkVal && metaNoteLinkVal.trim()}
+                                        <span style="color: var(--text-muted);">Searching note across vault...</span>
+                                    {:else}
+                                        Hovering badge in main view will preview this note. Clicking will open it.
+                                    {/if}
+                                </span>
                                 {#if metaNoteLinkVal && plugin?.app}
                                     <button type="button" class="meta-btn-secondary" style="align-self: flex-start; margin-top: 4px; font-size: 11px; padding: 3px 8px;"
-                                            on:click={() => {
-                                                const clean = metaNoteLinkVal.replace(/^\[\[/, "").replace(/\]\]$/, "").trim();
-                                                if (clean) plugin.app.workspace.openLinkText(clean, categoryFilepath, false);
-                                            }}>
+                                            on:click={() => void handleTestOpenNote(metaNoteLinkVal)}>
                                         🔗 Test Open Note
                                     </button>
                                 {/if}

@@ -19,6 +19,7 @@
     import { TaskStepsModal } from "./modals/TaskStepsModal";
     import { BackupModal } from "./modals/BackupModal";
     import { t, isChinese } from "./lang/helpers";
+    import { Logger } from "./Logger";
 
     // =============================================
     // Props
@@ -612,9 +613,9 @@
 
     function handleNoteLinkHover(e: MouseEvent, noteLink?: string) {
         if (!noteLink || !plugin?.app) return;
-        // Strip wikilink brackets and aliases (e.g. [[Note#^block|alias]] -> Note#^block)
-        const cleanLink = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
-        if (!cleanLink) return;
+        const file = LinkedNoteService.resolveLinkedNoteFile(plugin.app, noteLink, currentCategory?.filepath);
+        const linktext = file ? file.path.replace(/\.md$/, "") : LinkedNoteService.sanitizeLinkpath(noteLink);
+        if (!linktext || linktext.includes(":")) return;
 
         // Create a proxied MouseEvent where ctrlKey / metaKey always returns true
         // This guarantees Obsidian's Page Preview triggers directly on hover in all view modes (Reading & Live Preview)
@@ -631,7 +632,7 @@
             source: "fluent-tasks",
             hoverParent: e.currentTarget as HTMLElement,
             targetEl: e.currentTarget as HTMLElement,
-            linktext: cleanLink,
+            linktext: linktext,
             sourcePath: currentCategory?.filepath || "",
         });
     }
@@ -646,13 +647,19 @@
         if (file) {
             await LinkedNoteService.openLinkedNoteFile(plugin.app, file);
         } else if (noteLink) {
-            const cleanLink = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
-            if (cleanLink) {
-                plugin.app.workspace.openLinkText(
-                    cleanLink,
-                    currentCategory?.filepath || "",
-                    "tab"
-                );
+            const cleanLink = LinkedNoteService.sanitizeLinkpath(noteLink);
+            if (cleanLink && !cleanLink.includes(":")) {
+                try {
+                    plugin.app.workspace.openLinkText(
+                        cleanLink,
+                        currentCategory?.filepath || "",
+                        "tab"
+                    );
+                } catch (err) {
+                    void Logger.log("[TaskMainView] openLinkText failed:", err);
+                }
+            } else {
+                new Notice(`Cannot find note in vault matching "${noteLink}"`);
             }
         }
     }
