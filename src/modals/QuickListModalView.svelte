@@ -74,13 +74,16 @@
     // Inline Add List / Group State
     let isAddingList: boolean = false;
     let newListName: string = "";
+    let isCommittingAddList: boolean = false;
     let isAddingGroup: boolean = false;
     let newGroupName: string = "";
+    let isCommittingAddGroup: boolean = false;
 
     // Inline Rename State
     let editingItemId: string = "";
     let editingItemType: "category" | "group" = "category";
     let editingName: string = "";
+    let isCommittingRename: boolean = false;
     let renameInputEl: HTMLInputElement;
 
     // Drag & Drop reordering state
@@ -95,6 +98,7 @@
     let addGroupInputEl: HTMLInputElement;
     let boardEl: HTMLElement | null = null;
     let resizeObserver: ResizeObserver | null = null;
+    let resizeDebounceTimer: number | null = null;
     let isAdjustingSpacing: boolean = false;
 
     $: isFiltering = (searchMode === 'list') && !!searchQuery.trim();
@@ -134,7 +138,25 @@
 
     let layoutColumns: GridCardData[][] = [];
     let rafId: number | null = null;
-    let isRefining = false;
+
+    interface CardHeightRecord {
+        height: number;
+        itemCount: number;
+    }
+    let measuredCardHeights = new Map<string, CardHeightRecord>();
+
+    function areColumnsEqual(colsA: GridCardData[][], colsB: GridCardData[][]): boolean {
+        if (colsA.length !== colsB.length) return false;
+        for (let i = 0; i < colsA.length; i++) {
+            const colA = colsA[i];
+            const colB = colsB[i];
+            if (colA.length !== colB.length) return false;
+            for (let j = 0; j < colA.length; j++) {
+                if (colA[j].id !== colB[j].id) return false;
+            }
+        }
+        return true;
+    }
 
     function scheduleAdjustSpacing() {
         if (!isGridLayout) return;
@@ -174,26 +196,35 @@
         const estimatedItemH = Math.round(28 * fontScale);
         const estimatedHeaderH = Math.round(38 * fontScale);
 
-        // 2. Gather all cards with font-scaled initial estimated heights
+        // 2. Gather all cards with font-scaled initial estimated heights or cached measurements
         const cards: GridCardData[] = [];
         if (rootCategories.length > 0) {
+            const itemCount = rootCategories.length;
+            const cached = measuredCardHeights.get("__root__");
+            const height = (cached && cached.itemCount === itemCount)
+                ? cached.height
+                : (estimatedHeaderH + itemCount * estimatedItemH);
             cards.push({
                 id: "__root__",
                 type: "root",
                 name: "Lists",
                 items: rootCategories,
-                height: estimatedHeaderH + rootCategories.length * estimatedItemH
+                height
             });
         }
         for (const group of groupItems) {
             const itemCount = (group.isExpanded && group.items) ? group.items.length : 0;
+            const cached = measuredCardHeights.get(group.id);
+            const height = (cached && cached.itemCount === itemCount)
+                ? cached.height
+                : (group.isExpanded ? (estimatedHeaderH + itemCount * estimatedItemH) : estimatedHeaderH);
             cards.push({
                 id: group.id,
                 type: "group",
                 name: group.name,
                 group: group,
                 items: group.items,
-                height: group.isExpanded ? (estimatedHeaderH + itemCount * estimatedItemH) : estimatedHeaderH
+                height
             });
         }
 
@@ -203,15 +234,15 @@
         }
 
         // 3. Measure actual rendered DOM heights if available
-        let needsRefine = false;
         if (boardEl) {
             for (const c of cards) {
                 const el = boardEl.querySelector<HTMLElement>(`.quick-grid-card[data-card-id="${c.id}"]`);
                 if (el && el.offsetHeight > 0) {
-                    if (Math.abs(c.height - el.offsetHeight) > 8) {
-                        needsRefine = true;
-                    }
                     c.height = el.offsetHeight;
+                    measuredCardHeights.set(c.id, {
+                        height: el.offsetHeight,
+                        itemCount: c.items ? c.items.length : 0
+                    });
                 }
             }
         }
@@ -296,8 +327,11 @@
             return orderA - orderB;
         });
 
-        // 6. Update layoutColumns
-        layoutColumns = bestBins.map(b => b.items);
+        // 6. Update layoutColumns only when column structure changes
+        const newColumns = bestBins.map(b => b.items);
+        if (!areColumnsEqual(layoutColumns, newColumns)) {
+            layoutColumns = newColumns;
+        }
 
         // 7. Calculate elastic card width, column gap, and symmetrical top/bottom padding to center vertically
         const peakH = Math.max(...bestBins.map(b => b.h));
@@ -323,15 +357,6 @@
             } else {
                 boardEl.style.justifyContent = "center";
             }
-        }
-
-        // 8. One follow-up refinement pass if DOM heights differed from estimation
-        if (needsRefine && !isRefining) {
-            isRefining = true;
-            requestAnimationFrame(() => {
-                isRefining = false;
-                updateLayoutColumns();
-            });
         }
 
         if (!hasInitializedFocus && flatCategories.length > 0) {
@@ -446,8 +471,26 @@
         window.addEventListener("resize", scheduleAdjustSpacing);
 
         if (typeof ResizeObserver !== "undefined" && modalContainerEl) {
-            resizeObserver = new ResizeObserver(() => {
-                scheduleAdjustSpacing();
+            let lastObservedW = 0;
+            let lastObservedH = 0;
+            resizeObserver = new ResizeObserver((entries) => {
+                if (!entries || entries.length === 0) return;
+                const entry = entries[0];
+                const cr = entry.contentRect;
+                if (!cr) return;
+                const dw = Math.abs(cr.width - lastObservedW);
+                const dh = Math.abs(cr.height - lastObservedH);
+                if (dw >= 2 || dh >= 2) {
+                    lastObservedW = cr.width;
+                    lastObservedH = cr.height;
+                    if (resizeDebounceTimer !== null) {
+                        window.clearTimeout(resizeDebounceTimer);
+                    }
+                    resizeDebounceTimer = window.setTimeout(() => {
+                        resizeDebounceTimer = null;
+                        scheduleAdjustSpacing();
+                    }, 60);
+                }
             });
             resizeObserver.observe(modalContainerEl);
         }
@@ -457,6 +500,10 @@
         if (searchDebounceTimer) {
             clearTimeout(searchDebounceTimer);
             searchDebounceTimer = null;
+        }
+        if (resizeDebounceTimer !== null) {
+            window.clearTimeout(resizeDebounceTimer);
+            resizeDebounceTimer = null;
         }
         if (rafId !== null) {
             cancelAnimationFrame(rafId);
@@ -512,6 +559,7 @@
     }
 
     async function toggleGroup(group: GroupInfo) {
+        measuredCardHeights.delete(group.id);
         sidebarItems = toggleGroupExpandedState(sidebarItems, group.id);
         await dataService.saveSidebarState(sidebarItems);
         scheduleAdjustSpacing();
@@ -727,26 +775,31 @@
     }
 
     async function commitRename() {
+        if (isCommittingRename || !editingItemId) return;
         const newName = editingName.trim();
-        if (!newName || !editingItemId) {
-            cancelRename();
+        const itemId = editingItemId;
+        const itemType = editingItemType;
+        cancelRename();
+        if (!newName || !itemId) {
             return;
         }
 
+        isCommittingRename = true;
         try {
-            if (editingItemType === "category") {
-                const cat = categories.find(c => c.id === editingItemId || c.filepath === editingItemId);
+            if (itemType === "category") {
+                const cat = categories.find(c => c.id === itemId || c.filepath === itemId);
                 if (cat && cat.name !== newName) {
                     await dataService.renameCategory(cat.filepath, newName);
                 }
             } else {
-                await dataService.renameGroup(editingItemId, newName);
+                await dataService.renameGroup(itemId, newName);
             }
             await loadData();
         } catch (e) {
             console.error("[QuickListModal] Rename failed:", e);
+        } finally {
+            isCommittingRename = false;
         }
-        cancelRename();
     }
 
     function cancelRename() {
