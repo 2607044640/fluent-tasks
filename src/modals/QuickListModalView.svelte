@@ -864,20 +864,25 @@
     }
 
     async function commitAddList() {
+        if (isCommittingAddList || !isAddingList) return;
         const name = newListName.trim();
         if (!name) {
             isAddingList = false;
+            newListName = "";
             return;
         }
+        isCommittingAddList = true;
+        isAddingList = false;
+        newListName = "";
         try {
             const newCat = await dataService.createCategory(name);
             await loadData();
             await openCategoryInCenterOnly(newCat);
         } catch (e) {
             new Notice(`Failed to create list: ${e}`);
+        } finally {
+            isCommittingAddList = false;
         }
-        isAddingList = false;
-        newListName = "";
     }
 
     function startAddGroup() {
@@ -887,19 +892,24 @@
     }
 
     async function commitAddGroup() {
+        if (isCommittingAddGroup || !isAddingGroup) return;
         const name = newGroupName.trim();
         if (!name) {
             isAddingGroup = false;
+            newGroupName = "";
             return;
         }
+        isCommittingAddGroup = true;
+        isAddingGroup = false;
+        newGroupName = "";
         try {
             await dataService.createGroup(name);
             await loadData();
         } catch (e) {
             new Notice(`Failed to create group: ${e}`);
+        } finally {
+            isCommittingAddGroup = false;
         }
-        isAddingGroup = false;
-        newGroupName = "";
     }
 
     // =============================================
@@ -1754,6 +1764,18 @@
                     placeholder="New list name (Enter to save, Esc to cancel)..."
                     bind:value={newListName}
                     bind:this={addListInputEl}
+                    on:keydown={(e) => {
+                        if (e.key === "Enter") {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            void commitAddList();
+                        } else if (e.key === "Escape") {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            isAddingList = false;
+                            newListName = "";
+                        }
+                    }}
                     on:blur={commitAddList}
                 />
             </div>
@@ -1765,6 +1787,18 @@
                     placeholder="New group name (Enter to save, Esc to cancel)..."
                     bind:value={newGroupName}
                     bind:this={addGroupInputEl}
+                    on:keydown={(e) => {
+                        if (e.key === "Enter") {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            void commitAddGroup();
+                        } else if (e.key === "Escape") {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            isAddingGroup = false;
+                            newGroupName = "";
+                        }
+                    }}
                     on:blur={commitAddGroup}
                 />
             </div>
