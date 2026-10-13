@@ -19637,23 +19637,48 @@ function instance4($$self, $$props, $$invalidate) {
       $$invalidate(34, showPluginDownloadModal = false);
       return;
     }
-    $$invalidate(33, showSvgSaveConfirmModal = false);
     const quickEditor = window.svgQuickEditor || window.a1SvgQuickEditor;
+    const svgEl = document.querySelector(".svg-lightbox-content svg");
+    const isDirty = (quickEditor == null ? void 0 : quickEditor.isSvgDirty) ? quickEditor.isSvgDirty(svgEl) : false;
+    if (isDirty) {
+      $$invalidate(33, showSvgSaveConfirmModal = true);
+      return;
+    }
+    $$invalidate(33, showSvgSaveConfirmModal = false);
     (_a2 = quickEditor == null ? void 0 : quickEditor.clearHover) == null ? void 0 : _a2.call(quickEditor);
     closeSvgLightbox();
   }
   async function saveAndCloseSvgLightbox() {
+    var _a2;
     const quickEditor = window.svgQuickEditor || window.a1SvgQuickEditor;
+    const svgEl = document.querySelector(".svg-lightbox-content svg");
+    if (svgEl && (lightboxData == null ? void 0 : lightboxData.cleanPath) && !svgEl.getAttribute("data-a1-svg-path")) {
+      svgEl.setAttribute("data-a1-svg-path", lightboxData.cleanPath);
+    }
     if (quickEditor == null ? void 0 : quickEditor.saveCurrentSvg) {
-      await quickEditor.saveCurrentSvg();
+      await quickEditor.saveCurrentSvg(svgEl, false);
+    } else if ((lightboxData == null ? void 0 : lightboxData.cleanPath) && ((_a2 = plugin == null ? void 0 : plugin.app) == null ? void 0 : _a2.vault)) {
+      const contentToSave = svgEl ? svgEl.outerHTML : lightboxData.content;
+      try {
+        if (await plugin.app.vault.adapter.exists(lightboxData.cleanPath)) {
+          await plugin.app.vault.adapter.write(lightboxData.cleanPath, contentToSave);
+        } else {
+          const file = plugin.app.vault.getAbstractFileByPath(lightboxData.cleanPath);
+          if (file)
+            await plugin.app.vault.modify(file, contentToSave);
+        }
+      } catch (e) {
+        console.error("Failed to save SVG in lightbox:", e);
+      }
     }
     $$invalidate(33, showSvgSaveConfirmModal = false);
     closeSvgLightbox();
   }
   function discardAndCloseSvgLightbox() {
     const quickEditor = window.svgQuickEditor || window.a1SvgQuickEditor;
+    const svgEl = document.querySelector(".svg-lightbox-content svg");
     if (quickEditor == null ? void 0 : quickEditor.discardCurrentSvg) {
-      quickEditor.discardCurrentSvg();
+      quickEditor.discardCurrentSvg(svgEl);
     }
     $$invalidate(33, showSvgSaveConfirmModal = false);
     closeSvgLightbox();

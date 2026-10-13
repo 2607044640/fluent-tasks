@@ -378,16 +378,38 @@
             showPluginDownloadModal = false;
             return;
         }
-        showSvgSaveConfirmModal = false;
         const quickEditor = (window as any).svgQuickEditor || (window as any).a1SvgQuickEditor;
+        const svgEl = document.querySelector('.svg-lightbox-content svg') as SVGSVGElement | null;
+        const isDirty = quickEditor?.isSvgDirty ? quickEditor.isSvgDirty(svgEl) : false;
+        if (isDirty) {
+            showSvgSaveConfirmModal = true;
+            return;
+        }
+        showSvgSaveConfirmModal = false;
         quickEditor?.clearHover?.();
         closeSvgLightbox();
     }
 
     async function saveAndCloseSvgLightbox() {
         const quickEditor = (window as any).svgQuickEditor || (window as any).a1SvgQuickEditor;
+        const svgEl = document.querySelector('.svg-lightbox-content svg') as SVGSVGElement | null;
+        if (svgEl && lightboxData?.cleanPath && !svgEl.getAttribute('data-a1-svg-path')) {
+            svgEl.setAttribute('data-a1-svg-path', lightboxData.cleanPath);
+        }
         if (quickEditor?.saveCurrentSvg) {
-            await quickEditor.saveCurrentSvg();
+            await quickEditor.saveCurrentSvg(svgEl, false);
+        } else if (lightboxData?.cleanPath && plugin?.app?.vault) {
+            const contentToSave = svgEl ? svgEl.outerHTML : lightboxData.content;
+            try {
+                if (await plugin.app.vault.adapter.exists(lightboxData.cleanPath)) {
+                    await plugin.app.vault.adapter.write(lightboxData.cleanPath, contentToSave);
+                } else {
+                    const file = plugin.app.vault.getAbstractFileByPath(lightboxData.cleanPath);
+                    if (file) await plugin.app.vault.modify(file, contentToSave);
+                }
+            } catch (e) {
+                console.error("Failed to save SVG in lightbox:", e);
+            }
         }
         showSvgSaveConfirmModal = false;
         closeSvgLightbox();
@@ -395,8 +417,9 @@
 
     function discardAndCloseSvgLightbox() {
         const quickEditor = (window as any).svgQuickEditor || (window as any).a1SvgQuickEditor;
+        const svgEl = document.querySelector('.svg-lightbox-content svg') as SVGSVGElement | null;
         if (quickEditor?.discardCurrentSvg) {
-            quickEditor.discardCurrentSvg();
+            quickEditor.discardCurrentSvg(svgEl);
         }
         showSvgSaveConfirmModal = false;
         closeSvgLightbox();

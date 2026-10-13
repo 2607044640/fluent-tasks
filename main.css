@@ -1600,6 +1600,7 @@ body.is-dragging-ghost #dnd-action-dragged-el {
 }
 
 .svg-lightbox-modal {
+    position: relative;
     width: 96vw;
     height: 94vh;
     max-width: 96vw;
@@ -1612,6 +1613,48 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     flex-direction: column;
     overflow: hidden;
     animation: lightbox-pop 150ms ease-out;
+}
+
+/* In-Modal Top-Right Save Toast Notification (Ctrl+S) */
+.svg-lightbox-toast {
+    position: absolute;
+    top: 56px;
+    right: 20px;
+    z-index: 100050;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(22, 24, 34, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: #f3f4f6;
+    border: 1px solid var(--interactive-accent, #7c9cff);
+    border-radius: 8px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5), 0 0 14px color-mix(in srgb, var(--interactive-accent, #7c9cff) 35%, transparent);
+    font-size: 13px;
+    font-weight: 500;
+    pointer-events: none;
+    animation: lightbox-toast-slide-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.svg-lightbox-toast-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: #4ade80;
+}
+
+@keyframes lightbox-toast-slide-in {
+    from {
+        opacity: 0;
+        transform: translateY(-12px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 @keyframes lightbox-pop {
