@@ -360,19 +360,28 @@
         quickEditor?.clearSvgHistory?.();
     }
 
+    let showSaveToast: boolean = false;
+    let saveToastText: string = "";
+    let saveToastTimer: any = null;
+
+    function triggerSaveToast(msg: string) {
+        saveToastText = msg;
+        showSaveToast = true;
+        if (saveToastTimer) clearTimeout(saveToastTimer);
+        saveToastTimer = setTimeout(() => {
+            showSaveToast = false;
+        }, 2200);
+    }
+
     function requestCloseSvgLightbox() {
         if (showPluginDownloadModal) {
             showPluginDownloadModal = false;
             return;
         }
+        showSvgSaveConfirmModal = false;
         const quickEditor = (window as any).svgQuickEditor || (window as any).a1SvgQuickEditor;
         quickEditor?.clearHover?.();
-        const isDirty = quickEditor?.isSvgDirty ? quickEditor.isSvgDirty() : false;
-        if (isDirty) {
-            showSvgSaveConfirmModal = true;
-        } else {
-            closeSvgLightbox();
-        }
+        closeSvgLightbox();
     }
 
     async function saveAndCloseSvgLightbox() {
@@ -399,10 +408,19 @@
 
     async function saveSvgLightboxInPlace() {
         if (!lightboxData) return;
+        const name = lightboxData.cleanPath ? (lightboxData.cleanPath.split("/").pop() || "SVG") : "SVG";
+        const msg = isChinese() ? `SVG 已保存: ${name}` : `SVG saved: ${name}`;
+
         const quickEditor = (window as any).svgQuickEditor || (window as any).a1SvgQuickEditor;
         const svgEl = document.querySelector('.svg-lightbox-content svg') as SVGSVGElement | null;
+        if (svgEl && lightboxData.cleanPath && !svgEl.getAttribute('data-a1-svg-path')) {
+            svgEl.setAttribute('data-a1-svg-path', lightboxData.cleanPath);
+        }
+
         if (quickEditor?.saveCurrentSvg) {
             await quickEditor.saveCurrentSvg(svgEl, true);
+            quickEditor?.showSaveToast?.(msg);
+            triggerSaveToast(msg);
         } else if (lightboxData.cleanPath && plugin?.app?.vault) {
             const contentToSave = svgEl ? svgEl.outerHTML : lightboxData.content;
             try {
@@ -412,12 +430,14 @@
                     const file = plugin.app.vault.getAbstractFileByPath(lightboxData.cleanPath);
                     if (file) await plugin.app.vault.modify(file, contentToSave);
                 }
-                const name = lightboxData.cleanPath.split("/").pop() || "SVG";
                 const NoticeCtor = (window as any).Notice || Notice;
-                new NoticeCtor(isChinese() ? `SVG 已保存: ${name}` : `SVG saved: ${name}`);
+                new NoticeCtor(msg);
+                triggerSaveToast(msg);
             } catch (err) {
                 console.error("Failed to save SVG in place:", err);
             }
+        } else {
+            triggerSaveToast(msg);
         }
     }
 
