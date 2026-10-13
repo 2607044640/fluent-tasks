@@ -74,6 +74,8 @@
     let scrollSpeed = 0;
     let scrollContainerEl: HTMLElement | null = null;
     let isDndActive = false;
+    let preDragIncompleteTasks: TaskItem[] = [];
+    let preDragCompletedTasks: TaskItem[] = [];
     const AUTO_SCROLL_EDGE_ZONE = 60;
     const AUTO_SCROLL_MAX_SPEED = 12;
     const AUTO_SCROLL_MIN_SPEED = 2;
@@ -818,6 +820,10 @@
         disableStars = plugin?.settings?.disableStars ?? false;
         incompleteTasks = applyWeightSort(rawIncompleteTasks, enableTaskWeightMode);
         completedTasks = applyWeightSort(rawCompletedTasks, enableTaskWeightMode);
+        if (enableTaskWeightMode) {
+            rawIncompleteTasks = [...incompleteTasks];
+            rawCompletedTasks = [...completedTasks];
+        }
     }
 
     function handleSvgUpdated(e: any) {
@@ -941,6 +947,10 @@
             pendingWeightReSort = false;
             incompleteTasks = applyWeightSort(rawIncompleteTasks, enableTaskWeightMode);
             completedTasks = applyWeightSort(rawCompletedTasks, enableTaskWeightMode);
+            if (enableTaskWeightMode) {
+                rawIncompleteTasks = [...incompleteTasks];
+                rawCompletedTasks = [...completedTasks];
+            }
         }
     }
 
@@ -982,6 +992,10 @@
         pendingWeightReSort = false;
         incompleteTasks = applyWeightSort(rawIncompleteTasks, enableTaskWeightMode);
         completedTasks = applyWeightSort(rawCompletedTasks, enableTaskWeightMode);
+        if (enableTaskWeightMode) {
+            rawIncompleteTasks = [...incompleteTasks];
+            rawCompletedTasks = [...completedTasks];
+        }
     }
 
     function handleWeightInputKeydown(e: KeyboardEvent, task: TaskItem) {
@@ -1018,8 +1032,12 @@
         
         rawIncompleteTasks = tasks.filter(t => !t.completed);
         rawCompletedTasks = tasks.filter(t => t.completed);
-        incompleteTasks = applyWeightSort(rawIncompleteTasks, enableTaskWeightMode);
-        completedTasks = applyWeightSort(rawCompletedTasks, enableTaskWeightMode);
+        if (enableTaskWeightMode) {
+            rawIncompleteTasks = applyWeightSort(rawIncompleteTasks, true);
+            rawCompletedTasks = applyWeightSort(rawCompletedTasks, true);
+        }
+        incompleteTasks = [...rawIncompleteTasks];
+        completedTasks = [...rawCompletedTasks];
     }
 
     // Called from main.ts when the view is activated directly
@@ -1421,7 +1439,11 @@
     // Drag & Drop (In-list reordering & Cross-Pane)
     // =============================================
     function handleDndConsider(e: CustomEvent, listType: 'incomplete' | 'completed') {
-        isDndActive = true;
+        if (!isDndActive) {
+            isDndActive = true;
+            if (preDragIncompleteTasks.length === 0) preDragIncompleteTasks = [...incompleteTasks];
+            if (preDragCompletedTasks.length === 0) preDragCompletedTasks = [...completedTasks];
+        }
         if (listType === 'incomplete') incompleteTasks = e.detail.items;
         else completedTasks = e.detail.items;
 
@@ -1462,6 +1484,8 @@
             if (domNode) domNode.style.display = 'none';
             killDndGhostElement();
             (window as any).__mstodo_drag_data = null;
+            preDragIncompleteTasks = [];
+            preDragCompletedTasks = [];
             return;
         }
 
@@ -1469,8 +1493,13 @@
 
         if (e.detail.info.trigger === TRIGGERS.DROPPED_OUTSIDE_OF_ANY) {
             // Dropped in empty space (cancelled drag)
-            if (listType === 'incomplete') incompleteTasks = e.detail.items;
-            else completedTasks = e.detail.items;
+            if (listType === 'incomplete') {
+                incompleteTasks = preDragIncompleteTasks.length > 0 ? [...preDragIncompleteTasks] : e.detail.items;
+            } else {
+                completedTasks = preDragCompletedTasks.length > 0 ? [...preDragCompletedTasks] : e.detail.items;
+            }
+            preDragIncompleteTasks = [];
+            preDragCompletedTasks = [];
             return;
         }
 
@@ -1478,6 +1507,41 @@
         const updatedItems = e.detail.items as TaskItem[];
         const isCompletedList = listType === 'completed';
         updatedItems.forEach(t => { t.completed = isCompletedList; });
+
+        // When task weight mode is enabled, enforce monotonic non-increasing weight order:
+        // A task with a smaller weight cannot be placed above a task with a larger weight.
+        if (enableTaskWeightMode) {
+            let hasViolation = false;
+            for (let i = 0; i < updatedItems.length - 1; i++) {
+                if (getTaskWeight(updatedItems[i]) < getTaskWeight(updatedItems[i + 1])) {
+                    hasViolation = true;
+                    break;
+                }
+            }
+
+            if (hasViolation) {
+                // Cancel move and revert to pre-drag order
+                if (listType === 'incomplete') {
+                    incompleteTasks = [...preDragIncompleteTasks];
+                    rawIncompleteTasks = [...preDragIncompleteTasks];
+                } else {
+                    completedTasks = [...preDragCompletedTasks];
+                    rawCompletedTasks = [...preDragCompletedTasks];
+                }
+                preDragIncompleteTasks = [];
+                preDragCompletedTasks = [];
+                killDndGhostElement();
+
+                const NoticeCtor = (window as any).Notice || Notice;
+                new NoticeCtor(isChinese()
+                    ? "⚠️ 权重模式限制：数字较小的任务不能排在较大任务上方！"
+                    : "⚠️ Weight mode: Smaller weight task cannot be placed above a larger weight task!", 4000);
+                return;
+            }
+        }
+
+        preDragIncompleteTasks = [];
+        preDragCompletedTasks = [];
 
         if (listType === 'incomplete') {
             incompleteTasks = updatedItems;
@@ -1494,6 +1558,10 @@
     }
 
     function handleTaskPointerDown(task: TaskItem) {
+        if (!isDndActive) {
+            preDragIncompleteTasks = [...incompleteTasks];
+            preDragCompletedTasks = [...completedTasks];
+        }
         if (currentCategory) {
             (window as any).__mstodo_drag_data = {
                 taskId: task.id,
