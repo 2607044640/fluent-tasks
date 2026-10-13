@@ -42,6 +42,7 @@ export class TaskStepsModal extends Modal {
                 categoryFilepath: this.categoryFilepath,
                 closeModal: () => this.close(),
                 centerAlignTasks: this.plugin?.settings?.centerAlignTasks ?? true,
+                showStepsProgressPill: this.plugin?.settings?.showStepsProgressPill ?? false,
             },
         });
     }

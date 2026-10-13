@@ -25,6 +25,7 @@ export interface FluentTasksSettings {
     disableStars: boolean;
     quickListTitleAlignment: 'center' | 'left';
     quickListMaxCardWidth: number;
+    showStepsProgressPill: boolean;
 }
 
 export const DEFAULT_SETTINGS: FluentTasksSettings = {
@@ -37,6 +38,7 @@ export const DEFAULT_SETTINGS: FluentTasksSettings = {
     wrapTaskTitles: true,
     centerAlignTasks: true,
     disableStars: false,
+    showStepsProgressPill: false,
     quickModalAction: 'direct',
     quickModalTipCount: 0,
     quickListGridLayout: true,
@@ -134,6 +136,16 @@ export class FluentTasksSettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.disableStars ?? false)
                 .onChange(async (value) => {
                     this.plugin.settings.disableStars = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName("Show Subtasks Progress Badge")
+            .setDesc("Display step completion progress badge (e.g. 0/3 steps completed) at the bottom of the subtasks floating modal. Disabled by default.")
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.showStepsProgressPill ?? false)
+                .onChange(async (value) => {
+                    this.plugin.settings.showStepsProgressPill = value;
                     await this.plugin.saveSettings();
                 }));
 

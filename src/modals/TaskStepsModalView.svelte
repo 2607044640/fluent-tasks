@@ -18,6 +18,7 @@
     export let dataService: DataService;
     export let closeModal: () => void = () => {};
     export let centerAlignTasks: boolean = true;
+    export let showStepsProgressPill: boolean = false;
 
     // =============================================
     // Local State
@@ -239,11 +240,6 @@
             </svg>
             <div class="task-steps-modal-title" title={task.title}>{task.title}</div>
         </div>
-        <div class="task-steps-modal-header-actions">
-            <span class="task-steps-progress-pill">
-                {completedCount}/{totalCount} {totalCount === 1 ? 'step' : 'steps'} completed
-            </span>
-        </div>
     </div>
 
     <!-- Progress Track -->
@@ -379,4 +375,12 @@
             </button>
         </div>
     </div>
+
+    {#if showStepsProgressPill && totalCount > 0}
+        <div class="task-steps-modal-footer">
+            <span class="task-steps-progress-pill">
+                {completedCount}/{totalCount} {totalCount === 1 ? 'step' : 'steps'} completed
+            </span>
+        </div>
+    {/if}
 </div>

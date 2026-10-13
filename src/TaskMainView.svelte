@@ -109,6 +109,14 @@
             quickEditor.autoAlign = isAutoAlignActive;
         }
     }
+
+    function applySmartLayout() {
+        const quickEditor = (window as any).svgQuickEditor || (window as any).a1SvgQuickEditor;
+        const svgEl = document.querySelector('.svg-lightbox-content svg') as SVGSVGElement | null;
+        if (quickEditor?.smartLayout) {
+            quickEditor.smartLayout(svgEl);
+        }
+    }
     const svgResolveCache = new Map<string, { isInline: boolean; content: string; srcUrl: string; cleanPath: string }>();
 
     function resolveSvgItem(svgStr: string): { isInline: boolean; content: string; srcUrl: string; cleanPath: string } {
@@ -2753,6 +2761,7 @@
                                     <div class="svg-help-popover">
                                         {#if isChinese()}
                                             <div class="svg-help-row"><kbd>Ctrl+S</kbd><span class="svg-help-desc">即时保存 (保留撤销记录)</span></div>
+                                            <div class="svg-help-row"><kbd>智能排版</kbd><span class="svg-help-desc">自动居中并均匀分布卡片间隙</span></div>
                                             <div class="svg-help-row"><kbd>Ctrl+滚轮</kbd><span class="svg-help-desc">缩放UI框大小 (增大/减小)</span></div>
                                             <div class="svg-help-row"><kbd>Delete</kbd><span class="svg-help-desc">悬浮UI框按键直接删除</span></div>
                                             <div class="svg-help-row"><kbd>清空文本</kbd><span class="svg-help-desc">清空文字自动删除UI框</span></div>
@@ -2762,6 +2771,7 @@
                                             <div class="svg-help-row"><kbd>双击 / F2</kbd><span class="svg-help-desc">快速编辑文字</span></div>
                                         {:else}
                                             <div class="svg-help-row"><kbd>Ctrl+S</kbd><span class="svg-help-desc">Save in-place (keeps history)</span></div>
+                                            <div class="svg-help-row"><kbd>Smart Layout</kbd><span class="svg-help-desc">Auto-center and balance cards & gaps</span></div>
                                             <div class="svg-help-row"><kbd>Ctrl+Scroll</kbd><span class="svg-help-desc">Scale UI box size (enlarge/shrink)</span></div>
                                             <div class="svg-help-row"><kbd>Delete</kbd><span class="svg-help-desc">Hover and press Delete to remove box</span></div>
                                             <div class="svg-help-row"><kbd>Clear Text</kbd><span class="svg-help-desc">Auto-deletes box when text is empty</span></div>
@@ -2792,6 +2802,14 @@
                                 title={isChinese() ? "拖动时在很小的范围内自动对齐上下左右" : "Snap to edges and centers while dragging"}>
                             Auto Align
                         </button>
+                        {#if isSvgQuickEditorInstalled()}
+                            <button type="button"
+                                    class="svg-lightbox-action-btn"
+                                    on:click|stopPropagation={applySmartLayout}
+                                    title={isChinese() ? "智能排版：删除部分UI卡片后自动居中并均匀分布剩余卡片与间隙 (Ctrl+Z 可撤销)" : "Smart Layout: auto-center and balance remaining cards and gaps (Ctrl+Z to undo)"}>
+                                {isChinese() ? "智能排版" : "Smart Layout"}
+                            </button>
+                        {/if}
                         {#if lightboxData.cleanPath}
                             <button type="button" class="svg-lightbox-action-btn" on:click|stopPropagation={() => lightboxData && openSvgInVault(lightboxData.cleanPath)} title="Open note/file in Obsidian">
                                 Open in Tab
