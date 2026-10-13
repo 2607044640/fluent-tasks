@@ -427,6 +427,8 @@
 
     function cancelSvgSavePrompt() {
         showSvgSaveConfirmModal = false;
+        const modalEl = document.querySelector('.svg-lightbox-modal') as HTMLElement | null;
+        modalEl?.focus();
     }
 
     async function saveSvgLightboxInPlace() {
@@ -462,11 +464,15 @@
     }
 
     function handleLightboxKeydown(e: KeyboardEvent) {
+        if (!lightboxData) return;
+
         if (showPluginDownloadModal) {
             if (e.key === "Escape") {
                 e.preventDefault();
                 e.stopPropagation();
                 showPluginDownloadModal = false;
+                const modalEl = document.querySelector('.svg-lightbox-modal') as HTMLElement | null;
+                modalEl?.focus();
                 return;
             }
         }
@@ -484,9 +490,25 @@
                 cancelSvgSavePrompt();
                 return;
             }
+            return;
+        }
+
+        // Check if user is actively editing text in the SVG overlay
+        const isEditing = !!(
+            (window as any).a1SvgQuickEditor?.overlay ||
+            (window as any).svgQuickEditor?.overlay ||
+            document.querySelector(".a1-svg-text-overlay") ||
+            (document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA"))
+        );
+        if (isEditing) {
+            // When editing text, the overlay input itself handles Escape / Enter / typing.
+            // Do NOT intercept Escape to close the lightbox here!
+            return;
         }
 
         if (e.key === "Escape") {
+            e.preventDefault();
+            e.stopPropagation();
             requestCloseSvgLightbox();
             return;
         }
@@ -1710,7 +1732,11 @@
 
 <svelte:window 
     on:contextmenu={() => { if (popoverVisible) dismissPopover(); }} 
-    on:keydown={(e) => {
+    on:keydown|capture={(e) => {
+        if (lightboxData) {
+            handleLightboxKeydown(e);
+            return;
+        }
         if (isMultiSelectMode && e.key === "Escape") {
             isMultiSelectMode = false;
             selectedTaskIds.clear();

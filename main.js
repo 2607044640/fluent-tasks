@@ -19178,7 +19178,8 @@ function create_fragment4(ctx) {
             window_12,
             "keydown",
             /*keydown_handler*/
-            ctx[106]
+            ctx[106],
+            true
           )
         ];
         mounted = true;
@@ -19700,6 +19701,8 @@ function instance4($$self, $$props, $$invalidate) {
   }
   function cancelSvgSavePrompt() {
     $$invalidate(33, showSvgSaveConfirmModal = false);
+    const modalEl = document.querySelector(".svg-lightbox-modal");
+    modalEl == null ? void 0 : modalEl.focus();
   }
   async function saveSvgLightboxInPlace() {
     var _a2;
@@ -19734,12 +19737,16 @@ function instance4($$self, $$props, $$invalidate) {
     }
   }
   function handleLightboxKeydown(e) {
-    var _a2, _b2, _c2, _d2, _e2;
+    var _a2, _b2, _c2, _d2, _e2, _f2, _g2;
+    if (!lightboxData)
+      return;
     if (showPluginDownloadModal) {
       if (e.key === "Escape") {
         e.preventDefault();
         e.stopPropagation();
         $$invalidate(34, showPluginDownloadModal = false);
+        const modalEl = document.querySelector(".svg-lightbox-modal");
+        modalEl == null ? void 0 : modalEl.focus();
         return;
       }
     }
@@ -19756,8 +19763,15 @@ function instance4($$self, $$props, $$invalidate) {
         cancelSvgSavePrompt();
         return;
       }
+      return;
+    }
+    const isEditing = !!(((_a2 = window.a1SvgQuickEditor) == null ? void 0 : _a2.overlay) || ((_b2 = window.svgQuickEditor) == null ? void 0 : _b2.overlay) || document.querySelector(".a1-svg-text-overlay") || document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA"));
+    if (isEditing) {
+      return;
     }
     if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
       requestCloseSvgLightbox();
       return;
     }
@@ -19773,21 +19787,21 @@ function instance4($$self, $$props, $$invalidate) {
         e.preventDefault();
         e.stopPropagation();
         if (e.shiftKey) {
-          (_a2 = quickEditor == null ? void 0 : quickEditor.redo) == null ? void 0 : _a2.call(quickEditor);
+          (_c2 = quickEditor == null ? void 0 : quickEditor.redo) == null ? void 0 : _c2.call(quickEditor);
         } else {
-          (_b2 = quickEditor == null ? void 0 : quickEditor.undo) == null ? void 0 : _b2.call(quickEditor);
+          (_d2 = quickEditor == null ? void 0 : quickEditor.undo) == null ? void 0 : _d2.call(quickEditor);
         }
         return;
       }
       if (e.key === "y" || e.key === "Y") {
         e.preventDefault();
         e.stopPropagation();
-        (_c2 = quickEditor == null ? void 0 : quickEditor.redo) == null ? void 0 : _c2.call(quickEditor);
+        (_e2 = quickEditor == null ? void 0 : quickEditor.redo) == null ? void 0 : _e2.call(quickEditor);
         return;
       }
     }
     if ((e.key === "Delete" || e.code === "Delete") && !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
-      const activeTag = (_e2 = (_d2 = document.activeElement) == null ? void 0 : _d2.tagName) == null ? void 0 : _e2.toLowerCase();
+      const activeTag = (_g2 = (_f2 = document.activeElement) == null ? void 0 : _f2.tagName) == null ? void 0 : _g2.toLowerCase();
       if (activeTag === "input" || activeTag === "textarea")
         return;
       if (isSvgQuickEditorInstalled()) {
@@ -20842,6 +20856,10 @@ function instance4($$self, $$props, $$invalidate) {
       dismissPopover();
   };
   const keydown_handler = (e) => {
+    if (lightboxData) {
+      handleLightboxKeydown(e);
+      return;
+    }
     if (isMultiSelectMode && e.key === "Escape") {
       $$invalidate(21, isMultiSelectMode = false);
       selectedTaskIds.clear();
@@ -26433,6 +26451,7 @@ var DEFAULT_SETTINGS = {
   hideRibbonIcon: false,
   wrapTaskTitles: true,
   centerAlignTasks: false,
+  disableStars: false,
   quickModalAction: "direct",
   quickModalTipCount: 0,
   quickListGridLayout: true,

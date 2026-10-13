@@ -22,6 +22,7 @@ export interface FluentTasksSettings {
     enableTaskWeightMode: boolean;
     quickListSearchMode: 'list' | 'task';
     centerAlignTasks: boolean;
+    disableStars: boolean;
     quickListTitleAlignment: 'center' | 'left';
     quickListMaxCardWidth: number;
 }
@@ -35,6 +36,7 @@ export const DEFAULT_SETTINGS: FluentTasksSettings = {
     hideRibbonIcon: false,
     wrapTaskTitles: true,
     centerAlignTasks: false,
+    disableStars: false,
     quickModalAction: 'direct',
     quickModalTipCount: 0,
     quickListGridLayout: true,
@@ -122,6 +124,16 @@ export class FluentTasksSettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.centerAlignTasks ?? false)
                 .onChange(async (value) => {
                     this.plugin.settings.centerAlignTasks = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName("Disable star mode")
+            .setDesc("Hide the star (favorite) icon on tasks in the task list and modals. Disabled by default.")
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.disableStars ?? false)
+                .onChange(async (value) => {
+                    this.plugin.settings.disableStars = value;
                     await this.plugin.saveSettings();
                 }));
 
