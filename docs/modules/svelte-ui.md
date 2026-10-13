@@ -21,6 +21,7 @@ Obsidian `ItemView` wrappers in `src/main.ts` mount Svelte 4 components. Cross-p
 1. Wrappers destroy Svelte with `$destroy()` in `onClose`. (Why chosen over leaving the component: ItemView recycle would duplicate EventBus handlers.)
 2. Optimistic UI updates local arrays first, then `DataService`; main-view `addTask` does not `loadTasks()` immediately. Cross-pane finalize **must not** `saveTasks` if `movedToTarget` is set. (Why chosen over reload-after-every-write: `vault.process` races with stale reads.)
 3. `TaskMainViewWrapper.navigation = true` and `getState`/`setState` persist `categoryFilepath` for Obsidian history. History restores emit `CATEGORY_SELECTED` with `fromHistory: true` so the plugin does not `setViewState` again. (Why chosen over only EventBus: back/forward would desync the leaf header.)
+4. SVG lightbox modal captures window keydown and wheel events with `{ capture: true }`; Ctrl+Scroll forwards to `quickEditor.scaleHoveredBox`; exit prompts save confirmation only when `isDirty` is true.
 
 ## Numbered Data Flow
 
