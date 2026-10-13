@@ -397,6 +397,30 @@
         showSvgSaveConfirmModal = false;
     }
 
+    async function saveSvgLightboxInPlace() {
+        if (!lightboxData) return;
+        const quickEditor = (window as any).svgQuickEditor || (window as any).a1SvgQuickEditor;
+        const svgEl = document.querySelector('.svg-lightbox-content svg') as SVGSVGElement | null;
+        if (quickEditor?.saveCurrentSvg) {
+            await quickEditor.saveCurrentSvg(svgEl, true);
+        } else if (lightboxData.cleanPath && plugin?.app?.vault) {
+            const contentToSave = svgEl ? svgEl.outerHTML : lightboxData.content;
+            try {
+                if (await plugin.app.vault.adapter.exists(lightboxData.cleanPath)) {
+                    await plugin.app.vault.adapter.write(lightboxData.cleanPath, contentToSave);
+                } else {
+                    const file = plugin.app.vault.getAbstractFileByPath(lightboxData.cleanPath);
+                    if (file) await plugin.app.vault.modify(file, contentToSave);
+                }
+                const name = lightboxData.cleanPath.split("/").pop() || "SVG";
+                const NoticeCtor = (window as any).Notice || Notice;
+                new NoticeCtor(isChinese() ? `SVG 已保存: ${name}` : `SVG saved: ${name}`);
+            } catch (err) {
+                console.error("Failed to save SVG in place:", err);
+            }
+        }
+    }
+
     function handleLightboxKeydown(e: KeyboardEvent) {
         if (showPluginDownloadModal) {
             if (e.key === "Escape") {
@@ -427,7 +451,15 @@
             return;
         }
 
-        const quickEditor = (window as any).a1SvgQuickEditor;
+        const quickEditor = (window as any).a1SvgQuickEditor || (window as any).svgQuickEditor;
+
+        // Save in-place (Ctrl+S / Cmd+S): directly overwrite local file, keeping Ctrl+Z/Y history
+        if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key === "s" || e.key === "S")) {
+            e.preventDefault();
+            e.stopPropagation();
+            void saveSvgLightboxInPlace();
+            return;
+        }
 
         // Undo (Ctrl+Z) and Redo (Ctrl+Y / Ctrl+Shift+Z)
         if ((e.ctrlKey || e.metaKey) && !e.altKey) {
@@ -2575,13 +2607,13 @@
                         <div class="svg-lightbox-hints" style="font-size: 11px; opacity: 0.85; display: inline-flex; gap: 6px; align-items: center; margin-left: 10px;">
                             {#if isSvgQuickEditorInstalled()}
                                 {#if isChinese()}
-                                    <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">F2 / 双击文字编辑</span>
+                                    <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Ctrl+S 保存</span>
                                     <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">清空文字即删UI框</span>
                                     <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Shift+拖拽移动</span>
                                     <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Alt+拖拽复制</span>
                                     <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Ctrl+Z/Y 撤销重做</span>
                                 {:else}
-                                    <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">F2 / Double-click to Edit</span>
+                                    <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Ctrl+S to Save</span>
                                     <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Clear Text to Delete Box</span>
                                     <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Shift+Drag to Move</span>
                                     <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Alt+Drag to Duplicate</span>
@@ -2671,9 +2703,9 @@
                 </div>
                 <div class="svg-confirm-desc" style="line-height: 1.6; font-size: 13px; color: var(--text-muted, #9ca3af); margin-top: 8px;">
                     {#if isChinese()}
-                        Fluent Tasks 专注轻量纯净展示。若需开启<b>双击/F2 即时文字编辑</b>、<b>清空删框</b>、<b>Shift+拖拽移动UI框</b>、<b>Alt+拖拽克隆UI框</b>与 <b>Ctrl+Z/Y 撤销重做</b>等高级交互功能，请安装或启用配套插件 <b>SVG Quick Editor</b>。
+                        Fluent Tasks 专注轻量纯净展示。若需开启<b>Ctrl+S 即时保存</b>、<b>清空删框</b>、<b>Shift+拖拽移动UI框</b>、<b>Alt+拖拽克隆UI框</b>与 <b>Ctrl+Z/Y 撤销重做</b>等高级交互功能，请安装或启用配套插件 <b>SVG Quick Editor</b>。
                     {:else}
-                        Fluent Tasks focuses on pure visual presentation. To unlock <b>F2/Double-click inline text editing</b>, <b>empty-text box removal</b>, <b>Shift+drag card move</b>, <b>Alt+drag card duplication</b>, and <b>Ctrl+Z/Y undo/redo</b>, please install or enable the companion plugin <b>SVG Quick Editor</b>。
+                        Fluent Tasks focuses on pure visual presentation. To unlock <b>Ctrl+S in-place save</b>, <b>empty-text box removal</b>, <b>Shift+drag card move</b>, <b>Alt+drag card duplication</b>, and <b>Ctrl+Z/Y undo/redo</b>, please install or enable the companion plugin <b>SVG Quick Editor</b>。
                     {/if}
                 </div>
                 <div class="svg-download-actions" style="display: flex; flex-direction: column; gap: 10px; margin-top: 18px;">
