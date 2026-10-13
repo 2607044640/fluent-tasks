@@ -2146,19 +2146,23 @@
                     </div>
 
                     <!-- Meta Badges -->
-                    {#if task.why}
-                        <span class="meta-badge why-badge"
-                              on:mouseenter={(e) => showPopover(e, task, 'why')}
-                              on:mouseleave={scheduleHidePopover}
-                              role="button" tabindex="0"
-                              title="Why: view rationale">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="10"/>
-                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                                <line x1="12" y1="17" x2="12.01" y2="17"/>
-                            </svg>
-                        </span>
+                    {#if (task.whys && task.whys.length > 0) || task.why}
+                        {#each ((task.whys && task.whys.length > 0) ? task.whys : [task.why]) as whyVal, idx}
+                            {#if whyVal}
+                                <span class="meta-badge why-badge"
+                                      on:mouseenter={(e) => showPopover(e, task, 'why', idx)}
+                                      on:mouseleave={scheduleHidePopover}
+                                      role="button" tabindex="0"
+                                      title={((task.whys && task.whys.length > 1) ? `Why #${idx + 1}: view rationale` : "Why: view rationale")}>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                    </svg>
+                                </span>
+                            {/if}
+                        {/each}
                     {/if}
                     {#if task.svgs && task.svgs.length > 0}
                         {#each task.svgs as svgContent, i}
@@ -2367,19 +2371,23 @@
                                 </div>
 
                                 <!-- Meta Badges -->
-                                {#if task.why}
-                                    <span class="meta-badge why-badge"
-                                          on:mouseenter={(e) => showPopover(e, task, 'why')}
-                                          on:mouseleave={scheduleHidePopover}
-                                          role="button" tabindex="0"
-                                          title="Why: view rationale">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <circle cx="12" cy="12" r="10"/>
-                                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                                            <line x1="12" y1="17" x2="12.01" y2="17"/>
-                                        </svg>
-                                    </span>
+                                {#if (task.whys && task.whys.length > 0) || task.why}
+                                    {#each ((task.whys && task.whys.length > 0) ? task.whys : [task.why]) as whyVal, idx}
+                                        {#if whyVal}
+                                            <span class="meta-badge why-badge"
+                                                  on:mouseenter={(e) => showPopover(e, task, 'why', idx)}
+                                                  on:mouseleave={scheduleHidePopover}
+                                                  role="button" tabindex="0"
+                                                  title={((task.whys && task.whys.length > 1) ? `Why #${idx + 1}: view rationale` : "Why: view rationale")}>
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <circle cx="12" cy="12" r="10"/>
+                                                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                                                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                                </svg>
+                                            </span>
+                                        {/if}
+                                    {/each}
                                 {/if}
                                 {#if task.svgs && task.svgs.length > 0}
                                     {#each task.svgs as svgContent, i}
@@ -2504,7 +2512,9 @@
              on:mouseleave={scheduleHidePopover}
              on:contextmenu|preventDefault={dismissPopover}
              role="tooltip">
-            {#if popoverType === 'why' && popoverTask && popoverTask.why}
+            {#if popoverType === 'why' && popoverTask && (popoverTask.why || (popoverTask.whys && popoverTask.whys.length > 0))}
+                {@const activeWhys = (popoverTask.whys && popoverTask.whys.length > 0) ? popoverTask.whys : (popoverTask.why ? [popoverTask.why] : [])}
+                {@const activeWhy = activeWhys[popoverSvgIndex] || activeWhys[0] || ""}
                 <div class="meta-popover-header">
                     <div style="display: flex; align-items: center; gap: 6px;">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
@@ -2513,10 +2523,10 @@
                             <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
                             <line x1="12" y1="17" x2="12.01" y2="17"/>
                         </svg>
-                        <span>Why</span>
+                        <span>Why {activeWhys.length > 1 ? `#${popoverSvgIndex + 1}` : ''}</span>
                     </div>
                 </div>
-                <div class="meta-popover-body">{popoverTask.why}</div>
+                <div class="meta-popover-body">{activeWhy}</div>
             {:else if popoverType === 'svg' && popoverTask && popoverTask.svgs && popoverTask.svgs[popoverSvgIndex]}
                 {@const resolved = resolveSvgItem(popoverTask.svgs[popoverSvgIndex])}
                 <div class="meta-popover-header">

@@ -661,24 +661,99 @@
 
     let showAddMetaModal: boolean = false;
     let metaFormType: "why" | "note_link" | "svg" | "custom" = "why";
-    let metaWhyVal: string = "";
+    let metaWhyList: string[] = [];
+    let selectedWhyIndex: number = 0;
+    let metaSvgList: string[] = [];
+    let selectedSvgIndex: number = 0;
     let metaNoteLinkVal: string = "";
-    let metaSvgVal: string = "";
-    let metaCustomKey: string = "";
-    let metaCustomVal: string = "";
+    let metaCustomEntries: Array<{ key: string; value: string }> = [];
+    let selectedCustomIndex: number = 0;
 
-    function openAddMetaModal() {
+    function getTaskWhys(t: TaskItem): string[] {
+        if (t.whys && Array.isArray(t.whys) && t.whys.length > 0) {
+            return [...t.whys];
+        }
+        if (t.why && typeof t.why === "string" && t.why.trim()) {
+            return [t.why.trim()];
+        }
+        return [];
+    }
+
+    function openAddMetaModal(type: "why" | "note_link" | "svg" | "custom" = "why", targetIndexOrKey?: number | string) {
         if (!task) return;
-        metaWhyVal = task.why || "";
+        metaFormType = type;
+
+        // 1. Whys
+        metaWhyList = getTaskWhys(task);
+        if (typeof targetIndexOrKey === "number" && type === "why") {
+            selectedWhyIndex = Math.min(Math.max(0, targetIndexOrKey), metaWhyList.length - 1);
+        } else {
+            selectedWhyIndex = metaWhyList.length > 0 ? 0 : -1;
+        }
+
+        // 2. SVGs
+        metaSvgList = Array.isArray(task.svgs) ? [...task.svgs] : [];
+        if (typeof targetIndexOrKey === "number" && type === "svg") {
+            selectedSvgIndex = Math.min(Math.max(0, targetIndexOrKey), metaSvgList.length - 1);
+        } else {
+            selectedSvgIndex = metaSvgList.length > 0 ? 0 : -1;
+        }
+
+        // 3. Note Link
         metaNoteLinkVal = task.note_link || "";
-        metaSvgVal = task.svgs && task.svgs.length > 0 ? task.svgs[0] : "";
-        metaCustomKey = "";
-        metaCustomVal = "";
+
+        // 4. Custom Meta
+        metaCustomEntries = task.customMeta
+            ? Object.entries(task.customMeta).map(([k, v]) => ({ key: k, value: String(v) }))
+            : [];
+        if (typeof targetIndexOrKey === "string" && type === "custom") {
+            const foundIdx = metaCustomEntries.findIndex(e => e.key === targetIndexOrKey);
+            selectedCustomIndex = foundIdx >= 0 ? foundIdx : (metaCustomEntries.length > 0 ? 0 : -1);
+        } else {
+            selectedCustomIndex = metaCustomEntries.length > 0 ? 0 : -1;
+        }
+
         showAddMetaModal = true;
     }
 
     function closeAddMetaModal() {
         showAddMetaModal = false;
+    }
+
+    function addNewSvgItem() {
+        metaSvgList = [...metaSvgList, ""];
+        selectedSvgIndex = metaSvgList.length - 1;
+    }
+
+    function removeSvgItem(idx: number) {
+        metaSvgList = metaSvgList.filter((_, i) => i !== idx);
+        if (selectedSvgIndex >= metaSvgList.length) {
+            selectedSvgIndex = metaSvgList.length - 1;
+        }
+    }
+
+    function addNewWhyItem() {
+        metaWhyList = [...metaWhyList, ""];
+        selectedWhyIndex = metaWhyList.length - 1;
+    }
+
+    function removeWhyItem(idx: number) {
+        metaWhyList = metaWhyList.filter((_, i) => i !== idx);
+        if (selectedWhyIndex >= metaWhyList.length) {
+            selectedWhyIndex = metaWhyList.length - 1;
+        }
+    }
+
+    function addNewCustomEntry() {
+        metaCustomEntries = [...metaCustomEntries, { key: "", value: "" }];
+        selectedCustomIndex = metaCustomEntries.length - 1;
+    }
+
+    function removeCustomEntry(idx: number) {
+        metaCustomEntries = metaCustomEntries.filter((_, i) => i !== idx);
+        if (selectedCustomIndex >= metaCustomEntries.length) {
+            selectedCustomIndex = metaCustomEntries.length - 1;
+        }
     }
 
     $: resolvedHintFile = (metaNoteLinkVal && plugin?.app)
@@ -707,35 +782,52 @@
 
     async function saveMetadata() {
         if (!task) return;
-        if (metaFormType === "why") {
-            const val = metaWhyVal.trim();
-            if (val) task.why = val;
-            else delete task.why;
-        } else if (metaFormType === "note_link") {
-            const val = metaNoteLinkVal.trim();
-            if (val) {
-                const resolvedFile = LinkedNoteService.resolveLinkedNoteFile(plugin.app, val, categoryFilepath);
-                if (resolvedFile) {
-                    const cleanPath = resolvedFile.path.replace(/\.md$/, "");
-                    task.note_link = `[[${cleanPath}]]`;
-                } else {
-                    task.note_link = LinkedNoteService.normalizeNoteLinkInput(val);
-                }
-            } else {
-                delete task.note_link;
-            }
-        } else if (metaFormType === "svg") {
-            const val = metaSvgVal.trim();
-            if (val) task.svgs = [val];
-            else delete task.svgs;
-        } else if (metaFormType === "custom") {
-            const key = metaCustomKey.trim();
-            const val = metaCustomVal.trim();
-            if (key) {
-                if (!task.customMeta) task.customMeta = {};
-                task.customMeta[key] = val;
-            }
+
+        // 1. Save Whys
+        const cleanWhys = metaWhyList.map(w => w.trim()).filter(Boolean);
+        if (cleanWhys.length > 0) {
+            task.whys = cleanWhys;
+            task.why = cleanWhys[0];
+        } else {
+            delete task.whys;
+            delete task.why;
         }
+
+        // 2. Save Note Link
+        const cleanNote = metaNoteLinkVal.trim();
+        if (cleanNote) {
+            const resolvedFile = LinkedNoteService.resolveLinkedNoteFile(plugin.app, cleanNote, categoryFilepath);
+            if (resolvedFile) {
+                const cleanPath = resolvedFile.path.replace(/\.md$/, "");
+                task.note_link = `[[${cleanPath}]]`;
+            } else {
+                task.note_link = LinkedNoteService.normalizeNoteLinkInput(cleanNote);
+            }
+        } else {
+            delete task.note_link;
+        }
+
+        // 3. Save SVGs
+        const cleanSvgs = metaSvgList.map(s => s.trim()).filter(Boolean);
+        if (cleanSvgs.length > 0) {
+            task.svgs = cleanSvgs;
+        } else {
+            delete task.svgs;
+        }
+
+        // 4. Save Custom Meta
+        const cleanCustom: Record<string, unknown> = {};
+        for (const entry of metaCustomEntries) {
+            const k = entry.key.trim();
+            const v = entry.value.trim();
+            if (k) cleanCustom[k] = v;
+        }
+        if (Object.keys(cleanCustom).length > 0) {
+            task.customMeta = cleanCustom;
+        } else {
+            delete task.customMeta;
+        }
+
         task = { ...task };
         if (categoryFilepath) {
             await dataService.updateTask(categoryFilepath, task);
@@ -763,11 +855,47 @@
         }
     }
 
+    async function deleteWhyEntry(idx: number) {
+        if (!task) return;
+        const currentWhys = getTaskWhys(task);
+        currentWhys.splice(idx, 1);
+        if (currentWhys.length > 0) {
+            task.whys = currentWhys;
+            task.why = currentWhys[0];
+        } else {
+            delete task.whys;
+            delete task.why;
+        }
+        task = { ...task };
+        if (categoryFilepath) {
+            await dataService.updateTask(categoryFilepath, task);
+            EventBus.emit(EventName.TASK_UPDATED, { task, categoryFilepath });
+        }
+    }
+
+    async function deleteSvgEntry(idx: number) {
+        if (!task || !task.svgs) return;
+        task.svgs.splice(idx, 1);
+        if (task.svgs.length === 0) {
+            delete task.svgs;
+        }
+        task = { ...task };
+        if (categoryFilepath) {
+            await dataService.updateTask(categoryFilepath, task);
+            EventBus.emit(EventName.TASK_UPDATED, { task, categoryFilepath });
+        }
+    }
+
     async function deleteMetaProp(prop: 'why' | 'note_link' | 'svg') {
         if (!task) return;
-        if (prop === 'why') delete task.why;
-        else if (prop === 'note_link') delete task.note_link;
-        else if (prop === 'svg') delete task.svgs;
+        if (prop === 'why') {
+            delete task.whys;
+            delete task.why;
+        } else if (prop === 'note_link') {
+            delete task.note_link;
+        } else if (prop === 'svg') {
+            delete task.svgs;
+        }
         task = { ...task };
         if (categoryFilepath) {
             await dataService.updateTask(categoryFilepath, task);
@@ -963,25 +1091,27 @@
         </div>
 
         <!-- Active Metadata Chips (Why, Note Link, SVG, Custom) -->
-        {#if task.why || task.note_link || (task.svgs && task.svgs.length > 0) || (task.customMeta && Object.keys(task.customMeta).length > 0)}
+        {#if getTaskWhys(task).length > 0 || task.note_link || (task.svgs && task.svgs.length > 0) || (task.customMeta && Object.keys(task.customMeta).length > 0)}
             <div class="detail-meta-chips-section">
-                {#if task.why}
-                    <!-- svelte-ignore a11y-click-events-have-key-events -->
-                    <!-- svelte-ignore a11y-no-static-element-interactions -->
-                    <div class="meta-chip why-chip" title={task.why}
-                         on:click={() => { metaFormType = 'why'; openAddMetaModal(); }}
-                         role="button" tabindex="0">
-                        <span class="chip-label">Why</span>
-                        <span class="chip-val">{task.why}</span>
-                        <span class="chip-delete" on:click|stopPropagation={() => deleteMetaProp('why')}
-                              role="button" tabindex="0" title="Remove why">✕</span>
-                    </div>
+                {#if getTaskWhys(task).length > 0}
+                    {#each getTaskWhys(task) as whyItem, idx}
+                        <!-- svelte-ignore a11y-click-events-have-key-events -->
+                        <!-- svelte-ignore a11y-no-static-element-interactions -->
+                        <div class="meta-chip why-chip" title={whyItem}
+                             on:click={() => openAddMetaModal('why', idx)}
+                             role="button" tabindex="0">
+                            <span class="chip-label">{getTaskWhys(task).length > 1 ? `Why #${idx + 1}` : 'Why'}</span>
+                            <span class="chip-val">{whyItem}</span>
+                            <span class="chip-delete" on:click|stopPropagation={() => deleteWhyEntry(idx)}
+                                  role="button" tabindex="0" title={`Remove Why #${idx + 1}`}>✕</span>
+                        </div>
+                    {/each}
                 {/if}
                 {#if task.note_link}
                     <!-- svelte-ignore a11y-click-events-have-key-events -->
                     <!-- svelte-ignore a11y-no-static-element-interactions -->
                     <div class="meta-chip note-chip" title={task.note_link}
-                         on:click={() => { metaFormType = 'note_link'; openAddMetaModal(); }}
+                         on:click={() => openAddMetaModal('note_link')}
                          role="button" tabindex="0">
                         <span class="chip-label">Note</span>
                         <span class="chip-val">{task.note_link}</span>
@@ -990,22 +1120,26 @@
                     </div>
                 {/if}
                 {#if task.svgs && task.svgs.length > 0}
-                    <!-- svelte-ignore a11y-click-events-have-key-events -->
-                    <!-- svelte-ignore a11y-no-static-element-interactions -->
-                    <div class="meta-chip svg-chip" title={task.svgs[0]}
-                         on:click={() => { metaFormType = 'svg'; openAddMetaModal(); }}
-                         role="button" tabindex="0">
-                        <span class="chip-label">SVG</span>
-                        <span class="chip-val">{task.svgs[0].length > 30 ? task.svgs[0].slice(0, 30) + '...' : task.svgs[0]}</span>
-                        <span class="chip-delete" on:click|stopPropagation={() => deleteMetaProp('svg')}
-                              role="button" tabindex="0" title="Remove SVG">✕</span>
-                    </div>
+                    {#each task.svgs as svgItem, idx}
+                        <!-- svelte-ignore a11y-click-events-have-key-events -->
+                        <!-- svelte-ignore a11y-no-static-element-interactions -->
+                        <div class="meta-chip svg-chip" title={svgItem}
+                             on:click={() => openAddMetaModal('svg', idx)}
+                             role="button" tabindex="0">
+                            <span class="chip-label">{task.svgs.length > 1 ? `SVG #${idx + 1}` : 'SVG'}</span>
+                            <span class="chip-val">{svgItem.length > 30 ? svgItem.slice(0, 30) + '...' : svgItem}</span>
+                            <span class="chip-delete" on:click|stopPropagation={() => deleteSvgEntry(idx)}
+                                  role="button" tabindex="0" title={`Remove SVG #${idx + 1}`}>✕</span>
+                        </div>
+                    {/each}
                 {/if}
                 {#if task.customMeta}
                     {#each Object.entries(task.customMeta) as [k, v]}
                         <!-- svelte-ignore a11y-click-events-have-key-events -->
                         <!-- svelte-ignore a11y-no-static-element-interactions -->
-                        <div class="meta-chip custom-chip" title={`${k}: ${v}`}>
+                        <div class="meta-chip custom-chip" title={`${k}: ${v}`}
+                             on:click={() => openAddMetaModal('custom', k)}
+                             role="button" tabindex="0">
                             <span class="chip-label">{k}</span>
                             <span class="chip-val">{v}</span>
                             <span class="chip-delete" on:click|stopPropagation={() => deleteCustomKey(k)}
@@ -1170,7 +1304,7 @@
                 </span>
 
                 <span class="footer-btn add-meta-btn"
-                      on:click={openAddMetaModal}
+                      on:click={() => openAddMetaModal()}
                       on:keydown={(e) => e.key === "Enter" && openAddMetaModal()}
                       role="button" tabindex="0" title="Add / Edit metadata (Why, Note Link, SVG, Custom)">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
@@ -1215,22 +1349,45 @@
 
                     <div class="meta-modal-tabs">
                         <button type="button" class="meta-modal-tab" class:active={metaFormType === 'why'}
-                                on:click={() => metaFormType = 'why'}>Why</button>
+                                on:click={() => metaFormType = 'why'}>Why ({metaWhyList.length})</button>
                         <button type="button" class="meta-modal-tab" class:active={metaFormType === 'note_link'}
                                 on:click={() => metaFormType = 'note_link'}>Note Link</button>
                         <button type="button" class="meta-modal-tab" class:active={metaFormType === 'svg'}
-                                on:click={() => metaFormType = 'svg'}>Visual SVG</button>
+                                on:click={() => metaFormType = 'svg'}>Visual SVG ({metaSvgList.length})</button>
                         <button type="button" class="meta-modal-tab" class:active={metaFormType === 'custom'}
-                                on:click={() => metaFormType = 'custom'}>Custom</button>
+                                on:click={() => metaFormType = 'custom'}>Custom ({metaCustomEntries.length})</button>
                     </div>
 
                     <div class="meta-modal-body">
                         {#if metaFormType === 'why'}
-                            <div class="meta-form-field">
-                                <span class="meta-field-label">Why / Methodology Rationale</span>
-                                <textarea class="meta-form-textarea" placeholder="Core rationale or mental model behind this instruction..."
-                                          bind:value={metaWhyVal} rows="4"></textarea>
+                            <div class="meta-section-header">
+                                <span class="meta-field-label">Why / Methodology Rationales ({metaWhyList.length})</span>
+                                <button type="button" class="meta-add-item-btn" on:click={addNewWhyItem}>+ Add Why</button>
                             </div>
+                            {#if metaWhyList.length === 0}
+                                <div class="meta-empty-tip">No rationales yet. Click "+ Add Why" to add one.</div>
+                            {:else}
+                                <div class="meta-items-list">
+                                    {#each metaWhyList as whyItem, i}
+                                        <!-- svelte-ignore a11y-click-events-have-key-events -->
+                                        <!-- svelte-ignore a11y-no-static-element-interactions -->
+                                        <div class="meta-item-card" class:active={selectedWhyIndex === i}
+                                             on:click={() => selectedWhyIndex = i}>
+                                            <span class="item-badge">#{i + 1}</span>
+                                            <span class="item-preview">{whyItem.trim() ? (whyItem.length > 32 ? whyItem.slice(0, 32) + '...' : whyItem) : '(Empty Rationale)'}</span>
+                                            <span class="item-delete" title="Delete this rationale"
+                                                  on:click|stopPropagation={() => removeWhyItem(i)}>✕</span>
+                                        </div>
+                                    {/each}
+                                </div>
+                            {/if}
+                            {#if selectedWhyIndex >= 0 && selectedWhyIndex < metaWhyList.length}
+                                <div class="meta-item-editor">
+                                    <div class="meta-editor-title">Editing Rationale #{selectedWhyIndex + 1}</div>
+                                    <textarea class="meta-form-textarea" placeholder="Core rationale or mental model behind this instruction..."
+                                              bind:value={metaWhyList[selectedWhyIndex]} rows="3"></textarea>
+                                </div>
+                            {/if}
                         {:else if metaFormType === 'note_link'}
                             <div class="meta-form-field">
                                 <span class="meta-field-label">Linked Obsidian / OneNote Note</span>
@@ -1253,38 +1410,74 @@
                                 {/if}
                             </div>
                         {:else if metaFormType === 'svg'}
-                            <div class="meta-form-field">
-                                <span class="meta-field-label">Visual Memory SVG (Path or Code)</span>
-                                <textarea class="meta-form-textarea monospace" placeholder="OneNote/Original Game/AI Draw/assets/name.svg or <svg...>...</svg>"
-                                          bind:value={metaSvgVal} rows="3"></textarea>
-                                <span class="meta-form-hint">Path to .svg asset in vault, or raw &lt;svg&gt; XML markup.</span>
+                            <div class="meta-section-header">
+                                <span class="meta-field-label">Visual SVGs ({metaSvgList.length})</span>
+                                <button type="button" class="meta-add-item-btn" on:click={addNewSvgItem}>+ Add SVG</button>
                             </div>
+                            {#if metaSvgList.length === 0}
+                                <div class="meta-empty-tip">No SVGs yet. Click "+ Add SVG" to add one.</div>
+                            {:else}
+                                <div class="meta-items-list">
+                                    {#each metaSvgList as svgItem, i}
+                                        <!-- svelte-ignore a11y-click-events-have-key-events -->
+                                        <!-- svelte-ignore a11y-no-static-element-interactions -->
+                                        <div class="meta-item-card" class:active={selectedSvgIndex === i}
+                                             on:click={() => selectedSvgIndex = i}>
+                                            <span class="item-badge">#{i + 1}</span>
+                                            <span class="item-preview">{svgItem.trim() ? (svgItem.length > 32 ? svgItem.slice(0, 32) + '...' : svgItem) : '(Empty SVG)'}</span>
+                                            <span class="item-delete" title="Delete this SVG"
+                                                  on:click|stopPropagation={() => removeSvgItem(i)}>✕</span>
+                                        </div>
+                                    {/each}
+                                </div>
+                            {/if}
+                            {#if selectedSvgIndex >= 0 && selectedSvgIndex < metaSvgList.length}
+                                <div class="meta-item-editor">
+                                    <div class="meta-editor-title">Editing SVG #{selectedSvgIndex + 1}</div>
+                                    <textarea class="meta-form-textarea monospace" placeholder="OneNote/Original Game/AI Draw/assets/name.svg or <svg...>...</svg>"
+                                              bind:value={metaSvgList[selectedSvgIndex]} rows="3"></textarea>
+                                    <span class="meta-form-hint">Path to .svg asset in vault, or raw &lt;svg&gt; XML markup.</span>
+                                </div>
+                            {/if}
                         {:else if metaFormType === 'custom'}
-                            {#if task.customMeta && Object.keys(task.customMeta).length > 0}
-                                <div class="meta-existing-custom-box">
-                                    <span class="meta-field-label">Current Properties ({Object.keys(task.customMeta).length})</span>
-                                    <div class="custom-chips-grid">
-                                        {#each Object.entries(task.customMeta) as [k, v]}
-                                            <div class="custom-prop-row">
-                                                <span class="custom-prop-key">{k}:</span>
-                                                <span class="custom-prop-val">{v}</span>
-                                                <span class="custom-prop-del" on:click={() => deleteCustomKey(k)}
-                                                      role="button" tabindex="0" title="Delete property">✕</span>
-                                            </div>
-                                        {/each}
+                            <div class="meta-section-header">
+                                <span class="meta-field-label">Custom Properties ({metaCustomEntries.length})</span>
+                                <button type="button" class="meta-add-item-btn" on:click={addNewCustomEntry}>+ Add Property</button>
+                            </div>
+                            {#if metaCustomEntries.length === 0}
+                                <div class="meta-empty-tip">No custom properties yet. Click "+ Add Property" to add one.</div>
+                            {:else}
+                                <div class="meta-items-list">
+                                    {#each metaCustomEntries as entry, i}
+                                        <!-- svelte-ignore a11y-click-events-have-key-events -->
+                                        <!-- svelte-ignore a11y-no-static-element-interactions -->
+                                        <div class="meta-item-card" class:active={selectedCustomIndex === i}
+                                             on:click={() => selectedCustomIndex = i}>
+                                            <span class="item-badge custom-badge">{entry.key.trim() || 'Key'}</span>
+                                            <span class="item-preview">{entry.value.trim() || '(Empty value)'}</span>
+                                            <span class="item-delete" title="Delete this property"
+                                                  on:click|stopPropagation={() => removeCustomEntry(i)}>✕</span>
+                                        </div>
+                                    {/each}
+                                </div>
+                            {/if}
+                            {#if selectedCustomIndex >= 0 && selectedCustomIndex < metaCustomEntries.length}
+                                <div class="meta-item-editor">
+                                    <div class="meta-editor-title">Editing Property #{selectedCustomIndex + 1}</div>
+                                    <div class="meta-custom-edit-grid">
+                                        <div class="meta-form-field">
+                                            <span class="meta-field-label">Key</span>
+                                            <input class="meta-form-input" type="text" placeholder="e.g. priority, author"
+                                                   bind:value={metaCustomEntries[selectedCustomIndex].key} />
+                                        </div>
+                                        <div class="meta-form-field">
+                                            <span class="meta-field-label">Value</span>
+                                            <input class="meta-form-input" type="text" placeholder="e.g. high, Opus"
+                                                   bind:value={metaCustomEntries[selectedCustomIndex].value} />
+                                        </div>
                                     </div>
                                 </div>
                             {/if}
-                            <div class="meta-form-field">
-                                <span class="meta-field-label">Property Key</span>
-                                <input class="meta-form-input" type="text" placeholder="e.g. priority, author, tags, domain"
-                                       bind:value={metaCustomKey} />
-                            </div>
-                            <div class="meta-form-field">
-                                <span class="meta-field-label">Property Value</span>
-                                <input class="meta-form-input" type="text" placeholder="e.g. high, Opus, #review, AI"
-                                       bind:value={metaCustomVal} />
-                            </div>
                         {/if}
                     </div>
 

@@ -45,6 +45,8 @@ export interface TaskItem {
     recurrence?: RecurrenceRule;
     /** Core reasoning / rationale behind this task or instruction */
     why?: string;
+    /** Multiple reasonings / rationales behind this task */
+    whys?: string[];
     /** Array of inline SVG code strings for visual metadata icons */
     svgs?: string[];
     /** Linked Obsidian note path or wikilink (e.g. [[Topic]] or OneNote/Domain/Topic.md) */

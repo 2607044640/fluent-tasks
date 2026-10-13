@@ -134,6 +134,7 @@ export class MarkdownParser {
                 ...(typeof meta.msGraphListId === "string" ? { msGraphListId: meta.msGraphListId } : {}),
                 ...(meta.recurrence && typeof meta.recurrence === "object" ? { recurrence: meta.recurrence as RecurrenceRule } : {}),
                 ...(typeof meta.why === "string" ? { why: meta.why } : {}),
+                ...(Array.isArray(meta.whys) && meta.whys.length > 0 ? { whys: meta.whys as string[] } : {}),
                 ...(Array.isArray(meta.svgs) && meta.svgs.length > 0 ? { svgs: meta.svgs as string[] } : {}),
                 ...(typeof meta.note_link === "string" ? { note_link: meta.note_link } : typeof meta.noteLink === "string" ? { note_link: meta.noteLink } : {}),
                 ...(meta.customMeta && typeof meta.customMeta === "object" && Object.keys(meta.customMeta).length > 0 ? { customMeta: meta.customMeta as Record<string, unknown> } : {}),
@@ -163,7 +164,12 @@ export class MarkdownParser {
             if (task.msGraphId) meta.msGraphId = task.msGraphId;
             if (task.msGraphListId) meta.msGraphListId = task.msGraphListId;
             if (task.recurrence) meta.recurrence = task.recurrence;
-            if (task.why) meta.why = task.why;
+            if (task.whys && task.whys.length > 0) {
+                meta.whys = task.whys;
+                meta.why = task.whys[0];
+            } else if (task.why) {
+                meta.why = task.why;
+            }
             if (task.svgs && task.svgs.length > 0) meta.svgs = task.svgs;
             if (task.note_link) meta.note_link = task.note_link;
             if (task.customMeta && Object.keys(task.customMeta).length > 0) meta.customMeta = task.customMeta;
