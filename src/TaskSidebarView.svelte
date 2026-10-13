@@ -146,10 +146,67 @@
     }
 
     // =============================================
-    // Renaming Logic (F2 on Hover)
+    // Renaming Logic (F2 on Hover or Focus)
     // =============================================
+    let sidebarContainerEl: HTMLElement | null = null;
+    let isMouseInsideSidebar: boolean = false;
     let lastMouseX: number = 0;
     let lastMouseY: number = 0;
+
+    function handleSidebarMouseEnter() {
+        isMouseInsideSidebar = true;
+    }
+
+    function handleSidebarMouseLeave() {
+        isMouseInsideSidebar = false;
+        hoveredItem = null;
+    }
+
+    function isSidebarExpanded(): boolean {
+        if (!sidebarContainerEl) return false;
+
+        // 1. Check if parent split (leftSplit or rightSplit) is collapsed
+        const leftSplit = (app.workspace as any)?.leftSplit;
+        if (leftSplit) {
+            const isInsideLeftSplit = !!sidebarContainerEl.closest('.mod-left-split');
+            if (isInsideLeftSplit && leftSplit.collapsed === true) {
+                return false;
+            }
+        }
+        const rightSplit = (app.workspace as any)?.rightSplit;
+        if (rightSplit) {
+            const isInsideRightSplit = !!sidebarContainerEl.closest('.mod-right-split');
+            if (isInsideRightSplit && rightSplit.collapsed === true) {
+                return false;
+            }
+        }
+
+        // 2. DOM dimension and visibility check
+        if (sidebarContainerEl.offsetParent === null && !sidebarContainerEl.closest('.modal')) {
+            return false;
+        }
+        const rect = sidebarContainerEl.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) {
+            return false;
+        }
+
+        return true;
+    }
+
+    function isSidebarFocused(): boolean {
+        if (!sidebarContainerEl) return false;
+        const active = document.activeElement;
+        if (!active) return false;
+
+        // Either active element is inside our sidebar container
+        if (sidebarContainerEl.contains(active)) return true;
+
+        // Or active element is inside the same workspace-leaf container
+        const leafEl = sidebarContainerEl.closest('.workspace-leaf');
+        if (leafEl && leafEl.contains(active)) return true;
+
+        return false;
+    }
 
     function setHoveredCategory(cat: CategoryInfo) {
         hoveredItem = { type: "category", id: cat.id, name: cat.name, filepath: cat.filepath };
@@ -196,52 +253,78 @@
     }
 
     function getHoveredItemTarget(): { type: "category" | "group"; id: string; name: string; filepath?: string } | null {
-        if (hoveredItem) return hoveredItem;
+        if (!sidebarContainerEl) return null;
 
-        // Fallback: check DOM elements under cursor
+        // 1. Direct hover tracking verified by mouse bounds / DOM hit
         const elUnderCursor = document.elementFromPoint(lastMouseX, lastMouseY);
-        if (!elUnderCursor) return null;
+        if (elUnderCursor && sidebarContainerEl.contains(elUnderCursor)) {
+            const target = getTargetFromElement(elUnderCursor as HTMLElement);
+            if (target) return target;
+        }
 
-        return getTargetFromElement(elUnderCursor as HTMLElement);
+        // 2. Query CSS :hover match strictly within sidebar container
+        try {
+            const hoveredEl = sidebarContainerEl.querySelector('.category-item:hover, .group-header:hover, .group-container:hover') as HTMLElement | null;
+            if (hoveredEl) {
+                const target = getTargetFromElement(hoveredEl);
+                if (target) return target;
+            }
+        } catch {
+            // Ignore if querySelector :hover fails in unusual environments
+        }
+
+        // 3. Fallback to hoveredItem only if mouse is confirmed to be inside the sidebar
+        if (hoveredItem && isMouseInsideSidebar) {
+            return hoveredItem;
+        }
+
+        return null;
     }
 
     export function triggerRenameHoveredOrActive(): boolean {
         if (editingItemId || isAddingList || isAddingGroup) return false;
 
-        // 1. Check hovered item
+        // Must be expanded (not collapsed)
+        if (!isSidebarExpanded()) return false;
+
+        // 1. Check if an item in the sidebar is hovered by the mouse
         const hovered = getHoveredItemTarget();
         if (hovered) {
             startRenaming(hovered);
             return true;
         }
 
-        // 2. Check active DOM element with focus
-        const activeEl = document.activeElement as HTMLElement | null;
-        if (activeEl) {
-            const target = getTargetFromElement(activeEl);
-            if (target) {
-                startRenaming(target);
-                return true;
-            }
-        }
-
-        // 3. Fallback to currently selected active category in the sidebar
-        if (activeCategoryPath) {
-            for (const item of sidebarItems) {
-                if (item.type === "category" && item.filepath === activeCategoryPath) {
-                    startRenaming({ type: "category", id: item.id, name: item.name, filepath: item.filepath });
+        // 2. Check if the sidebar is focused
+        if (isSidebarFocused()) {
+            // 2a. Check if active DOM element with focus is a specific category or group
+            const activeEl = document.activeElement as HTMLElement | null;
+            if (activeEl) {
+                const target = getTargetFromElement(activeEl);
+                if (target) {
+                    startRenaming(target);
                     return true;
                 }
-                if (item.type === "group") {
-                    const child = item.items.find(c => c.filepath === activeCategoryPath);
-                    if (child) {
-                        startRenaming({ type: "category", id: child.id, name: child.name, filepath: child.filepath });
+            }
+
+            // 2b. Fallback to currently selected active category in the sidebar when sidebar is focused
+            if (activeCategoryPath) {
+                for (const item of sidebarItems) {
+                    if (item.type === "category" && item.filepath === activeCategoryPath) {
+                        startRenaming({ type: "category", id: item.id, name: item.name, filepath: item.filepath });
                         return true;
+                    }
+                    if (item.type === "group") {
+                        const child = item.items.find(c => c.filepath === activeCategoryPath);
+                        if (child) {
+                            startRenaming({ type: "category", id: child.id, name: child.name, filepath: child.filepath });
+                            return true;
+                        }
                     }
                 }
             }
         }
 
+        // Neither hovering over a list in sidebar nor sidebar being focused: DO NOT hijack F2!
         return false;
     }
 
@@ -743,6 +826,19 @@
         lastMouseX = e.clientX;
         lastMouseY = e.clientY;
 
+        if (sidebarContainerEl) {
+            const rect = sidebarContainerEl.getBoundingClientRect();
+            isMouseInsideSidebar = (
+                e.clientX >= rect.left &&
+                e.clientX <= rect.right &&
+                e.clientY >= rect.top &&
+                e.clientY <= rect.bottom
+            );
+            if (!isMouseInsideSidebar && hoveredItem) {
+                hoveredItem = null;
+            }
+        }
+
         const ghost = document.getElementById('dnd-action-dragged-el') as HTMLElement;
         if (ghost) {
             const overModal = document.elementFromPoint(e.clientX, e.clientY)?.closest('.modal-container, .workspace-ribbon');
@@ -834,10 +930,15 @@
 <svelte:window 
     on:pointerup|capture={handleGlobalPointerUp} 
     on:pointerup|capture={handleRescuePointerUp} 
-    on:keydown={handleWindowKeydown}
 />
 
-<div class="sidebar-container">
+<div 
+    class="sidebar-container"
+    bind:this={sidebarContainerEl}
+    tabindex="-1"
+    on:mouseenter={handleSidebarMouseEnter}
+    on:mouseleave={handleSidebarMouseLeave}
+>
     <div class="sidebar-header" style="display: flex; align-items: center; justify-content: space-between;">
         <span>Lists</span>
         <span class="icon-btn" on:click={openGlobalSearch}
