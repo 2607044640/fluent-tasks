@@ -4635,3 +4635,17 @@ body .task-steps-floating-modal .steps-modal-delete-btn:hover {
     margin-left: 2px !important;
 }
 
+.main-search-scope-pill {
+    background: var(--todo-accent-light, rgba(139, 92, 246, 0.15)) !important;
+    color: var(--todo-accent, #8b5cf6) !important;
+    border-color: var(--todo-accent, #8b5cf6) !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    user-select: none !important;
+}
+
+.main-search-scope-pill:hover {
+    background: var(--todo-accent-light, rgba(139, 92, 246, 0.28)) !important;
+    box-shadow: 0 0 8px rgba(139, 92, 246, 0.35);
+}
+

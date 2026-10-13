@@ -122,6 +122,9 @@ const zhCn: typeof en = {
     quick_list_search_filter_all_tasks: "所有任务",
     quick_list_search_filter_tooltip: "切换是否包含已完成任务",
     main_view_task_search_placeholder: "在当前列表中搜索任务 (标题、步骤、备注)...",
+    main_view_search_list_only_btn: "List only",
+    main_view_search_list_only_tooltip: "当前检索范围：仅当前列表。点击查看如何搜索全部任务。",
+    main_view_search_all_tasks_hint: "如果想要搜索全部任务 (All tasks)，请在 Obsidian【设置 -> 快捷键】中为本插件命令【Search all tasks】绑定快捷键。",
 };
 
 export default zhCn;

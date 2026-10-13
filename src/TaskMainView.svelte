@@ -1174,9 +1174,6 @@
             isSearchingTasks = true;
             try {
                 let results = await dataService.searchTasks(q, currentCategory ? currentCategory.filepath : null);
-                if (hideCompleted) {
-                    results = results.filter(r => !r.task.completed);
-                }
                 taskSearchResults = results;
                 taskFocusedIndex = 0;
             } catch (err) {
@@ -1188,19 +1185,15 @@
         }, 50);
     }
 
-    async function toggleHideCompleted(e?: MouseEvent) {
+    function handleListOnlyClick(e?: MouseEvent) {
         if (e) {
             e.preventDefault();
             e.stopPropagation();
         }
-        hideCompleted = !hideCompleted;
-        if (plugin?.settings) {
-            plugin.settings.searchHideCompleted = hideCompleted;
-            await plugin.saveSettings();
-        }
-        if (searchQuery.trim().length > 0) {
-            runTaskSearch(searchQuery);
-        }
+        new Notice(
+            t("main_view_search_all_tasks_hint") ||
+            "如果想要搜索全部任务 (All tasks)，请在 Obsidian【设置 -> 快捷键】中为本插件命令【Search all tasks】绑定快捷键。"
+        );
         searchInputEl?.focus();
     }
 
@@ -1788,20 +1781,6 @@
                         </span>
                     </div>
                 {:else}
-                    <!-- Search icon button in header actions -->
-                    <span class="icon-btn"
-                          class:is-active={isSearchOpen}
-                          on:click|stopPropagation={toggleSearch}
-                          role="button" tabindex="0"
-                          aria-label="Search in list (Ctrl+F)"
-                          title="Search in list (Ctrl+F)"
-                          on:keydown|stopPropagation={(e) => (e.key === "Enter" || e.key === " ") && toggleSearch()}>
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                        </svg>
-                    </span>
-
                     <!-- More options menu (three vertical dots) -->
                     <span class="icon-btn"
                           on:click|stopPropagation={openHeaderMoreMenu}
@@ -1845,16 +1824,12 @@
                     {/if}
 
                     <button 
-                        class="quick-modal-header-btn todo-search-filter-btn"
-                        class:is-active={hideCompleted}
-                        aria-label={t("quick_list_search_filter_tooltip") || "Toggle completed tasks filter"}
-                        title={t("quick_list_search_filter_tooltip") || "Toggle completed tasks filter"}
+                        class="quick-modal-header-btn main-search-scope-pill"
                         tabindex="-1"
-                        on:click={toggleHideCompleted}
+                        title={t("main_view_search_list_only_tooltip") || "List only"}
+                        on:click={handleListOnlyClick}
                     >
-                        {hideCompleted 
-                            ? (t("quick_list_search_filter_active_only") || "Active only") 
-                            : (t("quick_list_search_filter_all_tasks") || "All tasks")}
+                        {t("main_view_search_list_only_btn") || "List only"}
                     </button>
 
                     <button 

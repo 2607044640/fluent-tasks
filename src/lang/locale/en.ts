@@ -120,6 +120,9 @@ const en = {
     quick_list_search_filter_all_tasks: "All tasks",
     quick_list_search_filter_tooltip: "Toggle completed tasks filter",
     main_view_task_search_placeholder: "Search tasks in this list (title, steps, notes)...",
+    main_view_search_list_only_btn: "List only",
+    main_view_search_list_only_tooltip: "Current scope: List only. Click for info on searching all tasks.",
+    main_view_search_all_tasks_hint: "To search across all tasks, set a hotkey for plugin command 'Search all tasks' in Settings -> Hotkeys.",
 };
 
 export default en;
