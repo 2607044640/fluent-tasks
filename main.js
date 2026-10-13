@@ -16909,7 +16909,10 @@ function create_if_block_15(ctx) {
 }
 function create_if_block_132(ctx) {
   let div1;
-  let t4;
+  let div0;
+  let t0;
+  let span;
+  let t2;
   let div2;
   let mounted;
   let dispose;
@@ -16926,10 +16929,18 @@ function create_if_block_132(ctx) {
   return {
     c() {
       div1 = element("div");
-      div1.innerHTML = `<div style="display: flex; align-items: center; gap: 6px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg> <span>Visual Memory Aid</span></div> <span class="meta-popover-hint">Click to enlarge</span>`;
-      t4 = space();
+      div0 = element("div");
+      div0.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`;
+      t0 = space();
+      span = element("span");
+      span.textContent = `${isChinese() ? "\u70B9\u51FB\u653E\u5927" : "Click to enlarge"}`;
+      t2 = space();
       div2 = element("div");
       if_block.c();
+      set_style(div0, "display", "flex");
+      set_style(div0, "align-items", "center");
+      set_style(div0, "gap", "6px");
+      attr(span, "class", "meta-popover-hint");
       attr(div1, "class", "meta-popover-header");
       attr(div2, "class", "meta-popover-svg-preview");
       attr(div2, "role", "button");
@@ -16938,7 +16949,10 @@ function create_if_block_132(ctx) {
     },
     m(target, anchor) {
       insert(target, div1, anchor);
-      insert(target, t4, anchor);
+      append(div1, div0);
+      append(div1, t0);
+      append(div1, span);
+      insert(target, t2, anchor);
       insert(target, div2, anchor);
       if_block.m(div2, null);
       if (!mounted) {
@@ -16966,7 +16980,7 @@ function create_if_block_132(ctx) {
     d(detaching) {
       if (detaching) {
         detach(div1);
-        detach(t4);
+        detach(t2);
         detach(div2);
       }
       if_block.d();

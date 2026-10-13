@@ -2518,9 +2518,8 @@
                             <circle cx="8.5" cy="8.5" r="1.5"/>
                             <polyline points="21 15 16 10 5 21"/>
                         </svg>
-                        <span>Visual Memory Aid</span>
                     </div>
-                    <span class="meta-popover-hint">Click to enlarge</span>
+                    <span class="meta-popover-hint">{isChinese() ? "点击放大" : "Click to enlarge"}</span>
                 </div>
                 <!-- svelte-ignore a11y-click-events-have-key-events -->
                 <!-- svelte-ignore a11y-no-static-element-interactions -->
