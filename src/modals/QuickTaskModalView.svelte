@@ -60,6 +60,7 @@
     let editingName: string = "";
     let renameInputEl: HTMLInputElement;
     let titleAlignment: 'center' | 'left' = plugin?.settings?.quickListTitleAlignment ?? 'center';
+    let disableStars: boolean = plugin?.settings?.disableStars ?? false;
 
     // DOM Element Bindings
     let searchInputEl: HTMLInputElement;
@@ -110,6 +111,11 @@
             titleAlignment = payload.settings.quickListTitleAlignment;
         } else if (plugin?.settings?.quickListTitleAlignment !== undefined) {
             titleAlignment = plugin.settings.quickListTitleAlignment;
+        }
+        if (payload?.settings?.disableStars !== undefined) {
+            disableStars = payload.settings.disableStars;
+        } else if (plugin?.settings?.disableStars !== undefined) {
+            disableStars = plugin.settings.disableStars;
         }
     }
 
@@ -789,7 +795,7 @@
             return;
         }
 
-        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        if (!disableStars && (e.ctrlKey || e.metaKey) && e.key === "Enter") {
             if (focusPane === "tasks" && allDisplayedTasks.length > 0) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -1122,15 +1128,17 @@
                                             {/if}
                                         </span>
                                     {/if}
-                                    <span 
-                                        class="quick-modal-star-btn"
-                                        class:is-starred={result.task.starred}
-                                        role="button"
-                                        tabindex="-1"
-                                        on:click|stopPropagation={() => toggleTaskStar(result.task)}
-                                    >
-                                        {result.task.starred ? "★" : "☆"}
-                                    </span>
+                                    {#if !disableStars}
+                                        <span 
+                                            class="quick-modal-star-btn"
+                                            class:is-starred={result.task.starred}
+                                            role="button"
+                                            tabindex="-1"
+                                            on:click|stopPropagation={() => toggleTaskStar(result.task)}
+                                        >
+                                            {result.task.starred ? "★" : "☆"}
+                                        </span>
+                                    {/if}
                                 </div>
                             {/each}
                         </div>
@@ -1205,15 +1213,17 @@
                                             {/if}
                                         </span>
                                     {/if}
-                                    <span 
-                                        class="quick-modal-star-btn"
-                                        class:is-starred={task.starred}
-                                        role="button"
-                                        tabindex="-1"
-                                        on:click|stopPropagation={() => toggleTaskStar(task)}
-                                    >
-                                        {task.starred ? "★" : "☆"}
-                                    </span>
+                                    {#if !disableStars}
+                                        <span 
+                                            class="quick-modal-star-btn"
+                                            class:is-starred={task.starred}
+                                            role="button"
+                                            tabindex="-1"
+                                            on:click|stopPropagation={() => toggleTaskStar(task)}
+                                        >
+                                            {task.starred ? "★" : "☆"}
+                                        </span>
+                                    {/if}
                                 </div>
                             {/each}
                         </div>
@@ -1287,15 +1297,17 @@
                                                 {/if}
                                             </span>
                                         {/if}
-                                        <span 
-                                            class="quick-modal-star-btn"
-                                            class:is-starred={task.starred}
-                                            role="button"
-                                            tabindex="-1"
-                                            on:click|stopPropagation={() => toggleTaskStar(task)}
-                                        >
-                                            {task.starred ? "★" : "☆"}
-                                        </span>
+                                        {#if !disableStars}
+                                            <span 
+                                                class="quick-modal-star-btn"
+                                                class:is-starred={task.starred}
+                                                role="button"
+                                                tabindex="-1"
+                                                on:click|stopPropagation={() => toggleTaskStar(task)}
+                                            >
+                                                {task.starred ? "★" : "☆"}
+                                            </span>
+                                        {/if}
                                     </div>
                                 {/each}
                             </div>
@@ -1312,7 +1324,9 @@
         <span><b>Space</b> Toggle Check</span>
         <span><b>F2</b> Rename</span>
         <span><b>Ctrl+N</b> Add Task</span>
-        <span><b>Ctrl+Enter</b> Star</span>
+        {#if !disableStars}
+            <span><b>Ctrl+Enter</b> Star</span>
+        {/if}
         <span><b>Enter</b> {plugin && plugin.settings && plugin.settings.quickModalAction === 'navigate' ? 'Open in Workspace' : 'Select'}</span>
         <span><b>Esc</b> Close</span>
     </div>

@@ -42,6 +42,7 @@
     let wrapTaskTitles: boolean = plugin?.settings?.wrapTaskTitles ?? true;
     let enableTaskWeightMode: boolean = plugin?.settings?.enableTaskWeightMode ?? false;
     let centerAlignTasks: boolean = plugin?.settings?.centerAlignTasks ?? false;
+    let disableStars: boolean = plugin?.settings?.disableStars ?? false;
 
     // In-List Search State (Ctrl+F)
     let isSearchOpen: boolean = false;
@@ -803,6 +804,7 @@
         wrapTaskTitles = plugin?.settings?.wrapTaskTitles ?? true;
         enableTaskWeightMode = plugin?.settings?.enableTaskWeightMode ?? false;
         centerAlignTasks = plugin?.settings?.centerAlignTasks ?? false;
+        disableStars = plugin?.settings?.disableStars ?? false;
         incompleteTasks = applyWeightSort(rawIncompleteTasks, enableTaskWeightMode);
         completedTasks = applyWeightSort(rawCompletedTasks, enableTaskWeightMode);
     }
@@ -1015,6 +1017,7 @@
         selectedTaskId = "";
         showCompleted = false;
         enableTaskWeightMode = plugin?.settings?.enableTaskWeightMode ?? false;
+        disableStars = plugin?.settings?.disableStars ?? false;
         await loadTasks();
         if (plugin?.app && cat?.filepath) {
             void LinkedNoteService.autoSyncCategoryLinkedNotes(plugin.app, dataService, cat.filepath);
@@ -1801,17 +1804,19 @@
                         </span>
 
                         <!-- Batch Star -->
-                        <span class="icon-btn"
-                              class:is-disabled={selectedTaskIds.size === 0}
-                              on:click|stopPropagation={() => selectedTaskIds.size > 0 && handleBatchStar()}
-                              role="button" tabindex="0"
-                              aria-label={t("batch_star")}
-                              title={t("batch_star")}
-                              on:keydown|stopPropagation={(e) => e.key === "Enter" && selectedTaskIds.size > 0 && handleBatchStar()}>
-                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                            </svg>
-                        </span>
+                        {#if !disableStars}
+                            <span class="icon-btn"
+                                  class:is-disabled={selectedTaskIds.size === 0}
+                                  on:click|stopPropagation={() => selectedTaskIds.size > 0 && handleBatchStar()}
+                                  role="button" tabindex="0"
+                                  aria-label={t("batch_star")}
+                                  title={t("batch_star")}
+                                  on:keydown|stopPropagation={(e) => e.key === "Enter" && selectedTaskIds.size > 0 && handleBatchStar()}>
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                </svg>
+                            </span>
+                        {/if}
 
                         <!-- Batch Delete -->
                         <span class="icon-btn is-delete"
@@ -2131,16 +2136,18 @@
                     {/if}
 
                     <!-- Star -->
-                    <span class="star" class:active={task.starred}
-                          on:click|stopPropagation={() => toggleStar(task)}
-                          role="button" tabindex="0"
-                          on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleStar(task)}>
-                        <svg width="18" height="18" viewBox="0 0 24 24"
-                             fill={task.starred ? "currentColor" : "none"}
-                             stroke="currentColor" stroke-width="2">
-                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                        </svg>
-                    </span>
+                    {#if !disableStars}
+                        <span class="star" class:active={task.starred}
+                              on:click|stopPropagation={() => toggleStar(task)}
+                              role="button" tabindex="0"
+                              on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleStar(task)}>
+                            <svg width="18" height="18" viewBox="0 0 24 24"
+                                 fill={task.starred ? "currentColor" : "none"}
+                                 stroke="currentColor" stroke-width="2">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                            </svg>
+                        </span>
+                    {/if}
 
                     <!-- Weight Control (Priority 1-9) -->
                     {#if enableTaskWeightMode}
@@ -2354,16 +2361,18 @@
                                     </span>
                                 {/if}
 
-                                <span class="star" class:active={task.starred}
-                                      on:click|stopPropagation={() => toggleStar(task)}
-                                      role="button" tabindex="0"
-                                      on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleStar(task)}>
-                                    <svg width="18" height="18" viewBox="0 0 24 24"
-                                         fill={task.starred ? "currentColor" : "none"}
-                                         stroke="currentColor" stroke-width="2">
-                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                                    </svg>
-                                </span>
+                                {#if !disableStars}
+                                    <span class="star" class:active={task.starred}
+                                          on:click|stopPropagation={() => toggleStar(task)}
+                                          role="button" tabindex="0"
+                                          on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleStar(task)}>
+                                        <svg width="18" height="18" viewBox="0 0 24 24"
+                                             fill={task.starred ? "currentColor" : "none"}
+                                             stroke="currentColor" stroke-width="2">
+                                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                                        </svg>
+                                    </span>
+                                {/if}
 
                                 <!-- Weight Control (Priority 1-9) -->
                                 {#if enableTaskWeightMode}
