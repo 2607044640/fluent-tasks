@@ -521,6 +521,20 @@
             }
         }
 
+        // Delete key: Directly delete hovered UI box
+        if ((e.key === "Delete" || e.code === "Delete") && !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+            const activeTag = document.activeElement?.tagName?.toLowerCase();
+            if (activeTag === "input" || activeTag === "textarea") return;
+            if (isSvgQuickEditorInstalled()) {
+                if (quickEditor?.deleteHoveredBox) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    quickEditor.deleteHoveredBox();
+                    return;
+                }
+            }
+        }
+
         const isMatch = e.key === "F2" ||
             (quickEditor?.isSvgEditHotkey && quickEditor.isSvgEditHotkey(e)) ||
             (e.ctrlKey && e.altKey && e.shiftKey && (e.key.toLowerCase() === "i" || e.code === "KeyI"));
@@ -2629,19 +2643,28 @@
                         <span class="svg-lightbox-title">{lightboxData.title || "Visual Memory Aid"}</span>
                         <div class="svg-lightbox-hints" style="font-size: 11px; opacity: 0.85; display: inline-flex; gap: 6px; align-items: center; margin-left: 10px;">
                             {#if isSvgQuickEditorInstalled()}
-                                {#if isChinese()}
-                                    <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Ctrl+S 保存</span>
-                                    <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">清空文字即删UI框</span>
-                                    <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Shift+拖拽移动</span>
-                                    <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Alt+拖拽复制</span>
-                                    <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Ctrl+Z/Y 撤销重做</span>
-                                {:else}
-                                    <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Ctrl+S to Save</span>
-                                    <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Clear Text to Delete Box</span>
-                                    <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Shift+Drag to Move</span>
-                                    <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Alt+Drag to Duplicate</span>
-                                    <span style="background: rgba(124, 156, 255, 0.16); border: 1px solid rgba(124, 156, 255, 0.35); padding: 1px 6px; border-radius: 4px; color: var(--text-normal, #e5e7eb);">Ctrl+Z/Y Undo/Redo</span>
-                                {/if}
+                                <div class="svg-help-wrap">
+                                    <div class="svg-help-icon" title={isChinese() ? "操作说明 (悬浮查看)" : "Help & Shortcuts (Hover to view)"}>?</div>
+                                    <div class="svg-help-popover">
+                                        {#if isChinese()}
+                                            <div class="svg-help-row"><kbd>Ctrl+S</kbd><span class="svg-help-desc">即时保存 (保留撤销记录)</span></div>
+                                            <div class="svg-help-row"><kbd>Delete</kbd><span class="svg-help-desc">悬浮UI框按键直接删除</span></div>
+                                            <div class="svg-help-row"><kbd>清空文本</kbd><span class="svg-help-desc">清空文字自动删除UI框</span></div>
+                                            <div class="svg-help-row"><kbd>Shift+拖拽</kbd><span class="svg-help-desc">移动UI框</span></div>
+                                            <div class="svg-help-row"><kbd>Alt+拖拽</kbd><span class="svg-help-desc">复制克隆UI框</span></div>
+                                            <div class="svg-help-row"><kbd>Ctrl+Z / Y</kbd><span class="svg-help-desc">撤销与重做</span></div>
+                                            <div class="svg-help-row"><kbd>双击 / F2</kbd><span class="svg-help-desc">快速编辑文字</span></div>
+                                        {:else}
+                                            <div class="svg-help-row"><kbd>Ctrl+S</kbd><span class="svg-help-desc">Save in-place (keeps history)</span></div>
+                                            <div class="svg-help-row"><kbd>Delete</kbd><span class="svg-help-desc">Hover and press Delete to remove box</span></div>
+                                            <div class="svg-help-row"><kbd>Clear Text</kbd><span class="svg-help-desc">Auto-deletes box when text is empty</span></div>
+                                            <div class="svg-help-row"><kbd>Shift+Drag</kbd><span class="svg-help-desc">Move UI box</span></div>
+                                            <div class="svg-help-row"><kbd>Alt+Drag</kbd><span class="svg-help-desc">Duplicate / clone UI box</span></div>
+                                            <div class="svg-help-row"><kbd>Ctrl+Z / Y</kbd><span class="svg-help-desc">Undo & Redo</span></div>
+                                            <div class="svg-help-row"><kbd>Dblclick / F2</kbd><span class="svg-help-desc">Quick edit text</span></div>
+                                        {/if}
+                                    </div>
+                                </div>
                             {:else}
                                 <button type="button" class="svg-plugin-download-btn" on:click={() => showPluginDownloadModal = true}>
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">

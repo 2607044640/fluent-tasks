@@ -18102,8 +18102,12 @@ function create_else_block_32(ctx) {
   };
 }
 function create_if_block_8(ctx) {
+  let div2;
+  let div0;
+  let div0_title_value;
+  let t1;
+  let div1;
   let show_if;
-  let if_block_anchor;
   function select_block_type_12(ctx2, dirty) {
     if (isChinese())
       return create_if_block_9;
@@ -18113,174 +18117,185 @@ function create_if_block_8(ctx) {
   let if_block = current_block_type(ctx);
   return {
     c() {
+      div2 = element("div");
+      div0 = element("div");
+      div0.textContent = "?";
+      t1 = space();
+      div1 = element("div");
       if_block.c();
-      if_block_anchor = empty();
+      attr(div0, "class", "svg-help-icon");
+      attr(div0, "title", div0_title_value = isChinese() ? "\u64CD\u4F5C\u8BF4\u660E (\u60AC\u6D6E\u67E5\u770B)" : "Help & Shortcuts (Hover to view)");
+      attr(div1, "class", "svg-help-popover");
+      attr(div2, "class", "svg-help-wrap");
     },
     m(target, anchor) {
-      if_block.m(target, anchor);
-      insert(target, if_block_anchor, anchor);
+      insert(target, div2, anchor);
+      append(div2, div0);
+      append(div2, t1);
+      append(div2, div1);
+      if_block.m(div1, null);
     },
     p: noop,
     d(detaching) {
       if (detaching) {
-        detach(if_block_anchor);
+        detach(div2);
       }
-      if_block.d(detaching);
+      if_block.d();
     }
   };
 }
 function create_else_block_22(ctx) {
-  let span0;
-  let t1;
-  let span1;
-  let t3;
-  let span2;
+  let div0;
+  let t2;
+  let div1;
   let t5;
-  let span3;
-  let t7;
-  let span4;
+  let div2;
+  let t8;
+  let div3;
+  let t11;
+  let div4;
+  let t14;
+  let div5;
+  let t17;
+  let div6;
   return {
     c() {
-      span0 = element("span");
-      span0.textContent = "Ctrl+S to Save";
-      t1 = space();
-      span1 = element("span");
-      span1.textContent = "Clear Text to Delete Box";
-      t3 = space();
-      span2 = element("span");
-      span2.textContent = "Shift+Drag to Move";
+      div0 = element("div");
+      div0.innerHTML = `<kbd>Ctrl+S</kbd><span class="svg-help-desc">Save in-place (keeps history)</span>`;
+      t2 = space();
+      div1 = element("div");
+      div1.innerHTML = `<kbd>Delete</kbd><span class="svg-help-desc">Hover and press Delete to remove box</span>`;
       t5 = space();
-      span3 = element("span");
-      span3.textContent = "Alt+Drag to Duplicate";
-      t7 = space();
-      span4 = element("span");
-      span4.textContent = "Ctrl+Z/Y Undo/Redo";
-      set_style(span0, "background", "rgba(124, 156, 255, 0.16)");
-      set_style(span0, "border", "1px solid rgba(124, 156, 255, 0.35)");
-      set_style(span0, "padding", "1px 6px");
-      set_style(span0, "border-radius", "4px");
-      set_style(span0, "color", "var(--text-normal, #e5e7eb)");
-      set_style(span1, "background", "rgba(124, 156, 255, 0.16)");
-      set_style(span1, "border", "1px solid rgba(124, 156, 255, 0.35)");
-      set_style(span1, "padding", "1px 6px");
-      set_style(span1, "border-radius", "4px");
-      set_style(span1, "color", "var(--text-normal, #e5e7eb)");
-      set_style(span2, "background", "rgba(124, 156, 255, 0.16)");
-      set_style(span2, "border", "1px solid rgba(124, 156, 255, 0.35)");
-      set_style(span2, "padding", "1px 6px");
-      set_style(span2, "border-radius", "4px");
-      set_style(span2, "color", "var(--text-normal, #e5e7eb)");
-      set_style(span3, "background", "rgba(124, 156, 255, 0.16)");
-      set_style(span3, "border", "1px solid rgba(124, 156, 255, 0.35)");
-      set_style(span3, "padding", "1px 6px");
-      set_style(span3, "border-radius", "4px");
-      set_style(span3, "color", "var(--text-normal, #e5e7eb)");
-      set_style(span4, "background", "rgba(124, 156, 255, 0.16)");
-      set_style(span4, "border", "1px solid rgba(124, 156, 255, 0.35)");
-      set_style(span4, "padding", "1px 6px");
-      set_style(span4, "border-radius", "4px");
-      set_style(span4, "color", "var(--text-normal, #e5e7eb)");
+      div2 = element("div");
+      div2.innerHTML = `<kbd>Clear Text</kbd><span class="svg-help-desc">Auto-deletes box when text is empty</span>`;
+      t8 = space();
+      div3 = element("div");
+      div3.innerHTML = `<kbd>Shift+Drag</kbd><span class="svg-help-desc">Move UI box</span>`;
+      t11 = space();
+      div4 = element("div");
+      div4.innerHTML = `<kbd>Alt+Drag</kbd><span class="svg-help-desc">Duplicate / clone UI box</span>`;
+      t14 = space();
+      div5 = element("div");
+      div5.innerHTML = `<kbd>Ctrl+Z / Y</kbd><span class="svg-help-desc">Undo &amp; Redo</span>`;
+      t17 = space();
+      div6 = element("div");
+      div6.innerHTML = `<kbd>Dblclick / F2</kbd><span class="svg-help-desc">Quick edit text</span>`;
+      attr(div0, "class", "svg-help-row");
+      attr(div1, "class", "svg-help-row");
+      attr(div2, "class", "svg-help-row");
+      attr(div3, "class", "svg-help-row");
+      attr(div4, "class", "svg-help-row");
+      attr(div5, "class", "svg-help-row");
+      attr(div6, "class", "svg-help-row");
     },
     m(target, anchor) {
-      insert(target, span0, anchor);
-      insert(target, t1, anchor);
-      insert(target, span1, anchor);
-      insert(target, t3, anchor);
-      insert(target, span2, anchor);
+      insert(target, div0, anchor);
+      insert(target, t2, anchor);
+      insert(target, div1, anchor);
       insert(target, t5, anchor);
-      insert(target, span3, anchor);
-      insert(target, t7, anchor);
-      insert(target, span4, anchor);
+      insert(target, div2, anchor);
+      insert(target, t8, anchor);
+      insert(target, div3, anchor);
+      insert(target, t11, anchor);
+      insert(target, div4, anchor);
+      insert(target, t14, anchor);
+      insert(target, div5, anchor);
+      insert(target, t17, anchor);
+      insert(target, div6, anchor);
     },
     d(detaching) {
       if (detaching) {
-        detach(span0);
-        detach(t1);
-        detach(span1);
-        detach(t3);
-        detach(span2);
+        detach(div0);
+        detach(t2);
+        detach(div1);
         detach(t5);
-        detach(span3);
-        detach(t7);
-        detach(span4);
+        detach(div2);
+        detach(t8);
+        detach(div3);
+        detach(t11);
+        detach(div4);
+        detach(t14);
+        detach(div5);
+        detach(t17);
+        detach(div6);
       }
     }
   };
 }
 function create_if_block_9(ctx) {
-  let span0;
-  let t1;
-  let span1;
-  let t3;
-  let span2;
+  let div0;
+  let t2;
+  let div1;
   let t5;
-  let span3;
-  let t7;
-  let span4;
+  let div2;
+  let t8;
+  let div3;
+  let t11;
+  let div4;
+  let t14;
+  let div5;
+  let t17;
+  let div6;
   return {
     c() {
-      span0 = element("span");
-      span0.textContent = "Ctrl+S \u4FDD\u5B58";
-      t1 = space();
-      span1 = element("span");
-      span1.textContent = "\u6E05\u7A7A\u6587\u5B57\u5373\u5220UI\u6846";
-      t3 = space();
-      span2 = element("span");
-      span2.textContent = "Shift+\u62D6\u62FD\u79FB\u52A8";
+      div0 = element("div");
+      div0.innerHTML = `<kbd>Ctrl+S</kbd><span class="svg-help-desc">\u5373\u65F6\u4FDD\u5B58 (\u4FDD\u7559\u64A4\u9500\u8BB0\u5F55)</span>`;
+      t2 = space();
+      div1 = element("div");
+      div1.innerHTML = `<kbd>Delete</kbd><span class="svg-help-desc">\u60AC\u6D6EUI\u6846\u6309\u952E\u76F4\u63A5\u5220\u9664</span>`;
       t5 = space();
-      span3 = element("span");
-      span3.textContent = "Alt+\u62D6\u62FD\u590D\u5236";
-      t7 = space();
-      span4 = element("span");
-      span4.textContent = "Ctrl+Z/Y \u64A4\u9500\u91CD\u505A";
-      set_style(span0, "background", "rgba(124, 156, 255, 0.16)");
-      set_style(span0, "border", "1px solid rgba(124, 156, 255, 0.35)");
-      set_style(span0, "padding", "1px 6px");
-      set_style(span0, "border-radius", "4px");
-      set_style(span0, "color", "var(--text-normal, #e5e7eb)");
-      set_style(span1, "background", "rgba(124, 156, 255, 0.16)");
-      set_style(span1, "border", "1px solid rgba(124, 156, 255, 0.35)");
-      set_style(span1, "padding", "1px 6px");
-      set_style(span1, "border-radius", "4px");
-      set_style(span1, "color", "var(--text-normal, #e5e7eb)");
-      set_style(span2, "background", "rgba(124, 156, 255, 0.16)");
-      set_style(span2, "border", "1px solid rgba(124, 156, 255, 0.35)");
-      set_style(span2, "padding", "1px 6px");
-      set_style(span2, "border-radius", "4px");
-      set_style(span2, "color", "var(--text-normal, #e5e7eb)");
-      set_style(span3, "background", "rgba(124, 156, 255, 0.16)");
-      set_style(span3, "border", "1px solid rgba(124, 156, 255, 0.35)");
-      set_style(span3, "padding", "1px 6px");
-      set_style(span3, "border-radius", "4px");
-      set_style(span3, "color", "var(--text-normal, #e5e7eb)");
-      set_style(span4, "background", "rgba(124, 156, 255, 0.16)");
-      set_style(span4, "border", "1px solid rgba(124, 156, 255, 0.35)");
-      set_style(span4, "padding", "1px 6px");
-      set_style(span4, "border-radius", "4px");
-      set_style(span4, "color", "var(--text-normal, #e5e7eb)");
+      div2 = element("div");
+      div2.innerHTML = `<kbd>\u6E05\u7A7A\u6587\u672C</kbd><span class="svg-help-desc">\u6E05\u7A7A\u6587\u5B57\u81EA\u52A8\u5220\u9664UI\u6846</span>`;
+      t8 = space();
+      div3 = element("div");
+      div3.innerHTML = `<kbd>Shift+\u62D6\u62FD</kbd><span class="svg-help-desc">\u79FB\u52A8UI\u6846</span>`;
+      t11 = space();
+      div4 = element("div");
+      div4.innerHTML = `<kbd>Alt+\u62D6\u62FD</kbd><span class="svg-help-desc">\u590D\u5236\u514B\u9686UI\u6846</span>`;
+      t14 = space();
+      div5 = element("div");
+      div5.innerHTML = `<kbd>Ctrl+Z / Y</kbd><span class="svg-help-desc">\u64A4\u9500\u4E0E\u91CD\u505A</span>`;
+      t17 = space();
+      div6 = element("div");
+      div6.innerHTML = `<kbd>\u53CC\u51FB / F2</kbd><span class="svg-help-desc">\u5FEB\u901F\u7F16\u8F91\u6587\u5B57</span>`;
+      attr(div0, "class", "svg-help-row");
+      attr(div1, "class", "svg-help-row");
+      attr(div2, "class", "svg-help-row");
+      attr(div3, "class", "svg-help-row");
+      attr(div4, "class", "svg-help-row");
+      attr(div5, "class", "svg-help-row");
+      attr(div6, "class", "svg-help-row");
     },
     m(target, anchor) {
-      insert(target, span0, anchor);
-      insert(target, t1, anchor);
-      insert(target, span1, anchor);
-      insert(target, t3, anchor);
-      insert(target, span2, anchor);
+      insert(target, div0, anchor);
+      insert(target, t2, anchor);
+      insert(target, div1, anchor);
       insert(target, t5, anchor);
-      insert(target, span3, anchor);
-      insert(target, t7, anchor);
-      insert(target, span4, anchor);
+      insert(target, div2, anchor);
+      insert(target, t8, anchor);
+      insert(target, div3, anchor);
+      insert(target, t11, anchor);
+      insert(target, div4, anchor);
+      insert(target, t14, anchor);
+      insert(target, div5, anchor);
+      insert(target, t17, anchor);
+      insert(target, div6, anchor);
     },
     d(detaching) {
       if (detaching) {
-        detach(span0);
-        detach(t1);
-        detach(span1);
-        detach(t3);
-        detach(span2);
+        detach(div0);
+        detach(t2);
+        detach(div1);
         detach(t5);
-        detach(span3);
-        detach(t7);
-        detach(span4);
+        detach(div2);
+        detach(t8);
+        detach(div3);
+        detach(t11);
+        detach(div4);
+        detach(t14);
+        detach(div5);
+        detach(t17);
+        detach(div6);
       }
     }
   };
@@ -19719,7 +19734,7 @@ function instance4($$self, $$props, $$invalidate) {
     }
   }
   function handleLightboxKeydown(e) {
-    var _a2, _b2, _c2;
+    var _a2, _b2, _c2, _d2, _e2;
     if (showPluginDownloadModal) {
       if (e.key === "Escape") {
         e.preventDefault();
@@ -19769,6 +19784,19 @@ function instance4($$self, $$props, $$invalidate) {
         e.stopPropagation();
         (_c2 = quickEditor == null ? void 0 : quickEditor.redo) == null ? void 0 : _c2.call(quickEditor);
         return;
+      }
+    }
+    if ((e.key === "Delete" || e.code === "Delete") && !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+      const activeTag = (_e2 = (_d2 = document.activeElement) == null ? void 0 : _d2.tagName) == null ? void 0 : _e2.toLowerCase();
+      if (activeTag === "input" || activeTag === "textarea")
+        return;
+      if (isSvgQuickEditorInstalled()) {
+        if (quickEditor == null ? void 0 : quickEditor.deleteHoveredBox) {
+          e.preventDefault();
+          e.stopPropagation();
+          quickEditor.deleteHoveredBox();
+          return;
+        }
       }
     }
     const isMatch = e.key === "F2" || (quickEditor == null ? void 0 : quickEditor.isSvgEditHotkey) && quickEditor.isSvgEditHotkey(e) || e.ctrlKey && e.altKey && e.shiftKey && (e.key.toLowerCase() === "i" || e.code === "KeyI");
