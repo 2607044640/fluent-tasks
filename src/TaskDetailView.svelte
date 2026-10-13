@@ -6,12 +6,12 @@
     import { DataService } from "./DataService";
     import { EventName, type TaskItem, type TaskStep, type RecurrenceRule } from "./types";
     import { SAVE_DEBOUNCE_MS } from "./constants";
-    import { portal, autosize } from "./utils/domUtils";
+    import { portal, autosize, longPress } from "./utils/domUtils";
     import { ensureStepIds, persistableSteps, reconcileDndSteps } from "./utils/stepIds";
     import { DAY_LABELS, formatExactTime, getRelativeTime, getRecurrenceLabel } from "./utils/timeUtils";
     import { LinkedNoteService } from "./services/LinkedNoteService";
     import { promptDeleteTaskWithLinkedNote } from "./modals/ConfirmDeleteLinkedNoteModal";
-    import { Menu, Notice } from "obsidian";
+    import { Menu, Notice, TFile } from "obsidian";
     import { t } from "./lang/helpers";
     import { Logger } from "./Logger";
 
@@ -905,6 +905,139 @@
             });
         }
     }
+
+    // =============================================
+    // SVG Resolution & Long-Press Source File Trashing
+    // =============================================
+    const svgResolveCache = new Map<string, { isInline: boolean; content: string; srcUrl: string; cleanPath: string }>();
+
+    function resolveSvgItem(svgStr: string): { isInline: boolean; content: string; srcUrl: string; cleanPath: string } {
+        if (!svgStr) return { isInline: false, content: "", srcUrl: "", cleanPath: "" };
+        const cached = svgResolveCache.get(svgStr);
+        if (cached) return cached;
+
+        const trimmed = svgStr.trim();
+        if (trimmed.startsWith("<svg") || trimmed.startsWith("<?xml") || trimmed.includes("</svg>")) {
+            let processed = trimmed;
+            if (!processed.includes("viewBox") && !processed.includes("viewbox")) {
+                const widthMatch = processed.match(/width=["']?(\d+(?:\.\d+)?)px?["']?/i);
+                const heightMatch = processed.match(/height=["']?(\d+(?:\.\d+)?)px?["']?/i);
+                if (widthMatch && heightMatch) {
+                    const w = widthMatch[1];
+                    const h = heightMatch[1];
+                    processed = processed.replace(/<svg\b/i, `<svg viewBox="0 0 ${w} ${h}"`);
+                }
+            }
+            const res = { isInline: true, content: processed, srcUrl: "", cleanPath: "" };
+            svgResolveCache.set(svgStr, res);
+            return res;
+        }
+
+        const cleanPath = trimmed.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
+        let file: any = null;
+        if (plugin?.app?.metadataCache) {
+            file = plugin.app.metadataCache.getFirstLinkpathDest(cleanPath, categoryFilepath || "");
+        }
+        if (!file && plugin?.app?.vault) {
+            file = plugin.app.vault.getAbstractFileByPath(cleanPath);
+        }
+        const rawSrc = file && plugin?.app?.vault?.adapter ? plugin.app.vault.adapter.getResourcePath(file.path) : cleanPath;
+        const srcUrl = rawSrc ? (rawSrc.includes("?") ? `${rawSrc}&t=${Date.now()}` : `${rawSrc}?t=${Date.now()}`) : "";
+        const res = {
+            isInline: false,
+            content: trimmed,
+            srcUrl: srcUrl || cleanPath,
+            cleanPath: file?.path || cleanPath,
+        };
+        svgResolveCache.set(svgStr, res);
+        return res;
+    }
+
+    function resolveSourceFileFromSvg(svgStr: string): TFile | null {
+        if (!svgStr || !plugin?.app) return null;
+        const trimmed = svgStr.trim();
+        if (trimmed.startsWith("<svg") || trimmed.startsWith("<?xml") || trimmed.includes("</svg>")) {
+            return null;
+        }
+        const cleanPath = trimmed.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
+        let file: any = null;
+        if (plugin.app.metadataCache) {
+            file = plugin.app.metadataCache.getFirstLinkpathDest(cleanPath, categoryFilepath || "");
+        }
+        if (!file && plugin.app.vault) {
+            file = plugin.app.vault.getAbstractFileByPath(cleanPath);
+        }
+        return (file instanceof TFile) ? file : null;
+    }
+
+    async function trashSourceFile(file: TFile | null) {
+        if (!file) {
+            new Notice("内联 SVG 无物理源文件，仅从任务元数据中移除");
+            return;
+        }
+        if (!plugin?.app?.fileManager) return;
+        try {
+            await plugin.app.fileManager.trashFile(file);
+            new Notice(`已将源文件移至废纸篓: ${file.name}`);
+        } catch (err: any) {
+            console.error("Failed to trash file:", err);
+            new Notice(`移至废纸篓失败: ${err?.message || err}`);
+        }
+    }
+
+    async function deleteSvgWithSourceFile(idx: number) {
+        if (idx < 0 || idx >= metaSvgList.length) return;
+        const svgStr = metaSvgList[idx];
+        const file = resolveSourceFileFromSvg(svgStr);
+        await trashSourceFile(file);
+        removeSvgItem(idx);
+    }
+
+    async function deleteSvgChipWithSourceFile(idx: number) {
+        if (!task || !task.svgs || idx < 0 || idx >= task.svgs.length) return;
+        const svgStr = task.svgs[idx];
+        const file = resolveSourceFileFromSvg(svgStr);
+        await trashSourceFile(file);
+        await deleteSvgEntry(idx);
+    }
+
+    async function deleteNoteChipWithSourceFile() {
+        if (!task || !task.note_link || !plugin?.app) return;
+        const noteFile = LinkedNoteService.resolveLinkedNoteFile(plugin.app, task.note_link, categoryFilepath);
+        if (noteFile) {
+            await trashSourceFile(noteFile);
+        }
+        await deleteMetaProp('note_link');
+    }
+
+    async function deleteTaskWithLongPress() {
+        if (!task || !categoryFilepath || !plugin?.app) return;
+        const toDelete = task;
+        const path = categoryFilepath;
+        const noteFile = LinkedNoteService.resolveLinkedNoteFile(plugin.app, toDelete.note_link, path, toDelete.id);
+        if (noteFile) {
+            await trashSourceFile(noteFile);
+        }
+        if (toDelete.svgs) {
+            for (const s of toDelete.svgs) {
+                const svgFile = resolveSourceFileFromSvg(s);
+                if (svgFile) {
+                    await trashSourceFile(svgFile);
+                }
+            }
+        }
+        await dataService.deleteTask(path, toDelete);
+        EventBus.emit(EventName.TASK_DELETED, { task: toDelete, categoryFilepath: path });
+        task = null;
+        categoryFilepath = "";
+        new Notice("已直接删除任务及源文件至废纸篓");
+    }
+
+    function handleOpenSvgFile(resolved: { isInline: boolean; cleanPath: string }) {
+        if (!resolved.isInline && resolved.cleanPath && plugin?.app) {
+            plugin.app.workspace.openLinkText(resolved.cleanPath, categoryFilepath || "", false);
+        }
+    }
 </script>
 
 <div class="detail-container" on:wheel={handleContainerWheel}>
@@ -1115,8 +1248,14 @@
                          role="button" tabindex="0">
                         <span class="chip-label">Note</span>
                         <span class="chip-val">{task.note_link}</span>
-                        <span class="chip-delete" on:click|stopPropagation={() => deleteMetaProp('note_link')}
-                              role="button" tabindex="0" title="Remove note link">✕</span>
+                        <span class="chip-delete"
+                              use:longPress={{
+                                  duration: 1500,
+                                  onLongPress: () => deleteNoteChipWithSourceFile(),
+                                  onClick: () => deleteMetaProp('note_link')
+                              }}
+                              on:keydown={(e) => e.key === "Enter" && deleteMetaProp('note_link')}
+                              role="button" tabindex="0" title="Click to remove, hold 1.5s to trash note file / 长按1.5秒直接删除笔记至垃圾桶">✕</span>
                     </div>
                 {/if}
                 {#if task.svgs && task.svgs.length > 0}
@@ -1128,8 +1267,14 @@
                              role="button" tabindex="0">
                             <span class="chip-label">{task.svgs.length > 1 ? `SVG #${idx + 1}` : 'SVG'}</span>
                             <span class="chip-val">{svgItem.length > 30 ? svgItem.slice(0, 30) + '...' : svgItem}</span>
-                            <span class="chip-delete" on:click|stopPropagation={() => deleteSvgEntry(idx)}
-                                  role="button" tabindex="0" title={`Remove SVG #${idx + 1}`}>✕</span>
+                            <span class="chip-delete"
+                              use:longPress={{
+                                  duration: 1500,
+                                  onLongPress: () => deleteSvgChipWithSourceFile(idx),
+                                  onClick: () => deleteSvgEntry(idx)
+                              }}
+                              on:keydown={(e) => e.key === "Enter" && deleteSvgEntry(idx)}
+                              role="button" tabindex="0" title={`Click to remove, hold 1.5s to trash source file / 长按1.5秒直接删除源文件至垃圾桶`}>✕</span>
                         </div>
                     {/each}
                 {/if}
@@ -1316,8 +1461,13 @@
             </div>
 
             <!-- Delete -->
-            <span class="footer-btn danger" on:click={deleteTask}
-                  role="button" tabindex="0" title="Delete task"
+            <span class="footer-btn danger"
+                  use:longPress={{
+                      duration: 1500,
+                      onLongPress: () => deleteTaskWithLongPress(),
+                      onClick: () => deleteTask()
+                  }}
+                  role="button" tabindex="0" title="Delete task (hold 1.5s to trash task & source files directly / 长按1.5秒直接删除任务及源文件)"
                   on:keydown={(e) => e.key === "Enter" && deleteTask()}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1419,24 +1569,73 @@
                             {:else}
                                 <div class="meta-items-list">
                                     {#each metaSvgList as svgItem, i}
+                                        {@const resolvedThumb = resolveSvgItem(svgItem)}
                                         <!-- svelte-ignore a11y-click-events-have-key-events -->
                                         <!-- svelte-ignore a11y-no-static-element-interactions -->
                                         <div class="meta-item-card" class:active={selectedSvgIndex === i}
                                              on:click={() => selectedSvgIndex = i}>
                                             <span class="item-badge">#{i + 1}</span>
+                                            <div class="item-svg-mini-thumb">
+                                                {#if resolvedThumb.isInline}
+                                                    <div class="thumb-render">
+                                                        {@html resolvedThumb.content}
+                                                    </div>
+                                                {:else if resolvedThumb.srcUrl}
+                                                    <img src={resolvedThumb.srcUrl} alt="" class="item-svg-mini-thumb-img" />
+                                                {:else}
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                                                    </svg>
+                                                {/if}
+                                            </div>
                                             <span class="item-preview">{svgItem.trim() ? (svgItem.length > 32 ? svgItem.slice(0, 32) + '...' : svgItem) : '(Empty SVG)'}</span>
-                                            <span class="item-delete" title="Delete this SVG"
-                                                  on:click|stopPropagation={() => removeSvgItem(i)}>✕</span>
+                                            <span class="item-delete" title="点击删除条目，长按 1.5 秒直接删除源文件至垃圾桶"
+                                                  use:longPress={{
+                                                      duration: 1500,
+                                                      onLongPress: () => deleteSvgWithSourceFile(i),
+                                                      onClick: () => removeSvgItem(i)
+                                                  }}
+                                                  on:keydown={(e) => e.key === "Enter" && removeSvgItem(i)}
+                                                  role="button" tabindex="0">✕</span>
                                         </div>
                                     {/each}
                                 </div>
                             {/if}
                             {#if selectedSvgIndex >= 0 && selectedSvgIndex < metaSvgList.length}
+                                {@const activeResolved = resolveSvgItem(metaSvgList[selectedSvgIndex])}
                                 <div class="meta-item-editor">
                                     <div class="meta-editor-title">Editing SVG #{selectedSvgIndex + 1}</div>
-                                    <textarea class="meta-form-textarea monospace" placeholder="OneNote/Original Game/AI Draw/assets/name.svg or <svg...>...</svg>"
-                                              bind:value={metaSvgList[selectedSvgIndex]} rows="3"></textarea>
-                                    <span class="meta-form-hint">Path to .svg asset in vault, or raw &lt;svg&gt; XML markup.</span>
+                                    <div class="meta-svg-editor-row">
+                                        <!-- svelte-ignore a11y-click-events-have-key-events -->
+                                        <!-- svelte-ignore a11y-no-static-element-interactions -->
+                                        <div class="meta-svg-preview-box"
+                                             class:clickable={!activeResolved.isInline && !!activeResolved.cleanPath}
+                                             title={!activeResolved.isInline && activeResolved.cleanPath ? `Click to open: ${activeResolved.cleanPath}` : "SVG 实时预览"}
+                                             on:click={() => handleOpenSvgFile(activeResolved)}>
+                                            {#if activeResolved.isInline}
+                                                <div class="meta-svg-preview-render">
+                                                    {@html activeResolved.content}
+                                                </div>
+                                            {:else if activeResolved.srcUrl}
+                                                <img src={activeResolved.srcUrl} alt="SVG Preview" class="meta-svg-preview-img" />
+                                            {:else}
+                                                <div class="meta-svg-preview-empty">
+                                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                                                        <polyline points="21 15 16 10 5 21"/>
+                                                    </svg>
+                                                    <span>No preview</span>
+                                                </div>
+                                            {/if}
+                                        </div>
+                                        <div class="meta-svg-editor-inputs">
+                                            <textarea class="meta-form-textarea monospace" placeholder="OneNote/Original Game/AI Draw/assets/name.svg or <svg...>...</svg>"
+                                                      bind:value={metaSvgList[selectedSvgIndex]} rows="3"></textarea>
+                                            <span class="meta-form-hint">Path to .svg asset in vault, or raw &lt;svg&gt; XML markup.</span>
+                                        </div>
+                                    </div>
                                 </div>
                             {/if}
                         {:else if metaFormType === 'custom'}

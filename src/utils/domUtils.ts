@@ -69,3 +69,98 @@ export function autosize(node: HTMLTextAreaElement, _value?: string) {
         }
     };
 }
+
+export interface LongPressOptions {
+    duration?: number;
+    onLongPress: () => void | Promise<void>;
+    onClick?: () => void | Promise<void>;
+}
+
+/**
+ * Svelte Action: handles normal click vs long press (default 1.5s).
+ * If held for >= duration ms, triggers onLongPress() and suppresses click.
+ * If released before duration, triggers onClick().
+ */
+export function longPress(node: HTMLElement, options: LongPressOptions) {
+    let duration = options.duration ?? 1500;
+    let onLongPress = options.onLongPress;
+    let onClick = options.onClick;
+    let timer: number | null = null;
+    let isLongPressTriggered = false;
+    let startX = 0;
+    let startY = 0;
+
+    function handlePointerDown(e: PointerEvent) {
+        if (e.button !== 0) return;
+        isLongPressTriggered = false;
+        startX = e.clientX;
+        startY = e.clientY;
+        node.classList.add("is-pressing");
+
+        timer = window.setTimeout(async () => {
+            isLongPressTriggered = true;
+            node.classList.remove("is-pressing");
+            node.classList.add("long-pressed");
+            window.setTimeout(() => node.classList.remove("long-pressed"), 300);
+            try {
+                await onLongPress();
+            } catch (err) {
+                console.error("longPress error:", err);
+            }
+        }, duration);
+    }
+
+    function cancelTimer() {
+        if (timer !== null) {
+            window.clearTimeout(timer);
+            timer = null;
+        }
+        node.classList.remove("is-pressing");
+    }
+
+    function handlePointerMove(e: PointerEvent) {
+        if (Math.abs(e.clientX - startX) > 8 || Math.abs(e.clientY - startY) > 8) {
+            cancelTimer();
+        }
+    }
+
+    function handlePointerUp(e: PointerEvent) {
+        cancelTimer();
+        if (isLongPressTriggered) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+        if (onClick) {
+            e.stopPropagation();
+            void onClick();
+        }
+    }
+
+    function handlePointerCancel() {
+        cancelTimer();
+    }
+
+    node.addEventListener("pointerdown", handlePointerDown);
+    node.addEventListener("pointermove", handlePointerMove);
+    node.addEventListener("pointerup", handlePointerUp);
+    node.addEventListener("pointercancel", handlePointerCancel);
+    node.addEventListener("pointerleave", handlePointerCancel);
+
+    return {
+        update(newOptions: LongPressOptions) {
+            duration = newOptions.duration ?? 1500;
+            onLongPress = newOptions.onLongPress;
+            onClick = newOptions.onClick;
+        },
+        destroy() {
+            cancelTimer();
+            node.removeEventListener("pointerdown", handlePointerDown);
+            node.removeEventListener("pointermove", handlePointerMove);
+            node.removeEventListener("pointerup", handlePointerUp);
+            node.removeEventListener("pointercancel", handlePointerCancel);
+            node.removeEventListener("pointerleave", handlePointerCancel);
+        }
+    };
+}
+
