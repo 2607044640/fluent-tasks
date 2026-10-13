@@ -574,6 +574,17 @@
         }
     }
 
+    function handleLightboxWheel(e: WheelEvent) {
+        if (!lightboxData || (!e.ctrlKey && !e.metaKey)) return;
+        const quickEditor = (window as any).svgQuickEditor || (window as any).a1SvgQuickEditor;
+        if (quickEditor?.scaleHoveredBox) {
+            e.preventDefault();
+            e.stopPropagation();
+            const factor = e.deltaY < 0 ? 1.08 : 0.92;
+            quickEditor.scaleHoveredBox(factor);
+        }
+    }
+
     function handleLightboxDblClick() {
         if (isSvgQuickEditorInstalled()) {
             const quickEditor = (window as any).a1SvgQuickEditor;
@@ -1735,17 +1746,7 @@
 
 <svelte:window 
     on:contextmenu={() => { if (popoverVisible) dismissPopover(); }} 
-    on:wheel|capture={(e) => {
-        if (lightboxData && (e.ctrlKey || e.metaKey)) {
-            const quickEditor = (window as any).svgQuickEditor || (window as any).a1SvgQuickEditor;
-            if (quickEditor?.scaleHoveredBox) {
-                e.preventDefault();
-                e.stopPropagation();
-                const factor = e.deltaY < 0 ? 1.08 : 0.92;
-                quickEditor.scaleHoveredBox(factor);
-            }
-        }
-    }}
+    on:wheel|capture={handleLightboxWheel}
     on:keydown|capture={(e) => {
         if (lightboxData) {
             handleLightboxKeydown(e);
@@ -2086,7 +2087,6 @@
                     {#if task.svgs && task.svgs.length > 0}
                         {#each task.svgs as svgContent, i}
                             {#if svgContent}
-                                {@const resolved = resolveSvgItem(svgContent)}
                                 <span class="meta-badge svg-badge"
                                       on:mouseenter={(e) => showPopover(e, task, 'svg', i)}
                                       on:mouseleave={scheduleHidePopover}
@@ -2094,15 +2094,11 @@
                                       on:keydown={(e) => e.key === "Enter" && openSvgLightbox(e, svgContent, task.title)}
                                       role="button" tabindex="0"
                                       title="Visual memory SVG: click to enlarge, hover to preview">
-                                    {#if resolved.isInline}
-                                        {@html resolved.content}
-                                    {:else}
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                                            <circle cx="8.5" cy="8.5" r="1.5"/>
-                                            <polyline points="21 15 16 10 5 21"/>
-                                        </svg>
-                                    {/if}
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                                        <polyline points="21 15 16 10 5 21"/>
+                                    </svg>
                                 </span>
                             {/if}
                         {/each}
@@ -2312,7 +2308,6 @@
                                 {#if task.svgs && task.svgs.length > 0}
                                     {#each task.svgs as svgContent, i}
                                         {#if svgContent}
-                                            {@const resolved = resolveSvgItem(svgContent)}
                                             <span class="meta-badge svg-badge"
                                                   on:mouseenter={(e) => showPopover(e, task, 'svg', i)}
                                                   on:mouseleave={scheduleHidePopover}
@@ -2320,15 +2315,11 @@
                                                   on:keydown={(e) => e.key === "Enter" && openSvgLightbox(e, svgContent, task.title)}
                                                   role="button" tabindex="0"
                                                   title="Visual memory SVG: click to enlarge, hover to preview">
-                                                {#if resolved.isInline}
-                                                    {@html resolved.content}
-                                                {:else}
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                                                        <circle cx="8.5" cy="8.5" r="1.5"/>
-                                                        <polyline points="21 15 16 10 5 21"/>
-                                                    </svg>
-                                                {/if}
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                                                    <polyline points="21 15 16 10 5 21"/>
+                                                </svg>
                                             </span>
                                         {/if}
                                     {/each}
