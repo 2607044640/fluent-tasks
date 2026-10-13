@@ -121,6 +121,7 @@ const zhCn: typeof en = {
     quick_list_search_filter_active_only: "仅未完成",
     quick_list_search_filter_all_tasks: "所有任务",
     quick_list_search_filter_tooltip: "切换是否包含已完成任务",
+    main_view_task_search_placeholder: "在当前列表中搜索任务 (标题、步骤、备注)...",
 };
 
 export default zhCn;

@@ -106,6 +106,9 @@ interface TaskMainViewComponent extends TaskMainView {
     loadCategory: (cat: CategoryInfo) => Promise<void>;
     toggleMultiSelect: () => void;
     openBackupModal: () => void;
+    openSearch?: () => void;
+    closeSearch?: () => void;
+    toggleSearch?: () => void;
 }
 
 class TaskMainViewWrapper extends ItemView {
@@ -119,6 +122,15 @@ class TaskMainViewWrapper extends ItemView {
         this.navigation = true;
         this.dataService = dataService;
         this.plugin = plugin;
+
+        this.scope = new Scope(this.app.scope);
+        this.scope.register(["Mod"], "f", (evt) => {
+            if (this.component?.openSearch) {
+                this.component.openSearch();
+                evt.preventDefault();
+                return false;
+            }
+        });
     }
 
     getViewType(): string { return VIEW_TYPE_MAIN; }
@@ -363,6 +375,13 @@ export default class FluentTasksPlugin extends Plugin {
             name: "Search tasks in current list",
             callback: () => {
                 const mainLeaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_MAIN)[0];
+                if (mainLeaf && mainLeaf.view instanceof TaskMainViewWrapper) {
+                    const comp = mainLeaf.view.getComponent();
+                    if (comp?.openSearch) {
+                        comp.openSearch();
+                        return;
+                    }
+                }
                 let scopePath: string | null = null;
                 if (mainLeaf && mainLeaf.view instanceof TaskMainViewWrapper) {
                     const comp = mainLeaf.view.getComponent();

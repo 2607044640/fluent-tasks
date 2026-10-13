@@ -4606,3 +4606,32 @@ body .task-steps-floating-modal .steps-modal-delete-btn:hover {
     text-align: center;
 }
 
+/* =============================================
+   Main View In-List Search Bar & Dropdown (Ctrl+F)
+   ============================================= */
+.main-search-bar-wrap {
+    position: relative;
+    margin-bottom: 16px;
+    z-index: 99;
+}
+
+.main-search-filter-bar {
+    border-radius: 8px !important;
+    border: 1px solid var(--todo-accent, #8b5cf6) !important;
+    background-color: var(--background-secondary) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+    padding: 6px 12px !important;
+}
+
+.main-search-task-dropdown {
+    top: calc(100% + 6px) !important;
+    left: 0 !important;
+    width: 100% !important;
+    max-height: min(440px, 60vh) !important;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65) !important;
+}
+
+.main-search-close-btn {
+    margin-left: 2px !important;
+}
+

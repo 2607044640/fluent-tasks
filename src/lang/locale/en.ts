@@ -119,6 +119,7 @@ const en = {
     quick_list_search_filter_active_only: "Active only",
     quick_list_search_filter_all_tasks: "All tasks",
     quick_list_search_filter_tooltip: "Toggle completed tasks filter",
+    main_view_task_search_placeholder: "Search tasks in this list (title, steps, notes)...",
 };
 
 export default en;

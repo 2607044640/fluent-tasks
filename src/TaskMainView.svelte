@@ -4,14 +4,14 @@
     import { flip } from "svelte/animate";
     import { EventBus } from "./EventBus";
     import { DataService } from "./DataService";
-    import { EventName, type CategoryInfo, type TaskItem } from "./types";
+    import { EventName, VIEW_TYPE_MAIN, type CategoryInfo, type TaskItem } from "./types";
     import { killDndGhostElement, removeDndGhostShield, injectDndGhostShield } from "./utils/dndUtils";
     import { portal } from "./utils/domUtils";
     import { calculatePopoverPosition, type PopoverContentType } from "./utils/popoverUtils";
     import { getRelativeTime, getRecurrenceLabel } from "./utils/timeUtils";
     import { getTaskWeight, clampTaskWeight, applyWeightSort } from "./utils/taskUtils";
     import { DISK_SYNC_DELAY_MS, ANTI_FLICKER_DURATION_MS, POPOVER_HIDE_DELAY_MS } from "./constants";
-    import { Menu, setIcon, Platform, Notice, type App } from "obsidian";
+    import { Menu, setIcon, Platform, Notice, ItemView, type App } from "obsidian";
     import { TaskSearchModal } from "./TaskSearchModal";
     import { RecurrenceService } from "./services/RecurrenceService";
     import { LinkedNoteService } from "./services/LinkedNoteService";
@@ -42,6 +42,19 @@
     let wrapTaskTitles: boolean = plugin?.settings?.wrapTaskTitles ?? true;
     let enableTaskWeightMode: boolean = plugin?.settings?.enableTaskWeightMode ?? false;
     let centerAlignTasks: boolean = plugin?.settings?.centerAlignTasks ?? false;
+
+    // In-List Search State (Ctrl+F)
+    let isSearchOpen: boolean = false;
+    let searchQuery: string = "";
+    let taskSearchResults: Array<{ task: TaskItem; category: CategoryInfo; matchField: string }> = [];
+    let isSearchingTasks: boolean = false;
+    let taskFocusedIndex: number = 0;
+    let hideCompleted: boolean = plugin?.settings?.searchHideCompleted ?? false;
+    let searchInputEl: HTMLInputElement | null = null;
+    let taskResultsContainerEl: HTMLElement | null = null;
+    let mainContainerEl: HTMLElement | null = null;
+    let searchDebounceTimer: any = null;
+    let isSearchComposing: boolean = false;
 
     // Multi-Select Mode State
     let isMultiSelectMode: boolean = false;
@@ -534,6 +547,20 @@
     }
 
     function handleGlobalKeyDown(e: KeyboardEvent) {
+        // Ctrl+F / Cmd+F handler for in-list search
+        const isF = e.key === "f" || e.key === "F" || e.code === "KeyF";
+        const isMod = Platform.isMacOS ? (e.metaKey || e.ctrlKey) : (e.ctrlKey && !e.metaKey);
+        if (isMod && !e.shiftKey && !e.altKey && isF) {
+            const activeType = plugin?.app?.workspace?.getActiveViewOfType(ItemView)?.getViewType();
+            const isInsideMain = mainContainerEl && (mainContainerEl.contains(document.activeElement) || activeType === VIEW_TYPE_MAIN);
+            if (isInsideMain) {
+                e.preventDefault();
+                e.stopPropagation();
+                void openSearch();
+                return;
+            }
+        }
+
         if (isControlKey(e)) {
             isCtrlPressed = true;
             // If standalone Ctrl was pressed while cursor is currently hovering over a task title
@@ -1080,6 +1107,151 @@
     }
 
     // =============================================
+    // In-List Task Search Engine (Ctrl+F)
+    // =============================================
+    function runTaskSearch(query: string) {
+        if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+        const q = query.trim();
+        if (!q || !currentCategory) {
+            taskSearchResults = [];
+            taskFocusedIndex = 0;
+            isSearchingTasks = false;
+            return;
+        }
+        searchDebounceTimer = setTimeout(async () => {
+            isSearchingTasks = true;
+            try {
+                let results = await dataService.searchTasks(q, currentCategory ? currentCategory.filepath : null);
+                if (hideCompleted) {
+                    results = results.filter(r => !r.task.completed);
+                }
+                taskSearchResults = results;
+                taskFocusedIndex = 0;
+            } catch (err) {
+                console.error("[TaskMainView] Task search failed:", err);
+                taskSearchResults = [];
+            } finally {
+                isSearchingTasks = false;
+            }
+        }, 50);
+    }
+
+    async function toggleHideCompleted(e?: MouseEvent) {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        hideCompleted = !hideCompleted;
+        if (plugin?.settings) {
+            plugin.settings.searchHideCompleted = hideCompleted;
+            await plugin.saveSettings();
+        }
+        if (searchQuery.trim().length > 0) {
+            runTaskSearch(searchQuery);
+        }
+        searchInputEl?.focus();
+    }
+
+    async function openSearch() {
+        isSearchOpen = true;
+        await tick();
+        searchInputEl?.focus();
+        searchInputEl?.select();
+        if (searchQuery.trim().length > 0) {
+            runTaskSearch(searchQuery);
+        }
+    }
+
+    function closeSearch() {
+        isSearchOpen = false;
+        searchQuery = "";
+        taskSearchResults = [];
+        taskFocusedIndex = 0;
+        isSearchingTasks = false;
+    }
+
+    function toggleSearch() {
+        if (isSearchOpen) {
+            closeSearch();
+        } else {
+            void openSearch();
+        }
+    }
+
+    async function scrollTaskFocusedIntoView() {
+        await tick();
+        if (!taskResultsContainerEl) return;
+        const focusedEl = taskResultsContainerEl.querySelector(".quick-modal-task-item.is-focused") as HTMLElement | null;
+        if (focusedEl) {
+            focusedEl.scrollIntoView({ block: "nearest" });
+        }
+    }
+
+    async function selectSearchResult(item: { task: TaskItem; category: CategoryInfo; matchField: string }) {
+        if (!item || !item.task) return;
+
+        // 1. Expand completed section if completed
+        if (item.task.completed && !showCompleted) {
+            showCompleted = true;
+        }
+
+        // 2. Select the task (triggers TASK_SELECTED)
+        selectTask(item.task);
+
+        // 3. Scroll into view and highlight
+        await tick();
+        const el = document.getElementById('task-' + item.task.id);
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.classList.add('navigate-highlight');
+            setTimeout(() => el.classList?.remove('navigate-highlight'), 1500);
+        }
+
+        // 4. Close search overlay so task is clearly visible
+        closeSearch();
+    }
+
+    function handleSearchKeydown(e: KeyboardEvent) {
+        if (e.isComposing || isSearchComposing || e.keyCode === 229) return;
+
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            e.stopPropagation();
+            if (taskSearchResults.length > 0) {
+                taskFocusedIndex = (taskFocusedIndex + 1) % taskSearchResults.length;
+                void scrollTaskFocusedIntoView();
+            }
+            return;
+        }
+
+        if (e.key === "ArrowUp") {
+            e.preventDefault();
+            e.stopPropagation();
+            if (taskSearchResults.length > 0) {
+                taskFocusedIndex = (taskFocusedIndex - 1 + taskSearchResults.length) % taskSearchResults.length;
+                void scrollTaskFocusedIntoView();
+            }
+            return;
+        }
+
+        if (e.key === "Enter") {
+            e.preventDefault();
+            e.stopPropagation();
+            if (taskSearchResults.length > 0 && taskSearchResults[taskFocusedIndex]) {
+                void selectSearchResult(taskSearchResults[taskFocusedIndex]);
+            }
+            return;
+        }
+
+        if (e.key === "Escape") {
+            e.preventDefault();
+            e.stopPropagation();
+            closeSearch();
+            return;
+        }
+    }
+
+    // =============================================
     // Custom Auto-Scroll Engine for DnD
     // =============================================
     function startAutoScroll() {
@@ -1411,10 +1583,10 @@
 
         // 2. Search in list
         menu.addItem((item) => {
-            item.setTitle("Search in list")
+            item.setTitle("Search in list (Ctrl+F)")
                 .setIcon("search")
                 .onClick(() => {
-                    new TaskSearchModal(plugin.app, plugin, dataService, currentCategory?.filepath).open();
+                    void openSearch();
                 });
         });
 
@@ -1454,7 +1626,7 @@
         }
     }
 
-    export { scheduleHidePopover };
+    export { scheduleHidePopover, openSearch, closeSearch, toggleSearch };
 </script>
 
 <svelte:window 
@@ -1464,11 +1636,13 @@
             isMultiSelectMode = false;
             selectedTaskIds.clear();
             selectedTaskIds = selectedTaskIds;
+        } else if (isSearchOpen && e.key === "Escape") {
+            closeSearch();
         }
     }}
 />
 
-<div class="main-container" class:wrap-titles={wrapTaskTitles} class:center-tasks={centerAlignTasks} role="application">
+<div class="main-container" bind:this={mainContainerEl} class:wrap-titles={wrapTaskTitles} class:center-tasks={centerAlignTasks} role="application">
     {#if currentCategory}
         <!-- Header -->
         <div class="main-header">
@@ -1562,6 +1736,20 @@
                         </span>
                     </div>
                 {:else}
+                    <!-- Search icon button in header actions -->
+                    <span class="icon-btn"
+                          class:is-active={isSearchOpen}
+                          on:click|stopPropagation={toggleSearch}
+                          role="button" tabindex="0"
+                          aria-label="Search in list (Ctrl+F)"
+                          title="Search in list (Ctrl+F)"
+                          on:keydown|stopPropagation={(e) => (e.key === "Enter" || e.key === " ") && toggleSearch()}>
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </span>
+
                     <!-- More options menu (three vertical dots) -->
                     <span class="icon-btn"
                           on:click|stopPropagation={openHeaderMoreMenu}
@@ -1578,6 +1766,100 @@
                 {/if}
             </div>
         </div>
+
+        {#if isSearchOpen}
+            <!-- In-List Search Filter Bar & Dropdown Overlay -->
+            <div class="main-search-bar-wrap">
+                <div class="quick-modal-filter-bar main-search-filter-bar">
+                    <span class="quick-modal-filter-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </span>
+                    <input 
+                        type="text" 
+                        class="quick-modal-filter-input"
+                        placeholder={t("main_view_task_search_placeholder") || "Search tasks in this list (title, steps, notes)..."}
+                        bind:value={searchQuery}
+                        bind:this={searchInputEl}
+                        on:input={() => runTaskSearch(searchQuery)}
+                        on:compositionstart={() => { isSearchComposing = true; }}
+                        on:compositionend={() => { isSearchComposing = false; runTaskSearch(searchQuery); }}
+                        on:keydown={handleSearchKeydown}
+                    />
+                    {#if searchQuery}
+                        <button class="quick-modal-filter-clear" on:click={() => { searchQuery = ""; taskSearchResults = []; searchInputEl?.focus(); }}>✕</button>
+                    {/if}
+
+                    <button 
+                        class="quick-modal-header-btn todo-search-filter-btn"
+                        class:is-active={hideCompleted}
+                        aria-label={t("quick_list_search_filter_tooltip") || "Toggle completed tasks filter"}
+                        title={t("quick_list_search_filter_tooltip") || "Toggle completed tasks filter"}
+                        tabindex="-1"
+                        on:click={toggleHideCompleted}
+                    >
+                        {hideCompleted 
+                            ? (t("quick_list_search_filter_active_only") || "Active only") 
+                            : (t("quick_list_search_filter_all_tasks") || "All tasks")}
+                    </button>
+
+                    <button 
+                        class="quick-modal-header-btn quick-modal-close-btn main-search-close-btn"
+                        aria-label="Close search (Esc)"
+                        title="Close search (Esc)"
+                        tabindex="-1"
+                        on:click={closeSearch}
+                    >
+                        ✕
+                    </button>
+                </div>
+
+                {#if searchQuery.trim().length > 0}
+                    <!-- Floating Task Search Results Dropdown Overlay -->
+                    <div class="quick-modal-task-dropdown main-search-task-dropdown" bind:this={taskResultsContainerEl}>
+                        {#if isSearchingTasks}
+                            <div class="quick-modal-task-dropdown-status">Searching tasks...</div>
+                        {:else if taskSearchResults.length === 0}
+                            <div class="quick-modal-task-dropdown-status">{t("quick_list_task_search_no_results") || "No matching tasks found."}</div>
+                        {:else}
+                            <div class="quick-modal-task-dropdown-list" role="listbox">
+                                {#each taskSearchResults as item, idx (item.task.id)}
+                                    <!-- svelte-ignore a11y-no-noninteractive-tabindex a11y-click-events-have-key-events -->
+                                    <div 
+                                        class="quick-modal-task-item"
+                                        class:is-focused={taskFocusedIndex === idx}
+                                        class:is-completed={item.task.completed}
+                                        role="option"
+                                        aria-selected={taskFocusedIndex === idx}
+                                        tabindex="0"
+                                        on:mouseenter={() => { taskFocusedIndex = idx; }}
+                                        on:click={() => selectSearchResult(item)}
+                                    >
+                                        <div class="quick-modal-task-main">
+                                            <span class="quick-modal-task-check" class:is-done={item.task.completed}>
+                                                {#if item.task.completed}✓{/if}
+                                            </span>
+                                            <span class="quick-modal-task-title">{item.task.title}</span>
+                                        </div>
+                                        <div class="quick-modal-task-meta">
+                                            <span class="quick-modal-task-cat">{item.category.name}</span>
+                                            <span class="quick-modal-task-dot">·</span>
+                                            <span class="quick-modal-task-match">Match: {item.matchField}</span>
+                                            {#if item.task.completed}
+                                                <span class="quick-modal-task-dot">·</span>
+                                                <span class="quick-modal-task-completed-tag">Completed</span>
+                                            {/if}
+                                        </div>
+                                    </div>
+                                {/each}
+                            </div>
+                        {/if}
+                    </div>
+                {/if}
+            </div>
+        {/if}
 
         <!-- Add Task Input -->
         <div class="add-task-container">
