@@ -17733,11 +17733,11 @@ function create_if_block_510(ctx) {
       attr(span0, "class", "svg-lightbox-title");
       attr(div0, "class", "svg-lightbox-hints");
       set_style(div0, "font-size", "11px");
-      set_style(div0, "opacity", "0.85");
       set_style(div0, "display", "inline-flex");
       set_style(div0, "gap", "6px");
       set_style(div0, "align-items", "center");
       set_style(div0, "margin-left", "10px");
+      set_style(div0, "overflow", "visible");
       attr(div1, "class", "svg-lightbox-title-row");
       attr(button, "type", "button");
       attr(button, "class", "svg-lightbox-action-btn");

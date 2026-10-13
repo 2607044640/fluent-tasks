@@ -7,6 +7,7 @@
   "hideRibbonIcon": true,
   "wrapTaskTitles": true,
   "centerAlignTasks": true,
+  "disableStars": true,
   "quickModalAction": "direct",
   "quickModalTipCount": 0,
   "quickListGridLayout": true,
@@ -19,7 +20,6 @@
   "lastDailyBackupDate": "2026-10-13",
   "undoDurationSeconds": 2.5,
   "enableTaskWeightMode": true,
-  "disableStars": true,
   "quickListSearchMode": "task",
   "quickListTitleAlignment": "center"
 }

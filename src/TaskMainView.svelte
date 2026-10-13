@@ -2678,7 +2678,7 @@
                             <polyline points="21 15 16 10 5 21"/>
                         </svg>
                         <span class="svg-lightbox-title">{lightboxData.title || "Visual Memory Aid"}</span>
-                        <div class="svg-lightbox-hints" style="font-size: 11px; opacity: 0.85; display: inline-flex; gap: 6px; align-items: center; margin-left: 10px;">
+                        <div class="svg-lightbox-hints" style="font-size: 11px; display: inline-flex; gap: 6px; align-items: center; margin-left: 10px; overflow: visible;">
                             {#if isSvgQuickEditorInstalled()}
                                 <div class="svg-help-wrap">
                                     <div class="svg-help-icon" title={isChinese() ? "操作说明 (悬浮查看)" : "Help & Shortcuts (Hover to view)"}>?</div>

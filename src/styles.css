@@ -1670,6 +1670,8 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     border-bottom: 1px solid var(--todo-border);
     background: rgba(255, 255, 255, 0.03);
     flex-shrink: 0;
+    position: relative;
+    z-index: 100;
 }
 
 .svg-lightbox-title-row {
@@ -1679,9 +1681,7 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     font-size: 14px;
     font-weight: 600;
     color: var(--todo-text);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow: visible;
     max-width: 80%;
 }
 
@@ -1689,6 +1689,8 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    max-width: min(550px, 45vw);
+    flex-shrink: 1;
 }
 
 /* Question Mark Help Tooltip Trigger & Popover */
@@ -1697,6 +1699,7 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     display: inline-flex;
     align-items: center;
     margin-left: 8px;
+    z-index: 100060;
 }
 
 .svg-help-icon {
@@ -1745,7 +1748,19 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
 }
 
-.svg-help-wrap:hover .svg-help-popover {
+/* Invisible bridge so mouse moving from icon to popover does not drop hover */
+.svg-help-popover::before {
+    content: "";
+    position: absolute;
+    top: -10px;
+    left: 0;
+    right: 0;
+    height: 10px;
+}
+
+.svg-help-wrap:hover .svg-help-popover,
+.svg-help-icon:hover ~ .svg-help-popover,
+.svg-help-popover:hover {
     opacity: 1;
     visibility: visible;
     transform: translateY(0) scale(1);
