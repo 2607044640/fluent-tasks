@@ -19,6 +19,7 @@
   "lastDailyBackupDate": "2026-10-13",
   "undoDurationSeconds": 2.5,
   "enableTaskWeightMode": true,
+  "disableStars": true,
   "quickListSearchMode": "task",
   "quickListTitleAlignment": "center"
 }
