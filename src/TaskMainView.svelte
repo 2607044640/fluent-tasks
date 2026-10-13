@@ -370,7 +370,7 @@
         if (saveToastTimer) clearTimeout(saveToastTimer);
         saveToastTimer = setTimeout(() => {
             showSaveToast = false;
-        }, 2200);
+        }, 3000);
     }
 
     function requestCloseSvgLightbox() {
@@ -419,7 +419,6 @@
 
         if (quickEditor?.saveCurrentSvg) {
             await quickEditor.saveCurrentSvg(svgEl, true);
-            quickEditor?.showSaveToast?.(msg);
             triggerSaveToast(msg);
         } else if (lightboxData.cleanPath && plugin?.app?.vault) {
             const contentToSave = svgEl ? svgEl.outerHTML : lightboxData.content;
@@ -430,8 +429,6 @@
                     const file = plugin.app.vault.getAbstractFileByPath(lightboxData.cleanPath);
                     if (file) await plugin.app.vault.modify(file, contentToSave);
                 }
-                const NoticeCtor = (window as any).Notice || Notice;
-                new NoticeCtor(msg);
                 triggerSaveToast(msg);
             } catch (err) {
                 console.error("Failed to save SVG in place:", err);
@@ -2591,6 +2588,14 @@
              role="presentation">
             <div class="svg-lightbox-modal" role="dialog" aria-modal="true" tabindex="-1"
                  on:keydown={handleLightboxKeydown}>
+                {#if showSaveToast}
+                    <div class="svg-lightbox-toast">
+                        <svg class="svg-lightbox-toast-icon" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 6L9 17l-5-5"/>
+                        </svg>
+                        <span>{saveToastText}</span>
+                    </div>
+                {/if}
                 <div class="svg-lightbox-header">
                     <div class="svg-lightbox-title-row">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--todo-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
