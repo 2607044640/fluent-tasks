@@ -61,6 +61,7 @@
     let renameInputEl: HTMLInputElement;
     let titleAlignment: 'center' | 'left' = plugin?.settings?.quickListTitleAlignment ?? 'center';
     let disableStars: boolean = plugin?.settings?.disableStars ?? false;
+    let centerAlignTasks: boolean = plugin?.settings?.centerAlignTasks ?? true;
 
     // DOM Element Bindings
     let searchInputEl: HTMLInputElement;
@@ -116,6 +117,11 @@
             disableStars = payload.settings.disableStars;
         } else if (plugin?.settings?.disableStars !== undefined) {
             disableStars = plugin.settings.disableStars;
+        }
+        if (payload?.settings?.centerAlignTasks !== undefined) {
+            centerAlignTasks = payload.settings.centerAlignTasks;
+        } else if (plugin?.settings?.centerAlignTasks !== undefined) {
+            centerAlignTasks = plugin.settings.centerAlignTasks;
         }
     }
 
@@ -1334,6 +1340,7 @@
 
 {#if popoverVisible && popoverTask}
     <div class="meta-popover placement-{popoverPlacement}"
+         class:is-center-aligned={centerAlignTasks}
          style="position: fixed; left: {popoverX}px; top: {popoverY}px; z-index: 10000;"
          on:mouseenter={cancelHidePopover}
          on:mouseleave={scheduleHidePopover}

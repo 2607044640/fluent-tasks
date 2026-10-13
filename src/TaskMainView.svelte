@@ -41,7 +41,7 @@
     let addTaskInputEl: HTMLInputElement;
     let wrapTaskTitles: boolean = plugin?.settings?.wrapTaskTitles ?? true;
     let enableTaskWeightMode: boolean = plugin?.settings?.enableTaskWeightMode ?? false;
-    let centerAlignTasks: boolean = plugin?.settings?.centerAlignTasks ?? false;
+    let centerAlignTasks: boolean = plugin?.settings?.centerAlignTasks ?? true;
     let disableStars: boolean = plugin?.settings?.disableStars ?? false;
 
     // In-List Search State (Ctrl+F)
@@ -814,7 +814,7 @@
     function handleSettingsChanged() {
         wrapTaskTitles = plugin?.settings?.wrapTaskTitles ?? true;
         enableTaskWeightMode = plugin?.settings?.enableTaskWeightMode ?? false;
-        centerAlignTasks = plugin?.settings?.centerAlignTasks ?? false;
+        centerAlignTasks = plugin?.settings?.centerAlignTasks ?? true;
         disableStars = plugin?.settings?.disableStars ?? false;
         incompleteTasks = applyWeightSort(rawIncompleteTasks, enableTaskWeightMode);
         completedTasks = applyWeightSort(rawCompletedTasks, enableTaskWeightMode);
@@ -2422,6 +2422,7 @@
         <div use:portal
              class="meta-popover placement-{popoverPlacement}"
              class:guide-popover={popoverType === 'guide'}
+             class:is-center-aligned={centerAlignTasks}
              style="left: {popoverX}px; top: {popoverY}px;"
              on:mouseenter={cancelHidePopover}
              on:mouseleave={scheduleHidePopover}

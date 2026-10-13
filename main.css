@@ -4794,3 +4794,105 @@ body .task-steps-floating-modal .steps-modal-delete-btn:hover {
     box-shadow: 0 0 8px rgba(139, 92, 246, 0.35);
 }
 
+/* =============================================
+   Center-Aligned Tasks Mode: Hover Popovers & Sidestep Modal
+   ============================================= */
+.meta-popover.is-center-aligned .meta-popover-header {
+    justify-content: center;
+    text-align: center;
+    gap: 8px;
+}
+
+.meta-popover.is-center-aligned .meta-popover-body {
+    text-align: center;
+}
+
+.meta-popover.is-center-aligned .popover-why-box,
+.meta-popover.is-center-aligned .popover-note-box {
+    text-align: center;
+}
+
+.meta-popover.is-center-aligned .popover-steps-list {
+    align-items: center;
+}
+
+.meta-popover.is-center-aligned .popover-step-item {
+    justify-content: center;
+    text-align: center;
+}
+
+.meta-popover.is-center-aligned .popover-step-item .step-text {
+    text-align: center;
+}
+
+.meta-popover.is-center-aligned .meta-popover-expand-hint {
+    justify-content: center;
+    text-align: center;
+}
+
+.meta-popover.is-center-aligned .meta-popover-full-title {
+    text-align: center;
+}
+
+.meta-popover.is-center-aligned .meta-popover-custom-grid {
+    align-items: center;
+}
+
+.meta-popover.is-center-aligned .meta-popover-custom-row {
+    justify-content: center;
+    text-align: center;
+}
+
+.meta-popover.is-center-aligned .meta-popover-footer-tags {
+    justify-content: center;
+}
+
+/* Sidestep / Task Steps Floating Modal Centering */
+.task-steps-floating-modal.is-center-aligned .task-steps-modal-title,
+.task-steps-modal-container.is-center-aligned .task-steps-modal-title {
+    text-align: center;
+}
+
+.task-steps-floating-modal.is-center-aligned .task-steps-modal-title-box,
+.task-steps-modal-container.is-center-aligned .task-steps-modal-title-box {
+    justify-content: center;
+    text-align: center;
+}
+
+.task-steps-floating-modal.is-center-aligned .steps-modal-item,
+.task-steps-modal-container.is-center-aligned .steps-modal-item {
+    justify-content: center;
+}
+
+.task-steps-floating-modal.is-center-aligned .steps-modal-textarea,
+.task-steps-modal-container.is-center-aligned .steps-modal-textarea {
+    text-align: center;
+}
+
+.task-steps-floating-modal.is-center-aligned .steps-modal-textarea::placeholder,
+.task-steps-modal-container.is-center-aligned .steps-modal-textarea::placeholder {
+    text-align: center;
+}
+
+.task-steps-floating-modal.is-center-aligned .steps-modal-add-row,
+.task-steps-modal-container.is-center-aligned .steps-modal-add-row {
+    justify-content: center;
+}
+
+.task-steps-floating-modal.is-center-aligned .steps-modal-add-input,
+.task-steps-modal-container.is-center-aligned .steps-modal-add-input {
+    text-align: center;
+}
+
+.task-steps-floating-modal.is-center-aligned .steps-modal-add-input::placeholder,
+.task-steps-modal-container.is-center-aligned .steps-modal-add-input::placeholder {
+    text-align: center;
+}
+
+.task-steps-floating-modal.is-center-aligned .task-steps-empty-state,
+.task-steps-modal-container.is-center-aligned .task-steps-empty-state {
+    align-items: center;
+    text-align: center;
+}
+
+

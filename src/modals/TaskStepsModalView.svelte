@@ -17,6 +17,7 @@
     export let categoryFilepath: string;
     export let dataService: DataService;
     export let closeModal: () => void = () => {};
+    export let centerAlignTasks: boolean = true;
 
     // =============================================
     // Local State
@@ -228,7 +229,7 @@
     });
 </script>
 
-<div class="task-steps-modal-container">
+<div class="task-steps-modal-container" class:is-center-aligned={centerAlignTasks}>
     <!-- Modal Header -->
     <div class="task-steps-modal-header">
         <div class="task-steps-modal-title-box">

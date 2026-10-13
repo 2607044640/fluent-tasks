@@ -35,7 +35,7 @@ export const DEFAULT_SETTINGS: FluentTasksSettings = {
     searchHideCompleted: true,
     hideRibbonIcon: false,
     wrapTaskTitles: true,
-    centerAlignTasks: false,
+    centerAlignTasks: true,
     disableStars: false,
     quickModalAction: 'direct',
     quickModalTipCount: 0,
@@ -119,9 +119,9 @@ export class FluentTasksSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName("Center-Align Tasks")
-            .setDesc("Display task titles, steps, and metadata centered in the task list.")
+            .setDesc("Display task titles, steps, and metadata centered in the task list and modals. Enabled by default.")
             .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.centerAlignTasks ?? false)
+                .setValue(this.plugin.settings.centerAlignTasks ?? true)
                 .onChange(async (value) => {
                     this.plugin.settings.centerAlignTasks = value;
                     await this.plugin.saveSettings();

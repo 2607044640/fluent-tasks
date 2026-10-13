@@ -29,6 +29,9 @@ export class TaskStepsModal extends Modal {
         const { contentEl, modalEl } = this;
         contentEl.empty();
         modalEl.addClass("task-steps-floating-modal");
+        if (this.plugin?.settings?.centerAlignTasks ?? true) {
+            modalEl.addClass("is-center-aligned");
+        }
         contentEl.addClass("task-steps-modal-content");
 
         this.component = new TaskStepsModalView({
@@ -38,6 +41,7 @@ export class TaskStepsModal extends Modal {
                 task: this.task,
                 categoryFilepath: this.categoryFilepath,
                 closeModal: () => this.close(),
+                centerAlignTasks: this.plugin?.settings?.centerAlignTasks ?? true,
             },
         });
     }
