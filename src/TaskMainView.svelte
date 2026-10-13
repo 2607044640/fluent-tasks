@@ -1735,6 +1735,17 @@
 
 <svelte:window 
     on:contextmenu={() => { if (popoverVisible) dismissPopover(); }} 
+    on:wheel|capture={(e) => {
+        if (lightboxData && (e.ctrlKey || e.metaKey)) {
+            const quickEditor = (window as any).svgQuickEditor || (window as any).a1SvgQuickEditor;
+            if (quickEditor?.scaleHoveredBox) {
+                e.preventDefault();
+                e.stopPropagation();
+                const factor = e.deltaY < 0 ? 1.08 : 0.92;
+                quickEditor.scaleHoveredBox(factor);
+            }
+        }
+    }}
     on:keydown|capture={(e) => {
         if (lightboxData) {
             handleLightboxKeydown(e);
@@ -2683,6 +2694,7 @@
                                     <div class="svg-help-popover">
                                         {#if isChinese()}
                                             <div class="svg-help-row"><kbd>Ctrl+S</kbd><span class="svg-help-desc">即时保存 (保留撤销记录)</span></div>
+                                            <div class="svg-help-row"><kbd>Ctrl+滚轮</kbd><span class="svg-help-desc">缩放UI框大小 (增大/减小)</span></div>
                                             <div class="svg-help-row"><kbd>Delete</kbd><span class="svg-help-desc">悬浮UI框按键直接删除</span></div>
                                             <div class="svg-help-row"><kbd>清空文本</kbd><span class="svg-help-desc">清空文字自动删除UI框</span></div>
                                             <div class="svg-help-row"><kbd>Shift+拖拽</kbd><span class="svg-help-desc">移动UI框</span></div>
@@ -2691,6 +2703,7 @@
                                             <div class="svg-help-row"><kbd>双击 / F2</kbd><span class="svg-help-desc">快速编辑文字</span></div>
                                         {:else}
                                             <div class="svg-help-row"><kbd>Ctrl+S</kbd><span class="svg-help-desc">Save in-place (keeps history)</span></div>
+                                            <div class="svg-help-row"><kbd>Ctrl+Scroll</kbd><span class="svg-help-desc">Scale UI box size (enlarge/shrink)</span></div>
                                             <div class="svg-help-row"><kbd>Delete</kbd><span class="svg-help-desc">Hover and press Delete to remove box</span></div>
                                             <div class="svg-help-row"><kbd>Clear Text</kbd><span class="svg-help-desc">Auto-deletes box when text is empty</span></div>
                                             <div class="svg-help-row"><kbd>Shift+Drag</kbd><span class="svg-help-desc">Move UI box</span></div>
