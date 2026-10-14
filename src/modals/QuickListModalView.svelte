@@ -957,10 +957,118 @@
     // =============================================
     // Inline Rename & Context Menus
     // =============================================
-    function startRenameItem(item: { id: string; name: string; type: "category" | "group" }) {
-        editingItemId = item.id;
+    interface RenameTarget {
+        id: string;
+        name: string;
+        type: "category" | "group";
+        filepath?: string;
+    }
+
+    let hoveredRenameTarget: RenameTarget | null = null;
+    let lastMouseX: number = -1;
+    let lastMouseY: number = -1;
+
+    function handlePointerMove(e: PointerEvent) {
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+    }
+
+    function handlePointerLeave() {
+        lastMouseX = -1;
+        lastMouseY = -1;
+        hoveredRenameTarget = null;
+    }
+
+    function setHoveredTarget(target: RenameTarget) {
+        hoveredRenameTarget = target;
+    }
+
+    function clearHoveredTarget(id: string) {
+        if (hoveredRenameTarget?.id === id) {
+            hoveredRenameTarget = null;
+        }
+    }
+
+    function getTargetUnderMouse(): RenameTarget | null {
+        // Priority 1: Pointer coordinates hit-test (dynamic cursor position)
+        if (lastMouseX > 0 && lastMouseY > 0) {
+            try {
+                const el = document.elementFromPoint(lastMouseX, lastMouseY);
+                if (el) {
+                    // Check if hovering over a category list item
+                    const listItemEl = el.closest(".quick-modal-list-item") as HTMLElement | null;
+                    if (listItemEl) {
+                        const filepath = listItemEl.dataset.filepath;
+                        if (filepath) {
+                            const cat = categories.find(c => c.filepath === filepath || c.id === filepath);
+                            if (cat) {
+                                return { id: cat.id || cat.filepath, name: cat.name, type: "category", filepath: cat.filepath };
+                            }
+                        }
+                    }
+
+                    // Check if hovering over a group header or group container/card
+                    const groupEl = el.closest(".quick-grid-card-header, .quick-modal-group-header, .quick-grid-card, .quick-modal-group-container") as HTMLElement | null;
+                    if (groupEl) {
+                        const groupId = groupEl.dataset.groupId || groupEl.dataset.cardId;
+                        if (groupId) {
+                            const grp = groupItems.find(g => g.id === groupId) || (sidebarItems.find(i => i.id === groupId && i.type === "group") as GroupInfo | undefined);
+                            if (grp) {
+                                return { id: grp.id, name: grp.name, type: "group" };
+                            }
+                        }
+                    }
+                }
+            } catch {
+                // Ignore any hit-test exceptions
+            }
+        }
+
+        // Priority 2: CSS :hover active element inside modalContainerEl
+        if (modalContainerEl) {
+            try {
+                const hoveredListEl = modalContainerEl.querySelector(".quick-modal-list-item:hover") as HTMLElement | null;
+                if (hoveredListEl && hoveredListEl.dataset.filepath) {
+                    const cat = categories.find(c => c.filepath === hoveredListEl.dataset.filepath || c.id === hoveredListEl.dataset.filepath);
+                    if (cat) {
+                        return { id: cat.id || cat.filepath, name: cat.name, type: "category", filepath: cat.filepath };
+                    }
+                }
+
+                const hoveredGroupEl = modalContainerEl.querySelector(".quick-grid-card-header:hover, .quick-modal-group-header:hover, .quick-grid-card:hover, .quick-modal-group-container:hover") as HTMLElement | null;
+                if (hoveredGroupEl) {
+                    const groupId = hoveredGroupEl.dataset.groupId || hoveredGroupEl.dataset.cardId;
+                    if (groupId) {
+                        const grp = groupItems.find(g => g.id === groupId) || (sidebarItems.find(i => i.id === groupId && i.type === "group") as GroupInfo | undefined);
+                        if (grp) {
+                            return { id: grp.id, name: grp.name, type: "group" };
+                        }
+                    }
+                }
+            } catch {
+                // Ignore querySelector exceptions
+            }
+        }
+
+        // Priority 3: Explicit mouseenter/mouseleave target tracking
+        if (hoveredRenameTarget) {
+            return hoveredRenameTarget;
+        }
+
+        return null;
+    }
+
+    function startRenameItem(item: { id: string; name: string; type: "category" | "group"; filepath?: string }) {
+        editingItemId = item.id || item.filepath || "";
         editingItemType = item.type;
         editingName = item.name;
+        if (item.type === "category") {
+            const catPath = item.filepath || item.id;
+            const idx = flatCategories.findIndex(c => c.filepath === catPath || c.id === catPath);
+            if (idx >= 0) {
+                focusedIndex = idx;
+            }
+        }
         setTimeout(() => {
             renameInputEl?.focus();
             renameInputEl?.select();
@@ -1306,9 +1414,14 @@
         if (e.key === "F2") {
             e.preventDefault();
             e.stopPropagation();
-            if (flatCategories[focusedIndex]) {
+            if (editingItemId) return;
+
+            const target = getTargetUnderMouse();
+            if (target) {
+                startRenameItem(target);
+            } else if (flatCategories[focusedIndex]) {
                 const cat = flatCategories[focusedIndex];
-                startRenameItem({ id: cat.id || "", name: cat.name, type: "category" });
+                startRenameItem({ id: cat.id || cat.filepath, name: cat.name, type: "category", filepath: cat.filepath });
             }
             return;
         }
@@ -1460,6 +1573,8 @@
     class:is-picking-focus={isPickingDefaultFocus}
     bind:this={modalContainerEl}
     on:keydown={handleKeydown}
+    on:pointermove={handlePointerMove}
+    on:pointerleave={handlePointerLeave}
     tabindex="0"
     role="region"
 >
@@ -1706,9 +1821,12 @@
                                                 class:drag-over-top={dragOverListId === cat.id && dragListPosition === "top"}
                                                 class:drag-over-bottom={dragOverListId === cat.id && dragListPosition === "bottom"}
                                                 data-filepath={cat.filepath}
+                                                data-item-id={cat.id}
                                                 role="button"
                                                 tabindex="0"
                                                 draggable="true"
+                                                on:mouseenter={() => setHoveredTarget({ id: cat.id || cat.filepath, name: cat.name, type: "category", filepath: cat.filepath })}
+                                                on:mouseleave={() => clearHoveredTarget(cat.id || cat.filepath)}
                                                 on:dragstart={(e) => handleListDragStart(e, cat)}
                                                 on:dragend={handleListDragEnd}
                                                 on:dragover={(e) => handleListDragOver(e, cat, false)}
@@ -1726,6 +1844,7 @@
                                                         bind:value={editingName}
                                                         bind:this={renameInputEl}
                                                         on:blur={commitRename}
+                                                        on:click|stopPropagation
                                                     />
                                                 {:else}
                                                     <span class="quick-modal-list-name" title={cat.name}>{cat.name}</span>
@@ -1746,6 +1865,7 @@
                                 <div 
                                     class="quick-grid-card"
                                     data-card-id={group.id}
+                                    data-group-id={group.id}
                                     class:is-dragging={draggedListId === group.id}
                                     class:drag-over-top={dragOverListId === group.id && dragListPosition === "top"}
                                     class:drag-over-bottom={dragOverListId === group.id && dragListPosition === "bottom"}
@@ -1756,7 +1876,10 @@
                                 >
                                     <div 
                                         class="quick-grid-card-header"
+                                        data-group-id={group.id}
                                         draggable="true"
+                                        on:mouseenter={() => setHoveredTarget({ id: group.id, name: group.name, type: "group" })}
+                                        on:mouseleave={() => clearHoveredTarget(group.id)}
                                         on:dragstart={(e) => handleListDragStart(e, group)}
                                         on:dragend={handleListDragEnd}
                                         on:dragover={(e) => handleListDragOver(e, group, true)}
@@ -1777,6 +1900,7 @@
                                                     bind:value={editingName}
                                                     bind:this={renameInputEl}
                                                     on:blur={commitRename}
+                                                    on:click|stopPropagation
                                                 />
                                             {:else}
                                                 <span class="quick-grid-card-title" on:click|stopPropagation={() => toggleGroup(group)}>
@@ -1809,9 +1933,12 @@
                                                         class:drag-over-top={dragOverListId === child.id && dragListPosition === "top"}
                                                         class:drag-over-bottom={dragOverListId === child.id && dragListPosition === "bottom"}
                                                         data-filepath={child.filepath}
+                                                        data-item-id={child.id}
                                                         role="button"
                                                         tabindex="0"
                                                         draggable="true"
+                                                        on:mouseenter={() => setHoveredTarget({ id: child.id || child.filepath, name: child.name, type: "category", filepath: child.filepath })}
+                                                        on:mouseleave={() => clearHoveredTarget(child.id || child.filepath)}
                                                         on:dragstart={(e) => handleListDragStart(e, child)}
                                                         on:dragend={handleListDragEnd}
                                                         on:dragover={(e) => handleListDragOver(e, child, false, group)}
@@ -1829,6 +1956,7 @@
                                                                 bind:value={editingName}
                                                                 bind:this={renameInputEl}
                                                                 on:blur={commitRename}
+                                                                on:click|stopPropagation
                                                             />
                                                         {:else}
                                                             <span class="quick-modal-list-name" title={child.name}>{child.name}</span>
@@ -1869,6 +1997,7 @@
                         <!-- Group Header -->
                         <div 
                             class="quick-modal-group-container"
+                            data-group-id={item.id}
                             class:is-dragging={draggedListId === item.id}
                             class:drag-over-top={dragOverListId === item.id && dragListPosition === "top"}
                             class:drag-over-bottom={dragOverListId === item.id && dragListPosition === "bottom"}
@@ -1876,7 +2005,10 @@
                         >
                             <div 
                                 class="quick-modal-group-header"
+                                data-group-id={item.id}
                                 draggable="true"
+                                on:mouseenter={() => setHoveredTarget({ id: item.id, name: item.name, type: "group" })}
+                                on:mouseleave={() => clearHoveredTarget(item.id)}
                                 on:dragstart={(e) => handleListDragStart(e, item)}
                                 on:dragend={handleListDragEnd}
                                 on:dragover={(e) => handleListDragOver(e, item, true)}
@@ -1896,6 +2028,7 @@
                                         bind:value={editingName}
                                         bind:this={renameInputEl}
                                         on:blur={commitRename}
+                                        on:click|stopPropagation
                                     />
                                 {:else}
                                     <span class="quick-modal-group-title" on:click={() => toggleGroup(item)}>
@@ -1921,9 +2054,12 @@
                                             class:drag-over-top={dragOverListId === child.id && dragListPosition === "top"}
                                             class:drag-over-bottom={dragOverListId === child.id && dragListPosition === "bottom"}
                                             data-filepath={child.filepath}
+                                            data-item-id={child.id}
                                             role="button"
                                             tabindex="0"
                                             draggable="true"
+                                            on:mouseenter={() => setHoveredTarget({ id: child.id || child.filepath, name: child.name, type: "category", filepath: child.filepath })}
+                                            on:mouseleave={() => clearHoveredTarget(child.id || child.filepath)}
                                             on:dragstart={(e) => handleListDragStart(e, child)}
                                             on:dragend={handleListDragEnd}
                                             on:dragover={(e) => handleListDragOver(e, child, false, item)}
@@ -1941,6 +2077,7 @@
                                                     bind:value={editingName}
                                                     bind:this={renameInputEl}
                                                     on:blur={commitRename}
+                                                    on:click|stopPropagation
                                                 />
                                             {:else}
                                                 <span class="quick-modal-list-name">{child.name}</span>
@@ -1967,9 +2104,12 @@
                             class:drag-over-top={dragOverListId === item.id && dragListPosition === "top"}
                             class:drag-over-bottom={dragOverListId === item.id && dragListPosition === "bottom"}
                             data-filepath={item.filepath}
+                            data-item-id={item.id}
                             role="button"
                             tabindex="0"
                             draggable="true"
+                            on:mouseenter={() => setHoveredTarget({ id: item.id || item.filepath, name: item.name, type: "category", filepath: item.filepath })}
+                            on:mouseleave={() => clearHoveredTarget(item.id || item.filepath)}
                             on:dragstart={(e) => handleListDragStart(e, item)}
                             on:dragend={handleListDragEnd}
                             on:dragover={(e) => handleListDragOver(e, item, false)}
@@ -1987,6 +2127,7 @@
                                     bind:value={editingName}
                                     bind:this={renameInputEl}
                                     on:blur={commitRename}
+                                    on:click|stopPropagation
                                 />
                             {:else}
                                 <span class="quick-modal-list-name">{item.name}</span>
