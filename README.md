@@ -1,6 +1,6 @@
 # Fluent Tasks
 
-Obsidian plugin: a three-pane, drag-and-drop task manager inspired by Microsoft To Do, Todoist, and TickTick. Version **1.0.37** (`manifest.json`). Desktop and mobile (`isDesktopOnly: false`). Minimum Obsidian **1.8.7**.
+Obsidian plugin: a three-pane, drag-and-drop task manager inspired by Microsoft To Do, Todoist, and TickTick. Version **1.0.38** (`manifest.json`). Desktop and mobile (`isDesktopOnly: false`). Minimum Obsidian **1.8.7**.
 
 Architecture documentation: [ARCHITECTURE.md](./ARCHITECTURE.md).
 
@@ -35,6 +35,7 @@ There is no cloud lock-in or external server dependency. All data remains 100% l
 - **Due Dates & Recurrence**: Schedule tasks with smart presets (today, tomorrow, next week) and flexible recurrence rules (daily, weekdays, weekly, custom). Overdue recurring tasks automatically roll over.
 - **Quick Modals & Dashboard Grid**: Access Quick List board (`Ctrl+Shift+L` or command) and Quick Task popup for rapid task capture and navigation. Dynamically adapts viewport padding, margins, and column layouts to user font sizes.
 - **Automatic & Manual Backups**: Built-in Backup Manager with automatic daily snapshots, manual export, import, and backup history management.
+- **Hide Left Sidebar (Floating UI Mode)**: Optional setting to hide the left sidebar list view completely for a distraction-free experience. When active, navigates lists via the Quick List floating modal, featuring persistent top-right status reminders if a hotkey has not yet been assigned.
 - **Internationalization**: Full bilingual support defaulting to English, with automatic Chinese localization when Obsidian runs in Chinese.
 
 ## Install and build
