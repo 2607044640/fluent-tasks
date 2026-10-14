@@ -38580,7 +38580,7 @@ function create_else_block_54(ctx) {
       insert(target, span, anchor);
       append(span, t_1);
       if (!mounted) {
-        dispose = listen(span, "click", click_handler_42);
+        dispose = listen(span, "click", stop_propagation(click_handler_42));
         mounted = true;
       }
     },
@@ -39847,7 +39847,11 @@ function create_each_block8(key_1, ctx) {
   );
   const get_key = (ctx2) => (
     /*card*/
-    ctx2[184].id
+    ctx2[184].id + "_" + /*card*/
+    (ctx2[184].group ? (
+      /*card*/
+      ctx2[184].group.isExpanded ? "exp" : "col"
+    ) : "root")
   );
   for (let i = 0; i < each_value_1.length; i += 1) {
     let child_ctx = get_each_context_15(ctx, each_value_1, i);
@@ -40631,7 +40635,7 @@ function handleBoardWheel(e) {
   }
 }
 function areColumnsEqual(colsA, colsB) {
-  var _a, _b;
+  var _a, _b, _c, _d;
   if (colsA.length !== colsB.length)
     return false;
   for (let i = 0; i < colsA.length; i++) {
@@ -40644,8 +40648,14 @@ function areColumnsEqual(colsA, colsB) {
       const cardB = colB[j];
       if (cardA.id !== cardB.id)
         return false;
-      const itemsA = cardA.items || ((_a = cardA.group) == null ? void 0 : _a.items) || [];
-      const itemsB = cardB.items || ((_b = cardB.group) == null ? void 0 : _b.items) || [];
+      if (cardA.name !== cardB.name)
+        return false;
+      if (((_a = cardA.group) == null ? void 0 : _a.isExpanded) !== ((_b = cardB.group) == null ? void 0 : _b.isExpanded))
+        return false;
+      if (Math.abs(cardA.height - cardB.height) > 4)
+        return false;
+      const itemsA = cardA.items || ((_c = cardA.group) == null ? void 0 : _c.items) || [];
+      const itemsB = cardB.items || ((_d = cardB.group) == null ? void 0 : _d.items) || [];
       if (itemsA.length !== itemsB.length)
         return false;
       for (let k = 0; k < itemsA.length; k++) {
@@ -40805,11 +40815,22 @@ function instance8($$self, $$props, $$invalidate) {
       for (const c of cards) {
         const el = boardEl.querySelector(`.quick-grid-card[data-card-id="${c.id}"]`);
         if (el && el.offsetHeight > 0) {
-          c.height = el.offsetHeight;
-          measuredCardHeights.set(c.id, {
-            height: el.offsetHeight,
-            itemCount: c.items ? c.items.length : 0
-          });
+          if (c.type === "group" && c.group) {
+            const hasDomItems = !!el.querySelector(".quick-grid-card-items");
+            if (hasDomItems === !!c.group.isExpanded) {
+              c.height = el.offsetHeight;
+              measuredCardHeights.set(c.id, {
+                height: el.offsetHeight,
+                itemCount: c.group.isExpanded && c.items ? c.items.length : 0
+              });
+            }
+          } else {
+            c.height = el.offsetHeight;
+            measuredCardHeights.set(c.id, {
+              height: el.offsetHeight,
+              itemCount: c.items ? c.items.length : 0
+            });
+          }
         }
       }
     }
@@ -41091,8 +41112,13 @@ function instance8($$self, $$props, $$invalidate) {
   async function toggleGroup(group) {
     measuredCardHeights.delete(group.id);
     $$invalidate(69, sidebarItems = toggleGroupExpandedState(sidebarItems, group.id));
+    await tick();
+    if (isGridLayout) {
+      updateLayoutColumns(true);
+      scheduleAdjustSpacing();
+    }
     await dataService.saveSidebarState(sidebarItems);
-    scheduleAdjustSpacing();
+    EventBus.emit("category:list-changed" /* CATEGORY_LIST_CHANGED */, { sidebarItems });
   }
   async function openCategoryInCenterOnly(cat) {
     if (!cat)

@@ -172,6 +172,10 @@
                 const cardA = colA[j];
                 const cardB = colB[j];
                 if (cardA.id !== cardB.id) return false;
+                if (cardA.name !== cardB.name) return false;
+                // CRITICAL: Compare expansion state
+                if (cardA.group?.isExpanded !== cardB.group?.isExpanded) return false;
+                if (Math.abs(cardA.height - cardB.height) > 4) return false;
                 const itemsA = cardA.items || cardA.group?.items || [];
                 const itemsB = cardB.items || cardB.group?.items || [];
                 if (itemsA.length !== itemsB.length) return false;
@@ -258,16 +262,28 @@
             return;
         }
 
-        // 3. Measure actual rendered DOM heights if available
+        // 3. Measure actual rendered DOM heights if available and expansion state matches
         if (boardEl) {
             for (const c of cards) {
                 const el = boardEl.querySelector<HTMLElement>(`.quick-grid-card[data-card-id="${c.id}"]`);
                 if (el && el.offsetHeight > 0) {
-                    c.height = el.offsetHeight;
-                    measuredCardHeights.set(c.id, {
-                        height: el.offsetHeight,
-                        itemCount: c.items ? c.items.length : 0
-                    });
+                    if (c.type === "group" && c.group) {
+                        const hasDomItems = !!el.querySelector(".quick-grid-card-items");
+                        // Only measure if DOM matches the card's current expansion state
+                        if (hasDomItems === !!c.group.isExpanded) {
+                            c.height = el.offsetHeight;
+                            measuredCardHeights.set(c.id, {
+                                height: el.offsetHeight,
+                                itemCount: (c.group.isExpanded && c.items) ? c.items.length : 0
+                            });
+                        }
+                    } else {
+                        c.height = el.offsetHeight;
+                        measuredCardHeights.set(c.id, {
+                            height: el.offsetHeight,
+                            itemCount: c.items ? c.items.length : 0
+                        });
+                    }
                 }
             }
         }
@@ -592,8 +608,19 @@
     async function toggleGroup(group: GroupInfo) {
         measuredCardHeights.delete(group.id);
         sidebarItems = toggleGroupExpandedState(sidebarItems, group.id);
+        
+        // 1. Await Svelte tick so reactive stores ($: groupItems, $: filteredItems) refresh
+        await tick();
+
+        // 2. Force immediate grid recalculation so layoutColumns updates right away
+        if (isGridLayout) {
+            updateLayoutColumns(true);
+            scheduleAdjustSpacing();
+        }
+
+        // 3. Persist to disk and notify peers
         await dataService.saveSidebarState(sidebarItems);
-        scheduleAdjustSpacing();
+        EventBus.emit(EventName.CATEGORY_LIST_CHANGED, { sidebarItems });
     }
 
     async function openCategoryInCenterOnly(cat: CategoryInfo) {
@@ -1645,7 +1672,7 @@
             {:else}
                 {#each layoutColumns as column, colIdx (colIdx)}
                     <div class="quick-grid-column">
-                        {#each column as card (card.id)}
+                        {#each column as card (card.id + "_" + (card.group ? (card.group.isExpanded ? "exp" : "col") : "root"))}
                             {#if card.type === "root"}
                                 <!-- Standalone Root Categories Card -->
                                 <div 
@@ -1752,7 +1779,7 @@
                                                     on:blur={commitRename}
                                                 />
                                             {:else}
-                                                <span class="quick-grid-card-title" on:click={() => toggleGroup(group)}>
+                                                <span class="quick-grid-card-title" on:click|stopPropagation={() => toggleGroup(group)}>
                                                     {group.name}
                                                 </span>
                                             {/if}
