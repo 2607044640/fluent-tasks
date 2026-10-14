@@ -12,7 +12,7 @@
  * All data I/O flows through DataService.
  */
 
-import { Plugin, ItemView, WorkspaceLeaf, TFile, Scope, App, ViewStateResult } from "obsidian";
+import { Plugin, ItemView, WorkspaceLeaf, TFile, Scope, App, ViewStateResult, Notice } from "obsidian";
 import { VIEW_TYPE_SIDEBAR, VIEW_TYPE_MAIN, VIEW_TYPE_DETAIL, DATA_FOLDER, EventName, type CategoryInfo, type TaskItem } from "./types";
 import { EventBus } from "./EventBus";
 import { Logger } from "./Logger";
@@ -31,6 +31,7 @@ import { BackupService } from "./services/BackupService";
 import { getTodayLocalDateString } from "./utils/timeUtils";
 import { t } from "./lang/helpers";
 import { LinkedNoteService } from "./services/LinkedNoteService";
+import { isQuickListHotkeyAssigned, openHotkeySettingsForQuickList } from "./utils/hotkeyUtils";
 import "./styles.css";
 
 // =============================================
@@ -303,6 +304,23 @@ export default class FluentTasksPlugin extends Plugin {
         }
     }
 
+    async handleHideLeftSidebarChanged(value: boolean): Promise<void> {
+        if (value) {
+            const wasLeftActive = this.isPluginLeftSidebarActive();
+            this.app.workspace.detachLeavesOfType(VIEW_TYPE_SIDEBAR);
+            const leftSplit = this.app.workspace.leftSplit as { collapsed?: boolean; collapse: () => void } | null;
+            if (leftSplit && !leftSplit.collapsed && wasLeftActive) {
+                leftSplit.collapse();
+            }
+            if (!isQuickListHotkeyAssigned(this.app)) {
+                new Notice(t("warn_bind_hotkey_notice") || "⚠️ [Fluent Tasks] 'Hide Left Sidebar' is enabled, but no hotkey is bound for the Floating UI! Please assign a hotkey in Settings -> Hotkeys.", 8000);
+            }
+        } else {
+            await this.activateView(VIEW_TYPE_SIDEBAR, "left");
+        }
+        EventBus.emit(EventName.SETTINGS_CHANGED, { settings: this.settings });
+    }
+
     async onload(): Promise<void> {
         // Synchronous initialization before any async awaits
         this.dataService = new DataService(this.app);
@@ -438,6 +456,10 @@ export default class FluentTasksPlugin extends Plugin {
                 await this.loadSettings();
                 this.applySettings();
 
+                if (this.settings.hideLeftSidebar) {
+                    this.app.workspace.detachLeavesOfType(VIEW_TYPE_SIDEBAR);
+                }
+
                 // Check and run daily backup if enabled
                 await BackupService.checkAndRunDailyBackup(this.app, this);
 
@@ -465,7 +487,7 @@ export default class FluentTasksPlugin extends Plugin {
                                               lastActiveViewType === VIEW_TYPE_DETAIL;
 
                         // When switching focus from an external tab (e.g. Markdown note via Ctrl+Tab / Ctrl+Shift+Tab) to Fluent Tasks
-                        if (isPluginView && !wasPluginView && this.settings.autoExpandSidebar) {
+                        if (isPluginView && !wasPluginView && this.settings.autoExpandSidebar && !this.settings.hideLeftSidebar) {
                             if (!this.isUserClosingSidebar && Date.now() > this.suppressAutoExpandSidebarUntil) {
                                 this.expandSidebarToList();
                             }
@@ -908,6 +930,7 @@ export default class FluentTasksPlugin extends Plugin {
      * Expand the left sidebar and reveal the Fluent Tasks sidebar list tab.
      */
     expandSidebarToList(): void {
+        if (this.settings.hideLeftSidebar) return;
         const leftSplit = this.app.workspace.leftSplit as { collapsed?: boolean; expand: () => void } | null;
         if (leftSplit?.collapsed) {
             leftSplit.expand();
@@ -981,6 +1004,7 @@ export default class FluentTasksPlugin extends Plugin {
      * NEVER forces sidebar expansion if the user collapsed it.
      */
     locateActiveCategoryInSidebar(): void {
+        if (this.settings.hideLeftSidebar) return;
         const leftSplit = this.app.workspace.leftSplit as any;
         if (!leftSplit || leftSplit.collapsed) {
             return; // Safety guard: NEVER do anything if sidebar is collapsed!
@@ -1102,7 +1126,9 @@ export default class FluentTasksPlugin extends Plugin {
      * Open all three panels at once for the full MS To-Do experience.
      */
     async activateAllViews(): Promise<void> {
-        await this.activateView(VIEW_TYPE_SIDEBAR, "left");
+        if (!this.settings.hideLeftSidebar) {
+            await this.activateView(VIEW_TYPE_SIDEBAR, "left");
+        }
         await this.activateView(VIEW_TYPE_MAIN, "center");
         if (!this.settings.openDetailInModal) {
             await this.activateView(VIEW_TYPE_DETAIL, "right");
@@ -1117,6 +1143,9 @@ export default class FluentTasksPlugin extends Plugin {
         viewType: string,
         position: "left" | "center" | "right"
     ): Promise<WorkspaceLeaf | null> {
+        if (viewType === VIEW_TYPE_SIDEBAR && this.settings.hideLeftSidebar) {
+            return null;
+        }
         if (viewType === VIEW_TYPE_DETAIL && this.settings.openDetailInModal) {
             return null;
         }

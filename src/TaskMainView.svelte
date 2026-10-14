@@ -20,6 +20,7 @@
     import { BackupModal } from "./modals/BackupModal";
     import { t, isChinese } from "./lang/helpers";
     import { Logger } from "./Logger";
+    import { isQuickListHotkeyAssigned, openHotkeySettingsForQuickList } from "./utils/hotkeyUtils";
 
     // =============================================
     // Props
@@ -43,6 +44,22 @@
     let enableTaskWeightMode: boolean = plugin?.settings?.enableTaskWeightMode ?? false;
     let centerAlignTasks: boolean = plugin?.settings?.centerAlignTasks ?? true;
     let disableStars: boolean = plugin?.settings?.disableStars ?? false;
+    let hideLeftSidebar: boolean = plugin?.settings?.hideLeftSidebar ?? false;
+    let hasFloatingModalHotkey: boolean = true;
+    $: showNoHotkeyWarning = hideLeftSidebar && !hasFloatingModalHotkey;
+
+    function checkHotkeyStatus() {
+        hideLeftSidebar = plugin?.settings?.hideLeftSidebar ?? false;
+        if (plugin?.app) {
+            hasFloatingModalHotkey = isQuickListHotkeyAssigned(plugin.app);
+        }
+    }
+
+    function handleOpenHotkeySettings() {
+        if (plugin?.app) {
+            openHotkeySettingsForQuickList(plugin.app);
+        }
+    }
 
     // In-List Search State (Ctrl+F)
     let isSearchOpen: boolean = false;
@@ -826,6 +843,7 @@
         enableTaskWeightMode = plugin?.settings?.enableTaskWeightMode ?? false;
         centerAlignTasks = plugin?.settings?.centerAlignTasks ?? true;
         disableStars = plugin?.settings?.disableStars ?? false;
+        checkHotkeyStatus();
         incompleteTasks = applyWeightSort(rawIncompleteTasks, enableTaskWeightMode);
         completedTasks = applyWeightSort(rawCompletedTasks, enableTaskWeightMode);
         if (enableTaskWeightMode) {
@@ -860,12 +878,14 @@
             svgResolveCache.clear();
             void refreshActiveLightboxFromDisk();
         }
+        checkHotkeyStatus();
     }
 
     // =============================================
     // Lifecycle
     // =============================================
     onMount(() => {
+        checkHotkeyStatus();
         EventBus.on(EventName.CATEGORY_SELECTED, handleCategorySelected);
         EventBus.on(EventName.TASK_UPDATED, handleTaskUpdated);
         EventBus.on(EventName.TASK_MOVED, handleTaskMoved);
@@ -1844,6 +1864,18 @@
         <div class="main-header">
             <h1 class="category-title">{currentCategory.name}</h1>
             <div class="main-header-actions">
+                {#if showNoHotkeyWarning}
+                    <button class="header-hotkey-warning-pill"
+                            on:click={handleOpenHotkeySettings}
+                            title={t("warn_bind_hotkey_tooltip")}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                            <line x1="12" y1="9" x2="12" y2="13"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                        <span>{t("warn_bind_hotkey_btn")}</span>
+                    </button>
+                {/if}
                 {#if isMultiSelectMode}
                     <div class="header-multi-select-group">
                         <span class="header-multi-select-count" title={t("selected_items_label", selectedTaskIds.size)}>
@@ -2496,8 +2528,22 @@
             </div>
         {/if}
     {:else}
+        {#if showNoHotkeyWarning}
+            <div class="main-empty-header-actions">
+                <button class="header-hotkey-warning-pill"
+                        on:click={handleOpenHotkeySettings}
+                        title={t("warn_bind_hotkey_tooltip")}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    <span>{t("warn_bind_hotkey_btn")}</span>
+                </button>
+            </div>
+        {/if}
         <div class="detail-empty">
-            Select a list from the sidebar to view tasks.
+            {hideLeftSidebar ? (t("empty_state_hide_sidebar_desc") || "Sidebar is hidden. Use Quick List (Floating UI) to select a list.") : "Select a list from the sidebar to view tasks."}
         </div>
     {/if}
 

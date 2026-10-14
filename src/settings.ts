@@ -1,9 +1,11 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import type FluentTasksPlugin from "./main";
+import { t } from "./lang/helpers";
 
 export interface FluentTasksSettings {
     accentColor: string;
     openDetailInModal: boolean;
+    hideLeftSidebar: boolean;
     autoExpandSidebar: boolean;
     autoCollapseSidebarOnSwitch: boolean;
     searchHideCompleted: boolean;
@@ -31,6 +33,7 @@ export interface FluentTasksSettings {
 export const DEFAULT_SETTINGS: FluentTasksSettings = {
     accentColor: "#8b5cf6",
     openDetailInModal: false,
+    hideLeftSidebar: false,
     autoExpandSidebar: true,
     autoCollapseSidebarOnSwitch: true,
     searchHideCompleted: true,
@@ -107,6 +110,18 @@ export class FluentTasksSettingTab extends PluginSettingTab {
                             this.plugin.activeDetailModal.close();
                         }
                     }
+                }));
+
+        new Setting(containerEl)
+            .setName(t("setting_hide_left_sidebar_title") || "Hide Left Sidebar (Floating UI Mode)")
+            .setDesc(t("setting_hide_left_sidebar_desc") || "Hide the left sidebar list view completely. Navigate lists using the Quick List Floating UI (modal). Recommended to bind a hotkey for quick access.")
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.hideLeftSidebar ?? false)
+                .onChange(async (value) => {
+                    this.plugin.settings.hideLeftSidebar = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.applySettings();
+                    await this.plugin.handleHideLeftSidebarChanged(value);
                 }));
 
         new Setting(containerEl)

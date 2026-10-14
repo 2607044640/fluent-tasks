@@ -9,6 +9,7 @@
     import { Menu, Notice } from "obsidian";
     import type { App } from "obsidian";
     import { t } from "../lang/helpers";
+    import { isQuickListHotkeyAssigned, openHotkeySettingsForQuickList } from "../utils/hotkeyUtils";
 
     // =============================================
     // Props
@@ -42,6 +43,22 @@
     let isPickingDefaultFocus: boolean = false;
     let showFocusPopover: boolean = false;
     let titleAlignment: 'center' | 'left' = plugin?.settings?.quickListTitleAlignment ?? 'center';
+    let hideLeftSidebar: boolean = plugin?.settings?.hideLeftSidebar ?? false;
+    let hasFloatingModalHotkey: boolean = true;
+    $: showNoHotkeyWarning = hideLeftSidebar && !hasFloatingModalHotkey;
+
+    function checkHotkeyStatus() {
+        hideLeftSidebar = plugin?.settings?.hideLeftSidebar ?? false;
+        if (app) {
+            hasFloatingModalHotkey = isQuickListHotkeyAssigned(app);
+        }
+    }
+
+    function handleOpenHotkeySettings() {
+        if (app) {
+            openHotkeySettingsForQuickList(app);
+        }
+    }
 
     function handleBoardWheel(e: WheelEvent) {
         if (e.deltaY !== 0 && !e.shiftKey) {
@@ -461,6 +478,9 @@
     }
 
     onMount(async () => {
+        checkHotkeyStatus();
+        window.addEventListener("focus", checkHotkeyStatus);
+        document.addEventListener("visibilitychange", checkHotkeyStatus);
         await loadData();
         EventBus.on(EventName.CATEGORY_LIST_CHANGED, handleExternalListChanged);
         EventBus.on(EventName.TASK_UPDATED, handleExternalTaskUpdated);
@@ -505,6 +525,8 @@
     });
 
     onDestroy(() => {
+        window.removeEventListener("focus", checkHotkeyStatus);
+        document.removeEventListener("visibilitychange", checkHotkeyStatus);
         if (searchDebounceTimer) {
             clearTimeout(searchDebounceTimer);
             searchDebounceTimer = null;
@@ -528,6 +550,7 @@
     });
 
     function handleSettingsChanged(payload?: any) {
+        checkHotkeyStatus();
         if (payload?.settings?.quickListTitleAlignment !== undefined) {
             titleAlignment = payload.settings.quickListTitleAlignment;
         } else if (plugin?.settings?.quickListTitleAlignment !== undefined) {
@@ -1553,6 +1576,21 @@
                 <span>List</span>
             {/if}
         </button>
+
+        {#if showNoHotkeyWarning}
+            <button 
+                class="quick-modal-header-btn quick-modal-warning-btn"
+                title={t("warn_bind_hotkey_tooltip")}
+                on:click={handleOpenHotkeySettings}
+            >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <span>{t("warn_bind_hotkey_btn")}</span>
+            </button>
+        {/if}
 
         {#if searchMode === 'task' && searchQuery.trim().length > 0}
             <!-- Floating Task Search Results Dropdown Overlay (Does not unmount or alter the list board below) -->

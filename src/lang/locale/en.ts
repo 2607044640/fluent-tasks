@@ -123,6 +123,12 @@ const en = {
     main_view_search_list_only_btn: "List only",
     main_view_search_list_only_tooltip: "Current scope: List only. Click for info on searching all tasks.",
     main_view_search_all_tasks_hint: "To search across all tasks, set a hotkey for plugin command 'Search all tasks' in Settings -> Hotkeys.",
+    setting_hide_left_sidebar_title: "Hide Left Sidebar (Floating UI Mode)",
+    setting_hide_left_sidebar_desc: "Hide the left sidebar list view completely. Navigate lists using the Quick List Floating UI (modal). Recommended to bind a hotkey for quick access.",
+    warn_bind_hotkey_btn: "Set Floating UI Hotkey",
+    warn_bind_hotkey_tooltip: "You enabled 'Hide Left Sidebar'. Please bind a hotkey for 'Open Quick List Modal' in Settings -> Hotkeys to switch lists conveniently.",
+    warn_bind_hotkey_notice: "⚠️ [Fluent Tasks] 'Hide Left Sidebar' is enabled, but no hotkey is bound for the Floating UI! Please assign a hotkey in Settings -> Hotkeys.",
+    empty_state_hide_sidebar_desc: "Sidebar is hidden. Use Quick List (Floating UI) to select a list.",
 };
 
 export default en;
