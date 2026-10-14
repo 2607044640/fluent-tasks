@@ -3506,6 +3506,11 @@ body .quick-modal-task-item.is-focused {
 }
 
 /* Drag and Drop Indicators for Lists & Groups */
+.is-dragging {
+    opacity: 0.38 !important;
+    filter: grayscale(20%);
+}
+
 .drag-over-top {
     border-top: 2px solid var(--todo-accent, #8b5cf6) !important;
 }
@@ -3515,8 +3520,31 @@ body .quick-modal-task-item.is-focused {
 }
 
 .drag-over-inside {
-    background-color: var(--todo-accent-light, rgba(139, 92, 246, 0.2)) !important;
+    background-color: var(--todo-accent-light, rgba(139, 92, 246, 0.15)) !important;
     outline: 2px dashed var(--todo-accent, #8b5cf6) !important;
+}
+
+.quick-grid-card.drag-over-inside {
+    border-color: var(--todo-accent, #8b5cf6) !important;
+    box-shadow: 0 0 0 2px var(--todo-accent, #8b5cf6), 0 4px 14px rgba(139, 92, 246, 0.22) !important;
+    background-color: var(--todo-accent-light, rgba(139, 92, 246, 0.08)) !important;
+}
+
+.quick-grid-card-items.drag-over-inside {
+    background-color: var(--todo-accent-light, rgba(139, 92, 246, 0.12));
+    border-radius: 6px;
+    outline: 2px dashed var(--todo-accent, #8b5cf6);
+}
+
+.quick-grid-card-empty-dropzone {
+    padding: 10px 8px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-faint);
+    border: 1px dashed var(--background-modifier-border);
+    border-radius: 6px;
+    margin: 4px 0;
+    pointer-events: none;
 }
 
 /* Inline Edit & Add Inputs */

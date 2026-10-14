@@ -41,6 +41,15 @@ export function moveSidebarItem(
     let tempItems = extractItem(items);
     if (!listToMove) return items;
 
+    // Special case: moving to root level when targetId is "__root__" or "root"
+    if (targetId === "__root__" || targetId === "root") {
+        if (position === "top") {
+            return [listToMove as SidebarItem, ...tempItems];
+        } else {
+            return [...tempItems, listToMove as SidebarItem];
+        }
+    }
+
     // 2. Drop inside a group
     if (position === "inside") {
         return tempItems.map(item => {

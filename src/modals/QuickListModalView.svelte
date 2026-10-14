@@ -152,7 +152,15 @@
             const colB = colsB[i];
             if (colA.length !== colB.length) return false;
             for (let j = 0; j < colA.length; j++) {
-                if (colA[j].id !== colB[j].id) return false;
+                const cardA = colA[j];
+                const cardB = colB[j];
+                if (cardA.id !== cardB.id) return false;
+                const itemsA = cardA.items || cardA.group?.items || [];
+                const itemsB = cardB.items || cardB.group?.items || [];
+                if (itemsA.length !== itemsB.length) return false;
+                for (let k = 0; k < itemsA.length; k++) {
+                    if (itemsA[k].id !== itemsB[k].id) return false;
+                }
             }
         }
         return true;
@@ -184,7 +192,7 @@
         return bins;
     }
 
-    function updateLayoutColumns() {
+    function updateLayoutColumns(force: boolean = false) {
         if (!isGridLayout) return;
 
         // 1. Live base font size and scale detection (relative to standard 14px)
@@ -327,9 +335,9 @@
             return orderA - orderB;
         });
 
-        // 6. Update layoutColumns only when column structure changes
+        // 6. Update layoutColumns when forced or when column structure/items change
         const newColumns = bestBins.map(b => b.items);
-        if (!areColumnsEqual(layoutColumns, newColumns)) {
+        if (force || !areColumnsEqual(layoutColumns, newColumns)) {
             layoutColumns = newColumns;
         }
 
@@ -709,19 +717,76 @@
     // =============================================
     // Drag & Drop Lists / Groups (Tree Reordering)
     // =============================================
+    function getDraggedItem(): SidebarItem | CategoryInfo | null {
+        if (!draggedListId) return null;
+        for (const item of sidebarItems) {
+            if (item.id === draggedListId) return item;
+            if (item.type === "group" && item.items) {
+                const child = item.items.find(c => c.id === draggedListId);
+                if (child) return child;
+            }
+        }
+        return null;
+    }
+
+    function checkBoardAutoScroll(e: DragEvent) {
+        if (!boardEl) return;
+        const rect = boardEl.getBoundingClientRect();
+        const x = e.clientX;
+        const threshold = 60;
+        const speed = 12;
+        if (x - rect.left < threshold && boardEl.scrollLeft > 0) {
+            boardEl.scrollLeft -= speed;
+        } else if (rect.right - x < threshold) {
+            boardEl.scrollLeft += speed;
+        }
+    }
+
     function handleListDragStart(e: DragEvent, item: SidebarItem | CategoryInfo) {
         draggedListId = item.id;
+        (window as any).__mstodo_category_drag = true;
         if (e.dataTransfer) {
             e.dataTransfer.setData("text/plain", item.id);
             e.dataTransfer.effectAllowed = "move";
         }
     }
 
-    function handleListDragOver(e: DragEvent, target: SidebarItem | CategoryInfo, isGroupHeader: boolean = false) {
+    function handleListDragEnd() {
+        draggedListId = "";
+        dragOverListId = "";
+        dragListPosition = null;
+        (window as any).__mstodo_category_drag = false;
+    }
+
+    function handleListDragLeave(e: DragEvent, targetId?: string) {
+        const el = e.currentTarget as HTMLElement;
+        const related = e.relatedTarget as HTMLElement | null;
+        if (!related || !el.contains(related)) {
+            if (!targetId || dragOverListId === targetId) {
+                dragOverListId = "";
+                dragListPosition = null;
+            }
+        }
+    }
+
+    function handleListDragOver(e: DragEvent, target: SidebarItem | CategoryInfo, isGroupHeader: boolean = false, parentGroup?: any) {
         e.preventDefault();
+        e.stopPropagation();
         if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
 
+        checkBoardAutoScroll(e);
+
         if (!draggedListId || target.id === draggedListId) {
+            dragOverListId = "";
+            dragListPosition = null;
+            return;
+        }
+
+        const draggedItem = getDraggedItem();
+        if (!draggedItem) return;
+
+        // Groups cannot be placed inside groups or next to children inside groups
+        if (draggedItem.type === "group" && (parentGroup || (!isGroupHeader && target.type !== "group"))) {
             dragOverListId = "";
             dragListPosition = null;
             return;
@@ -733,30 +798,108 @@
         const relY = e.clientY - rect.top;
 
         if (isGroupHeader) {
-            dragListPosition = relY < rect.height * 0.35 ? "top" : "inside";
+            if (draggedItem.type === "group") {
+                dragListPosition = relY < rect.height * 0.5 ? "top" : "bottom";
+            } else {
+                dragListPosition = relY < rect.height * 0.35 ? "top" : "inside";
+            }
         } else {
             dragListPosition = relY < rect.height * 0.5 ? "top" : "bottom";
         }
     }
 
-    function handleListDragLeave() {
-        dragOverListId = "";
-        dragListPosition = null;
+    function handleGroupCardDragOver(e: DragEvent, group: GroupInfo) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+
+        checkBoardAutoScroll(e);
+
+        if (!draggedListId || group.id === draggedListId) return;
+        const draggedItem = getDraggedItem();
+        if (!draggedItem) return;
+
+        if (draggedItem.type === "group") {
+            const el = e.currentTarget as HTMLElement;
+            const rect = el.getBoundingClientRect();
+            const relY = e.clientY - rect.top;
+            dragOverListId = group.id;
+            dragListPosition = relY < rect.height * 0.5 ? "top" : "bottom";
+        } else {
+            dragOverListId = group.id;
+            dragListPosition = "inside";
+        }
     }
 
-    async function handleListDrop(target: SidebarItem | CategoryInfo) {
-        if (!draggedListId || !dragOverListId || !dragListPosition) return;
+    function handleRootCardDragOver(e: DragEvent) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+
+        checkBoardAutoScroll(e);
+
+        if (!draggedListId) return;
+        const draggedItem = getDraggedItem();
+        if (!draggedItem || draggedItem.type === "group") return;
+
+        if (rootCategories.length > 0) {
+            const last = rootCategories[rootCategories.length - 1];
+            dragOverListId = last.id;
+            dragListPosition = "bottom";
+        } else {
+            dragOverListId = "__root__";
+            dragListPosition = "top";
+        }
+    }
+
+    async function handleRootCardDrop(e: DragEvent) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (rootCategories.length > 0) {
+            const last = rootCategories[rootCategories.length - 1];
+            await handleListDrop(last, "bottom");
+        } else {
+            await handleListDrop({ id: "__root__", name: "Lists", type: "category", filepath: "" } as any, "top");
+        }
+    }
+
+    async function handleGroupCardDrop(e: DragEvent, group: GroupInfo) {
+        e.preventDefault();
+        e.stopPropagation();
+        const draggedItem = getDraggedItem();
+        if (draggedItem?.type === "group") {
+            await handleListDrop(group);
+        } else {
+            await handleListDrop(group, "inside");
+        }
+    }
+
+    async function handleListDrop(target: SidebarItem | CategoryInfo, forcedPosition?: "top" | "bottom" | "inside") {
         const movedId = draggedListId;
-        const targetId = target.id || "";
-        const pos = dragListPosition;
+        const targetId = target?.id || "";
+        const pos = forcedPosition || dragListPosition;
 
-        draggedListId = "";
-        dragOverListId = "";
-        dragListPosition = null;
+        handleListDragEnd();
 
-        if (movedId === targetId) return;
+        if (!movedId || !targetId || !pos || movedId === targetId) return;
 
+        // 1. Move item in sidebar tree
         sidebarItems = moveSidebarItem(sidebarItems, movedId, targetId, pos);
+        categories = getFlatCategories(sidebarItems);
+
+        // 2. Invalidate card measurement cache to ensure complete recalculation
+        measuredCardHeights.clear();
+
+        // 3. Await reactivity tick so derived stores ($: groupItems, $: rootCategories) refresh
+        await tick();
+
+        // 4. Force immediate grid layout recalculation
+        if (isGridLayout) {
+            updateLayoutColumns(true);
+            scheduleAdjustSpacing();
+        }
+
+        // 5. Persist to disk and notify peers
         await dataService.saveSidebarState(sidebarItems);
         EventBus.emit(EventName.CATEGORY_LIST_CHANGED, { sidebarItems });
     }
@@ -1469,7 +1612,11 @@
                                 <!-- Standalone Root Categories Card -->
                                 <div 
                                     class="quick-grid-card is-root-card" 
-                                    data-card-id="__root__" 
+                                    data-card-id="__root__"
+                                    class:drag-over-inside={dragOverListId === "__root__"}
+                                    on:dragover={handleRootCardDragOver}
+                                    on:dragleave={(e) => handleListDragLeave(e, "__root__")}
+                                    on:drop|preventDefault={handleRootCardDrop}
                                 >
                                     <div class="quick-grid-card-header">
                                         <div class="quick-grid-card-title-wrap">
@@ -1478,12 +1625,19 @@
                                         </div>
                                         <span class="quick-grid-card-count">{rootCategories.length}</span>
                                     </div>
-                                    <div class="quick-grid-card-items">
+                                    <div 
+                                        class="quick-grid-card-items"
+                                        class:is-empty={rootCategories.length === 0}
+                                        on:dragover={handleRootCardDragOver}
+                                        on:dragleave={(e) => handleListDragLeave(e, "__root__")}
+                                        on:drop|preventDefault={handleRootCardDrop}
+                                    >
                                         {#each rootCategories as cat (cat.id)}
                                             <div 
                                                 class="quick-modal-list-item is-grid-item"
                                                 class:is-focused={flatCategories[focusedIndex]?.filepath === cat.filepath}
                                                 class:is-default-focus={plugin?.settings?.defaultQuickListFocusFilepath === cat.filepath}
+                                                class:is-dragging={draggedListId === cat.id}
                                                 class:drag-over-top={dragOverListId === cat.id && dragListPosition === "top"}
                                                 class:drag-over-bottom={dragOverListId === cat.id && dragListPosition === "bottom"}
                                                 data-filepath={cat.filepath}
@@ -1491,8 +1645,9 @@
                                                 tabindex="0"
                                                 draggable="true"
                                                 on:dragstart={(e) => handleListDragStart(e, cat)}
+                                                on:dragend={handleListDragEnd}
                                                 on:dragover={(e) => handleListDragOver(e, cat, false)}
-                                                on:dragleave={handleListDragLeave}
+                                                on:dragleave={(e) => handleListDragLeave(e, cat.id)}
                                                 on:drop|preventDefault={() => handleListDrop(cat)}
                                                 on:click={() => handleCategoryClick(cat)}
                                                 on:contextmenu={(e) => showItemContextMenu(e, { id: cat.id || "", name: cat.name, type: "category", filepath: cat.filepath })}
@@ -1526,16 +1681,21 @@
                                 <div 
                                     class="quick-grid-card"
                                     data-card-id={group.id}
+                                    class:is-dragging={draggedListId === group.id}
                                     class:drag-over-top={dragOverListId === group.id && dragListPosition === "top"}
                                     class:drag-over-bottom={dragOverListId === group.id && dragListPosition === "bottom"}
                                     class:drag-over-inside={dragOverListId === group.id && dragListPosition === "inside"}
+                                    on:dragover={(e) => handleGroupCardDragOver(e, group)}
+                                    on:dragleave={(e) => handleListDragLeave(e, group.id)}
+                                    on:drop|preventDefault={(e) => handleGroupCardDrop(e, group)}
                                 >
                                     <div 
                                         class="quick-grid-card-header"
                                         draggable="true"
                                         on:dragstart={(e) => handleListDragStart(e, group)}
+                                        on:dragend={handleListDragEnd}
                                         on:dragover={(e) => handleListDragOver(e, group, true)}
-                                        on:dragleave={handleListDragLeave}
+                                        on:dragleave={(e) => handleListDragLeave(e, group.id)}
                                         on:drop|preventDefault={() => handleListDrop(group)}
                                         on:contextmenu={(e) => showItemContextMenu(e, { id: group.id, name: group.name, type: "group" })}
                                     >
@@ -1565,48 +1725,63 @@
                                         </span>
                                     </div>
 
-                                    {#if group.isExpanded && group.items && group.items.length > 0}
-                                        <div class="quick-grid-card-items">
-                                            {#each group.items as child (child.id)}
-                                                <div 
-                                                    class="quick-modal-list-item is-grid-item"
-                                                    class:is-focused={flatCategories[focusedIndex]?.filepath === child.filepath}
-                                                    class:is-default-focus={plugin?.settings?.defaultQuickListFocusFilepath === child.filepath}
-                                                    class:drag-over-top={dragOverListId === child.id && dragListPosition === "top"}
-                                                    class:drag-over-bottom={dragOverListId === child.id && dragListPosition === "bottom"}
-                                                    data-filepath={child.filepath}
-                                                    role="button"
-                                                    tabindex="0"
-                                                    draggable="true"
-                                                    on:dragstart={(e) => handleListDragStart(e, child)}
-                                                    on:dragover={(e) => handleListDragOver(e, child, false)}
-                                                    on:dragleave={handleListDragLeave}
-                                                    on:drop|preventDefault={() => handleListDrop(child)}
-                                                    on:click={() => handleCategoryClick(child)}
-                                                    on:contextmenu={(e) => showItemContextMenu(e, { id: child.id || "", name: child.name, type: "category", filepath: child.filepath })}
-                                                >
-                                                    <span class="quick-modal-list-icon">📁</span>
-                                                    
-                                                    {#if editingItemId === child.id}
-                                                        <input 
-                                                            type="text" 
-                                                            class="quick-modal-inline-rename-input"
-                                                            bind:value={editingName}
-                                                            bind:this={renameInputEl}
-                                                            on:blur={commitRename}
-                                                        />
-                                                    {:else}
-                                                        <span class="quick-modal-list-name" title={child.name}>{child.name}</span>
-                                                    {/if}
+                                    {#if group.isExpanded}
+                                        <div 
+                                            class="quick-grid-card-items"
+                                            class:is-empty={!group.items || group.items.length === 0}
+                                            class:drag-over-inside={dragOverListId === group.id && dragListPosition === "inside"}
+                                            on:dragover={(e) => handleGroupCardDragOver(e, group)}
+                                            on:dragleave={(e) => handleListDragLeave(e, group.id)}
+                                            on:drop|preventDefault={(e) => handleGroupCardDrop(e, group)}
+                                        >
+                                            {#if group.items && group.items.length > 0}
+                                                {#each group.items as child (child.id)}
+                                                    <div 
+                                                        class="quick-modal-list-item is-grid-item"
+                                                        class:is-focused={flatCategories[focusedIndex]?.filepath === child.filepath}
+                                                        class:is-default-focus={plugin?.settings?.defaultQuickListFocusFilepath === child.filepath}
+                                                        class:is-dragging={draggedListId === child.id}
+                                                        class:drag-over-top={dragOverListId === child.id && dragListPosition === "top"}
+                                                        class:drag-over-bottom={dragOverListId === child.id && dragListPosition === "bottom"}
+                                                        data-filepath={child.filepath}
+                                                        role="button"
+                                                        tabindex="0"
+                                                        draggable="true"
+                                                        on:dragstart={(e) => handleListDragStart(e, child)}
+                                                        on:dragend={handleListDragEnd}
+                                                        on:dragover={(e) => handleListDragOver(e, child, false, group)}
+                                                        on:dragleave={(e) => handleListDragLeave(e, child.id)}
+                                                        on:drop|preventDefault={() => handleListDrop(child)}
+                                                        on:click={() => handleCategoryClick(child)}
+                                                        on:contextmenu={(e) => showItemContextMenu(e, { id: child.id || "", name: child.name, type: "category", filepath: child.filepath })}
+                                                    >
+                                                        <span class="quick-modal-list-icon">📁</span>
+                                                        
+                                                        {#if editingItemId === child.id}
+                                                            <input 
+                                                                type="text" 
+                                                                class="quick-modal-inline-rename-input"
+                                                                bind:value={editingName}
+                                                                bind:this={renameInputEl}
+                                                                on:blur={commitRename}
+                                                            />
+                                                        {:else}
+                                                            <span class="quick-modal-list-name" title={child.name}>{child.name}</span>
+                                                        {/if}
 
-                                                    {#if (taskCounts[child.filepath] ?? 0) > 0}
-                                                        <span class="quick-modal-badge">{taskCounts[child.filepath]}</span>
-                                                    {/if}
-                                                    {#if plugin?.settings?.defaultQuickListFocusFilepath === child.filepath}
-                                                        <span class="quick-modal-focus-tag" title={t("focus_tag_tooltip")}>🎯</span>
-                                                    {/if}
+                                                        {#if (taskCounts[child.filepath] ?? 0) > 0}
+                                                            <span class="quick-modal-badge">{taskCounts[child.filepath]}</span>
+                                                        {/if}
+                                                        {#if plugin?.settings?.defaultQuickListFocusFilepath === child.filepath}
+                                                            <span class="quick-modal-focus-tag" title={t("focus_tag_tooltip")}>🎯</span>
+                                                        {/if}
+                                                    </div>
+                                                {/each}
+                                            {:else}
+                                                <div class="quick-grid-card-empty-dropzone">
+                                                    Drop lists here
                                                 </div>
-                                            {/each}
+                                            {/if}
                                         </div>
                                     {/if}
                                 </div>
@@ -1629,6 +1804,7 @@
                         <!-- Group Header -->
                         <div 
                             class="quick-modal-group-container"
+                            class:is-dragging={draggedListId === item.id}
                             class:drag-over-top={dragOverListId === item.id && dragListPosition === "top"}
                             class:drag-over-bottom={dragOverListId === item.id && dragListPosition === "bottom"}
                             class:drag-over-inside={dragOverListId === item.id && dragListPosition === "inside"}
@@ -1637,8 +1813,9 @@
                                 class="quick-modal-group-header"
                                 draggable="true"
                                 on:dragstart={(e) => handleListDragStart(e, item)}
+                                on:dragend={handleListDragEnd}
                                 on:dragover={(e) => handleListDragOver(e, item, true)}
-                                on:dragleave={handleListDragLeave}
+                                on:dragleave={(e) => handleListDragLeave(e, item.id)}
                                 on:drop|preventDefault={() => handleListDrop(item)}
                                 on:contextmenu={(e) => showItemContextMenu(e, { id: item.id, name: item.name, type: "group" })}
                             >
@@ -1664,12 +1841,18 @@
 
                             <!-- Nested Group Children -->
                             {#if item.isExpanded && item.items}
-                                <div class="quick-modal-group-children">
+                                <div 
+                                    class="quick-modal-group-children"
+                                    on:dragover={(e) => handleGroupCardDragOver(e, item)}
+                                    on:dragleave={(e) => handleListDragLeave(e, item.id)}
+                                    on:drop|preventDefault={(e) => handleGroupCardDrop(e, item)}
+                                >
                                     {#each item.items as child (child.id)}
                                         <div 
                                             class="quick-modal-list-item is-nested"
                                             class:is-focused={flatCategories[focusedIndex]?.filepath === child.filepath}
                                             class:is-default-focus={plugin?.settings?.defaultQuickListFocusFilepath === child.filepath}
+                                            class:is-dragging={draggedListId === child.id}
                                             class:drag-over-top={dragOverListId === child.id && dragListPosition === "top"}
                                             class:drag-over-bottom={dragOverListId === child.id && dragListPosition === "bottom"}
                                             data-filepath={child.filepath}
@@ -1677,8 +1860,9 @@
                                             tabindex="0"
                                             draggable="true"
                                             on:dragstart={(e) => handleListDragStart(e, child)}
-                                            on:dragover={(e) => handleListDragOver(e, child, false)}
-                                            on:dragleave={handleListDragLeave}
+                                            on:dragend={handleListDragEnd}
+                                            on:dragover={(e) => handleListDragOver(e, child, false, item)}
+                                            on:dragleave={(e) => handleListDragLeave(e, child.id)}
                                             on:drop|preventDefault={() => handleListDrop(child)}
                                             on:click={() => handleCategoryClick(child)}
                                             on:contextmenu={(e) => showItemContextMenu(e, { id: child.id || "", name: child.name, type: "category", filepath: child.filepath })}
@@ -1714,6 +1898,7 @@
                             class="quick-modal-list-item"
                             class:is-focused={flatCategories[focusedIndex]?.filepath === item.filepath}
                             class:is-default-focus={plugin?.settings?.defaultQuickListFocusFilepath === item.filepath}
+                            class:is-dragging={draggedListId === item.id}
                             class:drag-over-top={dragOverListId === item.id && dragListPosition === "top"}
                             class:drag-over-bottom={dragOverListId === item.id && dragListPosition === "bottom"}
                             data-filepath={item.filepath}
@@ -1721,8 +1906,9 @@
                             tabindex="0"
                             draggable="true"
                             on:dragstart={(e) => handleListDragStart(e, item)}
+                            on:dragend={handleListDragEnd}
                             on:dragover={(e) => handleListDragOver(e, item, false)}
-                            on:dragleave={handleListDragLeave}
+                            on:dragleave={(e) => handleListDragLeave(e, item.id)}
                             on:drop|preventDefault={() => handleListDrop(item)}
                             on:click={() => handleCategoryClick(item)}
                             on:contextmenu={(e) => showItemContextMenu(e, { id: item.id || "", name: item.name, type: "category", filepath: item.filepath })}
