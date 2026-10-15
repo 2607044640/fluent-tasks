@@ -110,6 +110,9 @@ interface TaskMainViewComponent extends TaskMainView {
     openSearch?: () => void;
     closeSearch?: () => void;
     toggleSearch?: () => void;
+    startRenameCategory: () => void;
+    cancelRenameCategory: () => void;
+    isHoveringOrFocusedCategoryTitle: () => boolean;
 }
 
 class TaskMainViewWrapper extends ItemView {
@@ -128,6 +131,13 @@ class TaskMainViewWrapper extends ItemView {
         this.scope.register(["Mod"], "f", (evt) => {
             if (this.component?.openSearch) {
                 this.component.openSearch();
+                evt.preventDefault();
+                return false;
+            }
+        });
+        this.scope.register([], "F2", (evt) => {
+            if (this.component?.isHoveringOrFocusedCategoryTitle?.()) {
+                this.component.startRenameCategory?.();
                 evt.preventDefault();
                 return false;
             }
@@ -175,6 +185,18 @@ class TaskMainViewWrapper extends ItemView {
     async onOpen(): Promise<void> {
         const container = this.containerEl.children[1] as HTMLElement;
         container.empty();
+
+        // Native capture-phase keydown listener on the main view container element
+        this.containerEl.addEventListener("keydown", (evt: KeyboardEvent) => {
+            if (evt.key === "F2") {
+                if (this.component?.isHoveringOrFocusedCategoryTitle?.()) {
+                    this.component.startRenameCategory?.();
+                    evt.preventDefault();
+                    evt.stopPropagation();
+                }
+            }
+        }, true);
+
         this.component = new TaskMainView({
             target: container,
             props: { dataService: this.dataService, plugin: this.plugin },
@@ -414,6 +436,16 @@ export default class FluentTasksPlugin extends Plugin {
             id: "rename-hovered-list-or-group",
             name: "Rename hovered or active list / group (F2)",
             callback: () => {
+                const mainLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MAIN);
+                for (const leaf of mainLeaves) {
+                    if (leaf.view instanceof TaskMainViewWrapper) {
+                        const comp = leaf.view.getComponent();
+                        if (comp?.isHoveringOrFocusedCategoryTitle?.()) {
+                            comp.startRenameCategory?.();
+                            return;
+                        }
+                    }
+                }
                 const sidebarLeaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR)[0];
                 if (sidebarLeaf && sidebarLeaf.view instanceof TaskSidebarViewWrapper) {
                     sidebarLeaf.view.getComponent()?.triggerRenameHoveredOrActive();

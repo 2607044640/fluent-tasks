@@ -48,6 +48,14 @@
     let hasFloatingModalHotkey: boolean = true;
     $: showNoHotkeyWarning = hideLeftSidebar && !hasFloatingModalHotkey;
 
+    // Inline Category Rename State
+    let isEditingCategoryName: boolean = false;
+    let editingCategoryName: string = "";
+    let categoryRenameInputEl: HTMLInputElement | null = null;
+    let isCommittingCategoryRename: boolean = false;
+    let isCategoryTitleHovered: boolean = false;
+    let isComposingCategoryTitle: boolean = false;
+
     function checkHotkeyStatus() {
         hideLeftSidebar = plugin?.settings?.hideLeftSidebar ?? false;
         if (plugin?.app) {
@@ -708,6 +716,16 @@
             }
         }
 
+        if (e.key === "F2") {
+            if (isEditingCategoryName) return;
+            if (isCategoryTitleHovered || document.activeElement?.classList.contains("category-title")) {
+                e.preventDefault();
+                e.stopPropagation();
+                startRenameCategory();
+                return;
+            }
+        }
+
         if (isControlKey(e)) {
             isCtrlPressed = true;
             // If standalone Ctrl was pressed while cursor is currently hovering over a task title
@@ -1083,6 +1101,67 @@
 
     export function getCurrentCategory() {
         return currentCategory;
+    }
+
+    // =============================================
+    // Category Inline Renaming
+    // =============================================
+    export function isHoveringOrFocusedCategoryTitle(): boolean {
+        return Boolean(isCategoryTitleHovered || document.activeElement?.classList.contains("category-title"));
+    }
+
+    export function startRenameCategory() {
+        if (!currentCategory || isEditingCategoryName) return;
+        editingCategoryName = currentCategory.name;
+        isEditingCategoryName = true;
+        void tick().then(() => {
+            categoryRenameInputEl?.focus();
+            categoryRenameInputEl?.select();
+        });
+    }
+
+    export function cancelRenameCategory() {
+        isEditingCategoryName = false;
+        editingCategoryName = "";
+        isComposingCategoryTitle = false;
+    }
+
+    async function commitRenameCategory() {
+        if (!isEditingCategoryName || isCommittingCategoryRename || !currentCategory) return;
+        const newName = editingCategoryName.trim();
+        const oldName = currentCategory.name;
+        const oldPath = currentCategory.filepath;
+        if (!newName || newName === oldName) {
+            cancelRenameCategory();
+            return;
+        }
+        isCommittingCategoryRename = true;
+        try {
+            const newCat = await dataService.renameCategory(oldPath, newName);
+            currentCategory = newCat;
+            EventBus.emit(EventName.CATEGORY_SELECTED, { category: newCat });
+        } catch (err: any) {
+            console.error("[Fluent Tasks] Failed to rename list:", err);
+            new Notice(`Failed to rename list: ${err?.message || err}`);
+        } finally {
+            isCommittingCategoryRename = false;
+            isEditingCategoryName = false;
+            editingCategoryName = "";
+            isComposingCategoryTitle = false;
+        }
+    }
+
+    function handleCategoryTitleKeydown(e: KeyboardEvent) {
+        if (e.isComposing || isComposingCategoryTitle || e.keyCode === 229) return;
+        if (e.key === "Enter") {
+            e.preventDefault();
+            e.stopPropagation();
+            void commitRenameCategory();
+        } else if (e.key === "Escape") {
+            e.preventDefault();
+            e.stopPropagation();
+            cancelRenameCategory();
+        }
     }
 
     // =============================================
@@ -1780,6 +1859,17 @@
         e.stopPropagation();
         const menu = new Menu();
 
+        // 0. Rename list (F2)
+        menu.addItem((item) => {
+            item.setTitle(t("rename_list_menu_item") || "Rename list (F2)")
+                .setIcon("edit-3")
+                .onClick(() => {
+                    startRenameCategory();
+                });
+        });
+
+        menu.addSeparator();
+
         // 1. Center-align tasks toggle
         menu.addItem((item) => {
             item.setTitle(centerAlignTasks ? "Align tasks: Left" : "Align tasks: Center")
@@ -1837,7 +1927,7 @@
         }
     }
 
-    export { scheduleHidePopover, openSearch, closeSearch, toggleSearch };
+    export { scheduleHidePopover, openSearch, closeSearch, toggleSearch, startRenameCategory, cancelRenameCategory, isHoveringOrFocusedCategoryTitle };
 </script>
 
 <svelte:window 
@@ -1862,7 +1952,34 @@
     {#if currentCategory}
         <!-- Header -->
         <div class="main-header">
-            <h1 class="category-title">{currentCategory.name}</h1>
+            {#if isEditingCategoryName}
+                <div class="category-title-edit-wrap">
+                    <input 
+                        type="text"
+                        class="category-title-input"
+                        bind:this={categoryRenameInputEl}
+                        bind:value={editingCategoryName}
+                        on:compositionstart={() => { isComposingCategoryTitle = true; }}
+                        on:compositionend={() => { isComposingCategoryTitle = false; }}
+                        on:keydown={handleCategoryTitleKeydown}
+                        on:blur={commitRenameCategory}
+                    />
+                </div>
+            {:else}
+                <!-- svelte-ignore a11y-click-events-have-key-events -->
+                <h1 
+                    class="category-title" 
+                    role="button"
+                    tabindex="0"
+                    title={t("rename_list_tooltip")}
+                    on:click={startRenameCategory}
+                    on:keydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); startRenameCategory(); } }}
+                    on:mouseenter={() => { isCategoryTitleHovered = true; }}
+                    on:mouseleave={() => { isCategoryTitleHovered = false; }}
+                >
+                    {currentCategory.name}
+                </h1>
+            {/if}
             <div class="main-header-actions">
                 {#if showNoHotkeyWarning}
                     <button class="header-hotkey-warning-pill"

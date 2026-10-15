@@ -129,6 +129,8 @@ const en = {
     warn_bind_hotkey_tooltip: "You enabled 'Hide Left Sidebar'. Please bind a hotkey for 'Open Quick List Modal' in Settings -> Hotkeys to switch lists conveniently.",
     warn_bind_hotkey_notice: "⚠️ [Fluent Tasks] 'Hide Left Sidebar' is enabled, but no hotkey is bound for the Floating UI! Please assign a hotkey in Settings -> Hotkeys.",
     empty_state_hide_sidebar_desc: "Sidebar is hidden. Use Quick List (Floating UI) to select a list.",
+    rename_list_tooltip: "Click to rename list (F2)",
+    rename_list_menu_item: "Rename list (F2)",
 };
 
 export default en;

@@ -131,6 +131,8 @@ const zhCn: typeof en = {
     warn_bind_hotkey_tooltip: "你开启了「隐藏左侧侧边栏」设置，请在「设置 -> 快捷键」中为「打开快速列表弹窗」绑定快捷键，以便随时调出悬浮UI切换列表。",
     warn_bind_hotkey_notice: "⚠️ [Fluent Tasks] 你开启了「隐藏左侧侧边栏」设置，但尚未为悬浮UI绑定快捷键！请前往「设置 -> 快捷键」绑定快捷键。",
     empty_state_hide_sidebar_desc: "侧边栏已隐藏。使用快速列表（悬浮UI）选择列表。",
+    rename_list_tooltip: "点击重命名列表 (F2)",
+    rename_list_menu_item: "重命名列表 (F2)",
 };
 
 export default zhCn;

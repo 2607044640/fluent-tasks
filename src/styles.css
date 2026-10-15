@@ -353,6 +353,49 @@
     font-size: 28px;
     font-weight: 600;
     margin: 0;
+    cursor: pointer;
+    border-radius: 6px;
+    padding: 2px 8px;
+    margin-left: -8px;
+    border: 1px solid transparent;
+    transition: background-color var(--todo-transition), border-color var(--todo-transition);
+    user-select: none;
+    -webkit-user-select: none;
+    display: inline-flex;
+    align-items: center;
+    max-width: calc(100% - 140px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.category-title:hover {
+    background-color: var(--todo-hover-bg, rgba(255, 255, 255, 0.06));
+    border-color: var(--background-modifier-border, rgba(255, 255, 255, 0.1));
+}
+
+.category-title-edit-wrap {
+    display: inline-flex;
+    align-items: center;
+    flex-grow: 1;
+    max-width: calc(100% - 140px);
+}
+
+.category-title-input {
+    color: var(--todo-accent);
+    font-size: 28px;
+    font-weight: 600;
+    font-family: inherit;
+    line-height: 1.2;
+    padding: 2px 8px;
+    margin-left: -8px;
+    background: var(--background-modifier-form-field, rgba(0, 0, 0, 0.2));
+    border: 1px solid var(--interactive-accent, #0078d4);
+    border-radius: 6px;
+    outline: none;
+    width: 100%;
+    min-width: 200px;
+    box-shadow: 0 0 0 1px var(--interactive-accent, #0078d4);
 }
 
 .header-actions {
