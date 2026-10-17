@@ -858,18 +858,28 @@
         }
     }
 
-    function handleGroupCardDragOver(e: DragEvent, group: GroupInfo) {
+    function handleGroupCardDragOver(e: DragEvent, group: GroupInfo, isItemsContainer: boolean = false) {
         e.preventDefault();
         e.stopPropagation();
         if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
 
         checkBoardAutoScroll(e);
 
-        if (!draggedListId || group.id === draggedListId) return;
+        if (!draggedListId || group.id === draggedListId) {
+            dragOverListId = "";
+            dragListPosition = null;
+            return;
+        }
         const draggedItem = getDraggedItem();
         if (!draggedItem) return;
 
         if (draggedItem.type === "group") {
+            // Groups cannot be placed inside groups or next to children inside groups
+            if (isItemsContainer) {
+                dragOverListId = "";
+                dragListPosition = null;
+                return;
+            }
             const el = e.currentTarget as HTMLElement;
             const rect = el.getBoundingClientRect();
             const relY = e.clientY - rect.top;
@@ -890,7 +900,12 @@
 
         if (!draggedListId) return;
         const draggedItem = getDraggedItem();
-        if (!draggedItem || draggedItem.type === "group") return;
+        // Groups cannot be placed inside root lists card or onto root categories container
+        if (!draggedItem || draggedItem.type === "group") {
+            dragOverListId = "";
+            dragListPosition = null;
+            return;
+        }
 
         if (rootCategories.length > 0) {
             const last = rootCategories[rootCategories.length - 1];
@@ -905,6 +920,12 @@
     async function handleRootCardDrop(e: DragEvent) {
         e.preventDefault();
         e.stopPropagation();
+        const draggedItem = getDraggedItem();
+        if (!draggedItem || draggedItem.type === "group") {
+            handleListDragEnd();
+            return;
+        }
+
         if (rootCategories.length > 0) {
             const last = rootCategories[rootCategories.length - 1];
             await handleListDrop(last, "bottom");
@@ -913,11 +934,18 @@
         }
     }
 
-    async function handleGroupCardDrop(e: DragEvent, group: GroupInfo) {
+    async function handleGroupCardDrop(e: DragEvent, group: GroupInfo, isItemsContainer: boolean = false) {
         e.preventDefault();
         e.stopPropagation();
         const draggedItem = getDraggedItem();
-        if (draggedItem?.type === "group") {
+        if (!draggedItem) return;
+
+        if (draggedItem.type === "group") {
+            // Groups cannot be dropped into children containers or inside groups
+            if (isItemsContainer || dragListPosition === "inside") {
+                handleListDragEnd();
+                return;
+            }
             await handleListDrop(group);
         } else {
             await handleListDrop(group, "inside");
@@ -928,10 +956,17 @@
         const movedId = draggedListId;
         const targetId = target?.id || "";
         const pos = forcedPosition || dragListPosition;
+        const draggedItem = getDraggedItem();
 
         handleListDragEnd();
 
         if (!movedId || !targetId || !pos || movedId === targetId) return;
+
+        // Invariant: groups cannot be placed inside groups or next to children inside groups
+        if (draggedItem?.type === "group") {
+            if (pos === "inside") return;
+            if (target.type !== "group" && targetId !== "__root__") return;
+        }
 
         // 1. Move item in sidebar tree
         sidebarItems = moveSidebarItem(sidebarItems, movedId, targetId, pos);
@@ -1919,9 +1954,9 @@
                                             class="quick-grid-card-items"
                                             class:is-empty={!group.items || group.items.length === 0}
                                             class:drag-over-inside={dragOverListId === group.id && dragListPosition === "inside"}
-                                            on:dragover={(e) => handleGroupCardDragOver(e, group)}
+                                            on:dragover={(e) => handleGroupCardDragOver(e, group, true)}
                                             on:dragleave={(e) => handleListDragLeave(e, group.id)}
-                                            on:drop|preventDefault={(e) => handleGroupCardDrop(e, group)}
+                                            on:drop|preventDefault={(e) => handleGroupCardDrop(e, group, true)}
                                         >
                                             {#if group.items && group.items.length > 0}
                                                 {#each group.items as child (child.id)}
@@ -2041,9 +2076,9 @@
                             {#if item.isExpanded && item.items}
                                 <div 
                                     class="quick-modal-group-children"
-                                    on:dragover={(e) => handleGroupCardDragOver(e, item)}
+                                    on:dragover={(e) => handleGroupCardDragOver(e, item, true)}
                                     on:dragleave={(e) => handleListDragLeave(e, item.id)}
-                                    on:drop|preventDefault={(e) => handleGroupCardDrop(e, item)}
+                                    on:drop|preventDefault={(e) => handleGroupCardDrop(e, item, true)}
                                 >
                                     {#each item.items as child (child.id)}
                                         <div 

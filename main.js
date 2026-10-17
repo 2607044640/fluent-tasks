@@ -42073,18 +42073,26 @@ function instance8($$self, $$props, $$invalidate) {
       $$invalidate(28, dragListPosition = relY < rect.height * 0.5 ? "top" : "bottom");
     }
   }
-  function handleGroupCardDragOver(e, group) {
+  function handleGroupCardDragOver(e, group, isItemsContainer = false) {
     e.preventDefault();
     e.stopPropagation();
     if (e.dataTransfer)
       e.dataTransfer.dropEffect = "move";
     checkBoardAutoScroll(e);
-    if (!draggedListId || group.id === draggedListId)
+    if (!draggedListId || group.id === draggedListId) {
+      $$invalidate(27, dragOverListId = "");
+      $$invalidate(28, dragListPosition = null);
       return;
+    }
     const draggedItem = getDraggedItem();
     if (!draggedItem)
       return;
     if (draggedItem.type === "group") {
+      if (isItemsContainer) {
+        $$invalidate(27, dragOverListId = "");
+        $$invalidate(28, dragListPosition = null);
+        return;
+      }
       const el = e.currentTarget;
       const rect = el.getBoundingClientRect();
       const relY = e.clientY - rect.top;
@@ -42104,8 +42112,11 @@ function instance8($$self, $$props, $$invalidate) {
     if (!draggedListId)
       return;
     const draggedItem = getDraggedItem();
-    if (!draggedItem || draggedItem.type === "group")
+    if (!draggedItem || draggedItem.type === "group") {
+      $$invalidate(27, dragOverListId = "");
+      $$invalidate(28, dragListPosition = null);
       return;
+    }
     if (rootCategories.length > 0) {
       const last = rootCategories[rootCategories.length - 1];
       $$invalidate(27, dragOverListId = last.id);
@@ -42118,6 +42129,11 @@ function instance8($$self, $$props, $$invalidate) {
   async function handleRootCardDrop(e) {
     e.preventDefault();
     e.stopPropagation();
+    const draggedItem = getDraggedItem();
+    if (!draggedItem || draggedItem.type === "group") {
+      handleListDragEnd();
+      return;
+    }
     if (rootCategories.length > 0) {
       const last = rootCategories[rootCategories.length - 1];
       await handleListDrop(last, "bottom");
@@ -42133,11 +42149,17 @@ function instance8($$self, $$props, $$invalidate) {
       );
     }
   }
-  async function handleGroupCardDrop(e, group) {
+  async function handleGroupCardDrop(e, group, isItemsContainer = false) {
     e.preventDefault();
     e.stopPropagation();
     const draggedItem = getDraggedItem();
-    if ((draggedItem == null ? void 0 : draggedItem.type) === "group") {
+    if (!draggedItem)
+      return;
+    if (draggedItem.type === "group") {
+      if (isItemsContainer || dragListPosition === "inside") {
+        handleListDragEnd();
+        return;
+      }
       await handleListDrop(group);
     } else {
       await handleListDrop(group, "inside");
@@ -42147,9 +42169,16 @@ function instance8($$self, $$props, $$invalidate) {
     const movedId = draggedListId;
     const targetId = (target == null ? void 0 : target.id) || "";
     const pos = forcedPosition || dragListPosition;
+    const draggedItem = getDraggedItem();
     handleListDragEnd();
     if (!movedId || !targetId || !pos || movedId === targetId)
       return;
+    if ((draggedItem == null ? void 0 : draggedItem.type) === "group") {
+      if (pos === "inside")
+        return;
+      if (target.type !== "group" && targetId !== "__root__")
+        return;
+    }
     $$invalidate(73, sidebarItems = moveSidebarItem(sidebarItems, movedId, targetId, pos));
     categories = getFlatCategories(sidebarItems);
     measuredCardHeights.clear();
@@ -42856,9 +42885,9 @@ function instance8($$self, $$props, $$invalidate) {
     type: "category",
     filepath: child.filepath
   });
-  const dragover_handler_3 = (group, e) => handleGroupCardDragOver(e, group);
+  const dragover_handler_3 = (group, e) => handleGroupCardDragOver(e, group, true);
   const dragleave_handler_5 = (group, e) => handleListDragLeave(e, group.id);
-  const drop_handler_3 = (group, e) => handleGroupCardDrop(e, group);
+  const drop_handler_3 = (group, e) => handleGroupCardDrop(e, group, true);
   const dragover_handler_4 = (group, e) => handleGroupCardDragOver(e, group);
   const dragleave_handler_6 = (group, e) => handleListDragLeave(e, group.id);
   const drop_handler_4 = (group, e) => handleGroupCardDrop(e, group);
@@ -42923,9 +42952,9 @@ function instance8($$self, $$props, $$invalidate) {
     type: "category",
     filepath: child.filepath
   });
-  const dragover_handler_7 = (item, e) => handleGroupCardDragOver(e, item);
+  const dragover_handler_7 = (item, e) => handleGroupCardDragOver(e, item, true);
   const dragleave_handler_9 = (item, e) => handleListDragLeave(e, item.id);
-  const drop_handler_7 = (item, e) => handleGroupCardDrop(e, item);
+  const drop_handler_7 = (item, e) => handleGroupCardDrop(e, item, true);
   function input_input_handler_6() {
     editingName = this.value;
     $$invalidate(24, editingName);
