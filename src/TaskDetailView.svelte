@@ -1552,7 +1552,7 @@
             <!-- svelte-ignore a11y-click-events-have-key-events -->
             <!-- svelte-ignore a11y-no-static-element-interactions -->
             <div use:portal
-                 class="meta-modal-backdrop" on:click|stopPropagation={(e) => e.target === e.currentTarget && closeAddMetaModal()} role="presentation">
+                 class="meta-modal-backdrop" on:click|stopPropagation={(e) => e.target === e.currentTarget && requestCloseAddMetaModal()} role="presentation">
                 <div class="meta-modal-dialog" role="dialog" aria-modal="true" tabindex="-1" on:click|stopPropagation>
                     <div class="meta-modal-header">
                         <div class="meta-modal-title">
@@ -1562,8 +1562,8 @@
                             </svg>
                             <span>Task Metadata</span>
                         </div>
-                        <span class="meta-modal-close" on:click={closeAddMetaModal}
-                              on:keydown={(e) => e.key === "Enter" && closeAddMetaModal()}
+                        <span class="meta-modal-close" on:click={requestCloseAddMetaModal}
+                              on:keydown={(e) => e.key === "Enter" && requestCloseAddMetaModal()}
                               role="button" tabindex="0">✕</span>
                     </div>
 
@@ -1751,8 +1751,33 @@
                     </div>
 
                     <div class="meta-modal-footer">
-                        <button type="button" class="meta-btn-secondary" on:click={closeAddMetaModal}>Cancel</button>
+                        <button type="button" class="meta-btn-secondary" on:click={requestCloseAddMetaModal}>Cancel</button>
                         <button type="button" class="meta-btn-primary" on:click={saveMetadata}>Save Metadata</button>
+                    </div>
+                </div>
+            </div>
+        {/if}
+
+        <!-- Save Confirmation Modal on Closing Metadata with Unsaved Changes ("是否保存？") -->
+        {#if showMetaSaveConfirmModal}
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <div use:portal class="svg-confirm-backdrop" on:click|self={cancelMetaSavePrompt} role="presentation">
+                <div class="svg-confirm-modal" role="dialog" aria-modal="true" tabindex="-1">
+                    <div class="svg-confirm-title">{t("confirm_save_title")}</div>
+                    <div class="svg-confirm-desc">
+                        {t("confirm_save_meta_desc")}
+                    </div>
+                    <div class="svg-confirm-actions">
+                        <button type="button" class="svg-btn svg-btn-primary" on:click={saveAndCloseMetaModal}>
+                            {t("confirm_save_btn")}
+                        </button>
+                        <button type="button" class="svg-btn svg-btn-warning" on:click={discardAndCloseMetaModal}>
+                            {t("confirm_dont_save_btn")}
+                        </button>
+                        <button type="button" class="svg-btn svg-btn-ghost" on:click={cancelMetaSavePrompt}>
+                            {t("confirm_keep_editing_btn")}
+                        </button>
                     </div>
                 </div>
             </div>
