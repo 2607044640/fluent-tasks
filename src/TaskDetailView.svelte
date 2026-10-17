@@ -12,7 +12,7 @@
     import { LinkedNoteService } from "./services/LinkedNoteService";
     import { promptDeleteTaskWithLinkedNote } from "./modals/ConfirmDeleteLinkedNoteModal";
     import { Menu, Notice, TFile } from "obsidian";
-    import { t } from "./lang/helpers";
+    import { t, isChinese } from "./lang/helpers";
     import { Logger } from "./Logger";
 
     const DND_FLIP_DURATION = 150;
@@ -210,12 +210,30 @@
     // Lifecycle
     // =============================================
     function handleMetaModalKeydown(e: KeyboardEvent) {
+        if (showMetaSaveConfirmModal) {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                void saveAndCloseMetaModal();
+                return;
+            }
+            if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                cancelMetaSavePrompt();
+                return;
+            }
+            return;
+        }
+
         if (e.key === "Escape") {
             if (showAddMetaModal) {
                 e.preventDefault();
                 e.stopPropagation();
                 e.stopImmediatePropagation();
-                closeAddMetaModal();
+                requestCloseAddMetaModal();
                 return;
             }
             if (showRepeatPicker) {
@@ -254,6 +272,8 @@
         showScheduleSection = false;
         showRepeatPicker = false;
         showAddMetaModal = false;
+        showMetaSaveConfirmModal = false;
+        initialMetaSnapshot = "";
 
         // Auto-heal note_link if pointing to broken/stale path
         if (task && (task.note_link || task.id) && plugin?.app) {
@@ -287,6 +307,8 @@
         showScheduleSection = false;
         showRepeatPicker = false;
         showAddMetaModal = false;
+        showMetaSaveConfirmModal = false;
+        initialMetaSnapshot = "";
         if (isModal && onCloseModal) {
             onCloseModal();
         }
@@ -637,6 +659,8 @@
         showScheduleSection = false;
         showRepeatPicker = false;
         showAddMetaModal = false;
+        showMetaSaveConfirmModal = false;
+        initialMetaSnapshot = "";
         EventBus.emit(EventName.DETAIL_CLOSE, {});
         if (isModal && onCloseModal) {
             onCloseModal();
@@ -660,6 +684,8 @@
     }
 
     let showAddMetaModal: boolean = false;
+    let showMetaSaveConfirmModal: boolean = false;
+    let initialMetaSnapshot: string = "";
     let metaFormType: "why" | "note_link" | "svg" | "custom" = "why";
     let metaWhyList: string[] = [];
     let selectedWhyIndex: number = 0;
@@ -668,6 +694,48 @@
     let metaNoteLinkVal: string = "";
     let metaCustomEntries: Array<{ key: string; value: string }> = [];
     let selectedCustomIndex: number = 0;
+
+    function getMetaSnapshot(): string {
+        return JSON.stringify({
+            whys: metaWhyList,
+            noteLink: metaNoteLinkVal,
+            svgs: metaSvgList,
+            custom: metaCustomEntries
+        });
+    }
+
+    function isMetaDirty(): boolean {
+        if (!showAddMetaModal) return false;
+        return getMetaSnapshot() !== initialMetaSnapshot;
+    }
+
+    function requestCloseAddMetaModal() {
+        if (isMetaDirty()) {
+            showMetaSaveConfirmModal = true;
+            return;
+        }
+        forceCloseAddMetaModal();
+    }
+
+    function forceCloseAddMetaModal() {
+        showMetaSaveConfirmModal = false;
+        showAddMetaModal = false;
+        initialMetaSnapshot = "";
+    }
+
+    async function saveAndCloseMetaModal() {
+        showMetaSaveConfirmModal = false;
+        await saveMetadata();
+    }
+
+    function discardAndCloseMetaModal() {
+        showMetaSaveConfirmModal = false;
+        forceCloseAddMetaModal();
+    }
+
+    function cancelMetaSavePrompt() {
+        showMetaSaveConfirmModal = false;
+    }
 
     function getTaskWhys(t: TaskItem): string[] {
         if (t.whys && Array.isArray(t.whys) && t.whys.length > 0) {
@@ -714,10 +782,12 @@
         }
 
         showAddMetaModal = true;
+        showMetaSaveConfirmModal = false;
+        initialMetaSnapshot = getMetaSnapshot();
     }
 
     function closeAddMetaModal() {
-        showAddMetaModal = false;
+        requestCloseAddMetaModal();
     }
 
     function addNewSvgItem() {
@@ -836,7 +906,7 @@
                 categoryFilepath,
             });
         }
-        closeAddMetaModal();
+        forceCloseAddMetaModal();
     }
 
     async function deleteCustomKey(key: string) {

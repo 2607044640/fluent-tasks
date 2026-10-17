@@ -133,6 +133,11 @@ const zhCn: typeof en = {
     empty_state_hide_sidebar_desc: "侧边栏已隐藏。使用快速列表（悬浮UI）选择列表。",
     rename_list_tooltip: "点击重命名列表 (F2)",
     rename_list_menu_item: "重命名列表 (F2)",
+    confirm_save_title: "是否保存？",
+    confirm_save_meta_desc: "任务元数据（SVG / Why / 链接等）已有改动，退出前是否保存更改？",
+    confirm_save_btn: "保存 (Enter)",
+    confirm_dont_save_btn: "不保存 / 放弃",
+    confirm_keep_editing_btn: "继续编辑 (Esc)",
 };
 
 export default zhCn;

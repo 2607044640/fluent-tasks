@@ -131,6 +131,11 @@ const en = {
     empty_state_hide_sidebar_desc: "Sidebar is hidden. Use Quick List (Floating UI) to select a list.",
     rename_list_tooltip: "Click to rename list (F2)",
     rename_list_menu_item: "Rename list (F2)",
+    confirm_save_title: "Save changes?",
+    confirm_save_meta_desc: "Task metadata has unsaved changes. Do you want to save changes before exiting?",
+    confirm_save_btn: "Save (Enter)",
+    confirm_dont_save_btn: "Don't Save",
+    confirm_keep_editing_btn: "Keep Editing (Esc)",
 };
 
 export default en;
