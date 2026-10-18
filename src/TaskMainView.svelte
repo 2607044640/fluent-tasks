@@ -2632,7 +2632,7 @@
                 </div>
             {:else if currentCategory.filepath === STARRED_CATEGORY_PATH}
                 <h1 class="category-title is-smart-title" style="cursor: default; display: flex; align-items: center; gap: 8px;">
-                    <span style="color: var(--todo-star, #eab308); font-size: 1.1em;">★</span>
+                    <span style="color: var(--todo-star, var(--todo-accent, #8b5cf6)); font-size: 1.1em;">★</span>
                     <span>{currentCategory.name}</span>
                 </h1>
             {:else}

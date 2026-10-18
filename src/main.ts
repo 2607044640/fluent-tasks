@@ -950,6 +950,9 @@ export default class FluentTasksPlugin extends Plugin {
             "--todo-accent": this.settings.accentColor,
             "--todo-accent-glow": `${this.settings.accentColor}99`,
             "--todo-accent-light": `${this.settings.accentColor}26`,
+            "--todo-star": this.settings.accentColor,
+            "--todo-star-light": `${this.settings.accentColor}26`,
+            "--todo-star-border": `${this.settings.accentColor}4d`,
         });
     }
 

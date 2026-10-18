@@ -4241,7 +4241,7 @@ function create_if_block_8(ctx) {
       div1 = element("div");
       div0 = element("div");
       span0 = element("span");
-      span0.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="var(--todo-star, #eab308)" stroke="var(--todo-star, #eab308)" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
+      span0.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="var(--todo-star, var(--todo-accent, #8b5cf6))" stroke="var(--todo-star, var(--todo-accent, #8b5cf6))" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
       t0 = space();
       span1 = element("span");
       span1.textContent = "Starred";
@@ -14936,7 +14936,7 @@ function create_if_block_75(ctx) {
       t1 = space();
       span1 = element("span");
       t2 = text(t2_value);
-      set_style(span0, "color", "var(--todo-star, #eab308)");
+      set_style(span0, "color", "var(--todo-star, var(--todo-accent, #8b5cf6))");
       set_style(span0, "font-size", "1.1em");
       attr(h1, "class", "category-title is-smart-title");
       set_style(h1, "cursor", "default");
@@ -49984,7 +49984,10 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
     document.body.setCssProps({
       "--todo-accent": this.settings.accentColor,
       "--todo-accent-glow": `${this.settings.accentColor}99`,
-      "--todo-accent-light": `${this.settings.accentColor}26`
+      "--todo-accent-light": `${this.settings.accentColor}26`,
+      "--todo-star": this.settings.accentColor,
+      "--todo-star-light": `${this.settings.accentColor}26`,
+      "--todo-star-border": `${this.settings.accentColor}4d`
     });
   }
   /**
