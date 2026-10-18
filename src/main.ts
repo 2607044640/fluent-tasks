@@ -1255,6 +1255,12 @@ export default class FluentTasksPlugin extends Plugin {
     async activateAllViews(): Promise<void> {
         if (!this.settings.hideLeftSidebar) {
             await this.activateView(VIEW_TYPE_SIDEBAR, "left");
+        } else {
+            this.app.workspace.detachLeavesOfType(VIEW_TYPE_SIDEBAR);
+            const leftSplit = this.app.workspace.leftSplit as { collapsed?: boolean; collapse: () => void } | null;
+            if (leftSplit && !leftSplit.collapsed) {
+                leftSplit.collapse();
+            }
         }
         await this.activateView(VIEW_TYPE_MAIN, "center");
         if (!this.settings.openDetailInModal) {

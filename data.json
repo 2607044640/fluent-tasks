@@ -1,7 +1,7 @@
 {
   "accentColor": "#006eff",
   "openDetailInModal": false,
-  "hideLeftSidebar": false,
+  "hideLeftSidebar": true,
   "autoExpandSidebar": true,
   "autoCollapseSidebarOnSwitch": true,
   "searchHideCompleted": true,

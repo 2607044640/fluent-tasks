@@ -49485,10 +49485,9 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
   }
   async handleHideLeftSidebarChanged(value) {
     if (value) {
-      const wasLeftActive = this.isPluginLeftSidebarActive();
       this.app.workspace.detachLeavesOfType(VIEW_TYPE_SIDEBAR);
       const leftSplit = this.app.workspace.leftSplit;
-      if (leftSplit && !leftSplit.collapsed && wasLeftActive) {
+      if (leftSplit && !leftSplit.collapsed) {
         leftSplit.collapse();
       }
       if (!isQuickListHotkeyAssigned(this.app)) {
@@ -49496,6 +49495,10 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
       }
     } else {
       await this.activateView(VIEW_TYPE_SIDEBAR, "left");
+      const leftSplit = this.app.workspace.leftSplit;
+      if (leftSplit == null ? void 0 : leftSplit.collapsed) {
+        leftSplit.expand();
+      }
     }
     EventBus.emit("settings:changed" /* SETTINGS_CHANGED */, { settings: this.settings });
   }
@@ -49637,6 +49640,10 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
         this.applySettings();
         if (this.settings.hideLeftSidebar) {
           this.app.workspace.detachLeavesOfType(VIEW_TYPE_SIDEBAR);
+          const leftSplit = this.app.workspace.leftSplit;
+          if (leftSplit && !leftSplit.collapsed) {
+            leftSplit.collapse();
+          }
         }
         await BackupService.checkAndRunDailyBackup(this.app, this);
         void LinkedNoteService.migrateOldLinkedNotes(this.app, this.dataService).then((res) => {
@@ -49653,9 +49660,17 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
             const currentType = leaf.view.getViewType();
             const isPluginView = currentType === VIEW_TYPE_MAIN || currentType === VIEW_TYPE_SIDEBAR || currentType === VIEW_TYPE_DETAIL;
             const wasPluginView = lastActiveViewType === VIEW_TYPE_MAIN || lastActiveViewType === VIEW_TYPE_SIDEBAR || lastActiveViewType === VIEW_TYPE_DETAIL;
-            if (isPluginView && !wasPluginView && this.settings.autoExpandSidebar && !this.settings.hideLeftSidebar) {
-              if (!this.isUserClosingSidebar && Date.now() > this.suppressAutoExpandSidebarUntil) {
-                this.expandSidebarToList();
+            if (isPluginView && !wasPluginView) {
+              if (this.settings.hideLeftSidebar) {
+                this.app.workspace.detachLeavesOfType(VIEW_TYPE_SIDEBAR);
+                const leftSplit = this.app.workspace.leftSplit;
+                if (leftSplit && !leftSplit.collapsed) {
+                  leftSplit.collapse();
+                }
+              } else if (this.settings.autoExpandSidebar) {
+                if (!this.isUserClosingSidebar && Date.now() > this.suppressAutoExpandSidebarUntil) {
+                  this.expandSidebarToList();
+                }
               }
             }
             if (!isPluginView && wasPluginView && ((_a2 = this.settings.autoCollapseSidebarOnSwitch) != null ? _a2 : true)) {
@@ -49868,7 +49883,9 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
         if (this.settings.openDetailInModal) {
           this.handleDetailModalModeEnabled();
         }
-        if (this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR).length === 0) {
+        const needsMain = this.app.workspace.getLeavesOfType(VIEW_TYPE_MAIN).length === 0;
+        const needsSidebar = !this.settings.hideLeftSidebar && this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR).length === 0;
+        if (needsMain || needsSidebar) {
           await this.activateAllViews();
         }
         await this.registerCategoryCommands();
@@ -50037,13 +50054,13 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
     }
     const leftSplit = this.app.workspace.leftSplit;
     if (leftSplit && !leftSplit.collapsed) {
-      if (force || this.isPluginLeftSidebarActive()) {
+      if (force || this.isPluginLeftSidebarActive() || this.settings.hideLeftSidebar) {
         leftSplit.collapse();
       }
     }
     const rightSplit = this.app.workspace.rightSplit;
     if (rightSplit && !rightSplit.collapsed) {
-      if (force || this.isPluginRightSidebarActive()) {
+      if (force || this.isPluginRightSidebarActive() || this.settings.openDetailInModal) {
         rightSplit.collapse();
       }
     }
@@ -50223,6 +50240,12 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
   async activateAllViews() {
     if (!this.settings.hideLeftSidebar) {
       await this.activateView(VIEW_TYPE_SIDEBAR, "left");
+    } else {
+      this.app.workspace.detachLeavesOfType(VIEW_TYPE_SIDEBAR);
+      const leftSplit = this.app.workspace.leftSplit;
+      if (leftSplit && !leftSplit.collapsed) {
+        leftSplit.collapse();
+      }
     }
     await this.activateView(VIEW_TYPE_MAIN, "center");
     if (!this.settings.openDetailInModal) {
