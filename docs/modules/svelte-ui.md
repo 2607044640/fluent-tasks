@@ -22,6 +22,9 @@ Obsidian `ItemView` wrappers in `src/main.ts` mount Svelte 4 components. Cross-p
 2. Optimistic UI updates local arrays first, then `DataService`; main-view `addTask` does not `loadTasks()` immediately. Cross-pane finalize **must not** `saveTasks` if `movedToTarget` is set. (Why chosen over reload-after-every-write: `vault.process` races with stale reads.)
 3. `TaskMainViewWrapper.navigation = true` and `getState`/`setState` persist `categoryFilepath` for Obsidian history. History restores emit `CATEGORY_SELECTED` with `fromHistory: true` so the plugin does not `setViewState` again. (Why chosen over only EventBus: back/forward would desync the leaf header.)
 4. SVG lightbox modal captures window keydown and wheel events with `{ capture: true }`; Ctrl+Scroll forwards to `quickEditor.scaleHoveredBox`; exit prompts save confirmation only when `isDirty` is true.
+5. In Quick View (`QuickListModalView.svelte`), normal lists are freely draggable across groups and root (`moveSidebarItem`), recalculating layout columns and updating `.metadata.json`. Dragging groups in Quick View is strictly forbidden (`is-dragging-group`, `cursor: not-allowed`, top-right `showDragForbiddenNotice`), because group repositioning interferes with grid column recalculation.
+6. Star mode (`STARRED_CATEGORY_PATH = "__starred__"`) provides a virtual aggregated view of all starred tasks across all lists; task updates route to their underlying `sourceFilepath`; settings changes propagate immediately to active leaves via `applySettingsUpdate`.
+7. Inline renaming (F2 / `rename-hovered-list-or-group`) works consecutively across lists and groups in both `TaskSidebarView` and `TaskMainView` via container capture-phase keydown listeners and hover/focus tracking.
 
 ## Numbered Data Flow
 
@@ -61,6 +64,8 @@ Obsidian `ItemView` wrappers in `src/main.ts` mount Svelte 4 components. Cross-p
 5. **Edit steps in the large modal** — Click steps badge → `TaskStepsModal`; close calls `flushSaveSync`.
 6. **Quick List board** — Command `open-quick-list-modal`; grid vs list is `plugin.settings.quickListGridLayout`; column/row gaps are `quickListMinColGap` / `quickListMinRowGap`.
 7. **Ctrl-hover title peek** — `isQuickPeekModifierPressed` (Ctrl on Windows/Linux, not Win/Super; Meta or Ctrl on macOS) → `showPopover(..., 'title')`.
+8. **Drag lists in Quick View** — Normal lists drag to reorder/move across groups; group dragging is blocked with notice.
+9. **Move-to submenu** — Context menu hierarchical move-to with search modal fallback.
 
 <!-- BEGIN USER-SPECIFIED -->
 <!-- END USER-SPECIFIED -->

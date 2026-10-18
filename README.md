@@ -24,9 +24,10 @@ There is no cloud lock-in or external server dependency. All data remains 100% l
 
 ## Key Features
 
-- **Lists & Groups**: Create custom lists and organize them into collapsible groups. Drag-and-drop lists into groups or reorder them freely. Press **F2** to rename hovered or active lists.
+- **Lists & Groups**: Create custom lists and organize them into collapsible groups. Different groups can have lists with identical display names, with automated sibling collision disambiguation (`name(1)`). Drag-and-drop lists into groups or reorder them freely. Press **F2** to rename hovered or active lists.
+- **Star Mode (Smart Aggregation)**: Dedicated virtual Star Mode aggregating all starred tasks across all lists into a single unified view. Toggling stars in Star Mode directly updates the task's originating list with live setting reactivity.
 - **In-List Task Search (Ctrl+F)**: Fast in-page search bar triggered by `Ctrl+F` (or `Cmd+F` on macOS) or the more options menu. Scopes search strictly to the active list, supporting deep matching across titles, checklist steps, and notes, with keyboard navigation (`↑`/`↓`/`Enter`) and automatic scroll-to-task highlighting.
-- **Task Management & Priority Weight Scoring**: Inline task creation, completion toggles, star/pin priority, drag-and-drop task reordering, and moving tasks between lists. Optional 1-9 priority score weighting with stepper controls and dynamic stable sorting.
+- **Task Management & Priority Weight Scoring**: Inline task creation, completion toggles, star/pin priority, drag-and-drop task reordering, and moving tasks between lists via hierarchical submenus with fuzzy search fallback. Optional 1-9 priority score weighting with stepper controls and dynamic stable sorting.
 - **Linked Notes & Frontmatter Synchronization**: One-click linked note creation per task. Files use clean immutable paths (`<ListName> <taskId>.md`) and two-way synchronize the task title via the note's YAML frontmatter `title` property. Renaming a list automatically renames note folders, note filenames, and note links across all tasks with full auto-healing. Automatic migration of legacy notes.
 - **More Options Menu & Batch Operations**: Clean three-dots header menu consolidating list search, multi-select mode, backup manager, shortcuts guide, and display alignment. Multi-select supports batch star/unstar and batch deletion.
 - **Center-Align Tasks Mode**: Toggle center alignment for task titles, steps counters, and wrapped multi-line text directly from the more options menu or plugin settings.
@@ -77,6 +78,7 @@ Static commands (`fluent-tasks:`):
 - `open-quick-list-modal`: Open Quick List modal board
 - `open-quick-task-modal`: Open Quick Task modal popup
 - `open-backup-modal`: Open Backup Manager modal
+- `toggle-task-star-hover`: Toggle star on hovered task
 
 Dynamic commands:
 - `z-jump-to-list-<hash>`: Dedicated jump command per list file path

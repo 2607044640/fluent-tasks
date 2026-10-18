@@ -4,7 +4,7 @@ Fluent Tasks (`manifest.json` id `fluent-tasks`, v1.0.32) is an Obsidian plugin.
 
 ## Global Invariants
 
-1. Flat `TodoData/*.md` files are the only task store. Sidebar grouping lives in `TodoData/.metadata.json` via `vault.adapter` (Obsidian Vault API ignores dotfiles). Each task occupies exactly one physical line; title newlines encode as `<br>` to ensure checklist metadata stays aligned. (Why chosen over a JSON/DB store: lists remain editable as ordinary checklists.)
+1. Flat `TodoData/*.md` files are the only task store. Sidebar grouping lives in `TodoData/.metadata.json` via `vault.adapter` (Obsidian Vault API ignores dotfiles). Entries decouple display `name` from disk basename `file`, allowing lists with identical display names across different groups while deduplicating by disk filepath. Each task occupies exactly one physical line; title newlines encode as `<br>` to ensure checklist metadata stays aligned. (Why chosen over a JSON/DB store: lists remain editable as ordinary checklists.)
 2. Views never call `vault.modify` themselves. Mutations go `UI → DataService → AtomicIOPipeline.processFile` (or adapter for metadata), then `EventBus` notifies peers. Internal-write windows suppress echo reloads. (Why chosen over per-view writes: concurrent edit + vault `modify` events would duplicate or drop tasks.)
 3. Recurrence uses local calendar dates (`YYYY-MM-DD` via `timeUtils`). Rollover runs inside `TaskService.getTasks`, on a 10s interval, and on window focus. (Why chosen over UTC `Date` math: due dates must not shift by timezone.)
 
@@ -27,9 +27,9 @@ Fluent Tasks (`manifest.json` id `fluent-tasks`, v1.0.32) is an Obsidian plugin.
 
 View types (`src/types.ts`): `fluent-tasks-sidebar` (left), `fluent-tasks-main` (center), `fluent-tasks-detail` (right leaf, or `TaskDetailModal` when `openDetailInModal`).
 
-Static commands: `open-all-views`, `open-sidebar`, `open-main-view`, `open-detail-view`, `search-all-tasks`, `search-current-list`, `rename-hovered-list-or-group`, `open-quick-list-modal`, `open-quick-task-modal`. Dynamic: `z-jump-to-list-*` from `registerCategoryCommands`.
+Static commands: `open-all-views`, `open-sidebar`, `open-main-view`, `open-detail-view`, `search-all-tasks`, `search-current-list`, `rename-hovered-list-or-group`, `open-quick-list-modal`, `open-quick-task-modal`, `open-backup-modal`, `toggle-task-star-hover`. Dynamic: `z-jump-to-list-*` from `registerCategoryCommands`.
 
-Models in `src/types.ts`: `TaskItem`, `TaskStep`, `RecurrenceRule` (`daily` | `weekdays` | `weekly` | `custom`), `CategoryInfo`, `GroupInfo`, `SidebarItem`. Timing: `src/constants.ts`.
+Models in `src/types.ts`: `TaskItem`, `TaskStep`, `RecurrenceRule` (`daily` | `weekdays` | `weekly` | `custom`), `CategoryInfo`, `GroupInfo`, `SidebarItem`. Virtual category: `STARRED_CATEGORY_PATH = "__starred__"` aggregates starred tasks across all lists into a unified view. Timing: `src/constants.ts`.
 
 On disk: `TodoData/<List>.md` (tasks), `TodoData/.metadata.json` (tree), `TodoData/<List>/<List> <taskId>.md` (bound notes with frontmatter title property), `TodoData/debug.log` (`Logger`). Plugin options: Obsidian `saveData` (`FluentTasksSettings`).
 

@@ -15,6 +15,7 @@
 1. Task-list writes use `app.vault.process(file, mutator)`, not read-modify-write in the caller. (Why chosen over `vault.modify` after a stale read: Obsidian serializes `process` against concurrent writers.)
 2. `markInternalWrite` expires after `windowMs` (default 800ms). Vault `modify` in `main.ts` skips those paths. (Why chosen over a generation counter: simple echo suppression for optimistic UI.)
 3. `readFile` uses `vault.adapter.read`, not `vault.read`. (Why chosen over Vault API cache: matches the pipeline’s need for latest disk bytes.)
+4. `STARRED_CATEGORY_PATH = "__starred__"` is an in-memory virtual aggregated list. Calls to `getTasks(STARRED_CATEGORY_PATH)` iterate all categories and gather tasks where `t.starred === true`, annotating each task with `sourceFilepath` and `sourceCategoryName`. Mutations (`saveTasks`, `addTask`) route transparently to each task's `sourceFilepath` or find the owning file via `findCategoryForTaskId`. (Why chosen over storing a separate starred file: prevents sync drift and duplicate records.)
 
 ## Numbered Data Flow
 
@@ -22,8 +23,9 @@
 2. `ensureDataFolder()` creates `TodoData` if missing.
 3. Category calls (`getSidebarItems`, `createCategory`, …) go to `CategoryService` (metadata via adapter; `.md` via Vault).
 4. Task calls (`getTasks`, `saveTasks`, `addTask`, `updateTask`, `deleteTask`, `moveTask`) go to `TaskService.processFile` mutators.
-5. `searchTasks(query, scopeFilepath?)` lowercases the query, iterates `getCategories()` (optionally one list), `getTasks` each, matches title then steps then note (`includes`). Empty/whitespace query returns `[]`.
-6. `rolloverRecurringTasks()` loops categories and `TaskService.rolloverTasksInFile`.
+5. Star mode routing: `getTasks(STARRED_CATEGORY_PATH)` loops all categories via `taskSvc.getTasks`, filtering `t.starred` and attaching `sourceFilepath`/`sourceCategoryName`. `saveTasks(STARRED_CATEGORY_PATH, tasks)` dispatches individual updates to each task's `sourceFilepath`.
+6. `searchTasks(query, scopeFilepath?)` lowercases the query, iterates `getCategories()` (optionally one list), `getTasks` each, matches title then steps then note (`includes`). Empty/whitespace query returns `[]`.
+7. `rolloverRecurringTasks()` loops categories and `TaskService.rolloverTasksInFile`.
 
 ## Side-effects API
 
@@ -36,7 +38,9 @@
 | `createGroup` / `renameGroup` / `deleteGroup` | see CategoryService | Metadata I/O + EventBus |
 | `getCategories` | `(): Promise<CategoryInfo[]>` | Reads sidebar tree (flatten groups) |
 | `createCategory` / `deleteCategory` / `renameCategory` | see CategoryService | Vault file + metadata |
-| `getTasks` / `saveTasks` / `addTask` / `updateTask` / `deleteTask` / `moveTask` | see TaskService | List `.md` rewrite |
+| `getTasks` / `saveTasks` / `addTask` / `updateTask` / `deleteTask` / `moveTask` | see TaskService | List `.md` rewrite; routes `__starred__` to source files |
+| `getStarredCount` / `getTotalStarredCount` | `(): Promise<number>` | Reads all category task files (uncompleted / total starred) |
+| `findCategoryForTaskId` | `(taskId: string): Promise<string \| null>` | Reads category task files to resolve owner list |
 | `searchTasks` | `(query: string, scopeFilepath?: string \| null)` | Read-only (but `getTasks` may auto-heal/rollover) |
 | `rolloverRecurringTasks` | `(): Promise<boolean>` | May rewrite every list file |
 | `AtomicIOPipeline.processFile` | `(filepath, mutator: (data: string) => string): Promise<void>` | `markInternalWrite` + `vault.process` |
@@ -48,6 +52,7 @@
 2. **Suppress self-reload** — `processFile` calls `markInternalWrite` immediately before `vault.process`; `main.ts` vault `modify` returns early when `isInternalWrite`.
 3. **Startup folder** — `onLayoutReady` → `dataService.ensureDataFolder()`.
 4. **Search from command** — `new TaskSearchModal(app, plugin, dataService, scopePath?).open()` → `dataService.searchTasks`.
+5. **Star Mode view** — `TaskMainView.loadCategory({ filepath: STARRED_CATEGORY_PATH, ... })` queries `dataService.getTasks(STARRED_CATEGORY_PATH)`. Toggle star/unstar routes to the task's originating list.
 
 <!-- BEGIN USER-SPECIFIED -->
 <!-- END USER-SPECIFIED -->
