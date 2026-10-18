@@ -39,6 +39,7 @@ var VIEW_TYPE_SIDEBAR = "fluent-tasks-sidebar";
 var VIEW_TYPE_MAIN = "fluent-tasks-main";
 var VIEW_TYPE_DETAIL = "fluent-tasks-detail";
 var DATA_FOLDER = "TodoData";
+var STARRED_CATEGORY_PATH = "__starred__";
 
 // src/EventBus.ts
 var EventBusImpl = class {
@@ -2324,23 +2325,111 @@ var DataService = class {
   }
   // Task Operations
   async getTasks(categoryFilepath) {
+    if (categoryFilepath === STARRED_CATEGORY_PATH) {
+      const categories = await this.getCategories();
+      const starredTasks = [];
+      for (const cat of categories) {
+        const tasks2 = await this.taskSvc.getTasks(cat.filepath);
+        for (const t2 of tasks2) {
+          if (t2.starred) {
+            t2.sourceFilepath = cat.filepath;
+            t2.sourceCategoryName = cat.name;
+            starredTasks.push(t2);
+          }
+        }
+      }
+      return starredTasks;
+    }
     return this.taskSvc.getTasks(categoryFilepath);
   }
+  async getStarredCount() {
+    const categories = await this.getCategories();
+    let count = 0;
+    for (const cat of categories) {
+      const tasks2 = await this.taskSvc.getTasks(cat.filepath);
+      for (const t2 of tasks2) {
+        if (t2.starred && !t2.completed) {
+          count++;
+        }
+      }
+    }
+    return count;
+  }
+  async getTotalStarredCount() {
+    const categories = await this.getCategories();
+    let count = 0;
+    for (const cat of categories) {
+      const tasks2 = await this.taskSvc.getTasks(cat.filepath);
+      for (const t2 of tasks2) {
+        if (t2.starred) {
+          count++;
+        }
+      }
+    }
+    return count;
+  }
+  async findCategoryForTaskId(taskId) {
+    const categories = await this.getCategories();
+    for (const cat of categories) {
+      const tasks2 = await this.taskSvc.getTasks(cat.filepath);
+      if (tasks2.some((t2) => t2.id === taskId)) {
+        return cat.filepath;
+      }
+    }
+    return null;
+  }
   async saveTasks(categoryFilepath, tasks2) {
+    if (categoryFilepath === STARRED_CATEGORY_PATH) {
+      for (const task of tasks2) {
+        const targetFile = task.sourceFilepath || await this.findCategoryForTaskId(task.id);
+        if (targetFile) {
+          await this.taskSvc.updateTask(targetFile, task);
+        }
+      }
+      return;
+    }
     return this.taskSvc.saveTasks(categoryFilepath, tasks2);
   }
   async addTask(categoryFilepath, title) {
+    if (categoryFilepath === STARRED_CATEGORY_PATH) {
+      const categories = await this.getCategories();
+      if (categories.length === 0) {
+        throw new Error("No category available to add task");
+      }
+      const targetCat = categories[0];
+      const newTask = await this.taskSvc.addTask(targetCat.filepath, title);
+      newTask.starred = true;
+      newTask.sourceFilepath = targetCat.filepath;
+      newTask.sourceCategoryName = targetCat.name;
+      await this.taskSvc.updateTask(targetCat.filepath, newTask);
+      return newTask;
+    }
     return this.taskSvc.addTask(categoryFilepath, title);
   }
   async updateTask(categoryFilepath, updatedTask) {
+    if (categoryFilepath === STARRED_CATEGORY_PATH) {
+      const targetFile = updatedTask.sourceFilepath || await this.findCategoryForTaskId(updatedTask.id);
+      if (targetFile) {
+        return this.taskSvc.updateTask(targetFile, updatedTask);
+      }
+      throw new Error(`Failed to locate source category for task ${updatedTask.id}`);
+    }
     return this.taskSvc.updateTask(categoryFilepath, updatedTask);
   }
   async deleteTask(categoryFilepath, task) {
+    if (categoryFilepath === STARRED_CATEGORY_PATH) {
+      const targetFile = task.sourceFilepath || await this.findCategoryForTaskId(task.id);
+      if (targetFile) {
+        return this.taskSvc.deleteTask(targetFile, task);
+      }
+      throw new Error(`Failed to locate source category for task ${task.id}`);
+    }
     return this.taskSvc.deleteTask(categoryFilepath, task);
   }
   async moveTask(task, sourceFilepath, targetFilepath) {
-    await LinkedNoteService.handleTaskMove(this.app, this, task, sourceFilepath, targetFilepath);
-    return this.taskSvc.moveTask(task, sourceFilepath, targetFilepath);
+    const actualSource = sourceFilepath === STARRED_CATEGORY_PATH ? task.sourceFilepath || await this.findCategoryForTaskId(task.id) || sourceFilepath : sourceFilepath;
+    await LinkedNoteService.handleTaskMove(this.app, this, task, actualSource, targetFilepath);
+    return this.taskSvc.moveTask(task, actualSource, targetFilepath);
   }
   /** Deep search across tasks — matches title, steps text, and note content */
   async searchTasks(query, scopeFilepath) {
@@ -29744,6 +29833,7 @@ var DEFAULT_SETTINGS = {
   wrapTaskTitles: true,
   centerAlignTasks: true,
   disableStars: false,
+  hiddenStarMode: false,
   showStepsProgressPill: false,
   quickModalAction: "direct",
   quickModalTipCount: 0,
@@ -29819,9 +29909,10 @@ var FluentTasksSettingTab = class extends import_obsidian16.PluginSettingTab {
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian16.Setting(containerEl).setName("Disable star mode").setDesc("Hide the star (favorite) icon on tasks in the task list and modals. Disabled by default.").addToggle((toggle) => {
-      var _a;
-      return toggle.setValue((_a = this.plugin.settings.disableStars) != null ? _a : false).onChange(async (value) => {
+    new import_obsidian16.Setting(containerEl).setName("Hidden star mode").setDesc("Hide the star (favorite) icon on tasks in the task list and modals, while still allowing starring via task context menu (first item) or hover hotkey. Disabled by default.").addToggle((toggle) => {
+      var _a, _b;
+      return toggle.setValue((_b = (_a = this.plugin.settings.hiddenStarMode) != null ? _a : this.plugin.settings.disableStars) != null ? _b : false).onChange(async (value) => {
+        this.plugin.settings.hiddenStarMode = value;
         this.plugin.settings.disableStars = value;
         await this.plugin.saveSettings();
       });

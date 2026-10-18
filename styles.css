@@ -511,6 +511,19 @@
     stroke: var(--todo-accent);
 }
 
+.task-left-controls {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.task-right-controls {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
 .task-content {
     flex-grow: 1;
     display: flex;
@@ -542,11 +555,28 @@
     flex-wrap: wrap;
 }
 
-/* Center-Align Tasks Mode */
+/* Center-Align Tasks Mode (3-column CSS Grid: 1fr left, auto center, 1fr right) */
+.task-item.is-center-aligned {
+    display: grid;
+    grid-template-columns: minmax(min-content, 1fr) auto minmax(min-content, 1fr);
+    align-items: center;
+    column-gap: 12px;
+}
+
+.task-item.is-center-aligned .task-left-controls {
+    justify-self: start;
+}
+
+.task-item.is-center-aligned .task-left-controls .checkbox {
+    margin-right: 0;
+}
+
 .center-tasks .task-content,
 .task-item.is-center-aligned .task-content {
+    grid-column: 2;
     align-items: center;
     text-align: center;
+    min-width: 0;
 }
 
 .center-tasks .task-title,
@@ -560,6 +590,12 @@
     justify-content: center;
     text-align: center;
     width: 100%;
+}
+
+.task-item.is-center-aligned .task-right-controls {
+    grid-column: 3;
+    justify-self: end;
+    margin-left: auto;
 }
 
 .task-meta {
@@ -1479,6 +1515,14 @@ body.is-dragging-ghost #dnd-action-dragged-el {
 .meta-badge.custom-badge:hover {
     background-color: rgba(245, 158, 11, 0.15);
     color: #fbbf24;
+}
+
+.meta-badge.more-badge {
+    color: var(--todo-text-muted);
+}
+.meta-badge.more-badge:hover {
+    color: var(--todo-text-main);
+    background-color: var(--todo-hover-bg);
 }
 
 /* Prevent child elements inside badge from triggering mouseleave */

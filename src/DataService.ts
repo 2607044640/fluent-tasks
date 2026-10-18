@@ -1,5 +1,5 @@
 import { App } from "obsidian";
-import { TaskItem, CategoryInfo, SidebarItem, GroupInfo } from "./types";
+import { TaskItem, CategoryInfo, SidebarItem, GroupInfo, STARRED_CATEGORY_PATH } from "./types";
 import { AtomicIOPipeline } from "./services/AtomicIOPipeline";
 import { CategoryService } from "./services/CategoryService";
 import { TaskService } from "./services/TaskService";
@@ -80,23 +80,121 @@ export class DataService {
 
     // Task Operations
     async getTasks(categoryFilepath: string): Promise<TaskItem[]> {
+        if (categoryFilepath === STARRED_CATEGORY_PATH) {
+            const categories = await this.getCategories();
+            const starredTasks: TaskItem[] = [];
+            for (const cat of categories) {
+                const tasks = await this.taskSvc.getTasks(cat.filepath);
+                for (const t of tasks) {
+                    if (t.starred) {
+                        t.sourceFilepath = cat.filepath;
+                        t.sourceCategoryName = cat.name;
+                        starredTasks.push(t);
+                    }
+                }
+            }
+            return starredTasks;
+        }
         return this.taskSvc.getTasks(categoryFilepath);
     }
+
+    async getStarredCount(): Promise<number> {
+        const categories = await this.getCategories();
+        let count = 0;
+        for (const cat of categories) {
+            const tasks = await this.taskSvc.getTasks(cat.filepath);
+            for (const t of tasks) {
+                if (t.starred && !t.completed) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    async getTotalStarredCount(): Promise<number> {
+        const categories = await this.getCategories();
+        let count = 0;
+        for (const cat of categories) {
+            const tasks = await this.taskSvc.getTasks(cat.filepath);
+            for (const t of tasks) {
+                if (t.starred) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    async findCategoryForTaskId(taskId: string): Promise<string | null> {
+        const categories = await this.getCategories();
+        for (const cat of categories) {
+            const tasks = await this.taskSvc.getTasks(cat.filepath);
+            if (tasks.some(t => t.id === taskId)) {
+                return cat.filepath;
+            }
+        }
+        return null;
+    }
+
     async saveTasks(categoryFilepath: string, tasks: TaskItem[]): Promise<void> {
+        if (categoryFilepath === STARRED_CATEGORY_PATH) {
+            for (const task of tasks) {
+                const targetFile = task.sourceFilepath || await this.findCategoryForTaskId(task.id);
+                if (targetFile) {
+                    await this.taskSvc.updateTask(targetFile, task);
+                }
+            }
+            return;
+        }
         return this.taskSvc.saveTasks(categoryFilepath, tasks);
     }
+
     async addTask(categoryFilepath: string, title: string): Promise<TaskItem> {
+        if (categoryFilepath === STARRED_CATEGORY_PATH) {
+            const categories = await this.getCategories();
+            if (categories.length === 0) {
+                throw new Error("No category available to add task");
+            }
+            const targetCat = categories[0];
+            const newTask = await this.taskSvc.addTask(targetCat.filepath, title);
+            newTask.starred = true;
+            newTask.sourceFilepath = targetCat.filepath;
+            newTask.sourceCategoryName = targetCat.name;
+            await this.taskSvc.updateTask(targetCat.filepath, newTask);
+            return newTask;
+        }
         return this.taskSvc.addTask(categoryFilepath, title);
     }
+
     async updateTask(categoryFilepath: string, updatedTask: TaskItem): Promise<void> {
+        if (categoryFilepath === STARRED_CATEGORY_PATH) {
+            const targetFile = updatedTask.sourceFilepath || await this.findCategoryForTaskId(updatedTask.id);
+            if (targetFile) {
+                return this.taskSvc.updateTask(targetFile, updatedTask);
+            }
+            throw new Error(`Failed to locate source category for task ${updatedTask.id}`);
+        }
         return this.taskSvc.updateTask(categoryFilepath, updatedTask);
     }
+
     async deleteTask(categoryFilepath: string, task: TaskItem): Promise<void> {
+        if (categoryFilepath === STARRED_CATEGORY_PATH) {
+            const targetFile = task.sourceFilepath || await this.findCategoryForTaskId(task.id);
+            if (targetFile) {
+                return this.taskSvc.deleteTask(targetFile, task);
+            }
+            throw new Error(`Failed to locate source category for task ${task.id}`);
+        }
         return this.taskSvc.deleteTask(categoryFilepath, task);
     }
+
     async moveTask(task: TaskItem, sourceFilepath: string, targetFilepath: string): Promise<void> {
-        await LinkedNoteService.handleTaskMove(this.app, this, task, sourceFilepath, targetFilepath);
-        return this.taskSvc.moveTask(task, sourceFilepath, targetFilepath);
+        const actualSource = sourceFilepath === STARRED_CATEGORY_PATH 
+            ? (task.sourceFilepath || await this.findCategoryForTaskId(task.id) || sourceFilepath)
+            : sourceFilepath;
+        await LinkedNoteService.handleTaskMove(this.app, this, task, actualSource, targetFilepath);
+        return this.taskSvc.moveTask(task, actualSource, targetFilepath);
     }
 
     /** Deep search across tasks — matches title, steps text, and note content */

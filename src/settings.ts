@@ -25,6 +25,7 @@ export interface FluentTasksSettings {
     quickListSearchMode: 'list' | 'task';
     centerAlignTasks: boolean;
     disableStars: boolean;
+    hiddenStarMode: boolean;
     quickListTitleAlignment: 'center' | 'left';
     quickListMaxCardWidth: number;
     showStepsProgressPill: boolean;
@@ -41,6 +42,7 @@ export const DEFAULT_SETTINGS: FluentTasksSettings = {
     wrapTaskTitles: true,
     centerAlignTasks: true,
     disableStars: false,
+    hiddenStarMode: false,
     showStepsProgressPill: false,
     quickModalAction: 'direct',
     quickModalTipCount: 0,
@@ -145,11 +147,12 @@ export class FluentTasksSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(containerEl)
-            .setName("Disable star mode")
-            .setDesc("Hide the star (favorite) icon on tasks in the task list and modals. Disabled by default.")
+            .setName("Hidden star mode")
+            .setDesc("Hide the star (favorite) icon on tasks in the task list and modals, while still allowing starring via task context menu (first item) or hover hotkey. Disabled by default.")
             .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.disableStars ?? false)
+                .setValue(this.plugin.settings.hiddenStarMode ?? this.plugin.settings.disableStars ?? false)
                 .onChange(async (value) => {
+                    this.plugin.settings.hiddenStarMode = value;
                     this.plugin.settings.disableStars = value;
                     await this.plugin.saveSettings();
                 }));

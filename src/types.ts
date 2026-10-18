@@ -12,6 +12,8 @@ export const VIEW_TYPE_MAIN = "fluent-tasks-main";
 export const VIEW_TYPE_DETAIL = "fluent-tasks-detail";
 
 export const DATA_FOLDER = "TodoData";
+export const STARRED_CATEGORY_PATH = "__starred__";
+export const STARRED_CATEGORY_NAME = "Starred";
 
 // =============================================
 // Data Models
@@ -55,6 +57,10 @@ export interface TaskItem {
     customMeta?: Record<string, unknown>;
     /** Priority weight score: 1 to 9, default 5 */
     weight?: number;
+    /** For aggregated smart lists (like Starred): original category filepath */
+    sourceFilepath?: string;
+    /** For aggregated smart lists (like Starred): original category name */
+    sourceCategoryName?: string;
 }
 
 export interface CategoryInfo {
@@ -65,6 +71,8 @@ export interface CategoryInfo {
     name: string;
     /** Relative path within the vault, e.g. "TodoData/MyList.md" */
     filepath: string;
+    /** Whether this is a virtual smart list like Starred */
+    isSmartList?: boolean;
 }
 
 export interface GroupInfo {
