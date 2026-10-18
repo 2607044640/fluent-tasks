@@ -1740,6 +1740,21 @@
             <button class="quick-modal-filter-clear" on:click={() => { searchQuery = ""; if (searchMode === 'task') taskSearchResults = []; searchInputEl?.focus(); }}>✕</button>
         {/if}
 
+        {#if isStarredMatching}
+            <button 
+                class="quick-modal-header-btn quick-modal-starred-btn quick-modal-list-item is-smart-item"
+                class:is-focused={flatCategories[focusedIndex]?.filepath === STARRED_CATEGORY_PATH}
+                data-filepath={STARRED_CATEGORY_PATH}
+                data-item-id={STARRED_CATEGORY_PATH}
+                title="Starred tasks ({starredCount}): click to open in center view"
+                on:click={() => handleCategoryClick(starredCategory)}
+            >
+                <span class="quick-modal-smart-star-icon">★</span>
+                <span class="quick-modal-starred-label">{STARRED_CATEGORY_NAME}</span>
+                <span class="quick-modal-badge smart-count-badge">{starredCount}</span>
+            </button>
+        {/if}
+
         {#if searchMode === 'task'}
             <button 
                 class="quick-modal-header-btn todo-search-filter-btn"
@@ -1911,25 +1926,6 @@
     </div>
 
     {#if isGridLayout}
-        {#if isStarredMatching}
-            <div class="quick-grid-smart-container">
-                <!-- svelte-ignore a11y-click-events-have-key-events -->
-                <div 
-                    class="quick-modal-list-item is-smart-item is-grid-smart-pill"
-                    class:is-focused={flatCategories[focusedIndex]?.filepath === STARRED_CATEGORY_PATH}
-                    data-filepath={STARRED_CATEGORY_PATH}
-                    data-item-id={STARRED_CATEGORY_PATH}
-                    role="button"
-                    tabindex="0"
-                    on:click={() => handleCategoryClick(starredCategory)}
-                    title="Open Starred tasks list in center view"
-                >
-                    <span class="quick-modal-smart-star-icon">★</span>
-                    <span class="quick-modal-list-name">{STARRED_CATEGORY_NAME}</span>
-                    <span class="quick-modal-badge smart-count-badge">{starredCount}</span>
-                </div>
-            </div>
-        {/if}
         <!-- =============================================
              Grid Board / Dashboard Card Layout (图表平铺看板 - 横向滑动 + 纵向换列)
              ============================================= -->

@@ -5456,38 +5456,50 @@ body .task-steps-floating-modal .steps-modal-delete-btn:hover {
     margin-right: 2px;
 }
 
-.quick-grid-smart-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 12px 28px 0 28px;
+.quick-modal-header-btn.quick-modal-starred-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    height: 28px !important;
+    padding: 3px 10px !important;
+    margin-bottom: 0 !important;
+    border: 1px solid var(--background-modifier-border) !important;
+    border-radius: 6px !important;
+    background: var(--background-secondary) !important;
+    color: var(--text-normal) !important;
+    cursor: pointer !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    transition: all 0.15s ease !important;
     flex-shrink: 0;
 }
 
-.quick-modal-list-item.is-grid-smart-pill {
-    display: inline-flex !important;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 16px !important;
-    background: var(--background-secondary) !important;
-    border: 1px solid var(--background-modifier-border) !important;
-    border-radius: 20px !important;
-    cursor: pointer !important;
-    transition: all 0.15s ease !important;
-    font-size: 13px !important;
-    font-weight: 600 !important;
-    color: var(--text-normal) !important;
-    user-select: none !important;
-    margin-bottom: 0 !important;
-    border-bottom: 1px solid var(--background-modifier-border) !important;
-}
-
-.quick-modal-list-item.is-grid-smart-pill:hover,
-.quick-modal-list-item.is-grid-smart-pill.is-focused {
+.quick-modal-header-btn.quick-modal-starred-btn:hover,
+.quick-modal-header-btn.quick-modal-starred-btn.is-focused {
     background: var(--background-modifier-hover) !important;
     border-color: var(--todo-star, #eab308) !important;
-    box-shadow: 0 0 10px rgba(234, 179, 8, 0.3) !important;
-    transform: translateY(-1px);
+    box-shadow: 0 0 8px rgba(234, 179, 8, 0.25) !important;
+}
+
+.quick-modal-header-btn.quick-modal-starred-btn .quick-modal-smart-star-icon {
+    font-size: 14px;
+    line-height: 1;
+    margin-right: 0;
+}
+
+.quick-modal-header-btn.quick-modal-starred-btn .quick-modal-starred-label {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.quick-modal-header-btn.quick-modal-starred-btn .smart-count-badge {
+    margin-left: 2px;
+    font-size: 10.5px;
+    padding: 0 5px;
+    height: 16px;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 8px;
 }
 
 /* =============================================
