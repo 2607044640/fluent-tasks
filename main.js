@@ -12165,18 +12165,18 @@ function openHotkeySettingsForQuickList(app) {
 var { Map: Map_1, window: window_12 } = globals;
 function get_each_context_2(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[306] = list[i];
+  child_ctx[307] = list[i];
   return child_ctx;
 }
 function get_each_context_12(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[306] = list[i];
+  child_ctx[307] = list[i];
   return child_ctx;
 }
 function get_each_context4(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[302] = list[i][0];
-  child_ctx[303] = list[i][1];
+  child_ctx[303] = list[i][0];
+  child_ctx[304] = list[i][1];
   return child_ctx;
 }
 function get_if_ctx_1(ctx) {
@@ -12191,7 +12191,7 @@ function get_if_ctx_1(ctx) {
       ]
     )
   );
-  child_ctx[301] = constants_0;
+  child_ctx[302] = constants_0;
   return child_ctx;
 }
 function get_if_ctx(ctx) {
@@ -12210,58 +12210,58 @@ function get_if_ctx(ctx) {
       ] : []
     )
   );
-  child_ctx[299] = constants_0;
+  child_ctx[300] = constants_0;
   const constants_1 = (
     /*activeWhys*/
-    child_ctx[299][
+    child_ctx[300][
       /*popoverSvgIndex*/
       child_ctx[35]
     ] || /*activeWhys*/
-    child_ctx[299][0] || ""
+    child_ctx[300][0] || ""
   );
-  child_ctx[300] = constants_1;
+  child_ctx[301] = constants_1;
   return child_ctx;
 }
 function get_each_context_3(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[311] = list[i];
+  child_ctx[312] = list[i];
   const constants_0 = (
     /*getTaskBadges*/
     child_ctx[80](
       /*task*/
-      child_ctx[311]
+      child_ctx[312]
     )
   );
-  child_ctx[312] = constants_0;
+  child_ctx[313] = constants_0;
   return child_ctx;
 }
 function get_each_context_4(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[315] = list[i];
+  child_ctx[316] = list[i];
   return child_ctx;
 }
 function get_each_context_5(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[311] = list[i];
+  child_ctx[312] = list[i];
   const constants_0 = (
     /*getTaskBadges*/
     child_ctx[80](
       /*task*/
-      child_ctx[311]
+      child_ctx[312]
     )
   );
-  child_ctx[312] = constants_0;
+  child_ctx[313] = constants_0;
   return child_ctx;
 }
 function get_each_context_6(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[315] = list[i];
+  child_ctx[316] = list[i];
   return child_ctx;
 }
 function get_each_context_7(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[322] = list[i];
-  child_ctx[324] = i;
+  child_ctx[323] = list[i];
+  child_ctx[325] = i;
   return child_ctx;
 }
 function create_else_block_13(ctx) {
@@ -12382,7 +12382,7 @@ function create_if_block_31(ctx) {
   );
   const get_key = (ctx2) => (
     /*task*/
-    ctx2[311].id
+    ctx2[312].id
   );
   for (let i = 0; i < each_value_5.length; i += 1) {
     let child_ctx = get_each_context_5(ctx, each_value_5, i);
@@ -13664,7 +13664,7 @@ function create_else_block_10(ctx) {
   );
   const get_key = (ctx2) => (
     /*item*/
-    ctx2[322].task.id
+    ctx2[323].task.id
   );
   for (let i = 0; i < each_value_7.length; i += 1) {
     let child_ctx = get_each_context_7(ctx, each_value_7, i);
@@ -13799,7 +13799,7 @@ function create_each_block_7(key_1, ctx) {
   let span1;
   let t1_value = (
     /*item*/
-    ctx[322].task.title + ""
+    ctx[323].task.title + ""
   );
   let t1;
   let t2;
@@ -13807,7 +13807,7 @@ function create_each_block_7(key_1, ctx) {
   let span2;
   let t3_value = (
     /*item*/
-    ctx[322].category.name + ""
+    ctx[323].category.name + ""
   );
   let t3;
   let t4;
@@ -13817,7 +13817,7 @@ function create_each_block_7(key_1, ctx) {
   let t7;
   let t8_value = (
     /*item*/
-    ctx[322].matchField + ""
+    ctx[323].matchField + ""
   );
   let t8;
   let t9;
@@ -13827,18 +13827,18 @@ function create_each_block_7(key_1, ctx) {
   let dispose;
   let if_block0 = (
     /*item*/
-    ctx[322].task.completed && create_if_block_69(ctx)
+    ctx[323].task.completed && create_if_block_69(ctx)
   );
   let if_block1 = (
     /*item*/
-    ctx[322].task.completed && create_if_block_68(ctx)
+    ctx[323].task.completed && create_if_block_68(ctx)
   );
   function mouseenter_handler_1() {
     return (
       /*mouseenter_handler_1*/
       ctx[159](
         /*idx*/
-        ctx[324]
+        ctx[325]
       )
     );
   }
@@ -13847,7 +13847,7 @@ function create_each_block_7(key_1, ctx) {
       /*click_handler_6*/
       ctx[160](
         /*item*/
-        ctx[322]
+        ctx[323]
       )
     );
   }
@@ -13883,7 +13883,7 @@ function create_each_block_7(key_1, ctx) {
         span0,
         "is-done",
         /*item*/
-        ctx[322].task.completed
+        ctx[323].task.completed
       );
       attr(span1, "class", "quick-modal-task-title");
       attr(div0, "class", "quick-modal-task-main");
@@ -13895,20 +13895,20 @@ function create_each_block_7(key_1, ctx) {
       attr(div2, "role", "option");
       attr(div2, "aria-selected", div2_aria_selected_value = /*taskFocusedIndex*/
       ctx[24] === /*idx*/
-      ctx[324]);
+      ctx[325]);
       attr(div2, "tabindex", "0");
       toggle_class(
         div2,
         "is-focused",
         /*taskFocusedIndex*/
         ctx[24] === /*idx*/
-        ctx[324]
+        ctx[325]
       );
       toggle_class(
         div2,
         "is-completed",
         /*item*/
-        ctx[322].task.completed
+        ctx[323].task.completed
       );
       this.first = div2;
     },
@@ -13947,7 +13947,7 @@ function create_each_block_7(key_1, ctx) {
       ctx = new_ctx;
       if (
         /*item*/
-        ctx[322].task.completed
+        ctx[323].task.completed
       ) {
         if (if_block0) {
         } else {
@@ -13965,24 +13965,24 @@ function create_each_block_7(key_1, ctx) {
           span0,
           "is-done",
           /*item*/
-          ctx[322].task.completed
+          ctx[323].task.completed
         );
       }
       if (dirty[0] & /*taskSearchResults*/
       4194304 && t1_value !== (t1_value = /*item*/
-      ctx[322].task.title + ""))
+      ctx[323].task.title + ""))
         set_data(t1, t1_value);
       if (dirty[0] & /*taskSearchResults*/
       4194304 && t3_value !== (t3_value = /*item*/
-      ctx[322].category.name + ""))
+      ctx[323].category.name + ""))
         set_data(t3, t3_value);
       if (dirty[0] & /*taskSearchResults*/
       4194304 && t8_value !== (t8_value = /*item*/
-      ctx[322].matchField + ""))
+      ctx[323].matchField + ""))
         set_data(t8, t8_value);
       if (
         /*item*/
-        ctx[322].task.completed
+        ctx[323].task.completed
       ) {
         if (if_block1) {
         } else {
@@ -13997,7 +13997,7 @@ function create_each_block_7(key_1, ctx) {
       if (dirty[0] & /*taskFocusedIndex, taskSearchResults*/
       20971520 && div2_aria_selected_value !== (div2_aria_selected_value = /*taskFocusedIndex*/
       ctx[24] === /*idx*/
-      ctx[324])) {
+      ctx[325])) {
         attr(div2, "aria-selected", div2_aria_selected_value);
       }
       if (dirty[0] & /*taskFocusedIndex, taskSearchResults*/
@@ -14007,7 +14007,7 @@ function create_each_block_7(key_1, ctx) {
           "is-focused",
           /*taskFocusedIndex*/
           ctx[24] === /*idx*/
-          ctx[324]
+          ctx[325]
         );
       }
       if (dirty[0] & /*taskSearchResults*/
@@ -14016,7 +14016,7 @@ function create_each_block_7(key_1, ctx) {
           div2,
           "is-completed",
           /*item*/
-          ctx[322].task.completed
+          ctx[323].task.completed
         );
       }
     },
@@ -14040,7 +14040,7 @@ function create_if_block_62(ctx) {
     /*selectedTaskIds*/
     ctx[30].has(
       /*task*/
-      ctx[311].id
+      ctx[312].id
     )
   );
   let mounted;
@@ -14051,7 +14051,7 @@ function create_if_block_62(ctx) {
       /*click_handler_7*/
       ctx[164](
         /*task*/
-        ctx[311]
+        ctx[312]
       )
     );
   }
@@ -14068,7 +14068,7 @@ function create_if_block_62(ctx) {
         /*selectedTaskIds*/
         ctx[30].has(
           /*task*/
-          ctx[311].id
+          ctx[312].id
         )
       );
       attr(span1, "class", "multi-select-checkbox-wrap");
@@ -14090,7 +14090,7 @@ function create_if_block_62(ctx) {
         show_if = /*selectedTaskIds*/
         ctx[30].has(
           /*task*/
-          ctx[311].id
+          ctx[312].id
         );
       if (show_if) {
         if (if_block) {
@@ -14111,7 +14111,7 @@ function create_if_block_62(ctx) {
           /*selectedTaskIds*/
           ctx[30].has(
             /*task*/
-            ctx[311].id
+            ctx[312].id
           )
         );
       }
@@ -14158,7 +14158,7 @@ function create_if_block_61(ctx) {
   let t0;
   let t1_value = (
     /*task*/
-    ctx[311].sourceCategoryName + ""
+    ctx[312].sourceCategoryName + ""
   );
   let t1;
   let span_title_value;
@@ -14169,7 +14169,7 @@ function create_if_block_61(ctx) {
       /*click_handler_9*/
       ctx[169](
         /*task*/
-        ctx[311]
+        ctx[312]
       )
     );
   }
@@ -14180,7 +14180,7 @@ function create_if_block_61(ctx) {
       t1 = text(t1_value);
       attr(span, "class", "task-meta source-category-badge");
       attr(span, "title", span_title_value = `From list: ${/*task*/
-      ctx[311].sourceCategoryName} (Click to jump)`);
+      ctx[312].sourceCategoryName} (Click to jump)`);
     },
     m(target, anchor) {
       insert(target, span, anchor);
@@ -14195,11 +14195,11 @@ function create_if_block_61(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*incompleteTasks*/
       32 && t1_value !== (t1_value = /*task*/
-      ctx[311].sourceCategoryName + ""))
+      ctx[312].sourceCategoryName + ""))
         set_data(t1, t1_value);
       if (dirty[0] & /*incompleteTasks*/
       32 && span_title_value !== (span_title_value = `From list: ${/*task*/
-      ctx[311].sourceCategoryName} (Click to jump)`)) {
+      ctx[312].sourceCategoryName} (Click to jump)`)) {
         attr(span, "title", span_title_value);
       }
     },
@@ -14216,13 +14216,13 @@ function create_if_block_60(ctx) {
   let span;
   let t0_value = (
     /*task*/
-    ctx[311].steps.filter(func_2).length + ""
+    ctx[312].steps.filter(func_2).length + ""
   );
   let t0;
   let t1;
   let t2_value = (
     /*task*/
-    ctx[311].steps.length + ""
+    ctx[312].steps.length + ""
   );
   let t2;
   let t3;
@@ -14233,7 +14233,7 @@ function create_if_block_60(ctx) {
       /*click_handler_10*/
       ctx[170](
         /*task*/
-        ctx[311]
+        ctx[312]
       )
     );
   }
@@ -14242,7 +14242,7 @@ function create_if_block_60(ctx) {
       /*keydown_handler_10*/
       ctx[171](
         /*task*/
-        ctx[311],
+        ctx[312],
         ...args
       )
     );
@@ -14252,7 +14252,7 @@ function create_if_block_60(ctx) {
       /*mouseenter_handler_3*/
       ctx[172](
         /*task*/
-        ctx[311],
+        ctx[312],
         ...args
       )
     );
@@ -14294,11 +14294,11 @@ function create_if_block_60(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*incompleteTasks*/
       32 && t0_value !== (t0_value = /*task*/
-      ctx[311].steps.filter(func_2).length + ""))
+      ctx[312].steps.filter(func_2).length + ""))
         set_data(t0, t0_value);
       if (dirty[0] & /*incompleteTasks*/
       32 && t2_value !== (t2_value = /*task*/
-      ctx[311].steps.length + ""))
+      ctx[312].steps.length + ""))
         set_data(t2, t2_value);
     },
     d(detaching) {
@@ -14314,7 +14314,7 @@ function create_if_block_59(ctx) {
   let span;
   let t_1_value = (
     /*task*/
-    ctx[311].dueDate + ""
+    ctx[312].dueDate + ""
   );
   let t_1;
   return {
@@ -14330,7 +14330,7 @@ function create_if_block_59(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*incompleteTasks*/
       32 && t_1_value !== (t_1_value = /*task*/
-      ctx2[311].dueDate + ""))
+      ctx2[312].dueDate + ""))
         set_data(t_1, t_1_value);
     },
     d(detaching) {
@@ -14368,7 +14368,7 @@ function create_if_block_57(ctx) {
       /*mouseenter_handler_7*/
       ctx[180](
         /*task*/
-        ctx[311],
+        ctx[312],
         ...args
       )
     );
@@ -14423,7 +14423,7 @@ function create_if_block_55(ctx) {
     if (show_if == null)
       show_if = !!LinkedNoteService.isHardBoundNote(
         /*badge*/
-        ctx2[315].noteLink
+        ctx2[316].noteLink
       );
     if (show_if)
       return create_if_block_56;
@@ -14436,7 +14436,7 @@ function create_if_block_55(ctx) {
       /*mouseenter_handler_6*/
       ctx[177](
         /*badge*/
-        ctx[315],
+        ctx[316],
         ...args
       )
     );
@@ -14446,9 +14446,9 @@ function create_if_block_55(ctx) {
       /*click_handler_12*/
       ctx[178](
         /*badge*/
-        ctx[315],
+        ctx[316],
         /*task*/
-        ctx[311],
+        ctx[312],
         ...args
       )
     );
@@ -14458,9 +14458,9 @@ function create_if_block_55(ctx) {
       /*keydown_handler_12*/
       ctx[179](
         /*badge*/
-        ctx[315],
+        ctx[316],
         /*task*/
-        ctx[311],
+        ctx[312],
         ...args
       )
     );
@@ -14476,11 +14476,11 @@ function create_if_block_55(ctx) {
       attr(span, "title", span_title_value = t(
         "linked_note_preview_tooltip",
         /*badge*/
-        ctx[315].noteLink
+        ctx[316].noteLink
       ));
       toggle_class(span, "hard-bound", LinkedNoteService.isHardBoundNote(
         /*badge*/
-        ctx[315].noteLink
+        ctx[316].noteLink
       ));
     },
     m(target, anchor) {
@@ -14510,7 +14510,7 @@ function create_if_block_55(ctx) {
       32 && span_title_value !== (span_title_value = t(
         "linked_note_preview_tooltip",
         /*badge*/
-        ctx[315].noteLink
+        ctx[316].noteLink
       ))) {
         attr(span, "title", span_title_value);
       }
@@ -14519,7 +14519,7 @@ function create_if_block_55(ctx) {
       262144) {
         toggle_class(span, "hard-bound", LinkedNoteService.isHardBoundNote(
           /*badge*/
-          ctx[315].noteLink
+          ctx[316].noteLink
         ));
       }
     },
@@ -14542,9 +14542,9 @@ function create_if_block_54(ctx) {
       /*mouseenter_handler_5*/
       ctx[174](
         /*task*/
-        ctx[311],
+        ctx[312],
         /*badge*/
-        ctx[315],
+        ctx[316],
         ...args
       )
     );
@@ -14554,9 +14554,9 @@ function create_if_block_54(ctx) {
       /*click_handler_11*/
       ctx[175](
         /*badge*/
-        ctx[315],
+        ctx[316],
         /*task*/
-        ctx[311],
+        ctx[312],
         ...args
       )
     );
@@ -14566,9 +14566,9 @@ function create_if_block_54(ctx) {
       /*keydown_handler_11*/
       ctx[176](
         /*badge*/
-        ctx[315],
+        ctx[316],
         /*task*/
-        ctx[311],
+        ctx[312],
         ...args
       )
     );
@@ -14626,9 +14626,9 @@ function create_if_block_53(ctx) {
       /*mouseenter_handler_4*/
       ctx[173](
         /*task*/
-        ctx[311],
+        ctx[312],
         /*badge*/
-        ctx[315],
+        ctx[316],
         ...args
       )
     );
@@ -14661,9 +14661,9 @@ function create_if_block_53(ctx) {
       attr(span, "role", "button");
       attr(span, "tabindex", "0");
       attr(span, "title", span_title_value = /*task*/
-      ctx[311].whys && /*task*/
-      ctx[311].whys.length > 1 ? `Why #${/*badge*/
-      (ctx[315].index || 0) + 1}: view rationale` : "Why: view rationale");
+      ctx[312].whys && /*task*/
+      ctx[312].whys.length > 1 ? `Why #${/*badge*/
+      (ctx[316].index || 0) + 1}: view rationale` : "Why: view rationale");
     },
     m(target, anchor) {
       insert(target, span, anchor);
@@ -14689,9 +14689,9 @@ function create_if_block_53(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*incompleteTasks*/
       32 && span_title_value !== (span_title_value = /*task*/
-      ctx[311].whys && /*task*/
-      ctx[311].whys.length > 1 ? `Why #${/*badge*/
-      (ctx[315].index || 0) + 1}: view rationale` : "Why: view rationale")) {
+      ctx[312].whys && /*task*/
+      ctx[312].whys.length > 1 ? `Why #${/*badge*/
+      (ctx[316].index || 0) + 1}: view rationale` : "Why: view rationale")) {
         attr(span, "title", span_title_value);
       }
     },
@@ -14792,23 +14792,23 @@ function create_each_block_6(key_1, ctx) {
   function select_block_type_4(ctx2, dirty) {
     if (
       /*badge*/
-      ctx2[315].type === "why"
+      ctx2[316].type === "why"
     )
       return create_if_block_53;
     if (
       /*badge*/
-      ctx2[315].type === "svg"
+      ctx2[316].type === "svg"
     )
       return create_if_block_54;
     if (
       /*badge*/
-      ctx2[315].type === "note" && /*badge*/
-      ctx2[315].noteLink
+      ctx2[316].type === "note" && /*badge*/
+      ctx2[316].noteLink
     )
       return create_if_block_55;
     if (
       /*badge*/
-      ctx2[315].type === "custom"
+      ctx2[316].type === "custom"
     )
       return create_if_block_57;
   }
@@ -14869,9 +14869,9 @@ function create_if_block_52(ctx) {
       /*click_handler_13*/
       ctx[181](
         /*task*/
-        ctx[311],
-        /*badgeData*/
         ctx[312],
+        /*badgeData*/
+        ctx[313],
         ...args
       )
     );
@@ -14881,9 +14881,9 @@ function create_if_block_52(ctx) {
       /*keydown_handler_13*/
       ctx[182](
         /*task*/
-        ctx[311],
-        /*badgeData*/
         ctx[312],
+        /*badgeData*/
+        ctx[313],
         ...args
       )
     );
@@ -14913,7 +14913,7 @@ function create_if_block_52(ctx) {
       attr(span, "role", "button");
       attr(span, "tabindex", "0");
       attr(span, "title", span_title_value = `More metadata (${/*badgeData*/
-      ctx[312].overflowBadges.length}): click to view`);
+      ctx[313].overflowBadges.length}): click to view`);
     },
     m(target, anchor) {
       insert(target, span, anchor);
@@ -14933,7 +14933,7 @@ function create_if_block_52(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*incompleteTasks*/
       32 && span_title_value !== (span_title_value = `More metadata (${/*badgeData*/
-      ctx[312].overflowBadges.length}): click to view`)) {
+      ctx[313].overflowBadges.length}): click to view`)) {
         attr(span, "title", span_title_value);
       }
     },
@@ -14958,7 +14958,7 @@ function create_if_block_51(ctx) {
       /*click_handler_14*/
       ctx[183](
         /*task*/
-        ctx[311]
+        ctx[312]
       )
     );
   }
@@ -14967,7 +14967,7 @@ function create_if_block_51(ctx) {
       /*keydown_handler_14*/
       ctx[184](
         /*task*/
-        ctx[311],
+        ctx[312],
         ...args
       )
     );
@@ -14982,7 +14982,7 @@ function create_if_block_51(ctx) {
       attr(svg, "height", "14");
       attr(svg, "viewBox", "0 0 24 24");
       attr(svg, "fill", svg_fill_value = /*task*/
-      ctx[311].starred ? "currentColor" : "none");
+      ctx[312].starred ? "currentColor" : "none");
       attr(svg, "stroke", "currentColor");
       attr(svg, "stroke-width", "2");
       attr(span, "class", "star");
@@ -14992,7 +14992,7 @@ function create_if_block_51(ctx) {
         span,
         "active",
         /*task*/
-        ctx[311].starred
+        ctx[312].starred
       );
     },
     m(target, anchor) {
@@ -15011,7 +15011,7 @@ function create_if_block_51(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*incompleteTasks*/
       32 && svg_fill_value !== (svg_fill_value = /*task*/
-      ctx[311].starred ? "currentColor" : "none")) {
+      ctx[312].starred ? "currentColor" : "none")) {
         attr(svg, "fill", svg_fill_value);
       }
       if (dirty[0] & /*incompleteTasks*/
@@ -15020,7 +15020,7 @@ function create_if_block_51(ctx) {
           span,
           "active",
           /*task*/
-          ctx[311].starred
+          ctx[312].starred
         );
       }
     },
@@ -15042,7 +15042,7 @@ function create_if_block_49(ctx) {
     if (
       /*editingWeightTaskId*/
       ctx2[31] === /*task*/
-      ctx2[311].id
+      ctx2[312].id
     )
       return create_if_block_50;
     return create_else_block_8;
@@ -15054,7 +15054,7 @@ function create_if_block_49(ctx) {
       /*click_handler_15*/
       ctx[188](
         /*task*/
-        ctx[311]
+        ctx[312]
       )
     );
   }
@@ -15063,7 +15063,7 @@ function create_if_block_49(ctx) {
       /*wheel_handler*/
       ctx[189](
         /*task*/
-        ctx[311],
+        ctx[312],
         ...args
       )
     );
@@ -15075,14 +15075,14 @@ function create_if_block_49(ctx) {
       attr(div, "class", "task-weight-control");
       attr(div, "title", div_title_value = "Priority: " + getTaskWeight(
         /*task*/
-        ctx[311]
+        ctx[312]
       ) + " (Scroll or click to edit 1-9)");
       toggle_class(
         div,
         "is-editing",
         /*editingWeightTaskId*/
         ctx[31] === /*task*/
-        ctx[311].id
+        ctx[312].id
       );
     },
     m(target, anchor) {
@@ -15121,7 +15121,7 @@ function create_if_block_49(ctx) {
       if (dirty[0] & /*incompleteTasks*/
       32 && div_title_value !== (div_title_value = "Priority: " + getTaskWeight(
         /*task*/
-        ctx[311]
+        ctx[312]
       ) + " (Scroll or click to edit 1-9)")) {
         attr(div, "title", div_title_value);
       }
@@ -15133,7 +15133,7 @@ function create_if_block_49(ctx) {
           "is-editing",
           /*editingWeightTaskId*/
           ctx[31] === /*task*/
-          ctx[311].id
+          ctx[312].id
         );
       }
     },
@@ -15151,7 +15151,7 @@ function create_else_block_8(ctx) {
   let span;
   let t_1_value = getTaskWeight(
     /*task*/
-    ctx[311]
+    ctx[312]
   ) + "";
   let t_1;
   return {
@@ -15161,11 +15161,11 @@ function create_else_block_8(ctx) {
       attr(span, "class", "weight-score-badge");
       toggle_class(span, "high-weight", getTaskWeight(
         /*task*/
-        ctx[311]
+        ctx[312]
       ) >= 7);
       toggle_class(span, "low-weight", getTaskWeight(
         /*task*/
-        ctx[311]
+        ctx[312]
       ) <= 3);
     },
     m(target, anchor) {
@@ -15176,21 +15176,21 @@ function create_else_block_8(ctx) {
       if (dirty[0] & /*incompleteTasks*/
       32 && t_1_value !== (t_1_value = getTaskWeight(
         /*task*/
-        ctx2[311]
+        ctx2[312]
       ) + ""))
         set_data(t_1, t_1_value);
       if (dirty[0] & /*incompleteTasks*/
       32) {
         toggle_class(span, "high-weight", getTaskWeight(
           /*task*/
-          ctx2[311]
+          ctx2[312]
         ) >= 7);
       }
       if (dirty[0] & /*incompleteTasks*/
       32) {
         toggle_class(span, "low-weight", getTaskWeight(
           /*task*/
-          ctx2[311]
+          ctx2[312]
         ) <= 3);
       }
     },
@@ -15211,7 +15211,7 @@ function create_if_block_50(ctx) {
       /*blur_handler*/
       ctx[186](
         /*task*/
-        ctx[311]
+        ctx[312]
       )
     );
   }
@@ -15220,7 +15220,7 @@ function create_if_block_50(ctx) {
       /*keydown_handler_15*/
       ctx[187](
         /*task*/
-        ctx[311],
+        ctx[312],
         ...args
       )
     );
@@ -15231,7 +15231,7 @@ function create_if_block_50(ctx) {
       attr(input, "type", "text");
       attr(input, "class", "task-weight-input");
       attr(input, "data-task-id", input_data_task_id_value = /*task*/
-      ctx[311].id);
+      ctx[312].id);
       attr(input, "maxlength", "1");
     },
     m(target, anchor) {
@@ -15267,7 +15267,7 @@ function create_if_block_50(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*incompleteTasks*/
       32 && input_data_task_id_value !== (input_data_task_id_value = /*task*/
-      ctx[311].id)) {
+      ctx[312].id)) {
         attr(input, "data-task-id", input_data_task_id_value);
       }
       if (dirty[1] & /*editingWeightValue*/
@@ -15300,7 +15300,7 @@ function create_each_block_5(key_1, ctx) {
   let span1;
   let t2_value = (
     /*task*/
-    ctx[311].title + ""
+    ctx[312].title + ""
   );
   let t2;
   let t3;
@@ -15330,7 +15330,7 @@ function create_each_block_5(key_1, ctx) {
       /*click_handler_8*/
       ctx[165](
         /*task*/
-        ctx[311]
+        ctx[312]
       )
     );
   }
@@ -15339,7 +15339,7 @@ function create_each_block_5(key_1, ctx) {
       /*keydown_handler_9*/
       ctx[166](
         /*task*/
-        ctx[311],
+        ctx[312],
         ...args
       )
     );
@@ -15349,7 +15349,7 @@ function create_each_block_5(key_1, ctx) {
       /*mouseenter_handler_2*/
       ctx[167](
         /*task*/
-        ctx[311],
+        ctx[312],
         ...args
       )
     );
@@ -15359,7 +15359,7 @@ function create_each_block_5(key_1, ctx) {
       /*mousemove_handler*/
       ctx[168](
         /*task*/
-        ctx[311],
+        ctx[312],
         ...args
       )
     );
@@ -15367,27 +15367,27 @@ function create_each_block_5(key_1, ctx) {
   let if_block1 = (
     /*currentCategory*/
     ((_a = ctx[4]) == null ? void 0 : _a.filepath) === STARRED_CATEGORY_PATH && /*task*/
-    ctx[311].sourceCategoryName && create_if_block_61(ctx)
+    ctx[312].sourceCategoryName && create_if_block_61(ctx)
   );
   let if_block2 = (
     /*task*/
-    ctx[311].steps.length > 0 && create_if_block_60(ctx)
+    ctx[312].steps.length > 0 && create_if_block_60(ctx)
   );
   let if_block3 = (
     /*task*/
-    ctx[311].dueDate && create_if_block_59(ctx)
+    ctx[312].dueDate && create_if_block_59(ctx)
   );
   let if_block4 = (
     /*task*/
-    ctx[311].recurrence && create_if_block_58(ctx)
+    ctx[312].recurrence && create_if_block_58(ctx)
   );
   let each_value_6 = ensure_array_like(
     /*badgeData*/
-    ctx[312].visibleBadges
+    ctx[313].visibleBadges
   );
   const get_key = (ctx2) => (
     /*badge*/
-    ctx2[315].id
+    ctx2[316].id
   );
   for (let i = 0; i < each_value_6.length; i += 1) {
     let child_ctx = get_each_context_6(ctx, each_value_6, i);
@@ -15396,7 +15396,7 @@ function create_each_block_5(key_1, ctx) {
   }
   let if_block5 = (
     /*badgeData*/
-    ctx[312].overflowBadges.length > 0 && create_if_block_52(ctx)
+    ctx[313].overflowBadges.length > 0 && create_if_block_52(ctx)
   );
   let if_block6 = !/*hiddenStarMode*/
   ctx[14] && create_if_block_51(ctx);
@@ -15409,7 +15409,7 @@ function create_each_block_5(key_1, ctx) {
       /*pointerdown_handler_4*/
       ctx[190](
         /*task*/
-        ctx[311]
+        ctx[312]
       )
     );
   }
@@ -15418,7 +15418,7 @@ function create_each_block_5(key_1, ctx) {
       /*click_handler_16*/
       ctx[191](
         /*task*/
-        ctx[311]
+        ctx[312]
       )
     );
   }
@@ -15427,7 +15427,7 @@ function create_each_block_5(key_1, ctx) {
       /*contextmenu_handler_1*/
       ctx[192](
         /*task*/
-        ctx[311],
+        ctx[312],
         ...args
       )
     );
@@ -15437,7 +15437,7 @@ function create_each_block_5(key_1, ctx) {
       /*keydown_handler_16*/
       ctx[193](
         /*task*/
-        ctx[311],
+        ctx[312],
         ...args
       )
     );
@@ -15447,7 +15447,7 @@ function create_each_block_5(key_1, ctx) {
       /*mouseenter_handler_8*/
       ctx[194](
         /*task*/
-        ctx[311]
+        ctx[312]
       )
     );
   }
@@ -15456,7 +15456,7 @@ function create_each_block_5(key_1, ctx) {
       /*mouseleave_handler_1*/
       ctx[195](
         /*task*/
-        ctx[311]
+        ctx[312]
       )
     );
   }
@@ -15513,7 +15513,7 @@ function create_each_block_5(key_1, ctx) {
       attr(div2, "class", "task-content");
       attr(div3, "class", "task-right-controls");
       attr(div4, "id", div4_id_value = "task-" + /*task*/
-      ctx[311].id);
+      ctx[312].id);
       attr(div4, "class", "task-item");
       attr(div4, "tabindex", "0");
       attr(div4, "role", "button");
@@ -15528,7 +15528,7 @@ function create_each_block_5(key_1, ctx) {
         "selected",
         /*selectedTaskId*/
         ctx[9] === /*task*/
-        ctx[311].id
+        ctx[312].id
       );
       toggle_class(
         div4,
@@ -15537,7 +15537,7 @@ function create_each_block_5(key_1, ctx) {
         ctx[29] && /*selectedTaskIds*/
         ctx[30].has(
           /*task*/
-          ctx[311].id
+          ctx[312].id
         )
       );
       this.first = div4;
@@ -15625,12 +15625,12 @@ function create_each_block_5(key_1, ctx) {
       }
       if (dirty[0] & /*incompleteTasks*/
       32 && t2_value !== (t2_value = /*task*/
-      ctx[311].title + ""))
+      ctx[312].title + ""))
         set_data(t2, t2_value);
       if (
         /*currentCategory*/
         ((_a2 = ctx[4]) == null ? void 0 : _a2.filepath) === STARRED_CATEGORY_PATH && /*task*/
-        ctx[311].sourceCategoryName
+        ctx[312].sourceCategoryName
       ) {
         if (if_block1) {
           if_block1.p(ctx, dirty);
@@ -15645,7 +15645,7 @@ function create_each_block_5(key_1, ctx) {
       }
       if (
         /*task*/
-        ctx[311].steps.length > 0
+        ctx[312].steps.length > 0
       ) {
         if (if_block2) {
           if_block2.p(ctx, dirty);
@@ -15660,7 +15660,7 @@ function create_each_block_5(key_1, ctx) {
       }
       if (
         /*task*/
-        ctx[311].dueDate
+        ctx[312].dueDate
       ) {
         if (if_block3) {
           if_block3.p(ctx, dirty);
@@ -15675,7 +15675,7 @@ function create_each_block_5(key_1, ctx) {
       }
       if (
         /*task*/
-        ctx[311].recurrence
+        ctx[312].recurrence
       ) {
         if (if_block4) {
         } else {
@@ -15693,13 +15693,13 @@ function create_each_block_5(key_1, ctx) {
       459776) {
         each_value_6 = ensure_array_like(
           /*badgeData*/
-          ctx[312].visibleBadges
+          ctx[313].visibleBadges
         );
         each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx, each_value_6, each_1_lookup, div3, destroy_block, create_each_block_6, t8, get_each_context_6);
       }
       if (
         /*badgeData*/
-        ctx[312].overflowBadges.length > 0
+        ctx[313].overflowBadges.length > 0
       ) {
         if (if_block5) {
           if_block5.p(ctx, dirty);
@@ -15742,7 +15742,7 @@ function create_each_block_5(key_1, ctx) {
       }
       if (dirty[0] & /*incompleteTasks*/
       32 && div4_id_value !== (div4_id_value = "task-" + /*task*/
-      ctx[311].id)) {
+      ctx[312].id)) {
         attr(div4, "id", div4_id_value);
       }
       if (dirty[0] & /*centerAlignTasks*/
@@ -15761,7 +15761,7 @@ function create_each_block_5(key_1, ctx) {
           "selected",
           /*selectedTaskId*/
           ctx[9] === /*task*/
-          ctx[311].id
+          ctx[312].id
         );
       }
       if (dirty[0] & /*isMultiSelectMode, selectedTaskIds, incompleteTasks*/
@@ -15773,7 +15773,7 @@ function create_each_block_5(key_1, ctx) {
           ctx[29] && /*selectedTaskIds*/
           ctx[30].has(
             /*task*/
-            ctx[311].id
+            ctx[312].id
           )
         );
       }
@@ -15956,7 +15956,7 @@ function create_if_block_33(ctx) {
   );
   const get_key = (ctx2) => (
     /*task*/
-    ctx2[311].id
+    ctx2[312].id
   );
   for (let i = 0; i < each_value_3.length; i += 1) {
     let child_ctx = get_each_context_3(ctx, each_value_3, i);
@@ -16052,7 +16052,7 @@ function create_if_block_47(ctx) {
     /*selectedTaskIds*/
     ctx[30].has(
       /*task*/
-      ctx[311].id
+      ctx[312].id
     )
   );
   let mounted;
@@ -16063,7 +16063,7 @@ function create_if_block_47(ctx) {
       /*click_handler_17*/
       ctx[199](
         /*task*/
-        ctx[311]
+        ctx[312]
       )
     );
   }
@@ -16080,7 +16080,7 @@ function create_if_block_47(ctx) {
         /*selectedTaskIds*/
         ctx[30].has(
           /*task*/
-          ctx[311].id
+          ctx[312].id
         )
       );
       attr(span1, "class", "multi-select-checkbox-wrap");
@@ -16102,7 +16102,7 @@ function create_if_block_47(ctx) {
         show_if = /*selectedTaskIds*/
         ctx[30].has(
           /*task*/
-          ctx[311].id
+          ctx[312].id
         );
       if (show_if) {
         if (if_block) {
@@ -16123,7 +16123,7 @@ function create_if_block_47(ctx) {
           /*selectedTaskIds*/
           ctx[30].has(
             /*task*/
-            ctx[311].id
+            ctx[312].id
           )
         );
       }
@@ -16170,7 +16170,7 @@ function create_if_block_46(ctx) {
   let t0;
   let t1_value = (
     /*task*/
-    ctx[311].sourceCategoryName + ""
+    ctx[312].sourceCategoryName + ""
   );
   let t1;
   let span_title_value;
@@ -16181,7 +16181,7 @@ function create_if_block_46(ctx) {
       /*click_handler_19*/
       ctx[204](
         /*task*/
-        ctx[311]
+        ctx[312]
       )
     );
   }
@@ -16192,7 +16192,7 @@ function create_if_block_46(ctx) {
       t1 = text(t1_value);
       attr(span, "class", "task-meta source-category-badge");
       attr(span, "title", span_title_value = `From list: ${/*task*/
-      ctx[311].sourceCategoryName} (Click to jump)`);
+      ctx[312].sourceCategoryName} (Click to jump)`);
     },
     m(target, anchor) {
       insert(target, span, anchor);
@@ -16207,11 +16207,11 @@ function create_if_block_46(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*completedTasks*/
       64 && t1_value !== (t1_value = /*task*/
-      ctx[311].sourceCategoryName + ""))
+      ctx[312].sourceCategoryName + ""))
         set_data(t1, t1_value);
       if (dirty[0] & /*completedTasks*/
       64 && span_title_value !== (span_title_value = `From list: ${/*task*/
-      ctx[311].sourceCategoryName} (Click to jump)`)) {
+      ctx[312].sourceCategoryName} (Click to jump)`)) {
         attr(span, "title", span_title_value);
       }
     },
@@ -16228,13 +16228,13 @@ function create_if_block_45(ctx) {
   let span;
   let t0_value = (
     /*task*/
-    ctx[311].steps.filter(func_3).length + ""
+    ctx[312].steps.filter(func_3).length + ""
   );
   let t0;
   let t1;
   let t2_value = (
     /*task*/
-    ctx[311].steps.length + ""
+    ctx[312].steps.length + ""
   );
   let t2;
   let t3;
@@ -16245,7 +16245,7 @@ function create_if_block_45(ctx) {
       /*click_handler_20*/
       ctx[205](
         /*task*/
-        ctx[311]
+        ctx[312]
       )
     );
   }
@@ -16254,7 +16254,7 @@ function create_if_block_45(ctx) {
       /*keydown_handler_19*/
       ctx[206](
         /*task*/
-        ctx[311],
+        ctx[312],
         ...args
       )
     );
@@ -16264,7 +16264,7 @@ function create_if_block_45(ctx) {
       /*mouseenter_handler_10*/
       ctx[207](
         /*task*/
-        ctx[311],
+        ctx[312],
         ...args
       )
     );
@@ -16306,11 +16306,11 @@ function create_if_block_45(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*completedTasks*/
       64 && t0_value !== (t0_value = /*task*/
-      ctx[311].steps.filter(func_3).length + ""))
+      ctx[312].steps.filter(func_3).length + ""))
         set_data(t0, t0_value);
       if (dirty[0] & /*completedTasks*/
       64 && t2_value !== (t2_value = /*task*/
-      ctx[311].steps.length + ""))
+      ctx[312].steps.length + ""))
         set_data(t2, t2_value);
     },
     d(detaching) {
@@ -16326,7 +16326,7 @@ function create_if_block_44(ctx) {
   let span;
   let t_1_value = (
     /*task*/
-    ctx[311].dueDate + ""
+    ctx[312].dueDate + ""
   );
   let t_1;
   return {
@@ -16342,7 +16342,7 @@ function create_if_block_44(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*completedTasks*/
       64 && t_1_value !== (t_1_value = /*task*/
-      ctx2[311].dueDate + ""))
+      ctx2[312].dueDate + ""))
         set_data(t_1, t_1_value);
     },
     d(detaching) {
@@ -16379,7 +16379,7 @@ function create_if_block_42(ctx) {
       /*mouseenter_handler_14*/
       ctx[215](
         /*task*/
-        ctx[311],
+        ctx[312],
         ...args
       )
     );
@@ -16434,7 +16434,7 @@ function create_if_block_40(ctx) {
     if (show_if == null)
       show_if = !!LinkedNoteService.isHardBoundNote(
         /*badge*/
-        ctx2[315].noteLink
+        ctx2[316].noteLink
       );
     if (show_if)
       return create_if_block_41;
@@ -16447,7 +16447,7 @@ function create_if_block_40(ctx) {
       /*mouseenter_handler_13*/
       ctx[212](
         /*badge*/
-        ctx[315],
+        ctx[316],
         ...args
       )
     );
@@ -16457,9 +16457,9 @@ function create_if_block_40(ctx) {
       /*click_handler_22*/
       ctx[213](
         /*badge*/
-        ctx[315],
+        ctx[316],
         /*task*/
-        ctx[311],
+        ctx[312],
         ...args
       )
     );
@@ -16469,9 +16469,9 @@ function create_if_block_40(ctx) {
       /*keydown_handler_21*/
       ctx[214](
         /*badge*/
-        ctx[315],
+        ctx[316],
         /*task*/
-        ctx[311],
+        ctx[312],
         ...args
       )
     );
@@ -16487,11 +16487,11 @@ function create_if_block_40(ctx) {
       attr(span, "title", span_title_value = t(
         "linked_note_preview_tooltip",
         /*badge*/
-        ctx[315].noteLink
+        ctx[316].noteLink
       ));
       toggle_class(span, "hard-bound", LinkedNoteService.isHardBoundNote(
         /*badge*/
-        ctx[315].noteLink
+        ctx[316].noteLink
       ));
     },
     m(target, anchor) {
@@ -16521,7 +16521,7 @@ function create_if_block_40(ctx) {
       64 && span_title_value !== (span_title_value = t(
         "linked_note_preview_tooltip",
         /*badge*/
-        ctx[315].noteLink
+        ctx[316].noteLink
       ))) {
         attr(span, "title", span_title_value);
       }
@@ -16530,7 +16530,7 @@ function create_if_block_40(ctx) {
       262144) {
         toggle_class(span, "hard-bound", LinkedNoteService.isHardBoundNote(
           /*badge*/
-          ctx[315].noteLink
+          ctx[316].noteLink
         ));
       }
     },
@@ -16553,9 +16553,9 @@ function create_if_block_39(ctx) {
       /*mouseenter_handler_12*/
       ctx[209](
         /*task*/
-        ctx[311],
+        ctx[312],
         /*badge*/
-        ctx[315],
+        ctx[316],
         ...args
       )
     );
@@ -16565,9 +16565,9 @@ function create_if_block_39(ctx) {
       /*click_handler_21*/
       ctx[210](
         /*badge*/
-        ctx[315],
+        ctx[316],
         /*task*/
-        ctx[311],
+        ctx[312],
         ...args
       )
     );
@@ -16577,9 +16577,9 @@ function create_if_block_39(ctx) {
       /*keydown_handler_20*/
       ctx[211](
         /*badge*/
-        ctx[315],
+        ctx[316],
         /*task*/
-        ctx[311],
+        ctx[312],
         ...args
       )
     );
@@ -16637,9 +16637,9 @@ function create_if_block_38(ctx) {
       /*mouseenter_handler_11*/
       ctx[208](
         /*task*/
-        ctx[311],
+        ctx[312],
         /*badge*/
-        ctx[315],
+        ctx[316],
         ...args
       )
     );
@@ -16672,9 +16672,9 @@ function create_if_block_38(ctx) {
       attr(span, "role", "button");
       attr(span, "tabindex", "0");
       attr(span, "title", span_title_value = /*task*/
-      ctx[311].whys && /*task*/
-      ctx[311].whys.length > 1 ? `Why #${/*badge*/
-      (ctx[315].index || 0) + 1}: view rationale` : "Why: view rationale");
+      ctx[312].whys && /*task*/
+      ctx[312].whys.length > 1 ? `Why #${/*badge*/
+      (ctx[316].index || 0) + 1}: view rationale` : "Why: view rationale");
     },
     m(target, anchor) {
       insert(target, span, anchor);
@@ -16700,9 +16700,9 @@ function create_if_block_38(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*completedTasks*/
       64 && span_title_value !== (span_title_value = /*task*/
-      ctx[311].whys && /*task*/
-      ctx[311].whys.length > 1 ? `Why #${/*badge*/
-      (ctx[315].index || 0) + 1}: view rationale` : "Why: view rationale")) {
+      ctx[312].whys && /*task*/
+      ctx[312].whys.length > 1 ? `Why #${/*badge*/
+      (ctx[316].index || 0) + 1}: view rationale` : "Why: view rationale")) {
         attr(span, "title", span_title_value);
       }
     },
@@ -16803,23 +16803,23 @@ function create_each_block_4(key_1, ctx) {
   function select_block_type_7(ctx2, dirty) {
     if (
       /*badge*/
-      ctx2[315].type === "why"
+      ctx2[316].type === "why"
     )
       return create_if_block_38;
     if (
       /*badge*/
-      ctx2[315].type === "svg"
+      ctx2[316].type === "svg"
     )
       return create_if_block_39;
     if (
       /*badge*/
-      ctx2[315].type === "note" && /*badge*/
-      ctx2[315].noteLink
+      ctx2[316].type === "note" && /*badge*/
+      ctx2[316].noteLink
     )
       return create_if_block_40;
     if (
       /*badge*/
-      ctx2[315].type === "custom"
+      ctx2[316].type === "custom"
     )
       return create_if_block_42;
   }
@@ -16880,9 +16880,9 @@ function create_if_block_37(ctx) {
       /*click_handler_23*/
       ctx[216](
         /*task*/
-        ctx[311],
-        /*badgeData*/
         ctx[312],
+        /*badgeData*/
+        ctx[313],
         ...args
       )
     );
@@ -16892,9 +16892,9 @@ function create_if_block_37(ctx) {
       /*keydown_handler_22*/
       ctx[217](
         /*task*/
-        ctx[311],
-        /*badgeData*/
         ctx[312],
+        /*badgeData*/
+        ctx[313],
         ...args
       )
     );
@@ -16924,7 +16924,7 @@ function create_if_block_37(ctx) {
       attr(span, "role", "button");
       attr(span, "tabindex", "0");
       attr(span, "title", span_title_value = `More metadata (${/*badgeData*/
-      ctx[312].overflowBadges.length}): click to view`);
+      ctx[313].overflowBadges.length}): click to view`);
     },
     m(target, anchor) {
       insert(target, span, anchor);
@@ -16944,7 +16944,7 @@ function create_if_block_37(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*completedTasks*/
       64 && span_title_value !== (span_title_value = `More metadata (${/*badgeData*/
-      ctx[312].overflowBadges.length}): click to view`)) {
+      ctx[313].overflowBadges.length}): click to view`)) {
         attr(span, "title", span_title_value);
       }
     },
@@ -16969,7 +16969,7 @@ function create_if_block_36(ctx) {
       /*click_handler_24*/
       ctx[218](
         /*task*/
-        ctx[311]
+        ctx[312]
       )
     );
   }
@@ -16978,7 +16978,7 @@ function create_if_block_36(ctx) {
       /*keydown_handler_23*/
       ctx[219](
         /*task*/
-        ctx[311],
+        ctx[312],
         ...args
       )
     );
@@ -16993,7 +16993,7 @@ function create_if_block_36(ctx) {
       attr(svg, "height", "14");
       attr(svg, "viewBox", "0 0 24 24");
       attr(svg, "fill", svg_fill_value = /*task*/
-      ctx[311].starred ? "currentColor" : "none");
+      ctx[312].starred ? "currentColor" : "none");
       attr(svg, "stroke", "currentColor");
       attr(svg, "stroke-width", "2");
       attr(span, "class", "star");
@@ -17003,7 +17003,7 @@ function create_if_block_36(ctx) {
         span,
         "active",
         /*task*/
-        ctx[311].starred
+        ctx[312].starred
       );
     },
     m(target, anchor) {
@@ -17022,7 +17022,7 @@ function create_if_block_36(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*completedTasks*/
       64 && svg_fill_value !== (svg_fill_value = /*task*/
-      ctx[311].starred ? "currentColor" : "none")) {
+      ctx[312].starred ? "currentColor" : "none")) {
         attr(svg, "fill", svg_fill_value);
       }
       if (dirty[0] & /*completedTasks*/
@@ -17031,7 +17031,7 @@ function create_if_block_36(ctx) {
           span,
           "active",
           /*task*/
-          ctx[311].starred
+          ctx[312].starred
         );
       }
     },
@@ -17053,7 +17053,7 @@ function create_if_block_34(ctx) {
     if (
       /*editingWeightTaskId*/
       ctx2[31] === /*task*/
-      ctx2[311].id
+      ctx2[312].id
     )
       return create_if_block_35;
     return create_else_block_6;
@@ -17065,7 +17065,7 @@ function create_if_block_34(ctx) {
       /*click_handler_25*/
       ctx[223](
         /*task*/
-        ctx[311]
+        ctx[312]
       )
     );
   }
@@ -17074,7 +17074,7 @@ function create_if_block_34(ctx) {
       /*wheel_handler_1*/
       ctx[224](
         /*task*/
-        ctx[311],
+        ctx[312],
         ...args
       )
     );
@@ -17086,14 +17086,14 @@ function create_if_block_34(ctx) {
       attr(div, "class", "task-weight-control");
       attr(div, "title", div_title_value = "Priority: " + getTaskWeight(
         /*task*/
-        ctx[311]
+        ctx[312]
       ) + " (Scroll or click to edit 1-9)");
       toggle_class(
         div,
         "is-editing",
         /*editingWeightTaskId*/
         ctx[31] === /*task*/
-        ctx[311].id
+        ctx[312].id
       );
     },
     m(target, anchor) {
@@ -17132,7 +17132,7 @@ function create_if_block_34(ctx) {
       if (dirty[0] & /*completedTasks*/
       64 && div_title_value !== (div_title_value = "Priority: " + getTaskWeight(
         /*task*/
-        ctx[311]
+        ctx[312]
       ) + " (Scroll or click to edit 1-9)")) {
         attr(div, "title", div_title_value);
       }
@@ -17144,7 +17144,7 @@ function create_if_block_34(ctx) {
           "is-editing",
           /*editingWeightTaskId*/
           ctx[31] === /*task*/
-          ctx[311].id
+          ctx[312].id
         );
       }
     },
@@ -17162,7 +17162,7 @@ function create_else_block_6(ctx) {
   let span;
   let t_1_value = getTaskWeight(
     /*task*/
-    ctx[311]
+    ctx[312]
   ) + "";
   let t_1;
   return {
@@ -17172,11 +17172,11 @@ function create_else_block_6(ctx) {
       attr(span, "class", "weight-score-badge");
       toggle_class(span, "high-weight", getTaskWeight(
         /*task*/
-        ctx[311]
+        ctx[312]
       ) >= 7);
       toggle_class(span, "low-weight", getTaskWeight(
         /*task*/
-        ctx[311]
+        ctx[312]
       ) <= 3);
     },
     m(target, anchor) {
@@ -17187,21 +17187,21 @@ function create_else_block_6(ctx) {
       if (dirty[0] & /*completedTasks*/
       64 && t_1_value !== (t_1_value = getTaskWeight(
         /*task*/
-        ctx2[311]
+        ctx2[312]
       ) + ""))
         set_data(t_1, t_1_value);
       if (dirty[0] & /*completedTasks*/
       64) {
         toggle_class(span, "high-weight", getTaskWeight(
           /*task*/
-          ctx2[311]
+          ctx2[312]
         ) >= 7);
       }
       if (dirty[0] & /*completedTasks*/
       64) {
         toggle_class(span, "low-weight", getTaskWeight(
           /*task*/
-          ctx2[311]
+          ctx2[312]
         ) <= 3);
       }
     },
@@ -17222,7 +17222,7 @@ function create_if_block_35(ctx) {
       /*blur_handler_1*/
       ctx[221](
         /*task*/
-        ctx[311]
+        ctx[312]
       )
     );
   }
@@ -17231,7 +17231,7 @@ function create_if_block_35(ctx) {
       /*keydown_handler_24*/
       ctx[222](
         /*task*/
-        ctx[311],
+        ctx[312],
         ...args
       )
     );
@@ -17242,7 +17242,7 @@ function create_if_block_35(ctx) {
       attr(input, "type", "text");
       attr(input, "class", "task-weight-input");
       attr(input, "data-task-id", input_data_task_id_value = /*task*/
-      ctx[311].id);
+      ctx[312].id);
       attr(input, "maxlength", "1");
     },
     m(target, anchor) {
@@ -17278,7 +17278,7 @@ function create_if_block_35(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*completedTasks*/
       64 && input_data_task_id_value !== (input_data_task_id_value = /*task*/
-      ctx[311].id)) {
+      ctx[312].id)) {
         attr(input, "data-task-id", input_data_task_id_value);
       }
       if (dirty[1] & /*editingWeightValue*/
@@ -17311,7 +17311,7 @@ function create_each_block_3(key_1, ctx) {
   let span1;
   let t2_value = (
     /*task*/
-    ctx[311].title + ""
+    ctx[312].title + ""
   );
   let t2;
   let t3;
@@ -17341,7 +17341,7 @@ function create_each_block_3(key_1, ctx) {
       /*click_handler_18*/
       ctx[200](
         /*task*/
-        ctx[311]
+        ctx[312]
       )
     );
   }
@@ -17350,7 +17350,7 @@ function create_each_block_3(key_1, ctx) {
       /*keydown_handler_18*/
       ctx[201](
         /*task*/
-        ctx[311],
+        ctx[312],
         ...args
       )
     );
@@ -17360,7 +17360,7 @@ function create_each_block_3(key_1, ctx) {
       /*mouseenter_handler_9*/
       ctx[202](
         /*task*/
-        ctx[311],
+        ctx[312],
         ...args
       )
     );
@@ -17370,7 +17370,7 @@ function create_each_block_3(key_1, ctx) {
       /*mousemove_handler_1*/
       ctx[203](
         /*task*/
-        ctx[311],
+        ctx[312],
         ...args
       )
     );
@@ -17378,28 +17378,28 @@ function create_each_block_3(key_1, ctx) {
   let if_block1 = (
     /*currentCategory*/
     ((_a = ctx[4]) == null ? void 0 : _a.filepath) === STARRED_CATEGORY_PATH && /*task*/
-    ctx[311].sourceCategoryName && create_if_block_46(ctx)
+    ctx[312].sourceCategoryName && create_if_block_46(ctx)
   );
   let if_block2 = (
     /*task*/
-    ctx[311].steps && /*task*/
-    ctx[311].steps.length > 0 && create_if_block_45(ctx)
+    ctx[312].steps && /*task*/
+    ctx[312].steps.length > 0 && create_if_block_45(ctx)
   );
   let if_block3 = (
     /*task*/
-    ctx[311].dueDate && create_if_block_44(ctx)
+    ctx[312].dueDate && create_if_block_44(ctx)
   );
   let if_block4 = (
     /*task*/
-    ctx[311].recurrence && create_if_block_43(ctx)
+    ctx[312].recurrence && create_if_block_43(ctx)
   );
   let each_value_4 = ensure_array_like(
     /*badgeData*/
-    ctx[312].visibleBadges
+    ctx[313].visibleBadges
   );
   const get_key = (ctx2) => (
     /*badge*/
-    ctx2[315].id
+    ctx2[316].id
   );
   for (let i = 0; i < each_value_4.length; i += 1) {
     let child_ctx = get_each_context_4(ctx, each_value_4, i);
@@ -17408,7 +17408,7 @@ function create_each_block_3(key_1, ctx) {
   }
   let if_block5 = (
     /*badgeData*/
-    ctx[312].overflowBadges.length > 0 && create_if_block_37(ctx)
+    ctx[313].overflowBadges.length > 0 && create_if_block_37(ctx)
   );
   let if_block6 = !/*hiddenStarMode*/
   ctx[14] && create_if_block_36(ctx);
@@ -17421,7 +17421,7 @@ function create_each_block_3(key_1, ctx) {
       /*pointerdown_handler_5*/
       ctx[225](
         /*task*/
-        ctx[311]
+        ctx[312]
       )
     );
   }
@@ -17430,7 +17430,7 @@ function create_each_block_3(key_1, ctx) {
       /*click_handler_26*/
       ctx[226](
         /*task*/
-        ctx[311]
+        ctx[312]
       )
     );
   }
@@ -17439,7 +17439,7 @@ function create_each_block_3(key_1, ctx) {
       /*contextmenu_handler_2*/
       ctx[227](
         /*task*/
-        ctx[311],
+        ctx[312],
         ...args
       )
     );
@@ -17449,7 +17449,7 @@ function create_each_block_3(key_1, ctx) {
       /*keydown_handler_25*/
       ctx[228](
         /*task*/
-        ctx[311],
+        ctx[312],
         ...args
       )
     );
@@ -17459,7 +17459,7 @@ function create_each_block_3(key_1, ctx) {
       /*mouseenter_handler_15*/
       ctx[229](
         /*task*/
-        ctx[311]
+        ctx[312]
       )
     );
   }
@@ -17468,7 +17468,7 @@ function create_each_block_3(key_1, ctx) {
       /*mouseleave_handler_2*/
       ctx[230](
         /*task*/
-        ctx[311]
+        ctx[312]
       )
     );
   }
@@ -17525,7 +17525,7 @@ function create_each_block_3(key_1, ctx) {
       attr(div2, "class", "task-content");
       attr(div3, "class", "task-right-controls");
       attr(div4, "id", div4_id_value = "task-" + /*task*/
-      ctx[311].id);
+      ctx[312].id);
       attr(div4, "class", "task-item completed");
       attr(div4, "tabindex", "0");
       attr(div4, "role", "button");
@@ -17540,7 +17540,7 @@ function create_each_block_3(key_1, ctx) {
         "selected",
         /*selectedTaskId*/
         ctx[9] === /*task*/
-        ctx[311].id
+        ctx[312].id
       );
       toggle_class(
         div4,
@@ -17549,7 +17549,7 @@ function create_each_block_3(key_1, ctx) {
         ctx[29] && /*selectedTaskIds*/
         ctx[30].has(
           /*task*/
-          ctx[311].id
+          ctx[312].id
         )
       );
       this.first = div4;
@@ -17637,12 +17637,12 @@ function create_each_block_3(key_1, ctx) {
       }
       if (dirty[0] & /*completedTasks*/
       64 && t2_value !== (t2_value = /*task*/
-      ctx[311].title + ""))
+      ctx[312].title + ""))
         set_data(t2, t2_value);
       if (
         /*currentCategory*/
         ((_a2 = ctx[4]) == null ? void 0 : _a2.filepath) === STARRED_CATEGORY_PATH && /*task*/
-        ctx[311].sourceCategoryName
+        ctx[312].sourceCategoryName
       ) {
         if (if_block1) {
           if_block1.p(ctx, dirty);
@@ -17657,8 +17657,8 @@ function create_each_block_3(key_1, ctx) {
       }
       if (
         /*task*/
-        ctx[311].steps && /*task*/
-        ctx[311].steps.length > 0
+        ctx[312].steps && /*task*/
+        ctx[312].steps.length > 0
       ) {
         if (if_block2) {
           if_block2.p(ctx, dirty);
@@ -17673,7 +17673,7 @@ function create_each_block_3(key_1, ctx) {
       }
       if (
         /*task*/
-        ctx[311].dueDate
+        ctx[312].dueDate
       ) {
         if (if_block3) {
           if_block3.p(ctx, dirty);
@@ -17688,7 +17688,7 @@ function create_each_block_3(key_1, ctx) {
       }
       if (
         /*task*/
-        ctx[311].recurrence
+        ctx[312].recurrence
       ) {
         if (if_block4) {
         } else {
@@ -17706,13 +17706,13 @@ function create_each_block_3(key_1, ctx) {
       459776) {
         each_value_4 = ensure_array_like(
           /*badgeData*/
-          ctx[312].visibleBadges
+          ctx[313].visibleBadges
         );
         each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx, each_value_4, each_1_lookup, div3, destroy_block, create_each_block_4, t8, get_each_context_4);
       }
       if (
         /*badgeData*/
-        ctx[312].overflowBadges.length > 0
+        ctx[313].overflowBadges.length > 0
       ) {
         if (if_block5) {
           if_block5.p(ctx, dirty);
@@ -17755,7 +17755,7 @@ function create_each_block_3(key_1, ctx) {
       }
       if (dirty[0] & /*completedTasks*/
       64 && div4_id_value !== (div4_id_value = "task-" + /*task*/
-      ctx[311].id)) {
+      ctx[312].id)) {
         attr(div4, "id", div4_id_value);
       }
       if (dirty[0] & /*centerAlignTasks*/
@@ -17774,7 +17774,7 @@ function create_each_block_3(key_1, ctx) {
           "selected",
           /*selectedTaskId*/
           ctx[9] === /*task*/
-          ctx[311].id
+          ctx[312].id
         );
       }
       if (dirty[0] & /*isMultiSelectMode, selectedTaskIds, completedTasks*/
@@ -17786,7 +17786,7 @@ function create_each_block_3(key_1, ctx) {
           ctx[29] && /*selectedTaskIds*/
           ctx[30].has(
             /*task*/
-            ctx[311].id
+            ctx[312].id
           )
         );
       }
@@ -18451,7 +18451,7 @@ function create_if_block_18(ctx) {
   function select_block_type_11(ctx2, dirty) {
     if (
       /*resolved*/
-      ctx2[301].isInline
+      ctx2[302].isInline
     )
       return create_if_block_19;
     return create_else_block_5;
@@ -18533,7 +18533,7 @@ function create_if_block_17(ctx) {
   let t1;
   let t2_value = (
     /*activeWhys*/
-    ctx[299].length > 1 ? `#${/*popoverSvgIndex*/
+    ctx[300].length > 1 ? `#${/*popoverSvgIndex*/
     ctx[35] + 1}` : ""
   );
   let t2;
@@ -18541,7 +18541,7 @@ function create_if_block_17(ctx) {
   let div2;
   let t4_value = (
     /*activeWhy*/
-    ctx[300] + ""
+    ctx[301] + ""
   );
   let t4;
   return {
@@ -18599,12 +18599,12 @@ function create_if_block_17(ctx) {
     p(ctx2, dirty) {
       if (dirty[1] & /*popoverTask, popoverSvgIndex*/
       20 && t2_value !== (t2_value = /*activeWhys*/
-      ctx2[299].length > 1 ? `#${/*popoverSvgIndex*/
+      ctx2[300].length > 1 ? `#${/*popoverSvgIndex*/
       ctx2[35] + 1}` : ""))
         set_data(t2, t2_value);
       if (dirty[1] & /*popoverTask, popoverSvgIndex*/
       20 && t4_value !== (t4_value = /*activeWhy*/
-      ctx2[300] + ""))
+      ctx2[301] + ""))
         set_data(t4, t4_value);
     },
     d(detaching) {
@@ -18785,14 +18785,14 @@ function create_each_block_2(ctx) {
   let span0;
   let t0_value = (
     /*step*/
-    ctx[306].done ? "\u2713" : "\u25CB"
+    ctx[307].done ? "\u2713" : "\u25CB"
   );
   let t0;
   let t1;
   let span1;
   let t2_value = (
     /*step*/
-    ctx[306].text + ""
+    ctx[307].text + ""
   );
   let t2;
   let t3;
@@ -18812,7 +18812,7 @@ function create_each_block_2(ctx) {
         div,
         "done",
         /*step*/
-        ctx[306].done
+        ctx[307].done
       );
     },
     m(target, anchor) {
@@ -18827,11 +18827,11 @@ function create_each_block_2(ctx) {
     p(ctx2, dirty) {
       if (dirty[1] & /*popoverTask*/
       4 && t0_value !== (t0_value = /*step*/
-      ctx2[306].done ? "\u2713" : "\u25CB"))
+      ctx2[307].done ? "\u2713" : "\u25CB"))
         set_data(t0, t0_value);
       if (dirty[1] & /*popoverTask*/
       4 && t2_value !== (t2_value = /*step*/
-      ctx2[306].text + ""))
+      ctx2[307].text + ""))
         set_data(t2, t2_value);
       if (dirty[1] & /*popoverTask*/
       4) {
@@ -18839,7 +18839,7 @@ function create_each_block_2(ctx) {
           div,
           "done",
           /*step*/
-          ctx2[306].done
+          ctx2[307].done
         );
       }
     },
@@ -19079,14 +19079,14 @@ function create_each_block_12(ctx) {
   let span0;
   let t0_value = (
     /*step*/
-    ctx[306].done ? "\u2713" : "\u25CB"
+    ctx[307].done ? "\u2713" : "\u25CB"
   );
   let t0;
   let t1;
   let span1;
   let t2_value = (
     /*step*/
-    ctx[306].text + ""
+    ctx[307].text + ""
   );
   let t2;
   let t3;
@@ -19106,7 +19106,7 @@ function create_each_block_12(ctx) {
         div,
         "done",
         /*step*/
-        ctx[306].done
+        ctx[307].done
       );
     },
     m(target, anchor) {
@@ -19121,11 +19121,11 @@ function create_each_block_12(ctx) {
     p(ctx2, dirty) {
       if (dirty[1] & /*popoverTask*/
       4 && t0_value !== (t0_value = /*step*/
-      ctx2[306].done ? "\u2713" : "\u25CB"))
+      ctx2[307].done ? "\u2713" : "\u25CB"))
         set_data(t0, t0_value);
       if (dirty[1] & /*popoverTask*/
       4 && t2_value !== (t2_value = /*step*/
-      ctx2[306].text + ""))
+      ctx2[307].text + ""))
         set_data(t2, t2_value);
       if (dirty[1] & /*popoverTask*/
       4) {
@@ -19133,7 +19133,7 @@ function create_each_block_12(ctx) {
           div,
           "done",
           /*step*/
-          ctx2[306].done
+          ctx2[307].done
         );
       }
     },
@@ -19149,7 +19149,7 @@ function create_each_block4(ctx) {
   let span0;
   let t0_value = (
     /*k*/
-    ctx[302] + ""
+    ctx[303] + ""
   );
   let t0;
   let t1;
@@ -19157,7 +19157,7 @@ function create_each_block4(ctx) {
   let span1;
   let t3_value = (
     /*v*/
-    ctx[303] + ""
+    ctx[304] + ""
   );
   let t3;
   let t4;
@@ -19188,11 +19188,11 @@ function create_each_block4(ctx) {
     p(ctx2, dirty) {
       if (dirty[1] & /*popoverTask*/
       4 && t0_value !== (t0_value = /*k*/
-      ctx2[302] + ""))
+      ctx2[303] + ""))
         set_data(t0, t0_value);
       if (dirty[1] & /*popoverTask*/
       4 && t3_value !== (t3_value = /*v*/
-      ctx2[303] + ""))
+      ctx2[304] + ""))
         set_data(t3, t3_value);
     },
     d(detaching) {
@@ -19209,7 +19209,7 @@ function create_else_block_5(ctx) {
     c() {
       img = element("img");
       if (!src_url_equal(img.src, img_src_value = /*resolved*/
-      ctx[301].srcUrl))
+      ctx[302].srcUrl))
         attr(img, "src", img_src_value);
       attr(img, "alt", "Visual memory");
       attr(img, "class", "meta-popover-img");
@@ -19220,7 +19220,7 @@ function create_else_block_5(ctx) {
     p(ctx2, dirty) {
       if (dirty[1] & /*popoverTask, popoverSvgIndex*/
       20 && !src_url_equal(img.src, img_src_value = /*resolved*/
-      ctx2[301].srcUrl)) {
+      ctx2[302].srcUrl)) {
         attr(img, "src", img_src_value);
       }
     },
@@ -19235,7 +19235,7 @@ function create_if_block_19(ctx) {
   let html_tag;
   let raw_value = (
     /*resolved*/
-    ctx[301].content + ""
+    ctx[302].content + ""
   );
   let html_anchor;
   return {
@@ -19251,7 +19251,7 @@ function create_if_block_19(ctx) {
     p(ctx2, dirty) {
       if (dirty[1] & /*popoverTask, popoverSvgIndex*/
       20 && raw_value !== (raw_value = /*resolved*/
-      ctx2[301].content + ""))
+      ctx2[302].content + ""))
         html_tag.p(raw_value);
     },
     d(detaching) {
@@ -20354,7 +20354,7 @@ function create_else_block_14(ctx) {
   return {
     c() {
       span = element("span");
-      span.textContent = "This file is not linked to any tasks. This action cannot be undone.";
+      span.textContent = "This action cannot be undone.";
       set_style(span, "color", "var(--text-muted, #9ca3af)");
     },
     m(target, anchor) {
@@ -21895,6 +21895,7 @@ function instance4($$self, $$props, $$invalidate) {
       }
     }
     await unlinkSvgFromTasks(cleanPath, filename);
+    await cleanupSvgEmbedsInNotes(cleanPath);
     $$invalidate(42, showSvgDeleteConfirmModal = false);
     closeSvgLightbox();
     const NoticeCtor = window.Notice || import_obsidian14.Notice;
@@ -21910,6 +21911,61 @@ function instance4($$self, $$props, $$invalidate) {
       }
     ));
     window.dispatchEvent(new CustomEvent("fluent-tasks-svg-deleted", { detail: { path: cleanPath } }));
+  }
+  async function cleanupSvgEmbedsInNotes(targetPath) {
+    var _a2;
+    if (!targetPath || !((_a2 = plugin == null ? void 0 : plugin.app) == null ? void 0 : _a2.vault))
+      return;
+    const cleanTarget = targetPath.replace(/\\/g, "/").trim();
+    const fname = cleanTarget.split("/").pop() || "";
+    if (!fname)
+      return;
+    const escapedName = fname.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const embedRegexes = [
+      new RegExp(`!?\\[\\[(?:[^\\]]*\\/)?${escapedName}(?:\\|[^\\]]*)?\\]\\]`, "gi"),
+      new RegExp(`!?\\[[^\\]]*\\]\\([^)]*${escapedName}[^)]*\\)`, "gi")
+    ];
+    try {
+      const files = plugin.app.vault.getFiles().filter((f) => f.extension === "md");
+      for (const file of files) {
+        const content = await plugin.app.vault.read(file);
+        if (!content.includes(fname))
+          continue;
+        let modified = false;
+        const lines = content.split("\n");
+        const newLines = [];
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
+          let isPureEmbed = false;
+          for (const rx of embedRegexes) {
+            rx.lastIndex = 0;
+            const match = rx.exec(line.trim());
+            if (match && match[0] === line.trim()) {
+              isPureEmbed = true;
+              break;
+            }
+          }
+          if (isPureEmbed) {
+            modified = true;
+            continue;
+          }
+          let newLine = line;
+          for (const rx of embedRegexes) {
+            rx.lastIndex = 0;
+            if (rx.test(newLine)) {
+              newLine = newLine.replace(rx, "").trimEnd();
+              modified = true;
+            }
+          }
+          newLines.push(newLine);
+        }
+        if (modified) {
+          await plugin.app.vault.modify(file, newLines.join("\n"));
+        }
+      }
+    } catch (e) {
+      console.error("Failed to clean up SVG embeds in notes:", e);
+    }
   }
   async function unlinkSvgFromTasks(cleanPath, filename) {
     var _a2, _b2;

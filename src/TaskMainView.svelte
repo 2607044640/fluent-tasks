@@ -605,11 +605,14 @@
         // 2. Unlink from tasks in current category and all TodoData files
         await unlinkSvgFromTasks(cleanPath, filename);
 
-        // 3. Close modals
+        // 3. Clean up any broken markdown embeds in notes so no missing link box is left
+        await cleanupSvgEmbedsInNotes(cleanPath);
+
+        // 4. Close modals
         showSvgDeleteConfirmModal = false;
         closeSvgLightbox();
 
-        // 4. Notify
+        // 5. Notify
         const NoticeCtor = (window as any).Notice || Notice;
         if (svgLinkedTaskCount > 0) {
             new NoticeCtor(isChinese() ? `SVG 已删除并解绑任务: ${filename}` : `Deleted SVG and unlinked: ${filename}`);
@@ -617,9 +620,68 @@
             new NoticeCtor(isChinese() ? `SVG 已删除: ${filename}` : `Deleted SVG: ${filename}`);
         }
 
-        // 5. Notify window listeners
+        // 6. Notify window listeners
         window.dispatchEvent(new CustomEvent("a1-svg-updated", { detail: { path: cleanPath, deleted: true } }));
         window.dispatchEvent(new CustomEvent("fluent-tasks-svg-deleted", { detail: { path: cleanPath } }));
+    }
+
+    async function cleanupSvgEmbedsInNotes(targetPath: string) {
+        if (!targetPath || !plugin?.app?.vault) return;
+        const cleanTarget = targetPath.replace(/\\/g, "/").trim();
+        const fname = cleanTarget.split("/").pop() || "";
+        if (!fname) return;
+
+        const escapedName = fname.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const embedRegexes = [
+            new RegExp(`!?\\[\\[(?:[^\\]]*\\/)?${escapedName}(?:\\|[^\\]]*)?\\]\\]`, "gi"),
+            new RegExp(`!?\\[[^\\]]*\\]\\([^)]*${escapedName}[^)]*\\)`, "gi"),
+        ];
+
+        try {
+            const files = plugin.app.vault.getFiles().filter((f: any) => f.extension === "md");
+            for (const file of files) {
+                const content = await plugin.app.vault.read(file);
+                if (!content.includes(fname)) continue;
+
+                let modified = false;
+                const lines = content.split("\n");
+                const newLines: string[] = [];
+
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    let isPureEmbed = false;
+                    for (const rx of embedRegexes) {
+                        rx.lastIndex = 0;
+                        const match = rx.exec(line.trim());
+                        if (match && match[0] === line.trim()) {
+                            isPureEmbed = true;
+                            break;
+                        }
+                    }
+
+                    if (isPureEmbed) {
+                        modified = true;
+                        continue;
+                    }
+
+                    let newLine = line;
+                    for (const rx of embedRegexes) {
+                        rx.lastIndex = 0;
+                        if (rx.test(newLine)) {
+                            newLine = newLine.replace(rx, "").trimEnd();
+                            modified = true;
+                        }
+                    }
+                    newLines.push(newLine);
+                }
+
+                if (modified) {
+                    await plugin.app.vault.modify(file, newLines.join("\n"));
+                }
+            }
+        } catch (e) {
+            console.error("Failed to clean up SVG embeds in notes:", e);
+        }
     }
 
     async function unlinkSvgFromTasks(cleanPath: string, filename: string) {
@@ -3678,7 +3740,7 @@
                             </span>
                         {:else}
                             <span style="color: var(--text-muted, #9ca3af);">
-                                This file is not linked to any tasks. This action cannot be undone.
+                                This action cannot be undone.
                             </span>
                         {/if}
                     </div>
