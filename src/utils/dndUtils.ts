@@ -54,9 +54,9 @@ export function createVerticalAutoScroll(getContainer: () => HTMLElement | null)
                 return;
             }
             container.scrollTop += scrollSpeed;
-            scrollAnimId = requestAnimationFrame(step);
+            scrollAnimId = window.requestAnimationFrame(step);
         };
-        scrollAnimId = requestAnimationFrame(step);
+        scrollAnimId = window.requestAnimationFrame(step);
     }
 
     function stopAutoScroll() {

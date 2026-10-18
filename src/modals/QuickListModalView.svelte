@@ -2,7 +2,7 @@
     import { onMount, onDestroy, tick } from "svelte";
     import { DataService } from "../DataService";
     import { EventBus } from "../EventBus";
-    import { EventName, VIEW_TYPE_MAIN } from "../types";
+    import { EventName, VIEW_TYPE_MAIN, STARRED_CATEGORY_PATH, STARRED_CATEGORY_NAME } from "../types";
     import type { CategoryInfo, SidebarItem, GroupInfo, TaskItem } from "../types";
     import { toggleGroupExpandedState, getFlatCategories, filterSidebarTree, moveSidebarItem } from "../utils/sidebarTreeUtils";
     import { INPUT_FOCUS_DELAY_MS } from "../constants";
@@ -27,6 +27,7 @@
     let sidebarItems: SidebarItem[] = [];
     let categories: CategoryInfo[] = [];
     let taskCounts: Record<string, number> = {};
+    let starredCount: number = 0;
     let searchQuery: string = "";
     let focusedIndex: number = 0;
     let isGridLayout: boolean = plugin?.settings?.quickListGridLayout ?? true;
@@ -120,7 +121,17 @@
 
     $: isFiltering = (searchMode === 'list') && !!searchQuery.trim();
     $: filteredItems = (searchMode === 'list' && searchQuery.trim()) ? filterSidebarTree(sidebarItems, searchQuery) : sidebarItems;
-    $: flatCategories = getFlatCategories(filteredItems);
+    $: starredCategory = {
+        id: STARRED_CATEGORY_PATH,
+        name: STARRED_CATEGORY_NAME,
+        filepath: STARRED_CATEGORY_PATH,
+        type: "category",
+        isSmartList: true
+    } as CategoryInfo;
+    $: isStarredMatching = starredCount > 0 && (!isFiltering || STARRED_CATEGORY_NAME.toLowerCase().includes(searchQuery.toLowerCase()));
+    $: flatCategories = isStarredMatching
+        ? [starredCategory, ...getFlatCategories(filteredItems)]
+        : getFlatCategories(filteredItems);
     $: groupItems = filteredItems.filter(i => i.type === "group") as GroupInfo[];
     $: rootCategories = filteredItems.filter(i => i.type === "category") as CategoryInfo[];
     $: defaultFocusCategory = flatCategories.find(c => c.filepath === plugin?.settings?.defaultQuickListFocusFilepath);

@@ -32,7 +32,7 @@ function ensureUniqueCategoryName(
     destinationCategoryNames: string[]
 ): SidebarItem | CategoryInfo {
     if (item.type === "category" || ("filepath" in item && !("items" in item))) {
-        const cat = item as CategoryInfo;
+        const cat = item;
         if (destinationCategoryNames.includes(cat.name)) {
             const uniqueName = resolveUniqueName(destinationCategoryNames, cat.name);
             return { ...cat, name: uniqueName };
@@ -85,7 +85,7 @@ export function moveSidebarItem(
     // Special case: moving to root level when targetId is "__root__" or "root"
     if (targetId === "__root__" || targetId === "root") {
         const rootCategoryNames = tempItems.filter(i => i.type === "category").map(c => c.name);
-        const resolvedItem = ensureUniqueCategoryName(listToMove, rootCategoryNames) as SidebarItem;
+        const resolvedItem = ensureUniqueCategoryName(listToMove, rootCategoryNames);
         if (position === "top") {
             return [resolvedItem, ...tempItems];
         } else {
@@ -115,7 +115,7 @@ export function moveSidebarItem(
         for (const item of list) {
             if (item.id === tId) {
                 const rootNames = list.filter(i => i.type === "category").map(c => c.name);
-                const resolved = ensureUniqueCategoryName(itemToInsert, rootNames) as SidebarItem;
+                const resolved = ensureUniqueCategoryName(itemToInsert, rootNames);
                 if (p === "top") {
                     nextList.push(resolved);
                     nextList.push(item);
@@ -225,7 +225,7 @@ export function moveListToGroupOrRoot(
     if (targetGroupId === "root") {
         const rootNames = nextItems.filter(i => i.type === "category").map(c => c.name);
         const resolved = ensureUniqueCategoryName(listToMove, rootNames);
-        return [...nextItems, resolved as SidebarItem];
+        return [...nextItems, resolved];
     }
 
     return nextItems.map(item => {

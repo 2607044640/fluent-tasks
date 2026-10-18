@@ -327,7 +327,7 @@ export default class FluentTasksPlugin extends Plugin {
         }
 
         // Fallback: check DOM hover state
-        const hoveredTaskEl = document.querySelector(".task-item:hover, .quick-modal-task-item:hover") as HTMLElement | null;
+        const hoveredTaskEl = document.querySelector(".task-item:hover, .quick-modal-task-item:hover");
         if (hoveredTaskEl) {
             const taskIdAttr = hoveredTaskEl.id || "";
             const taskId = taskIdAttr.replace(/^task-/, "");

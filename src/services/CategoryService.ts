@@ -214,7 +214,7 @@ export class CategoryService {
                     id: item.id,
                     name: item.name,
                     isExpanded: item.isExpanded,
-                    children: children as any
+                    children: children
                 });
             } else if (item.type === "category") {
                 if (seenFilepaths.has(item.filepath)) continue;
