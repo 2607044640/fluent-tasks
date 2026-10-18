@@ -870,6 +870,145 @@
         }
     }
 
+    interface TaskMetaBadgeItem {
+        id: string;
+        type: 'why' | 'svg' | 'note' | 'custom';
+        index?: number;
+        whyVal?: string;
+        svgContent?: string;
+        noteLink?: string;
+        customMeta?: Record<string, any>;
+    }
+
+    function getTaskBadges(task: TaskItem): { visibleBadges: TaskMetaBadgeItem[]; overflowBadges: TaskMetaBadgeItem[] } {
+        const badges: TaskMetaBadgeItem[] = [];
+
+        // 1. Whys
+        const whys = (task.whys && task.whys.length > 0) ? task.whys : (task.why ? [task.why] : []);
+        whys.forEach((whyVal, idx) => {
+            if (whyVal) {
+                badges.push({
+                    id: `why-${idx}`,
+                    type: 'why',
+                    index: idx,
+                    whyVal
+                });
+            }
+        });
+
+        // 2. SVGs
+        if (task.svgs && task.svgs.length > 0) {
+            task.svgs.forEach((svgContent, idx) => {
+                if (svgContent) {
+                    badges.push({
+                        id: `svg-${idx}`,
+                        type: 'svg',
+                        index: idx,
+                        svgContent
+                    });
+                }
+            });
+        }
+
+        // 3. Note Link
+        if (task.note_link) {
+            badges.push({
+                id: 'note-link',
+                type: 'note',
+                noteLink: task.note_link
+            });
+        }
+
+        // 4. Custom Meta
+        if (task.customMeta && Object.keys(task.customMeta).length > 0) {
+            badges.push({
+                id: 'custom-meta',
+                type: 'custom',
+                customMeta: task.customMeta
+            });
+        }
+
+        // Count right-side interactive controls (star & priority weight)
+        const controlsCount = (!disableStars ? 1 : 0) + (enableTaskWeightMode ? 1 : 0);
+        const totalIcons = badges.length + controlsCount;
+
+        if (totalIcons > 9) {
+            // Capped at 9 visible icons: max badges = 9 - controlsCount (at least 1 badge slot)
+            const maxVisibleBadges = Math.max(1, 9 - controlsCount);
+            return {
+                visibleBadges: badges.slice(0, maxVisibleBadges),
+                overflowBadges: badges.slice(maxVisibleBadges)
+            };
+        } else {
+            return {
+                visibleBadges: badges,
+                overflowBadges: []
+            };
+        }
+    }
+
+    function openBadgesOverflowMenu(e: MouseEvent | KeyboardEvent, task: TaskItem, overflowBadges: TaskMetaBadgeItem[]) {
+        e.stopPropagation();
+        e.preventDefault();
+
+        const triggerEl = e.currentTarget as HTMLElement;
+        const menu = new Menu();
+
+        for (const badge of overflowBadges) {
+            if (badge.type === 'why') {
+                const whyIdx = badge.index ?? 0;
+                const previewText = badge.whyVal ? (badge.whyVal.length > 25 ? badge.whyVal.slice(0, 25) + '...' : badge.whyVal) : '';
+                menu.addItem((item) => {
+                    item.setTitle(`Why #${whyIdx + 1}: ${previewText || 'View rationale'}`)
+                        .setIcon("help-circle")
+                        .onClick(() => {
+                            if (triggerEl) {
+                                showPopover({ currentTarget: triggerEl }, task, 'why', whyIdx);
+                            }
+                        });
+                });
+            } else if (badge.type === 'svg') {
+                const svgIdx = badge.index ?? 0;
+                menu.addItem((item) => {
+                    item.setTitle(`Image #${svgIdx + 1}: View visual memory`)
+                        .setIcon("image")
+                        .onClick((clickEvent) => {
+                            if (badge.svgContent) {
+                                openSvgLightbox(clickEvent as any, badge.svgContent, task.title);
+                            }
+                        });
+                });
+            } else if (badge.type === 'note' && badge.noteLink) {
+                const isHard = LinkedNoteService.isHardBoundNote(badge.noteLink);
+                menu.addItem((item) => {
+                    item.setTitle(`Note: ${badge.noteLink}`)
+                        .setIcon(isHard ? "link" : "file-text")
+                        .onClick((clickEvent) => {
+                            handleNoteLinkClick(clickEvent as any, badge.noteLink, task.id);
+                        });
+                });
+            } else if (badge.type === 'custom') {
+                const keys = badge.customMeta ? Object.keys(badge.customMeta).join(", ") : "";
+                menu.addItem((item) => {
+                    item.setTitle(`Custom: ${keys || 'View properties'}`)
+                        .setIcon("tag")
+                        .onClick(() => {
+                            if (triggerEl) {
+                                showPopover({ currentTarget: triggerEl }, task, 'custom');
+                            }
+                        });
+                });
+            }
+        }
+
+        if (e instanceof MouseEvent) {
+            menu.showAtMouseEvent(e);
+        } else if (triggerEl) {
+            const rect = triggerEl.getBoundingClientRect();
+            menu.showAtPosition({ x: rect.left, y: rect.bottom + 4 });
+        }
+    }
+
     function handleSvgUpdated(e: any) {
         const { path, content } = e?.detail || {};
         svgResolveCache.clear();
@@ -2216,6 +2355,7 @@
              on:finalize={(e) => handleDndFinalize(e, 'incomplete')}
         >
             {#each incompleteTasks as task (task.id)}
+                {@const badgeData = getTaskBadges(task)}
                 <div
                     id={'task-' + task.id}
                     animate:flip={{duration: DND_FLIP_DURATION}}
@@ -2230,28 +2370,30 @@
                     tabindex="0"
                     role="button"
                 >
-                    {#if isMultiSelectMode}
-                        <!-- svelte-ignore a11y-click-events-have-key-events -->
-                        <span class="multi-select-checkbox-wrap" on:click|stopPropagation={() => toggleTaskSelection(task.id)}>
-                            <span class="multi-select-checkbox" class:is-checked={selectedTaskIds.has(task.id)}>
-                                {#if selectedTaskIds.has(task.id)}
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                                        <polyline points="20 6 9 17 4 12"></polyline>
-                                    </svg>
-                                {/if}
+                    <div class="task-left-controls">
+                        {#if isMultiSelectMode}
+                            <!-- svelte-ignore a11y-click-events-have-key-events -->
+                            <span class="multi-select-checkbox-wrap" on:click|stopPropagation={() => toggleTaskSelection(task.id)}>
+                                <span class="multi-select-checkbox" class:is-checked={selectedTaskIds.has(task.id)}>
+                                    {#if selectedTaskIds.has(task.id)}
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                    {/if}
+                                </span>
                             </span>
-                        </span>
-                    {/if}
+                        {/if}
 
-                    <!-- Checkbox circle -->
-                    <span class="checkbox" on:click|stopPropagation={() => toggleComplete(task)}
-                          role="checkbox" aria-checked="false" tabindex="0"
-                          on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleComplete(task)}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                             stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"/>
-                        </svg>
-                    </span>
+                        <!-- Checkbox circle -->
+                        <span class="checkbox" on:click|stopPropagation={() => toggleComplete(task)}
+                              role="checkbox" aria-checked="false" tabindex="0"
+                              on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleComplete(task)}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                            </svg>
+                        </span>
+                    </div>
 
                     <div class="task-content">
                         <!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -2294,15 +2436,15 @@
                         </div>
                     </div>
 
-                    <!-- Meta Badges -->
-                    {#if (task.whys && task.whys.length > 0) || task.why}
-                        {#each ((task.whys && task.whys.length > 0) ? task.whys : [task.why]) as whyVal, idx}
-                            {#if whyVal}
+                    <div class="task-right-controls">
+                        <!-- Meta Badges (Visible max 9) -->
+                        {#each badgeData.visibleBadges as badge (badge.id)}
+                            {#if badge.type === 'why'}
                                 <span class="meta-badge why-badge"
-                                      on:mouseenter={(e) => showPopover(e, task, 'why', idx)}
+                                      on:mouseenter={(e) => showPopover(e, task, 'why', badge.index)}
                                       on:mouseleave={scheduleHidePopover}
                                       role="button" tabindex="0"
-                                      title={((task.whys && task.whys.length > 1) ? `Why #${idx + 1}: view rationale` : "Why: view rationale")}>
+                                      title={((task.whys && task.whys.length > 1) ? `Why #${(badge.index || 0) + 1}: view rationale` : "Why: view rationale")}>
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <circle cx="12" cy="12" r="10"/>
@@ -2310,17 +2452,12 @@
                                         <line x1="12" y1="17" x2="12.01" y2="17"/>
                                     </svg>
                                 </span>
-                            {/if}
-                        {/each}
-                    {/if}
-                    {#if task.svgs && task.svgs.length > 0}
-                        {#each task.svgs as svgContent, i}
-                            {#if svgContent}
+                            {:else if badge.type === 'svg'}
                                 <span class="meta-badge svg-badge"
-                                      on:mouseenter={(e) => showPopover(e, task, 'svg', i)}
+                                      on:mouseenter={(e) => showPopover(e, task, 'svg', badge.index)}
                                       on:mouseleave={scheduleHidePopover}
-                                      on:click={(e) => openSvgLightbox(e, svgContent, task.title)}
-                                      on:keydown={(e) => e.key === "Enter" && openSvgLightbox(e, svgContent, task.title)}
+                                      on:click={(e) => badge.svgContent && openSvgLightbox(e, badge.svgContent, task.title)}
+                                      on:keydown={(e) => e.key === "Enter" && badge.svgContent && openSvgLightbox(e, badge.svgContent, task.title)}
                                       role="button" tabindex="0"
                                       title="Visual memory SVG: click to enlarge, hover to preview">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2329,91 +2466,105 @@
                                         <polyline points="21 15 16 10 5 21"/>
                                     </svg>
                                 </span>
-                            {/if}
-                        {/each}
-                    {/if}
-                    {#if task.note_link}
-                        <span class="meta-badge note-badge"
-                              class:hard-bound={LinkedNoteService.isHardBoundNote(task.note_link)}
-                              on:mouseenter={(e) => handleNoteLinkHover(e, task.note_link)}
-                              on:click={(e) => handleNoteLinkClick(e, task.note_link, task.id)}
-                              on:keydown={(e) => e.key === "Enter" && handleNoteLinkClick(e, task.note_link, task.id)}
-                              role="button" tabindex="0"
-                              title={t("linked_note_preview_tooltip", task.note_link)}>
-                            {#if LinkedNoteService.isHardBoundNote(task.note_link)}
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                                </svg>
-                            {:else}
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                    <polyline points="14 2 14 8 20 8"/>
-                                    <line x1="16" y1="13" x2="8" y2="13"/>
-                                    <line x1="16" y1="17" x2="8" y2="17"/>
-                                    <polyline points="10 9 9 9 8 9"/>
-                                </svg>
-                            {/if}
-                        </span>
-                    {/if}
-                    {#if task.customMeta && Object.keys(task.customMeta).length > 0}
-                        <span class="meta-badge custom-badge"
-                              on:mouseenter={(e) => showPopover(e, task, 'custom')}
-                              on:mouseleave={scheduleHidePopover}
-                              role="button" tabindex="0"
-                              title="Custom properties">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
-                                <line x1="7" y1="7" x2="7.01" y2="7"/>
-                            </svg>
-                        </span>
-                    {/if}
-
-                    <!-- Star -->
-                    {#if !disableStars}
-                        <span class="star" class:active={task.starred}
-                              on:click|stopPropagation={() => toggleStar(task)}
-                              role="button" tabindex="0"
-                              on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleStar(task)}>
-                            <svg width="18" height="18" viewBox="0 0 24 24"
-                                 fill={task.starred ? "currentColor" : "none"}
-                                 stroke="currentColor" stroke-width="2">
-                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                            </svg>
-                        </span>
-                    {/if}
-
-                    <!-- Weight Control (Priority 1-9) -->
-                    {#if enableTaskWeightMode}
-                        <!-- svelte-ignore a11y-click-events-have-key-events -->
-                        <div class="task-weight-control"
-                             class:is-editing={editingWeightTaskId === task.id}
-                             on:click|stopPropagation={() => startEditingWeight(task)}
-                             on:pointerdown|stopPropagation
-                             on:wheel={(e) => handleWeightWheel(e, task)}
-                             on:mouseleave={handleWeightMouseLeave}
-                             title="Priority: {getTaskWeight(task)} (Scroll or click to edit 1-9)">
-                            {#if editingWeightTaskId === task.id}
-                                <input
-                                    type="text"
-                                    class="task-weight-input"
-                                    data-task-id={task.id}
-                                    maxlength="1"
-                                    bind:value={editingWeightValue}
-                                    on:blur={() => commitWeightEdit(task)}
-                                    on:keydown={(e) => handleWeightInputKeydown(e, task)}
-                                    on:click|stopPropagation
-                                    on:pointerdown|stopPropagation
-                                />
-                            {:else}
-                                <span class="weight-score-badge" class:high-weight={getTaskWeight(task) >= 7} class:low-weight={getTaskWeight(task) <= 3}>
-                                    {getTaskWeight(task)}
+                            {:else if badge.type === 'note' && badge.noteLink}
+                                <span class="meta-badge note-badge"
+                                      class:hard-bound={LinkedNoteService.isHardBoundNote(badge.noteLink)}
+                                      on:mouseenter={(e) => handleNoteLinkHover(e, badge.noteLink)}
+                                      on:click={(e) => handleNoteLinkClick(e, badge.noteLink, task.id)}
+                                      on:keydown={(e) => e.key === "Enter" && handleNoteLinkClick(e, badge.noteLink, task.id)}
+                                      role="button" tabindex="0"
+                                      title={t("linked_note_preview_tooltip", badge.noteLink)}>
+                                    {#if LinkedNoteService.isHardBoundNote(badge.noteLink)}
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                                        </svg>
+                                    {:else}
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                            <polyline points="14 2 14 8 20 8"/>
+                                            <line x1="16" y1="13" x2="8" y2="13"/>
+                                            <line x1="16" y1="17" x2="8" y2="17"/>
+                                            <polyline points="10 9 9 9 8 9"/>
+                                        </svg>
+                                    {/if}
+                                </span>
+                            {:else if badge.type === 'custom'}
+                                <span class="meta-badge custom-badge"
+                                      on:mouseenter={(e) => showPopover(e, task, 'custom')}
+                                      on:mouseleave={scheduleHidePopover}
+                                      role="button" tabindex="0"
+                                      title="Custom properties">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                                        <line x1="7" y1="7" x2="7.01" y2="7"/>
+                                    </svg>
                                 </span>
                             {/if}
-                        </div>
-                    {/if}
+                        {/each}
+
+                        <!-- Overflow Badges Dropdown (···) -->
+                        {#if badgeData.overflowBadges.length > 0}
+                            <!-- svelte-ignore a11y-click-events-have-key-events -->
+                            <span class="meta-badge more-badge"
+                                  on:click|stopPropagation={(e) => openBadgesOverflowMenu(e, task, badgeData.overflowBadges)}
+                                  on:keydown|stopPropagation={(e) => (e.key === "Enter" || e.key === " ") && openBadgesOverflowMenu(e, task, badgeData.overflowBadges)}
+                                  role="button" tabindex="0"
+                                  title={`More metadata (${badgeData.overflowBadges.length}): click to view`}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                                    <circle cx="5" cy="12" r="2"/>
+                                    <circle cx="12" cy="12" r="2"/>
+                                    <circle cx="19" cy="12" r="2"/>
+                                </svg>
+                            </span>
+                        {/if}
+
+                        <!-- Star -->
+                        {#if !disableStars}
+                            <span class="star" class:active={task.starred}
+                                  on:click|stopPropagation={() => toggleStar(task)}
+                                  role="button" tabindex="0"
+                                  on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleStar(task)}>
+                                <svg width="18" height="18" viewBox="0 0 24 24"
+                                     fill={task.starred ? "currentColor" : "none"}
+                                     stroke="currentColor" stroke-width="2">
+                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                                </svg>
+                            </span>
+                        {/if}
+
+                        <!-- Weight Control (Priority 1-9) -->
+                        {#if enableTaskWeightMode}
+                            <!-- svelte-ignore a11y-click-events-have-key-events -->
+                            <div class="task-weight-control"
+                                 class:is-editing={editingWeightTaskId === task.id}
+                                 on:click|stopPropagation={() => startEditingWeight(task)}
+                                 on:pointerdown|stopPropagation
+                                 on:wheel={(e) => handleWeightWheel(e, task)}
+                                 on:mouseleave={handleWeightMouseLeave}
+                                 title="Priority: {getTaskWeight(task)} (Scroll or click to edit 1-9)">
+                                {#if editingWeightTaskId === task.id}
+                                    <input
+                                        type="text"
+                                        class="task-weight-input"
+                                        data-task-id={task.id}
+                                        maxlength="1"
+                                        bind:value={editingWeightValue}
+                                        on:blur={() => commitWeightEdit(task)}
+                                        on:keydown={(e) => handleWeightInputKeydown(e, task)}
+                                        on:click|stopPropagation
+                                        on:pointerdown|stopPropagation
+                                    />
+                                {:else}
+                                    <span class="weight-score-badge" class:high-weight={getTaskWeight(task) >= 7} class:low-weight={getTaskWeight(task) <= 3}>
+                                        {getTaskWeight(task)}
+                                    </span>
+                                {/if}
+                            </div>
+                        {/if}
+                    </div>
                 </div>
             {/each}
         </div>
@@ -2441,6 +2592,7 @@
                          on:finalize={(e) => handleDndFinalize(e, 'completed')}
                      >
                         {#each completedTasks as task (task.id)}
+                            {@const badgeData = getTaskBadges(task)}
                             <div
                                 id={'task-' + task.id}
                                 animate:flip={{duration: DND_FLIP_DURATION}}
@@ -2455,28 +2607,30 @@
                                 tabindex="0"
                                 role="button"
                             >
-                                {#if isMultiSelectMode}
-                                    <!-- svelte-ignore a11y-click-events-have-key-events -->
-                                    <span class="multi-select-checkbox-wrap" on:click|stopPropagation={() => toggleTaskSelection(task.id)}>
-                                        <span class="multi-select-checkbox" class:is-checked={selectedTaskIds.has(task.id)}>
-                                            {#if selectedTaskIds.has(task.id)}
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                                                    <polyline points="20 6 9 17 4 12"></polyline>
-                                                </svg>
-                                            {/if}
+                                <div class="task-left-controls">
+                                    {#if isMultiSelectMode}
+                                        <!-- svelte-ignore a11y-click-events-have-key-events -->
+                                        <span class="multi-select-checkbox-wrap" on:click|stopPropagation={() => toggleTaskSelection(task.id)}>
+                                            <span class="multi-select-checkbox" class:is-checked={selectedTaskIds.has(task.id)}>
+                                                {#if selectedTaskIds.has(task.id)}
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                                    </svg>
+                                                {/if}
+                                            </span>
                                         </span>
-                                    </span>
-                                {/if}
+                                    {/if}
 
-                                <span class="checkbox" on:click|stopPropagation={() => toggleComplete(task)}
-                                      role="checkbox" aria-checked="true" tabindex="0"
-                                      on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleComplete(task)}>
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                                         stroke="var(--todo-accent)" stroke-width="2">
-                                        <circle cx="12" cy="12" r="10"/>
-                                        <polyline points="8 12 11 15 16 9"/>
-                                    </svg>
-                                </span>
+                                    <span class="checkbox" on:click|stopPropagation={() => toggleComplete(task)}
+                                          role="checkbox" aria-checked="true" tabindex="0"
+                                          on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleComplete(task)}>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                             stroke="var(--todo-accent)" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"/>
+                                            <polyline points="8 12 11 15 16 9"/>
+                                        </svg>
+                                    </span>
+                                </div>
 
                                 <div class="task-content">
                                     <!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -2519,15 +2673,15 @@
                                     {/if}
                                 </div>
 
-                                <!-- Meta Badges -->
-                                {#if (task.whys && task.whys.length > 0) || task.why}
-                                    {#each ((task.whys && task.whys.length > 0) ? task.whys : [task.why]) as whyVal, idx}
-                                        {#if whyVal}
+                                <div class="task-right-controls">
+                                    <!-- Meta Badges (Visible max 9) -->
+                                    {#each badgeData.visibleBadges as badge (badge.id)}
+                                        {#if badge.type === 'why'}
                                             <span class="meta-badge why-badge"
-                                                  on:mouseenter={(e) => showPopover(e, task, 'why', idx)}
+                                                  on:mouseenter={(e) => showPopover(e, task, 'why', badge.index)}
                                                   on:mouseleave={scheduleHidePopover}
                                                   role="button" tabindex="0"
-                                                  title={((task.whys && task.whys.length > 1) ? `Why #${idx + 1}: view rationale` : "Why: view rationale")}>
+                                                  title={((task.whys && task.whys.length > 1) ? `Why #${(badge.index || 0) + 1}: view rationale` : "Why: view rationale")}>
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                                                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                     <circle cx="12" cy="12" r="10"/>
@@ -2535,17 +2689,12 @@
                                                     <line x1="12" y1="17" x2="12.01" y2="17"/>
                                                 </svg>
                                             </span>
-                                        {/if}
-                                    {/each}
-                                {/if}
-                                {#if task.svgs && task.svgs.length > 0}
-                                    {#each task.svgs as svgContent, i}
-                                        {#if svgContent}
+                                        {:else if badge.type === 'svg'}
                                             <span class="meta-badge svg-badge"
-                                                  on:mouseenter={(e) => showPopover(e, task, 'svg', i)}
+                                                  on:mouseenter={(e) => showPopover(e, task, 'svg', badge.index)}
                                                   on:mouseleave={scheduleHidePopover}
-                                                  on:click={(e) => openSvgLightbox(e, svgContent, task.title)}
-                                                  on:keydown={(e) => e.key === "Enter" && openSvgLightbox(e, svgContent, task.title)}
+                                                  on:click={(e) => badge.svgContent && openSvgLightbox(e, badge.svgContent, task.title)}
+                                                  on:keydown={(e) => e.key === "Enter" && badge.svgContent && openSvgLightbox(e, badge.svgContent, task.title)}
                                                   role="button" tabindex="0"
                                                   title="Visual memory SVG: click to enlarge, hover to preview">
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2554,90 +2703,105 @@
                                                     <polyline points="21 15 16 10 5 21"/>
                                                 </svg>
                                             </span>
-                                        {/if}
-                                    {/each}
-                                {/if}
-                                {#if task.note_link}
-                                    <span class="meta-badge note-badge"
-                                          class:hard-bound={LinkedNoteService.isHardBoundNote(task.note_link)}
-                                          on:mouseenter={(e) => handleNoteLinkHover(e, task.note_link)}
-                                          on:click={(e) => handleNoteLinkClick(e, task.note_link, task.id)}
-                                          on:keydown={(e) => e.key === "Enter" && handleNoteLinkClick(e, task.note_link, task.id)}
-                                          role="button" tabindex="0"
-                                          title={t("linked_note_preview_tooltip", task.note_link)}>
-                                        {#if LinkedNoteService.isHardBoundNote(task.note_link)}
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                                            </svg>
-                                        {:else}
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                                <polyline points="14 2 14 8 20 8"/>
-                                                <line x1="16" y1="13" x2="8" y2="13"/>
-                                                <line x1="16" y1="17" x2="8" y2="17"/>
-                                                <polyline points="10 9 9 9 8 9"/>
-                                            </svg>
-                                        {/if}
-                                    </span>
-                                {/if}
-                                {#if task.customMeta && Object.keys(task.customMeta).length > 0}
-                                    <span class="meta-badge custom-badge"
-                                          on:mouseenter={(e) => showPopover(e, task, 'custom')}
-                                          on:mouseleave={scheduleHidePopover}
-                                          role="button" tabindex="0"
-                                          title="Custom properties">
-                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
-                                            <line x1="7" y1="7" x2="7.01" y2="7"/>
-                                        </svg>
-                                    </span>
-                                {/if}
-
-                                {#if !disableStars}
-                                    <span class="star" class:active={task.starred}
-                                          on:click|stopPropagation={() => toggleStar(task)}
-                                          role="button" tabindex="0"
-                                          on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleStar(task)}>
-                                        <svg width="18" height="18" viewBox="0 0 24 24"
-                                             fill={task.starred ? "currentColor" : "none"}
-                                             stroke="currentColor" stroke-width="2">
-                                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                                        </svg>
-                                    </span>
-                                {/if}
-
-                                <!-- Weight Control (Priority 1-9) -->
-                                {#if enableTaskWeightMode}
-                                    <!-- svelte-ignore a11y-click-events-have-key-events -->
-                                    <div class="task-weight-control"
-                                         class:is-editing={editingWeightTaskId === task.id}
-                                         on:click|stopPropagation={() => startEditingWeight(task)}
-                                         on:pointerdown|stopPropagation
-                                         on:wheel={(e) => handleWeightWheel(e, task)}
-                                         on:mouseleave={handleWeightMouseLeave}
-                                         title="Priority: {getTaskWeight(task)} (Scroll or click to edit 1-9)">
-                                        {#if editingWeightTaskId === task.id}
-                                            <input
-                                                type="text"
-                                                class="task-weight-input"
-                                                data-task-id={task.id}
-                                                maxlength="1"
-                                                bind:value={editingWeightValue}
-                                                on:blur={() => commitWeightEdit(task)}
-                                                on:keydown={(e) => handleWeightInputKeydown(e, task)}
-                                                on:click|stopPropagation
-                                                on:pointerdown|stopPropagation
-                                            />
-                                        {:else}
-                                            <span class="weight-score-badge" class:high-weight={getTaskWeight(task) >= 7} class:low-weight={getTaskWeight(task) <= 3}>
-                                                {getTaskWeight(task)}
+                                        {:else if badge.type === 'note' && badge.noteLink}
+                                            <span class="meta-badge note-badge"
+                                                  class:hard-bound={LinkedNoteService.isHardBoundNote(badge.noteLink)}
+                                                  on:mouseenter={(e) => handleNoteLinkHover(e, badge.noteLink)}
+                                                  on:click={(e) => handleNoteLinkClick(e, badge.noteLink, task.id)}
+                                                  on:keydown={(e) => e.key === "Enter" && handleNoteLinkClick(e, badge.noteLink, task.id)}
+                                                  role="button" tabindex="0"
+                                                  title={t("linked_note_preview_tooltip", badge.noteLink)}>
+                                                {#if LinkedNoteService.isHardBoundNote(badge.noteLink)}
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                                                    </svg>
+                                                {:else}
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                                        <polyline points="14 2 14 8 20 8"/>
+                                                        <line x1="16" y1="13" x2="8" y2="13"/>
+                                                        <line x1="16" y1="17" x2="8" y2="17"/>
+                                                        <polyline points="10 9 9 9 8 9"/>
+                                                    </svg>
+                                                {/if}
+                                            </span>
+                                        {:else if badge.type === 'custom'}
+                                            <span class="meta-badge custom-badge"
+                                                  on:mouseenter={(e) => showPopover(e, task, 'custom')}
+                                                  on:mouseleave={scheduleHidePopover}
+                                                  role="button" tabindex="0"
+                                                  title="Custom properties">
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                                                    <line x1="7" y1="7" x2="7.01" y2="7"/>
+                                                </svg>
                                             </span>
                                         {/if}
-                                    </div>
-                                {/if}
+                                    {/each}
+
+                                    <!-- Overflow Badges Dropdown (···) -->
+                                    {#if badgeData.overflowBadges.length > 0}
+                                        <!-- svelte-ignore a11y-click-events-have-key-events -->
+                                        <span class="meta-badge more-badge"
+                                              on:click|stopPropagation={(e) => openBadgesOverflowMenu(e, task, badgeData.overflowBadges)}
+                                              on:keydown|stopPropagation={(e) => (e.key === "Enter" || e.key === " ") && openBadgesOverflowMenu(e, task, badgeData.overflowBadges)}
+                                              role="button" tabindex="0"
+                                              title={`More metadata (${badgeData.overflowBadges.length}): click to view`}>
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                                                <circle cx="5" cy="12" r="2"/>
+                                                <circle cx="12" cy="12" r="2"/>
+                                                <circle cx="19" cy="12" r="2"/>
+                                            </svg>
+                                        </span>
+                                    {/if}
+
+                                    <!-- Star -->
+                                    {#if !disableStars}
+                                        <span class="star" class:active={task.starred}
+                                              on:click|stopPropagation={() => toggleStar(task)}
+                                              role="button" tabindex="0"
+                                              on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleStar(task)}>
+                                            <svg width="18" height="18" viewBox="0 0 24 24"
+                                                 fill={task.starred ? "currentColor" : "none"}
+                                                 stroke="currentColor" stroke-width="2">
+                                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                                            </svg>
+                                        </span>
+                                    {/if}
+
+                                    <!-- Weight Control (Priority 1-9) -->
+                                    {#if enableTaskWeightMode}
+                                        <!-- svelte-ignore a11y-click-events-have-key-events -->
+                                        <div class="task-weight-control"
+                                             class:is-editing={editingWeightTaskId === task.id}
+                                             on:click|stopPropagation={() => startEditingWeight(task)}
+                                             on:pointerdown|stopPropagation
+                                             on:wheel={(e) => handleWeightWheel(e, task)}
+                                             on:mouseleave={handleWeightMouseLeave}
+                                             title="Priority: {getTaskWeight(task)} (Scroll or click to edit 1-9)">
+                                            {#if editingWeightTaskId === task.id}
+                                                <input
+                                                    type="text"
+                                                    class="task-weight-input"
+                                                    data-task-id={task.id}
+                                                    maxlength="1"
+                                                    bind:value={editingWeightValue}
+                                                    on:blur={() => commitWeightEdit(task)}
+                                                    on:keydown={(e) => handleWeightInputKeydown(e, task)}
+                                                    on:click|stopPropagation
+                                                    on:pointerdown|stopPropagation
+                                                />
+                                            {:else}
+                                                <span class="weight-score-badge" class:high-weight={getTaskWeight(task) >= 7} class:low-weight={getTaskWeight(task) <= 3}>
+                                                    {getTaskWeight(task)}
+                                                </span>
+                                            {/if}
+                                        </div>
+                                    {/if}
+                                </div>
                             </div>
                         {/each}
                     </div>
