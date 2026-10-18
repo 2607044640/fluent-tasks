@@ -542,7 +542,7 @@
 
         // 4. Notify
         const NoticeCtor = (window as any).Notice || Notice;
-        new NoticeCtor(isChinese() ? `SVG 已删除并解绑任务: ${filename}` : `Deleted SVG and unlinked: ${filename}`);
+        new NoticeCtor(isChinese() ? `SVG 已删除: ${filename}` : `Deleted SVG: ${filename}`);
 
         // 5. Notify window listeners
         window.dispatchEvent(new CustomEvent("a1-svg-updated", { detail: { path: cleanPath, deleted: true } }));
@@ -3537,7 +3537,7 @@
                             <button type="button"
                                     class="svg-lightbox-action-btn svg-lightbox-delete-btn"
                                     on:click|stopPropagation={() => showSvgDeleteConfirmModal = true}
-                                    title={isChinese() ? "删除此 SVG 图像及关联任务链接" : "Delete this SVG file and unlink from task"}>
+                                    title={isChinese() ? "删除此 SVG 图像文件" : "Delete this SVG file"}>
                                 {isChinese() ? "删除 SVG" : "Delete SVG"}
                             </button>
                         {/if}
@@ -3598,7 +3598,7 @@
                     {#if lightboxData?.cleanPath}
                         <br><code style="font-size: 11.5px; opacity: 0.85; word-break: break-all;">{lightboxData.cleanPath}</code>
                     {/if}
-                    <br>This will also remove its visual memory link from your tasks.
+                    <br>This action cannot be undone.
                 </div>
                 <div class="svg-confirm-actions">
                     <button type="button" class="svg-btn svg-btn-danger" on:click={confirmDeleteSvgFromLightbox}>
