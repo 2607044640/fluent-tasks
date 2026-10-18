@@ -400,6 +400,7 @@
             boardEl.style.setProperty("--quick-grid-card-w", `${actualCardW}px`);
             boardEl.style.setProperty("--quick-grid-col-gap", `${colGap}px`);
             boardEl.style.setProperty("--quick-grid-row-gap", `${rowGap}px`);
+            boardEl.style.setProperty("--quick-grid-item-slot-w", `${Math.round(48 * fontScale)}px`);
             boardEl.style.paddingTop = `${padY}px`;
             boardEl.style.paddingBottom = `${padY}px`;
             boardEl.style.paddingLeft = `${padX}px`;
@@ -2009,12 +2010,14 @@
                                                     <span class="quick-modal-list-name" title={cat.name}>{cat.name}</span>
                                                 {/if}
 
-                                                {#if (taskCounts[cat.filepath] ?? 0) > 0}
-                                                    <span class="quick-modal-badge">{taskCounts[cat.filepath]}</span>
-                                                {/if}
-                                                {#if plugin?.settings?.defaultQuickListFocusFilepath === cat.filepath}
-                                                    <span class="quick-modal-focus-tag" title={t("focus_tag_tooltip")}>🎯</span>
-                                                {/if}
+                                                <div class="quick-modal-item-meta-right">
+                                                    {#if (taskCounts[cat.filepath] ?? 0) > 0}
+                                                        <span class="quick-modal-badge">{taskCounts[cat.filepath]}</span>
+                                                    {/if}
+                                                    {#if plugin?.settings?.defaultQuickListFocusFilepath === cat.filepath}
+                                                        <span class="quick-modal-focus-tag" title={t("focus_tag_tooltip")}>🎯</span>
+                                                    {/if}
+                                                </div>
                                             </div>
                                         {/each}
                                     </div>
@@ -2121,12 +2124,14 @@
                                                             <span class="quick-modal-list-name" title={child.name}>{child.name}</span>
                                                         {/if}
 
-                                                        {#if (taskCounts[child.filepath] ?? 0) > 0}
-                                                            <span class="quick-modal-badge">{taskCounts[child.filepath]}</span>
-                                                        {/if}
-                                                        {#if plugin?.settings?.defaultQuickListFocusFilepath === child.filepath}
-                                                            <span class="quick-modal-focus-tag" title={t("focus_tag_tooltip")}>🎯</span>
-                                                        {/if}
+                                                        <div class="quick-modal-item-meta-right">
+                                                            {#if (taskCounts[child.filepath] ?? 0) > 0}
+                                                                <span class="quick-modal-badge">{taskCounts[child.filepath]}</span>
+                                                            {/if}
+                                                            {#if plugin?.settings?.defaultQuickListFocusFilepath === child.filepath}
+                                                                <span class="quick-modal-focus-tag" title={t("focus_tag_tooltip")}>🎯</span>
+                                                            {/if}
+                                                        </div>
                                                     </div>
                                                 {/each}
                                             {:else}
@@ -2162,7 +2167,9 @@
                 >
                     <span class="quick-modal-smart-star-icon">★</span>
                     <span class="quick-modal-list-name">{STARRED_CATEGORY_NAME}</span>
-                    <span class="quick-modal-badge smart-count-badge">{starredCount}</span>
+                    <div class="quick-modal-item-meta-right">
+                        <span class="quick-modal-badge smart-count-badge">{starredCount}</span>
+                    </div>
                 </div>
             {/if}
             {#if filteredItems.length === 0 && !isStarredMatching}
@@ -2259,12 +2266,14 @@
                                                 <span class="quick-modal-list-name">{child.name}</span>
                                             {/if}
 
-                                            {#if (taskCounts[child.filepath] ?? 0) > 0}
-                                                <span class="quick-modal-badge">{taskCounts[child.filepath]}</span>
-                                            {/if}
-                                            {#if plugin?.settings?.defaultQuickListFocusFilepath === child.filepath}
-                                                <span class="quick-modal-focus-tag" title={t("focus_tag_tooltip")}>🎯</span>
-                                            {/if}
+                                            <div class="quick-modal-item-meta-right">
+                                                {#if (taskCounts[child.filepath] ?? 0) > 0}
+                                                    <span class="quick-modal-badge">{taskCounts[child.filepath]}</span>
+                                                {/if}
+                                                {#if plugin?.settings?.defaultQuickListFocusFilepath === child.filepath}
+                                                    <span class="quick-modal-focus-tag" title={t("focus_tag_tooltip")}>🎯</span>
+                                                {/if}
+                                            </div>
                                         </div>
                                     {/each}
                                 </div>
@@ -2309,12 +2318,14 @@
                                 <span class="quick-modal-list-name">{item.name}</span>
                             {/if}
 
-                            {#if (taskCounts[item.filepath] ?? 0) > 0}
-                                <span class="quick-modal-badge">{taskCounts[item.filepath]}</span>
-                            {/if}
-                            {#if plugin?.settings?.defaultQuickListFocusFilepath === item.filepath}
-                                <span class="quick-modal-focus-tag" title={t("focus_tag_tooltip")}>🎯</span>
-                            {/if}
+                            <div class="quick-modal-item-meta-right">
+                                {#if (taskCounts[item.filepath] ?? 0) > 0}
+                                    <span class="quick-modal-badge">{taskCounts[item.filepath]}</span>
+                                {/if}
+                                {#if plugin?.settings?.defaultQuickListFocusFilepath === item.filepath}
+                                    <span class="quick-modal-focus-tag" title={t("focus_tag_tooltip")}>🎯</span>
+                                {/if}
+                            </div>
                         </div>
                     {/if}
                 {/each}

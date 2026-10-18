@@ -42481,11 +42481,12 @@ function create_if_block_215(ctx) {
   };
 }
 function create_if_block_254(ctx) {
-  let div;
+  let div1;
   let span0;
   let t1;
   let span1;
   let t3;
+  let div0;
   let span2;
   let t4;
   let mounted;
@@ -42493,13 +42494,14 @@ function create_if_block_254(ctx) {
   return {
     c() {
       var _a;
-      div = element("div");
+      div1 = element("div");
       span0 = element("span");
       span0.textContent = "\u2605";
       t1 = space();
       span1 = element("span");
       span1.textContent = `${STARRED_CATEGORY_NAME}`;
       t3 = space();
+      div0 = element("div");
       span2 = element("span");
       t4 = text(
         /*starredCount*/
@@ -42508,14 +42510,15 @@ function create_if_block_254(ctx) {
       attr(span0, "class", "quick-modal-smart-star-icon");
       attr(span1, "class", "quick-modal-list-name");
       attr(span2, "class", "quick-modal-badge smart-count-badge");
-      attr(div, "class", "quick-modal-list-item is-smart-item");
-      attr(div, "data-filepath", STARRED_CATEGORY_PATH);
-      attr(div, "data-item-id", STARRED_CATEGORY_PATH);
-      attr(div, "role", "button");
-      attr(div, "tabindex", "0");
-      attr(div, "title", "Open Starred tasks list in center view");
+      attr(div0, "class", "quick-modal-item-meta-right");
+      attr(div1, "class", "quick-modal-list-item is-smart-item");
+      attr(div1, "data-filepath", STARRED_CATEGORY_PATH);
+      attr(div1, "data-item-id", STARRED_CATEGORY_PATH);
+      attr(div1, "role", "button");
+      attr(div1, "tabindex", "0");
+      attr(div1, "title", "Open Starred tasks list in center view");
       toggle_class(
-        div,
+        div1,
         "is-focused",
         /*flatCategories*/
         ((_a = ctx[9][
@@ -42525,16 +42528,17 @@ function create_if_block_254(ctx) {
       );
     },
     m(target, anchor) {
-      insert(target, div, anchor);
-      append(div, span0);
-      append(div, t1);
-      append(div, span1);
-      append(div, t3);
-      append(div, span2);
+      insert(target, div1, anchor);
+      append(div1, span0);
+      append(div1, t1);
+      append(div1, span1);
+      append(div1, t3);
+      append(div1, div0);
+      append(div0, span2);
       append(span2, t4);
       if (!mounted) {
         dispose = listen(
-          div,
+          div1,
           "click",
           /*click_handler_13*/
           ctx[138]
@@ -42554,7 +42558,7 @@ function create_if_block_254(ctx) {
       if (dirty[0] & /*flatCategories, focusedIndex*/
       576) {
         toggle_class(
-          div,
+          div1,
           "is-focused",
           /*flatCategories*/
           ((_a = ctx2[9][
@@ -42566,7 +42570,7 @@ function create_if_block_254(ctx) {
     },
     d(detaching) {
       if (detaching) {
-        detach(div);
+        detach(div1);
       }
       mounted = false;
       dispose();
@@ -42648,14 +42652,15 @@ function create_if_block_154(ctx) {
 }
 function create_else_block_104(ctx) {
   var _a, _b, _c;
-  let div;
+  let div1;
   let span;
   let t1;
   let t2;
+  let div0;
   let t3;
   let t4;
-  let div_data_filepath_value;
-  let div_data_item_id_value;
+  let div1_data_filepath_value;
+  let div1_data_item_id_value;
   let mounted;
   let dispose;
   function select_block_type_15(ctx2, dirty) {
@@ -42763,12 +42768,13 @@ function create_else_block_104(ctx) {
   return {
     c() {
       var _a2, _b2, _c2;
-      div = element("div");
+      div1 = element("div");
       span = element("span");
       span.textContent = "\u{1F4C1}";
       t1 = space();
       if_block0.c();
       t2 = space();
+      div0 = element("div");
       if (if_block1)
         if_block1.c();
       t3 = space();
@@ -42776,16 +42782,17 @@ function create_else_block_104(ctx) {
         if_block2.c();
       t4 = space();
       attr(span, "class", "quick-modal-list-icon");
-      attr(div, "class", "quick-modal-list-item");
-      attr(div, "data-filepath", div_data_filepath_value = /*item*/
+      attr(div0, "class", "quick-modal-item-meta-right");
+      attr(div1, "class", "quick-modal-list-item");
+      attr(div1, "data-filepath", div1_data_filepath_value = /*item*/
       ctx[229].filepath);
-      attr(div, "data-item-id", div_data_item_id_value = /*item*/
+      attr(div1, "data-item-id", div1_data_item_id_value = /*item*/
       ctx[229].id);
-      attr(div, "role", "button");
-      attr(div, "tabindex", "0");
-      attr(div, "draggable", "true");
+      attr(div1, "role", "button");
+      attr(div1, "tabindex", "0");
+      attr(div1, "draggable", "true");
       toggle_class(
-        div,
+        div1,
         "is-focused",
         /*flatCategories*/
         ((_a2 = ctx[9][
@@ -42795,21 +42802,21 @@ function create_else_block_104(ctx) {
         ctx[229].filepath
       );
       toggle_class(
-        div,
+        div1,
         "is-default-focus",
         /*plugin*/
         ((_c2 = (_b2 = ctx[0]) == null ? void 0 : _b2.settings) == null ? void 0 : _c2.defaultQuickListFocusFilepath) === /*item*/
         ctx[229].filepath
       );
       toggle_class(
-        div,
+        div1,
         "is-dragging",
         /*draggedListId*/
         ctx[29] === /*item*/
         ctx[229].id
       );
       toggle_class(
-        div,
+        div1,
         "drag-over-top",
         /*dragOverListId*/
         ctx[30] === /*item*/
@@ -42817,7 +42824,7 @@ function create_else_block_104(ctx) {
         ctx[31] === "top"
       );
       toggle_class(
-        div,
+        div1,
         "drag-over-bottom",
         /*dragOverListId*/
         ctx[30] === /*item*/
@@ -42826,33 +42833,34 @@ function create_else_block_104(ctx) {
       );
     },
     m(target, anchor) {
-      insert(target, div, anchor);
-      append(div, span);
-      append(div, t1);
-      if_block0.m(div, null);
-      append(div, t2);
+      insert(target, div1, anchor);
+      append(div1, span);
+      append(div1, t1);
+      if_block0.m(div1, null);
+      append(div1, t2);
+      append(div1, div0);
       if (if_block1)
-        if_block1.m(div, null);
-      append(div, t3);
+        if_block1.m(div0, null);
+      append(div0, t3);
       if (if_block2)
-        if_block2.m(div, null);
-      append(div, t4);
+        if_block2.m(div0, null);
+      append(div1, t4);
       if (!mounted) {
         dispose = [
-          listen(div, "mouseenter", mouseenter_handler_6),
-          listen(div, "mouseleave", mouseleave_handler_5),
-          listen(div, "dragstart", dragstart_handler_5),
+          listen(div1, "mouseenter", mouseenter_handler_6),
+          listen(div1, "mouseleave", mouseleave_handler_5),
+          listen(div1, "dragstart", dragstart_handler_5),
           listen(
-            div,
+            div1,
             "dragend",
             /*handleListDragEnd*/
             ctx[56]
           ),
-          listen(div, "dragover", dragover_handler_8),
-          listen(div, "dragleave", dragleave_handler_10),
-          listen(div, "drop", prevent_default(drop_handler_8)),
-          listen(div, "click", click_handler_17),
-          listen(div, "contextmenu", contextmenu_handler_6)
+          listen(div1, "dragover", dragover_handler_8),
+          listen(div1, "dragleave", dragleave_handler_10),
+          listen(div1, "drop", prevent_default(drop_handler_8)),
+          listen(div1, "click", click_handler_17),
+          listen(div1, "contextmenu", contextmenu_handler_6)
         ];
         mounted = true;
       }
@@ -42867,7 +42875,7 @@ function create_else_block_104(ctx) {
         if_block0 = current_block_type(ctx);
         if (if_block0) {
           if_block0.c();
-          if_block0.m(div, t2);
+          if_block0.m(div1, t2);
         }
       }
       if (
@@ -42882,7 +42890,7 @@ function create_else_block_104(ctx) {
         } else {
           if_block1 = create_if_block_234(ctx);
           if_block1.c();
-          if_block1.m(div, t3);
+          if_block1.m(div0, t3);
         }
       } else if (if_block1) {
         if_block1.d(1);
@@ -42897,26 +42905,26 @@ function create_else_block_104(ctx) {
         } else {
           if_block2 = create_if_block_225(ctx);
           if_block2.c();
-          if_block2.m(div, t4);
+          if_block2.m(div0, null);
         }
       } else if (if_block2) {
         if_block2.d(1);
         if_block2 = null;
       }
       if (dirty[0] & /*filteredItems*/
-      1024 && div_data_filepath_value !== (div_data_filepath_value = /*item*/
+      1024 && div1_data_filepath_value !== (div1_data_filepath_value = /*item*/
       ctx[229].filepath)) {
-        attr(div, "data-filepath", div_data_filepath_value);
+        attr(div1, "data-filepath", div1_data_filepath_value);
       }
       if (dirty[0] & /*filteredItems*/
-      1024 && div_data_item_id_value !== (div_data_item_id_value = /*item*/
+      1024 && div1_data_item_id_value !== (div1_data_item_id_value = /*item*/
       ctx[229].id)) {
-        attr(div, "data-item-id", div_data_item_id_value);
+        attr(div1, "data-item-id", div1_data_item_id_value);
       }
       if (dirty[0] & /*flatCategories, focusedIndex, filteredItems*/
       1600) {
         toggle_class(
-          div,
+          div1,
           "is-focused",
           /*flatCategories*/
           ((_d = ctx[9][
@@ -42929,7 +42937,7 @@ function create_else_block_104(ctx) {
       if (dirty[0] & /*plugin, filteredItems*/
       1025) {
         toggle_class(
-          div,
+          div1,
           "is-default-focus",
           /*plugin*/
           ((_f = (_e = ctx[0]) == null ? void 0 : _e.settings) == null ? void 0 : _f.defaultQuickListFocusFilepath) === /*item*/
@@ -42939,7 +42947,7 @@ function create_else_block_104(ctx) {
       if (dirty[0] & /*draggedListId, filteredItems*/
       536871936) {
         toggle_class(
-          div,
+          div1,
           "is-dragging",
           /*draggedListId*/
           ctx[29] === /*item*/
@@ -42950,7 +42958,7 @@ function create_else_block_104(ctx) {
       1073742848 | dirty[1] & /*dragListPosition*/
       1) {
         toggle_class(
-          div,
+          div1,
           "drag-over-top",
           /*dragOverListId*/
           ctx[30] === /*item*/
@@ -42962,7 +42970,7 @@ function create_else_block_104(ctx) {
       1073742848 | dirty[1] & /*dragListPosition*/
       1) {
         toggle_class(
-          div,
+          div1,
           "drag-over-bottom",
           /*dragOverListId*/
           ctx[30] === /*item*/
@@ -42973,7 +42981,7 @@ function create_else_block_104(ctx) {
     },
     d(detaching) {
       if (detaching) {
-        detach(div);
+        detach(div1);
       }
       if_block0.d();
       if (if_block1)
@@ -43780,14 +43788,15 @@ function create_if_block_184(ctx) {
 }
 function create_each_block_54(key_1, ctx) {
   var _a, _b, _c;
-  let div;
+  let div1;
   let span;
   let t1;
   let t2;
+  let div0;
   let t3;
   let t4;
-  let div_data_filepath_value;
-  let div_data_item_id_value;
+  let div1_data_filepath_value;
+  let div1_data_item_id_value;
   let mounted;
   let dispose;
   function select_block_type_14(ctx2, dirty) {
@@ -43899,12 +43908,13 @@ function create_each_block_54(key_1, ctx) {
     first: null,
     c() {
       var _a2, _b2, _c2;
-      div = element("div");
+      div1 = element("div");
       span = element("span");
       span.textContent = "\u{1F4C1}";
       t1 = space();
       if_block0.c();
       t2 = space();
+      div0 = element("div");
       if (if_block1)
         if_block1.c();
       t3 = space();
@@ -43912,16 +43922,17 @@ function create_each_block_54(key_1, ctx) {
         if_block2.c();
       t4 = space();
       attr(span, "class", "quick-modal-list-icon");
-      attr(div, "class", "quick-modal-list-item is-nested");
-      attr(div, "data-filepath", div_data_filepath_value = /*child*/
+      attr(div0, "class", "quick-modal-item-meta-right");
+      attr(div1, "class", "quick-modal-list-item is-nested");
+      attr(div1, "data-filepath", div1_data_filepath_value = /*child*/
       ctx[226].filepath);
-      attr(div, "data-item-id", div_data_item_id_value = /*child*/
+      attr(div1, "data-item-id", div1_data_item_id_value = /*child*/
       ctx[226].id);
-      attr(div, "role", "button");
-      attr(div, "tabindex", "0");
-      attr(div, "draggable", "true");
+      attr(div1, "role", "button");
+      attr(div1, "tabindex", "0");
+      attr(div1, "draggable", "true");
       toggle_class(
-        div,
+        div1,
         "is-focused",
         /*flatCategories*/
         ((_a2 = ctx[9][
@@ -43931,21 +43942,21 @@ function create_each_block_54(key_1, ctx) {
         ctx[226].filepath
       );
       toggle_class(
-        div,
+        div1,
         "is-default-focus",
         /*plugin*/
         ((_c2 = (_b2 = ctx[0]) == null ? void 0 : _b2.settings) == null ? void 0 : _c2.defaultQuickListFocusFilepath) === /*child*/
         ctx[226].filepath
       );
       toggle_class(
-        div,
+        div1,
         "is-dragging",
         /*draggedListId*/
         ctx[29] === /*child*/
         ctx[226].id
       );
       toggle_class(
-        div,
+        div1,
         "drag-over-top",
         /*dragOverListId*/
         ctx[30] === /*child*/
@@ -43953,43 +43964,44 @@ function create_each_block_54(key_1, ctx) {
         ctx[31] === "top"
       );
       toggle_class(
-        div,
+        div1,
         "drag-over-bottom",
         /*dragOverListId*/
         ctx[30] === /*child*/
         ctx[226].id && /*dragListPosition*/
         ctx[31] === "bottom"
       );
-      this.first = div;
+      this.first = div1;
     },
     m(target, anchor) {
-      insert(target, div, anchor);
-      append(div, span);
-      append(div, t1);
-      if_block0.m(div, null);
-      append(div, t2);
+      insert(target, div1, anchor);
+      append(div1, span);
+      append(div1, t1);
+      if_block0.m(div1, null);
+      append(div1, t2);
+      append(div1, div0);
       if (if_block1)
-        if_block1.m(div, null);
-      append(div, t3);
+        if_block1.m(div0, null);
+      append(div0, t3);
       if (if_block2)
-        if_block2.m(div, null);
-      append(div, t4);
+        if_block2.m(div0, null);
+      append(div1, t4);
       if (!mounted) {
         dispose = [
-          listen(div, "mouseenter", mouseenter_handler_5),
-          listen(div, "mouseleave", mouseleave_handler_4),
-          listen(div, "dragstart", dragstart_handler_4),
+          listen(div1, "mouseenter", mouseenter_handler_5),
+          listen(div1, "mouseleave", mouseleave_handler_4),
+          listen(div1, "dragstart", dragstart_handler_4),
           listen(
-            div,
+            div1,
             "dragend",
             /*handleListDragEnd*/
             ctx[56]
           ),
-          listen(div, "dragover", dragover_handler_6),
-          listen(div, "dragleave", dragleave_handler_8),
-          listen(div, "drop", prevent_default(drop_handler_6)),
-          listen(div, "click", click_handler_16),
-          listen(div, "contextmenu", contextmenu_handler_5)
+          listen(div1, "dragover", dragover_handler_6),
+          listen(div1, "dragleave", dragleave_handler_8),
+          listen(div1, "drop", prevent_default(drop_handler_6)),
+          listen(div1, "click", click_handler_16),
+          listen(div1, "contextmenu", contextmenu_handler_5)
         ];
         mounted = true;
       }
@@ -44004,7 +44016,7 @@ function create_each_block_54(key_1, ctx) {
         if_block0 = current_block_type(ctx);
         if (if_block0) {
           if_block0.c();
-          if_block0.m(div, t2);
+          if_block0.m(div1, t2);
         }
       }
       if (
@@ -44019,7 +44031,7 @@ function create_each_block_54(key_1, ctx) {
         } else {
           if_block1 = create_if_block_194(ctx);
           if_block1.c();
-          if_block1.m(div, t3);
+          if_block1.m(div0, t3);
         }
       } else if (if_block1) {
         if_block1.d(1);
@@ -44034,26 +44046,26 @@ function create_each_block_54(key_1, ctx) {
         } else {
           if_block2 = create_if_block_184(ctx);
           if_block2.c();
-          if_block2.m(div, t4);
+          if_block2.m(div0, null);
         }
       } else if (if_block2) {
         if_block2.d(1);
         if_block2 = null;
       }
       if (dirty[0] & /*filteredItems*/
-      1024 && div_data_filepath_value !== (div_data_filepath_value = /*child*/
+      1024 && div1_data_filepath_value !== (div1_data_filepath_value = /*child*/
       ctx[226].filepath)) {
-        attr(div, "data-filepath", div_data_filepath_value);
+        attr(div1, "data-filepath", div1_data_filepath_value);
       }
       if (dirty[0] & /*filteredItems*/
-      1024 && div_data_item_id_value !== (div_data_item_id_value = /*child*/
+      1024 && div1_data_item_id_value !== (div1_data_item_id_value = /*child*/
       ctx[226].id)) {
-        attr(div, "data-item-id", div_data_item_id_value);
+        attr(div1, "data-item-id", div1_data_item_id_value);
       }
       if (dirty[0] & /*flatCategories, focusedIndex, filteredItems*/
       1600) {
         toggle_class(
-          div,
+          div1,
           "is-focused",
           /*flatCategories*/
           ((_d = ctx[9][
@@ -44066,7 +44078,7 @@ function create_each_block_54(key_1, ctx) {
       if (dirty[0] & /*plugin, filteredItems*/
       1025) {
         toggle_class(
-          div,
+          div1,
           "is-default-focus",
           /*plugin*/
           ((_f = (_e = ctx[0]) == null ? void 0 : _e.settings) == null ? void 0 : _f.defaultQuickListFocusFilepath) === /*child*/
@@ -44076,7 +44088,7 @@ function create_each_block_54(key_1, ctx) {
       if (dirty[0] & /*draggedListId, filteredItems*/
       536871936) {
         toggle_class(
-          div,
+          div1,
           "is-dragging",
           /*draggedListId*/
           ctx[29] === /*child*/
@@ -44087,7 +44099,7 @@ function create_each_block_54(key_1, ctx) {
       1073742848 | dirty[1] & /*dragListPosition*/
       1) {
         toggle_class(
-          div,
+          div1,
           "drag-over-top",
           /*dragOverListId*/
           ctx[30] === /*child*/
@@ -44099,7 +44111,7 @@ function create_each_block_54(key_1, ctx) {
       1073742848 | dirty[1] & /*dragListPosition*/
       1) {
         toggle_class(
-          div,
+          div1,
           "drag-over-bottom",
           /*dragOverListId*/
           ctx[30] === /*child*/
@@ -44110,7 +44122,7 @@ function create_each_block_54(key_1, ctx) {
     },
     d(detaching) {
       if (detaching) {
-        detach(div);
+        detach(div1);
       }
       if_block0.d();
       if (if_block1)
@@ -45217,13 +45229,14 @@ function create_if_block_115(ctx) {
 }
 function create_each_block_34(key_1, ctx) {
   var _a, _b, _c;
-  let div;
+  let div1;
   let span;
   let t1;
   let t2;
+  let div0;
   let t3;
-  let div_data_filepath_value;
-  let div_data_item_id_value;
+  let div1_data_filepath_value;
+  let div1_data_item_id_value;
   let mounted;
   let dispose;
   function select_block_type_10(ctx2, dirty) {
@@ -45335,28 +45348,30 @@ function create_each_block_34(key_1, ctx) {
     first: null,
     c() {
       var _a2, _b2, _c2;
-      div = element("div");
+      div1 = element("div");
       span = element("span");
       span.textContent = "\u{1F4C1}";
       t1 = space();
       if_block0.c();
       t2 = space();
+      div0 = element("div");
       if (if_block1)
         if_block1.c();
       t3 = space();
       if (if_block2)
         if_block2.c();
       attr(span, "class", "quick-modal-list-icon");
-      attr(div, "class", "quick-modal-list-item is-grid-item");
-      attr(div, "data-filepath", div_data_filepath_value = /*child*/
+      attr(div0, "class", "quick-modal-item-meta-right");
+      attr(div1, "class", "quick-modal-list-item is-grid-item");
+      attr(div1, "data-filepath", div1_data_filepath_value = /*child*/
       ctx[226].filepath);
-      attr(div, "data-item-id", div_data_item_id_value = /*child*/
+      attr(div1, "data-item-id", div1_data_item_id_value = /*child*/
       ctx[226].id);
-      attr(div, "role", "button");
-      attr(div, "tabindex", "0");
-      attr(div, "draggable", "true");
+      attr(div1, "role", "button");
+      attr(div1, "tabindex", "0");
+      attr(div1, "draggable", "true");
       toggle_class(
-        div,
+        div1,
         "is-focused",
         /*flatCategories*/
         ((_a2 = ctx[9][
@@ -45366,21 +45381,21 @@ function create_each_block_34(key_1, ctx) {
         ctx[226].filepath
       );
       toggle_class(
-        div,
+        div1,
         "is-default-focus",
         /*plugin*/
         ((_c2 = (_b2 = ctx[0]) == null ? void 0 : _b2.settings) == null ? void 0 : _c2.defaultQuickListFocusFilepath) === /*child*/
         ctx[226].filepath
       );
       toggle_class(
-        div,
+        div1,
         "is-dragging",
         /*draggedListId*/
         ctx[29] === /*child*/
         ctx[226].id
       );
       toggle_class(
-        div,
+        div1,
         "drag-over-top",
         /*dragOverListId*/
         ctx[30] === /*child*/
@@ -45388,42 +45403,43 @@ function create_each_block_34(key_1, ctx) {
         ctx[31] === "top"
       );
       toggle_class(
-        div,
+        div1,
         "drag-over-bottom",
         /*dragOverListId*/
         ctx[30] === /*child*/
         ctx[226].id && /*dragListPosition*/
         ctx[31] === "bottom"
       );
-      this.first = div;
+      this.first = div1;
     },
     m(target, anchor) {
-      insert(target, div, anchor);
-      append(div, span);
-      append(div, t1);
-      if_block0.m(div, null);
-      append(div, t2);
+      insert(target, div1, anchor);
+      append(div1, span);
+      append(div1, t1);
+      if_block0.m(div1, null);
+      append(div1, t2);
+      append(div1, div0);
       if (if_block1)
-        if_block1.m(div, null);
-      append(div, t3);
+        if_block1.m(div0, null);
+      append(div0, t3);
       if (if_block2)
-        if_block2.m(div, null);
+        if_block2.m(div0, null);
       if (!mounted) {
         dispose = [
-          listen(div, "mouseenter", mouseenter_handler_3),
-          listen(div, "mouseleave", mouseleave_handler_2),
-          listen(div, "dragstart", dragstart_handler_2),
+          listen(div1, "mouseenter", mouseenter_handler_3),
+          listen(div1, "mouseleave", mouseleave_handler_2),
+          listen(div1, "dragstart", dragstart_handler_2),
           listen(
-            div,
+            div1,
             "dragend",
             /*handleListDragEnd*/
             ctx[56]
           ),
-          listen(div, "dragover", dragover_handler_2),
-          listen(div, "dragleave", dragleave_handler_4),
-          listen(div, "drop", prevent_default(drop_handler_2)),
-          listen(div, "click", click_handler_12),
-          listen(div, "contextmenu", contextmenu_handler_3)
+          listen(div1, "dragover", dragover_handler_2),
+          listen(div1, "dragleave", dragleave_handler_4),
+          listen(div1, "drop", prevent_default(drop_handler_2)),
+          listen(div1, "click", click_handler_12),
+          listen(div1, "contextmenu", contextmenu_handler_3)
         ];
         mounted = true;
       }
@@ -45438,7 +45454,7 @@ function create_each_block_34(key_1, ctx) {
         if_block0 = current_block_type(ctx);
         if (if_block0) {
           if_block0.c();
-          if_block0.m(div, t2);
+          if_block0.m(div1, t2);
         }
       }
       if (
@@ -45453,7 +45469,7 @@ function create_each_block_34(key_1, ctx) {
         } else {
           if_block1 = create_if_block_125(ctx);
           if_block1.c();
-          if_block1.m(div, t3);
+          if_block1.m(div0, t3);
         }
       } else if (if_block1) {
         if_block1.d(1);
@@ -45468,27 +45484,27 @@ function create_each_block_34(key_1, ctx) {
         } else {
           if_block2 = create_if_block_115(ctx);
           if_block2.c();
-          if_block2.m(div, null);
+          if_block2.m(div0, null);
         }
       } else if (if_block2) {
         if_block2.d(1);
         if_block2 = null;
       }
       if (dirty[1] & /*layoutColumns*/
-      64 && div_data_filepath_value !== (div_data_filepath_value = /*child*/
+      64 && div1_data_filepath_value !== (div1_data_filepath_value = /*child*/
       ctx[226].filepath)) {
-        attr(div, "data-filepath", div_data_filepath_value);
+        attr(div1, "data-filepath", div1_data_filepath_value);
       }
       if (dirty[1] & /*layoutColumns*/
-      64 && div_data_item_id_value !== (div_data_item_id_value = /*child*/
+      64 && div1_data_item_id_value !== (div1_data_item_id_value = /*child*/
       ctx[226].id)) {
-        attr(div, "data-item-id", div_data_item_id_value);
+        attr(div1, "data-item-id", div1_data_item_id_value);
       }
       if (dirty[0] & /*flatCategories, focusedIndex*/
       576 | dirty[1] & /*layoutColumns*/
       64) {
         toggle_class(
-          div,
+          div1,
           "is-focused",
           /*flatCategories*/
           ((_d = ctx[9][
@@ -45502,7 +45518,7 @@ function create_each_block_34(key_1, ctx) {
       1 | dirty[1] & /*layoutColumns*/
       64) {
         toggle_class(
-          div,
+          div1,
           "is-default-focus",
           /*plugin*/
           ((_f = (_e = ctx[0]) == null ? void 0 : _e.settings) == null ? void 0 : _f.defaultQuickListFocusFilepath) === /*child*/
@@ -45513,7 +45529,7 @@ function create_each_block_34(key_1, ctx) {
       536870912 | dirty[1] & /*layoutColumns*/
       64) {
         toggle_class(
-          div,
+          div1,
           "is-dragging",
           /*draggedListId*/
           ctx[29] === /*child*/
@@ -45524,7 +45540,7 @@ function create_each_block_34(key_1, ctx) {
       1073741824 | dirty[1] & /*layoutColumns, dragListPosition*/
       65) {
         toggle_class(
-          div,
+          div1,
           "drag-over-top",
           /*dragOverListId*/
           ctx[30] === /*child*/
@@ -45536,7 +45552,7 @@ function create_each_block_34(key_1, ctx) {
       1073741824 | dirty[1] & /*layoutColumns, dragListPosition*/
       65) {
         toggle_class(
-          div,
+          div1,
           "drag-over-bottom",
           /*dragOverListId*/
           ctx[30] === /*child*/
@@ -45547,7 +45563,7 @@ function create_each_block_34(key_1, ctx) {
     },
     d(detaching) {
       if (detaching) {
-        detach(div);
+        detach(div1);
       }
       if_block0.d();
       if (if_block1)
@@ -45717,13 +45733,14 @@ function create_if_block_513(ctx) {
 }
 function create_each_block_25(key_1, ctx) {
   var _a, _b, _c;
-  let div;
+  let div1;
   let span;
   let t1;
   let t2;
+  let div0;
   let t3;
-  let div_data_filepath_value;
-  let div_data_item_id_value;
+  let div1_data_filepath_value;
+  let div1_data_item_id_value;
   let mounted;
   let dispose;
   function select_block_type_7(ctx2, dirty) {
@@ -45833,28 +45850,30 @@ function create_each_block_25(key_1, ctx) {
     first: null,
     c() {
       var _a2, _b2, _c2;
-      div = element("div");
+      div1 = element("div");
       span = element("span");
       span.textContent = "\u{1F4C1}";
       t1 = space();
       if_block0.c();
       t2 = space();
+      div0 = element("div");
       if (if_block1)
         if_block1.c();
       t3 = space();
       if (if_block2)
         if_block2.c();
       attr(span, "class", "quick-modal-list-icon");
-      attr(div, "class", "quick-modal-list-item is-grid-item");
-      attr(div, "data-filepath", div_data_filepath_value = /*cat*/
+      attr(div0, "class", "quick-modal-item-meta-right");
+      attr(div1, "class", "quick-modal-list-item is-grid-item");
+      attr(div1, "data-filepath", div1_data_filepath_value = /*cat*/
       ctx[222].filepath);
-      attr(div, "data-item-id", div_data_item_id_value = /*cat*/
+      attr(div1, "data-item-id", div1_data_item_id_value = /*cat*/
       ctx[222].id);
-      attr(div, "role", "button");
-      attr(div, "tabindex", "0");
-      attr(div, "draggable", "true");
+      attr(div1, "role", "button");
+      attr(div1, "tabindex", "0");
+      attr(div1, "draggable", "true");
       toggle_class(
-        div,
+        div1,
         "is-focused",
         /*flatCategories*/
         ((_a2 = ctx[9][
@@ -45864,21 +45883,21 @@ function create_each_block_25(key_1, ctx) {
         ctx[222].filepath
       );
       toggle_class(
-        div,
+        div1,
         "is-default-focus",
         /*plugin*/
         ((_c2 = (_b2 = ctx[0]) == null ? void 0 : _b2.settings) == null ? void 0 : _c2.defaultQuickListFocusFilepath) === /*cat*/
         ctx[222].filepath
       );
       toggle_class(
-        div,
+        div1,
         "is-dragging",
         /*draggedListId*/
         ctx[29] === /*cat*/
         ctx[222].id
       );
       toggle_class(
-        div,
+        div1,
         "drag-over-top",
         /*dragOverListId*/
         ctx[30] === /*cat*/
@@ -45886,42 +45905,43 @@ function create_each_block_25(key_1, ctx) {
         ctx[31] === "top"
       );
       toggle_class(
-        div,
+        div1,
         "drag-over-bottom",
         /*dragOverListId*/
         ctx[30] === /*cat*/
         ctx[222].id && /*dragListPosition*/
         ctx[31] === "bottom"
       );
-      this.first = div;
+      this.first = div1;
     },
     m(target, anchor) {
-      insert(target, div, anchor);
-      append(div, span);
-      append(div, t1);
-      if_block0.m(div, null);
-      append(div, t2);
+      insert(target, div1, anchor);
+      append(div1, span);
+      append(div1, t1);
+      if_block0.m(div1, null);
+      append(div1, t2);
+      append(div1, div0);
       if (if_block1)
-        if_block1.m(div, null);
-      append(div, t3);
+        if_block1.m(div0, null);
+      append(div0, t3);
       if (if_block2)
-        if_block2.m(div, null);
+        if_block2.m(div0, null);
       if (!mounted) {
         dispose = [
-          listen(div, "mouseenter", mouseenter_handler_1),
-          listen(div, "mouseleave", mouseleave_handler),
-          listen(div, "dragstart", dragstart_handler),
+          listen(div1, "mouseenter", mouseenter_handler_1),
+          listen(div1, "mouseleave", mouseleave_handler),
+          listen(div1, "dragstart", dragstart_handler),
           listen(
-            div,
+            div1,
             "dragend",
             /*handleListDragEnd*/
             ctx[56]
           ),
-          listen(div, "dragover", dragover_handler),
-          listen(div, "dragleave", dragleave_handler),
-          listen(div, "drop", prevent_default(drop_handler)),
-          listen(div, "click", click_handler_9),
-          listen(div, "contextmenu", contextmenu_handler_1)
+          listen(div1, "dragover", dragover_handler),
+          listen(div1, "dragleave", dragleave_handler),
+          listen(div1, "drop", prevent_default(drop_handler)),
+          listen(div1, "click", click_handler_9),
+          listen(div1, "contextmenu", contextmenu_handler_1)
         ];
         mounted = true;
       }
@@ -45936,7 +45956,7 @@ function create_each_block_25(key_1, ctx) {
         if_block0 = current_block_type(ctx);
         if (if_block0) {
           if_block0.c();
-          if_block0.m(div, t2);
+          if_block0.m(div1, t2);
         }
       }
       if (
@@ -45951,7 +45971,7 @@ function create_each_block_25(key_1, ctx) {
         } else {
           if_block1 = create_if_block_613(ctx);
           if_block1.c();
-          if_block1.m(div, t3);
+          if_block1.m(div0, t3);
         }
       } else if (if_block1) {
         if_block1.d(1);
@@ -45966,27 +45986,27 @@ function create_each_block_25(key_1, ctx) {
         } else {
           if_block2 = create_if_block_513(ctx);
           if_block2.c();
-          if_block2.m(div, null);
+          if_block2.m(div0, null);
         }
       } else if (if_block2) {
         if_block2.d(1);
         if_block2 = null;
       }
       if (dirty[1] & /*rootCategories*/
-      256 && div_data_filepath_value !== (div_data_filepath_value = /*cat*/
+      256 && div1_data_filepath_value !== (div1_data_filepath_value = /*cat*/
       ctx[222].filepath)) {
-        attr(div, "data-filepath", div_data_filepath_value);
+        attr(div1, "data-filepath", div1_data_filepath_value);
       }
       if (dirty[1] & /*rootCategories*/
-      256 && div_data_item_id_value !== (div_data_item_id_value = /*cat*/
+      256 && div1_data_item_id_value !== (div1_data_item_id_value = /*cat*/
       ctx[222].id)) {
-        attr(div, "data-item-id", div_data_item_id_value);
+        attr(div1, "data-item-id", div1_data_item_id_value);
       }
       if (dirty[0] & /*flatCategories, focusedIndex*/
       576 | dirty[1] & /*rootCategories*/
       256) {
         toggle_class(
-          div,
+          div1,
           "is-focused",
           /*flatCategories*/
           ((_d = ctx[9][
@@ -46000,7 +46020,7 @@ function create_each_block_25(key_1, ctx) {
       1 | dirty[1] & /*rootCategories*/
       256) {
         toggle_class(
-          div,
+          div1,
           "is-default-focus",
           /*plugin*/
           ((_f = (_e = ctx[0]) == null ? void 0 : _e.settings) == null ? void 0 : _f.defaultQuickListFocusFilepath) === /*cat*/
@@ -46011,7 +46031,7 @@ function create_each_block_25(key_1, ctx) {
       536870912 | dirty[1] & /*rootCategories*/
       256) {
         toggle_class(
-          div,
+          div1,
           "is-dragging",
           /*draggedListId*/
           ctx[29] === /*cat*/
@@ -46022,7 +46042,7 @@ function create_each_block_25(key_1, ctx) {
       1073741824 | dirty[1] & /*rootCategories, dragListPosition*/
       257) {
         toggle_class(
-          div,
+          div1,
           "drag-over-top",
           /*dragOverListId*/
           ctx[30] === /*cat*/
@@ -46034,7 +46054,7 @@ function create_each_block_25(key_1, ctx) {
       1073741824 | dirty[1] & /*rootCategories, dragListPosition*/
       257) {
         toggle_class(
-          div,
+          div1,
           "drag-over-bottom",
           /*dragOverListId*/
           ctx[30] === /*cat*/
@@ -46045,7 +46065,7 @@ function create_each_block_25(key_1, ctx) {
     },
     d(detaching) {
       if (detaching) {
-        detach(div);
+        detach(div1);
       }
       if_block0.d();
       if (if_block1)
@@ -47252,6 +47272,7 @@ function instance10($$self, $$props, $$invalidate) {
       boardEl.style.setProperty("--quick-grid-card-w", `${actualCardW}px`);
       boardEl.style.setProperty("--quick-grid-col-gap", `${colGap}px`);
       boardEl.style.setProperty("--quick-grid-row-gap", `${rowGap}px`);
+      boardEl.style.setProperty("--quick-grid-item-slot-w", `${Math.round(48 * fontScale)}px`);
       $$invalidate(36, boardEl.style.paddingTop = `${padY}px`, boardEl);
       $$invalidate(36, boardEl.style.paddingBottom = `${padY}px`, boardEl);
       $$invalidate(36, boardEl.style.paddingLeft = `${padX}px`, boardEl);

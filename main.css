@@ -3292,6 +3292,21 @@ body .quick-modal-task-item.is-focused {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    min-width: 0;
+}
+
+.quick-modal-item-meta-right {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.quick-modal-item-meta-right .quick-modal-badge,
+.quick-modal-item-meta-right .quick-modal-focus-tag {
+    margin-left: 0 !important;
 }
 
 .quick-modal-badge {
@@ -3868,7 +3883,7 @@ body .quick-modal-list-item.is-grid-item.is-focused {
 .quick-modal-list-item.is-grid-item .quick-modal-badge {
     font-size: 9.5px;
     padding: 0 5px;
-    margin-left: 8px;
+    margin-left: 0;
 }
 
 .quick-grid-card.is-root-card .quick-grid-card-icon {
@@ -5148,8 +5163,41 @@ body .task-steps-floating-modal .steps-modal-delete-btn:hover {
 /* =============================================
    Quick List Modal: Centered Titles Mode
    ============================================= */
-.quick-modal-container.is-centered-titles .quick-modal-list-name {
+.quick-modal-container.is-centered-titles .quick-modal-list-item:not(.quick-modal-header-btn) {
+    display: grid;
+    grid-template-columns: var(--quick-grid-item-slot-w, 48px) minmax(0, 1fr) var(--quick-grid-item-slot-w, 48px);
+    align-items: center;
+    gap: 0;
+}
+
+.quick-modal-container.is-centered-titles .quick-modal-list-item:not(.quick-modal-header-btn) .quick-modal-list-icon,
+.quick-modal-container.is-centered-titles .quick-modal-list-item:not(.quick-modal-header-btn) .quick-modal-smart-star-icon {
+    justify-self: start;
+    margin-left: 2px;
+}
+
+.quick-modal-container.is-centered-titles .quick-modal-list-item:not(.quick-modal-header-btn) .quick-modal-list-name {
+    width: 100%;
     text-align: center;
+    margin: 0;
+    padding: 0 4px;
+    box-sizing: border-box;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+.quick-modal-container.is-centered-titles .quick-modal-list-item:not(.quick-modal-header-btn) .quick-modal-inline-rename-input {
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
+    min-width: 0;
+}
+
+.quick-modal-container.is-centered-titles .quick-modal-list-item:not(.quick-modal-header-btn) .quick-modal-item-meta-right {
+    justify-self: end;
+    margin-left: 0;
 }
 
 .quick-modal-container.is-centered-titles .quick-grid-card-title-wrap {
@@ -5173,10 +5221,6 @@ body .task-steps-floating-modal .steps-modal-delete-btn:hover {
 }
 
 .quick-modal-container.is-centered-titles .quick-list-title {
-    text-align: center;
-}
-
-.quick-modal-container.is-centered-titles .quick-modal-inline-rename-input {
     text-align: center;
 }
 
