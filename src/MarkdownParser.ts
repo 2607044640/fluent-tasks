@@ -117,6 +117,7 @@ export class MarkdownParser {
                         text: typeof s.text === "string" ? s.text.trimEnd() : "",
                         done: Boolean(s.done),
                         id: typeof s.id === "string" && s.id.length > 0 ? s.id : `${id}-step-${idx}`,
+                        ...(Array.isArray(s.images) && s.images.length > 0 ? { images: (s.images as unknown[]).filter((img): img is string => typeof img === "string") } : {}),
                     }))
                 : [];
 
@@ -128,6 +129,7 @@ export class MarkdownParser {
                 steps: cleanSteps,
                 note: typeof meta.note === "string" ? meta.note : "",
                 createdAt,
+                ...(Array.isArray(meta.images) && meta.images.length > 0 ? { images: (meta.images as unknown[]).filter((img): img is string => typeof img === "string") } : {}),
                 ...(typeof meta.completedAt === "string" ? { completedAt: meta.completedAt } : {}),
                 ...(typeof meta.dueDate === "string" ? { dueDate: meta.dueDate } : {}),
                 ...(typeof meta.msGraphId === "string" ? { msGraphId: meta.msGraphId } : {}),
@@ -152,13 +154,28 @@ export class MarkdownParser {
     static serializeTasksToMarkdown(tasks: TaskItem[]): string {
         return tasks.map(task => {
             const checkbox = task.completed ? "[x]" : "[ ]";
+            const cleanSteps = Array.isArray(task.steps)
+                ? task.steps.map((s) => {
+                    const stepObj: Record<string, unknown> = {
+                        text: s.text,
+                        done: s.done,
+                    };
+                    if (s.id) stepObj.id = s.id;
+                    if (Array.isArray(s.images) && s.images.length > 0) {
+                        stepObj.images = s.images;
+                    }
+                    return stepObj;
+                })
+                : [];
+
             const meta: Record<string, unknown> = {
                 id: task.id,
                 starred: task.starred,
-                steps: task.steps,
+                steps: cleanSteps,
                 note: task.note,
                 createdAt: task.createdAt,
             };
+            if (Array.isArray(task.images) && task.images.length > 0) meta.images = task.images;
             if (task.completedAt) meta.completedAt = task.completedAt;
             if (task.dueDate) meta.dueDate = task.dueDate;
             if (task.msGraphId) meta.msGraphId = task.msGraphId;

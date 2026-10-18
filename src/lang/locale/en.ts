@@ -139,6 +139,22 @@ const en = {
     move_to_menu_title: "Move to",
     search_list_to_move: "Search destination list...",
     add_side_step: "Add side step",
+    // Image attachment & clipboard operations
+    image_copied: "Image copied to clipboard",
+    image_cut: "Image cut to clipboard",
+    image_deleted: "Image removed",
+    image_pasted: "Image attached",
+    image_preview_title: "Image Preview",
+    image_tooltip: "Click to preview • Hover + Ctrl+C to copy • Hover + Ctrl+X to cut",
+    image_copy_tooltip: "Copy image (Ctrl+C)",
+    image_cut_tooltip: "Cut image (Ctrl+X)",
+    image_delete_tooltip: "Remove image (Ctrl+X)",
+    image_hint_copy: "Copy",
+    image_hint_cut: "Cut",
+    image_hint_close: "Close",
+    copy: "Copy",
+    cut: "Cut",
+    close: "Close",
 };
 
 export default en;

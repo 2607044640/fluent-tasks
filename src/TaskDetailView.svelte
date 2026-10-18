@@ -14,6 +14,15 @@
     import { Menu, Notice, TFile } from "obsidian";
     import { t, isChinese } from "./lang/helpers";
     import { Logger } from "./Logger";
+    import TaskImageThumbnail from "./components/TaskImageThumbnail.svelte";
+    import {
+        saveImageAttachment,
+        copyImageToClipboard,
+        extractImageRefs,
+        removeImageRefFromText,
+        getImagesFromClipboard,
+        isSameImageRef,
+    } from "./utils/imageAttachmentUtils";
 
     const DND_FLIP_DURATION = 150;
 
@@ -28,9 +37,13 @@
     // =============================================
     // State
     // =============================================
+    $: actualApp = dataService?.app || plugin?.app || (window as any).app;
     let task: TaskItem | null = null;
     let categoryFilepath: string = "";
     let newStepText: string = "";
+    let newStepImages: string[] = [];
+    let focusedTarget: { type: 'step'; stepId: string } | { type: 'newStep' } | { type: 'note' } | null = null;
+    let hoveredImageRef: { imageRef: string; stepId?: string; isNewDraft?: boolean; isNote?: boolean } | null = null;
     let showScheduleSection: boolean = false;
     let showRepeatPicker: boolean = false;
     let detailBodyEl: HTMLElement | null = null;
@@ -246,11 +259,48 @@
         }
     }
 
+    function hasActiveTextSelection(): boolean {
+        const active = document.activeElement;
+        if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) {
+            if (typeof active.selectionStart === "number" && typeof active.selectionEnd === "number") {
+                if (active.selectionStart !== active.selectionEnd) return true;
+            }
+        }
+        const sel = window.getSelection();
+        if (sel && !sel.isCollapsed && sel.toString().trim().length > 0) {
+            return true;
+        }
+        return false;
+    }
+
+    const handleImageKeydown = (e: KeyboardEvent) => {
+        if (document.querySelector(".task-img-preview-modal-shell")) {
+            return;
+        }
+        if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey) {
+            if (hasActiveTextSelection()) return;
+
+            if ((e.key === "c" || e.key === "C") && hoveredImageRef) {
+                e.preventDefault();
+                e.stopPropagation();
+                void handleCopyHoveredImage();
+                return;
+            }
+            if ((e.key === "x" || e.key === "X") && hoveredImageRef) {
+                e.preventDefault();
+                e.stopPropagation();
+                void handleCutHoveredImage();
+                return;
+            }
+        }
+    };
+
     onMount(() => {
         EventBus.on(EventName.TASK_SELECTED, handleTaskSelected);
         EventBus.on(EventName.TASK_DELETED, handleTaskDeleted);
         EventBus.on(EventName.TASK_UPDATED, handleExternalTaskUpdate);
         window.addEventListener("keydown", handleMetaModalKeydown, true);
+        window.addEventListener("keydown", handleImageKeydown, true);
     });
 
     onDestroy(() => {
@@ -258,6 +308,7 @@
         EventBus.off(EventName.TASK_DELETED, handleTaskDeleted);
         EventBus.off(EventName.TASK_UPDATED, handleExternalTaskUpdate);
         window.removeEventListener("keydown", handleMetaModalKeydown, true);
+        window.removeEventListener("keydown", handleImageKeydown, true);
         if (saveTimeout) {
             clearTimeout(saveTimeout);
             saveTimeout = null;
@@ -533,20 +584,169 @@
     }
 
     // =============================================
+    // Image Attachment Helpers
+    // =============================================
+    function getStepImages(step: TaskStep): string[] {
+        const fromArray = step.images || [];
+        const fromText = extractImageRefs(step.text);
+        const combined = [...fromArray];
+        for (const ref of fromText) {
+            if (!combined.some(existing => isSameImageRef(existing, ref))) {
+                combined.push(ref);
+            }
+        }
+        return combined;
+    }
+
+    function getNoteImages(t: TaskItem | null): string[] {
+        if (!t) return [];
+        const fromArray = t.images || [];
+        const fromText = extractImageRefs(t.note || "");
+        const combined = [...fromArray];
+        for (const ref of fromText) {
+            if (!combined.some(existing => isSameImageRef(existing, ref))) {
+                combined.push(ref);
+            }
+        }
+        return combined;
+    }
+
+    function removeImageFromStep(stepId: string | undefined, imageRef: string) {
+        if (!task || !task.steps || !stepId) return;
+        const step = task.steps.find(s => s.id === stepId);
+        if (!step) return;
+        step.images = (step.images || []).filter(img => !isSameImageRef(img, imageRef));
+        step.text = removeImageRefFromText(step.text, imageRef);
+        task = task;
+        immediateSave();
+    }
+
+    function removeNewStepImage(imageRef: string) {
+        newStepImages = newStepImages.filter(img => !isSameImageRef(img, imageRef));
+    }
+
+    function removeImageFromNote(imageRef: string) {
+        if (!task) return;
+        task.images = (task.images || []).filter(img => !isSameImageRef(img, imageRef));
+        task.note = removeImageRefFromText(task.note || "", imageRef);
+        task = task;
+        immediateSave();
+    }
+
+    async function handleCutHoveredImage() {
+        if (!hoveredImageRef || !actualApp) return;
+        const { imageRef, stepId, isNewDraft, isNote } = hoveredImageRef;
+        await copyImageToClipboard(imageRef, actualApp, t("image_cut") || "Image cut to clipboard / 图片已剪切至剪贴板");
+        if (isNewDraft) {
+            removeNewStepImage(imageRef);
+        } else if (stepId) {
+            removeImageFromStep(stepId, imageRef);
+        } else if (isNote) {
+            removeImageFromNote(imageRef);
+        }
+        hoveredImageRef = null;
+    }
+
+    async function handleCopyHoveredImage() {
+        if (!hoveredImageRef || !actualApp) return;
+        await copyImageToClipboard(hoveredImageRef.imageRef, actualApp, t("image_copied") || "Image copied to clipboard / 图片已复制到剪贴板");
+    }
+
+    function handlePaste(e: ClipboardEvent) {
+        if (!actualApp || !task) return;
+        const files = getImagesFromClipboard(e);
+        if (!files || files.length === 0) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const ft = focusedTarget;
+        void (async () => {
+            for (const file of files) {
+                const savedPath = await saveImageAttachment(file, actualApp, categoryFilepath);
+                if (!savedPath) continue;
+
+                new Notice(t("image_pasted") || "Image attached / 图片已附加");
+
+                if (ft && ft.type === "step") {
+                    const targetStep = task?.steps?.find(s => s.id === ft.stepId);
+                    if (targetStep) {
+                        targetStep.images = [...(targetStep.images || []), savedPath];
+                        task = task;
+                        immediateSave();
+                        continue;
+                    }
+                } else if (ft && ft.type === "newStep") {
+                    newStepImages = [...newStepImages, savedPath];
+                    continue;
+                }
+
+                if (task) {
+                    task.images = [...(task.images || []), savedPath];
+                    task = task;
+                    immediateSave();
+                }
+            }
+        })();
+    }
+
+    async function handleDrop(e: DragEvent) {
+        if (!actualApp || !task) return;
+        const dataTransfer = e.dataTransfer;
+        if (!dataTransfer || !dataTransfer.files || dataTransfer.files.length === 0) return;
+        const imgFiles: File[] = [];
+        for (let i = 0; i < dataTransfer.files.length; i++) {
+            if (dataTransfer.files[i].type.startsWith("image/")) {
+                imgFiles.push(dataTransfer.files[i]);
+            }
+        }
+        if (imgFiles.length === 0) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const ft = focusedTarget;
+        for (const file of imgFiles) {
+            const savedPath = await saveImageAttachment(file, actualApp, categoryFilepath);
+            if (!savedPath) continue;
+            new Notice(t("image_pasted") || "Image attached / 图片已附加");
+
+            if (ft && ft.type === "step") {
+                const targetStep = task.steps?.find(s => s.id === ft.stepId);
+                if (targetStep) {
+                    targetStep.images = [...(targetStep.images || []), savedPath];
+                    task = task;
+                    immediateSave();
+                    continue;
+                }
+            } else if (ft && ft.type === "newStep") {
+                newStepImages = [...newStepImages, savedPath];
+                continue;
+            }
+
+            task.images = [...(task.images || []), savedPath];
+            task = task;
+            immediateSave();
+        }
+    }
+
+    // =============================================
     // Step Actions
     // =============================================
     function addStep() {
         const text = newStepText.trim();
-        if (!text || !task) return;
+        if ((!text && newStepImages.length === 0) || !task) return;
         const newStep: TaskStep = {
             id: `${task.id}-step-${Date.now()}-${task.steps.length}`,
             text,
-            done: false
+            done: false,
+            ...(newStepImages.length > 0 ? { images: [...newStepImages] } : {})
         };
         task.steps = [...task.steps, newStep];
         newStepText = "";
+        newStepImages = [];
         task = task;
-        void Logger.log(`[DND Detail] Added step: taskId=${task.id}, stepId=${newStep.id}, text="${newStep.text}", totalSteps=${task.steps.length}`);
+        void Logger.log(`[DND Detail] Added step: taskId=${task.id}, stepId=${newStep.id}, text="${newStep.text}", images=${newStep.images?.length || 0}, totalSteps=${task.steps.length}`);
         console.log(`[FluentTasks] Added step: taskId=${task.id}, stepId=${newStep.id}, total=${task.steps.length}`);
         scheduleSave();
     }
@@ -1110,7 +1310,7 @@
     }
 </script>
 
-<div class="detail-container" on:wheel={handleContainerWheel}>
+<div class="detail-container" on:wheel={handleContainerWheel} on:paste={handlePaste} on:dragover|preventDefault on:drop={handleDrop}>
     {#if task}
         <!-- Scrollable Content Body -->
         <div class="detail-body" bind:this={detailBodyEl}>
@@ -1237,20 +1437,43 @@
                                         </svg>
                                     {/if}
                                 </span>
-                                <textarea
-                                    use:autosize={step.text}
-                                    rows="1"
-                                    value={step.text}
-                                    class:completed={step.done}
-                                    on:input={(e) => updateStepText(step.id, e.currentTarget.value)}
-                                    on:keydown={(e) => {
-                                        if (e.key === "Enter" && !e.shiftKey) {
-                                            e.preventDefault();
-                                            e.currentTarget.blur();
-                                        }
-                                    }}
-                                    placeholder="Step text"
-                                />
+                                <div class="step-content-col">
+                                    <textarea
+                                        use:autosize={step.text}
+                                        rows="1"
+                                        value={step.text}
+                                        class:completed={step.done}
+                                        on:focus={() => { if (step.id) focusedTarget = { type: 'step', stepId: step.id }; }}
+                                        on:input={(e) => updateStepText(step.id, e.currentTarget.value)}
+                                        on:keydown={(e) => {
+                                            if (e.key === "Enter" && !e.shiftKey) {
+                                                e.preventDefault();
+                                                e.currentTarget.blur();
+                                            }
+                                        }}
+                                        placeholder="Step text"
+                                    />
+                                    {#if getStepImages(step).length > 0}
+                                        <div class="step-thumbnails-row">
+                                            {#each getStepImages(step) as imgRef}
+                                                <TaskImageThumbnail
+                                                    imageRef={imgRef}
+                                                    app={actualApp}
+                                                    size={38}
+                                                    onDelete={() => removeImageFromStep(step.id, imgRef)}
+                                                    onCut={() => removeImageFromStep(step.id, imgRef)}
+                                                    onHover={(isHovered) => {
+                                                        if (isHovered && step.id) {
+                                                            hoveredImageRef = { imageRef: imgRef, stepId: step.id };
+                                                        } else if (hoveredImageRef?.imageRef === imgRef) {
+                                                            hoveredImageRef = null;
+                                                        }
+                                                    }}
+                                                />
+                                            {/each}
+                                        </div>
+                                    {/if}
+                                </div>
                                 <span class="delete-step" on:click|stopPropagation={() => deleteStep(step.id)}
                                       role="button" tabindex="0"
                                       on:keydown|stopPropagation={(e) => e.key === "Enter" && deleteStep(step.id)}>
@@ -1266,29 +1489,74 @@
                 {/if}
 
                 <!-- Add step row (kept outside dndzone so dndzone children strictly equal items) -->
-                <div class="add-step-row">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19"/>
-                        <line x1="5" y1="12" x2="19" y2="12"/>
-                    </svg>
-                    <input
-                        class="add-step-input"
-                        type="text"
-                        placeholder="Add step"
-                        bind:value={newStepText}
-                        on:keydown={handleStepKeydown}
-                    />
+                <div class="add-step-card">
+                    {#if newStepImages.length > 0}
+                        <div class="step-draft-thumbnails-row">
+                            {#each newStepImages as imgRef}
+                                <TaskImageThumbnail
+                                    imageRef={imgRef}
+                                    app={actualApp}
+                                    size={38}
+                                    onDelete={() => removeNewStepImage(imgRef)}
+                                    onCut={() => removeNewStepImage(imgRef)}
+                                    onHover={(isHovered) => {
+                                        if (isHovered) {
+                                            hoveredImageRef = { imageRef: imgRef, isNewDraft: true };
+                                        } else if (hoveredImageRef?.imageRef === imgRef) {
+                                            hoveredImageRef = null;
+                                        }
+                                    }}
+                                />
+                            {/each}
+                        </div>
+                    {/if}
+                    <div class="add-step-row">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        <input
+                            class="add-step-input"
+                            type="text"
+                            placeholder="Add step (Ctrl+V to paste image)"
+                            bind:value={newStepText}
+                            on:focus={() => { focusedTarget = { type: 'newStep' }; }}
+                            on:keydown={handleStepKeydown}
+                        />
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Note -->
-        <div class="note-section">
+        <!-- svelte-ignore a11y-no-static-element-interactions -->
+        <div class="note-section" on:focusin={() => { focusedTarget = { type: 'note' }; }}>
+            {#if getNoteImages(task).length > 0}
+                <div class="note-thumbnails-row">
+                    {#each getNoteImages(task) as imgRef}
+                        <TaskImageThumbnail
+                            imageRef={imgRef}
+                            app={actualApp}
+                            size={44}
+                            onDelete={() => removeImageFromNote(imgRef)}
+                            onCut={() => removeImageFromNote(imgRef)}
+                            onHover={(isHovered) => {
+                                if (isHovered) {
+                                    hoveredImageRef = { imageRef: imgRef, isNote: true };
+                                } else if (hoveredImageRef?.imageRef === imgRef) {
+                                    hoveredImageRef = null;
+                                }
+                            }}
+                        />
+                    {/each}
+                </div>
+            {/if}
             <textarea
                 class="note-textarea"
-                placeholder="Add note"
+                placeholder="Add note (Ctrl+V to paste image)"
                 bind:value={task.note}
+                on:focus={() => { focusedTarget = { type: 'note' }; }}
                 on:input={handleNoteInput}
             ></textarea>
         </div>
@@ -1804,3 +2072,48 @@
         </div>
     {/if}
 </div>
+
+<style>
+    .step-content-col {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        gap: 4px;
+    }
+
+    .step-thumbnails-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+        padding-top: 2px;
+    }
+
+    .add-step-card {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .step-draft-thumbnails-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+        padding: 4px 8px;
+        background-color: var(--background-secondary);
+        border: 1px dashed var(--background-modifier-border);
+        border-radius: 6px;
+    }
+
+    .note-thumbnails-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 8px;
+        padding-bottom: 6px;
+        border-bottom: 1px dashed var(--background-modifier-border);
+    }
+</style>

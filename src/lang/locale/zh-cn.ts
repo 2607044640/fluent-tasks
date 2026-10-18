@@ -141,6 +141,22 @@ const zhCn: typeof en = {
     move_to_menu_title: "移动到",
     search_list_to_move: "搜索目标列表...",
     add_side_step: "添加子步骤",
+    // Image attachment & clipboard operations
+    image_copied: "图片已复制到剪贴板",
+    image_cut: "图片已剪切至剪贴板",
+    image_deleted: "图片已移除",
+    image_pasted: "图片已附加",
+    image_preview_title: "图片预览",
+    image_tooltip: "点击查看大图 • 悬浮 Ctrl+C 复制 • 悬浮 Ctrl+X 剪切",
+    image_copy_tooltip: "复制图片 (Ctrl+C)",
+    image_cut_tooltip: "剪切图片 (Ctrl+X)",
+    image_delete_tooltip: "移除图片 (Ctrl+X)",
+    image_hint_copy: "复制",
+    image_hint_cut: "剪切",
+    image_hint_close: "关闭",
+    copy: "复制",
+    cut: "剪切",
+    close: "关闭",
 };
 
 export default zhCn;

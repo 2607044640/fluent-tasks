@@ -26,6 +26,7 @@ export function persistableSteps(steps: TaskStep[]): TaskStep[] {
         .map((step) => {
             const out: TaskStep = { text: step.text, done: step.done };
             if (step.id) out.id = step.id;
+            if (step.images && step.images.length > 0) out.images = [...step.images];
             return out;
         });
 }
@@ -61,13 +62,28 @@ export function reconcileDndSteps(
 
         if (isShadow && original) {
             // Restore original step data cleanly without shadow marker
-            result.push({ text: original.text, done: original.done, id: original.id });
+            result.push({
+                text: original.text,
+                done: original.done,
+                id: original.id,
+                ...(original.images ? { images: [...original.images] } : {})
+            });
             seenIds.add(id);
         } else if (original) {
-            result.push({ text: item.text ?? original.text, done: item.done ?? original.done, id });
+            result.push({
+                text: item.text ?? original.text,
+                done: item.done ?? original.done,
+                id,
+                ...(item.images ? { images: [...item.images] } : original.images ? { images: [...original.images] } : {})
+            });
             seenIds.add(id);
         } else {
-            result.push({ text: item.text, done: item.done, id });
+            result.push({
+                text: item.text,
+                done: item.done,
+                id,
+                ...(item.images ? { images: [...item.images] } : {})
+            });
             seenIds.add(id);
         }
     }
@@ -76,7 +92,12 @@ export function reconcileDndSteps(
     const missing: TaskStep[] = [];
     for (const orig of preDragSteps) {
         if (orig.id && !seenIds.has(orig.id)) {
-            missing.push({ text: orig.text, done: orig.done, id: orig.id });
+            missing.push({
+                text: orig.text,
+                done: orig.done,
+                id: orig.id,
+                ...(orig.images ? { images: [...orig.images] } : {})
+            });
             seenIds.add(orig.id);
         }
     }

@@ -11,7 +11,7 @@ import { getFlatCategories } from "./utils/sidebarTreeUtils";
  * Facade pattern bridging the old monolithic DataService to the new atomic microservices.
  */
 export class DataService {
-    private app: App;
+    public app: App;
     private io: AtomicIOPipeline;
     private categorySvc: CategoryService;
     private taskSvc: TaskService;
@@ -21,6 +21,10 @@ export class DataService {
         this.io = new AtomicIOPipeline(app);
         this.categorySvc = new CategoryService(app, this.io);
         this.taskSvc = new TaskService(this.io);
+    }
+
+    public getApp(): App {
+        return this.app;
     }
 
     async ensureDataFolder(): Promise<void> {

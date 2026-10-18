@@ -9,10 +9,23 @@
     import type { DataService } from "../DataService";
     import { ensureStepIds, persistableSteps, reconcileDndSteps } from "../utils/stepIds";
     import { Logger } from "../Logger";
+    import TaskImageThumbnail from "../components/TaskImageThumbnail.svelte";
+    import {
+        saveImageAttachment,
+        copyImageToClipboard,
+        extractImageRefs,
+        removeImageRefFromText,
+        getImagesFromClipboard,
+        isSameImageRef,
+    } from "../utils/imageAttachmentUtils";
+    import { t } from "../lang/helpers";
+    import { Notice } from "obsidian";
 
     // =============================================
     // Props
     // =============================================
+    export let app: any = undefined;
+    export let plugin: any = undefined;
     export let task: TaskItem;
     export let categoryFilepath: string;
     export let dataService: DataService;
@@ -23,8 +36,12 @@
     // =============================================
     // Local State
     // =============================================
+    $: actualApp = app || dataService?.app || plugin?.app || (window as any).app;
     let steps: TaskStep[] = task.steps ? ensureStepIds(task.id, task.steps) : [];
     let newStepText: string = "";
+    let newStepImages: string[] = [];
+    let focusedStepId: string | null = null;
+    let hoveredImageRef: { imageRef: string; stepId?: string; isNewDraft?: boolean } | null = null;
     let addInputEl: HTMLTextAreaElement;
     let modalBodyEl: HTMLElement;
     let saveTimeout: any = null;
@@ -148,17 +165,143 @@
         await persistTask();
     }
 
+    function hasActiveTextSelection(): boolean {
+        const active = document.activeElement;
+        if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) {
+            if (typeof active.selectionStart === "number" && typeof active.selectionEnd === "number") {
+                if (active.selectionStart !== active.selectionEnd) return true;
+            }
+        }
+        const sel = window.getSelection();
+        if (sel && !sel.isCollapsed && sel.toString().trim().length > 0) {
+            return true;
+        }
+        return false;
+    }
+
+    function getStepImages(step: TaskStep): string[] {
+        const fromArray = step.images || [];
+        const fromText = extractImageRefs(step.text);
+        const combined = [...fromArray];
+        for (const ref of fromText) {
+            if (!combined.some(existing => isSameImageRef(existing, ref))) {
+                combined.push(ref);
+            }
+        }
+        return combined;
+    }
+
+    function removeImageFromStep(stepId: string | undefined, imageRef: string) {
+        if (!stepId) return;
+        const step = steps.find(s => s.id === stepId);
+        if (!step) return;
+        step.images = (step.images || []).filter(img => !isSameImageRef(img, imageRef));
+        step.text = removeImageRefFromText(step.text, imageRef);
+        steps = [...steps];
+        scheduleSave();
+    }
+
+    function removeNewStepImage(imageRef: string) {
+        newStepImages = newStepImages.filter(img => !isSameImageRef(img, imageRef));
+    }
+
+    async function handleCutHoveredImage() {
+        if (!hoveredImageRef || !actualApp) return;
+        const { imageRef, stepId, isNewDraft } = hoveredImageRef;
+        await copyImageToClipboard(imageRef, actualApp, t("image_cut") || "Image cut to clipboard / 图片已剪切至剪贴板");
+        if (isNewDraft) {
+            removeNewStepImage(imageRef);
+        } else if (stepId) {
+            removeImageFromStep(stepId, imageRef);
+        }
+        hoveredImageRef = null;
+    }
+
+    async function handleCopyHoveredImage() {
+        if (!hoveredImageRef || !actualApp) return;
+        await copyImageToClipboard(hoveredImageRef.imageRef, actualApp, t("image_copied") || "Image copied to clipboard / 图片已复制到剪贴板");
+    }
+
+    function handlePaste(e: ClipboardEvent) {
+        if (!actualApp) return;
+        const files = getImagesFromClipboard(e);
+        if (!files || files.length === 0) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        void (async () => {
+            for (const file of files) {
+                const savedPath = await saveImageAttachment(file, actualApp, categoryFilepath);
+                if (!savedPath) continue;
+
+                new Notice(t("image_pasted") || "Image attached / 图片已附加");
+
+                if (focusedStepId && focusedStepId !== "__new__") {
+                    const targetStep = steps.find(s => s.id === focusedStepId);
+                    if (targetStep) {
+                        targetStep.images = [...(targetStep.images || []), savedPath];
+                        steps = [...steps];
+                        scheduleSave();
+                        continue;
+                    }
+                }
+                newStepImages = [...newStepImages, savedPath];
+            }
+        })();
+    }
+
+    function handleDragOver(e: DragEvent) {
+        if (e.dataTransfer?.types?.includes("Files")) {
+            e.preventDefault();
+        }
+    }
+
+    async function handleDrop(e: DragEvent) {
+        if (!actualApp) return;
+        const dataTransfer = e.dataTransfer;
+        if (!dataTransfer || !dataTransfer.files || dataTransfer.files.length === 0) return;
+        const imgFiles: File[] = [];
+        for (let i = 0; i < dataTransfer.files.length; i++) {
+            if (dataTransfer.files[i].type.startsWith("image/")) {
+                imgFiles.push(dataTransfer.files[i]);
+            }
+        }
+        if (imgFiles.length === 0) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        for (const file of imgFiles) {
+            const savedPath = await saveImageAttachment(file, actualApp, categoryFilepath);
+            if (!savedPath) continue;
+            new Notice(t("image_pasted") || "Image attached / 图片已附加");
+            if (focusedStepId && focusedStepId !== "__new__") {
+                const targetStep = steps.find(s => s.id === focusedStepId);
+                if (targetStep) {
+                    targetStep.images = [...(targetStep.images || []), savedPath];
+                    steps = [...steps];
+                    scheduleSave();
+                    continue;
+                }
+            }
+            newStepImages = [...newStepImages, savedPath];
+        }
+    }
+
     async function addStep() {
         const trimmed = newStepText.trim();
-        if (!trimmed) return;
+        if (!trimmed && newStepImages.length === 0) return;
         const newStep: TaskStep = {
             id: `${task.id}-step-${Date.now()}-${steps.length}`,
             text: trimmed,
-            done: false
+            done: false,
+            ...(newStepImages.length > 0 ? { images: [...newStepImages] } : {})
         };
         steps = [...steps, newStep];
         newStepText = "";
-        void Logger.log(`[DND Modal] Added step: taskId=${task.id}, stepId=${newStep.id}, text="${newStep.text}", totalSteps=${steps.length}`);
+        newStepImages = [];
+        void Logger.log(`[DND Modal] Added step: taskId=${task.id}, stepId=${newStep.id}, text="${newStep.text}", images=${newStep.images?.length || 0}, totalSteps=${steps.length}`);
         console.log(`[FluentTasks Modal] Added step: taskId=${task.id}, stepId=${newStep.id}, total=${steps.length}`);
         await persistTask();
         await tick();
@@ -208,18 +351,46 @@
     onMount(() => {
         // Esc guard in capture phase to prevent conflicts with parent modal listeners
         const handleCaptureKeydown = (e: KeyboardEvent) => {
+            if (document.querySelector(".task-img-preview-modal-shell")) {
+                return;
+            }
+
             if (e.key === "Escape") {
                 e.stopPropagation();
                 e.preventDefault();
                 handleClose();
+                return;
+            }
+
+            if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey) {
+                if (hasActiveTextSelection()) return;
+
+                if ((e.key === "c" || e.key === "C") && hoveredImageRef) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void handleCopyHoveredImage();
+                    return;
+                }
+                if ((e.key === "x" || e.key === "X") && hoveredImageRef) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void handleCutHoveredImage();
+                    return;
+                }
             }
         };
 
         window.addEventListener("keydown", handleCaptureKeydown, { capture: true });
+        window.addEventListener("paste", handlePaste);
+        window.addEventListener("dragover", handleDragOver);
+        window.addEventListener("drop", handleDrop);
         EventBus.on(EventName.TASK_UPDATED, handleExternalTaskUpdate);
 
         return () => {
             window.removeEventListener("keydown", handleCaptureKeydown, { capture: true });
+            window.removeEventListener("paste", handlePaste);
+            window.removeEventListener("dragover", handleDragOver);
+            window.removeEventListener("drop", handleDrop);
             EventBus.off(EventName.TASK_UPDATED, handleExternalTaskUpdate);
             flushSaveSync();
         };
@@ -314,18 +485,40 @@
                             {/if}
                         </span>
 
-                        <!-- Multi-line auto-resizing textarea with large font -->
-                        <textarea
-                            use:autosize={step.text}
-                            rows="1"
-                            class="steps-modal-textarea"
-                            class:completed={step.done}
-                            value={step.text}
-                            placeholder="Step description..."
-                            on:input={(e) => handleStepInput(step.id, e.currentTarget.value)}
-                            on:blur={flushSaveSync}
-                            on:keydown={(e) => handleStepKeydown(e, step.id)}
-                        />
+                        <!-- Multi-line auto-resizing textarea with thumbnail row -->
+                        <div class="steps-modal-text-col">
+                            <textarea
+                                use:autosize={step.text}
+                                rows="1"
+                                class="steps-modal-textarea"
+                                class:completed={step.done}
+                                value={step.text}
+                                placeholder="Step description..."
+                                on:focus={() => { focusedStepId = step.id || null; }}
+                                on:input={(e) => handleStepInput(step.id, e.currentTarget.value)}
+                                on:blur={flushSaveSync}
+                                on:keydown={(e) => handleStepKeydown(e, step.id)}
+                            />
+                            {#if getStepImages(step).length > 0}
+                                <div class="steps-modal-thumbnails-row">
+                                    {#each getStepImages(step) as imgRef}
+                                        <TaskImageThumbnail
+                                            imageRef={imgRef}
+                                            app={actualApp}
+                                            onDelete={() => removeImageFromStep(step.id, imgRef)}
+                                            onCut={() => removeImageFromStep(step.id, imgRef)}
+                                            onHover={(isHovered) => {
+                                                if (isHovered && step.id) {
+                                                    hoveredImageRef = { imageRef: imgRef, stepId: step.id };
+                                                } else if (hoveredImageRef?.imageRef === imgRef) {
+                                                    hoveredImageRef = null;
+                                                }
+                                            }}
+                                        />
+                                    {/each}
+                                </div>
+                            {/if}
+                        </div>
 
                         <!-- Delete step button -->
                         <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -348,31 +541,53 @@
             </div>
         {/if}
 
-        <!-- Add Step Row -->
-        <div class="steps-modal-add-row">
-            <span class="steps-modal-add-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--todo-accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"/>
-                    <line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-            </span>
-            <textarea
-                use:autosize={newStepText}
-                rows="1"
-                class="steps-modal-add-input"
-                placeholder="Add a step... (Press Enter to add, Shift+Enter for newline)"
-                bind:value={newStepText}
-                bind:this={addInputEl}
-                on:keydown={handleAddInputKeydown}
-            />
-            <button
-                type="button"
-                class="steps-modal-add-btn"
-                disabled={!newStepText.trim()}
-                on:click={addStep}
-            >
-                Add
-            </button>
+        <!-- Add Step Container -->
+        <div class="steps-modal-add-card">
+            {#if newStepImages.length > 0}
+                <div class="steps-modal-draft-thumbnails-row">
+                    {#each newStepImages as imgRef}
+                        <TaskImageThumbnail
+                            imageRef={imgRef}
+                            app={actualApp}
+                            onDelete={() => removeNewStepImage(imgRef)}
+                            onCut={() => removeNewStepImage(imgRef)}
+                            onHover={(isHovered) => {
+                                if (isHovered) {
+                                    hoveredImageRef = { imageRef: imgRef, isNewDraft: true };
+                                } else if (hoveredImageRef?.imageRef === imgRef) {
+                                    hoveredImageRef = null;
+                                }
+                            }}
+                        />
+                    {/each}
+                </div>
+            {/if}
+            <div class="steps-modal-add-row">
+                <span class="steps-modal-add-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--todo-accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                </span>
+                <textarea
+                    use:autosize={newStepText}
+                    rows="1"
+                    class="steps-modal-add-input"
+                    placeholder="Add a step... (Press Enter to add, Shift+Enter for newline, Ctrl+V to paste image)"
+                    bind:value={newStepText}
+                    bind:this={addInputEl}
+                    on:focus={() => { focusedStepId = "__new__"; }}
+                    on:keydown={handleAddInputKeydown}
+                />
+                <button
+                    type="button"
+                    class="steps-modal-add-btn"
+                    disabled={!newStepText.trim() && newStepImages.length === 0}
+                    on:click={addStep}
+                >
+                    Add
+                </button>
+            </div>
         </div>
     </div>
 
@@ -384,3 +599,39 @@
         </div>
     {/if}
 </div>
+
+<style>
+    .steps-modal-text-col {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        gap: 6px;
+    }
+
+    .steps-modal-thumbnails-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        padding-top: 2px;
+    }
+
+    .steps-modal-add-card {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+
+    .steps-modal-draft-thumbnails-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        padding: 6px 12px;
+        background-color: var(--background-primary-alt, rgba(255, 255, 255, 0.02));
+        border: 1px dashed var(--todo-border, var(--background-modifier-border, #444));
+        border-radius: 8px;
+    }
+</style>

@@ -5520,3 +5520,23 @@ body .task-steps-floating-modal .steps-modal-delete-btn:hover {
 .svg-btn.svg-btn-danger:hover {
     background-color: #dc2626 !important;
 }
+
+/* =============================================
+   Image Attachment & Preview Modal Styles
+   ============================================= */
+.modal.task-img-preview-modal-shell {
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+
+.modal.task-img-preview-modal-shell .modal-content {
+    padding: 0 !important;
+}
+
+.modal.task-img-preview-modal-shell .modal-close-button {
+    display: none !important;
+}
+
+

@@ -23,6 +23,8 @@ export interface TaskStep {
     id?: string;
     text: string;
     done: boolean;
+    /** Attached image paths or wikilinks */
+    images?: string[];
 }
 
 export interface RecurrenceRule {
@@ -39,6 +41,8 @@ export interface TaskItem {
     starred: boolean;
     steps: TaskStep[];
     note: string;
+    /** Attached image paths or wikilinks for task / note */
+    images?: string[];
     createdAt: string; // ISO 8601
     completedAt?: string;   // ISO 8601 timestamp when task was completed
     dueDate?: string;       // ISO date "YYYY-MM-DD", synced from MS Graph
