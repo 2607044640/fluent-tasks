@@ -511,6 +511,9 @@
         await loadData();
         EventBus.on(EventName.CATEGORY_LIST_CHANGED, handleExternalListChanged);
         EventBus.on(EventName.TASK_UPDATED, handleExternalTaskUpdated);
+        EventBus.on(EventName.TASK_MOVED, handleExternalTaskUpdated);
+        EventBus.on(EventName.TASK_DELETED, handleExternalTaskUpdated);
+        EventBus.on(EventName.TASK_COMPLETED, handleExternalTaskUpdated);
         EventBus.on(EventName.SETTINGS_CHANGED, handleSettingsChanged);
 
         searchInputEl?.focus();
@@ -569,6 +572,9 @@
         window.removeEventListener("resize", scheduleAdjustSpacing);
         EventBus.off(EventName.CATEGORY_LIST_CHANGED, handleExternalListChanged);
         EventBus.off(EventName.TASK_UPDATED, handleExternalTaskUpdated);
+        EventBus.off(EventName.TASK_MOVED, handleExternalTaskUpdated);
+        EventBus.off(EventName.TASK_DELETED, handleExternalTaskUpdated);
+        EventBus.off(EventName.TASK_COMPLETED, handleExternalTaskUpdated);
         EventBus.off(EventName.SETTINGS_CHANGED, handleSettingsChanged);
         if (resizeObserver) {
             resizeObserver.disconnect();
@@ -593,14 +599,24 @@
     }
 
     function handleExternalTaskUpdated() {
+        void refreshStarredCount();
         void refreshTaskCounts();
     }
 
     async function loadData() {
         sidebarItems = await dataService.getSidebarItems();
         categories = await dataService.getCategories();
+        await refreshStarredCount();
         await refreshTaskCounts();
         scheduleAdjustSpacing();
+    }
+
+    async function refreshStarredCount() {
+        try {
+            starredCount = await dataService.getStarredCount();
+        } catch (e) {
+            console.error("[QuickListModal] Failed to refresh starred count:", e);
+        }
     }
 
     async function refreshTaskCounts() {
@@ -1145,6 +1161,7 @@
     }
 
     async function startRenameItem(item: { id: string; name: string; type: "category" | "group"; filepath?: string }) {
+        if (item.id === STARRED_CATEGORY_PATH || item.filepath === STARRED_CATEGORY_PATH) return;
         editingItemId = item.id || item.filepath || "";
         editingItemType = item.type;
         editingName = item.name;
@@ -1207,6 +1224,7 @@
     }
 
     function showItemContextMenu(e: MouseEvent, item: { id: string; name: string; type: "category" | "group"; filepath?: string }) {
+        if (item.id === STARRED_CATEGORY_PATH || item.filepath === STARRED_CATEGORY_PATH) return;
         e.preventDefault();
         e.stopPropagation();
 
@@ -1893,11 +1911,30 @@
     </div>
 
     {#if isGridLayout}
+        {#if isStarredMatching}
+            <div class="quick-grid-smart-container">
+                <!-- svelte-ignore a11y-click-events-have-key-events -->
+                <div 
+                    class="quick-modal-list-item is-smart-item is-grid-smart-pill"
+                    class:is-focused={flatCategories[focusedIndex]?.filepath === STARRED_CATEGORY_PATH}
+                    data-filepath={STARRED_CATEGORY_PATH}
+                    data-item-id={STARRED_CATEGORY_PATH}
+                    role="button"
+                    tabindex="0"
+                    on:click={() => handleCategoryClick(starredCategory)}
+                    title="Open Starred tasks list in center view"
+                >
+                    <span class="quick-modal-smart-star-icon">★</span>
+                    <span class="quick-modal-list-name">{STARRED_CATEGORY_NAME}</span>
+                    <span class="quick-modal-badge smart-count-badge">{starredCount}</span>
+                </div>
+            </div>
+        {/if}
         <!-- =============================================
              Grid Board / Dashboard Card Layout (图表平铺看板 - 横向滑动 + 纵向换列)
              ============================================= -->
         <div class="quick-list-grid-board" bind:this={boardEl} on:wheel={handleBoardWheel}>
-            {#if filteredItems.length === 0}
+            {#if filteredItems.length === 0 && !isStarredMatching}
                 <div class="quick-modal-empty">No matching lists or groups found.</div>
             {:else}
                 {#each layoutColumns as column, colIdx (colIdx)}
