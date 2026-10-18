@@ -2141,7 +2141,24 @@
              Classic Single-Column Hierarchical Tree Body
              ============================================= -->
         <div class="quick-list-scrollable">
-            {#if filteredItems.length === 0}
+            {#if isStarredMatching}
+                <!-- svelte-ignore a11y-click-events-have-key-events -->
+                <div 
+                    class="quick-modal-list-item is-smart-item"
+                    class:is-focused={flatCategories[focusedIndex]?.filepath === STARRED_CATEGORY_PATH}
+                    data-filepath={STARRED_CATEGORY_PATH}
+                    data-item-id={STARRED_CATEGORY_PATH}
+                    role="button"
+                    tabindex="0"
+                    on:click={() => handleCategoryClick(starredCategory)}
+                    title="Open Starred tasks list in center view"
+                >
+                    <span class="quick-modal-smart-star-icon">★</span>
+                    <span class="quick-modal-list-name">{STARRED_CATEGORY_NAME}</span>
+                    <span class="quick-modal-badge smart-count-badge">{starredCount}</span>
+                </div>
+            {/if}
+            {#if filteredItems.length === 0 && !isStarredMatching}
                 <div class="quick-modal-empty">No matching lists or groups found.</div>
             {:else}
                 {#each filteredItems as item (item.id)}
