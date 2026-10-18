@@ -735,6 +735,35 @@ export default class FluentTasksPlugin extends Plugin {
                 }
             });
 
+            EventBus.on(EventName.CATEGORY_RENAMED, (payload: unknown) => {
+                const p = payload as { oldFilepath?: string; category?: CategoryInfo } | null;
+                if (!p?.category || !p?.oldFilepath) return;
+
+                if (this.settings.defaultQuickListFocusFilepath === p.oldFilepath) {
+                    this.settings.defaultQuickListFocusFilepath = p.category.filepath;
+                    void this.saveSettings();
+                }
+
+                const mainLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MAIN);
+                for (const leaf of mainLeaves) {
+                    if (leaf.view instanceof TaskMainViewWrapper) {
+                        const comp = leaf.view.getComponent();
+                        const cur = comp?.getCurrentCategory();
+                        if (cur && (cur.filepath === p.oldFilepath || cur.id === p.oldFilepath)) {
+                            void leaf.setViewState({
+                                type: VIEW_TYPE_MAIN,
+                                state: {
+                                    categoryFilepath: p.category.filepath,
+                                    categoryName: p.category.name,
+                                },
+                                active: true,
+                            });
+                            (leaf as any).updateHeader?.();
+                        }
+                    }
+                }
+            });
+
             EventBus.on(EventName.TASK_SELECTED, (payload: unknown) => {
                 const p = payload as { task: TaskItem; categoryFilepath: string } | null;
                 if (!p) return;

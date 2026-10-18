@@ -1369,6 +1369,7 @@
     onMount(() => {
         checkHotkeyStatus();
         EventBus.on(EventName.CATEGORY_SELECTED, handleCategorySelected);
+        EventBus.on(EventName.CATEGORY_RENAMED, handleCategoryRenamed);
         EventBus.on(EventName.TASK_UPDATED, handleTaskUpdated);
         EventBus.on(EventName.TASK_MOVED, handleTaskMoved);
         EventBus.on(EventName.TASK_DELETED, handleTaskDeleted);
@@ -1409,6 +1410,7 @@
         window.removeEventListener('focus', handleWindowFocusOrVisibility);
         document.removeEventListener('visibilitychange', handleWindowFocusOrVisibility);
         EventBus.off(EventName.CATEGORY_SELECTED, handleCategorySelected);
+        EventBus.off(EventName.CATEGORY_RENAMED, handleCategoryRenamed);
         EventBus.off(EventName.TASK_UPDATED, handleTaskUpdated);
         EventBus.off(EventName.TASK_MOVED, handleTaskMoved);
         EventBus.off(EventName.TASK_DELETED, handleTaskDeleted);
@@ -1648,6 +1650,27 @@
         if (payload.focusInput) {
             await tick();
             addTaskInputEl?.focus();
+        }
+    }
+
+    async function handleCategoryRenamed(payload: any) {
+        if (!payload?.category || !payload?.oldFilepath) return;
+        const oldPath = payload.oldFilepath;
+        if (currentCategory && (currentCategory.filepath === oldPath || currentCategory.id === oldPath)) {
+            currentCategory = payload.category;
+            await loadTasks();
+            const mainLeaves = plugin?.app?.workspace?.getLeavesOfType(VIEW_TYPE_MAIN) || [];
+            for (const leaf of mainLeaves) {
+                (leaf as any).updateHeader?.();
+            }
+        }
+        if (taskSearchResults.length > 0) {
+            taskSearchResults = taskSearchResults.map(res => {
+                if (res.category && (res.category.filepath === oldPath || res.category.id === oldPath)) {
+                    return { ...res, category: payload.category };
+                }
+                return res;
+            });
         }
     }
 

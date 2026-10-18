@@ -558,6 +558,7 @@ export class CategoryService {
             filepath: newPath
         };
 
+        EventBus.emit(EventName.CATEGORY_RENAMED, { oldFilepath: filepath, category: newCat });
         EventBus.emit(EventName.CATEGORY_LIST_CHANGED, { sidebarItems: items });
         return newCat;
     }

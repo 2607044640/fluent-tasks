@@ -141,6 +141,7 @@ export interface CategoryListChangedPayload {
 export enum EventName {
     CATEGORY_SELECTED = "category:selected",
     CATEGORY_LIST_CHANGED = "category:list-changed",
+    CATEGORY_RENAMED = "category:renamed",
     CATEGORY_DELETED = "category:deleted",
     TASK_SELECTED = "task:selected",
     TASK_UPDATED = "task:updated",
@@ -153,6 +154,11 @@ export enum EventName {
     SETTINGS_CHANGED = "settings:changed",
     TRIGGER_SIDEBAR_RENAME = "sidebar:trigger-rename",
     REVEAL_SIDEBAR_CATEGORY = "sidebar:reveal-category",
+}
+
+export interface CategoryRenamedPayload {
+    oldFilepath: string;
+    category: CategoryInfo;
 }
 
 export interface StepDeletedPayload {

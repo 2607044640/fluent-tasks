@@ -1209,7 +1209,11 @@
             if (itemType === "category") {
                 const cat = categories.find(c => c.id === itemId || c.filepath === itemId);
                 if (cat && cat.name !== newName) {
-                    await dataService.renameCategory(cat.filepath, newName);
+                    const newCat = await dataService.renameCategory(cat.filepath, newName);
+                    if (plugin?.settings?.defaultQuickListFocusFilepath === cat.filepath) {
+                        plugin.settings.defaultQuickListFocusFilepath = newCat.filepath;
+                        await plugin.saveSettings();
+                    }
                 }
             } else {
                 await dataService.renameGroup(itemId, newName);

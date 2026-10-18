@@ -72,6 +72,7 @@
         // Sync visual selection when category is selected externally (e.g. jump commands, search)
         EventBus.on(EventName.CATEGORY_SELECTED, handleExternalCategorySelected);
         EventBus.on(EventName.CATEGORY_LIST_CHANGED, handleExternalCategoryListChanged);
+        EventBus.on(EventName.CATEGORY_RENAMED, handleCategoryRenamed);
         EventBus.on(EventName.TRIGGER_SIDEBAR_RENAME, handleTriggerRename);
         EventBus.on(EventName.REVEAL_SIDEBAR_CATEGORY, handleRevealSidebarCategory);
         EventBus.on(EventName.TASK_UPDATED, handleTaskChanged);
@@ -90,6 +91,7 @@
         window.removeEventListener("keydown", handleWindowKeydown, true);
         EventBus.off(EventName.CATEGORY_SELECTED, handleExternalCategorySelected);
         EventBus.off(EventName.CATEGORY_LIST_CHANGED, handleExternalCategoryListChanged);
+        EventBus.off(EventName.CATEGORY_RENAMED, handleCategoryRenamed);
         EventBus.off(EventName.TRIGGER_SIDEBAR_RENAME, handleTriggerRename);
         EventBus.off(EventName.REVEAL_SIDEBAR_CATEGORY, handleRevealSidebarCategory);
         EventBus.off(EventName.TASK_UPDATED, handleTaskChanged);
@@ -98,6 +100,14 @@
         EventBus.off(EventName.TASK_COMPLETED, handleTaskChanged);
         vaultEventRefs.forEach(ref => app.vault.offref(ref));
     });
+
+    function handleCategoryRenamed(payload: any) {
+        if (!payload || !payload.category) return;
+        if (activeCategoryPath === payload.oldFilepath) {
+            activeCategoryPath = payload.category.filepath;
+        }
+        void loadSidebarItems();
+    }
 
     function handleExternalCategorySelected(payload: any) {
         if (payload && payload.category) {
