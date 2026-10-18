@@ -887,7 +887,7 @@
     }
 
     function clearHoveredTarget(id: string) {
-        if (hoveredRenameTarget?.id === id) {
+        if (hoveredRenameTarget?.id === id || hoveredRenameTarget?.filepath === id) {
             hoveredRenameTarget = null;
         }
     }
@@ -902,11 +902,11 @@
                     const listItemEl = el.closest(".quick-modal-list-item") as HTMLElement | null;
                     if (listItemEl) {
                         const filepath = listItemEl.dataset.filepath;
-                        if (filepath) {
-                            const cat = categories.find(c => c.filepath === filepath || c.id === filepath);
-                            if (cat) {
-                                return { id: cat.id || cat.filepath, name: cat.name, type: "category", filepath: cat.filepath };
-                            }
+                        const itemId = listItemEl.dataset.itemId;
+                        const cat = categories.find(c => (filepath && c.filepath === filepath) || (itemId && c.id === itemId))
+                            || flatCategories.find(c => (filepath && c.filepath === filepath) || (itemId && c.id === itemId));
+                        if (cat) {
+                            return { id: cat.id || cat.filepath, name: cat.name, type: "category", filepath: cat.filepath };
                         }
                     }
 
@@ -931,8 +931,11 @@
         if (modalContainerEl) {
             try {
                 const hoveredListEl = modalContainerEl.querySelector(".quick-modal-list-item:hover") as HTMLElement | null;
-                if (hoveredListEl && hoveredListEl.dataset.filepath) {
-                    const cat = categories.find(c => c.filepath === hoveredListEl.dataset.filepath || c.id === hoveredListEl.dataset.filepath);
+                if (hoveredListEl) {
+                    const filepath = hoveredListEl.dataset.filepath;
+                    const itemId = hoveredListEl.dataset.itemId;
+                    const cat = categories.find(c => (filepath && c.filepath === filepath) || (itemId && c.id === itemId))
+                        || flatCategories.find(c => (filepath && c.filepath === filepath) || (itemId && c.id === itemId));
                     if (cat) {
                         return { id: cat.id || cat.filepath, name: cat.name, type: "category", filepath: cat.filepath };
                     }
@@ -955,13 +958,21 @@
 
         // Priority 3: Explicit mouseenter/mouseleave target tracking
         if (hoveredRenameTarget) {
+            const cat = categories.find(c => c.id === hoveredRenameTarget!.id || c.filepath === hoveredRenameTarget!.filepath || c.name === hoveredRenameTarget!.name);
+            if (cat) {
+                return { id: cat.id || cat.filepath, name: cat.name, type: "category", filepath: cat.filepath };
+            }
+            const grp = groupItems.find(g => g.id === hoveredRenameTarget!.id) || (sidebarItems.find(i => i.id === hoveredRenameTarget!.id && i.type === "group") as GroupInfo | undefined);
+            if (grp) {
+                return { id: grp.id, name: grp.name, type: "group" };
+            }
             return hoveredRenameTarget;
         }
 
         return null;
     }
 
-    function startRenameItem(item: { id: string; name: string; type: "category" | "group"; filepath?: string }) {
+    async function startRenameItem(item: { id: string; name: string; type: "category" | "group"; filepath?: string }) {
         editingItemId = item.id || item.filepath || "";
         editingItemType = item.type;
         editingName = item.name;
@@ -972,9 +983,14 @@
                 focusedIndex = idx;
             }
         }
+        await tick();
+        renameInputEl?.focus();
+        renameInputEl?.select();
         setTimeout(() => {
-            renameInputEl?.focus();
-            renameInputEl?.select();
+            if (renameInputEl && document.activeElement !== renameInputEl) {
+                renameInputEl.focus();
+                renameInputEl.select();
+            }
         }, 30);
     }
 
@@ -1003,12 +1019,19 @@
             console.error("[QuickListModal] Rename failed:", e);
         } finally {
             isCommittingRename = false;
+            setTimeout(() => {
+                modalContainerEl?.focus();
+            }, 30);
         }
     }
 
     function cancelRename() {
         editingItemId = "";
         editingName = "";
+        hoveredRenameTarget = null;
+        setTimeout(() => {
+            modalContainerEl?.focus();
+        }, 30);
     }
 
     function showItemContextMenu(e: MouseEvent, item: { id: string; name: string; type: "category" | "group"; filepath?: string }) {

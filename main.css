@@ -5367,5 +5367,68 @@ body .task-steps-floating-modal .steps-modal-delete-btn:hover {
     box-shadow: 0 0 8px rgba(245, 158, 11, 0.3) !important;
 }
 
+/* =============================================
+   Smart Lists & Starred Category Styles
+   ============================================= */
+.smart-lists-container {
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px dashed var(--background-modifier-border);
+}
 
+.smart-category-item {
+    font-weight: 600;
+}
 
+.smart-category-item .smart-star-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--todo-star, #eab308);
+}
+
+.smart-count-badge {
+    margin-left: auto;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 10px;
+    background-color: var(--todo-star-light, rgba(234, 179, 8, 0.15));
+    color: var(--todo-star, #eab308);
+    border: 1px solid var(--todo-star-border, rgba(234, 179, 8, 0.3));
+}
+
+.source-category-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background-color: var(--background-modifier-form-field);
+    color: var(--text-muted);
+    border: 1px solid var(--background-modifier-border);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.source-category-badge:hover {
+    color: var(--text-normal);
+    background-color: var(--background-modifier-hover);
+    border-color: var(--todo-accent, #8b5cf6);
+}
+
+.quick-modal-list-item.is-smart-item {
+    font-weight: 600;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px dashed var(--background-modifier-border);
+}
+
+.quick-modal-smart-star-icon {
+    color: var(--todo-star, #eab308);
+    font-size: 15px;
+    line-height: 1;
+    margin-right: 2px;
+}

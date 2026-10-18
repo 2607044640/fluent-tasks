@@ -113,6 +113,7 @@ interface TaskMainViewComponent extends TaskMainView {
     startRenameCategory: () => void;
     cancelRenameCategory: () => void;
     isHoveringOrFocusedCategoryTitle: () => boolean;
+    toggleStarByTaskId: (taskId: string) => Promise<void>;
 }
 
 class TaskMainViewWrapper extends ItemView {
@@ -317,6 +318,31 @@ export default class FluentTasksPlugin extends Plugin {
         this.activeDetailModal.open();
     }
 
+    toggleStarOnHoveredTask(): void {
+        const hovered = (window as any).__fluent_tasks_hovered_task;
+        if (hovered && typeof hovered.toggle === "function") {
+            void hovered.toggle();
+            return;
+        }
+
+        // Fallback: check DOM hover state
+        const hoveredTaskEl = document.querySelector(".task-item:hover, .quick-modal-task-item:hover") as HTMLElement | null;
+        if (hoveredTaskEl) {
+            const taskIdAttr = hoveredTaskEl.id || "";
+            const taskId = taskIdAttr.replace(/^task-/, "");
+            if (taskId) {
+                const mainLeaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_MAIN)[0];
+                if (mainLeaf && mainLeaf.view instanceof TaskMainViewWrapper) {
+                    const comp = mainLeaf.view.getComponent();
+                    if (comp?.toggleStarByTaskId) {
+                        void comp.toggleStarByTaskId(taskId);
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
     handleDetailModalModeEnabled(): void {
         const wasRightActive = this.isPluginRightSidebarActive();
         this.app.workspace.detachLeavesOfType(VIEW_TYPE_DETAIL);
@@ -476,6 +502,14 @@ export default class FluentTasksPlugin extends Plugin {
             name: t("cmd_backup_manager"),
             callback: () => {
                 new BackupModal(this.app, this, this.dataService).open();
+            },
+        });
+
+        this.addCommand({
+            id: "toggle-task-star-hover",
+            name: "Toggle star on hovered task",
+            callback: () => {
+                this.toggleStarOnHoveredTask();
             },
         });
 

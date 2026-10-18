@@ -87,7 +87,9 @@
     let dragListPosition: "top" | "bottom" | "inside" | null = null;
     let hoveredDropCategoryPath: string | null = null;
 
-    $: flatCategories = getFlatCategories(sidebarItems);
+    $: flatCategories = starredCount > 0 
+        ? [{ id: STARRED_CATEGORY_PATH, name: STARRED_CATEGORY_NAME, filepath: STARRED_CATEGORY_PATH, type: "category", isSmartList: true } as CategoryInfo, ...getFlatCategories(sidebarItems)]
+        : getFlatCategories(sidebarItems);
     $: allDisplayedTasks = isSearching 
         ? searchResults.map(r => r.task) 
         : [...incompleteTasks, ...completedTasks];
@@ -107,6 +109,7 @@
         EventBus.off(EventName.CATEGORY_LIST_CHANGED, handleExternalListChanged);
         EventBus.off(EventName.TASK_UPDATED, handleExternalTaskUpdated);
         EventBus.off(EventName.SETTINGS_CHANGED, handleSettingsChanged);
+        (window as any).__fluent_tasks_hovered_task = null;
     });
 
     function handleSettingsChanged(payload?: any) {
@@ -327,10 +330,25 @@
     async function handleTaskDropOnCategory(targetCat: CategoryInfo) {
         const dragData = (window as any).__mstodo_drag_data;
         if (!dragData || !dragData.task || !dragData.sourceFilepath) return;
-        if (dragData.sourceFilepath === targetCat.filepath) return;
 
         hoveredDropCategoryPath = null;
         try {
+            if (targetCat.filepath === STARRED_CATEGORY_PATH) {
+                if (!dragData.task.starred) {
+                    dragData.task.starred = true;
+                    await dataService.updateTask(dragData.sourceFilepath, dragData.task);
+                    EventBus.emit(EventName.TASK_UPDATED, { task: dragData.task, categoryFilepath: dragData.sourceFilepath });
+                    await refreshStarredCount();
+                    new Notice(`Starred task: "${dragData.task.title}"`);
+                    if (selectedCategory?.filepath === STARRED_CATEGORY_PATH) {
+                        await loadTasksForCategory(selectedCategory);
+                    }
+                }
+                return;
+            }
+
+            if (dragData.sourceFilepath === targetCat.filepath) return;
+
             await dataService.moveTask(dragData.sourceFilepath, targetCat.filepath, dragData.task.id);
             EventBus.emit(EventName.TASK_UPDATED, { categoryFilepath: dragData.sourceFilepath });
             EventBus.emit(EventName.TASK_UPDATED, { categoryFilepath: targetCat.filepath });
@@ -426,7 +444,8 @@
     // =============================================
     // Inline Rename & Context Menus
     // =============================================
-    function startRenameItem(item: { id: string; name: string; type: string }) {
+    function startRenameItem(item: { id: string; name: string; type: string; filepath?: string }) {
+        if (item.id === STARRED_CATEGORY_PATH || item.filepath === STARRED_CATEGORY_PATH) return;
         editingItemId = item.id;
         editingItemType = item.type;
         editingName = item.name;
@@ -467,6 +486,7 @@
     }
 
     function showItemContextMenu(e: MouseEvent, item: { id: string; name: string; type: string; filepath?: string }) {
+        if (item.id === STARRED_CATEGORY_PATH || item.filepath === STARRED_CATEGORY_PATH) return;
         e.preventDefault();
         e.stopPropagation();
 
@@ -578,13 +598,74 @@
         if (!catPath) return;
 
         taskItem.starred = !taskItem.starred;
-        await dataService.updateTask(catPath, taskItem);
-        EventBus.emit(EventName.TASK_UPDATED, { task: taskItem, categoryFilepath: catPath });
+        const targetFile = (catPath === STARRED_CATEGORY_PATH && taskItem.sourceFilepath)
+            ? taskItem.sourceFilepath
+            : catPath;
 
-        if (isSearching) searchResults = [...searchResults];
-        else {
+        await dataService.updateTask(targetFile, taskItem);
+        EventBus.emit(EventName.TASK_UPDATED, { task: taskItem, categoryFilepath: targetFile });
+
+        if (catPath === STARRED_CATEGORY_PATH && !taskItem.starred) {
+            incompleteTasks = incompleteTasks.filter(t => t.id !== taskItem.id);
+            completedTasks = completedTasks.filter(t => t.id !== taskItem.id);
+        } else if (isSearching) {
+            searchResults = [...searchResults];
+        } else {
             incompleteTasks = [...incompleteTasks];
             completedTasks = [...completedTasks];
+        }
+
+        await refreshStarredCount();
+        new Notice(taskItem.starred ? `Starred task: "${taskItem.title}"` : `Removed star from: "${taskItem.title}"`);
+    }
+
+    function handleTaskContextMenu(e: MouseEvent, task: TaskItem) {
+        e.preventDefault();
+        e.stopPropagation();
+        const menu = new Menu();
+
+        // 1st item: Star/Unstar task per requirement
+        menu.addItem((item) => {
+            item.setTitle(task.starred ? "Remove star" : "Star task")
+                .setIcon("star")
+                .onClick(() => {
+                    void toggleTaskStar(task);
+                });
+        });
+
+        menu.addItem((item) => {
+            item.setTitle(task.completed ? "Mark as uncompleted" : "Mark as completed")
+                .setIcon("check-square")
+                .onClick(() => {
+                    void toggleTaskCompletion(task);
+                });
+        });
+
+        menu.addSeparator();
+
+        menu.addItem((item) => {
+            item.setTitle("Delete task")
+                .setIcon("trash")
+                .setWarning(true)
+                .onClick(() => {
+                    void deleteTaskSafely(task);
+                });
+        });
+
+        menu.showAtMouseEvent(e);
+    }
+
+    function handleTaskMouseEnter(task: TaskItem) {
+        (window as any).__fluent_tasks_hovered_task = {
+            task,
+            categoryFilepath: selectedCategory?.filepath || "",
+            toggle: () => toggleTaskStar(task)
+        };
+    }
+
+    function handleTaskMouseLeave(task: TaskItem) {
+        if ((window as any).__fluent_tasks_hovered_task?.task?.id === task.id) {
+            (window as any).__fluent_tasks_hovered_task = null;
         }
     }
 
@@ -821,7 +902,7 @@
             return;
         }
 
-        if (!disableStars && (e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
             if (focusPane === "tasks" && allDisplayedTasks.length > 0) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -930,6 +1011,25 @@
         <div class="quick-modal-pane-lists">
             <div class="quick-modal-pane-title">Lists & Groups</div>
             <div class="quick-modal-scrollable">
+                {#if starredCount > 0}
+                    <!-- svelte-ignore a11y-click-events-have-key-events -->
+                    <div 
+                        class="quick-modal-list-item is-smart-item"
+                        class:is-selected={selectedCategory?.filepath === STARRED_CATEGORY_PATH}
+                        class:is-focused={focusPane === 'lists' && flatCategories[focusedCategoryIndex]?.filepath === STARRED_CATEGORY_PATH}
+                        class:drop-hover={hoveredDropCategoryPath === STARRED_CATEGORY_PATH}
+                        role="button"
+                        tabindex="0"
+                        on:dragover={(e) => handleCategoryDragOver(e, { id: STARRED_CATEGORY_PATH, name: STARRED_CATEGORY_NAME, filepath: STARRED_CATEGORY_PATH, type: 'category' })}
+                        on:dragleave={() => handleCategoryDragLeave({ id: STARRED_CATEGORY_PATH, name: STARRED_CATEGORY_NAME, filepath: STARRED_CATEGORY_PATH, type: 'category' })}
+                        on:drop|preventDefault={() => handleCategoryDrop({ id: STARRED_CATEGORY_PATH, name: STARRED_CATEGORY_NAME, filepath: STARRED_CATEGORY_PATH, type: 'category' })}
+                        on:click={() => selectCategory({ id: STARRED_CATEGORY_PATH, name: STARRED_CATEGORY_NAME, filepath: STARRED_CATEGORY_PATH, type: 'category', isSmartList: true })}
+                    >
+                        <span class="quick-modal-smart-star-icon">★</span>
+                        <span class="quick-modal-list-name">{STARRED_CATEGORY_NAME}</span>
+                        <span class="quick-modal-badge smart-count-badge">{starredCount}</span>
+                    </div>
+                {/if}
                 {#each sidebarItems as item (item.id)}
                     {#if item.type === "group"}
                         <div 
@@ -1116,6 +1216,9 @@
                                     role="button"
                                     tabindex="0"
                                     on:click={() => toggleTaskCompletion(result.task)}
+                                    on:contextmenu={(e) => handleTaskContextMenu(e, result.task)}
+                                    on:mouseenter={() => handleTaskMouseEnter(result.task)}
+                                    on:mouseleave={() => handleTaskMouseLeave(result.task)}
                                 >
                                     <input 
                                         type="checkbox" 
@@ -1154,7 +1257,7 @@
                                             {/if}
                                         </span>
                                     {/if}
-                                    {#if !disableStars}
+                                    {#if !disableStars && !hiddenStarMode}
                                         <span 
                                             class="quick-modal-star-btn"
                                             class:is-starred={result.task.starred}
@@ -1184,6 +1287,9 @@
                                     role="button"
                                     tabindex="0"
                                     on:click={() => toggleTaskCompletion(task)}
+                                    on:contextmenu={(e) => handleTaskContextMenu(e, task)}
+                                    on:mouseenter={() => handleTaskMouseEnter(task)}
+                                    on:mouseleave={() => handleTaskMouseLeave(task)}
                                 >
                                     <input 
                                         type="checkbox" 
@@ -1194,6 +1300,11 @@
                                     <span class="quick-modal-task-title">
                                         {task.title}
                                     </span>
+                                    {#if selectedCategory?.filepath === STARRED_CATEGORY_PATH && task.sourceCategoryName}
+                                        <span class="quick-modal-search-category-badge" title={`From list: ${task.sourceCategoryName}`}>
+                                            📁 {task.sourceCategoryName}
+                                        </span>
+                                    {/if}
                                     {#if task.steps && task.steps.length > 0}
                                         <span 
                                             class="quick-modal-steps-badge"
@@ -1239,7 +1350,7 @@
                                             {/if}
                                         </span>
                                     {/if}
-                                    {#if !disableStars}
+                                    {#if !disableStars && !hiddenStarMode}
                                         <span 
                                             class="quick-modal-star-btn"
                                             class:is-starred={task.starred}
@@ -1268,6 +1379,9 @@
                                         role="button"
                                         tabindex="0"
                                         on:click={() => toggleTaskCompletion(task)}
+                                        on:contextmenu={(e) => handleTaskContextMenu(e, task)}
+                                        on:mouseenter={() => handleTaskMouseEnter(task)}
+                                        on:mouseleave={() => handleTaskMouseLeave(task)}
                                     >
                                         <input 
                                             type="checkbox" 
@@ -1278,6 +1392,11 @@
                                         <span class="quick-modal-task-title is-done">
                                             {task.title}
                                         </span>
+                                        {#if selectedCategory?.filepath === STARRED_CATEGORY_PATH && task.sourceCategoryName}
+                                            <span class="quick-modal-search-category-badge" title={`From list: ${task.sourceCategoryName}`}>
+                                                📁 {task.sourceCategoryName}
+                                            </span>
+                                        {/if}
                                         {#if task.steps && task.steps.length > 0}
                                             <span 
                                                 class="quick-modal-steps-badge"
@@ -1323,7 +1442,7 @@
                                                 {/if}
                                             </span>
                                         {/if}
-                                        {#if !disableStars}
+                                        {#if !disableStars && !hiddenStarMode}
                                             <span 
                                                 class="quick-modal-star-btn"
                                                 class:is-starred={task.starred}
@@ -1350,9 +1469,7 @@
         <span><b>Space</b> Toggle Check</span>
         <span><b>F2</b> Rename</span>
         <span><b>Ctrl+N</b> Add Task</span>
-        {#if !disableStars}
-            <span><b>Ctrl+Enter</b> Star</span>
-        {/if}
+        <span><b>Ctrl+Enter</b> Star</span>
         <span><b>Enter</b> {plugin && plugin.settings && plugin.settings.quickModalAction === 'navigate' ? 'Open in Workspace' : 'Select'}</span>
         <span><b>Esc</b> Close</span>
     </div>
