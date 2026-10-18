@@ -41450,7 +41450,6 @@ function create_if_block_334(ctx) {
     )) + ""
   );
   let t1;
-  let button_aria_label_value;
   let t2;
   let if_block_anchor;
   let mounted;
@@ -41505,7 +41504,6 @@ function create_if_block_334(ctx) {
       attr(svg, "stroke", "currentColor");
       attr(svg, "stroke-width", "2");
       attr(button, "class", "quick-modal-header-btn quick-modal-focus-picker-btn");
-      attr(button, "aria-label", button_aria_label_value = t("focus_btn_aria_label"));
       toggle_class(
         button,
         "is-active",

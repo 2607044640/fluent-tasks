@@ -1813,7 +1813,6 @@
             <button 
                 class="quick-modal-header-btn quick-modal-focus-picker-btn"
                 class:is-active={isPickingDefaultFocus}
-                aria-label={t("focus_btn_aria_label")}
                 on:click={togglePickingDefaultFocus}
                 on:contextmenu|preventDefault={async () => {
                     if (plugin?.settings) {
