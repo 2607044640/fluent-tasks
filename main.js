@@ -201,6 +201,235 @@ var AtomicIOPipeline = class {
 
 // src/services/CategoryService.ts
 var import_obsidian3 = require("obsidian");
+
+// src/utils/sidebarTreeUtils.ts
+function resolveUniqueName(existingNames, desiredName) {
+  const trimmed = desiredName.trim();
+  if (!existingNames.includes(trimmed)) {
+    return trimmed;
+  }
+  const match = trimmed.match(/^(.*?)(?:\s*\(([0-9]+)\))?$/);
+  const base = match && match[1] ? match[1].trim() : trimmed;
+  let index = match && match[2] ? parseInt(match[2], 10) + 1 : 1;
+  while (existingNames.includes(`${base}(${index})`)) {
+    index++;
+  }
+  return `${base}(${index})`;
+}
+function ensureUniqueCategoryName(item, destinationCategoryNames) {
+  if (item.type === "category" || "filepath" in item && !("items" in item)) {
+    const cat = item;
+    if (destinationCategoryNames.includes(cat.name)) {
+      const uniqueName = resolveUniqueName(destinationCategoryNames, cat.name);
+      return { ...cat, name: uniqueName };
+    }
+  }
+  return item;
+}
+function moveSidebarItem(items, movedItemId, targetId, position) {
+  if (!movedItemId || !targetId || movedItemId === targetId)
+    return items;
+  let listToMove = null;
+  const extractItem = (list) => {
+    const nextList = [];
+    for (const item of list) {
+      if (item.id === movedItemId) {
+        listToMove = item;
+      } else if (item.type === "group") {
+        const childIdx = item.items.findIndex((c) => c.id === movedItemId);
+        if (childIdx !== -1) {
+          listToMove = item.items[childIdx];
+          nextList.push({
+            ...item,
+            items: item.items.filter((c) => c.id !== movedItemId)
+          });
+        } else {
+          nextList.push(item);
+        }
+      } else {
+        nextList.push(item);
+      }
+    }
+    return nextList;
+  };
+  let tempItems = extractItem(items);
+  if (!listToMove)
+    return items;
+  if (targetId === "__root__" || targetId === "root") {
+    const rootCategoryNames = tempItems.filter((i) => i.type === "category").map((c) => c.name);
+    const resolvedItem = ensureUniqueCategoryName(listToMove, rootCategoryNames);
+    if (position === "top") {
+      return [resolvedItem, ...tempItems];
+    } else {
+      return [...tempItems, resolvedItem];
+    }
+  }
+  if (position === "inside") {
+    return tempItems.map((item) => {
+      if (item.type === "group" && item.id === targetId) {
+        const groupNames = item.items.map((c) => c.name);
+        const resolvedItem = ensureUniqueCategoryName(listToMove, groupNames);
+        return {
+          ...item,
+          isExpanded: true,
+          items: [...item.items, resolvedItem]
+        };
+      }
+      return item;
+    });
+  }
+  const insertNextTo = (list, tId, itemToInsert, p) => {
+    const nextList = [];
+    for (const item of list) {
+      if (item.id === tId) {
+        const rootNames = list.filter((i) => i.type === "category").map((c) => c.name);
+        const resolved = ensureUniqueCategoryName(itemToInsert, rootNames);
+        if (p === "top") {
+          nextList.push(resolved);
+          nextList.push(item);
+        } else {
+          nextList.push(item);
+          nextList.push(resolved);
+        }
+      } else if (item.type === "group") {
+        const targetIdx = item.items.findIndex((c) => c.id === tId);
+        if (targetIdx !== -1) {
+          const newChildren = [...item.items];
+          const filtered = newChildren.filter((c) => c.id !== itemToInsert.id);
+          const insertIdx = filtered.findIndex((c) => c.id === tId);
+          const groupNames = filtered.map((c) => c.name);
+          const resolvedChild = ensureUniqueCategoryName(itemToInsert, groupNames);
+          if (p === "top") {
+            filtered.splice(insertIdx, 0, resolvedChild);
+          } else {
+            filtered.splice(insertIdx + 1, 0, resolvedChild);
+          }
+          nextList.push({
+            ...item,
+            items: filtered
+          });
+        } else {
+          nextList.push(item);
+        }
+      } else {
+        nextList.push(item);
+      }
+    }
+    return nextList;
+  };
+  return insertNextTo(tempItems, targetId, listToMove, position);
+}
+function toggleGroupExpandedState(items, groupId) {
+  return items.map((item) => {
+    if (item.type === "group" && item.id === groupId) {
+      return {
+        ...item,
+        isExpanded: !item.isExpanded
+      };
+    }
+    return item;
+  });
+}
+function getFlatCategories(items) {
+  const result = [];
+  for (const item of items) {
+    if (item.type === "category") {
+      result.push(item);
+    } else if (item.type === "group" && Array.isArray(item.items)) {
+      for (const child of item.items) {
+        result.push(child);
+      }
+    }
+  }
+  return result;
+}
+function moveListToGroupOrRoot(items, listId, targetGroupId) {
+  let listToMove = null;
+  let nextItems = [];
+  for (const item of items) {
+    if (item.id === listId) {
+      listToMove = item;
+    } else if (item.type === "group") {
+      const childIdx = item.items.findIndex((c) => c.id === listId);
+      if (childIdx !== -1) {
+        listToMove = item.items[childIdx];
+        nextItems.push({
+          ...item,
+          items: item.items.filter((c) => c.id !== listId)
+        });
+      } else {
+        nextItems.push(item);
+      }
+    } else {
+      nextItems.push(item);
+    }
+  }
+  if (!listToMove)
+    return items;
+  if (targetGroupId === "root") {
+    const rootNames = nextItems.filter((i) => i.type === "category").map((c) => c.name);
+    const resolved = ensureUniqueCategoryName(listToMove, rootNames);
+    return [...nextItems, resolved];
+  }
+  return nextItems.map((item) => {
+    if (item.type === "group" && item.id === targetGroupId) {
+      const groupNames = item.items.map((c) => c.name);
+      const resolved = ensureUniqueCategoryName(listToMove, groupNames);
+      return {
+        ...item,
+        isExpanded: true,
+        items: [...item.items, resolved]
+      };
+    }
+    return item;
+  });
+}
+function deleteGroupFromTree(items, groupId) {
+  const groupIdx = items.findIndex((i) => i.id === groupId && i.type === "group");
+  if (groupIdx === -1)
+    return items;
+  const group = items[groupIdx];
+  const children2 = group.items || [];
+  const nextItems = [...items];
+  nextItems.splice(groupIdx, 1);
+  const rootNames = nextItems.filter((i) => i.type === "category").map((c) => c.name);
+  const resolvedChildren = [];
+  for (const child of children2) {
+    const uniqueName = resolveUniqueName(rootNames, child.name);
+    rootNames.push(uniqueName);
+    resolvedChildren.push({
+      ...child,
+      name: uniqueName
+    });
+  }
+  nextItems.splice(groupIdx, 0, ...resolvedChildren);
+  return nextItems;
+}
+function filterSidebarTree(items, query) {
+  const q = query.trim().toLowerCase();
+  if (!q)
+    return items;
+  const result = [];
+  for (const item of items) {
+    if (item.type === "category") {
+      if (item.name.toLowerCase().includes(q)) {
+        result.push(item);
+      }
+    } else if (item.type === "group") {
+      const matchingChildren = (item.items || []).filter((c) => c.name.toLowerCase().includes(q));
+      if (item.name.toLowerCase().includes(q) || matchingChildren.length > 0) {
+        result.push({
+          ...item,
+          isExpanded: true,
+          items: matchingChildren.length > 0 ? matchingChildren : item.items
+        });
+      }
+    }
+  }
+  return result;
+}
+
+// src/services/CategoryService.ts
 var CategoryService = class {
   constructor(app, io) {
     this.app = app;
@@ -208,6 +437,33 @@ var CategoryService = class {
   }
   getMetadataPath() {
     return `${DATA_FOLDER}/.metadata.json`;
+  }
+  /**
+   * Resolves an available physical file path on disk within DATA_FOLDER.
+   * If TodoData/<baseName>.md exists, tries <baseName>(1).md, <baseName>(2).md, etc.
+   */
+  getAvailableDiskFilepath(baseName, currentFilepath) {
+    let candidateBasename = baseName;
+    let candidatePath = `${DATA_FOLDER}/${candidateBasename}.md`;
+    if (currentFilepath && candidatePath === currentFilepath) {
+      return { filepath: candidatePath, basename: candidateBasename };
+    }
+    let file = this.app.vault.getAbstractFileByPath(candidatePath);
+    if (!file || currentFilepath && file.path === currentFilepath) {
+      return { filepath: candidatePath, basename: candidateBasename };
+    }
+    const match = baseName.match(/^(.*?)(?:\s*\(([0-9]+)\))?$/);
+    const rawBase = match && match[1] ? match[1].trim() : baseName;
+    let index = match && match[2] ? parseInt(match[2], 10) + 1 : 1;
+    while (true) {
+      candidateBasename = `${rawBase}(${index})`;
+      candidatePath = `${DATA_FOLDER}/${candidateBasename}.md`;
+      file = this.app.vault.getAbstractFileByPath(candidatePath);
+      if (!file || currentFilepath && file.path === currentFilepath) {
+        return { filepath: candidatePath, basename: candidateBasename };
+      }
+      index++;
+    }
   }
   async getSidebarItems() {
     var _a;
@@ -235,23 +491,27 @@ var CategoryService = class {
         }
         seenGroupIds.add(groupId);
         const groupItems = [];
-        for (const child of itemState.children || []) {
-          const childName = typeof child === "string" ? child : child.name;
+        for (const rawChild of itemState.children || []) {
+          const childName = typeof rawChild === "string" ? rawChild : rawChild.name;
+          const childFile = typeof rawChild === "string" ? rawChild : rawChild.file || rawChild.name;
           if (!childName)
             continue;
-          if (usedFiles.has(childName)) {
+          if (usedFiles.has(childFile)) {
             hasDuplicateMetadata = true;
             continue;
           }
-          const file = fileMap.get(childName);
+          let file = fileMap.get(childFile);
+          if (!file && childName !== childFile) {
+            file = fileMap.get(childName);
+          }
           if (file) {
             groupItems.push({
               id: file.path,
               type: "category",
-              name: file.basename,
+              name: childName,
               filepath: file.path
             });
-            usedFiles.add(childName);
+            usedFiles.add(file.basename);
           }
         }
         sidebarItems.push({
@@ -262,19 +522,24 @@ var CategoryService = class {
           isExpanded: (_a = itemState.isExpanded) != null ? _a : true
         });
       } else if (itemState.type === "category") {
-        if (usedFiles.has(itemState.name)) {
+        const childName = itemState.name;
+        const childFile = itemState.file || itemState.name;
+        if (usedFiles.has(childFile)) {
           hasDuplicateMetadata = true;
           continue;
         }
-        const file = fileMap.get(itemState.name);
+        let file = fileMap.get(childFile);
+        if (!file && childName !== childFile) {
+          file = fileMap.get(childName);
+        }
         if (file) {
           sidebarItems.push({
             id: file.path,
             type: "category",
-            name: file.basename,
+            name: childName,
             filepath: file.path
           });
-          usedFiles.add(itemState.name);
+          usedFiles.add(file.basename);
         }
       }
     }
@@ -316,9 +581,10 @@ var CategoryService = class {
     }
   }
   async saveSidebarState(items) {
+    var _a, _b;
     await this.io.ensureDataFolder();
     const path = this.getMetadataPath();
-    const seenCategories = /* @__PURE__ */ new Set();
+    const seenFilepaths = /* @__PURE__ */ new Set();
     const seenGroupIds = /* @__PURE__ */ new Set();
     const state = [];
     for (const item of items) {
@@ -328,8 +594,13 @@ var CategoryService = class {
         seenGroupIds.add(item.id);
         const children2 = [];
         for (const child of item.items || []) {
-          if (!seenCategories.has(child.name)) {
-            seenCategories.add(child.name);
+          if (seenFilepaths.has(child.filepath))
+            continue;
+          seenFilepaths.add(child.filepath);
+          const fileBasename = ((_a = child.filepath.split("/").pop()) == null ? void 0 : _a.replace(/\.md$/, "")) || child.name;
+          if (fileBasename !== child.name) {
+            children2.push({ name: child.name, file: fileBasename });
+          } else {
             children2.push(child.name);
           }
         }
@@ -341,8 +612,17 @@ var CategoryService = class {
           children: children2
         });
       } else if (item.type === "category") {
-        if (!seenCategories.has(item.name)) {
-          seenCategories.add(item.name);
+        if (seenFilepaths.has(item.filepath))
+          continue;
+        seenFilepaths.add(item.filepath);
+        const fileBasename = ((_b = item.filepath.split("/").pop()) == null ? void 0 : _b.replace(/\.md$/, "")) || item.name;
+        if (fileBasename !== item.name) {
+          state.push({
+            type: "category",
+            name: item.name,
+            file: fileBasename
+          });
+        } else {
           state.push({
             type: "category",
             name: item.name
@@ -356,21 +636,20 @@ var CategoryService = class {
   }
   async createCategory(name) {
     await this.io.ensureDataFolder();
-    const filepath = `${DATA_FOLDER}/${name}.md`;
-    if (this.app.vault.getAbstractFileByPath(filepath)) {
-      throw new Error(`Category "${name}" already exists.`);
+    const trimmed = name.trim();
+    if (!trimmed) {
+      throw new Error("Category name cannot be empty");
     }
-    const state = await this.loadSidebarState();
-    const filteredState = state.filter((s) => !(s.type === "category" && s.name === name));
-    filteredState.unshift({ type: "category", name });
-    const metadataPath = this.getMetadataPath();
-    this.io.markInternalWrite(metadataPath);
-    await this.app.vault.adapter.write(metadataPath, JSON.stringify({ sidebar: filteredState }, null, 2));
+    const items = await this.getSidebarItems();
+    const rootNames = items.filter((i) => i.type === "category").map((c) => c.name);
+    const resolvedDisplayName = resolveUniqueName(rootNames, trimmed);
+    const { filepath } = this.getAvailableDiskFilepath(resolvedDisplayName);
+    const newCat = { id: filepath, type: "category", name: resolvedDisplayName, filepath };
+    items.unshift(newCat);
+    await this.saveSidebarState(items);
     this.io.markInternalWrite(filepath);
     await this.app.vault.create(filepath, "");
-    void Logger.log("Created category:", name);
-    const newCat = { id: filepath, type: "category", name, filepath };
-    const items = await this.getSidebarItems();
+    void Logger.log("Created category:", filepath);
     EventBus.emit("category:list-changed" /* CATEGORY_LIST_CHANGED */, { sidebarItems: items });
     return newCat;
   }
@@ -408,7 +687,18 @@ var CategoryService = class {
       return;
     const group = items[groupIdx];
     const children2 = group.items || [];
-    items.splice(groupIdx, 1, ...children2);
+    items.splice(groupIdx, 1);
+    const rootNames = items.filter((i) => i.type === "category").map((c) => c.name);
+    const resolvedChildren = [];
+    for (const child of children2) {
+      const uniqueName = resolveUniqueName(rootNames, child.name);
+      rootNames.push(uniqueName);
+      resolvedChildren.push({
+        ...child,
+        name: uniqueName
+      });
+    }
+    items.splice(groupIdx, 0, ...resolvedChildren);
     await this.saveSidebarState(items);
     void Logger.log("Deleted group:", groupId);
     EventBus.emit("category:list-changed" /* CATEGORY_LIST_CHANGED */, { sidebarItems: items });
@@ -427,16 +717,19 @@ var CategoryService = class {
     }
     let groupName;
     let index = -1;
+    let categoryDisplayName = basename;
     try {
       const currentItems = await this.getSidebarItems();
       for (let i = 0; i < currentItems.length; i++) {
         const item = currentItems[i];
-        if (item.type === "category" && item.name === basename) {
+        if (item.type === "category" && (item.filepath === filepath || item.id === filepath)) {
+          categoryDisplayName = item.name;
           index = i;
           break;
         } else if (item.type === "group" && item.items) {
-          const subIdx = item.items.findIndex((c) => c.name === basename);
+          const subIdx = item.items.findIndex((c) => c.filepath === filepath || c.id === filepath);
           if (subIdx !== -1) {
+            categoryDisplayName = item.items[subIdx].name;
             groupName = item.name;
             index = subIdx;
             break;
@@ -451,29 +744,27 @@ var CategoryService = class {
       await this.app.fileManager.trashFile(file);
       Logger.log("Moved category to trash:", filepath);
     }
-    if (basename) {
-      const items = await this.getSidebarItems();
-      const cleanup = (list) => {
-        for (let i = list.length - 1; i >= 0; i--) {
-          const item = list[i];
-          if (item.type === "category" && item.name === basename) {
-            list.splice(i, 1);
-          } else if (item.type === "group") {
-            item.items = item.items.filter((c) => c.name !== basename);
-          }
+    const items = await this.getSidebarItems();
+    const cleanup = (list) => {
+      for (let i = list.length - 1; i >= 0; i--) {
+        const item = list[i];
+        if (item.type === "category" && (item.filepath === filepath || item.id === filepath)) {
+          list.splice(i, 1);
+        } else if (item.type === "group" && item.items) {
+          item.items = item.items.filter((c) => c.filepath !== filepath && c.id !== filepath);
         }
-      };
-      cleanup(items);
-      await this.saveSidebarState(items);
-      EventBus.emit("category:list-changed" /* CATEGORY_LIST_CHANGED */, { sidebarItems: items });
-      EventBus.emit("category:deleted" /* CATEGORY_DELETED */, {
-        categoryName: basename,
-        categoryFilepath: filepath,
-        fileContent,
-        groupName,
-        index
-      });
-    }
+      }
+    };
+    cleanup(items);
+    await this.saveSidebarState(items);
+    EventBus.emit("category:list-changed" /* CATEGORY_LIST_CHANGED */, { sidebarItems: items });
+    EventBus.emit("category:deleted" /* CATEGORY_DELETED */, {
+      categoryName: categoryDisplayName,
+      categoryFilepath: filepath,
+      fileContent,
+      groupName,
+      index
+    });
   }
   async restoreCategory(categoryName, categoryFilepath, fileContent, groupName, index) {
     await this.io.ensureDataFolder();
@@ -497,12 +788,12 @@ var CategoryService = class {
     let existingItem = null;
     for (let i = items.length - 1; i >= 0; i--) {
       const item = items[i];
-      if (item.type === "category" && item.name === categoryName) {
+      if (item.type === "category" && (item.filepath === categoryFilepath || item.id === categoryFilepath)) {
         existingItem = item;
         items.splice(i, 1);
         break;
       } else if (item.type === "group" && item.items) {
-        const subIdx = item.items.findIndex((c) => c.name === categoryName);
+        const subIdx = item.items.findIndex((c) => c.filepath === categoryFilepath || c.id === categoryFilepath);
         if (subIdx !== -1) {
           existingItem = item.items[subIdx];
           item.items.splice(subIdx, 1);
@@ -516,42 +807,85 @@ var CategoryService = class {
       if (targetGroup && targetGroup.type === "group") {
         if (!targetGroup.items)
           targetGroup.items = [];
+        const siblingNames = targetGroup.items.map((c) => c.name);
+        catToInsert.name = resolveUniqueName(siblingNames, catToInsert.name);
         const insertIdx = typeof index === "number" && index >= 0 && index <= targetGroup.items.length ? index : targetGroup.items.length;
         targetGroup.items.splice(insertIdx, 0, catToInsert);
       } else {
+        const rootNames = items.filter((i) => i.type === "category").map((c) => c.name);
+        catToInsert.name = resolveUniqueName(rootNames, catToInsert.name);
         const insertIdx = typeof index === "number" && index >= 0 && index <= items.length ? index : items.length;
         items.splice(insertIdx, 0, catToInsert);
       }
     } else {
+      const rootNames = items.filter((i) => i.type === "category").map((c) => c.name);
+      catToInsert.name = resolveUniqueName(rootNames, catToInsert.name);
       const insertIdx = typeof index === "number" && index >= 0 && index <= items.length ? index : items.length;
       items.splice(insertIdx, 0, catToInsert);
     }
     await this.saveSidebarState(items);
     EventBus.emit("category:list-changed" /* CATEGORY_LIST_CHANGED */, { sidebarItems: items });
-    EventBus.emit("category:selected" /* CATEGORY_SELECTED */, { category: restoredCat });
-    return restoredCat;
+    EventBus.emit("category:selected" /* CATEGORY_SELECTED */, { category: catToInsert });
+    return catToInsert;
   }
   async renameCategory(filepath, newName) {
     const file = this.app.vault.getAbstractFileByPath(filepath);
     if (!file || !(file instanceof import_obsidian3.TFile)) {
       throw new Error(`Category file not found: ${filepath}`);
     }
-    const oldName = file.basename;
-    const newPath = `${DATA_FOLDER}/${newName}.md`;
-    const state = await this.loadSidebarState();
-    for (const item of state) {
-      if (item.type === "category" && item.name === oldName) {
-        item.name = newName;
-      } else if (item.type === "group" && item.children) {
-        item.children = item.children.map((child) => child === oldName ? newName : child);
+    const trimmedName = newName.trim();
+    if (!trimmedName) {
+      throw new Error("Category name cannot be empty");
+    }
+    const items = await this.getSidebarItems();
+    let targetCat = null;
+    let siblingNames = [];
+    let containingGroup = null;
+    for (const item of items) {
+      if (item.type === "category") {
+        if (item.filepath === filepath || item.id === filepath) {
+          targetCat = item;
+        }
+      } else if (item.type === "group" && item.items) {
+        const found = item.items.find((c) => c.filepath === filepath || c.id === filepath);
+        if (found) {
+          targetCat = found;
+          containingGroup = item;
+        }
       }
     }
-    const metadataPath = this.getMetadataPath();
-    await this.app.vault.adapter.write(metadataPath, JSON.stringify({ sidebar: state }, null, 2));
-    await this.app.vault.rename(file, newPath);
-    void Logger.log("Renamed category:", filepath, "->", newPath);
-    const newCat = { id: newPath, type: "category", name: newName, filepath: newPath };
-    EventBus.emit("category:list-changed" /* CATEGORY_LIST_CHANGED */, {});
+    if (!targetCat) {
+      targetCat = {
+        id: filepath,
+        type: "category",
+        name: file.basename,
+        filepath
+      };
+    }
+    if (containingGroup) {
+      siblingNames = containingGroup.items.filter((c) => c.filepath !== filepath && c.id !== filepath).map((c) => c.name);
+    } else {
+      siblingNames = items.filter((i) => i.type === "category" && i.filepath !== filepath && i.id !== filepath).map((c) => c.name);
+    }
+    const resolvedDisplayName = resolveUniqueName(siblingNames, trimmedName);
+    const { filepath: newPath } = this.getAvailableDiskFilepath(resolvedDisplayName, filepath);
+    targetCat.name = resolvedDisplayName;
+    targetCat.id = newPath;
+    targetCat.filepath = newPath;
+    await this.saveSidebarState(items);
+    if (newPath !== filepath) {
+      this.io.markInternalWrite(filepath);
+      this.io.markInternalWrite(newPath);
+      await this.app.vault.rename(file, newPath);
+      void Logger.log("Renamed category file:", filepath, "->", newPath);
+    }
+    const newCat = {
+      id: newPath,
+      type: "category",
+      name: resolvedDisplayName,
+      filepath: newPath
+    };
+    EventBus.emit("category:list-changed" /* CATEGORY_LIST_CHANGED */, { sidebarItems: items });
     return newCat;
   }
 };
@@ -2093,222 +2427,6 @@ title: ${escapedTitle}
   }
 };
 LinkedNoteService.internalRenames = /* @__PURE__ */ new Map();
-
-// src/utils/sidebarTreeUtils.ts
-function resolveUniqueName(existingNames, desiredName) {
-  const trimmed = desiredName.trim();
-  if (!existingNames.includes(trimmed)) {
-    return trimmed;
-  }
-  const match = trimmed.match(/^(.*?)(?:\s*\(([0-9]+)\))?$/);
-  const base = match && match[1] ? match[1].trim() : trimmed;
-  let index = match && match[2] ? parseInt(match[2], 10) + 1 : 1;
-  while (existingNames.includes(`${base}(${index})`)) {
-    index++;
-  }
-  return `${base}(${index})`;
-}
-function ensureUniqueCategoryName(item, destinationCategoryNames) {
-  if (item.type === "category" || "filepath" in item && !("items" in item)) {
-    const cat = item;
-    if (destinationCategoryNames.includes(cat.name)) {
-      const uniqueName = resolveUniqueName(destinationCategoryNames, cat.name);
-      return { ...cat, name: uniqueName };
-    }
-  }
-  return item;
-}
-function moveSidebarItem(items, movedItemId, targetId, position) {
-  if (!movedItemId || !targetId || movedItemId === targetId)
-    return items;
-  let listToMove = null;
-  const extractItem = (list) => {
-    const nextList = [];
-    for (const item of list) {
-      if (item.id === movedItemId) {
-        listToMove = item;
-      } else if (item.type === "group") {
-        const childIdx = item.items.findIndex((c) => c.id === movedItemId);
-        if (childIdx !== -1) {
-          listToMove = item.items[childIdx];
-          nextList.push({
-            ...item,
-            items: item.items.filter((c) => c.id !== movedItemId)
-          });
-        } else {
-          nextList.push(item);
-        }
-      } else {
-        nextList.push(item);
-      }
-    }
-    return nextList;
-  };
-  let tempItems = extractItem(items);
-  if (!listToMove)
-    return items;
-  if (targetId === "__root__" || targetId === "root") {
-    const rootCategoryNames = tempItems.filter((i) => i.type === "category").map((c) => c.name);
-    const resolvedItem = ensureUniqueCategoryName(listToMove, rootCategoryNames);
-    if (position === "top") {
-      return [resolvedItem, ...tempItems];
-    } else {
-      return [...tempItems, resolvedItem];
-    }
-  }
-  if (position === "inside") {
-    return tempItems.map((item) => {
-      if (item.type === "group" && item.id === targetId) {
-        const groupNames = item.items.map((c) => c.name);
-        const resolvedItem = ensureUniqueCategoryName(listToMove, groupNames);
-        return {
-          ...item,
-          isExpanded: true,
-          items: [...item.items, resolvedItem]
-        };
-      }
-      return item;
-    });
-  }
-  const insertNextTo = (list, tId, itemToInsert, p) => {
-    const nextList = [];
-    for (const item of list) {
-      if (item.id === tId) {
-        const rootNames = list.filter((i) => i.type === "category").map((c) => c.name);
-        const resolved = ensureUniqueCategoryName(itemToInsert, rootNames);
-        if (p === "top") {
-          nextList.push(resolved);
-          nextList.push(item);
-        } else {
-          nextList.push(item);
-          nextList.push(resolved);
-        }
-      } else if (item.type === "group") {
-        const targetIdx = item.items.findIndex((c) => c.id === tId);
-        if (targetIdx !== -1) {
-          const newChildren = [...item.items];
-          const filtered = newChildren.filter((c) => c.id !== itemToInsert.id);
-          const insertIdx = filtered.findIndex((c) => c.id === tId);
-          const groupNames = filtered.map((c) => c.name);
-          const resolvedChild = ensureUniqueCategoryName(itemToInsert, groupNames);
-          if (p === "top") {
-            filtered.splice(insertIdx, 0, resolvedChild);
-          } else {
-            filtered.splice(insertIdx + 1, 0, resolvedChild);
-          }
-          nextList.push({
-            ...item,
-            items: filtered
-          });
-        } else {
-          nextList.push(item);
-        }
-      } else {
-        nextList.push(item);
-      }
-    }
-    return nextList;
-  };
-  return insertNextTo(tempItems, targetId, listToMove, position);
-}
-function toggleGroupExpandedState(items, groupId) {
-  return items.map((item) => {
-    if (item.type === "group" && item.id === groupId) {
-      return {
-        ...item,
-        isExpanded: !item.isExpanded
-      };
-    }
-    return item;
-  });
-}
-function getFlatCategories(items) {
-  const result = [];
-  for (const item of items) {
-    if (item.type === "category") {
-      result.push(item);
-    } else if (item.type === "group" && Array.isArray(item.items)) {
-      for (const child of item.items) {
-        result.push(child);
-      }
-    }
-  }
-  return result;
-}
-function moveListToGroupOrRoot(items, listId, targetGroupId) {
-  let listToMove = null;
-  let nextItems = [];
-  for (const item of items) {
-    if (item.id === listId) {
-      listToMove = item;
-    } else if (item.type === "group") {
-      const childIdx = item.items.findIndex((c) => c.id === listId);
-      if (childIdx !== -1) {
-        listToMove = item.items[childIdx];
-        nextItems.push({
-          ...item,
-          items: item.items.filter((c) => c.id !== listId)
-        });
-      } else {
-        nextItems.push(item);
-      }
-    } else {
-      nextItems.push(item);
-    }
-  }
-  if (!listToMove)
-    return items;
-  if (targetGroupId === "root") {
-    const rootNames = nextItems.filter((i) => i.type === "category").map((c) => c.name);
-    const resolved = ensureUniqueCategoryName(listToMove, rootNames);
-    return [...nextItems, resolved];
-  }
-  return nextItems.map((item) => {
-    if (item.type === "group" && item.id === targetGroupId) {
-      const groupNames = item.items.map((c) => c.name);
-      const resolved = ensureUniqueCategoryName(listToMove, groupNames);
-      return {
-        ...item,
-        isExpanded: true,
-        items: [...item.items, resolved]
-      };
-    }
-    return item;
-  });
-}
-function deleteGroupFromTree(items, groupId) {
-  const groupIdx = items.findIndex((i) => i.id === groupId && i.type === "group");
-  if (groupIdx === -1)
-    return items;
-  const group = items[groupIdx];
-  const children2 = group.items || [];
-  const nextItems = [...items];
-  nextItems.splice(groupIdx, 1, ...children2);
-  return nextItems;
-}
-function filterSidebarTree(items, query) {
-  const q = query.trim().toLowerCase();
-  if (!q)
-    return items;
-  const result = [];
-  for (const item of items) {
-    if (item.type === "category") {
-      if (item.name.toLowerCase().includes(q)) {
-        result.push(item);
-      }
-    } else if (item.type === "group") {
-      const matchingChildren = (item.items || []).filter((c) => c.name.toLowerCase().includes(q));
-      if (item.name.toLowerCase().includes(q) || matchingChildren.length > 0) {
-        result.push({
-          ...item,
-          isExpanded: true,
-          items: matchingChildren.length > 0 ? matchingChildren : item.items
-        });
-      }
-    }
-  }
-  return result;
-}
 
 // src/DataService.ts
 var DataService = class {

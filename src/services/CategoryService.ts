@@ -3,6 +3,7 @@ import { Logger } from "../Logger";
 import { CategoryInfo, DATA_FOLDER, SidebarItem, SidebarItemState, GroupInfo, EventName } from "../types";
 import { EventBus } from "../EventBus";
 import { AtomicIOPipeline } from "./AtomicIOPipeline";
+import { resolveUniqueName } from "../utils/sidebarTreeUtils";
 
 export class CategoryService {
     private app: App;
@@ -15,6 +16,38 @@ export class CategoryService {
 
     private getMetadataPath(): string {
         return `${DATA_FOLDER}/.metadata.json`;
+    }
+
+    /**
+     * Resolves an available physical file path on disk within DATA_FOLDER.
+     * If TodoData/<baseName>.md exists, tries <baseName>(1).md, <baseName>(2).md, etc.
+     */
+    getAvailableDiskFilepath(baseName: string, currentFilepath?: string): { filepath: string; basename: string } {
+        let candidateBasename = baseName;
+        let candidatePath = `${DATA_FOLDER}/${candidateBasename}.md`;
+
+        if (currentFilepath && candidatePath === currentFilepath) {
+            return { filepath: candidatePath, basename: candidateBasename };
+        }
+
+        let file = this.app.vault.getAbstractFileByPath(candidatePath);
+        if (!file || (currentFilepath && file.path === currentFilepath)) {
+            return { filepath: candidatePath, basename: candidateBasename };
+        }
+
+        const match = baseName.match(/^(.*?)(?:\s*\(([0-9]+)\))?$/);
+        const rawBase = (match && match[1]) ? match[1].trim() : baseName;
+        let index = (match && match[2]) ? parseInt(match[2], 10) + 1 : 1;
+
+        while (true) {
+            candidateBasename = `${rawBase}(${index})`;
+            candidatePath = `${DATA_FOLDER}/${candidateBasename}.md`;
+            file = this.app.vault.getAbstractFileByPath(candidatePath);
+            if (!file || (currentFilepath && file.path === currentFilepath)) {
+                return { filepath: candidatePath, basename: candidateBasename };
+            }
+            index++;
+        }
     }
 
     async getSidebarItems(): Promise<SidebarItem[]> {
@@ -48,22 +81,30 @@ export class CategoryService {
                 seenGroupIds.add(groupId);
 
                 const groupItems: CategoryInfo[] = [];
-                for (const child of itemState.children || []) {
-                    const childName = typeof child === "string" ? child : child.name;
+                for (const rawChild of itemState.children || []) {
+                    const childName = typeof rawChild === "string" ? rawChild : rawChild.name;
+                    const childFile = typeof rawChild === "string" ? rawChild : (rawChild.file || rawChild.name);
                     if (!childName) continue;
-                    if (usedFiles.has(childName)) {
+
+                    // Deduplicate by physical file basename
+                    if (usedFiles.has(childFile)) {
                         hasDuplicateMetadata = true;
                         continue;
                     }
-                    const file = fileMap.get(childName);
+
+                    let file = fileMap.get(childFile);
+                    if (!file && childName !== childFile) {
+                        file = fileMap.get(childName);
+                    }
+
                     if (file) {
                         groupItems.push({
                             id: file.path,
                             type: "category",
-                            name: file.basename,
+                            name: childName,
                             filepath: file.path
                         });
-                        usedFiles.add(childName);
+                        usedFiles.add(file.basename);
                     }
                 }
                 sidebarItems.push({
@@ -74,19 +115,27 @@ export class CategoryService {
                     isExpanded: itemState.isExpanded ?? true
                 });
             } else if (itemState.type === "category") {
-                if (usedFiles.has(itemState.name)) {
+                const childName = itemState.name;
+                const childFile = itemState.file || itemState.name;
+
+                if (usedFiles.has(childFile)) {
                     hasDuplicateMetadata = true;
                     continue;
                 }
-                const file = fileMap.get(itemState.name);
+
+                let file = fileMap.get(childFile);
+                if (!file && childName !== childFile) {
+                    file = fileMap.get(childName);
+                }
+
                 if (file) {
                     sidebarItems.push({
                         id: file.path,
                         type: "category",
-                        name: file.basename,
+                        name: childName,
                         filepath: file.path
                     });
-                    usedFiles.add(itemState.name);
+                    usedFiles.add(file.basename);
                 }
             }
         }
@@ -138,7 +187,7 @@ export class CategoryService {
         await this.io.ensureDataFolder();
         const path = this.getMetadataPath();
         
-        const seenCategories = new Set<string>();
+        const seenFilepaths = new Set<string>();
         const seenGroupIds = new Set<string>();
         const state: SidebarItemState[] = [];
 
@@ -148,10 +197,15 @@ export class CategoryService {
                 if (seenGroupIds.has(item.id)) continue;
                 seenGroupIds.add(item.id);
 
-                const children: string[] = [];
+                const children: Array<string | { name: string; file: string }> = [];
                 for (const child of item.items || []) {
-                    if (!seenCategories.has(child.name)) {
-                        seenCategories.add(child.name);
+                    if (seenFilepaths.has(child.filepath)) continue;
+                    seenFilepaths.add(child.filepath);
+
+                    const fileBasename = child.filepath.split("/").pop()?.replace(/\.md$/, "") || child.name;
+                    if (fileBasename !== child.name) {
+                        children.push({ name: child.name, file: fileBasename });
+                    } else {
                         children.push(child.name);
                     }
                 }
@@ -160,11 +214,20 @@ export class CategoryService {
                     id: item.id,
                     name: item.name,
                     isExpanded: item.isExpanded,
-                    children
+                    children: children as any
                 });
             } else if (item.type === "category") {
-                if (!seenCategories.has(item.name)) {
-                    seenCategories.add(item.name);
+                if (seenFilepaths.has(item.filepath)) continue;
+                seenFilepaths.add(item.filepath);
+
+                const fileBasename = item.filepath.split("/").pop()?.replace(/\.md$/, "") || item.name;
+                if (fileBasename !== item.name) {
+                    state.push({
+                        type: "category",
+                        name: item.name,
+                        file: fileBasename
+                    } as any);
+                } else {
                     state.push({
                         type: "category",
                         name: item.name
@@ -182,27 +245,26 @@ export class CategoryService {
 
     async createCategory(name: string): Promise<CategoryInfo> {
         await this.io.ensureDataFolder();
-        const filepath = `${DATA_FOLDER}/${name}.md`;
-        if (this.app.vault.getAbstractFileByPath(filepath)) {
-            throw new Error(`Category "${name}" already exists.`);
+        const trimmed = name.trim();
+        if (!trimmed) {
+            throw new Error("Category name cannot be empty");
         }
 
-        // 1. Update metadata state FIRST to place new category at the top
-        const state = await this.loadSidebarState();
-        const filteredState = state.filter(s => !(s.type === "category" && s.name === name));
-        filteredState.unshift({ type: "category", name });
+        const items = await this.getSidebarItems();
+        const rootNames = items.filter((i): i is CategoryInfo => i.type === "category").map(c => c.name);
+        const resolvedDisplayName = resolveUniqueName(rootNames, trimmed);
 
-        const metadataPath = this.getMetadataPath();
-        this.io.markInternalWrite(metadataPath);
-        await this.app.vault.adapter.write(metadataPath, JSON.stringify({ sidebar: filteredState }, null, 2));
+        const { filepath } = this.getAvailableDiskFilepath(resolvedDisplayName);
+
+        // 1. Update in-memory sidebar items and save metadata FIRST
+        const newCat: CategoryInfo = { id: filepath, type: "category", name: resolvedDisplayName, filepath };
+        items.unshift(newCat);
+        await this.saveSidebarState(items);
 
         // 2. Create the file on disk
         this.io.markInternalWrite(filepath);
         await this.app.vault.create(filepath, "");
-        void Logger.log("Created category:", name);
-
-        const newCat: CategoryInfo = { id: filepath, type: "category", name, filepath };
-        const items = await this.getSidebarItems();
+        void Logger.log("Created category:", filepath);
 
         EventBus.emit(EventName.CATEGORY_LIST_CHANGED, { sidebarItems: items });
         return newCat;
@@ -244,7 +306,19 @@ export class CategoryService {
 
         const group = items[groupIdx] as GroupInfo;
         const children = group.items || [];
-        items.splice(groupIdx, 1, ...children);
+        items.splice(groupIdx, 1);
+
+        const rootNames = items.filter((i): i is CategoryInfo => i.type === "category").map(c => c.name);
+        const resolvedChildren: CategoryInfo[] = [];
+        for (const child of children) {
+            const uniqueName = resolveUniqueName(rootNames, child.name);
+            rootNames.push(uniqueName);
+            resolvedChildren.push({
+                ...child,
+                name: uniqueName
+            });
+        }
+        items.splice(groupIdx, 0, ...resolvedChildren);
 
         await this.saveSidebarState(items);
         void Logger.log("Deleted group:", groupId);
@@ -266,16 +340,19 @@ export class CategoryService {
 
         let groupName: string | undefined;
         let index: number = -1;
+        let categoryDisplayName = basename;
         try {
             const currentItems = await this.getSidebarItems();
             for (let i = 0; i < currentItems.length; i++) {
                 const item = currentItems[i];
-                if (item.type === "category" && item.name === basename) {
+                if (item.type === "category" && (item.filepath === filepath || item.id === filepath)) {
+                    categoryDisplayName = item.name;
                     index = i;
                     break;
                 } else if (item.type === "group" && item.items) {
-                    const subIdx = item.items.findIndex(c => c.name === basename);
+                    const subIdx = item.items.findIndex(c => c.filepath === filepath || c.id === filepath);
                     if (subIdx !== -1) {
+                        categoryDisplayName = item.items[subIdx].name;
                         groupName = item.name;
                         index = subIdx;
                         break;
@@ -293,30 +370,28 @@ export class CategoryService {
         }
 
         // Always clean up from sidebar state, even if file on disk was already missing/trashed
-        if (basename) {
-            const items = await this.getSidebarItems();
-            const cleanup = (list: SidebarItem[]) => {
-                for (let i = list.length - 1; i >= 0; i--) {
-                    const item = list[i];
-                    if (item.type === "category" && item.name === basename) {
-                        list.splice(i, 1);
-                    } else if (item.type === "group") {
-                        item.items = item.items.filter(c => c.name !== basename);
-                    }
+        const items = await this.getSidebarItems();
+        const cleanup = (list: SidebarItem[]) => {
+            for (let i = list.length - 1; i >= 0; i--) {
+                const item = list[i];
+                if (item.type === "category" && (item.filepath === filepath || item.id === filepath)) {
+                    list.splice(i, 1);
+                } else if (item.type === "group" && item.items) {
+                    item.items = item.items.filter(c => c.filepath !== filepath && c.id !== filepath);
                 }
-            };
-            cleanup(items);
-            await this.saveSidebarState(items);
-            EventBus.emit(EventName.CATEGORY_LIST_CHANGED, { sidebarItems: items });
+            }
+        };
+        cleanup(items);
+        await this.saveSidebarState(items);
+        EventBus.emit(EventName.CATEGORY_LIST_CHANGED, { sidebarItems: items });
 
-            EventBus.emit(EventName.CATEGORY_DELETED, {
-                categoryName: basename,
-                categoryFilepath: filepath,
-                fileContent,
-                groupName,
-                index,
-            });
-        }
+        EventBus.emit(EventName.CATEGORY_DELETED, {
+            categoryName: categoryDisplayName,
+            categoryFilepath: filepath,
+            fileContent,
+            groupName,
+            index,
+        });
     }
 
     async restoreCategory(
@@ -351,12 +426,12 @@ export class CategoryService {
         let existingItem: CategoryInfo | null = null;
         for (let i = items.length - 1; i >= 0; i--) {
             const item = items[i];
-            if (item.type === "category" && item.name === categoryName) {
+            if (item.type === "category" && (item.filepath === categoryFilepath || item.id === categoryFilepath)) {
                 existingItem = item;
                 items.splice(i, 1);
                 break;
             } else if (item.type === "group" && item.items) {
-                const subIdx = item.items.findIndex(c => c.name === categoryName);
+                const subIdx = item.items.findIndex(c => c.filepath === categoryFilepath || c.id === categoryFilepath);
                 if (subIdx !== -1) {
                     existingItem = item.items[subIdx];
                     item.items.splice(subIdx, 1);
@@ -371,17 +446,23 @@ export class CategoryService {
             const targetGroup = items.find(item => item.type === "group" && item.name === groupName);
             if (targetGroup && targetGroup.type === "group") {
                 if (!targetGroup.items) targetGroup.items = [];
+                const siblingNames = targetGroup.items.map(c => c.name);
+                catToInsert.name = resolveUniqueName(siblingNames, catToInsert.name);
                 const insertIdx = typeof index === "number" && index >= 0 && index <= targetGroup.items.length
                     ? index
                     : targetGroup.items.length;
                 targetGroup.items.splice(insertIdx, 0, catToInsert);
             } else {
+                const rootNames = items.filter((i): i is CategoryInfo => i.type === "category").map(c => c.name);
+                catToInsert.name = resolveUniqueName(rootNames, catToInsert.name);
                 const insertIdx = typeof index === "number" && index >= 0 && index <= items.length
                     ? index
                     : items.length;
                 items.splice(insertIdx, 0, catToInsert);
             }
         } else {
+            const rootNames = items.filter((i): i is CategoryInfo => i.type === "category").map(c => c.name);
+            catToInsert.name = resolveUniqueName(rootNames, catToInsert.name);
             const insertIdx = typeof index === "number" && index >= 0 && index <= items.length
                 ? index
                 : items.length;
@@ -390,9 +471,9 @@ export class CategoryService {
 
         await this.saveSidebarState(items);
         EventBus.emit(EventName.CATEGORY_LIST_CHANGED, { sidebarItems: items });
-        EventBus.emit(EventName.CATEGORY_SELECTED, { category: restoredCat });
+        EventBus.emit(EventName.CATEGORY_SELECTED, { category: catToInsert });
 
-        return restoredCat;
+        return catToInsert;
     }
 
     async renameCategory(filepath: string, newName: string): Promise<CategoryInfo> {
@@ -400,29 +481,84 @@ export class CategoryService {
         if (!file || !(file instanceof TFile)) {
             throw new Error(`Category file not found: ${filepath}`);
         }
-        const oldName = file.basename;
-        const newPath = `${DATA_FOLDER}/${newName}.md`;
 
-        // CRITICAL: Update persistent sidebar metadata BEFORE renaming the file on disk.
-        // If the file is renamed first, getSidebarItems() / loadSidebarState() during vault rename events
-        // will fail to find oldName.md, discard it from its group, and dump newName at the bottom as an orphan.
-        const state = await this.loadSidebarState();
-        for (const item of state) {
-            if (item.type === "category" && item.name === oldName) {
-                item.name = newName;
-            } else if (item.type === "group" && item.children) {
-                item.children = item.children.map(child => child === oldName ? newName : child);
+        const trimmedName = newName.trim();
+        if (!trimmedName) {
+            throw new Error("Category name cannot be empty");
+        }
+
+        const items = await this.getSidebarItems();
+
+        // 1. Locate the category in the current tree structure
+        let targetCat: CategoryInfo | null = null;
+        let siblingNames: string[] = [];
+        let containingGroup: GroupInfo | null = null;
+
+        for (const item of items) {
+            if (item.type === "category") {
+                if (item.filepath === filepath || item.id === filepath) {
+                    targetCat = item;
+                }
+            } else if (item.type === "group" && item.items) {
+                const found = item.items.find(c => c.filepath === filepath || c.id === filepath);
+                if (found) {
+                    targetCat = found;
+                    containingGroup = item;
+                }
             }
         }
-        const metadataPath = this.getMetadataPath();
-        await this.app.vault.adapter.write(metadataPath, JSON.stringify({ sidebar: state }, null, 2));
 
-        // Perform the physical file rename
-        await this.app.vault.rename(file, newPath);
-        void Logger.log("Renamed category:", filepath, "->", newPath);
+        if (!targetCat) {
+            // Fallback if not found in sidebar tree
+            targetCat = {
+                id: filepath,
+                type: "category",
+                name: file.basename,
+                filepath: filepath
+            };
+        }
 
-        const newCat: CategoryInfo = { id: newPath, type: "category", name: newName, filepath: newPath };
-        EventBus.emit(EventName.CATEGORY_LIST_CHANGED, {});
+        // 2. Determine sibling display names within the same container
+        if (containingGroup) {
+            siblingNames = containingGroup.items
+                .filter(c => c.filepath !== filepath && c.id !== filepath)
+                .map(c => c.name);
+        } else {
+            siblingNames = items
+                .filter((i): i is CategoryInfo => i.type === "category" && i.filepath !== filepath && i.id !== filepath)
+                .map(c => c.name);
+        }
+
+        // 3. Resolve unique display name within this group/root (same group collisions -> name(1))
+        const resolvedDisplayName = resolveUniqueName(siblingNames, trimmedName);
+
+        // 4. Resolve an available disk filename under TodoData/
+        const { filepath: newPath } = this.getAvailableDiskFilepath(resolvedDisplayName, filepath);
+
+        // 5. Update the in-memory item
+        targetCat.name = resolvedDisplayName;
+        targetCat.id = newPath;
+        targetCat.filepath = newPath;
+
+        // 6. Save sidebar state FIRST (ensures metadata is synchronized before disk event fires)
+        await this.saveSidebarState(items);
+
+        // 7. If disk path changed, rename the physical file
+        if (newPath !== filepath) {
+            this.io.markInternalWrite(filepath);
+            this.io.markInternalWrite(newPath);
+            await this.app.vault.rename(file, newPath);
+            void Logger.log("Renamed category file:", filepath, "->", newPath);
+        }
+
+        const newCat: CategoryInfo = {
+            id: newPath,
+            type: "category",
+            name: resolvedDisplayName,
+            filepath: newPath
+        };
+
+        EventBus.emit(EventName.CATEGORY_LIST_CHANGED, { sidebarItems: items });
         return newCat;
     }
 }

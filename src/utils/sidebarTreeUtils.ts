@@ -253,7 +253,20 @@ export function deleteGroupFromTree(items: SidebarItem[], groupId: string): Side
     const children = group.items || [];
 
     const nextItems = [...items];
-    nextItems.splice(groupIdx, 1, ...children);
+    nextItems.splice(groupIdx, 1);
+
+    const rootNames = nextItems.filter(i => i.type === "category").map(c => c.name);
+    const resolvedChildren: CategoryInfo[] = [];
+    for (const child of children) {
+        const uniqueName = resolveUniqueName(rootNames, child.name);
+        rootNames.push(uniqueName);
+        resolvedChildren.push({
+            ...child,
+            name: uniqueName
+        });
+    }
+
+    nextItems.splice(groupIdx, 0, ...resolvedChildren);
     return nextItems;
 }
 
