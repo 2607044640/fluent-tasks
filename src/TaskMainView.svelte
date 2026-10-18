@@ -2129,7 +2129,7 @@
         }
     }
 
-    export { scheduleHidePopover, openSearch, closeSearch, toggleSearch, startRenameCategory, cancelRenameCategory, isHoveringOrFocusedCategoryTitle };
+    export { scheduleHidePopover, openSearch, closeSearch, toggleSearch, startRenameCategory, cancelRenameCategory, isHoveringOrFocusedCategoryTitle, toggleStarByTaskId };
 </script>
 
 <svelte:window 
@@ -2684,6 +2684,8 @@
                                 on:click={() => selectTask(task)}
                                 on:contextmenu={(e) => handleContextMenu(e, task)}
                                 on:keydown={(e) => e.key === "Enter" && selectTask(task)}
+                                on:mouseenter={() => handleTaskMouseEnter(task)}
+                                on:mouseleave={() => handleTaskMouseLeave(task)}
                                 tabindex="0"
                                 role="button"
                             >
@@ -2720,9 +2722,18 @@
                                           on:mouseleave={handleTitleMouseLeave}>
                                         {task.title}
                                     </span>
-                                    {#if (task.steps && task.steps.length > 0) || task.dueDate || task.recurrence}
-                                        <div class="task-meta-row">
-                                            {#if task.steps && task.steps.length > 0}
+                                    <div class="task-meta-row">
+                                        {#if currentCategory?.filepath === STARRED_CATEGORY_PATH && task.sourceCategoryName}
+                                            <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
+                                            <span 
+                                                class="task-meta source-category-badge" 
+                                                title={`From list: ${task.sourceCategoryName} (Click to jump)`}
+                                                on:click|stopPropagation={() => jumpToSourceCategory(task.sourceFilepath)}
+                                            >
+                                                📁 {task.sourceCategoryName}
+                                            </span>
+                                        {/if}
+                                        {#if task.steps && task.steps.length > 0}
                                                 <!-- svelte-ignore a11y-no-static-element-interactions -->
                                                 <span class="task-meta steps-badge"
                                                       on:click|stopPropagation={() => openStepsModal(task)}
@@ -2750,7 +2761,6 @@
                                                 </span>
                                             {/if}
                                         </div>
-                                    {/if}
                                 </div>
 
                                 <div class="task-right-controls">
@@ -2839,7 +2849,7 @@
                                     {/if}
 
                                     <!-- Star -->
-                                    {#if !disableStars}
+                                    {#if !disableStars && !hiddenStarMode}
                                         <span class="star" class:active={task.starred}
                                               on:click|stopPropagation={() => toggleStar(task)}
                                               role="button" tabindex="0"

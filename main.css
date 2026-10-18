@@ -3592,10 +3592,18 @@ body .quick-modal-task-item.is-focused {
     padding: 5px 8px;
 }
 
-/* Drag and Drop Indicators for Lists & Groups */
+/* Drag and Drop Disabled / Forbidden Indicators for Lists & Groups in Quick Modal */
+.quick-modal-container.is-dragging-list,
+.quick-modal-container.is-dragging-list *,
+.task-quick-list-modal.is-dragging-list,
+.task-quick-list-modal.is-dragging-list * {
+    cursor: not-allowed !important;
+}
+
 .is-dragging {
     opacity: 0.38 !important;
     filter: grayscale(20%);
+    cursor: not-allowed !important;
 }
 
 .drag-over-top {

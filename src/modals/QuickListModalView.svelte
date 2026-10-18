@@ -4,11 +4,11 @@
     import { EventBus } from "../EventBus";
     import { EventName, VIEW_TYPE_MAIN } from "../types";
     import type { CategoryInfo, SidebarItem, GroupInfo, TaskItem } from "../types";
-    import { moveSidebarItem, toggleGroupExpandedState, getFlatCategories, filterSidebarTree } from "../utils/sidebarTreeUtils";
+    import { toggleGroupExpandedState, getFlatCategories, filterSidebarTree } from "../utils/sidebarTreeUtils";
     import { INPUT_FOCUS_DELAY_MS } from "../constants";
     import { Menu, Notice } from "obsidian";
     import type { App } from "obsidian";
-    import { t } from "../lang/helpers";
+    import { t, isChinese } from "../lang/helpers";
     import { isQuickListHotkeyAssigned, openHotkeySettingsForQuickList } from "../utils/hotkeyUtils";
 
     // =============================================
@@ -765,30 +765,18 @@
     }
 
     // =============================================
-    // Drag & Drop Lists / Groups (Tree Reordering)
+    // Drag & Drop Lists / Groups (Disabled in Quick Modal)
     // =============================================
-    function getDraggedItem(): SidebarItem | CategoryInfo | null {
-        if (!draggedListId) return null;
-        for (const item of sidebarItems) {
-            if (item.id === draggedListId) return item;
-            if (item.type === "group" && item.items) {
-                const child = item.items.find(c => c.id === draggedListId);
-                if (child) return child;
-            }
-        }
-        return null;
-    }
+    let lastDragNoticeTime: number = 0;
 
-    function checkBoardAutoScroll(e: DragEvent) {
-        if (!boardEl) return;
-        const rect = boardEl.getBoundingClientRect();
-        const x = e.clientX;
-        const threshold = 60;
-        const speed = 12;
-        if (x - rect.left < threshold && boardEl.scrollLeft > 0) {
-            boardEl.scrollLeft -= speed;
-        } else if (rect.right - x < threshold) {
-            boardEl.scrollLeft += speed;
+    function showDragForbiddenNotice() {
+        const now = Date.now();
+        if (now - lastDragNoticeTime > 2500) {
+            lastDragNoticeTime = now;
+            const message = isChinese()
+                ? "当前悬浮UI不支持拖拽清单。\n原因：排列list代码本身覆盖了拖拽操作；如需调整清单顺序，请在左侧边栏操作。"
+                : "Dragging lists is not supported in Quick View.\nReason: List arrangement code overrides drag operations; to adjust list order, please use the sidebar.";
+            new Notice(message, 5000);
         }
     }
 
@@ -797,8 +785,9 @@
         (window as any).__mstodo_category_drag = true;
         if (e.dataTransfer) {
             e.dataTransfer.setData("text/plain", item.id);
-            e.dataTransfer.effectAllowed = "move";
+            e.dataTransfer.effectAllowed = "none";
         }
+        showDragForbiddenNotice();
     }
 
     function handleListDragEnd() {
@@ -822,171 +811,50 @@
     function handleListDragOver(e: DragEvent, target: SidebarItem | CategoryInfo, isGroupHeader: boolean = false, parentGroup?: any) {
         e.preventDefault();
         e.stopPropagation();
-        if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
-
-        checkBoardAutoScroll(e);
-
-        if (!draggedListId || target.id === draggedListId) {
-            dragOverListId = "";
-            dragListPosition = null;
-            return;
+        if (e.dataTransfer) {
+            e.dataTransfer.dropEffect = "none";
         }
-
-        const draggedItem = getDraggedItem();
-        if (!draggedItem) return;
-
-        // Groups cannot be placed inside groups or next to children inside groups
-        if (draggedItem.type === "group" && (parentGroup || (!isGroupHeader && target.type !== "group"))) {
-            dragOverListId = "";
-            dragListPosition = null;
-            return;
-        }
-
-        dragOverListId = target.id || "";
-        const el = e.currentTarget as HTMLElement;
-        const rect = el.getBoundingClientRect();
-        const relY = e.clientY - rect.top;
-
-        if (isGroupHeader) {
-            if (draggedItem.type === "group") {
-                dragListPosition = relY < rect.height * 0.5 ? "top" : "bottom";
-            } else {
-                dragListPosition = relY < rect.height * 0.35 ? "top" : "inside";
-            }
-        } else {
-            dragListPosition = relY < rect.height * 0.5 ? "top" : "bottom";
-        }
+        dragOverListId = "";
+        dragListPosition = null;
     }
 
     function handleGroupCardDragOver(e: DragEvent, group: GroupInfo, isItemsContainer: boolean = false) {
         e.preventDefault();
         e.stopPropagation();
-        if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
-
-        checkBoardAutoScroll(e);
-
-        if (!draggedListId || group.id === draggedListId) {
-            dragOverListId = "";
-            dragListPosition = null;
-            return;
+        if (e.dataTransfer) {
+            e.dataTransfer.dropEffect = "none";
         }
-        const draggedItem = getDraggedItem();
-        if (!draggedItem) return;
-
-        if (draggedItem.type === "group") {
-            // Groups cannot be placed inside groups or next to children inside groups
-            if (isItemsContainer) {
-                dragOverListId = "";
-                dragListPosition = null;
-                return;
-            }
-            const el = e.currentTarget as HTMLElement;
-            const rect = el.getBoundingClientRect();
-            const relY = e.clientY - rect.top;
-            dragOverListId = group.id;
-            dragListPosition = relY < rect.height * 0.5 ? "top" : "bottom";
-        } else {
-            dragOverListId = group.id;
-            dragListPosition = "inside";
-        }
+        dragOverListId = "";
+        dragListPosition = null;
     }
 
     function handleRootCardDragOver(e: DragEvent) {
         e.preventDefault();
         e.stopPropagation();
-        if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
-
-        checkBoardAutoScroll(e);
-
-        if (!draggedListId) return;
-        const draggedItem = getDraggedItem();
-        // Groups cannot be placed inside root lists card or onto root categories container
-        if (!draggedItem || draggedItem.type === "group") {
-            dragOverListId = "";
-            dragListPosition = null;
-            return;
+        if (e.dataTransfer) {
+            e.dataTransfer.dropEffect = "none";
         }
-
-        if (rootCategories.length > 0) {
-            const last = rootCategories[rootCategories.length - 1];
-            dragOverListId = last.id;
-            dragListPosition = "bottom";
-        } else {
-            dragOverListId = "__root__";
-            dragListPosition = "top";
-        }
+        dragOverListId = "";
+        dragListPosition = null;
     }
 
     async function handleRootCardDrop(e: DragEvent) {
         e.preventDefault();
         e.stopPropagation();
-        const draggedItem = getDraggedItem();
-        if (!draggedItem || draggedItem.type === "group") {
-            handleListDragEnd();
-            return;
-        }
-
-        if (rootCategories.length > 0) {
-            const last = rootCategories[rootCategories.length - 1];
-            await handleListDrop(last, "bottom");
-        } else {
-            await handleListDrop({ id: "__root__", name: "Lists", type: "category", filepath: "" } as any, "top");
-        }
+        handleListDragEnd();
+        showDragForbiddenNotice();
     }
 
     async function handleGroupCardDrop(e: DragEvent, group: GroupInfo, isItemsContainer: boolean = false) {
         e.preventDefault();
         e.stopPropagation();
-        const draggedItem = getDraggedItem();
-        if (!draggedItem) return;
-
-        if (draggedItem.type === "group") {
-            // Groups cannot be dropped into children containers or inside groups
-            if (isItemsContainer || dragListPosition === "inside") {
-                handleListDragEnd();
-                return;
-            }
-            await handleListDrop(group);
-        } else {
-            await handleListDrop(group, "inside");
-        }
+        handleListDragEnd();
+        showDragForbiddenNotice();
     }
 
-    async function handleListDrop(target: SidebarItem | CategoryInfo, forcedPosition?: "top" | "bottom" | "inside") {
-        const movedId = draggedListId;
-        const targetId = target?.id || "";
-        const pos = forcedPosition || dragListPosition;
-        const draggedItem = getDraggedItem();
-
+    async function handleListDrop(target?: SidebarItem | CategoryInfo, forcedPosition?: "top" | "bottom" | "inside") {
         handleListDragEnd();
-
-        if (!movedId || !targetId || !pos || movedId === targetId) return;
-
-        // Invariant: groups cannot be placed inside groups or next to children inside groups
-        if (draggedItem?.type === "group") {
-            if (pos === "inside") return;
-            if (target.type !== "group" && targetId !== "__root__") return;
-        }
-
-        // 1. Move item in sidebar tree
-        sidebarItems = moveSidebarItem(sidebarItems, movedId, targetId, pos);
-        categories = getFlatCategories(sidebarItems);
-
-        // 2. Invalidate card measurement cache to ensure complete recalculation
-        measuredCardHeights.clear();
-
-        // 3. Await reactivity tick so derived stores ($: groupItems, $: rootCategories) refresh
-        await tick();
-
-        // 4. Force immediate grid layout recalculation
-        if (isGridLayout) {
-            updateLayoutColumns(true);
-            scheduleAdjustSpacing();
-        }
-
-        // 5. Persist to disk and notify peers
-        await dataService.saveSidebarState(sidebarItems);
-        EventBus.emit(EventName.CATEGORY_LIST_CHANGED, { sidebarItems });
+        showDragForbiddenNotice();
     }
 
     // =============================================
@@ -1606,6 +1474,7 @@
     class="quick-modal-container quick-list-only-container"
     class:is-centered-titles={titleAlignment === 'center'}
     class:is-picking-focus={isPickingDefaultFocus}
+    class:is-dragging-list={!!draggedListId}
     bind:this={modalContainerEl}
     on:keydown={handleKeydown}
     on:pointermove={handlePointerMove}
@@ -2007,7 +1876,7 @@
                                                 {/each}
                                             {:else}
                                                 <div class="quick-grid-card-empty-dropzone">
-                                                    Drop lists here
+                                                    (Empty)
                                                 </div>
                                             {/if}
                                         </div>

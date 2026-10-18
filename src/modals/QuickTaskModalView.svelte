@@ -2,7 +2,7 @@
     import { onMount, onDestroy } from "svelte";
     import { DataService } from "../DataService";
     import { EventBus } from "../EventBus";
-    import { EventName } from "../types";
+    import { EventName, STARRED_CATEGORY_PATH, STARRED_CATEGORY_NAME } from "../types";
     import type { CategoryInfo, SidebarItem, TaskItem, GroupInfo } from "../types";
     import { moveSidebarItem, toggleGroupExpandedState, getFlatCategories } from "../utils/sidebarTreeUtils";
     import { calculatePopoverPosition } from "../utils/popoverUtils";
@@ -61,7 +61,9 @@
     let renameInputEl: HTMLInputElement;
     let titleAlignment: 'center' | 'left' = plugin?.settings?.quickListTitleAlignment ?? 'center';
     let disableStars: boolean = plugin?.settings?.disableStars ?? false;
+    let hiddenStarMode: boolean = plugin?.settings?.hiddenStarMode ?? plugin?.settings?.disableStars ?? false;
     let centerAlignTasks: boolean = plugin?.settings?.centerAlignTasks ?? true;
+    let starredCount: number = 0;
 
     // DOM Element Bindings
     let searchInputEl: HTMLInputElement;
@@ -113,10 +115,18 @@
         } else if (plugin?.settings?.quickListTitleAlignment !== undefined) {
             titleAlignment = plugin.settings.quickListTitleAlignment;
         }
-        if (payload?.settings?.disableStars !== undefined) {
+        if (payload?.settings?.hiddenStarMode !== undefined) {
+            hiddenStarMode = payload.settings.hiddenStarMode;
+            disableStars = hiddenStarMode;
+        } else if (plugin?.settings?.hiddenStarMode !== undefined) {
+            hiddenStarMode = plugin.settings.hiddenStarMode;
+            disableStars = hiddenStarMode;
+        } else if (payload?.settings?.disableStars !== undefined) {
             disableStars = payload.settings.disableStars;
+            hiddenStarMode = disableStars;
         } else if (plugin?.settings?.disableStars !== undefined) {
             disableStars = plugin.settings.disableStars;
+            hiddenStarMode = disableStars;
         }
         if (payload?.settings?.centerAlignTasks !== undefined) {
             centerAlignTasks = payload.settings.centerAlignTasks;
@@ -130,16 +140,26 @@
     }
 
     function handleExternalTaskUpdated(payload: any) {
-        if (selectedCategory && payload && payload.categoryFilepath === selectedCategory.filepath) {
+        if (selectedCategory && payload && (payload.categoryFilepath === selectedCategory.filepath || selectedCategory.filepath === STARRED_CATEGORY_PATH)) {
             void loadTasksForCategory(selectedCategory);
         }
         void refreshTaskCounts();
+        void refreshStarredCount();
+    }
+
+    async function refreshStarredCount() {
+        try {
+            starredCount = await dataService.getStarredCount();
+        } catch (e) {
+            console.error("[QuickTaskModal] Failed to refresh starred count:", e);
+        }
     }
 
     async function loadData() {
         sidebarItems = await dataService.getSidebarItems();
         categories = await dataService.getCategories();
         await refreshTaskCounts();
+        await refreshStarredCount();
 
         if (!selectedCategory && flatCategories.length > 0) {
             await selectCategory(flatCategories[0]);
