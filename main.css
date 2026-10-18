@@ -5489,3 +5489,22 @@ body .task-steps-floating-modal .steps-modal-delete-btn:hover {
     box-shadow: 0 0 10px rgba(234, 179, 8, 0.3) !important;
     transform: translateY(-1px);
 }
+
+/* =============================================
+   SVG Lightbox Delete Button & Confirmation Styles
+   ============================================= */
+.svg-lightbox-action-btn.svg-lightbox-delete-btn:hover {
+    background: rgba(239, 68, 68, 0.18) !important;
+    border-color: rgba(239, 68, 68, 0.6) !important;
+    color: #f87171 !important;
+}
+
+.svg-btn.svg-btn-danger {
+    background-color: var(--text-error, #ef4444) !important;
+    border-color: var(--text-error, #dc2626) !important;
+    color: #ffffff !important;
+}
+
+.svg-btn.svg-btn-danger:hover {
+    background-color: #dc2626 !important;
+}

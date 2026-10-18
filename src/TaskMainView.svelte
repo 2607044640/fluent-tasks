@@ -122,6 +122,7 @@
     // Lightbox modal state for full-screen / zoom SVG view
     let lightboxData: { isInline: boolean; content: string; srcUrl: string; title: string; cleanPath: string } | null = null;
     let showSvgSaveConfirmModal: boolean = false;
+    let showSvgDeleteConfirmModal: boolean = false;
     let showPluginDownloadModal: boolean = false;
     let nameCopiedHint: boolean = false;
     let nameCopiedTimer: any = null;
@@ -256,6 +257,7 @@
         e.stopPropagation();
         if (popoverTimeout) clearTimeout(popoverTimeout);
         popoverVisible = false;
+        showSvgDeleteConfirmModal = false;
         // Invalidate resolve cache for this SVG item so any external edits are loaded fresh
         svgResolveCache.delete(svgStr);
         const res = resolveSvgItem(svgStr);
@@ -391,6 +393,7 @@
     function closeSvgLightbox() {
         lightboxData = null;
         showSvgSaveConfirmModal = false;
+        showSvgDeleteConfirmModal = false;
         showPluginDownloadModal = false;
         nameCopiedHint = false;
         if (nameCopiedTimer) clearTimeout(nameCopiedTimer);
@@ -501,6 +504,133 @@
         }
     }
 
+    async function confirmDeleteSvgFromLightbox() {
+        if (!lightboxData) return;
+        const cleanPath = lightboxData.cleanPath;
+        const filename = cleanPath ? (cleanPath.split("/").pop() || "SVG") : "SVG";
+
+        // 1. Delete physical file from vault
+        if (cleanPath && plugin?.app) {
+            try {
+                let file: any = null;
+                if (plugin.app.metadataCache) {
+                    file = plugin.app.metadataCache.getFirstLinkpathDest(cleanPath, currentCategory?.filepath || "");
+                }
+                if (!file && plugin.app.vault) {
+                    file = plugin.app.vault.getAbstractFileByPath(cleanPath);
+                }
+                if (!file && plugin.app.vault) {
+                    const all = plugin.app.vault.getFiles();
+                    file = all.find((f: any) => f.path === cleanPath || f.name === cleanPath || f.path.endsWith("/" + cleanPath)) || null;
+                }
+                if (file) {
+                    await plugin.app.vault.trash(file, true);
+                } else if (await plugin.app.vault.adapter.exists(cleanPath)) {
+                    await plugin.app.vault.adapter.remove(cleanPath);
+                }
+            } catch (err) {
+                console.error("Failed to trash SVG file:", err);
+            }
+        }
+
+        // 2. Unlink from tasks in current category and all TodoData files
+        await unlinkSvgFromTasks(cleanPath, filename);
+
+        // 3. Close modals
+        showSvgDeleteConfirmModal = false;
+        closeSvgLightbox();
+
+        // 4. Notify
+        const NoticeCtor = (window as any).Notice || Notice;
+        new NoticeCtor(isChinese() ? `SVG 已删除并解绑任务: ${filename}` : `Deleted SVG and unlinked: ${filename}`);
+
+        // 5. Notify window listeners
+        window.dispatchEvent(new CustomEvent("a1-svg-updated", { detail: { path: cleanPath, deleted: true } }));
+        window.dispatchEvent(new CustomEvent("fluent-tasks-svg-deleted", { detail: { path: cleanPath } }));
+    }
+
+    async function unlinkSvgFromTasks(cleanPath: string, filename: string) {
+        if (!cleanPath && !filename) return;
+        const cleanTarget = (cleanPath || "").replace(/\\/g, "/").trim();
+        const fname = filename || cleanTarget.split("/").pop() || "";
+
+        const matchesSvg = (s: string) => {
+            if (!s) return false;
+            const c = s.replace(/\\/g, "/").trim();
+            if (cleanTarget && c === cleanTarget) return true;
+            if (fname && (c.endsWith("/" + fname) || (cleanTarget && cleanTarget.endsWith("/" + c)))) return true;
+            if (fname && c.split("/").pop() === fname) return true;
+            return false;
+        };
+
+        // Synchronously update in-memory tasks for immediate UI response (Anti-Flicker Optimistic UI)
+        let anyModified = false;
+        rawIncompleteTasks = rawIncompleteTasks.map(t => {
+            if (t.svgs && t.svgs.length > 0) {
+                const remaining = t.svgs.filter(s => !matchesSvg(s));
+                if (remaining.length !== t.svgs.length) {
+                    anyModified = true;
+                    return {
+                        ...t,
+                        svgs: remaining.length > 0 ? remaining : undefined
+                    };
+                }
+            }
+            return t;
+        });
+
+        rawCompletedTasks = rawCompletedTasks.map(t => {
+            if (t.svgs && t.svgs.length > 0) {
+                const remaining = t.svgs.filter(s => !matchesSvg(s));
+                if (remaining.length !== t.svgs.length) {
+                    anyModified = true;
+                    return {
+                        ...t,
+                        svgs: remaining.length > 0 ? remaining : undefined
+                    };
+                }
+            }
+            return t;
+        });
+
+        if (anyModified) {
+            incompleteTasks = applyWeightSort(rawIncompleteTasks, !!plugin?.settings?.enableTaskWeightMode);
+            completedTasks = applyWeightSort(rawCompletedTasks, !!plugin?.settings?.enableTaskWeightMode);
+            if (currentCategory) {
+                const allCurrent = [...rawIncompleteTasks, ...rawCompletedTasks];
+                await dataService.saveTasks(currentCategory.filepath, allCurrent);
+            }
+        }
+
+        // Also clean up across other categories in TodoData
+        try {
+            const categories = await dataService.getCategories();
+            for (const cat of categories) {
+                if (currentCategory && cat.filepath === currentCategory.filepath) continue;
+                const tasks = await dataService.getTasks(cat.filepath);
+                let catModified = false;
+                const updatedTasks = tasks.map(t => {
+                    if (t.svgs && t.svgs.length > 0) {
+                        const remaining = t.svgs.filter(s => !matchesSvg(s));
+                        if (remaining.length !== t.svgs.length) {
+                            catModified = true;
+                            return {
+                                ...t,
+                                svgs: remaining.length > 0 ? remaining : undefined
+                            };
+                        }
+                    }
+                    return t;
+                });
+                if (catModified) {
+                    await dataService.saveTasks(cat.filepath, updatedTasks);
+                }
+            }
+        } catch (e) {
+            console.error("Error unlinking SVG across other categories:", e);
+        }
+    }
+
     function handleLightboxKeydown(e: KeyboardEvent) {
         if (!lightboxData) return;
 
@@ -513,6 +643,24 @@
                 modalEl?.focus();
                 return;
             }
+        }
+
+        if (showSvgDeleteConfirmModal) {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                e.stopPropagation();
+                void confirmDeleteSvgFromLightbox();
+                return;
+            }
+            if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                showSvgDeleteConfirmModal = false;
+                const modalEl = document.querySelector('.svg-lightbox-modal') as HTMLElement | null;
+                modalEl?.focus();
+                return;
+            }
+            return;
         }
 
         if (showSvgSaveConfirmModal) {
@@ -552,6 +700,16 @@
         }
 
         const quickEditor = (window as any).a1SvgQuickEditor || (window as any).svgQuickEditor;
+
+        // Delete SVG hotkey check: Ctrl+Delete / Mod+Delete or custom configured delete hotkey
+        const isDeleteHotkey = ((e.ctrlKey || e.metaKey) && (e.key === "Delete" || e.code === "Delete")) ||
+            (quickEditor?.isDeleteSvgHotkey && quickEditor.isDeleteSvgHotkey(e));
+        if (isDeleteHotkey) {
+            e.preventDefault();
+            e.stopPropagation();
+            showSvgDeleteConfirmModal = true;
+            return;
+        }
 
         // Save in-place (Ctrl+S / Cmd+S): directly overwrite local file, keeping Ctrl+Z/Y history
         if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key === "s" || e.key === "S")) {
@@ -1021,8 +1179,16 @@
     }
 
     function handleSvgUpdated(e: any) {
-        const { path, content } = e?.detail || {};
+        const { path, content, deleted } = e?.detail || {};
         svgResolveCache.clear();
+        if (deleted && path) {
+            const filename = path.split("/").pop() || "";
+            void unlinkSvgFromTasks(path, filename);
+            if (lightboxData && (lightboxData.cleanPath === path || lightboxData.cleanPath.endsWith(filename))) {
+                closeSvgLightbox();
+            }
+            return;
+        }
         if (path) {
             if (content) {
                 if (lightboxData && (lightboxData.cleanPath === path || lightboxData.cleanPath.endsWith(path))) {
@@ -1036,6 +1202,16 @@
             }
         } else {
             void refreshActiveLightboxFromDisk();
+        }
+    }
+
+    function handleExternalSvgDeleted(e: any) {
+        const path = e?.detail?.path;
+        if (!path) return;
+        const filename = path.split("/").pop() || "";
+        void unlinkSvgFromTasks(path, filename);
+        if (lightboxData && (lightboxData.cleanPath === path || lightboxData.cleanPath.endsWith(filename))) {
+            closeSvgLightbox();
         }
     }
 
@@ -1065,6 +1241,7 @@
         window.addEventListener('keyup', handleGlobalKeyUp, true);
         window.addEventListener('blur', handleWindowBlur);
         window.addEventListener('a1-svg-updated', handleSvgUpdated);
+        window.addEventListener('fluent-tasks-svg-deleted', handleExternalSvgDeleted);
 
         if (plugin?.app?.vault) {
             vaultModifyRef = plugin.app.vault.on("modify", (file: any) => {
@@ -1086,6 +1263,7 @@
         window.removeEventListener('keyup', handleGlobalKeyUp, true);
         window.removeEventListener('blur', handleWindowBlur);
         window.removeEventListener('a1-svg-updated', handleSvgUpdated);
+        window.removeEventListener('fluent-tasks-svg-deleted', handleExternalSvgDeleted);
         if (vaultModifyRef && plugin?.app?.vault) {
             plugin.app.vault.offref(vaultModifyRef);
             vaultModifyRef = null;
@@ -3356,6 +3534,12 @@
                             <button type="button" class="svg-lightbox-action-btn" on:click|stopPropagation={() => lightboxData && openSvgInVault(lightboxData.cleanPath)} title="Open note/file in Obsidian">
                                 Open in Tab
                             </button>
+                            <button type="button"
+                                    class="svg-lightbox-action-btn svg-lightbox-delete-btn"
+                                    on:click|stopPropagation={() => showSvgDeleteConfirmModal = true}
+                                    title={isChinese() ? "删除此 SVG 图像及关联任务链接" : "Delete this SVG file and unlink from task"}>
+                                {isChinese() ? "删除 SVG" : "Delete SVG"}
+                            </button>
                         {/if}
                         <span class="svg-lightbox-close" on:click={requestCloseSvgLightbox}
                               role="button" tabindex="-1">✕</span>
@@ -3394,6 +3578,34 @@
                     </button>
                     <button type="button" class="svg-btn svg-btn-ghost" on:click={cancelSvgSavePrompt}>
                         {isChinese() ? "继续编辑 (Esc)" : "Keep Editing (Esc)"}
+                    </button>
+                </div>
+            </div>
+        </div>
+    {/if}
+
+    <!-- Delete Confirmation Modal ("是否删除？") -->
+    {#if showSvgDeleteConfirmModal}
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <!-- svelte-ignore a11y-no-static-element-interactions -->
+        <div use:portal class="svg-confirm-backdrop" on:click|self={() => showSvgDeleteConfirmModal = false} role="presentation">
+            <div class="svg-confirm-modal" role="dialog" aria-modal="true" tabindex="-1">
+                <div class="svg-confirm-title" style="color: var(--text-error, #f87171);">
+                    Delete SVG?
+                </div>
+                <div class="svg-confirm-desc">
+                    Are you sure you want to permanently delete this SVG file?
+                    {#if lightboxData?.cleanPath}
+                        <br><code style="font-size: 11.5px; opacity: 0.85; word-break: break-all;">{lightboxData.cleanPath}</code>
+                    {/if}
+                    <br>This will also remove its visual memory link from your tasks.
+                </div>
+                <div class="svg-confirm-actions">
+                    <button type="button" class="svg-btn svg-btn-danger" on:click={confirmDeleteSvgFromLightbox}>
+                        Delete (Enter)
+                    </button>
+                    <button type="button" class="svg-btn svg-btn-ghost" on:click={() => showSvgDeleteConfirmModal = false}>
+                        Cancel (Esc)
                     </button>
                 </div>
             </div>
