@@ -123,6 +123,8 @@
     let lightboxData: { isInline: boolean; content: string; srcUrl: string; title: string; cleanPath: string } | null = null;
     let showSvgSaveConfirmModal: boolean = false;
     let showSvgDeleteConfirmModal: boolean = false;
+    let svgLinkedTaskCount: number = 0;
+    let svgLinkedTaskTitles: string[] = [];
     let showPluginDownloadModal: boolean = false;
     let nameCopiedHint: boolean = false;
     let nameCopiedTimer: any = null;
@@ -394,6 +396,8 @@
         lightboxData = null;
         showSvgSaveConfirmModal = false;
         showSvgDeleteConfirmModal = false;
+        svgLinkedTaskCount = 0;
+        svgLinkedTaskTitles = [];
         showPluginDownloadModal = false;
         nameCopiedHint = false;
         if (nameCopiedTimer) clearTimeout(nameCopiedTimer);
@@ -504,6 +508,71 @@
         }
     }
 
+    async function promptDeleteSvgLightbox() {
+        if (!lightboxData) return;
+        const cleanPath = lightboxData.cleanPath || "";
+        const res = await countLinkedTasksForSvg(cleanPath);
+        svgLinkedTaskCount = res.count;
+        svgLinkedTaskTitles = res.titles;
+        showSvgDeleteConfirmModal = true;
+    }
+
+    async function countLinkedTasksForSvg(cleanPath: string): Promise<{ count: number; titles: string[] }> {
+        if (!cleanPath) return { count: 0, titles: [] };
+        const cleanTarget = cleanPath.replace(/\\/g, "/").trim();
+        const fname = cleanTarget.split("/").pop() || "";
+        if (!fname) return { count: 0, titles: [] };
+
+        const matchesSvg = (s: string) => {
+            if (!s) return false;
+            const c = s.replace(/\\/g, "/").replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
+            if (cleanTarget && c === cleanTarget) return true;
+            if (fname && (c.endsWith("/" + fname) || (cleanTarget && cleanTarget.endsWith("/" + c)))) return true;
+            if (fname && c.split("/").pop() === fname) return true;
+            return false;
+        };
+
+        const titles: string[] = [];
+        // 1. Check in-memory tasks of current category
+        for (const t of [...rawIncompleteTasks, ...rawCompletedTasks]) {
+            if (t.svgs && t.svgs.some(matchesSvg)) {
+                titles.push(t.title || "Untitled task");
+            }
+        }
+
+        // 2. Scan other TodoData category files in vault
+        try {
+            if (plugin?.app?.vault) {
+                const files = plugin.app.vault.getFiles();
+                const todoFiles = files.filter((f: any) =>
+                    f.extension === "md" &&
+                    (f.path.startsWith("TodoData/") || f.path.includes("TodoData")) &&
+                    (!currentCategory || f.path !== currentCategory.filepath)
+                );
+                for (const file of todoFiles) {
+                    const content = await plugin.app.vault.read(file);
+                    if (!content.includes("%%{") || !content.includes("svgs")) continue;
+                    const lines = content.split("\n");
+                    for (const line of lines) {
+                        const match = line.match(/%%(\{.*?\})%%/);
+                        if (!match) continue;
+                        try {
+                            const meta = JSON.parse(match[1]);
+                            if (Array.isArray(meta.svgs) && meta.svgs.some(matchesSvg)) {
+                                const rawTitle = line.replace(/^- \[([ x])\]\s*/, "").replace(/\s*%%\{.*?\}%%/, "").trim();
+                                titles.push(rawTitle || "Untitled task");
+                            }
+                        } catch {}
+                    }
+                }
+            }
+        } catch (e) {
+            console.error("Error detecting linked tasks for SVG in lightbox:", e);
+        }
+
+        return { count: titles.length, titles };
+    }
+
     async function confirmDeleteSvgFromLightbox() {
         if (!lightboxData) return;
         const cleanPath = lightboxData.cleanPath;
@@ -542,7 +611,11 @@
 
         // 4. Notify
         const NoticeCtor = (window as any).Notice || Notice;
-        new NoticeCtor(isChinese() ? `SVG 已删除: ${filename}` : `Deleted SVG: ${filename}`);
+        if (svgLinkedTaskCount > 0) {
+            new NoticeCtor(isChinese() ? `SVG 已删除并解绑任务: ${filename}` : `Deleted SVG and unlinked: ${filename}`);
+        } else {
+            new NoticeCtor(isChinese() ? `SVG 已删除: ${filename}` : `Deleted SVG: ${filename}`);
+        }
 
         // 5. Notify window listeners
         window.dispatchEvent(new CustomEvent("a1-svg-updated", { detail: { path: cleanPath, deleted: true } }));
@@ -707,7 +780,7 @@
         if (isDeleteHotkey) {
             e.preventDefault();
             e.stopPropagation();
-            showSvgDeleteConfirmModal = true;
+            void promptDeleteSvgLightbox();
             return;
         }
 
@@ -3536,8 +3609,8 @@
                             </button>
                             <button type="button"
                                     class="svg-lightbox-action-btn svg-lightbox-delete-btn"
-                                    on:click|stopPropagation={() => showSvgDeleteConfirmModal = true}
-                                    title={isChinese() ? "删除此 SVG 图像文件" : "Delete this SVG file"}>
+                                    on:click|stopPropagation={promptDeleteSvgLightbox}
+                                    title={isChinese() ? "删除此 SVG 图像及关联任务链接" : "Delete this SVG file and unlink from task"}>
                                 {isChinese() ? "删除 SVG" : "Delete SVG"}
                             </button>
                         {/if}
@@ -3598,7 +3671,17 @@
                     {#if lightboxData?.cleanPath}
                         <br><code style="font-size: 11.5px; opacity: 0.85; word-break: break-all;">{lightboxData.cleanPath}</code>
                     {/if}
-                    <br>This action cannot be undone.
+                    <div style="margin-top: 8px;">
+                        {#if svgLinkedTaskCount > 0}
+                            <span style="color: var(--text-warning, #f59e0b);">
+                                This file is linked to {svgLinkedTaskCount === 1 ? '1 task' : `${svgLinkedTaskCount} tasks`}{#if svgLinkedTaskTitles[0]} ("{svgLinkedTaskTitles[0].slice(0, 36)}{svgLinkedTaskTitles[0].length > 36 ? '...' : ''}"){/if}. Deleting it will also remove the link from the task{svgLinkedTaskCount > 1 ? 's' : ''}.
+                            </span>
+                        {:else}
+                            <span style="color: var(--text-muted, #9ca3af);">
+                                This file is not linked to any tasks. This action cannot be undone.
+                            </span>
+                        {/if}
+                    </div>
                 </div>
                 <div class="svg-confirm-actions">
                     <button type="button" class="svg-btn svg-btn-danger" on:click={confirmDeleteSvgFromLightbox}>
