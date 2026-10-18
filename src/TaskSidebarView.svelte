@@ -2,11 +2,11 @@
     import { onMount, onDestroy, tick } from "svelte";
     import { EventBus } from "./EventBus";
     import { DataService } from "./DataService";
-    import { EventName, type SidebarItem, type CategoryInfo, type GroupInfo, DATA_FOLDER } from "./types";
+    import { EventName, type SidebarItem, type CategoryInfo, type GroupInfo, DATA_FOLDER, STARRED_CATEGORY_PATH, STARRED_CATEGORY_NAME } from "./types";
     import { killDndGhostElement, injectDndGhostShield, removeDndGhostShield } from "./utils/dndUtils";
     import { moveSidebarItem, moveListToGroupOrRoot, deleteGroupFromTree } from "./utils/sidebarTreeUtils";
     import { INPUT_FOCUS_DELAY_MS, BLUR_CONFIRM_DELAY_MS, DND_SHIELD_REMOVAL_DELAY_MS, DND_RESCUE_DELAY_MS } from "./constants";
-    import { Menu, type App, type TAbstractFile, type EventRef } from "obsidian";
+    import { Menu, Notice, type App, type TAbstractFile, type EventRef } from "obsidian";
     import { TaskSearchModal } from "./TaskSearchModal";
 
     // =============================================
@@ -21,6 +21,7 @@
     // =============================================
     let sidebarItems: SidebarItem[] = [];
     let activeCategoryPath: string = "";
+    let starredCount: number = 0;
     let dragOverPath: string = ""; // For task dragging
     let draggedItemId: string = ""; // For HTML5 DnD
     let dragOverId: string = ""; // For HTML5 DnD
@@ -55,7 +56,7 @@
                     // Check if the currently active category was deleted externally
                     const exists = sidebarItems.some(i => i.type === "category" && i.filepath === activeCategoryPath) ||
                                    sidebarItems.some(i => i.type === "group" && i.items.some(c => c.filepath === activeCategoryPath));
-                    if (activeCategoryPath && !exists) {
+                    if (activeCategoryPath && !exists && activeCategoryPath !== STARRED_CATEGORY_PATH) {
                         activeCategoryPath = "";
                         EventBus.emit(EventName.CATEGORY_SELECTED, { category: null });
                     }
@@ -73,6 +74,10 @@
         EventBus.on(EventName.CATEGORY_LIST_CHANGED, handleExternalCategoryListChanged);
         EventBus.on(EventName.TRIGGER_SIDEBAR_RENAME, handleTriggerRename);
         EventBus.on(EventName.REVEAL_SIDEBAR_CATEGORY, handleRevealSidebarCategory);
+        EventBus.on(EventName.TASK_UPDATED, handleTaskChanged);
+        EventBus.on(EventName.TASK_MOVED, handleTaskChanged);
+        EventBus.on(EventName.TASK_DELETED, handleTaskChanged);
+        EventBus.on(EventName.TASK_COMPLETED, handleTaskChanged);
 
         window.addEventListener("pointermove", handleGlobalPointerMove, true);
         window.addEventListener("pointerup", handleGlobalPointerUp, true);
@@ -87,6 +92,10 @@
         EventBus.off(EventName.CATEGORY_LIST_CHANGED, handleExternalCategoryListChanged);
         EventBus.off(EventName.TRIGGER_SIDEBAR_RENAME, handleTriggerRename);
         EventBus.off(EventName.REVEAL_SIDEBAR_CATEGORY, handleRevealSidebarCategory);
+        EventBus.off(EventName.TASK_UPDATED, handleTaskChanged);
+        EventBus.off(EventName.TASK_MOVED, handleTaskChanged);
+        EventBus.off(EventName.TASK_DELETED, handleTaskChanged);
+        EventBus.off(EventName.TASK_COMPLETED, handleTaskChanged);
         vaultEventRefs.forEach(ref => app.vault.offref(ref));
     });
 
@@ -110,10 +119,24 @@
         } else {
             await loadSidebarItems();
         }
+        await refreshStarredCount();
+    }
+
+    async function handleTaskChanged() {
+        await refreshStarredCount();
+    }
+
+    async function refreshStarredCount() {
+        try {
+            starredCount = await dataService.getStarredCount();
+        } catch (e) {
+            console.error("[TaskSidebarView] Failed to refresh starred count:", e);
+        }
     }
 
     async function loadSidebarItems() {
         sidebarItems = await dataService.getSidebarItems();
+        await refreshStarredCount();
     }
 
     // =============================================
@@ -883,6 +906,27 @@
             return;
         }
 
+        if (targetPath === STARRED_CATEGORY_PATH) {
+            dragData.movedToTarget = targetPath;
+            const { task, sourceFilepath } = dragData;
+            (window as any).__mstodo_drag_data = null;
+            killDndGhostElement();
+            if (!task.starred) {
+                task.starred = true;
+                void (async () => {
+                    try {
+                        await dataService.updateTask(sourceFilepath, task);
+                        EventBus.emit(EventName.TASK_UPDATED, { task, categoryFilepath: sourceFilepath });
+                        new Notice(`Starred task: "${task.title}"`);
+                        await refreshStarredCount();
+                    } catch (err) {
+                        console.error("[TaskSidebarView] Star drop failed:", err);
+                    }
+                })();
+            }
+            return;
+        }
+
         // Mark that this task was moved cross-pane to targetPath
         dragData.movedToTarget = targetPath;
         const { task, sourceFilepath } = dragData;
@@ -951,6 +995,28 @@
             </svg>
         </span>
     </div>
+    {#if starredCount > 0}
+        <div class="smart-lists-container">
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <div
+                class="category-item smart-category-item"
+                class:active={activeCategoryPath === STARRED_CATEGORY_PATH}
+                class:drag-over={dragOverPath === STARRED_CATEGORY_PATH}
+                data-filepath={STARRED_CATEGORY_PATH}
+                on:click={() => selectCategory({ id: STARRED_CATEGORY_PATH, name: STARRED_CATEGORY_NAME, filepath: STARRED_CATEGORY_PATH, isSmartList: true })}
+                tabindex="0"
+                role="button"
+            >
+                <span class="cat-icon smart-star-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--todo-star, #eab308)" stroke="var(--todo-star, #eab308)" stroke-width="1.5">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                    </svg>
+                </span>
+                <span class="cat-name">Starred</span>
+                <span class="smart-count-badge">{starredCount}</span>
+            </div>
+        </div>
+    {/if}
     <div class="custom-lists" 
          data-root="true"
          role="list"

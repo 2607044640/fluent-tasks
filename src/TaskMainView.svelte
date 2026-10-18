@@ -4,7 +4,7 @@
     import { flip } from "svelte/animate";
     import { EventBus } from "./EventBus";
     import { DataService } from "./DataService";
-    import { EventName, VIEW_TYPE_MAIN, type CategoryInfo, type TaskItem } from "./types";
+    import { EventName, VIEW_TYPE_MAIN, type CategoryInfo, type TaskItem, STARRED_CATEGORY_PATH, STARRED_CATEGORY_NAME } from "./types";
     import { killDndGhostElement, removeDndGhostShield, injectDndGhostShield } from "./utils/dndUtils";
     import { portal } from "./utils/domUtils";
     import { calculatePopoverPosition, type PopoverContentType } from "./utils/popoverUtils";
@@ -44,6 +44,7 @@
     let enableTaskWeightMode: boolean = plugin?.settings?.enableTaskWeightMode ?? false;
     let centerAlignTasks: boolean = plugin?.settings?.centerAlignTasks ?? true;
     let disableStars: boolean = plugin?.settings?.disableStars ?? false;
+    let hiddenStarMode: boolean = plugin?.settings?.hiddenStarMode ?? plugin?.settings?.disableStars ?? false;
     let hideLeftSidebar: boolean = plugin?.settings?.hideLeftSidebar ?? false;
     let hasFloatingModalHotkey: boolean = true;
     $: showNoHotkeyWarning = hideLeftSidebar && !hasFloatingModalHotkey;
@@ -860,7 +861,8 @@
         wrapTaskTitles = plugin?.settings?.wrapTaskTitles ?? true;
         enableTaskWeightMode = plugin?.settings?.enableTaskWeightMode ?? false;
         centerAlignTasks = plugin?.settings?.centerAlignTasks ?? true;
-        disableStars = plugin?.settings?.disableStars ?? false;
+        hiddenStarMode = plugin?.settings?.hiddenStarMode ?? plugin?.settings?.disableStars ?? false;
+        disableStars = hiddenStarMode;
         checkHotkeyStatus();
         incompleteTasks = applyWeightSort(rawIncompleteTasks, enableTaskWeightMode);
         completedTasks = applyWeightSort(rawCompletedTasks, enableTaskWeightMode);
@@ -1440,7 +1442,7 @@
         });
     }
 
-    async function toggleStar(task: TaskItem) {
+    async function toggleStar(task: TaskItem, showNotice: boolean = true) {
         if (!currentCategory) return;
         task.starred = !task.starred;
 
@@ -1449,16 +1451,62 @@
         const rawComp = rawCompletedTasks.find(t => t.id === task.id);
         if (rawComp) rawComp.starred = task.starred;
 
-        // Update local arrays to trigger reactivity
-        incompleteTasks = [...incompleteTasks];
-        completedTasks = [...completedTasks];
+        const targetCatPath = (currentCategory.filepath === STARRED_CATEGORY_PATH && task.sourceFilepath)
+            ? task.sourceFilepath
+            : currentCategory.filepath;
 
-        await dataService.updateTask(currentCategory.filepath, task);
+        // If currently in Starred list and task was unstarred, remove it from view
+        if (currentCategory.filepath === STARRED_CATEGORY_PATH && !task.starred) {
+            incompleteTasks = incompleteTasks.filter(t => t.id !== task.id);
+            completedTasks = completedTasks.filter(t => t.id !== task.id);
+            rawIncompleteTasks = rawIncompleteTasks.filter(t => t.id !== task.id);
+            rawCompletedTasks = rawCompletedTasks.filter(t => t.id !== task.id);
+        } else {
+            // Update local arrays to trigger reactivity
+            incompleteTasks = [...incompleteTasks];
+            completedTasks = [...completedTasks];
+        }
+
+        await dataService.updateTask(targetCatPath, task);
         EventBus.emit(EventName.TASK_UPDATED, {
             task,
-            categoryFilepath: currentCategory.filepath,
+            categoryFilepath: targetCatPath,
             source: 'main-view',
         });
+
+        if (showNotice) {
+            new Notice(task.starred ? `Starred task: "${task.title}"` : `Removed star from: "${task.title}"`);
+        }
+    }
+
+    export async function toggleStarByTaskId(taskId: string): Promise<void> {
+        const task = incompleteTasks.find(t => t.id === taskId) || completedTasks.find(t => t.id === taskId);
+        if (task) {
+            await toggleStar(task, true);
+        }
+    }
+
+    function handleTaskMouseEnter(task: TaskItem) {
+        (window as any).__fluent_tasks_hovered_task = {
+            task,
+            categoryFilepath: currentCategory?.filepath || "",
+            toggle: () => toggleStar(task, true)
+        };
+    }
+
+    function handleTaskMouseLeave(task: TaskItem) {
+        if ((window as any).__fluent_tasks_hovered_task?.task?.id === task.id) {
+            (window as any).__fluent_tasks_hovered_task = null;
+        }
+    }
+
+    async function jumpToSourceCategory(filepath?: string) {
+        if (!filepath) return;
+        const cats = await dataService.getCategories();
+        const cat = cats.find(c => c.filepath === filepath);
+        if (cat) {
+            EventBus.emit(EventName.CATEGORY_SELECTED, { category: cat });
+        }
     }
 
     function selectTask(task: TaskItem) {
@@ -1826,6 +1874,18 @@
         if (!currentCategory) return;
 
         const menu = new Menu();
+
+        // 1st item: Star / Remove star
+        menu.addItem((item: any) => {
+            item.setTitle(task.starred ? "Remove star" : "Star task")
+                .setIcon("star")
+                .onClick(async () => {
+                    await toggleStar(task, true);
+                });
+        });
+
+        menu.addSeparator();
+
         const categories = await dataService.getCategories();
 
         // Build "Move to..." submenu
@@ -1859,10 +1919,13 @@
             item.setTitle("Delete task")
                 .setIcon("trash")
                 .onClick(async () => {
+                    const catPath = (currentCategory!.filepath === STARRED_CATEGORY_PATH && task.sourceFilepath)
+                        ? task.sourceFilepath
+                        : currentCategory!.filepath;
                     await promptDeleteTaskWithLinkedNote(
                         plugin.app,
                         task,
-                        currentCategory!.filepath,
+                        catPath,
                         dataService,
                         () => {
                             incompleteTasks = incompleteTasks.filter(t => t.id !== task.id);
@@ -2104,6 +2167,11 @@
                         on:blur={commitRenameCategory}
                     />
                 </div>
+            {:else if currentCategory.filepath === STARRED_CATEGORY_PATH}
+                <h1 class="category-title is-smart-title" style="cursor: default; display: flex; align-items: center; gap: 8px;">
+                    <span style="color: var(--todo-star, #eab308); font-size: 1.1em;">★</span>
+                    <span>{currentCategory.name}</span>
+                </h1>
             {:else}
                 <!-- svelte-ignore a11y-click-events-have-key-events -->
                 <h1 
@@ -2367,6 +2435,8 @@
                     on:click={() => selectTask(task)}
                     on:contextmenu={(e) => handleContextMenu(e, task)}
                     on:keydown={(e) => e.key === "Enter" && selectTask(task)}
+                    on:mouseenter={() => handleTaskMouseEnter(task)}
+                    on:mouseleave={() => handleTaskMouseLeave(task)}
                     tabindex="0"
                     role="button"
                 >
@@ -2404,6 +2474,16 @@
                             {task.title}
                         </span>
                         <div class="task-meta-row">
+                            {#if currentCategory?.filepath === STARRED_CATEGORY_PATH && task.sourceCategoryName}
+                                <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
+                                <span 
+                                    class="task-meta source-category-badge" 
+                                    title={`From list: ${task.sourceCategoryName} (Click to jump)`}
+                                    on:click|stopPropagation={() => jumpToSourceCategory(task.sourceFilepath)}
+                                >
+                                    📁 {task.sourceCategoryName}
+                                </span>
+                            {/if}
                             {#if task.steps.length > 0}
                                 <!-- svelte-ignore a11y-no-static-element-interactions -->
                                 <span class="task-meta steps-badge"
@@ -2522,7 +2602,7 @@
                         {/if}
 
                         <!-- Star -->
-                        {#if !disableStars}
+                        {#if !disableStars && !hiddenStarMode}
                             <span class="star" class:active={task.starred}
                                   on:click|stopPropagation={() => toggleStar(task)}
                                   role="button" tabindex="0"
