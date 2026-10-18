@@ -19960,7 +19960,7 @@ function create_if_block_9(ctx) {
       attr(button0, "title", "Open note/file in Obsidian");
       attr(button1, "type", "button");
       attr(button1, "class", "svg-lightbox-action-btn svg-lightbox-delete-btn");
-      attr(button1, "title", button1_title_value = isChinese() ? "\u5220\u9664\u6B64 SVG \u56FE\u50CF\u53CA\u5173\u8054\u4EFB\u52A1\u94FE\u63A5" : "Delete this SVG file and unlink from task");
+      attr(button1, "title", button1_title_value = isChinese() ? "\u5220\u9664\u6B64 SVG \u56FE\u50CF\u6587\u4EF6" : "Delete this SVG file");
     },
     m(target, anchor) {
       insert(target, button0, anchor);
@@ -20200,7 +20200,7 @@ function create_if_block_410(ctx) {
         if_block.c();
       t3 = space();
       br = element("br");
-      t4 = text("This will also remove its visual memory link from your tasks.");
+      t4 = text("This action cannot be undone.");
       t5 = space();
       div2 = element("div");
       button0 = element("button");
@@ -21667,7 +21667,7 @@ function instance4($$self, $$props, $$invalidate) {
     $$invalidate(42, showSvgDeleteConfirmModal = false);
     closeSvgLightbox();
     const NoticeCtor = window.Notice || import_obsidian14.Notice;
-    new NoticeCtor(isChinese() ? `SVG \u5DF2\u5220\u9664\u5E76\u89E3\u7ED1\u4EFB\u52A1: ${filename}` : `Deleted SVG and unlinked: ${filename}`);
+    new NoticeCtor(isChinese() ? `SVG \u5DF2\u5220\u9664: ${filename}` : `Deleted SVG: ${filename}`);
     window.dispatchEvent(new CustomEvent(
       "a1-svg-updated",
       {
