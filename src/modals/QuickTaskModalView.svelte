@@ -318,6 +318,38 @@
         closeModal();
     }
 
+    interface QuickTaskNoteBadge {
+        id: string;
+        isDedicated: boolean;
+        noteLink: string;
+    }
+
+    function getQuickTaskNoteBadges(taskItem: TaskItem): QuickTaskNoteBadge[] {
+        if (!taskItem) return [];
+        const badges: QuickTaskNoteBadge[] = [];
+        const dedicatedNote = taskItem.task_note || (taskItem.note_link && LinkedNoteService.isHardBoundNote(taskItem.note_link) ? taskItem.note_link : undefined);
+        if (dedicatedNote) {
+            badges.push({
+                id: 'task-note',
+                isDedicated: true,
+                noteLink: dedicatedNote,
+            });
+        }
+        const externalNotes = (taskItem.note_links && Array.isArray(taskItem.note_links) && taskItem.note_links.length > 0)
+            ? taskItem.note_links
+            : (taskItem.note_link && !LinkedNoteService.isHardBoundNote(taskItem.note_link) ? [taskItem.note_link] : []);
+        externalNotes.forEach((nl, idx) => {
+            if (nl) {
+                badges.push({
+                    id: `note-link-${idx}`,
+                    isDedicated: false,
+                    noteLink: nl,
+                });
+            }
+        });
+        return badges;
+    }
+
     // =============================================
     // Drag & Drop Tasks
     // =============================================
@@ -1417,21 +1449,18 @@
                                     <span class="quick-modal-search-category-badge">
                                         {result.category.name}
                                     </span>
-                                    {#if result.task.note_link}
+                                    {#each getQuickTaskNoteBadges(result.task) as badge}
                                         <span 
                                             class="meta-badge note-badge"
-                                            class:hard-bound={LinkedNoteService.isHardBoundNote(result.task.note_link)}
-                                            on:mouseenter={(e) => handleNoteLinkHover(e, result.task.note_link)}
-                                            on:click|stopPropagation={(e) => handleNoteLinkClick(e, result.task.note_link, result.task.id)}
+                                            class:task-note={badge.isDedicated}
+                                            class:note-link={!badge.isDedicated}
+                                            class:hard-bound={badge.isDedicated}
+                                            on:mouseenter={(e) => handleNoteLinkHover(e, badge.noteLink)}
+                                            on:click|stopPropagation={(e) => handleNoteLinkClick(e, badge.noteLink, badge.isDedicated ? result.task.id : undefined)}
                                             role="button" tabindex="0"
-                                            title={t("linked_note_preview_tooltip", result.task.note_link)}
+                                            title={t("linked_note_preview_tooltip", badge.noteLink)}
                                         >
-                                            {#if LinkedNoteService.isHardBoundNote(result.task.note_link)}
-                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                                                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                                                </svg>
-                                            {:else}
+                                            {#if badge.isDedicated}
                                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                                                     <polyline points="14 2 14 8 20 8"/>
@@ -1439,9 +1468,14 @@
                                                     <line x1="16" y1="17" x2="8" y2="17"/>
                                                     <polyline points="10 9 9 9 8 9"/>
                                                 </svg>
+                                            {:else}
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                                                </svg>
                                             {/if}
                                         </span>
-                                    {/if}
+                                    {/each}
                                     {#if !hiddenStarMode}
                                         <span 
                                             class="quick-modal-star-btn"
@@ -1510,21 +1544,18 @@
                                             role="button" tabindex="0"
                                         >?</span>
                                     {/if}
-                                    {#if task.note_link}
+                                    {#each getQuickTaskNoteBadges(task) as badge}
                                         <span 
                                             class="meta-badge note-badge"
-                                            class:hard-bound={LinkedNoteService.isHardBoundNote(task.note_link)}
-                                            on:mouseenter={(e) => handleNoteLinkHover(e, task.note_link)}
-                                            on:click|stopPropagation={(e) => handleNoteLinkClick(e, task.note_link, task.id)}
+                                            class:task-note={badge.isDedicated}
+                                            class:note-link={!badge.isDedicated}
+                                            class:hard-bound={badge.isDedicated}
+                                            on:mouseenter={(e) => handleNoteLinkHover(e, badge.noteLink)}
+                                            on:click|stopPropagation={(e) => handleNoteLinkClick(e, badge.noteLink, badge.isDedicated ? task.id : undefined)}
                                             role="button" tabindex="0"
-                                            title={t("linked_note_preview_tooltip", task.note_link)}
+                                            title={t("linked_note_preview_tooltip", badge.noteLink)}
                                         >
-                                            {#if LinkedNoteService.isHardBoundNote(task.note_link)}
-                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                                                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                                                </svg>
-                                            {:else}
+                                            {#if badge.isDedicated}
                                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                                                     <polyline points="14 2 14 8 20 8"/>
@@ -1532,9 +1563,14 @@
                                                     <line x1="16" y1="17" x2="8" y2="17"/>
                                                     <polyline points="10 9 9 9 8 9"/>
                                                 </svg>
+                                            {:else}
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                                                </svg>
                                             {/if}
                                         </span>
-                                    {/if}
+                                    {/each}
                                     {#if !hiddenStarMode}
                                         <span 
                                             class="quick-modal-star-btn"
@@ -1602,31 +1638,33 @@
                                                 role="button" tabindex="0"
                                             >?</span>
                                         {/if}
-                                        {#if task.note_link}
-                                            <span 
-                                                class="meta-badge note-badge"
-                                                class:hard-bound={LinkedNoteService.isHardBoundNote(task.note_link)}
-                                                on:mouseenter={(e) => handleNoteLinkHover(e, task.note_link)}
-                                                on:click|stopPropagation={(e) => handleNoteLinkClick(e, task.note_link, task.id)}
-                                                role="button" tabindex="0"
-                                                title={t("linked_note_preview_tooltip", task.note_link)}
-                                            >
-                                                {#if LinkedNoteService.isHardBoundNote(task.note_link)}
-                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                                                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                                                    </svg>
-                                                {:else}
-                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                                        <polyline points="14 2 14 8 20 8"/>
-                                                        <line x1="16" y1="13" x2="8" y2="13"/>
-                                                        <line x1="16" y1="17" x2="8" y2="17"/>
-                                                        <polyline points="10 9 9 9 8 9"/>
-                                                    </svg>
-                                                {/if}
-                                            </span>
-                                        {/if}
+                                    {#each getQuickTaskNoteBadges(task) as badge}
+                                        <span 
+                                            class="meta-badge note-badge"
+                                            class:task-note={badge.isDedicated}
+                                            class:note-link={!badge.isDedicated}
+                                            class:hard-bound={badge.isDedicated}
+                                            on:mouseenter={(e) => handleNoteLinkHover(e, badge.noteLink)}
+                                            on:click|stopPropagation={(e) => handleNoteLinkClick(e, badge.noteLink, badge.isDedicated ? task.id : undefined)}
+                                            role="button" tabindex="0"
+                                            title={t("linked_note_preview_tooltip", badge.noteLink)}
+                                        >
+                                            {#if badge.isDedicated}
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                                    <polyline points="14 2 14 8 20 8"/>
+                                                    <line x1="16" y1="13" x2="8" y2="13"/>
+                                                    <line x1="16" y1="17" x2="8" y2="17"/>
+                                                    <polyline points="10 9 9 9 8 9"/>
+                                                </svg>
+                                            {:else}
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                                                </svg>
+                                            {/if}
+                                        </span>
+                                    {/each}
                                         {#if !hiddenStarMode}
                                             <span 
                                                 class="quick-modal-star-btn"

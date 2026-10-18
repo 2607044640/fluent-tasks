@@ -4,7 +4,7 @@
     import { flip } from "svelte/animate";
     import { EventBus } from "./EventBus";
     import { DataService } from "./DataService";
-    import { EventName, type TaskItem, type TaskStep, type RecurrenceRule } from "./types";
+    import { EventName, STARRED_CATEGORY_PATH, type TaskItem, type TaskStep, type RecurrenceRule } from "./types";
     import { SAVE_DEBOUNCE_MS } from "./constants";
     import { portal, autosize, longPress } from "./utils/domUtils";
     import { ensureStepIds, persistableSteps, reconcileDndSteps } from "./utils/stepIds";
@@ -328,7 +328,10 @@
 
         // Auto-heal task_note if pointing to broken/stale path or standard note exists
         if (task && (task.task_note || task.id) && plugin?.app) {
-            const resolved = LinkedNoteService.resolveTaskNoteFile(plugin.app, task, categoryFilepath);
+            const effectiveCategory = (categoryFilepath === STARRED_CATEGORY_PATH && task.sourceFilepath)
+                ? task.sourceFilepath
+                : categoryFilepath;
+            const resolved = LinkedNoteService.resolveTaskNoteFile(plugin.app, task, effectiveCategory);
             if (resolved) {
                 const currentClean = resolved.path.replace(/\.md$/, "");
                 const expected = `[[${currentClean}]]`;
@@ -520,13 +523,44 @@
             }
         });
 
+        const effectiveCategory = (categoryFilepath === STARRED_CATEGORY_PATH && task?.sourceFilepath)
+            ? task.sourceFilepath
+            : categoryFilepath;
+
         plugin.app.workspace.trigger("hover-link", {
             event: proxiedEvent,
             source: "fluent-tasks",
             hoverParent: e.currentTarget as HTMLElement,
             targetEl: e.currentTarget as HTMLElement,
             linktext: cleanLink,
-            sourcePath: categoryFilepath || "",
+            sourcePath: effectiveCategory || "",
+        });
+    }
+
+    function handleNoteChipHover(e: MouseEvent, noteItem: string) {
+        if (!noteItem || !plugin?.app) return;
+        const effectiveCategory = (categoryFilepath === STARRED_CATEGORY_PATH && task?.sourceFilepath)
+            ? task.sourceFilepath
+            : categoryFilepath;
+        const resolved = LinkedNoteService.resolveLinkedNoteFile(plugin.app, noteItem, effectiveCategory);
+        const cleanLink = resolved ? resolved.path.replace(/\.md$/, "") : LinkedNoteService.sanitizeLinkpath(noteItem);
+        if (!cleanLink || cleanLink.includes(":")) return;
+
+        const proxiedEvent = new Proxy(e, {
+            get(target, prop) {
+                if (prop === "ctrlKey" || prop === "metaKey") return true;
+                const val = (target as any)[prop];
+                return typeof val === "function" ? val.bind(target) : val;
+            }
+        });
+
+        plugin.app.workspace.trigger("hover-link", {
+            event: proxiedEvent,
+            source: "fluent-tasks",
+            hoverParent: e.currentTarget as HTMLElement,
+            targetEl: e.currentTarget as HTMLElement,
+            linktext: cleanLink,
+            sourcePath: effectiveCategory || "",
         });
     }
 
@@ -1110,13 +1144,18 @@
         }
 
         // 2. Save Note Links
-        const cleanNoteLinks = metaNoteLinks.map(l => l.trim()).filter(Boolean).map(clean => {
-            const resolvedFile = LinkedNoteService.resolveLinkedNoteFile(plugin.app, clean, categoryFilepath);
+        const cleanNoteLinks = metaNoteLinks.map(l => l.trim()).filter(Boolean).map(raw => {
+            const unbracketed = raw.replace(/^\[\[/, "").replace(/\]\]$/, "").trim();
+            const parts = unbracketed.split("|");
+            const target = parts[0].trim();
+            const alias = parts.length > 1 ? parts.slice(1).join("|").trim() : "";
+
+            const resolvedFile = LinkedNoteService.resolveLinkedNoteFile(plugin.app, target, categoryFilepath);
             if (resolvedFile) {
                 const cleanPath = resolvedFile.path.replace(/\.md$/, "");
-                return `[[${cleanPath}]]`;
+                return alias ? `[[${cleanPath}|${alias}]]` : `[[${cleanPath}]]`;
             }
-            return LinkedNoteService.normalizeNoteLinkInput(clean);
+            return LinkedNoteService.normalizeNoteLinkInput(raw);
         });
         if (cleanNoteLinks.length > 0) {
             task.note_links = cleanNoteLinks;
@@ -1325,7 +1364,10 @@
         if (!task || !categoryFilepath || !plugin?.app) return;
         const toDelete = task;
         const path = categoryFilepath;
-        const taskNoteFile = LinkedNoteService.resolveTaskNoteFile(plugin.app, toDelete, path);
+        const effectiveCategory = (path === STARRED_CATEGORY_PATH && toDelete.sourceFilepath)
+            ? toDelete.sourceFilepath
+            : path;
+        const taskNoteFile = LinkedNoteService.resolveTaskNoteFile(plugin.app, toDelete, effectiveCategory);
         if (taskNoteFile) {
             await trashSourceFile(taskNoteFile);
         }
@@ -1627,6 +1669,7 @@
                         <!-- svelte-ignore a11y-click-events-have-key-events -->
                         <!-- svelte-ignore a11y-no-static-element-interactions -->
                         <div class="meta-chip note-chip" title={noteItem}
+                             on:mouseenter={(e) => handleNoteChipHover(e, noteItem)}
                              on:click={() => openAddMetaModal('note_link', idx)}
                              role="button" tabindex="0">
                             <span class="chip-label">{getTaskNoteLinks(task).length > 1 ? `Note #${idx + 1}` : 'Note'}</span>

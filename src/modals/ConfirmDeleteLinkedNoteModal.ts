@@ -1,6 +1,6 @@
 import { App, Modal, TFile } from "obsidian";
 import type { TaskItem } from "../types";
-import { EventName } from "../types";
+import { EventName, STARRED_CATEGORY_PATH } from "../types";
 import { EventBus } from "../EventBus";
 import type { DataService } from "../DataService";
 import { LinkedNoteService } from "../services/LinkedNoteService";
@@ -40,10 +40,15 @@ export class ConfirmDeleteLinkedNoteModal extends Modal {
             cls: "fluent-tasks-delete-modal-heading",
         });
 
+        const fmTitle = this.app.metadataCache?.getFileCache(this.noteFile)?.frontmatter?.title;
+        const displayNoteName = (typeof fmTitle === "string" && fmTitle.trim())
+            ? fmTitle.trim()
+            : (this.task.title?.trim() || this.noteFile.basename);
+
         const p1 = contentEl.createEl("p", { cls: "fluent-tasks-delete-modal-p1" });
         p1.createSpan({ text: t("confirm_delete_task_note_p1") });
         p1.createEl("strong", {
-            text: ` ${this.noteFile.basename} `,
+            text: ` ${displayNoteName} `,
             cls: "fluent-tasks-delete-modal-badge",
         });
 
@@ -98,7 +103,10 @@ export async function promptDeleteTaskWithLinkedNote(
     dataService: DataService,
     onDeleted?: () => void | Promise<void>
 ): Promise<boolean> {
-    const taskNoteFile = LinkedNoteService.resolveTaskNoteFile(app, task, categoryFilepath);
+    const effectiveCategoryPath = (categoryFilepath === STARRED_CATEGORY_PATH && task.sourceFilepath)
+        ? task.sourceFilepath
+        : categoryFilepath;
+    const taskNoteFile = LinkedNoteService.resolveTaskNoteFile(app, task, effectiveCategoryPath);
 
     if (!taskNoteFile) {
         // No dedicated physical task note file exists on disk, delete task directly without prompt

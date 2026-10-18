@@ -1307,9 +1307,9 @@
                     : (typeof badge.index === "number" ? `Note #${badge.index + 1}: ${badge.noteLink}` : `Note: ${badge.noteLink}`);
                 menu.addItem((item) => {
                     item.setTitle(title)
-                        .setIcon(isHard ? "link" : "file-text")
+                        .setIcon(isHard ? "file-text" : "link")
                         .onClick((clickEvent) => {
-                            handleNoteLinkClick(clickEvent as any, badge.noteLink, task.id);
+                            handleNoteLinkClick(clickEvent as any, badge.noteLink, badge.id === 'task-note' ? task.id : undefined);
                         });
                 });
             } else if (badge.type === 'custom') {
@@ -1878,9 +1878,12 @@
 
     function selectTask(task: TaskItem) {
         selectedTaskId = task.id;
+        const effectiveCategory = (currentCategory?.filepath === STARRED_CATEGORY_PATH && task.sourceFilepath)
+            ? task.sourceFilepath
+            : (currentCategory?.filepath || "");
         EventBus.emit(EventName.TASK_SELECTED, {
             task,
-            categoryFilepath: currentCategory?.filepath || "",
+            categoryFilepath: effectiveCategory,
         });
     }
 
@@ -3029,19 +3032,15 @@
                                 </span>
                             {:else if badge.type === 'note' && badge.noteLink}
                                 <span class="meta-badge note-badge"
+                                      class:task-note={badge.id === 'task-note'}
+                                      class:note-link={badge.id !== 'task-note'}
                                       class:hard-bound={LinkedNoteService.isHardBoundNote(badge.noteLink)}
                                       on:mouseenter={(e) => handleNoteLinkHover(e, badge.noteLink)}
-                                      on:click={(e) => handleNoteLinkClick(e, badge.noteLink, task.id)}
-                                      on:keydown={(e) => e.key === "Enter" && handleNoteLinkClick(e, badge.noteLink, task.id)}
+                                      on:click={(e) => handleNoteLinkClick(e, badge.noteLink, badge.id === 'task-note' ? task.id : undefined)}
+                                      on:keydown={(e) => e.key === "Enter" && handleNoteLinkClick(e, badge.noteLink, badge.id === 'task-note' ? task.id : undefined)}
                                       role="button" tabindex="0"
                                       title={t("linked_note_preview_tooltip", badge.noteLink)}>
                                     {#if LinkedNoteService.isHardBoundNote(badge.noteLink)}
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                                        </svg>
-                                    {:else}
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                                              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -3049,6 +3048,12 @@
                                             <line x1="16" y1="13" x2="8" y2="13"/>
                                             <line x1="16" y1="17" x2="8" y2="17"/>
                                             <polyline points="10 9 9 9 8 9"/>
+                                        </svg>
+                                    {:else}
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
                                         </svg>
                                     {/if}
                                 </span>
@@ -3276,19 +3281,15 @@
                                             </span>
                                         {:else if badge.type === 'note' && badge.noteLink}
                                             <span class="meta-badge note-badge"
+                                                  class:task-note={badge.id === 'task-note'}
+                                                  class:note-link={badge.id !== 'task-note'}
                                                   class:hard-bound={LinkedNoteService.isHardBoundNote(badge.noteLink)}
                                                   on:mouseenter={(e) => handleNoteLinkHover(e, badge.noteLink)}
-                                                  on:click={(e) => handleNoteLinkClick(e, badge.noteLink, task.id)}
-                                                  on:keydown={(e) => e.key === "Enter" && handleNoteLinkClick(e, badge.noteLink, task.id)}
+                                                  on:click={(e) => handleNoteLinkClick(e, badge.noteLink, badge.id === 'task-note' ? task.id : undefined)}
+                                                  on:keydown={(e) => e.key === "Enter" && handleNoteLinkClick(e, badge.noteLink, badge.id === 'task-note' ? task.id : undefined)}
                                                   role="button" tabindex="0"
                                                   title={t("linked_note_preview_tooltip", badge.noteLink)}>
                                                 {#if LinkedNoteService.isHardBoundNote(badge.noteLink)}
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                                                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                                                    </svg>
-                                                {:else}
                                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                                                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -3296,6 +3297,12 @@
                                                         <line x1="16" y1="13" x2="8" y2="13"/>
                                                         <line x1="16" y1="17" x2="8" y2="17"/>
                                                         <polyline points="10 9 9 9 8 9"/>
+                                                    </svg>
+                                                {:else}
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
                                                     </svg>
                                                 {/if}
                                             </span>

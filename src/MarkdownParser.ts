@@ -212,11 +212,19 @@ export class MarkdownParser {
                 meta.why = task.why;
             }
             if (task.svgs && task.svgs.length > 0) meta.svgs = task.svgs;
-            if (task.task_note) meta.task_note = task.task_note;
+            if (task.task_note) {
+                meta.task_note = task.task_note;
+            } else if (task.note_link) {
+                const clean = task.note_link.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
+                if (clean.startsWith(`${DATA_FOLDER}/`) || clean.startsWith(`${DATA_FOLDER}\\`)) {
+                    meta.task_note = task.note_link;
+                }
+            }
+
             if (task.note_links && task.note_links.length > 0) {
                 meta.note_links = task.note_links;
                 meta.note_link = task.note_links[0];
-            } else if (task.note_link && !task.task_note) {
+            } else if (task.note_link && !meta.task_note) {
                 meta.note_link = task.note_link;
             }
             if (task.customMeta && Object.keys(task.customMeta).length > 0) meta.customMeta = task.customMeta;

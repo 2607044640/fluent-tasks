@@ -89,7 +89,7 @@ const zhCn: typeof en = {
     backup_btn_tooltip: "数据备份器",
     guide_btn_tooltip: "功能与快捷键指南",
     search_list_tooltip: "搜索当前列表",
-    linked_note_preview_tooltip: "专属链接笔记: {0} (点击跳转，悬停预览)",
+    linked_note_preview_tooltip: "关联笔记: {0} (点击跳转，悬停预览)",
     selected_items_label: "已选 {0} 项",
     deselect_all: "取消全选",
     select_all: "全选",
