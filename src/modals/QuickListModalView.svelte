@@ -29,7 +29,7 @@
     let taskCounts: Record<string, number> = {};
     let starredCount: number = 0;
     let searchQuery: string = "";
-    let focusedIndex: number = 0;
+    let focusedIndex: number = -1;
     let isGridLayout: boolean = plugin?.settings?.quickListGridLayout ?? true;
     let searchMode: 'list' | 'task' = plugin?.settings?.quickListSearchMode ?? 'list';
     let hideCompleted: boolean = plugin?.settings?.searchHideCompleted ?? true;
@@ -40,6 +40,7 @@
     let taskResultsContainerEl: HTMLElement | null = null;
     let isComposing: boolean = false;
     let hasInitializedFocus: boolean = false;
+    let isDataLoaded: boolean = false;
     let prevSearchQuery: string = "";
     let isPickingDefaultFocus: boolean = false;
     let showFocusPopover: boolean = false;
@@ -136,7 +137,7 @@
     $: rootCategories = filteredItems.filter(i => i.type === "category") as CategoryInfo[];
     $: defaultFocusCategory = flatCategories.find(c => c.filepath === plugin?.settings?.defaultQuickListFocusFilepath);
     $: defaultFocusListName = defaultFocusCategory ? defaultFocusCategory.name : "";
-    $: if (focusedIndex >= flatCategories.length) {
+    $: if (focusedIndex >= 0 && focusedIndex >= flatCategories.length && flatCategories.length > 0) {
         focusedIndex = Math.max(0, flatCategories.length - 1);
     }
     $: if (searchMode === 'list' && searchQuery !== prevSearchQuery) {
@@ -411,7 +412,7 @@
             }
         }
 
-        if (!hasInitializedFocus && flatCategories.length > 0) {
+        if (!hasInitializedFocus && isDataLoaded && flatCategories.length > 0) {
             hasInitializedFocus = true;
             setTimeout(() => {
                 applyInitialFocus();
@@ -447,11 +448,14 @@
                 }
             }
             if (targetIndex === -1) {
-                targetIndex = 0;
+                // Fallback to first regular category, NEVER Starred smart list on open
+                const firstRealIdx = flatCategories.findIndex(c => !c.isSmartList && c.filepath !== STARRED_CATEGORY_PATH);
+                targetIndex = firstRealIdx !== -1 ? firstRealIdx : 0;
             }
         }
 
         focusedIndex = targetIndex;
+        hasInitializedFocus = true;
         scrollFocusedIntoView();
     }
 
@@ -519,11 +523,9 @@
         searchInputEl?.focus();
         if (isGridLayout) {
             scheduleAdjustSpacing();
-        } else {
-            if (!hasInitializedFocus && flatCategories.length > 0) {
-                hasInitializedFocus = true;
-                applyInitialFocus();
-            }
+        }
+        if (!hasInitializedFocus && flatCategories.length > 0) {
+            applyInitialFocus();
         }
 
         window.addEventListener("resize", scheduleAdjustSpacing);
@@ -608,6 +610,14 @@
         categories = await dataService.getCategories();
         await refreshStarredCount();
         await refreshTaskCounts();
+        isDataLoaded = true;
+        await tick();
+        if (isGridLayout) {
+            updateLayoutColumns(true);
+        }
+        if (!hasInitializedFocus && flatCategories.length > 0) {
+            applyInitialFocus();
+        }
         scheduleAdjustSpacing();
     }
 
@@ -1350,10 +1360,11 @@
         const items = Array.from(modalContainerEl?.querySelectorAll(".quick-modal-list-item") || []) as HTMLElement[];
         if (items.length === 0) return;
 
-        // Get currently focused element (or default to first item)
+        // Get currently focused element (or default to first item in board)
         let currentEl = modalContainerEl?.querySelector(".quick-modal-list-item.is-focused") as HTMLElement | null;
         if (!currentEl) {
-            currentEl = items[0];
+            const firstBoardItem = modalContainerEl?.querySelector(".quick-list-grid-board .quick-modal-list-item, .quick-modal-scrollable .quick-modal-list-item:not(.is-smart-item)") as HTMLElement | null;
+            currentEl = firstBoardItem || items[0];
             const targetPath = currentEl.dataset.filepath;
             const idx = flatCategories.findIndex(c => c.filepath === targetPath);
             if (idx !== -1) focusedIndex = idx;
