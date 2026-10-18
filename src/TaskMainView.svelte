@@ -971,7 +971,10 @@
         if (!task) return;
         dismissPopover();
         if (!currentCategory || !plugin?.app) return;
-        new TaskStepsModal(plugin.app, plugin, dataService, task, currentCategory.filepath).open();
+        const catPath = (currentCategory.filepath === STARRED_CATEGORY_PATH && task.sourceFilepath)
+            ? task.sourceFilepath
+            : currentCategory.filepath;
+        new TaskStepsModal(plugin.app, plugin, dataService, task, catPath).open();
     }
 
     // Dedicated keyboard state tracking to ensure Quick Peek activates ONLY on standalone Ctrl
@@ -2227,12 +2230,12 @@
 
         const menu = new Menu();
 
-        // 1st item: Star / Remove star
+        // 1st item: Add side step (opens floating subtasks modal)
         menu.addItem((item: any) => {
-            item.setTitle(task.starred ? "Remove star" : "Star task")
-                .setIcon("star")
-                .onClick(async () => {
-                    await toggleStar(task, true);
+            item.setTitle(t("add_side_step") || "Add side step")
+                .setIcon("list-plus")
+                .onClick(() => {
+                    openStepsModal(task);
                 });
         });
 

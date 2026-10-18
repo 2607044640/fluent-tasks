@@ -3855,7 +3855,8 @@ var en = {
   confirm_dont_save_btn: "Don't Save",
   confirm_keep_editing_btn: "Keep Editing (Esc)",
   move_to_menu_title: "Move to",
-  search_list_to_move: "Search destination list..."
+  search_list_to_move: "Search destination list...",
+  add_side_step: "Add side step"
 };
 var en_default = en;
 
@@ -3991,7 +3992,8 @@ var zhCn = {
   confirm_dont_save_btn: "\u4E0D\u4FDD\u5B58 / \u653E\u5F03",
   confirm_keep_editing_btn: "\u7EE7\u7EED\u7F16\u8F91 (Esc)",
   move_to_menu_title: "\u79FB\u52A8\u5230",
-  search_list_to_move: "\u641C\u7D22\u76EE\u6807\u5217\u8868..."
+  search_list_to_move: "\u641C\u7D22\u76EE\u6807\u5217\u8868...",
+  add_side_step: "\u6DFB\u52A0\u5B50\u6B65\u9AA4"
 };
 var zh_cn_default = zhCn;
 
@@ -22230,7 +22232,8 @@ function instance4($$self, $$props, $$invalidate) {
     dismissPopover();
     if (!currentCategory || !(plugin == null ? void 0 : plugin.app))
       return;
-    new TaskStepsModal(plugin.app, plugin, dataService, task, currentCategory.filepath).open();
+    const catPath = currentCategory.filepath === STARRED_CATEGORY_PATH && task.sourceFilepath ? task.sourceFilepath : currentCategory.filepath;
+    new TaskStepsModal(plugin.app, plugin, dataService, task, catPath).open();
   }
   let isCtrlPressed = false;
   let hasComboModifierOrKey = false;
@@ -23326,8 +23329,8 @@ function instance4($$self, $$props, $$invalidate) {
       return;
     const menu = new import_obsidian14.Menu();
     menu.addItem((item) => {
-      item.setTitle(task.starred ? "Remove star" : "Star task").setIcon("star").onClick(async () => {
-        await toggleStar(task, true);
+      item.setTitle(t("add_side_step") || "Add side step").setIcon("list-plus").onClick(() => {
+        openStepsModal(task);
       });
     });
     menu.addSeparator();
@@ -36647,7 +36650,8 @@ function instance7($$self, $$props, $$invalidate) {
     const catPath = isSearching ? (_a2 = searchResults.find((r) => r.task.id === task.id)) == null ? void 0 : _a2.category.filepath : selectedCategory == null ? void 0 : selectedCategory.filepath;
     if (!catPath || !plugin || !plugin.app)
       return;
-    new TaskStepsModal(plugin.app, plugin, dataService, task, catPath).open();
+    const actualSource = catPath === STARRED_CATEGORY_PATH && task.sourceFilepath ? task.sourceFilepath : catPath;
+    new TaskStepsModal(plugin.app, plugin, dataService, task, actualSource).open();
   }
   function handleNoteLinkHover(e, noteLink) {
     if (!noteLink || !plugin || !plugin.app)
@@ -37003,8 +37007,8 @@ function instance7($$self, $$props, $$invalidate) {
     e.stopPropagation();
     const menu = new import_obsidian18.Menu();
     menu.addItem((item) => {
-      item.setTitle(task.starred ? "Remove star" : "Star task").setIcon("star").onClick(() => {
-        void toggleTaskStar(task);
+      item.setTitle(t("add_side_step") || "Add side step").setIcon("list-plus").onClick(() => {
+        openStepsModal(task);
       });
     });
     menu.addItem((item) => {

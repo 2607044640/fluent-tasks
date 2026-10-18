@@ -138,6 +138,7 @@ const en = {
     confirm_keep_editing_btn: "Keep Editing (Esc)",
     move_to_menu_title: "Move to",
     search_list_to_move: "Search destination list...",
+    add_side_step: "Add side step",
 };
 
 export default en;

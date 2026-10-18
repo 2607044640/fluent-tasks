@@ -140,6 +140,7 @@ const zhCn: typeof en = {
     confirm_keep_editing_btn: "继续编辑 (Esc)",
     move_to_menu_title: "移动到",
     search_list_to_move: "搜索目标列表...",
+    add_side_step: "添加子步骤",
 };
 
 export default zhCn;

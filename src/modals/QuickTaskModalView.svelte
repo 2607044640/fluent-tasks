@@ -281,7 +281,10 @@
             ? searchResults.find(r => r.task.id === task.id)?.category.filepath 
             : selectedCategory?.filepath;
         if (!catPath || !plugin || !plugin.app) return;
-        new TaskStepsModal(plugin.app, plugin, dataService, task, catPath).open();
+        const actualSource = (catPath === STARRED_CATEGORY_PATH && task.sourceFilepath)
+            ? task.sourceFilepath
+            : catPath;
+        new TaskStepsModal(plugin.app, plugin, dataService, task, actualSource).open();
     }
 
     function handleNoteLinkHover(e: MouseEvent, noteLink?: string) {
@@ -682,12 +685,12 @@
         e.stopPropagation();
         const menu = new Menu();
 
-        // 1st item: Star/Unstar task per requirement
+        // 1st item: Add side step (opens floating subtasks modal)
         menu.addItem((item) => {
-            item.setTitle(task.starred ? "Remove star" : "Star task")
-                .setIcon("star")
+            item.setTitle(t("add_side_step") || "Add side step")
+                .setIcon("list-plus")
                 .onClick(() => {
-                    void toggleTaskStar(task);
+                    openStepsModal(task);
                 });
         });
 
