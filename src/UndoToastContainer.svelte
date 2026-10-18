@@ -15,6 +15,7 @@
         type: "task" | "step" | "category";
         categoryFilepath: string;
         tasks?: TaskItem[];
+        trashedTaskNotes?: Array<{ path: string; name: string; content?: string }>;
         stepPayload?: StepDeletedPayload;
         categoryPayload?: CategoryDeletedPayload;
         message: string;
@@ -89,7 +90,12 @@
         undoToasts = [...undoToasts, toast];
     }
 
-    function pushTaskUndoToast(categoryFilepath: string, tasks: TaskItem[], isBatch: boolean = false) {
+    function pushTaskUndoToast(
+        categoryFilepath: string, 
+        tasks: TaskItem[], 
+        isBatch: boolean = false, 
+        trashedTaskNotes?: Array<{ path: string; name: string; content?: string }>
+    ) {
         if (!tasks || tasks.length === 0) return;
         const count = tasks.length;
         const message = (isBatch || count > 1) 
@@ -100,6 +106,7 @@
             type: "task",
             categoryFilepath,
             tasks,
+            trashedTaskNotes,
             message,
             isBatch: isBatch || count > 1,
         });
@@ -178,15 +185,60 @@
                 const currentTasks = await dataService.getTasks(toast.categoryFilepath);
                 const existingIds = new Set(currentTasks.map(t => t.id));
                 const newRestores = tasksToRestore.filter(t => !existingIds.has(t.id));
-                if (newRestores.length === 0) return;
+                if (newRestores.length > 0) {
+                    const mergedTasks = [...newRestores, ...currentTasks];
+                    await dataService.saveTasks(toast.categoryFilepath, mergedTasks);
 
-                const mergedTasks = [...newRestores, ...currentTasks];
-                await dataService.saveTasks(toast.categoryFilepath, mergedTasks);
+                    EventBus.emit(EventName.TASK_UPDATED, {
+                        categoryFilepath: toast.categoryFilepath,
+                        isExternal: true
+                    });
+                }
 
-                EventBus.emit(EventName.TASK_UPDATED, {
-                    categoryFilepath: toast.categoryFilepath,
-                    isExternal: true
-                });
+                // Restore any trashed task notes (from .trash/ or memory content backup)
+                if (toast.trashedTaskNotes && toast.trashedTaskNotes.length > 0) {
+                    const adapter = plugin.app.vault.adapter;
+                    for (const noteInfo of toast.trashedTaskNotes) {
+                        try {
+                            const trashPath = ".trash/" + noteInfo.name;
+                            let restored = false;
+                            if (await adapter.exists(trashPath)) {
+                                const parts = noteInfo.path.replace(/\\/g, "/").split("/");
+                                parts.pop();
+                                const parentDir = parts.join("/");
+                                if (parentDir && !(await adapter.exists(parentDir))) {
+                                    await adapter.mkdir(parentDir);
+                                }
+                                await adapter.rename(trashPath, noteInfo.path);
+                                restored = true;
+                            }
+                            if (!restored && !(await adapter.exists(noteInfo.path)) && noteInfo.content !== undefined) {
+                                const parts = noteInfo.path.replace(/\\/g, "/").split("/");
+                                parts.pop();
+                                const parentDir = parts.join("/");
+                                if (parentDir && !(await adapter.exists(parentDir))) {
+                                    await adapter.mkdir(parentDir);
+                                }
+                                await plugin.app.vault.create(noteInfo.path, noteInfo.content);
+                                restored = true;
+                            }
+
+                            // Interlock with a1-file-undo / file-undo plugin if installed
+                            const fileUndoPlugin = (plugin.app as any).plugins?.plugins?.["file-undo"] 
+                                || (plugin.app as any).plugins?.plugins?.["a1-file-undo"];
+                            if (fileUndoPlugin && Array.isArray(fileUndoPlugin.undoStack)) {
+                                const idx = fileUndoPlugin.undoStack.findIndex((item: any) => 
+                                    item.type === "delete" && (item.path === noteInfo.path || item.name === noteInfo.name)
+                                );
+                                if (idx !== -1) {
+                                    fileUndoPlugin.undoStack.splice(idx, 1);
+                                }
+                            }
+                        } catch (noteErr) {
+                            console.error("Failed to restore trashed task note:", noteErr);
+                        }
+                    }
+                }
 
                 new Notice(
                     newRestores.length === 1 
@@ -202,10 +254,11 @@
 
     function handleTaskDeleted(payload: any) {
         if (!payload || !payload.categoryFilepath) return;
+        const trashedTaskNotes = payload.trashedTaskNotes || (payload.trashedTaskNote ? [payload.trashedTaskNote] : undefined);
         if (payload.tasks && Array.isArray(payload.tasks)) {
-            pushTaskUndoToast(payload.categoryFilepath, payload.tasks, true);
+            pushTaskUndoToast(payload.categoryFilepath, payload.tasks, true, trashedTaskNotes);
         } else if (payload.task && !payload.isBatch) {
-            pushTaskUndoToast(payload.categoryFilepath, [payload.task], false);
+            pushTaskUndoToast(payload.categoryFilepath, [payload.task], false, trashedTaskNotes);
         }
     }
 

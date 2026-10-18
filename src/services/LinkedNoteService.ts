@@ -153,6 +153,7 @@ export class LinkedNoteService {
                     if (child instanceof TFolder) {
                         stack.push(child);
                     } else if (child instanceof TFile && child.extension === "md") {
+                        if (this.isCategoryListFile(child)) continue; // Never match category list files
                         if (child.basename.endsWith(` ${taskId}`)) {
                             return child;
                         }
@@ -181,6 +182,7 @@ export class LinkedNoteService {
             if (folder && folder instanceof TFolder) {
                 for (const child of folder.children) {
                     if (child instanceof TFile && child.extension === "md") {
+                        if (this.isCategoryListFile(child)) continue;
                         if (child.basename.endsWith(` ${taskId}`)) {
                             return child;
                         }
@@ -288,26 +290,26 @@ export class LinkedNoteService {
         // 3. Stage 1: Direct vault path lookup (O(1))
         if (relativeCandidate) {
             let file = app.vault.getAbstractFileByPath(relativeCandidate);
-            if (file instanceof TFile) return file;
+            if (file instanceof TFile && !this.isCategoryListFile(file)) return file;
 
             if (!relativeCandidate.endsWith(".md")) {
                 file = app.vault.getAbstractFileByPath(`${relativeCandidate}.md`);
-                if (file instanceof TFile) return file;
+                if (file instanceof TFile && !this.isCategoryListFile(file)) return file;
             } else {
                 file = app.vault.getAbstractFileByPath(relativeCandidate.replace(/\.md$/, ""));
-                if (file instanceof TFile) return file;
+                if (file instanceof TFile && !this.isCategoryListFile(file)) return file;
             }
         }
 
         // 4. Stage 2: Obsidian metadataCache linkpath lookup
         if (app.metadataCache && relativeCandidate) {
             let cached = app.metadataCache.getFirstLinkpathDest(relativeCandidate, sourcePath || "");
-            if (cached instanceof TFile) return cached;
+            if (cached instanceof TFile && !this.isCategoryListFile(cached)) return cached;
 
             const noExt = relativeCandidate.replace(/\.md$/, "");
             if (noExt !== relativeCandidate) {
                 cached = app.metadataCache.getFirstLinkpathDest(noExt, sourcePath || "");
-                if (cached instanceof TFile) return cached;
+                if (cached instanceof TFile && !this.isCategoryListFile(cached)) return cached;
             }
         }
 
@@ -315,19 +317,20 @@ export class LinkedNoteService {
         const strippedPrefix = relativeCandidate.replace(/^[\s\-—–_•*#~]+\s*/, "").trim();
         if (strippedPrefix && strippedPrefix !== relativeCandidate) {
             let file = app.vault.getAbstractFileByPath(strippedPrefix);
-            if (file instanceof TFile) return file;
+            if (file instanceof TFile && !this.isCategoryListFile(file)) return file;
             if (!strippedPrefix.endsWith(".md")) {
                 file = app.vault.getAbstractFileByPath(`${strippedPrefix}.md`);
-                if (file instanceof TFile) return file;
+                if (file instanceof TFile && !this.isCategoryListFile(file)) return file;
             }
             if (app.metadataCache) {
                 const cached = app.metadataCache.getFirstLinkpathDest(strippedPrefix, sourcePath || "");
-                if (cached instanceof TFile) return cached;
+                if (cached instanceof TFile && !this.isCategoryListFile(cached)) return cached;
             }
         }
 
         // 6. Stage 4: Vault-wide scan across all markdown files ("自动寻找第一个找到的笔记")
-        const allMdFiles = app.vault.getMarkdownFiles();
+        // Strictly exclude category list files (e.g. TodoData/*.md) from note discovery!
+        const allMdFiles = app.vault.getMarkdownFiles().filter(f => !this.isCategoryListFile(f));
         if (!allMdFiles || allMdFiles.length === 0) return null;
 
         // Extract segments for comparison
@@ -428,13 +431,13 @@ export class LinkedNoteService {
         if (effectiveCategoryPath && task.id) {
             const stdPath = this.getStandardNotePath(effectiveCategoryPath, task.id);
             const stdFile = app.vault.getAbstractFileByPath(stdPath);
-            if (stdFile instanceof TFile) return stdFile;
+            if (stdFile instanceof TFile && !this.isCategoryListFile(stdFile)) return stdFile;
         }
 
-        // 2. If task.task_note is explicitly set, resolve it and verify it's under DATA_FOLDER
+        // 2. If task.task_note is explicitly set, resolve it and verify it's under DATA_FOLDER (and not a category file)
         if (task.task_note) {
             const resolved = this.resolveNoteLinkInternal(app, task.task_note, effectiveCategoryPath);
-            if (resolved instanceof TFile && this.isHardBoundNote(resolved.path)) {
+            if (resolved instanceof TFile && this.isHardBoundNote(resolved.path) && !this.isCategoryListFile(resolved)) {
                 return resolved;
             }
         }
@@ -442,7 +445,7 @@ export class LinkedNoteService {
         // 3. Backward compatibility: if task.note_link was a hard-bound note under DATA_FOLDER
         if (task.note_link && this.isHardBoundNote(task.note_link)) {
             const resolved = this.resolveNoteLinkInternal(app, task.note_link, effectiveCategoryPath);
-            if (resolved instanceof TFile && this.isHardBoundNote(resolved.path)) {
+            if (resolved instanceof TFile && this.isHardBoundNote(resolved.path) && !this.isCategoryListFile(resolved)) {
                 return resolved;
             }
         }
@@ -450,7 +453,7 @@ export class LinkedNoteService {
         // 4. Fallback search by taskId ONLY within the category's dedicated notes folder in DATA_FOLDER
         if (task.id) {
             const fileByTaskId = this.findFileByTaskId(app, task.id, effectiveCategoryPath);
-            if (fileByTaskId instanceof TFile && this.isHardBoundNote(fileByTaskId.path)) {
+            if (fileByTaskId instanceof TFile && this.isHardBoundNote(fileByTaskId.path) && !this.isCategoryListFile(fileByTaskId)) {
                 return fileByTaskId;
             }
         }
@@ -461,6 +464,7 @@ export class LinkedNoteService {
     /**
      * Resolve a note link string (e.g. [[Path/Note|Alias]] or Path/Note or bare note title) to a physical TFile,
      * with automatic fallback to taskId matching if link is stale or broken.
+     * Strictly rejects category list files!
      */
     static resolveLinkedNoteFile(app: App, noteLink?: string, sourcePath?: string, taskId?: string): TFile | null {
         if (!app) return null;
@@ -470,7 +474,7 @@ export class LinkedNoteService {
             const raw = noteLink.trim();
             if (raw) {
                 const resolved = this.resolveNoteLinkInternal(app, raw, sourcePath);
-                if (resolved) return resolved;
+                if (resolved && !this.isCategoryListFile(resolved)) return resolved;
             }
         }
 
@@ -478,13 +482,13 @@ export class LinkedNoteService {
         if (sourcePath && taskId) {
             const stdPath = this.getStandardNotePath(sourcePath, taskId);
             const stdFile = app.vault.getAbstractFileByPath(stdPath);
-            if (stdFile instanceof TFile) return stdFile;
+            if (stdFile instanceof TFile && !this.isCategoryListFile(stdFile)) return stdFile;
         }
 
         // 3. Fallback: Search by taskId if provided
         if (taskId) {
             const fileByTaskId = this.findFileByTaskId(app, taskId, sourcePath);
-            if (fileByTaskId) return fileByTaskId;
+            if (fileByTaskId && !this.isCategoryListFile(fileByTaskId)) return fileByTaskId;
         }
 
         return null;
@@ -498,12 +502,29 @@ export class LinkedNoteService {
     }
 
     /**
-     * Check if a note link is a dedicated hard-bound task note under TodoData/
+     * Determine if a path or TFile is a root category list file directly under DATA_FOLDER (e.g. TodoData/Meta.md)
+     * Category list files are task storage containers and must NEVER be resolved as notes or tasked notes.
+     */
+    static isCategoryListFile(pathOrFile?: string | TFile | null): boolean {
+        if (!pathOrFile) return false;
+        const path = typeof pathOrFile === "string" 
+            ? pathOrFile.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim().replace(/\\/g, "/")
+            : pathOrFile.path.replace(/\\/g, "/");
+        if (!path.startsWith(`${DATA_FOLDER}/`)) return false;
+        const withExt = path.endsWith(".md") ? path : `${path}.md`;
+        const relPath = withExt.slice(DATA_FOLDER.length + 1);
+        return !relPath.includes("/");
+    }
+
+    /**
+     * Check if a note link is a dedicated hard-bound task note under TodoData/ (strictly in a subfolder, e.g. TodoData/Category/Note.md)
      */
     static isHardBoundNote(noteLink?: string): boolean {
         if (!noteLink) return false;
-        const clean = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
-        return clean.startsWith(`${DATA_FOLDER}/`) || clean.startsWith(`${DATA_FOLDER}\\`);
+        const clean = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim().replace(/\\/g, "/");
+        if (!clean.startsWith(`${DATA_FOLDER}/`)) return false;
+        const rel = clean.slice(DATA_FOLDER.length + 1);
+        return rel.includes("/") && !this.isCategoryListFile(clean.endsWith(".md") ? clean : `${clean}.md`);
     }
 
     /**

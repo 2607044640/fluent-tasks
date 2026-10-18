@@ -79,6 +79,36 @@ export class BackupService {
         new Notice(t("backup_dir", this.BACKUP_FOLDER));
     }
 
+    private static async collectFilesRecursively(app: App, folder: string): Promise<string[]> {
+        const result: string[] = [];
+        try {
+            if (!(await app.vault.adapter.exists(folder))) return result;
+            const listing = await app.vault.adapter.list(folder);
+            for (const filePath of listing.files) {
+                const normPath = normalizePath(filePath);
+                const fname = normPath.split("/").pop() || "";
+                if (fname === "debug.log" || normPath.includes("/Backups/") || normPath.includes("/.backups/")) {
+                    continue;
+                }
+                if (fname.endsWith(".md") || fname.endsWith(".json")) {
+                    result.push(normPath);
+                }
+            }
+            for (const subFolder of listing.folders) {
+                const normFolder = normalizePath(subFolder);
+                const folderName = normFolder.split("/").pop() || "";
+                if (folderName === "Backups" || folderName === ".backups" || normFolder.includes("/Backups") || normFolder.includes("/.backups")) {
+                    continue;
+                }
+                const subFiles = await this.collectFilesRecursively(app, normFolder);
+                result.push(...subFiles);
+            }
+        } catch (e) {
+            console.warn(`[BackupService] Scan ${folder} failed:`, e);
+        }
+        return result;
+    }
+
     public static async createBackup(app: App, plugin?: any, isDaily: boolean = false): Promise<BackupFileInfo> {
         await this.ensureBackupFolder(app);
 
@@ -93,27 +123,27 @@ export class BackupService {
             : `backup-${dateStr}_${timeStr}.json`;
         const targetPath = `${this.BACKUP_FOLDER}/${filename}`;
 
-        // Collect all TodoData markdown and json files (excluding Backups, .backups, debug.log)
+        // Collect all TodoData markdown and json files (including dedicated task notes in subfolders, excluding Backups, .backups, debug.log)
         const filesToBackup: Record<string, string> = {};
         let totalTaskCount = 0;
         let listCount = 0;
 
         try {
-            const listing = await app.vault.adapter.list(DATA_FOLDER);
-            for (const filePath of listing.files) {
-                const normPath = normalizePath(filePath);
+            const allFiles = await this.collectFilesRecursively(app, DATA_FOLDER);
+            for (const normPath of allFiles) {
                 const fname = normPath.split("/").pop() || "";
-                if (fname === "debug.log" || normPath.includes("/Backups/") || normPath.includes("/.backups/")) {
-                    continue;
-                }
                 if (fname.endsWith(".md") || fname.endsWith(".json")) {
                     const content = await app.vault.adapter.read(normPath);
                     filesToBackup[normPath] = content;
                     if (fname.endsWith(".md")) {
-                        listCount++;
-                        const matches = content.match(/^[ \t]*- \[[ xX]\]/gm);
-                        if (matches) {
-                            totalTaskCount += matches.length;
+                        // Only count as category list if directly in DATA_FOLDER
+                        const rel = normPath.slice(DATA_FOLDER.length + 1);
+                        if (!rel.includes("/")) {
+                            listCount++;
+                            const matches = content.match(/^[ \t]*- \[[ xX]\]/gm);
+                            if (matches) {
+                                totalTaskCount += matches.length;
+                            }
                         }
                     }
                 }

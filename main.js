@@ -1548,6 +1548,8 @@ var LinkedNoteService = class {
           if (child instanceof import_obsidian4.TFolder) {
             stack.push(child);
           } else if (child instanceof import_obsidian4.TFile && child.extension === "md") {
+            if (this.isCategoryListFile(child))
+              continue;
             if (child.basename.endsWith(` ${taskId}`)) {
               return child;
             }
@@ -1574,6 +1576,8 @@ var LinkedNoteService = class {
       if (folder && folder instanceof import_obsidian4.TFolder) {
         for (const child of folder.children) {
           if (child instanceof import_obsidian4.TFile && child.extension === "md") {
+            if (this.isCategoryListFile(child))
+              continue;
             if (child.basename.endsWith(` ${taskId}`)) {
               return child;
             }
@@ -1657,46 +1661,46 @@ var LinkedNoteService = class {
     relativeCandidate = relativeCandidate.replace(/^\/+/, "");
     if (relativeCandidate) {
       let file = app.vault.getAbstractFileByPath(relativeCandidate);
-      if (file instanceof import_obsidian4.TFile)
+      if (file instanceof import_obsidian4.TFile && !this.isCategoryListFile(file))
         return file;
       if (!relativeCandidate.endsWith(".md")) {
         file = app.vault.getAbstractFileByPath(`${relativeCandidate}.md`);
-        if (file instanceof import_obsidian4.TFile)
+        if (file instanceof import_obsidian4.TFile && !this.isCategoryListFile(file))
           return file;
       } else {
         file = app.vault.getAbstractFileByPath(relativeCandidate.replace(/\.md$/, ""));
-        if (file instanceof import_obsidian4.TFile)
+        if (file instanceof import_obsidian4.TFile && !this.isCategoryListFile(file))
           return file;
       }
     }
     if (app.metadataCache && relativeCandidate) {
       let cached = app.metadataCache.getFirstLinkpathDest(relativeCandidate, sourcePath || "");
-      if (cached instanceof import_obsidian4.TFile)
+      if (cached instanceof import_obsidian4.TFile && !this.isCategoryListFile(cached))
         return cached;
       const noExt = relativeCandidate.replace(/\.md$/, "");
       if (noExt !== relativeCandidate) {
         cached = app.metadataCache.getFirstLinkpathDest(noExt, sourcePath || "");
-        if (cached instanceof import_obsidian4.TFile)
+        if (cached instanceof import_obsidian4.TFile && !this.isCategoryListFile(cached))
           return cached;
       }
     }
     const strippedPrefix = relativeCandidate.replace(/^[\s\-—–_•*#~]+\s*/, "").trim();
     if (strippedPrefix && strippedPrefix !== relativeCandidate) {
       let file = app.vault.getAbstractFileByPath(strippedPrefix);
-      if (file instanceof import_obsidian4.TFile)
+      if (file instanceof import_obsidian4.TFile && !this.isCategoryListFile(file))
         return file;
       if (!strippedPrefix.endsWith(".md")) {
         file = app.vault.getAbstractFileByPath(`${strippedPrefix}.md`);
-        if (file instanceof import_obsidian4.TFile)
+        if (file instanceof import_obsidian4.TFile && !this.isCategoryListFile(file))
           return file;
       }
       if (app.metadataCache) {
         const cached = app.metadataCache.getFirstLinkpathDest(strippedPrefix, sourcePath || "");
-        if (cached instanceof import_obsidian4.TFile)
+        if (cached instanceof import_obsidian4.TFile && !this.isCategoryListFile(cached))
           return cached;
       }
     }
-    const allMdFiles = app.vault.getMarkdownFiles();
+    const allMdFiles = app.vault.getMarkdownFiles().filter((f) => !this.isCategoryListFile(f));
     if (!allMdFiles || allMdFiles.length === 0)
       return null;
     const lastSegment = relativeCandidate.split("/").pop() || relativeCandidate;
@@ -1778,24 +1782,24 @@ var LinkedNoteService = class {
     if (effectiveCategoryPath && task.id) {
       const stdPath = this.getStandardNotePath(effectiveCategoryPath, task.id);
       const stdFile = app.vault.getAbstractFileByPath(stdPath);
-      if (stdFile instanceof import_obsidian4.TFile)
+      if (stdFile instanceof import_obsidian4.TFile && !this.isCategoryListFile(stdFile))
         return stdFile;
     }
     if (task.task_note) {
       const resolved = this.resolveNoteLinkInternal(app, task.task_note, effectiveCategoryPath);
-      if (resolved instanceof import_obsidian4.TFile && this.isHardBoundNote(resolved.path)) {
+      if (resolved instanceof import_obsidian4.TFile && this.isHardBoundNote(resolved.path) && !this.isCategoryListFile(resolved)) {
         return resolved;
       }
     }
     if (task.note_link && this.isHardBoundNote(task.note_link)) {
       const resolved = this.resolveNoteLinkInternal(app, task.note_link, effectiveCategoryPath);
-      if (resolved instanceof import_obsidian4.TFile && this.isHardBoundNote(resolved.path)) {
+      if (resolved instanceof import_obsidian4.TFile && this.isHardBoundNote(resolved.path) && !this.isCategoryListFile(resolved)) {
         return resolved;
       }
     }
     if (task.id) {
       const fileByTaskId = this.findFileByTaskId(app, task.id, effectiveCategoryPath);
-      if (fileByTaskId instanceof import_obsidian4.TFile && this.isHardBoundNote(fileByTaskId.path)) {
+      if (fileByTaskId instanceof import_obsidian4.TFile && this.isHardBoundNote(fileByTaskId.path) && !this.isCategoryListFile(fileByTaskId)) {
         return fileByTaskId;
       }
     }
@@ -1804,6 +1808,7 @@ var LinkedNoteService = class {
   /**
    * Resolve a note link string (e.g. [[Path/Note|Alias]] or Path/Note or bare note title) to a physical TFile,
    * with automatic fallback to taskId matching if link is stale or broken.
+   * Strictly rejects category list files!
    */
   static resolveLinkedNoteFile(app, noteLink, sourcePath, taskId) {
     if (!app)
@@ -1812,19 +1817,19 @@ var LinkedNoteService = class {
       const raw = noteLink.trim();
       if (raw) {
         const resolved = this.resolveNoteLinkInternal(app, raw, sourcePath);
-        if (resolved)
+        if (resolved && !this.isCategoryListFile(resolved))
           return resolved;
       }
     }
     if (sourcePath && taskId) {
       const stdPath = this.getStandardNotePath(sourcePath, taskId);
       const stdFile = app.vault.getAbstractFileByPath(stdPath);
-      if (stdFile instanceof import_obsidian4.TFile)
+      if (stdFile instanceof import_obsidian4.TFile && !this.isCategoryListFile(stdFile))
         return stdFile;
     }
     if (taskId) {
       const fileByTaskId = this.findFileByTaskId(app, taskId, sourcePath);
-      if (fileByTaskId)
+      if (fileByTaskId && !this.isCategoryListFile(fileByTaskId))
         return fileByTaskId;
     }
     return null;
@@ -1836,13 +1841,30 @@ var LinkedNoteService = class {
     return title.replace(/\s+\(\d+\)$/, "").trim();
   }
   /**
-   * Check if a note link is a dedicated hard-bound task note under TodoData/
+   * Determine if a path or TFile is a root category list file directly under DATA_FOLDER (e.g. TodoData/Meta.md)
+   * Category list files are task storage containers and must NEVER be resolved as notes or tasked notes.
+   */
+  static isCategoryListFile(pathOrFile) {
+    if (!pathOrFile)
+      return false;
+    const path = typeof pathOrFile === "string" ? pathOrFile.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim().replace(/\\/g, "/") : pathOrFile.path.replace(/\\/g, "/");
+    if (!path.startsWith(`${DATA_FOLDER}/`))
+      return false;
+    const withExt = path.endsWith(".md") ? path : `${path}.md`;
+    const relPath = withExt.slice(DATA_FOLDER.length + 1);
+    return !relPath.includes("/");
+  }
+  /**
+   * Check if a note link is a dedicated hard-bound task note under TodoData/ (strictly in a subfolder, e.g. TodoData/Category/Note.md)
    */
   static isHardBoundNote(noteLink) {
     if (!noteLink)
       return false;
-    const clean = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
-    return clean.startsWith(`${DATA_FOLDER}/`) || clean.startsWith(`${DATA_FOLDER}\\`);
+    const clean = noteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim().replace(/\\/g, "/");
+    if (!clean.startsWith(`${DATA_FOLDER}/`))
+      return false;
+    const rel = clean.slice(DATA_FOLDER.length + 1);
+    return rel.includes("/") && !this.isCategoryListFile(clean.endsWith(".md") ? clean : `${clean}.md`);
   }
   /**
    * Open or focus a linked note file in a tab without displacing active view
@@ -9809,7 +9831,7 @@ var ConfirmDeleteLinkedNoteModal = class extends import_obsidian8.Modal {
 async function promptDeleteTaskWithLinkedNote(app, task, categoryFilepath, dataService, onDeleted) {
   const effectiveCategoryPath = categoryFilepath === STARRED_CATEGORY_PATH && task.sourceFilepath ? task.sourceFilepath : categoryFilepath;
   const taskNoteFile = LinkedNoteService.resolveTaskNoteFile(app, task, effectiveCategoryPath);
-  if (!taskNoteFile) {
+  if (!taskNoteFile || LinkedNoteService.isCategoryListFile(taskNoteFile)) {
     await dataService.deleteTask(categoryFilepath, task);
     EventBus.emit("task:deleted" /* TASK_DELETED */, { task, categoryFilepath });
     if (onDeleted)
@@ -9822,15 +9844,30 @@ async function promptDeleteTaskWithLinkedNote(app, task, categoryFilepath, dataS
         resolve(false);
         return;
       }
+      let trashedTaskNote = void 0;
       if (deleteNote) {
         try {
-          await app.fileManager.trashFile(taskNoteFile);
+          if (!LinkedNoteService.isCategoryListFile(taskNoteFile)) {
+            const originalPath = taskNoteFile.path;
+            const originalName = taskNoteFile.name;
+            let content = void 0;
+            try {
+              content = await app.vault.read(taskNoteFile);
+            } catch (e) {
+            }
+            trashedTaskNote = { path: originalPath, name: originalName, content };
+            await app.fileManager.trashFile(taskNoteFile);
+          }
         } catch (err) {
           console.error("Failed to trash task note:", err);
         }
       }
       await dataService.deleteTask(categoryFilepath, task);
-      EventBus.emit("task:deleted" /* TASK_DELETED */, { task, categoryFilepath });
+      EventBus.emit("task:deleted" /* TASK_DELETED */, {
+        task,
+        categoryFilepath,
+        trashedTaskNote
+      });
       if (onDeleted)
         await onDeleted();
       resolve(true);
@@ -13191,6 +13228,36 @@ var BackupService = class {
     }
     new import_obsidian13.Notice(t("backup_dir", this.BACKUP_FOLDER));
   }
+  static async collectFilesRecursively(app, folder) {
+    const result = [];
+    try {
+      if (!await app.vault.adapter.exists(folder))
+        return result;
+      const listing = await app.vault.adapter.list(folder);
+      for (const filePath of listing.files) {
+        const normPath = (0, import_obsidian13.normalizePath)(filePath);
+        const fname = normPath.split("/").pop() || "";
+        if (fname === "debug.log" || normPath.includes("/Backups/") || normPath.includes("/.backups/")) {
+          continue;
+        }
+        if (fname.endsWith(".md") || fname.endsWith(".json")) {
+          result.push(normPath);
+        }
+      }
+      for (const subFolder of listing.folders) {
+        const normFolder = (0, import_obsidian13.normalizePath)(subFolder);
+        const folderName = normFolder.split("/").pop() || "";
+        if (folderName === "Backups" || folderName === ".backups" || normFolder.includes("/Backups") || normFolder.includes("/.backups")) {
+          continue;
+        }
+        const subFiles = await this.collectFilesRecursively(app, normFolder);
+        result.push(...subFiles);
+      }
+    } catch (e) {
+      console.warn(`[BackupService] Scan ${folder} failed:`, e);
+    }
+    return result;
+  }
   static async createBackup(app, plugin, isDaily = false) {
     await this.ensureBackupFolder(app);
     const now2 = /* @__PURE__ */ new Date();
@@ -13204,21 +13271,20 @@ var BackupService = class {
     let totalTaskCount = 0;
     let listCount = 0;
     try {
-      const listing = await app.vault.adapter.list(DATA_FOLDER);
-      for (const filePath of listing.files) {
-        const normPath = (0, import_obsidian13.normalizePath)(filePath);
+      const allFiles = await this.collectFilesRecursively(app, DATA_FOLDER);
+      for (const normPath of allFiles) {
         const fname = normPath.split("/").pop() || "";
-        if (fname === "debug.log" || normPath.includes("/Backups/") || normPath.includes("/.backups/")) {
-          continue;
-        }
         if (fname.endsWith(".md") || fname.endsWith(".json")) {
           const content = await app.vault.adapter.read(normPath);
           filesToBackup[normPath] = content;
           if (fname.endsWith(".md")) {
-            listCount++;
-            const matches = content.match(/^[ \t]*- \[[ xX]\]/gm);
-            if (matches) {
-              totalTaskCount += matches.length;
+            const rel = normPath.slice(DATA_FOLDER.length + 1);
+            if (!rel.includes("/")) {
+              listCount++;
+              const matches = content.match(/^[ \t]*- \[[ xX]\]/gm);
+              if (matches) {
+                totalTaskCount += matches.length;
+              }
             }
           }
         }
@@ -33528,13 +33594,16 @@ function instance7($$self, $$props, $$invalidate) {
     if (task && (task.task_note || task.id) && (plugin == null ? void 0 : plugin.app)) {
       const effectiveCategory = categoryFilepath === STARRED_CATEGORY_PATH && task.sourceFilepath ? task.sourceFilepath : categoryFilepath;
       const resolved = LinkedNoteService.resolveTaskNoteFile(plugin.app, task, effectiveCategory);
-      if (resolved) {
+      if (resolved && !LinkedNoteService.isCategoryListFile(resolved)) {
         const currentClean = resolved.path.replace(/\.md$/, "");
         const expected = `[[${currentClean}]]`;
         if (task.task_note !== expected) {
           $$invalidate(2, task.task_note = expected, task);
           void dataService.updateTask(categoryFilepath, task);
         }
+      } else if (task.task_note && (LinkedNoteService.isCategoryListFile(task.task_note) || !LinkedNoteService.isHardBoundNote(task.task_note))) {
+        delete task.task_note;
+        void dataService.updateTask(categoryFilepath, task);
       }
     }
   }
@@ -33671,10 +33740,10 @@ function instance7($$self, $$props, $$invalidate) {
     if (!t2)
       return [];
     if (t2.note_links && Array.isArray(t2.note_links) && t2.note_links.length > 0) {
-      return [...t2.note_links];
+      return t2.note_links.filter((nl) => !LinkedNoteService.isCategoryListFile(nl));
     }
     if (t2.note_link && typeof t2.note_link === "string" && t2.note_link.trim()) {
-      if (!LinkedNoteService.isHardBoundNote(t2.note_link)) {
+      if (!LinkedNoteService.isHardBoundNote(t2.note_link) && !LinkedNoteService.isCategoryListFile(t2.note_link)) {
         return [t2.note_link.trim()];
       }
     }
@@ -34244,13 +34313,13 @@ function instance7($$self, $$props, $$invalidate) {
       delete task.whys;
       delete task.why;
     }
-    const cleanNoteLinks = metaNoteLinks.map((l) => l.trim()).filter(Boolean).map((raw) => {
+    const cleanNoteLinks = metaNoteLinks.map((l) => l.trim()).filter(Boolean).filter((raw) => !LinkedNoteService.isCategoryListFile(raw)).map((raw) => {
       const unbracketed = raw.replace(/^\[\[/, "").replace(/\]\]$/, "").trim();
       const parts = unbracketed.split("|");
       const target = parts[0].trim();
       const alias = parts.length > 1 ? parts.slice(1).join("|").trim() : "";
       const resolvedFile = LinkedNoteService.resolveLinkedNoteFile(plugin.app, target, categoryFilepath);
-      if (resolvedFile) {
+      if (resolvedFile && !LinkedNoteService.isCategoryListFile(resolvedFile)) {
         const cleanPath = resolvedFile.path.replace(/\.md$/, "");
         return alias ? `[[${cleanPath}|${alias}]]` : `[[${cleanPath}]]`;
       }
@@ -34459,7 +34528,18 @@ function instance7($$self, $$props, $$invalidate) {
     const path = categoryFilepath;
     const effectiveCategory = path === STARRED_CATEGORY_PATH && toDelete.sourceFilepath ? toDelete.sourceFilepath : path;
     const taskNoteFile = LinkedNoteService.resolveTaskNoteFile(plugin.app, toDelete, effectiveCategory);
-    if (taskNoteFile) {
+    let trashedTaskNote = void 0;
+    if (taskNoteFile && !LinkedNoteService.isCategoryListFile(taskNoteFile)) {
+      let content = void 0;
+      try {
+        content = await plugin.app.vault.read(taskNoteFile);
+      } catch (e) {
+      }
+      trashedTaskNote = {
+        path: taskNoteFile.path,
+        name: taskNoteFile.name,
+        content
+      };
       await trashSourceFile(taskNoteFile);
     }
     if (toDelete.svgs) {
@@ -34471,7 +34551,11 @@ function instance7($$self, $$props, $$invalidate) {
       }
     }
     await dataService.deleteTask(path, toDelete);
-    EventBus.emit("task:deleted" /* TASK_DELETED */, { task: toDelete, categoryFilepath: path });
+    EventBus.emit("task:deleted" /* TASK_DELETED */, {
+      task: toDelete,
+      categoryFilepath: path,
+      trashedTaskNote
+    });
     $$invalidate(2, task = null);
     $$invalidate(4, categoryFilepath = "");
     new import_obsidian18.Notice("\u5DF2\u76F4\u63A5\u5220\u9664\u4EFB\u52A1\u53CA\u6E90\u6587\u4EF6\u81F3\u5E9F\u7EB8\u7BD3");
@@ -34649,7 +34733,7 @@ function instance7($$self, $$props, $$invalidate) {
     if ($$self.$$.dirty[0] & /*task*/
     4) {
       $:
-        $$invalidate(3, hasTaskNote = !!(task && (task.task_note || task.note_link && LinkedNoteService.isHardBoundNote(task.note_link))));
+        $$invalidate(3, hasTaskNote = !!(task && (task.task_note && LinkedNoteService.isHardBoundNote(task.task_note) || task.note_link && LinkedNoteService.isHardBoundNote(task.note_link))));
     }
     if ($$self.$$.dirty[0] & /*hasTaskNote, task*/
     12) {
@@ -35191,7 +35275,7 @@ function instance8($$self, $$props, $$invalidate) {
     };
     $$invalidate(0, undoToasts = [...undoToasts, toast]);
   }
-  function pushTaskUndoToast(categoryFilepath, tasks2, isBatch = false) {
+  function pushTaskUndoToast(categoryFilepath, tasks2, isBatch = false, trashedTaskNotes) {
     if (!tasks2 || tasks2.length === 0)
       return;
     const count = tasks2.length;
@@ -35200,6 +35284,7 @@ function instance8($$self, $$props, $$invalidate) {
       type: "task",
       categoryFilepath,
       tasks: tasks2,
+      trashedTaskNotes,
       message,
       isBatch: isBatch || count > 1
     });
@@ -35225,6 +35310,7 @@ function instance8($$self, $$props, $$invalidate) {
     });
   }
   async function executeUndo(toast) {
+    var _a, _b, _c, _d;
     dismissToast(toast.id);
     if (toast.type === "category" && toast.categoryPayload) {
       const { categoryName, categoryFilepath, fileContent, groupName, index } = toast.categoryPayload;
@@ -35271,14 +35357,52 @@ function instance8($$self, $$props, $$invalidate) {
         const currentTasks = await dataService.getTasks(toast.categoryFilepath);
         const existingIds = new Set(currentTasks.map((t2) => t2.id));
         const newRestores = tasksToRestore.filter((t2) => !existingIds.has(t2.id));
-        if (newRestores.length === 0)
-          return;
-        const mergedTasks = [...newRestores, ...currentTasks];
-        await dataService.saveTasks(toast.categoryFilepath, mergedTasks);
-        EventBus.emit("task:updated" /* TASK_UPDATED */, {
-          categoryFilepath: toast.categoryFilepath,
-          isExternal: true
-        });
+        if (newRestores.length > 0) {
+          const mergedTasks = [...newRestores, ...currentTasks];
+          await dataService.saveTasks(toast.categoryFilepath, mergedTasks);
+          EventBus.emit("task:updated" /* TASK_UPDATED */, {
+            categoryFilepath: toast.categoryFilepath,
+            isExternal: true
+          });
+        }
+        if (toast.trashedTaskNotes && toast.trashedTaskNotes.length > 0) {
+          const adapter = plugin.app.vault.adapter;
+          for (const noteInfo of toast.trashedTaskNotes) {
+            try {
+              const trashPath = ".trash/" + noteInfo.name;
+              let restored = false;
+              if (await adapter.exists(trashPath)) {
+                const parts = noteInfo.path.replace(/\\/g, "/").split("/");
+                parts.pop();
+                const parentDir = parts.join("/");
+                if (parentDir && !await adapter.exists(parentDir)) {
+                  await adapter.mkdir(parentDir);
+                }
+                await adapter.rename(trashPath, noteInfo.path);
+                restored = true;
+              }
+              if (!restored && !await adapter.exists(noteInfo.path) && noteInfo.content !== void 0) {
+                const parts = noteInfo.path.replace(/\\/g, "/").split("/");
+                parts.pop();
+                const parentDir = parts.join("/");
+                if (parentDir && !await adapter.exists(parentDir)) {
+                  await adapter.mkdir(parentDir);
+                }
+                await plugin.app.vault.create(noteInfo.path, noteInfo.content);
+                restored = true;
+              }
+              const fileUndoPlugin = ((_b = (_a = plugin.app.plugins) == null ? void 0 : _a.plugins) == null ? void 0 : _b["file-undo"]) || ((_d = (_c = plugin.app.plugins) == null ? void 0 : _c.plugins) == null ? void 0 : _d["a1-file-undo"]);
+              if (fileUndoPlugin && Array.isArray(fileUndoPlugin.undoStack)) {
+                const idx = fileUndoPlugin.undoStack.findIndex((item) => item.type === "delete" && (item.path === noteInfo.path || item.name === noteInfo.name));
+                if (idx !== -1) {
+                  fileUndoPlugin.undoStack.splice(idx, 1);
+                }
+              }
+            } catch (noteErr) {
+              console.error("Failed to restore trashed task note:", noteErr);
+            }
+          }
+        }
         new import_obsidian19.Notice(newRestores.length === 1 ? `Restored: "${formatToastTitle(newRestores[0].title)}"` : `Restored ${newRestores.length} tasks`);
       } catch (err) {
         console.error("Failed to restore task(s):", err);
@@ -35289,10 +35413,11 @@ function instance8($$self, $$props, $$invalidate) {
   function handleTaskDeleted(payload) {
     if (!payload || !payload.categoryFilepath)
       return;
+    const trashedTaskNotes = payload.trashedTaskNotes || (payload.trashedTaskNote ? [payload.trashedTaskNote] : void 0);
     if (payload.tasks && Array.isArray(payload.tasks)) {
-      pushTaskUndoToast(payload.categoryFilepath, payload.tasks, true);
+      pushTaskUndoToast(payload.categoryFilepath, payload.tasks, true, trashedTaskNotes);
     } else if (payload.task && !payload.isBatch) {
-      pushTaskUndoToast(payload.categoryFilepath, [payload.task], false);
+      pushTaskUndoToast(payload.categoryFilepath, [payload.task], false, trashedTaskNotes);
     }
   }
   function handleStepDeleted(payload) {

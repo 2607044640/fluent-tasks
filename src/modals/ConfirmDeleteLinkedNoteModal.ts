@@ -108,8 +108,8 @@ export async function promptDeleteTaskWithLinkedNote(
         : categoryFilepath;
     const taskNoteFile = LinkedNoteService.resolveTaskNoteFile(app, task, effectiveCategoryPath);
 
-    if (!taskNoteFile) {
-        // No dedicated physical task note file exists on disk, delete task directly without prompt
+    if (!taskNoteFile || LinkedNoteService.isCategoryListFile(taskNoteFile)) {
+        // No dedicated physical task note file exists on disk (or safety check), delete task directly without prompt
         await dataService.deleteTask(categoryFilepath, task);
         EventBus.emit(EventName.TASK_DELETED, { task, categoryFilepath });
         if (onDeleted) await onDeleted();
@@ -124,16 +124,31 @@ export async function promptDeleteTaskWithLinkedNote(
                 return;
             }
 
+            let trashedTaskNote: { path: string; name: string; content?: string } | undefined = undefined;
+
             if (deleteNote) {
                 try {
-                    await app.fileManager.trashFile(taskNoteFile);
+                    if (!LinkedNoteService.isCategoryListFile(taskNoteFile)) {
+                        const originalPath = taskNoteFile.path;
+                        const originalName = taskNoteFile.name;
+                        let content: string | undefined = undefined;
+                        try {
+                            content = await app.vault.read(taskNoteFile);
+                        } catch { /* ignore */ }
+                        trashedTaskNote = { path: originalPath, name: originalName, content };
+                        await app.fileManager.trashFile(taskNoteFile);
+                    }
                 } catch (err) {
                     console.error("Failed to trash task note:", err);
                 }
             }
 
             await dataService.deleteTask(categoryFilepath, task);
-            EventBus.emit(EventName.TASK_DELETED, { task, categoryFilepath });
+            EventBus.emit(EventName.TASK_DELETED, { 
+                task, 
+                categoryFilepath,
+                trashedTaskNote 
+            });
             if (onDeleted) await onDeleted();
             resolve(true);
         });

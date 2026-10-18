@@ -332,13 +332,16 @@
                 ? task.sourceFilepath
                 : categoryFilepath;
             const resolved = LinkedNoteService.resolveTaskNoteFile(plugin.app, task, effectiveCategory);
-            if (resolved) {
+            if (resolved && !LinkedNoteService.isCategoryListFile(resolved)) {
                 const currentClean = resolved.path.replace(/\.md$/, "");
                 const expected = `[[${currentClean}]]`;
                 if (task.task_note !== expected) {
                     task.task_note = expected;
                     void dataService.updateTask(categoryFilepath, task);
                 }
+            } else if (task.task_note && (LinkedNoteService.isCategoryListFile(task.task_note) || !LinkedNoteService.isHardBoundNote(task.task_note))) {
+                delete task.task_note;
+                void dataService.updateTask(categoryFilepath, task);
             }
         }
     }
@@ -490,7 +493,7 @@
     // =============================================
     // Task Note Actions (Dedicated Note for this Task)
     // =============================================
-    $: hasTaskNote = !!(task && (task.task_note || (task.note_link && LinkedNoteService.isHardBoundNote(task.note_link))));
+    $: hasTaskNote = !!(task && ((task.task_note && LinkedNoteService.isHardBoundNote(task.task_note)) || (task.note_link && LinkedNoteService.isHardBoundNote(task.note_link))));
     $: taskNoteTooltip = hasTaskNote
         ? t("task_note_tooltip_exists", task?.task_note || task?.note_link || "")
         : t("task_note_tooltip_create");
@@ -498,10 +501,10 @@
     function getTaskNoteLinks(t: TaskItem | null): string[] {
         if (!t) return [];
         if (t.note_links && Array.isArray(t.note_links) && t.note_links.length > 0) {
-            return [...t.note_links];
+            return t.note_links.filter(nl => !LinkedNoteService.isCategoryListFile(nl));
         }
         if (t.note_link && typeof t.note_link === "string" && t.note_link.trim()) {
-            if (!LinkedNoteService.isHardBoundNote(t.note_link)) {
+            if (!LinkedNoteService.isHardBoundNote(t.note_link) && !LinkedNoteService.isCategoryListFile(t.note_link)) {
                 return [t.note_link.trim()];
             }
         }
@@ -1144,19 +1147,23 @@
         }
 
         // 2. Save Note Links
-        const cleanNoteLinks = metaNoteLinks.map(l => l.trim()).filter(Boolean).map(raw => {
-            const unbracketed = raw.replace(/^\[\[/, "").replace(/\]\]$/, "").trim();
-            const parts = unbracketed.split("|");
-            const target = parts[0].trim();
-            const alias = parts.length > 1 ? parts.slice(1).join("|").trim() : "";
+        const cleanNoteLinks = metaNoteLinks
+            .map(l => l.trim())
+            .filter(Boolean)
+            .filter(raw => !LinkedNoteService.isCategoryListFile(raw))
+            .map(raw => {
+                const unbracketed = raw.replace(/^\[\[/, "").replace(/\]\]$/, "").trim();
+                const parts = unbracketed.split("|");
+                const target = parts[0].trim();
+                const alias = parts.length > 1 ? parts.slice(1).join("|").trim() : "";
 
-            const resolvedFile = LinkedNoteService.resolveLinkedNoteFile(plugin.app, target, categoryFilepath);
-            if (resolvedFile) {
-                const cleanPath = resolvedFile.path.replace(/\.md$/, "");
-                return alias ? `[[${cleanPath}|${alias}]]` : `[[${cleanPath}]]`;
-            }
-            return LinkedNoteService.normalizeNoteLinkInput(raw);
-        });
+                const resolvedFile = LinkedNoteService.resolveLinkedNoteFile(plugin.app, target, categoryFilepath);
+                if (resolvedFile && !LinkedNoteService.isCategoryListFile(resolvedFile)) {
+                    const cleanPath = resolvedFile.path.replace(/\.md$/, "");
+                    return alias ? `[[${cleanPath}|${alias}]]` : `[[${cleanPath}]]`;
+                }
+                return LinkedNoteService.normalizeNoteLinkInput(raw);
+            });
         if (cleanNoteLinks.length > 0) {
             task.note_links = cleanNoteLinks;
             task.note_link = cleanNoteLinks[0];
@@ -1368,7 +1375,13 @@
             ? toDelete.sourceFilepath
             : path;
         const taskNoteFile = LinkedNoteService.resolveTaskNoteFile(plugin.app, toDelete, effectiveCategory);
-        if (taskNoteFile) {
+        let trashedTaskNote: { path: string; name: string; content?: string } | undefined = undefined;
+        if (taskNoteFile && !LinkedNoteService.isCategoryListFile(taskNoteFile)) {
+            let content: string | undefined = undefined;
+            try {
+                content = await plugin.app.vault.read(taskNoteFile);
+            } catch { /* ignore */ }
+            trashedTaskNote = { path: taskNoteFile.path, name: taskNoteFile.name, content };
             await trashSourceFile(taskNoteFile);
         }
         if (toDelete.svgs) {
@@ -1380,7 +1393,11 @@
             }
         }
         await dataService.deleteTask(path, toDelete);
-        EventBus.emit(EventName.TASK_DELETED, { task: toDelete, categoryFilepath: path });
+        EventBus.emit(EventName.TASK_DELETED, { 
+            task: toDelete, 
+            categoryFilepath: path,
+            trashedTaskNote 
+        });
         task = null;
         categoryFilepath = "";
         new Notice("已直接删除任务及源文件至废纸篓");
