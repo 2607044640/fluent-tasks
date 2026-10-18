@@ -34921,9 +34921,9 @@ function create_else_block_93(ctx) {
   var _a;
   let div;
   let span;
+  let t0;
   let t1;
   let t2;
-  let t3;
   let mounted;
   let dispose;
   function select_block_type_3(ctx2, dirty) {
@@ -35006,13 +35006,13 @@ function create_else_block_93(ctx) {
       var _a2, _b;
       div = element("div");
       span = element("span");
-      span.textContent = "\u{1F4C1}";
-      t1 = space();
+      span.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path></svg>`;
+      t0 = space();
       if_block0.c();
-      t2 = space();
+      t1 = space();
       if (if_block1)
         if_block1.c();
-      t3 = space();
+      t2 = space();
       attr(span, "class", "quick-modal-list-icon");
       attr(div, "class", "quick-modal-list-item");
       attr(div, "role", "button");
@@ -35063,12 +35063,12 @@ function create_else_block_93(ctx) {
     m(target, anchor) {
       insert(target, div, anchor);
       append(div, span);
-      append(div, t1);
+      append(div, t0);
       if_block0.m(div, null);
-      append(div, t2);
+      append(div, t1);
       if (if_block1)
         if_block1.m(div, null);
-      append(div, t3);
+      append(div, t2);
       if (!mounted) {
         dispose = [
           listen(div, "dragstart", dragstart_handler_2),
@@ -35091,7 +35091,7 @@ function create_else_block_93(ctx) {
         if_block0 = current_block_type(ctx);
         if (if_block0) {
           if_block0.c();
-          if_block0.m(div, t2);
+          if_block0.m(div, t1);
         }
       }
       if (
@@ -35106,7 +35106,7 @@ function create_else_block_93(ctx) {
         } else {
           if_block1 = create_if_block_324(ctx);
           if_block1.c();
-          if_block1.m(div, t3);
+          if_block1.m(div, t2);
         }
       } else if (if_block1) {
         if_block1.d(1);
@@ -35823,9 +35823,9 @@ function create_each_block_53(key_1, ctx) {
   var _a;
   let div;
   let span;
+  let t0;
   let t1;
   let t2;
-  let t3;
   let mounted;
   let dispose;
   function select_block_type_2(ctx2, dirty) {
@@ -35910,13 +35910,13 @@ function create_each_block_53(key_1, ctx) {
       var _a2, _b;
       div = element("div");
       span = element("span");
-      span.textContent = "\u{1F4C1}";
-      t1 = space();
+      span.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path></svg>`;
+      t0 = space();
       if_block0.c();
-      t2 = space();
+      t1 = space();
       if (if_block1)
         if_block1.c();
-      t3 = space();
+      t2 = space();
       attr(span, "class", "quick-modal-list-icon");
       attr(div, "class", "quick-modal-list-item is-nested");
       attr(div, "role", "button");
@@ -35968,12 +35968,12 @@ function create_each_block_53(key_1, ctx) {
     m(target, anchor) {
       insert(target, div, anchor);
       append(div, span);
-      append(div, t1);
+      append(div, t0);
       if_block0.m(div, null);
-      append(div, t2);
+      append(div, t1);
       if (if_block1)
         if_block1.m(div, null);
-      append(div, t3);
+      append(div, t2);
       if (!mounted) {
         dispose = [
           listen(div, "dragstart", dragstart_handler_1),
@@ -35996,7 +35996,7 @@ function create_each_block_53(key_1, ctx) {
         if_block0 = current_block_type(ctx);
         if (if_block0) {
           if_block0.c();
-          if_block0.m(div, t2);
+          if_block0.m(div, t1);
         }
       }
       if (
@@ -36011,7 +36011,7 @@ function create_each_block_53(key_1, ctx) {
         } else {
           if_block1 = create_if_block_293(ctx);
           if_block1.c();
-          if_block1.m(div, t3);
+          if_block1.m(div, t2);
         }
       } else if (if_block1) {
         if_block1.d(1);
@@ -42652,11 +42652,11 @@ function create_else_block_104(ctx) {
   var _a, _b, _c;
   let div1;
   let span;
+  let t0;
   let t1;
-  let t2;
   let div0;
+  let t2;
   let t3;
-  let t4;
   let div1_data_filepath_value;
   let div1_data_item_id_value;
   let mounted;
@@ -42768,17 +42768,17 @@ function create_else_block_104(ctx) {
       var _a2, _b2, _c2;
       div1 = element("div");
       span = element("span");
-      span.textContent = "\u{1F4C1}";
-      t1 = space();
+      span.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path></svg>`;
+      t0 = space();
       if_block0.c();
-      t2 = space();
+      t1 = space();
       div0 = element("div");
       if (if_block1)
         if_block1.c();
-      t3 = space();
+      t2 = space();
       if (if_block2)
         if_block2.c();
-      t4 = space();
+      t3 = space();
       attr(span, "class", "quick-modal-list-icon");
       attr(div0, "class", "quick-modal-item-meta-right");
       attr(div1, "class", "quick-modal-list-item");
@@ -42833,16 +42833,16 @@ function create_else_block_104(ctx) {
     m(target, anchor) {
       insert(target, div1, anchor);
       append(div1, span);
-      append(div1, t1);
+      append(div1, t0);
       if_block0.m(div1, null);
-      append(div1, t2);
+      append(div1, t1);
       append(div1, div0);
       if (if_block1)
         if_block1.m(div0, null);
-      append(div0, t3);
+      append(div0, t2);
       if (if_block2)
         if_block2.m(div0, null);
-      append(div1, t4);
+      append(div1, t3);
       if (!mounted) {
         dispose = [
           listen(div1, "mouseenter", mouseenter_handler_6),
@@ -42873,7 +42873,7 @@ function create_else_block_104(ctx) {
         if_block0 = current_block_type(ctx);
         if (if_block0) {
           if_block0.c();
-          if_block0.m(div1, t2);
+          if_block0.m(div1, t1);
         }
       }
       if (
@@ -42888,7 +42888,7 @@ function create_else_block_104(ctx) {
         } else {
           if_block1 = create_if_block_234(ctx);
           if_block1.c();
-          if_block1.m(div0, t3);
+          if_block1.m(div0, t2);
         }
       } else if (if_block1) {
         if_block1.d(1);
@@ -43416,7 +43416,7 @@ function create_if_block_225(ctx) {
   return {
     c() {
       span = element("span");
-      span.textContent = "\u{1F3AF}";
+      span.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle><line x1="12" y1="2" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="22"></line><line x1="2" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="22" y2="12"></line></svg>`;
       attr(span, "class", "quick-modal-focus-tag");
       attr(span, "title", span_title_value = t("focus_tag_tooltip"));
     },
@@ -43770,7 +43770,7 @@ function create_if_block_184(ctx) {
   return {
     c() {
       span = element("span");
-      span.textContent = "\u{1F3AF}";
+      span.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle><line x1="12" y1="2" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="22"></line><line x1="2" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="22" y2="12"></line></svg>`;
       attr(span, "class", "quick-modal-focus-tag");
       attr(span, "title", span_title_value = t("focus_tag_tooltip"));
     },
@@ -43788,11 +43788,11 @@ function create_each_block_54(key_1, ctx) {
   var _a, _b, _c;
   let div1;
   let span;
+  let t0;
   let t1;
-  let t2;
   let div0;
+  let t2;
   let t3;
-  let t4;
   let div1_data_filepath_value;
   let div1_data_item_id_value;
   let mounted;
@@ -43908,17 +43908,17 @@ function create_each_block_54(key_1, ctx) {
       var _a2, _b2, _c2;
       div1 = element("div");
       span = element("span");
-      span.textContent = "\u{1F4C1}";
-      t1 = space();
+      span.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path></svg>`;
+      t0 = space();
       if_block0.c();
-      t2 = space();
+      t1 = space();
       div0 = element("div");
       if (if_block1)
         if_block1.c();
-      t3 = space();
+      t2 = space();
       if (if_block2)
         if_block2.c();
-      t4 = space();
+      t3 = space();
       attr(span, "class", "quick-modal-list-icon");
       attr(div0, "class", "quick-modal-item-meta-right");
       attr(div1, "class", "quick-modal-list-item is-nested");
@@ -43974,16 +43974,16 @@ function create_each_block_54(key_1, ctx) {
     m(target, anchor) {
       insert(target, div1, anchor);
       append(div1, span);
-      append(div1, t1);
+      append(div1, t0);
       if_block0.m(div1, null);
-      append(div1, t2);
+      append(div1, t1);
       append(div1, div0);
       if (if_block1)
         if_block1.m(div0, null);
-      append(div0, t3);
+      append(div0, t2);
       if (if_block2)
         if_block2.m(div0, null);
-      append(div1, t4);
+      append(div1, t3);
       if (!mounted) {
         dispose = [
           listen(div1, "mouseenter", mouseenter_handler_5),
@@ -44014,7 +44014,7 @@ function create_each_block_54(key_1, ctx) {
         if_block0 = current_block_type(ctx);
         if (if_block0) {
           if_block0.c();
-          if_block0.m(div1, t2);
+          if_block0.m(div1, t1);
         }
       }
       if (
@@ -44029,7 +44029,7 @@ function create_each_block_54(key_1, ctx) {
         } else {
           if_block1 = create_if_block_194(ctx);
           if_block1.c();
-          if_block1.m(div0, t3);
+          if_block1.m(div0, t2);
         }
       } else if (if_block1) {
         if_block1.d(1);
@@ -44615,14 +44615,14 @@ function create_if_block_413(ctx) {
   let div3;
   let div1;
   let div0;
-  let t3;
+  let t2;
   let span2;
-  let t4_value = (
+  let t3_value = (
     /*rootCategories*/
     ctx[39].length + ""
   );
+  let t3;
   let t4;
-  let t5;
   let div2;
   let each_blocks = [];
   let each_1_lookup = new Map_13();
@@ -44646,11 +44646,11 @@ function create_if_block_413(ctx) {
       div3 = element("div");
       div1 = element("div");
       div0 = element("div");
-      div0.innerHTML = `<span class="quick-grid-card-icon">\u{1F4C1}</span> <span class="quick-grid-card-title">Lists</span>`;
-      t3 = space();
+      div0.innerHTML = `<span class="quick-grid-card-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path></svg></span> <span class="quick-grid-card-title">Lists</span>`;
+      t2 = space();
       span2 = element("span");
-      t4 = text(t4_value);
-      t5 = space();
+      t3 = text(t3_value);
+      t4 = space();
       div2 = element("div");
       for (let i = 0; i < each_blocks.length; i += 1) {
         each_blocks[i].c();
@@ -44678,10 +44678,10 @@ function create_if_block_413(ctx) {
       insert(target, div3, anchor);
       append(div3, div1);
       append(div1, div0);
-      append(div1, t3);
+      append(div1, t2);
       append(div1, span2);
-      append(span2, t4);
-      append(div3, t5);
+      append(span2, t3);
+      append(div3, t4);
       append(div3, div2);
       for (let i = 0; i < each_blocks.length; i += 1) {
         if (each_blocks[i]) {
@@ -44728,9 +44728,9 @@ function create_if_block_413(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[1] & /*rootCategories*/
-      256 && t4_value !== (t4_value = /*rootCategories*/
+      256 && t3_value !== (t3_value = /*rootCategories*/
       ctx2[39].length + ""))
-        set_data(t4, t4_value);
+        set_data(t3, t3_value);
       if (dirty[0] & /*flatCategories, focusedIndex, plugin, draggedListId, dragOverListId, taskCounts, editingName, renameInputEl, editingItemId*/
       2080383553 | dirty[1] & /*rootCategories, dragListPosition, handleListDragStart, handleListDragEnd, handleListDragOver, handleListDragLeave, handleCategoryClick*/
       251920641 | dirty[2] & /*setHoveredTarget, clearHoveredTarget, handleListDrop, showItemContextMenu, commitRename*/
@@ -45211,7 +45211,7 @@ function create_if_block_115(ctx) {
   return {
     c() {
       span = element("span");
-      span.textContent = "\u{1F3AF}";
+      span.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle><line x1="12" y1="2" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="22"></line><line x1="2" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="22" y2="12"></line></svg>`;
       attr(span, "class", "quick-modal-focus-tag");
       attr(span, "title", span_title_value = t("focus_tag_tooltip"));
     },
@@ -45229,10 +45229,10 @@ function create_each_block_34(key_1, ctx) {
   var _a, _b, _c;
   let div1;
   let span;
+  let t0;
   let t1;
-  let t2;
   let div0;
-  let t3;
+  let t2;
   let div1_data_filepath_value;
   let div1_data_item_id_value;
   let mounted;
@@ -45348,14 +45348,14 @@ function create_each_block_34(key_1, ctx) {
       var _a2, _b2, _c2;
       div1 = element("div");
       span = element("span");
-      span.textContent = "\u{1F4C1}";
-      t1 = space();
+      span.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path></svg>`;
+      t0 = space();
       if_block0.c();
-      t2 = space();
+      t1 = space();
       div0 = element("div");
       if (if_block1)
         if_block1.c();
-      t3 = space();
+      t2 = space();
       if (if_block2)
         if_block2.c();
       attr(span, "class", "quick-modal-list-icon");
@@ -45413,13 +45413,13 @@ function create_each_block_34(key_1, ctx) {
     m(target, anchor) {
       insert(target, div1, anchor);
       append(div1, span);
-      append(div1, t1);
+      append(div1, t0);
       if_block0.m(div1, null);
-      append(div1, t2);
+      append(div1, t1);
       append(div1, div0);
       if (if_block1)
         if_block1.m(div0, null);
-      append(div0, t3);
+      append(div0, t2);
       if (if_block2)
         if_block2.m(div0, null);
       if (!mounted) {
@@ -45452,7 +45452,7 @@ function create_each_block_34(key_1, ctx) {
         if_block0 = current_block_type(ctx);
         if (if_block0) {
           if_block0.c();
-          if_block0.m(div1, t2);
+          if_block0.m(div1, t1);
         }
       }
       if (
@@ -45467,7 +45467,7 @@ function create_each_block_34(key_1, ctx) {
         } else {
           if_block1 = create_if_block_125(ctx);
           if_block1.c();
-          if_block1.m(div0, t3);
+          if_block1.m(div0, t2);
         }
       } else if (if_block1) {
         if_block1.d(1);
@@ -45715,7 +45715,7 @@ function create_if_block_513(ctx) {
   return {
     c() {
       span = element("span");
-      span.textContent = "\u{1F3AF}";
+      span.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle><line x1="12" y1="2" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="22"></line><line x1="2" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="22" y2="12"></line></svg>`;
       attr(span, "class", "quick-modal-focus-tag");
       attr(span, "title", span_title_value = t("focus_tag_tooltip"));
     },
@@ -45733,10 +45733,10 @@ function create_each_block_25(key_1, ctx) {
   var _a, _b, _c;
   let div1;
   let span;
+  let t0;
   let t1;
-  let t2;
   let div0;
-  let t3;
+  let t2;
   let div1_data_filepath_value;
   let div1_data_item_id_value;
   let mounted;
@@ -45850,14 +45850,14 @@ function create_each_block_25(key_1, ctx) {
       var _a2, _b2, _c2;
       div1 = element("div");
       span = element("span");
-      span.textContent = "\u{1F4C1}";
-      t1 = space();
+      span.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path></svg>`;
+      t0 = space();
       if_block0.c();
-      t2 = space();
+      t1 = space();
       div0 = element("div");
       if (if_block1)
         if_block1.c();
-      t3 = space();
+      t2 = space();
       if (if_block2)
         if_block2.c();
       attr(span, "class", "quick-modal-list-icon");
@@ -45915,13 +45915,13 @@ function create_each_block_25(key_1, ctx) {
     m(target, anchor) {
       insert(target, div1, anchor);
       append(div1, span);
-      append(div1, t1);
+      append(div1, t0);
       if_block0.m(div1, null);
-      append(div1, t2);
+      append(div1, t1);
       append(div1, div0);
       if (if_block1)
         if_block1.m(div0, null);
-      append(div0, t3);
+      append(div0, t2);
       if (if_block2)
         if_block2.m(div0, null);
       if (!mounted) {
@@ -45954,7 +45954,7 @@ function create_each_block_25(key_1, ctx) {
         if_block0 = current_block_type(ctx);
         if (if_block0) {
           if_block0.c();
-          if_block0.m(div1, t2);
+          if_block0.m(div1, t1);
         }
       }
       if (
@@ -45969,7 +45969,7 @@ function create_each_block_25(key_1, ctx) {
         } else {
           if_block1 = create_if_block_613(ctx);
           if_block1.c();
-          if_block1.m(div0, t3);
+          if_block1.m(div0, t2);
         }
       } else if (if_block1) {
         if_block1.d(1);

@@ -1959,7 +1959,11 @@
                                 >
                                     <div class="quick-grid-card-header">
                                         <div class="quick-grid-card-title-wrap">
-                                            <span class="quick-grid-card-icon">📁</span>
+                                            <span class="quick-grid-card-icon">
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
+                                                </svg>
+                                            </span>
                                             <span class="quick-grid-card-title">Lists</span>
                                         </div>
                                         <span class="quick-grid-card-count">{rootCategories.length}</span>
@@ -1994,7 +1998,11 @@
                                                 on:click={() => handleCategoryClick(cat)}
                                                 on:contextmenu={(e) => showItemContextMenu(e, { id: cat.id || "", name: cat.name, type: "category", filepath: cat.filepath })}
                                             >
-                                                <span class="quick-modal-list-icon">📁</span>
+                                                <span class="quick-modal-list-icon">
+                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
+                                                    </svg>
+                                                </span>
                                                 
                                                 {#if editingItemId === cat.id || (cat.filepath && editingItemId === cat.filepath)}
                                                     <input 
@@ -2014,7 +2022,16 @@
                                                         <span class="quick-modal-badge">{taskCounts[cat.filepath]}</span>
                                                     {/if}
                                                     {#if plugin?.settings?.defaultQuickListFocusFilepath === cat.filepath}
-                                                        <span class="quick-modal-focus-tag" title={t("focus_tag_tooltip")}>🎯</span>
+                                                        <span class="quick-modal-focus-tag" title={t("focus_tag_tooltip")}>
+                                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                                <circle cx="12" cy="12" r="10"></circle>
+                                                                <circle cx="12" cy="12" r="3"></circle>
+                                                                <line x1="12" y1="2" x2="12" y2="5"></line>
+                                                                <line x1="12" y1="19" x2="12" y2="22"></line>
+                                                                <line x1="2" y1="12" x2="5" y2="12"></line>
+                                                                <line x1="19" y1="12" x2="22" y2="12"></line>
+                                                            </svg>
+                                                        </span>
                                                     {/if}
                                                 </div>
                                             </div>
@@ -2108,7 +2125,11 @@
                                                         on:click={() => handleCategoryClick(child)}
                                                         on:contextmenu={(e) => showItemContextMenu(e, { id: child.id || "", name: child.name, type: "category", filepath: child.filepath })}
                                                     >
-                                                        <span class="quick-modal-list-icon">📁</span>
+                                                        <span class="quick-modal-list-icon">
+                                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                                <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
+                                                            </svg>
+                                                        </span>
                                                         
                                                         {#if editingItemId === child.id || (child.filepath && editingItemId === child.filepath)}
                                                             <input 
@@ -2128,7 +2149,16 @@
                                                                 <span class="quick-modal-badge">{taskCounts[child.filepath]}</span>
                                                             {/if}
                                                             {#if plugin?.settings?.defaultQuickListFocusFilepath === child.filepath}
-                                                                <span class="quick-modal-focus-tag" title={t("focus_tag_tooltip")}>🎯</span>
+                                                                <span class="quick-modal-focus-tag" title={t("focus_tag_tooltip")}>
+                                                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                                        <circle cx="12" cy="12" r="10"></circle>
+                                                                        <circle cx="12" cy="12" r="3"></circle>
+                                                                        <line x1="12" y1="2" x2="12" y2="5"></line>
+                                                                        <line x1="12" y1="19" x2="12" y2="22"></line>
+                                                                        <line x1="2" y1="12" x2="5" y2="12"></line>
+                                                                        <line x1="19" y1="12" x2="22" y2="12"></line>
+                                                                    </svg>
+                                                                </span>
                                                             {/if}
                                                         </div>
                                                     </div>
@@ -2250,7 +2280,11 @@
                                             on:click={() => handleCategoryClick(child)}
                                             on:contextmenu={(e) => showItemContextMenu(e, { id: child.id || "", name: child.name, type: "category", filepath: child.filepath })}
                                         >
-                                            <span class="quick-modal-list-icon">📁</span>
+                                            <span class="quick-modal-list-icon">
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
+                                                </svg>
+                                            </span>
                                             
                                             {#if editingItemId === child.id || (child.filepath && editingItemId === child.filepath)}
                                                 <input 
@@ -2270,7 +2304,16 @@
                                                     <span class="quick-modal-badge">{taskCounts[child.filepath]}</span>
                                                 {/if}
                                                 {#if plugin?.settings?.defaultQuickListFocusFilepath === child.filepath}
-                                                    <span class="quick-modal-focus-tag" title={t("focus_tag_tooltip")}>🎯</span>
+                                                    <span class="quick-modal-focus-tag" title={t("focus_tag_tooltip")}>
+                                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                            <circle cx="12" cy="12" r="10"></circle>
+                                                            <circle cx="12" cy="12" r="3"></circle>
+                                                            <line x1="12" y1="2" x2="12" y2="5"></line>
+                                                            <line x1="12" y1="19" x2="12" y2="22"></line>
+                                                            <line x1="2" y1="12" x2="5" y2="12"></line>
+                                                            <line x1="19" y1="12" x2="22" y2="12"></line>
+                                                        </svg>
+                                                    </span>
                                                 {/if}
                                             </div>
                                         </div>
@@ -2302,7 +2345,11 @@
                             on:click={() => handleCategoryClick(item)}
                             on:contextmenu={(e) => showItemContextMenu(e, { id: item.id || "", name: item.name, type: "category", filepath: item.filepath })}
                         >
-                            <span class="quick-modal-list-icon">📁</span>
+                            <span class="quick-modal-list-icon">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
+                                </svg>
+                            </span>
                             
                             {#if editingItemId === item.id || (item.filepath && editingItemId === item.filepath)}
                                 <input 
@@ -2322,7 +2369,16 @@
                                     <span class="quick-modal-badge">{taskCounts[item.filepath]}</span>
                                 {/if}
                                 {#if plugin?.settings?.defaultQuickListFocusFilepath === item.filepath}
-                                    <span class="quick-modal-focus-tag" title={t("focus_tag_tooltip")}>🎯</span>
+                                    <span class="quick-modal-focus-tag" title={t("focus_tag_tooltip")}>
+                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                            <line x1="12" y1="2" x2="12" y2="5"></line>
+                                            <line x1="12" y1="19" x2="12" y2="22"></line>
+                                            <line x1="2" y1="12" x2="5" y2="12"></line>
+                                            <line x1="19" y1="12" x2="22" y2="12"></line>
+                                        </svg>
+                                    </span>
                                 {/if}
                             </div>
                         </div>
