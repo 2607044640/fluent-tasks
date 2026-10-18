@@ -1285,14 +1285,58 @@
         }
     }
 
-    function handleKeydown(e: KeyboardEvent) {
+    async function handleKeydown(e: KeyboardEvent) {
         if (e.isComposing || isComposing || e.keyCode === 229) return;
 
-        if (e.key === "Tab") {
+        // If currently editing inline rename, give full precedence to rename controls
+        if (editingItemId) {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                e.stopPropagation();
+                await commitRename();
+                return;
+            } else if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                cancelRename();
+                return;
+            } else if (e.key === "F2") {
+                e.preventDefault();
+                e.stopPropagation();
+                const currentEditingId = editingItemId;
+                await commitRename();
+                const newTarget = getTargetUnderMouse();
+                if (newTarget && newTarget.id !== currentEditingId && newTarget.filepath !== currentEditingId) {
+                    await startRenameItem(newTarget);
+                }
+                return;
+            }
+            // Allow native input handling (typing, arrows, backspace, selection) inside rename input
+            return;
+        }
+
+        if (e.key === "F2") {
             e.preventDefault();
             e.stopPropagation();
-            void toggleSearchMode();
+            if (isCommittingRename) return;
+
+            const target = getTargetUnderMouse();
+            if (target) {
+                await startRenameItem(target);
+            } else if (flatCategories[focusedIndex]) {
+                const cat = flatCategories[focusedIndex];
+                await startRenameItem({ id: cat.id || cat.filepath, name: cat.name, type: "category", filepath: cat.filepath });
+            }
             return;
+        }
+
+        if (e.key === "Tab") {
+            if (document.activeElement !== renameInputEl && document.activeElement !== addListInputEl && document.activeElement !== addGroupInputEl) {
+                e.preventDefault();
+                e.stopPropagation();
+                void toggleSearchMode();
+                return;
+            }
         }
 
         if (searchMode === 'task' && searchQuery.trim().length > 0) {
@@ -1334,34 +1378,6 @@
                 return;
             }
 
-            return;
-        }
-
-        if (e.key === "F2") {
-            e.preventDefault();
-            e.stopPropagation();
-            if (editingItemId) return;
-
-            const target = getTargetUnderMouse();
-            if (target) {
-                startRenameItem(target);
-            } else if (flatCategories[focusedIndex]) {
-                const cat = flatCategories[focusedIndex];
-                startRenameItem({ id: cat.id || cat.filepath, name: cat.name, type: "category", filepath: cat.filepath });
-            }
-            return;
-        }
-
-        if (editingItemId) {
-            if (e.key === "Enter") {
-                e.preventDefault();
-                e.stopPropagation();
-                void commitRename();
-            } else if (e.key === "Escape") {
-                e.preventDefault();
-                e.stopPropagation();
-                cancelRename();
-            }
             return;
         }
 
@@ -1492,6 +1508,8 @@
     }
 </script>
 
+<svelte:window on:keydown={handleKeydown} on:pointermove={handlePointerMove} />
+
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions a11y-no-noninteractive-tabindex a11y-click-events-have-key-events -->
 <div 
     class="quick-modal-container quick-list-only-container"
@@ -1499,8 +1517,6 @@
     class:is-picking-focus={isPickingDefaultFocus}
     class:is-dragging-list={!!draggedListId}
     bind:this={modalContainerEl}
-    on:keydown={handleKeydown}
-    on:pointermove={handlePointerMove}
     on:pointerleave={handlePointerLeave}
     tabindex="0"
     role="region"
@@ -1764,7 +1780,7 @@
                                             >
                                                 <span class="quick-modal-list-icon">📁</span>
                                                 
-                                                {#if editingItemId === cat.id}
+                                                {#if editingItemId === cat.id || (cat.filepath && editingItemId === cat.filepath)}
                                                     <input 
                                                         type="text" 
                                                         class="quick-modal-inline-rename-input"
@@ -1876,7 +1892,7 @@
                                                     >
                                                         <span class="quick-modal-list-icon">📁</span>
                                                         
-                                                        {#if editingItemId === child.id}
+                                                        {#if editingItemId === child.id || (child.filepath && editingItemId === child.filepath)}
                                                             <input 
                                                                 type="text" 
                                                                 class="quick-modal-inline-rename-input"
@@ -1997,7 +2013,7 @@
                                         >
                                             <span class="quick-modal-list-icon">📁</span>
                                             
-                                            {#if editingItemId === child.id}
+                                            {#if editingItemId === child.id || (child.filepath && editingItemId === child.filepath)}
                                                 <input 
                                                     type="text" 
                                                     class="quick-modal-inline-rename-input"
@@ -2047,7 +2063,7 @@
                         >
                             <span class="quick-modal-list-icon">📁</span>
                             
-                            {#if editingItemId === item.id}
+                            {#if editingItemId === item.id || (item.filepath && editingItemId === item.filepath)}
                                 <input 
                                     type="text" 
                                     class="quick-modal-inline-rename-input"

@@ -36741,7 +36741,7 @@ var import_obsidian20 = require("obsidian");
 
 // src/modals/QuickListModalView.svelte
 var import_obsidian19 = require("obsidian");
-var { Map: Map_13 } = globals;
+var { Map: Map_13, window: window_13 } = globals;
 function get_each_context_44(ctx, list, i) {
   const child_ctx = ctx.slice();
   child_ctx[220] = list[i];
@@ -38140,7 +38140,10 @@ function create_else_block_104(ctx) {
     if (
       /*editingItemId*/
       ctx2[23] === /*item*/
-      ctx2[220].id
+      ctx2[220].id || /*item*/
+      ctx2[220].filepath && /*editingItemId*/
+      ctx2[23] === /*item*/
+      ctx2[220].filepath
     )
       return create_if_block_244;
     return create_else_block_112;
@@ -39264,7 +39267,10 @@ function create_each_block_54(key_1, ctx) {
     if (
       /*editingItemId*/
       ctx2[23] === /*child*/
-      ctx2[217].id
+      ctx2[217].id || /*child*/
+      ctx2[217].filepath && /*editingItemId*/
+      ctx2[23] === /*child*/
+      ctx2[217].filepath
     )
       return create_if_block_204;
     return create_else_block_84;
@@ -40695,7 +40701,10 @@ function create_each_block_34(key_1, ctx) {
     if (
       /*editingItemId*/
       ctx2[23] === /*child*/
-      ctx2[217].id
+      ctx2[217].id || /*child*/
+      ctx2[217].filepath && /*editingItemId*/
+      ctx2[23] === /*child*/
+      ctx2[217].filepath
     )
       return create_if_block_135;
     return create_else_block_35;
@@ -41192,7 +41201,10 @@ function create_each_block_24(key_1, ctx) {
     if (
       /*editingItemId*/
       ctx2[23] === /*cat*/
-      ctx2[213].id
+      ctx2[213].id || /*cat*/
+      ctx2[213].filepath && /*editingItemId*/
+      ctx2[23] === /*cat*/
+      ctx2[213].filepath
     )
       return create_if_block_76;
     return create_else_block_25;
@@ -42102,6 +42114,18 @@ function create_fragment8(ctx) {
       if (!mounted) {
         dispose = [
           listen(
+            window_13,
+            "keydown",
+            /*handleKeydown*/
+            ctx[70]
+          ),
+          listen(
+            window_13,
+            "pointermove",
+            /*handlePointerMove*/
+            ctx[60]
+          ),
+          listen(
             input,
             "input",
             /*input_input_handler*/
@@ -42138,18 +42162,6 @@ function create_fragment8(ctx) {
             ))
               ctx[3].apply(this, arguments);
           }),
-          listen(
-            div3,
-            "keydown",
-            /*handleKeydown*/
-            ctx[70]
-          ),
-          listen(
-            div3,
-            "pointermove",
-            /*handlePointerMove*/
-            ctx[60]
-          ),
           listen(
             div3,
             "pointerleave",
@@ -43490,14 +43502,59 @@ function instance8($$self, $$props, $$invalidate) {
       }
     }
   }
-  function handleKeydown(e) {
+  async function handleKeydown(e) {
     if (e.isComposing || isComposing || e.keyCode === 229)
       return;
-    if (e.key === "Tab") {
+    if (editingItemId) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        e.stopPropagation();
+        await commitRename();
+        return;
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        cancelRename();
+        return;
+      } else if (e.key === "F2") {
+        e.preventDefault();
+        e.stopPropagation();
+        const currentEditingId = editingItemId;
+        await commitRename();
+        const newTarget = getTargetUnderMouse();
+        if (newTarget && newTarget.id !== currentEditingId && newTarget.filepath !== currentEditingId) {
+          await startRenameItem(newTarget);
+        }
+        return;
+      }
+      return;
+    }
+    if (e.key === "F2") {
       e.preventDefault();
       e.stopPropagation();
-      void toggleSearchMode();
+      if (isCommittingRename)
+        return;
+      const target = getTargetUnderMouse();
+      if (target) {
+        await startRenameItem(target);
+      } else if (flatCategories[focusedIndex]) {
+        const cat = flatCategories[focusedIndex];
+        await startRenameItem({
+          id: cat.id || cat.filepath,
+          name: cat.name,
+          type: "category",
+          filepath: cat.filepath
+        });
+      }
       return;
+    }
+    if (e.key === "Tab") {
+      if (document.activeElement !== renameInputEl && document.activeElement !== addListInputEl && document.activeElement !== addGroupInputEl) {
+        e.preventDefault();
+        e.stopPropagation();
+        void toggleSearchMode();
+        return;
+      }
     }
     if (searchMode === "task" && searchQuery.trim().length > 0) {
       if (e.key === "ArrowDown") {
@@ -43533,37 +43590,6 @@ function instance8($$self, $$props, $$invalidate) {
         $$invalidate(12, taskSearchResults = []);
         $$invalidate(13, taskFocusedIndex = 0);
         return;
-      }
-      return;
-    }
-    if (e.key === "F2") {
-      e.preventDefault();
-      e.stopPropagation();
-      if (editingItemId)
-        return;
-      const target = getTargetUnderMouse();
-      if (target) {
-        startRenameItem(target);
-      } else if (flatCategories[focusedIndex]) {
-        const cat = flatCategories[focusedIndex];
-        startRenameItem({
-          id: cat.id || cat.filepath,
-          name: cat.name,
-          type: "category",
-          filepath: cat.filepath
-        });
-      }
-      return;
-    }
-    if (editingItemId) {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        e.stopPropagation();
-        void commitRename();
-      } else if (e.key === "Escape") {
-        e.preventDefault();
-        e.stopPropagation();
-        cancelRename();
       }
       return;
     }
