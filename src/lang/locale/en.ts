@@ -48,20 +48,32 @@ const en = {
     confirm_delete_all_backups: "⚠️ Dangerous action: Delete all {0} local backup files?\nThis action cannot be undone!",
     all_backups_deleted: "🗑️ Deleted all {0} backup files",
 
-    // Linked Note Modal
-    confirm_delete_linked_note_title: "Delete linked note for \"{0}\"?",
-    confirm_delete_linked_note_p1: "The task to be deleted is linked to note:",
-    confirm_delete_linked_note_p2: "You can delete only the task itself, or move both the task and its linked note to trash.",
+    // Task Note Modal
+    confirm_delete_task_note_title: "Delete task note for \"{0}\"?",
+    confirm_delete_task_note_p1: "The task to be deleted has a dedicated task note:",
+    confirm_delete_task_note_p2: "You can delete only the task itself, or move both the task and its task note to trash.",
+    confirm_delete_linked_note_title: "Delete task note for \"{0}\"?",
+    confirm_delete_linked_note_p1: "The task to be deleted has a dedicated task note:",
+    confirm_delete_linked_note_p2: "You can delete only the task itself, or move both the task and its task note to trash.",
     cancel: "Cancel",
     delete_task_only_keep_note: "Delete Task Only (Keep Note)",
-    delete_task_and_note: "Delete Task & Linked Note",
+    delete_task_and_note: "Delete Task & Task Note",
 
-    // Linked Note Tooltips & Notices (TaskDetailView)
-    linked_note_tooltip_exists: "Linked note: {0} (Click to open, hover to preview, right-click to manage)",
-    linked_note_tooltip_create: "Link dedicated note (Click to auto-create and open)",
-    linked_note_recreated: "Recreated and opened linked note: {0}",
-    linked_note_created: "Created and opened linked note: {0}",
-    open_linked_note: "Open linked note",
+    // Task Note Tooltips & Notices (TaskDetailView)
+    task_note_tooltip_exists: "Task note: {0} (Click to open, hover to preview, right-click to manage)",
+    task_note_tooltip_create: "Task Note (Click to create dedicated note and open)",
+    task_note_recreated: "Recreated and opened task note: {0}",
+    task_note_created: "Created and opened task note: {0}",
+    open_task_note: "Open task note",
+    unlink_task_note: "Unlink task note",
+    unlink_task_note_success: "Task note unlinked successfully",
+
+    // Legacy Aliases
+    linked_note_tooltip_exists: "Task note: {0} (Click to open, hover to preview, right-click to manage)",
+    linked_note_tooltip_create: "Task Note (Click to create dedicated note and open)",
+    linked_note_recreated: "Recreated and opened task note: {0}",
+    linked_note_created: "Created and opened task note: {0}",
+    open_linked_note: "Open task note",
     unlink_note: "Unlink note",
     unlink_note_success: "Note unlinked successfully",
 

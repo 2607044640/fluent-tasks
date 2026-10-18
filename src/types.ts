@@ -55,7 +55,11 @@ export interface TaskItem {
     whys?: string[];
     /** Array of inline SVG code strings for visual metadata icons */
     svgs?: string[];
-    /** Linked Obsidian note path or wikilink (e.g. [[Topic]] or OneNote/Domain/Topic.md) */
+    /** Dedicated task note path or wikilink (under TodoData/<Category>/<Category> <taskId>.md) */
+    task_note?: string;
+    /** Multiple linked Obsidian note paths or wikilinks (e.g. [[Topic]] or OneNote/Domain/Topic.md) */
+    note_links?: string[];
+    /** Linked Obsidian note path or wikilink (legacy single property, kept for backwards compatibility) */
     note_link?: string;
     /** Arbitrary custom key-value metadata */
     customMeta?: Record<string, unknown>;

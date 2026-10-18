@@ -50,22 +50,34 @@ const zhCn: typeof en = {
     confirm_delete_all_backups: "⚠️ 危险操作：确认清空并删除全部 {0} 个本地备份文件？\n此操作不可撤销！",
     all_backups_deleted: "🗑️ 已清空删除全部 {0} 个备份文件",
 
-    // Linked Note Modal
-    confirm_delete_linked_note_title: "是否删除链接笔记（title：{0}）？",
-    confirm_delete_linked_note_p1: "待删除的任务绑定了专属笔记：",
-    confirm_delete_linked_note_p2: "您可以选择仅删除任务本身，或同时将该链接笔记移入回收站。",
+    // Task Note Modal
+    confirm_delete_task_note_title: "是否删除任务专属笔记（{0}）？",
+    confirm_delete_task_note_p1: "待删除的任务拥有专属笔记：",
+    confirm_delete_task_note_p2: "您可以选择仅删除任务本身，或同时将该专属笔记移入回收站。",
+    confirm_delete_linked_note_title: "是否删除任务专属笔记（{0}）？",
+    confirm_delete_linked_note_p1: "待删除的任务拥有专属笔记：",
+    confirm_delete_linked_note_p2: "您可以选择仅删除任务本身，或同时将该专属笔记移入回收站。",
     cancel: "取消",
     delete_task_only_keep_note: "仅删除任务（保留笔记）",
-    delete_task_and_note: "删除任务与链接笔记",
+    delete_task_and_note: "删除任务与专属笔记",
 
-    // Linked Note Tooltips & Notices (TaskDetailView)
-    linked_note_tooltip_exists: "打开链接笔记: {0} (点击跳转，悬停预览，右键管理)",
-    linked_note_tooltip_create: "链接专属笔记 (点击自动创建并跳转)",
-    linked_note_recreated: "已重新创建并打开链接笔记: {0}",
-    linked_note_created: "已创建并打开链接笔记: {0}",
-    open_linked_note: "打开链接笔记",
-    unlink_note: "取消关联笔记",
-    unlink_note_success: "已取消笔记关联",
+    // Task Note Tooltips & Notices (TaskDetailView)
+    task_note_tooltip_exists: "任务专属笔记: {0} (点击跳转，悬停预览，右键管理)",
+    task_note_tooltip_create: "任务专属笔记 (点击自动创建并跳转)",
+    task_note_recreated: "已重新创建并打开任务笔记: {0}",
+    task_note_created: "已创建并打开任务笔记: {0}",
+    open_task_note: "打开任务笔记",
+    unlink_task_note: "取消关联专属笔记",
+    unlink_task_note_success: "已取消专属笔记关联",
+
+    // Legacy Aliases
+    linked_note_tooltip_exists: "任务专属笔记: {0} (点击跳转，悬停预览，右键管理)",
+    linked_note_tooltip_create: "任务专属笔记 (点击自动创建并跳转)",
+    linked_note_recreated: "已重新创建并打开任务笔记: {0}",
+    linked_note_created: "已创建并打开任务笔记: {0}",
+    open_linked_note: "打开任务笔记",
+    unlink_note: "取消关联专属笔记",
+    unlink_note_success: "已取消专属笔记关联",
 
     // TaskMainView Multi-Select & Batch
     multi_select_mode_enabled: "☑️ 多选模式已开启：可勾选任务进行批量操作",

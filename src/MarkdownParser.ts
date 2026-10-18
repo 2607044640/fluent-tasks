@@ -10,7 +10,7 @@
  * The %%{...}%% is an Obsidian invisible comment containing structured JSON metadata.
  */
 
-import { TaskItem, TaskStep, RecurrenceRule } from "./types";
+import { TaskItem, TaskStep, RecurrenceRule, DATA_FOLDER } from "./types";
 
 // =============================================
 // Internal Constants
@@ -121,6 +121,28 @@ export class MarkdownParser {
                     }))
                 : [];
 
+            const rawNoteLink = typeof meta.note_link === "string" ? meta.note_link : typeof meta.noteLink === "string" ? meta.noteLink : undefined;
+            const rawTaskNote = typeof meta.task_note === "string" ? meta.task_note : typeof meta.taskNote === "string" ? meta.taskNote : undefined;
+            const rawNoteLinks = Array.isArray(meta.note_links)
+                ? (meta.note_links as unknown[]).filter((l): l is string => typeof l === "string")
+                : undefined;
+
+            let parsedTaskNote = rawTaskNote;
+            let parsedNoteLinks = rawNoteLinks;
+            let parsedNoteLink = rawNoteLink;
+
+            // Auto-migration & backward compatibility:
+            if (!parsedTaskNote && rawNoteLink) {
+                const clean = rawNoteLink.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
+                if (clean.startsWith(`${DATA_FOLDER}/`) || clean.startsWith(`${DATA_FOLDER}\\`)) {
+                    parsedTaskNote = rawNoteLink;
+                    parsedNoteLink = undefined;
+                }
+            }
+            if (!parsedNoteLinks && parsedNoteLink) {
+                parsedNoteLinks = [parsedNoteLink];
+            }
+
             tasks.push({
                 id,
                 title: cleanTitle,
@@ -138,7 +160,9 @@ export class MarkdownParser {
                 ...(typeof meta.why === "string" ? { why: meta.why } : {}),
                 ...(Array.isArray(meta.whys) && meta.whys.length > 0 ? { whys: meta.whys as string[] } : {}),
                 ...(Array.isArray(meta.svgs) && meta.svgs.length > 0 ? { svgs: meta.svgs as string[] } : {}),
-                ...(typeof meta.note_link === "string" ? { note_link: meta.note_link } : typeof meta.noteLink === "string" ? { note_link: meta.noteLink } : {}),
+                ...(parsedTaskNote ? { task_note: parsedTaskNote } : {}),
+                ...(parsedNoteLinks && parsedNoteLinks.length > 0 ? { note_links: parsedNoteLinks } : {}),
+                ...(parsedNoteLink ? { note_link: parsedNoteLink } : {}),
                 ...(meta.customMeta && typeof meta.customMeta === "object" && Object.keys(meta.customMeta).length > 0 ? { customMeta: meta.customMeta as Record<string, unknown> } : {}),
                 ...(typeof meta.weight === "number" ? { weight: meta.weight } : {}),
             });
@@ -188,7 +212,13 @@ export class MarkdownParser {
                 meta.why = task.why;
             }
             if (task.svgs && task.svgs.length > 0) meta.svgs = task.svgs;
-            if (task.note_link) meta.note_link = task.note_link;
+            if (task.task_note) meta.task_note = task.task_note;
+            if (task.note_links && task.note_links.length > 0) {
+                meta.note_links = task.note_links;
+                meta.note_link = task.note_links[0];
+            } else if (task.note_link && !task.task_note) {
+                meta.note_link = task.note_link;
+            }
             if (task.customMeta && Object.keys(task.customMeta).length > 0) meta.customMeta = task.customMeta;
             if (typeof task.weight === "number") meta.weight = task.weight;
 

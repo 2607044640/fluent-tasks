@@ -413,6 +413,48 @@ export class LinkedNoteService {
     }
 
     /**
+     * Resolve the dedicated physical task note file (under TodoData/<Category>/)
+     * strictly dedicated to this task.
+     * NEVER resolves external referenced notes (e.g. OneNote/..., General/...).
+     */
+    static resolveTaskNoteFile(app: App, task: TaskItem, categoryFilepath: string): TFile | null {
+        if (!app || !task) return null;
+
+        // 1. Direct standard path lookup: TodoData/<Category>/<Category> <taskId>.md
+        if (categoryFilepath && task.id) {
+            const stdPath = this.getStandardNotePath(categoryFilepath, task.id);
+            const stdFile = app.vault.getAbstractFileByPath(stdPath);
+            if (stdFile instanceof TFile) return stdFile;
+        }
+
+        // 2. If task.task_note is explicitly set, resolve it and verify it's under DATA_FOLDER
+        if (task.task_note) {
+            const resolved = this.resolveNoteLinkInternal(app, task.task_note, categoryFilepath);
+            if (resolved instanceof TFile && this.isHardBoundNote(resolved.path)) {
+                return resolved;
+            }
+        }
+
+        // 3. Backward compatibility: if task.note_link was a hard-bound note under DATA_FOLDER
+        if (task.note_link && this.isHardBoundNote(task.note_link)) {
+            const resolved = this.resolveNoteLinkInternal(app, task.note_link, categoryFilepath);
+            if (resolved instanceof TFile && this.isHardBoundNote(resolved.path)) {
+                return resolved;
+            }
+        }
+
+        // 4. Fallback search by taskId ONLY within the category's dedicated notes folder in DATA_FOLDER
+        if (task.id) {
+            const fileByTaskId = this.findFileByTaskId(app, task.id, categoryFilepath);
+            if (fileByTaskId instanceof TFile && this.isHardBoundNote(fileByTaskId.path)) {
+                return fileByTaskId;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Resolve a note link string (e.g. [[Path/Note|Alias]] or Path/Note or bare note title) to a physical TFile,
      * with automatic fallback to taskId matching if link is stale or broken.
      */
@@ -530,11 +572,11 @@ export class LinkedNoteService {
     }
 
     /**
-     * Create or retrieve the linked note for a task.
+     * Create or retrieve the dedicated task note for a task.
      * Note file format: TodoData/<CategoryName>/<CategoryName> <taskId>.md
      * Frontmatter contains `title: <taskTitle>` property.
      */
-    static async createOrGetLinkedNote(
+    static async createOrGetTaskNote(
         app: App,
         task: TaskItem,
         categoryFilepath: string
@@ -550,13 +592,13 @@ export class LinkedNoteService {
             return { file: stdFile, noteLink, cleanPath };
         }
 
-        // 2. Check if an existing note exists via link or taskId (e.g. old note format)
-        const existingFile = this.resolveLinkedNoteFile(app, task.note_link, categoryFilepath, task.id)
+        // 2. Check if an existing dedicated task note exists (strictly under DATA_FOLDER)
+        const existingFile = this.resolveTaskNoteFile(app, task, categoryFilepath)
             || (task.id ? await this.findFileByTaskIdAsync(app, task.id, categoryFilepath) : null);
 
-        if (existingFile) {
+        if (existingFile && existingFile.path.startsWith(`${DATA_FOLDER}/`)) {
             // If it's an internal note under DATA_FOLDER with a non-standard path, migrate it to standardPath!
-            if (existingFile.path.startsWith(`${DATA_FOLDER}/`) && existingFile.path !== standardPath) {
+            if (existingFile.path !== standardPath) {
                 await this.ensureFolderExists(app, this.getTaskNotesFolder(categoryFilepath));
                 this.markInternalRename(existingFile.path, standardPath);
                 try {
@@ -569,7 +611,7 @@ export class LinkedNoteService {
                         return { file: renamedFile, noteLink, cleanPath };
                     }
                 } catch (err) {
-                    void Logger.log(`[LinkedNote] Failed to rename old note to standard path:`, err);
+                    void Logger.log(`[TaskNote] Failed to rename old note to standard path:`, err);
                 }
             }
             const cleanPath = existingFile.path.replace(/\.md$/, "");
@@ -593,8 +635,19 @@ export class LinkedNoteService {
         const cleanPath = standardPath.replace(/\.md$/, "");
         const noteLink = `[[${cleanPath}]]`;
 
-        void Logger.log(`[LinkedNote] Created note at ${standardPath} for task ${task.id}`);
+        void Logger.log(`[TaskNote] Created task note at ${standardPath} for task ${task.id}`);
         return { file, noteLink, cleanPath };
+    }
+
+    /**
+     * Backward-compatible alias for createOrGetTaskNote
+     */
+    static async createOrGetLinkedNote(
+        app: App,
+        task: TaskItem,
+        categoryFilepath: string
+    ): Promise<{ file: TFile; noteLink: string; cleanPath: string }> {
+        return this.createOrGetTaskNote(app, task, categoryFilepath);
     }
 
     /**
@@ -609,15 +662,15 @@ export class LinkedNoteService {
         task: TaskItem,
         categoryFilepath: string,
         dataService?: DataService
-    ): Promise<{ newNoteLink?: string; noteRenamed: boolean }> {
-        if (!task.note_link && !task.id) return { noteRenamed: false };
+    ): Promise<{ newNoteLink?: string; newTaskNote?: string; noteRenamed: boolean }> {
+        if (!task.task_note && !task.note_link && !task.id) return { noteRenamed: false };
 
         const standardPath = this.getStandardNotePath(categoryFilepath, task.id);
-        let file = this.resolveLinkedNoteFile(app, task.note_link, categoryFilepath, task.id);
+        let file = this.resolveTaskNoteFile(app, task, categoryFilepath);
         if (!file && task.id) {
             file = await this.findFileByTaskIdAsync(app, task.id, categoryFilepath);
         }
-        if (!file) return { noteRenamed: false };
+        if (!file || !file.path.startsWith(`${DATA_FOLDER}/`)) return { noteRenamed: false };
 
         let noteRenamed = false;
         // If file is an internal note under DATA_FOLDER at a non-standard path, rename to standardPath
@@ -636,17 +689,17 @@ export class LinkedNoteService {
                 if (renamed instanceof TFile) file = renamed;
                 noteRenamed = true;
             } catch (err) {
-                void Logger.log("[LinkedNote] Failed to rename old note to standard path:", err);
+                void Logger.log("[TaskNote] Failed to rename old note to standard path:", err);
             }
         }
 
-        // Auto-heal task.note_link to standard link ONLY for internal notes
+        // Auto-heal task.task_note to standard link ONLY for internal notes
         let linkHealed = false;
         if (file.path.startsWith(`${DATA_FOLDER}/`)) {
             const cleanPath = file.path.replace(/\.md$/, "");
             const expectedNoteLink = `[[${cleanPath}]]`;
-            if (task.note_link !== expectedNoteLink) {
-                task.note_link = expectedNoteLink;
+            if (task.task_note !== expectedNoteLink) {
+                task.task_note = expectedNoteLink;
                 linkHealed = true;
             }
 
@@ -658,7 +711,8 @@ export class LinkedNoteService {
         }
 
         return {
-            newNoteLink: (noteRenamed || linkHealed) ? task.note_link : undefined,
+            newNoteLink: (noteRenamed || linkHealed) ? task.task_note : undefined,
+            newTaskNote: (noteRenamed || linkHealed) ? task.task_note : undefined,
             noteRenamed,
         };
     }
@@ -710,31 +764,51 @@ export class LinkedNoteService {
             const categoryNotesFolder = this.getTaskNotesFolder(cat.filepath).replace(/\\/g, "/");
 
             for (const task of tasks) {
-                let isMatch = false;
+                let isTaskNoteMatch = false;
+                let isExternalLinkMatch = false;
 
                 if (frontmatterTaskId && task.id === frontmatterTaskId) {
-                    isMatch = true;
-                } else if (task.note_link) {
-                    const taskClean = task.note_link.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim().replace(/\\/g, "/");
-                    // Exact path match
+                    isTaskNoteMatch = true;
+                } else if (task.task_note) {
+                    const taskClean = task.task_note.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim().replace(/\\/g, "/");
                     if (taskClean === normalizedOldClean || taskClean === normalizedOldPath || `${taskClean}.md` === normalizedOldPath) {
-                        isMatch = true;
+                        isTaskNoteMatch = true;
+                    }
+                }
+
+                // Check external note_links
+                if (task.note_links && task.note_links.length > 0) {
+                    for (let li = 0; li < task.note_links.length; li++) {
+                        const lClean = task.note_links[li].replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim().replace(/\\/g, "/");
+                        if (lClean === normalizedOldClean || lClean === normalizedOldPath || `${lClean}.md` === normalizedOldPath) {
+                            task.note_links[li] = `[[${newClean}]]`;
+                            isExternalLinkMatch = true;
+                        }
+                    }
+                }
+                if (task.note_link) {
+                    const taskClean = task.note_link.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim().replace(/\\/g, "/");
+                    if (taskClean === normalizedOldClean || taskClean === normalizedOldPath || `${taskClean}.md` === normalizedOldPath) {
+                        if (this.isHardBoundNote(task.note_link)) {
+                            isTaskNoteMatch = true;
+                        } else {
+                            task.note_link = `[[${newClean}]]`;
+                            isExternalLinkMatch = true;
+                        }
                     } else if (!taskClean.includes("/") && normalizedOldPath.startsWith(categoryNotesFolder + "/")) {
-                        // Short link without slash: only match if old file belongs to this category's folder
                         const oldBase = normalizedOldClean.split("/").pop();
                         if (taskClean === oldBase) {
-                            isMatch = true;
+                            isTaskNoteMatch = true;
                         }
                     }
                 }
 
-                if (isMatch) {
+                if (isTaskNoteMatch) {
+                    task.task_note = `[[${newClean}]]`;
                     const fmTitle = app.metadataCache?.getFileCache(newFile)?.frontmatter?.title;
                     const isStandardIdFilename = newTitle.endsWith(` ${task.id}`);
                     if (!isStandardIdFilename && fmTitle === undefined) {
                         const cleanNewTitle = this.stripCollisionSuffix(newTitle) || newTitle;
-
-                        // Preserve multi-line structure: if existing task has line breaks (\n or <br>), update only line 1
                         const hasLineBreaks = task.title && (task.title.includes("\n") || /<br\s*\/?>/i.test(task.title));
                         if (hasLineBreaks) {
                             const lines = task.title.split(/\r?\n|<br\s*\/?>/i);
@@ -746,8 +820,12 @@ export class LinkedNoteService {
                     } else if (fmTitle && typeof fmTitle === "string" && fmTitle.trim() && task.title !== fmTitle.trim()) {
                         task.title = fmTitle.trim();
                     }
+                }
 
-                    task.note_link = `[[${newClean}]]`;
+                if (isTaskNoteMatch || isExternalLinkMatch) {
+                    if (task.note_links && task.note_links.length > 0) {
+                        task.note_link = task.note_links[0];
+                    }
                     anyUpdated = true;
 
                     // Update task atomically
@@ -950,18 +1028,13 @@ export class LinkedNoteService {
 
         // 1. Check each task in category
         for (const task of tasks) {
-            // CRITICAL: Skip external linked notes (e.g. in OneNote/) - never rename or move them
-            if (task.note_link && !this.isHardBoundNote(task.note_link)) {
-                continue;
-            }
-
             const standardPath = this.getStandardNotePath(categoryFilepath, task.id);
             const standardClean = standardPath.replace(/\.md$/, "");
             const standardNoteLink = `[[${standardClean}]]`;
 
             let noteFile = app.vault.getAbstractFileByPath(standardPath);
             if (!(noteFile instanceof TFile)) {
-                noteFile = this.resolveLinkedNoteFile(app, task.note_link, categoryFilepath, task.id)
+                noteFile = this.resolveTaskNoteFile(app, task, categoryFilepath)
                     || (task.id ? await this.findFileByTaskIdAsync(app, task.id, categoryFilepath) : null);
             }
 
@@ -975,16 +1048,20 @@ export class LinkedNoteService {
                     try {
                         await app.fileManager.renameFile(noteFile, standardPath);
                         healedNotesCount++;
-                        void Logger.log(`[LinkedNote AutoSync] Renamed note: ${noteFile.path} -> ${standardPath}`);
+                        void Logger.log(`[TaskNote AutoSync] Renamed note: ${noteFile.path} -> ${standardPath}`);
                     } catch (e) {
-                        void Logger.log(`[LinkedNote AutoSync] Failed to rename ${noteFile.path} to ${standardPath}:`, e);
+                        void Logger.log(`[TaskNote AutoSync] Failed to rename ${noteFile.path} to ${standardPath}:`, e);
                     }
                 }
 
-                if (task.note_link !== standardNoteLink) {
-                    task.note_link = standardNoteLink;
+                if (task.task_note !== standardNoteLink) {
+                    task.task_note = standardNoteLink;
                     tasksChanged = true;
                     updatedTasksCount++;
+                }
+                if (task.note_link === standardNoteLink) {
+                    delete task.note_link;
+                    tasksChanged = true;
                 }
 
                 const freshFile = app.vault.getAbstractFileByPath(standardPath);
@@ -1037,10 +1114,14 @@ export class LinkedNoteService {
                     if (matchingTask) {
                         const cleanPath = expectedPath.replace(/\.md$/, "");
                         const expectedLink = `[[${cleanPath}]]`;
-                        if (matchingTask.note_link !== expectedLink) {
-                            matchingTask.note_link = expectedLink;
+                        if (matchingTask.task_note !== expectedLink) {
+                            matchingTask.task_note = expectedLink;
                             tasksChanged = true;
                             updatedTasksCount++;
+                        }
+                        if (matchingTask.note_link === expectedLink) {
+                            delete matchingTask.note_link;
+                            tasksChanged = true;
                         }
                     }
                 }
@@ -1058,10 +1139,10 @@ export class LinkedNoteService {
 
     /**
      * Handle moving a task from one category to another:
-     * If the task has a linked note, moves/renames it from:
+     * If the task has a dedicated task note, moves/renames it from:
      * TodoData/<SourceCategory>/<SourceCategory> <taskId>.md ->
      * TodoData/<TargetCategory>/<TargetCategory> <taskId>.md
-     * And updates task.note_link accordingly.
+     * And updates task.task_note accordingly.
      */
     static async handleTaskMove(
         app: App,
@@ -1075,12 +1156,8 @@ export class LinkedNoteService {
         const targetCatName = this.getCategoryName(targetCategoryFilepath);
         if (sourceCatName === targetCatName) return false;
 
-        // CRITICAL: Skip external linked notes (e.g. in OneNote/) - never rename or move them
-        if (task.note_link && !this.isHardBoundNote(task.note_link)) {
-            return false;
-        }
-
-        const noteFile = this.resolveLinkedNoteFile(app, task.note_link, sourceCategoryFilepath, task.id)
+        // ONLY move dedicated task note under TodoData/ (never touch external note_links)
+        const noteFile = this.resolveTaskNoteFile(app, task, sourceCategoryFilepath)
             || (task.id ? await this.findFileByTaskIdAsync(app, task.id, sourceCategoryFilepath) : null);
 
         if (!noteFile || !(noteFile instanceof TFile) || !noteFile.path.startsWith(`${DATA_FOLDER}/`)) return false;
@@ -1097,11 +1174,14 @@ export class LinkedNoteService {
         try {
             await app.fileManager.renameFile(noteFile, newStandardPath);
             const cleanPath = newStandardPath.replace(/\.md$/, "");
-            task.note_link = `[[${cleanPath}]]`;
-            void Logger.log(`[LinkedNote] Moved task note: ${noteFile.path} -> ${newStandardPath}`);
+            task.task_note = `[[${cleanPath}]]`;
+            if (task.note_link && this.isHardBoundNote(task.note_link)) {
+                task.note_link = `[[${cleanPath}]]`;
+            }
+            void Logger.log(`[TaskNote] Moved task note: ${noteFile.path} -> ${newStandardPath}`);
             return true;
         } catch (e) {
-            void Logger.log(`[LinkedNote] Failed to move note on task move:`, e);
+            void Logger.log(`[TaskNote] Failed to move note on task move:`, e);
             return false;
         }
     }

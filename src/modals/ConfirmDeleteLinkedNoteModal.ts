@@ -36,19 +36,19 @@ export class ConfirmDeleteLinkedNoteModal extends Modal {
         contentEl.addClass("fluent-tasks-delete-modal");
 
         contentEl.createEl("h3", {
-            text: t("confirm_delete_linked_note_title", this.task.title),
+            text: t("confirm_delete_task_note_title", this.task.title),
             cls: "fluent-tasks-delete-modal-heading",
         });
 
         const p1 = contentEl.createEl("p", { cls: "fluent-tasks-delete-modal-p1" });
-        p1.createSpan({ text: t("confirm_delete_linked_note_p1") });
+        p1.createSpan({ text: t("confirm_delete_task_note_p1") });
         p1.createEl("strong", {
             text: ` ${this.noteFile.basename} `,
             cls: "fluent-tasks-delete-modal-badge",
         });
 
         contentEl.createEl("p", {
-            text: t("confirm_delete_linked_note_p2"),
+            text: t("confirm_delete_task_note_p2"),
             cls: "fluent-tasks-delete-modal-p2",
         });
 
@@ -87,8 +87,9 @@ export class ConfirmDeleteLinkedNoteModal extends Modal {
 }
 
 /**
- * Prompt user before deleting a task if it has a linked note.
- * If no linked note exists on disk, deletes task immediately without modal.
+ * Prompt user before deleting a task IF it has a dedicated task note.
+ * If no dedicated task note exists on disk (or if only external note links exist),
+ * deletes task immediately without modal prompt.
  */
 export async function promptDeleteTaskWithLinkedNote(
     app: App,
@@ -97,10 +98,10 @@ export async function promptDeleteTaskWithLinkedNote(
     dataService: DataService,
     onDeleted?: () => void | Promise<void>
 ): Promise<boolean> {
-    const noteFile = LinkedNoteService.resolveLinkedNoteFile(app, task.note_link, categoryFilepath, task.id);
+    const taskNoteFile = LinkedNoteService.resolveTaskNoteFile(app, task, categoryFilepath);
 
-    if (!noteFile) {
-        // No linked physical note file exists on disk, delete task directly
+    if (!taskNoteFile) {
+        // No dedicated physical task note file exists on disk, delete task directly without prompt
         await dataService.deleteTask(categoryFilepath, task);
         EventBus.emit(EventName.TASK_DELETED, { task, categoryFilepath });
         if (onDeleted) await onDeleted();
@@ -108,7 +109,7 @@ export async function promptDeleteTaskWithLinkedNote(
     }
 
     return new Promise<boolean>((resolve) => {
-        const modal = new ConfirmDeleteLinkedNoteModal(app, task, noteFile, async (deleteNote) => {
+        const modal = new ConfirmDeleteLinkedNoteModal(app, task, taskNoteFile, async (deleteNote) => {
             if (deleteNote === null) {
                 // User cancelled deletion
                 resolve(false);
@@ -117,9 +118,9 @@ export async function promptDeleteTaskWithLinkedNote(
 
             if (deleteNote) {
                 try {
-                    await app.fileManager.trashFile(noteFile);
+                    await app.fileManager.trashFile(taskNoteFile);
                 } catch (err) {
-                    console.error("Failed to trash linked note:", err);
+                    console.error("Failed to trash task note:", err);
                 }
             }
 

@@ -326,14 +326,14 @@
         showMetaSaveConfirmModal = false;
         initialMetaSnapshot = "";
 
-        // Auto-heal note_link if pointing to broken/stale path
-        if (task && (task.note_link || task.id) && plugin?.app) {
-            const resolved = LinkedNoteService.resolveLinkedNoteFile(plugin.app, task.note_link, categoryFilepath, task.id);
+        // Auto-heal task_note if pointing to broken/stale path or standard note exists
+        if (task && (task.task_note || task.id) && plugin?.app) {
+            const resolved = LinkedNoteService.resolveTaskNoteFile(plugin.app, task, categoryFilepath);
             if (resolved) {
                 const currentClean = resolved.path.replace(/\.md$/, "");
                 const expected = `[[${currentClean}]]`;
-                if (task.note_link !== expected) {
-                    task.note_link = expected;
+                if (task.task_note !== expected) {
+                    task.task_note = expected;
                     void dataService.updateTask(categoryFilepath, task);
                 }
             }
@@ -404,10 +404,10 @@
         saveTimeout = setTimeout(async () => {
             if (!task || !categoryFilepath || isDraggingSteps) return;
             task.steps = persistableSteps(task.steps);
-            if (task.note_link && plugin?.app) {
+            if (task.task_note && plugin?.app) {
                 const syncRes = await LinkedNoteService.syncTaskTitleToNote(plugin.app, task, categoryFilepath, dataService);
-                if (syncRes.noteRenamed && syncRes.newNoteLink) {
-                    task.note_link = syncRes.newNoteLink;
+                if (syncRes.noteRenamed && syncRes.newTaskNote) {
+                    task.task_note = syncRes.newTaskNote;
                 }
             }
             await dataService.updateTask(categoryFilepath, task);
@@ -474,10 +474,10 @@
         if (saveTimeout) clearTimeout(saveTimeout);
         if (!task || !categoryFilepath || isDraggingSteps) return;
         task.steps = persistableSteps(task.steps);
-        if (task.note_link && plugin?.app) {
+        if (task.task_note && plugin?.app) {
             const syncRes = await LinkedNoteService.syncTaskTitleToNote(plugin.app, task, categoryFilepath, dataService);
-            if (syncRes.noteRenamed && syncRes.newNoteLink) {
-                task.note_link = syncRes.newNoteLink;
+            if (syncRes.noteRenamed && syncRes.newTaskNote) {
+                task.task_note = syncRes.newTaskNote;
             }
         }
         await dataService.updateTask(categoryFilepath, task);
@@ -485,17 +485,31 @@
     }
 
     // =============================================
-    // Linked Note Actions
+    // Task Note Actions (Dedicated Note for this Task)
     // =============================================
-    $: hasLinkedNote = !!(task && task.note_link);
-    $: linkNoteTooltip = hasLinkedNote
-        ? t("linked_note_tooltip_exists", task?.note_link || "")
-        : t("linked_note_tooltip_create");
+    $: hasTaskNote = !!(task && (task.task_note || (task.note_link && LinkedNoteService.isHardBoundNote(task.note_link))));
+    $: taskNoteTooltip = hasTaskNote
+        ? t("task_note_tooltip_exists", task?.task_note || task?.note_link || "")
+        : t("task_note_tooltip_create");
 
-    function handleLinkNoteHover(e: MouseEvent) {
-        if (!hasLinkedNote || !task?.note_link || !plugin?.app) return;
-        const file = LinkedNoteService.resolveLinkedNoteFile(plugin.app, task.note_link, categoryFilepath, task?.id);
-        const cleanLink = file ? file.path.replace(/\.md$/, "") : LinkedNoteService.sanitizeLinkpath(task.note_link);
+    function getTaskNoteLinks(t: TaskItem | null): string[] {
+        if (!t) return [];
+        if (t.note_links && Array.isArray(t.note_links) && t.note_links.length > 0) {
+            return [...t.note_links];
+        }
+        if (t.note_link && typeof t.note_link === "string" && t.note_link.trim()) {
+            if (!LinkedNoteService.isHardBoundNote(t.note_link)) {
+                return [t.note_link.trim()];
+            }
+        }
+        return [];
+    }
+
+    function handleTaskNoteHover(e: MouseEvent) {
+        if (!hasTaskNote || !task || !plugin?.app) return;
+        const file = LinkedNoteService.resolveTaskNoteFile(plugin.app, task, categoryFilepath);
+        const targetLink = task.task_note || (task.note_link && LinkedNoteService.isHardBoundNote(task.note_link) ? task.note_link : "");
+        const cleanLink = file ? file.path.replace(/\.md$/, "") : (targetLink ? LinkedNoteService.sanitizeLinkpath(targetLink) : "");
         if (!cleanLink || cleanLink.includes(":")) return;
 
         const proxiedEvent = new Proxy(e, {
@@ -516,68 +530,68 @@
         });
     }
 
-    async function handleLinkNoteClick(e: MouseEvent | KeyboardEvent) {
+    async function handleTaskNoteClick(e: MouseEvent | KeyboardEvent) {
         e.stopPropagation();
         if (!task || !categoryFilepath || !plugin?.app) return;
 
-        if (hasLinkedNote && task.note_link) {
-            // Already has note link: reveal existing note
-            let file = LinkedNoteService.resolveLinkedNoteFile(plugin.app, task.note_link, categoryFilepath, task.id);
+        if (hasTaskNote) {
+            let file = LinkedNoteService.resolveTaskNoteFile(plugin.app, task, categoryFilepath);
             if (!file && task.id) {
                 file = await LinkedNoteService.findFileByTaskIdAsync(plugin.app, task.id, categoryFilepath);
             }
             if (file) {
                 const clean = file.path.replace(/\.md$/, "");
                 const expected = `[[${clean}]]`;
-                if (task.note_link !== expected) {
-                    task.note_link = expected;
+                if (task.task_note !== expected) {
+                    task.task_note = expected;
                     task = task;
                     await immediateSave();
                 }
                 await LinkedNoteService.openLinkedNoteFile(plugin.app, file);
-            } else if (LinkedNoteService.isHardBoundNote(task.note_link)) {
+            } else {
                 // Re-create dedicated note if file was removed
-                const res = await LinkedNoteService.createOrGetLinkedNote(plugin.app, task, categoryFilepath);
-                task.note_link = res.noteLink;
+                const res = await LinkedNoteService.createOrGetTaskNote(plugin.app, task, categoryFilepath);
+                task.task_note = res.noteLink;
                 task = task;
                 await immediateSave();
                 await LinkedNoteService.openLinkedNoteFile(plugin.app, res.file);
-                new Notice(t("linked_note_recreated", res.file.basename));
-            } else {
-                new Notice(`Linked note "${task.note_link}" not found in vault.`);
+                new Notice(t("task_note_recreated", res.file.basename));
             }
         } else {
-            // Create brand new dedicated linked note and jump to it
-            const res = await LinkedNoteService.createOrGetLinkedNote(plugin.app, task, categoryFilepath);
-            task.note_link = res.noteLink;
+            // Create brand new dedicated task note and jump to it
+            const res = await LinkedNoteService.createOrGetTaskNote(plugin.app, task, categoryFilepath);
+            task.task_note = res.noteLink;
             task = task;
             await immediateSave();
             await LinkedNoteService.openLinkedNoteFile(plugin.app, res.file);
-            new Notice(t("linked_note_created", res.file.basename));
+            new Notice(t("task_note_created", res.file.basename));
         }
     }
 
-    function handleLinkNoteContextMenu(e: MouseEvent) {
-        if (!hasLinkedNote || !plugin?.app || !task) return;
+    function handleTaskNoteContextMenu(e: MouseEvent) {
+        if (!hasTaskNote || !plugin?.app || !task) return;
         e.preventDefault();
         e.stopPropagation();
         const menu = new Menu();
         menu.addItem((item: any) => {
-            item.setTitle(t("open_linked_note"))
+            item.setTitle(t("open_task_note"))
                 .setIcon("file-text")
                 .onClick(() => {
-                    void handleLinkNoteClick(e);
+                    void handleTaskNoteClick(e);
                 });
         });
         menu.addItem((item: any) => {
-            item.setTitle(t("unlink_note"))
+            item.setTitle(t("unlink_task_note"))
                 .setIcon("unlink")
                 .onClick(async () => {
                     if (!task) return;
-                    delete task.note_link;
+                    delete task.task_note;
+                    if (task.note_link && LinkedNoteService.isHardBoundNote(task.note_link)) {
+                        delete task.note_link;
+                    }
                     task = task;
                     await immediateSave();
-                    new Notice(t("unlink_note_success"));
+                    new Notice(t("unlink_task_note_success"));
                 });
         });
         menu.showAtMouseEvent(e);
@@ -891,14 +905,15 @@
     let selectedWhyIndex: number = 0;
     let metaSvgList: string[] = [];
     let selectedSvgIndex: number = 0;
-    let metaNoteLinkVal: string = "";
+    let metaNoteLinks: string[] = [];
+    let selectedNoteLinkIndex: number = 0;
     let metaCustomEntries: Array<{ key: string; value: string }> = [];
     let selectedCustomIndex: number = 0;
 
     function getMetaSnapshot(): string {
         return JSON.stringify({
             whys: metaWhyList,
-            noteLink: metaNoteLinkVal,
+            noteLinks: metaNoteLinks,
             svgs: metaSvgList,
             custom: metaCustomEntries
         });
@@ -967,8 +982,13 @@
             selectedSvgIndex = metaSvgList.length > 0 ? 0 : -1;
         }
 
-        // 3. Note Link
-        metaNoteLinkVal = task.note_link || "";
+        // 3. Note Links
+        metaNoteLinks = getTaskNoteLinks(task);
+        if (typeof targetIndexOrKey === "number" && type === "note_link") {
+            selectedNoteLinkIndex = Math.min(Math.max(0, targetIndexOrKey), metaNoteLinks.length - 1);
+        } else {
+            selectedNoteLinkIndex = metaNoteLinks.length > 0 ? 0 : -1;
+        }
 
         // 4. Custom Meta
         metaCustomEntries = task.customMeta
@@ -1014,6 +1034,36 @@
         }
     }
 
+    function addNewNoteLinkItem() {
+        metaNoteLinks = [...metaNoteLinks, ""];
+        selectedNoteLinkIndex = metaNoteLinks.length - 1;
+    }
+
+    function removeNoteLinkItem(idx: number) {
+        metaNoteLinks = metaNoteLinks.filter((_, i) => i !== idx);
+        if (selectedNoteLinkIndex >= metaNoteLinks.length) {
+            selectedNoteLinkIndex = metaNoteLinks.length - 1;
+        }
+    }
+
+    async function deleteNoteLinkEntry(idx: number) {
+        if (!task) return;
+        const currentLinks = getTaskNoteLinks(task);
+        currentLinks.splice(idx, 1);
+        if (currentLinks.length > 0) {
+            task.note_links = currentLinks;
+            task.note_link = currentLinks[0];
+        } else {
+            delete task.note_links;
+            delete task.note_link;
+        }
+        task = { ...task };
+        if (categoryFilepath) {
+            await dataService.updateTask(categoryFilepath, task);
+            EventBus.emit(EventName.TASK_UPDATED, { task, categoryFilepath });
+        }
+    }
+
     function addNewCustomEntry() {
         metaCustomEntries = [...metaCustomEntries, { key: "", value: "" }];
         selectedCustomIndex = metaCustomEntries.length - 1;
@@ -1025,10 +1075,6 @@
             selectedCustomIndex = metaCustomEntries.length - 1;
         }
     }
-
-    $: resolvedHintFile = (metaNoteLinkVal && plugin?.app)
-        ? LinkedNoteService.resolveLinkedNoteFile(plugin.app, metaNoteLinkVal, categoryFilepath)
-        : null;
 
     async function handleTestOpenNote(val: string) {
         if (!val || !plugin?.app) return;
@@ -1063,17 +1109,20 @@
             delete task.why;
         }
 
-        // 2. Save Note Link
-        const cleanNote = metaNoteLinkVal.trim();
-        if (cleanNote) {
-            const resolvedFile = LinkedNoteService.resolveLinkedNoteFile(plugin.app, cleanNote, categoryFilepath);
+        // 2. Save Note Links
+        const cleanNoteLinks = metaNoteLinks.map(l => l.trim()).filter(Boolean).map(clean => {
+            const resolvedFile = LinkedNoteService.resolveLinkedNoteFile(plugin.app, clean, categoryFilepath);
             if (resolvedFile) {
                 const cleanPath = resolvedFile.path.replace(/\.md$/, "");
-                task.note_link = `[[${cleanPath}]]`;
-            } else {
-                task.note_link = LinkedNoteService.normalizeNoteLinkInput(cleanNote);
+                return `[[${cleanPath}]]`;
             }
+            return LinkedNoteService.normalizeNoteLinkInput(clean);
+        });
+        if (cleanNoteLinks.length > 0) {
+            task.note_links = cleanNoteLinks;
+            task.note_link = cleanNoteLinks[0];
         } else {
+            delete task.note_links;
             delete task.note_link;
         }
 
@@ -1162,6 +1211,7 @@
             delete task.whys;
             delete task.why;
         } else if (prop === 'note_link') {
+            delete task.note_links;
             delete task.note_link;
         } else if (prop === 'svg') {
             delete task.svgs;
@@ -1271,22 +1321,13 @@
         await deleteSvgEntry(idx);
     }
 
-    async function deleteNoteChipWithSourceFile() {
-        if (!task || !task.note_link || !plugin?.app) return;
-        const noteFile = LinkedNoteService.resolveLinkedNoteFile(plugin.app, task.note_link, categoryFilepath);
-        if (noteFile) {
-            await trashSourceFile(noteFile);
-        }
-        await deleteMetaProp('note_link');
-    }
-
     async function deleteTaskWithLongPress() {
         if (!task || !categoryFilepath || !plugin?.app) return;
         const toDelete = task;
         const path = categoryFilepath;
-        const noteFile = LinkedNoteService.resolveLinkedNoteFile(plugin.app, toDelete.note_link, path, toDelete.id);
-        if (noteFile) {
-            await trashSourceFile(noteFile);
+        const taskNoteFile = LinkedNoteService.resolveTaskNoteFile(plugin.app, toDelete, path);
+        if (taskNoteFile) {
+            await trashSourceFile(taskNoteFile);
         }
         if (toDelete.svgs) {
             for (const s of toDelete.svgs) {
@@ -1349,24 +1390,27 @@
                     placeholder="Task title"
                 />
 
-                <!-- Link Note Button (replaces detail panel star, star is maintained in center list) -->
+                <!-- Task Note Button (dedicated note for this task) -->
                 <!-- svelte-ignore a11y-click-events-have-key-events -->
-                <span class="detail-link-note-btn" class:active={hasLinkedNote}
-                      on:click={handleLinkNoteClick}
-                      on:mouseenter={handleLinkNoteHover}
-                      on:contextmenu={handleLinkNoteContextMenu}
+                <span class="detail-link-note-btn" class:active={hasTaskNote}
+                      on:click={handleTaskNoteClick}
+                      on:mouseenter={handleTaskNoteHover}
+                      on:contextmenu={handleTaskNoteContextMenu}
                       role="button" tabindex="0"
-                      title={linkNoteTooltip}
-                      on:keydown={(e) => e.key === "Enter" && handleLinkNoteClick(e)}>
-                    {#if hasLinkedNote}
-                        <!-- Hard-bound linked note active icon -->
+                      title={taskNoteTooltip}
+                      on:keydown={(e) => e.key === "Enter" && handleTaskNoteClick(e)}>
+                    {#if hasTaskNote}
+                        <!-- Dedicated task note active icon (File Text / Document with lines) -->
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
                              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                            <line x1="10" y1="9" x2="8" y2="9"/>
                         </svg>
                     {:else}
-                        <!-- Create & link note icon -->
+                        <!-- Create dedicated task note icon (Document with plus) -->
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
                              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -1562,7 +1606,7 @@
         </div>
 
         <!-- Active Metadata Chips (Why, Note Link, SVG, Custom) -->
-        {#if getTaskWhys(task).length > 0 || task.note_link || (task.svgs && task.svgs.length > 0) || (task.customMeta && Object.keys(task.customMeta).length > 0)}
+        {#if getTaskWhys(task).length > 0 || getTaskNoteLinks(task).length > 0 || (task.svgs && task.svgs.length > 0) || (task.customMeta && Object.keys(task.customMeta).length > 0)}
             <div class="detail-meta-chips-section">
                 {#if getTaskWhys(task).length > 0}
                     {#each getTaskWhys(task) as whyItem, idx}
@@ -1578,23 +1622,19 @@
                         </div>
                     {/each}
                 {/if}
-                {#if task.note_link}
-                    <!-- svelte-ignore a11y-click-events-have-key-events -->
-                    <!-- svelte-ignore a11y-no-static-element-interactions -->
-                    <div class="meta-chip note-chip" title={task.note_link}
-                         on:click={() => openAddMetaModal('note_link')}
-                         role="button" tabindex="0">
-                        <span class="chip-label">Note</span>
-                        <span class="chip-val">{task.note_link}</span>
-                        <span class="chip-delete"
-                              use:longPress={{
-                                  duration: 1500,
-                                  onLongPress: () => deleteNoteChipWithSourceFile(),
-                                  onClick: () => deleteMetaProp('note_link')
-                              }}
-                              on:keydown={(e) => e.key === "Enter" && deleteMetaProp('note_link')}
-                              role="button" tabindex="0" title="Click to remove, hold 1.5s to trash note file / 长按1.5秒直接删除笔记至垃圾桶">✕</span>
-                    </div>
+                {#if getTaskNoteLinks(task).length > 0}
+                    {#each getTaskNoteLinks(task) as noteItem, idx}
+                        <!-- svelte-ignore a11y-click-events-have-key-events -->
+                        <!-- svelte-ignore a11y-no-static-element-interactions -->
+                        <div class="meta-chip note-chip" title={noteItem}
+                             on:click={() => openAddMetaModal('note_link', idx)}
+                             role="button" tabindex="0">
+                            <span class="chip-label">{getTaskNoteLinks(task).length > 1 ? `Note #${idx + 1}` : 'Note'}</span>
+                            <span class="chip-val">{noteItem}</span>
+                            <span class="chip-delete" on:click|stopPropagation={() => deleteNoteLinkEntry(idx)}
+                                  role="button" tabindex="0" title={`Remove Note #${idx + 1}`}>✕</span>
+                        </div>
+                    {/each}
                 {/if}
                 {#if task.svgs && task.svgs.length > 0}
                     {#each task.svgs as svgItem, idx}
@@ -1839,7 +1879,7 @@
                         <button type="button" class="meta-modal-tab" class:active={metaFormType === 'why'}
                                 on:click={() => metaFormType = 'why'}>Why ({metaWhyList.length})</button>
                         <button type="button" class="meta-modal-tab" class:active={metaFormType === 'note_link'}
-                                on:click={() => metaFormType = 'note_link'}>Note Link</button>
+                                on:click={() => metaFormType = 'note_link'}>Note Links ({metaNoteLinks.length})</button>
                         <button type="button" class="meta-modal-tab" class:active={metaFormType === 'svg'}
                                 on:click={() => metaFormType = 'svg'}>Visual SVG ({metaSvgList.length})</button>
                         <button type="button" class="meta-modal-tab" class:active={metaFormType === 'custom'}
@@ -1877,26 +1917,56 @@
                                 </div>
                             {/if}
                         {:else if metaFormType === 'note_link'}
-                            <div class="meta-form-field">
-                                <span class="meta-field-label">Linked Obsidian / OneNote Note</span>
-                                <input class="meta-form-input" type="text" placeholder="e.g. [[My Note]] or OneNote/Domain/Section/Topic.md"
-                                       bind:value={metaNoteLinkVal} />
-                                <span class="meta-form-hint">
-                                    {#if resolvedHintFile}
-                                        <span style="color: var(--text-success, #48c774); font-weight: 500;">✓ Matched: {resolvedHintFile.path}</span>
-                                    {:else if metaNoteLinkVal && metaNoteLinkVal.trim()}
-                                        <span style="color: var(--text-muted);">Searching note across vault...</span>
-                                    {:else}
-                                        Hovering badge in main view will preview this note. Clicking will open it.
-                                    {/if}
-                                </span>
-                                {#if metaNoteLinkVal && plugin?.app}
-                                    <button type="button" class="meta-btn-secondary" style="align-self: flex-start; margin-top: 4px; font-size: 11px; padding: 3px 8px;"
-                                            on:click={() => void handleTestOpenNote(metaNoteLinkVal)}>
-                                        🔗 Test Open Note
-                                    </button>
-                                {/if}
+                            <div class="meta-section-header">
+                                <span class="meta-field-label">Linked Notes ({metaNoteLinks.length})</span>
+                                <button type="button" class="meta-add-item-btn" on:click={addNewNoteLinkItem}>+ Add Note Link</button>
                             </div>
+                            {#if metaNoteLinks.length === 0}
+                                <div class="meta-empty-tip">No linked notes yet. Click "+ Add Note Link" to reference external notes.</div>
+                            {:else}
+                                <div class="meta-items-list">
+                                    {#each metaNoteLinks as noteLinkItem, i}
+                                        <!-- svelte-ignore a11y-click-events-have-key-events -->
+                                        <!-- svelte-ignore a11y-no-static-element-interactions -->
+                                        <div class="meta-item-card" class:active={selectedNoteLinkIndex === i}
+                                             on:click={() => selectedNoteLinkIndex = i}>
+                                            <span class="item-badge">#{i + 1}</span>
+                                            <span class="item-preview">{noteLinkItem.trim() ? (noteLinkItem.length > 32 ? noteLinkItem.slice(0, 32) + '...' : noteLinkItem) : '(Empty Note Link)'}</span>
+                                            <span class="item-delete" title="Delete this note link"
+                                                  on:click|stopPropagation={() => removeNoteLinkItem(i)}>✕</span>
+                                        </div>
+                                    {/each}
+                                </div>
+                            {/if}
+                            {#if selectedNoteLinkIndex >= 0 && selectedNoteLinkIndex < metaNoteLinks.length}
+                                {@const activeNoteLink = metaNoteLinks[selectedNoteLinkIndex]}
+                                {@const activeHintFile = (activeNoteLink && plugin?.app)
+                                    ? LinkedNoteService.resolveLinkedNoteFile(plugin.app, activeNoteLink, categoryFilepath)
+                                    : null}
+                                <div class="meta-item-editor">
+                                    <div class="meta-editor-title">Editing Note Link #{selectedNoteLinkIndex + 1}</div>
+                                    <div class="meta-form-field">
+                                        <span class="meta-field-label">Linked Obsidian / OneNote Note</span>
+                                        <input class="meta-form-input" type="text" placeholder="e.g. [[My Note]] or OneNote/Domain/Section/Topic.md"
+                                               bind:value={metaNoteLinks[selectedNoteLinkIndex]} />
+                                        <span class="meta-form-hint">
+                                            {#if activeHintFile}
+                                                <span style="color: var(--text-success, #48c774); font-weight: 500;">✓ Matched: {activeHintFile.path}</span>
+                                            {:else if activeNoteLink && activeNoteLink.trim()}
+                                                <span style="color: var(--text-muted);">Searching note across vault...</span>
+                                            {:else}
+                                                Hovering badge in main view will preview this note. Clicking will open it.
+                                            {/if}
+                                        </span>
+                                        {#if activeNoteLink && plugin?.app}
+                                            <button type="button" class="meta-btn-secondary" style="align-self: flex-start; margin-top: 4px; font-size: 11px; padding: 3px 8px;"
+                                                    on:click={() => void handleTestOpenNote(activeNoteLink)}>
+                                                🔗 Test Open Note
+                                            </button>
+                                        {/if}
+                                    </div>
+                                </div>
+                            {/if}
                         {:else if metaFormType === 'svg'}
                             <div class="meta-section-header">
                                 <span class="meta-field-label">Visual SVGs ({metaSvgList.length})</span>

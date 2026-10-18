@@ -1217,14 +1217,29 @@
             });
         }
 
-        // 3. Note Link
-        if (task.note_link) {
+        // 3. Note Badges (Dedicated task_note & external note_links)
+        const dedicatedNote = task.task_note || (task.note_link && LinkedNoteService.isHardBoundNote(task.note_link) ? task.note_link : undefined);
+        if (dedicatedNote) {
             badges.push({
-                id: 'note-link',
+                id: 'task-note',
                 type: 'note',
-                noteLink: task.note_link
+                noteLink: dedicatedNote
             });
         }
+
+        const externalNotes = (task.note_links && Array.isArray(task.note_links) && task.note_links.length > 0)
+            ? task.note_links
+            : (task.note_link && !LinkedNoteService.isHardBoundNote(task.note_link) ? [task.note_link] : []);
+        externalNotes.forEach((nl, idx) => {
+            if (nl) {
+                badges.push({
+                    id: `note-link-${idx}`,
+                    type: 'note',
+                    index: idx,
+                    noteLink: nl
+                });
+            }
+        });
 
         // 4. Custom Meta
         if (task.customMeta && Object.keys(task.customMeta).length > 0) {
@@ -1287,8 +1302,11 @@
                 });
             } else if (badge.type === 'note' && badge.noteLink) {
                 const isHard = LinkedNoteService.isHardBoundNote(badge.noteLink);
+                const title = isHard 
+                    ? `Task Note: ${badge.noteLink}` 
+                    : (typeof badge.index === "number" ? `Note #${badge.index + 1}: ${badge.noteLink}` : `Note: ${badge.noteLink}`);
                 menu.addItem((item) => {
-                    item.setTitle(`Note: ${badge.noteLink}`)
+                    item.setTitle(title)
                         .setIcon(isHard ? "link" : "file-text")
                         .onClick((clickEvent) => {
                             handleNoteLinkClick(clickEvent as any, badge.noteLink, task.id);
