@@ -4,7 +4,7 @@
     import { EventBus } from "../EventBus";
     import { EventName, VIEW_TYPE_MAIN } from "../types";
     import type { CategoryInfo, SidebarItem, GroupInfo, TaskItem } from "../types";
-    import { toggleGroupExpandedState, getFlatCategories, filterSidebarTree } from "../utils/sidebarTreeUtils";
+    import { toggleGroupExpandedState, getFlatCategories, filterSidebarTree, moveSidebarItem } from "../utils/sidebarTreeUtils";
     import { INPUT_FOCUS_DELAY_MS } from "../constants";
     import { Menu, Notice } from "obsidian";
     import type { App } from "obsidian";
@@ -765,8 +765,9 @@
     }
 
     // =============================================
-    // Drag & Drop Lists / Groups (Disabled in Quick Modal)
+    // Drag & Drop Lists / Groups (Group dragging disabled in Quick Modal)
     // =============================================
+    let isDraggingGroup: boolean = false;
     let lastDragNoticeTime: number = 0;
 
     function showDragForbiddenNotice() {
@@ -774,26 +775,50 @@
         if (now - lastDragNoticeTime > 2500) {
             lastDragNoticeTime = now;
             const message = isChinese()
-                ? "当前悬浮UI不支持拖拽清单。\n原因：排列list代码本身覆盖了拖拽操作；如需调整清单顺序，请在左侧边栏操作。"
-                : "Dragging lists is not supported in Quick View.\nReason: List arrangement code overrides drag operations; to adjust list order, please use the sidebar.";
+                ? "当前悬浮UI不支持拖拽分组。\n原因：排列list代码本身覆盖了拖拽操作；如需调整分组顺序，请在左侧边栏操作。"
+                : "Dragging groups is not supported in Quick View.\nReason: List arrangement code overrides drag operations; to adjust group order, please use the sidebar.";
             new Notice(message, 5000);
         }
     }
 
+    function getDraggedItem(): SidebarItem | null {
+        for (const item of sidebarItems) {
+            if (item.id === draggedListId) return item;
+            if (item.type === "group" && item.items) {
+                const child = item.items.find(c => c.id === draggedListId);
+                if (child) return child;
+            }
+        }
+        return null;
+    }
+
     function handleListDragStart(e: DragEvent, item: SidebarItem | CategoryInfo) {
+        if (item.type === "group") {
+            isDraggingGroup = true;
+            draggedListId = item.id;
+            (window as any).__mstodo_category_drag = true;
+            if (e.dataTransfer) {
+                e.dataTransfer.setData("text/plain", item.id);
+                e.dataTransfer.effectAllowed = "none";
+            }
+            showDragForbiddenNotice();
+            return;
+        }
+
+        isDraggingGroup = false;
         draggedListId = item.id;
         (window as any).__mstodo_category_drag = true;
         if (e.dataTransfer) {
             e.dataTransfer.setData("text/plain", item.id);
-            e.dataTransfer.effectAllowed = "none";
+            e.dataTransfer.effectAllowed = "move";
         }
-        showDragForbiddenNotice();
     }
 
     function handleListDragEnd() {
         draggedListId = "";
         dragOverListId = "";
         dragListPosition = null;
+        isDraggingGroup = false;
         (window as any).__mstodo_category_drag = false;
     }
 
@@ -811,50 +836,186 @@
     function handleListDragOver(e: DragEvent, target: SidebarItem | CategoryInfo, isGroupHeader: boolean = false, parentGroup?: any) {
         e.preventDefault();
         e.stopPropagation();
-        if (e.dataTransfer) {
-            e.dataTransfer.dropEffect = "none";
+
+        if (isDraggingGroup) {
+            if (e.dataTransfer) e.dataTransfer.dropEffect = "none";
+            dragOverListId = "";
+            dragListPosition = null;
+            return;
         }
-        dragOverListId = "";
-        dragListPosition = null;
+
+        if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+
+        if (!draggedListId || target.id === draggedListId) {
+            dragOverListId = "";
+            dragListPosition = null;
+            return;
+        }
+
+        const draggedItem = getDraggedItem();
+        if (!draggedItem || draggedItem.type === "group") {
+            dragOverListId = "";
+            dragListPosition = null;
+            return;
+        }
+
+        dragOverListId = target.id || "";
+        const el = e.currentTarget as HTMLElement;
+        const rect = el.getBoundingClientRect();
+        const relY = e.clientY - rect.top;
+
+        if (isGroupHeader) {
+            dragListPosition = relY < rect.height * 0.35 ? "top" : "inside";
+        } else {
+            dragListPosition = relY < rect.height * 0.5 ? "top" : "bottom";
+        }
     }
 
     function handleGroupCardDragOver(e: DragEvent, group: GroupInfo, isItemsContainer: boolean = false) {
         e.preventDefault();
         e.stopPropagation();
-        if (e.dataTransfer) {
-            e.dataTransfer.dropEffect = "none";
+
+        if (isDraggingGroup) {
+            if (e.dataTransfer) e.dataTransfer.dropEffect = "none";
+            dragOverListId = "";
+            dragListPosition = null;
+            return;
         }
-        dragOverListId = "";
-        dragListPosition = null;
+
+        if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+
+        if (!draggedListId || group.id === draggedListId) {
+            dragOverListId = "";
+            dragListPosition = null;
+            return;
+        }
+
+        const draggedItem = getDraggedItem();
+        if (!draggedItem || draggedItem.type === "group") {
+            dragOverListId = "";
+            dragListPosition = null;
+            return;
+        }
+
+        dragOverListId = group.id;
+        dragListPosition = "inside";
     }
 
     function handleRootCardDragOver(e: DragEvent) {
         e.preventDefault();
         e.stopPropagation();
-        if (e.dataTransfer) {
-            e.dataTransfer.dropEffect = "none";
+
+        if (isDraggingGroup) {
+            if (e.dataTransfer) e.dataTransfer.dropEffect = "none";
+            dragOverListId = "";
+            dragListPosition = null;
+            return;
         }
-        dragOverListId = "";
-        dragListPosition = null;
+
+        if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+
+        if (!draggedListId) return;
+        const draggedItem = getDraggedItem();
+        if (!draggedItem || draggedItem.type === "group") {
+            dragOverListId = "";
+            dragListPosition = null;
+            return;
+        }
+
+        if (rootCategories.length > 0) {
+            const last = rootCategories[rootCategories.length - 1];
+            dragOverListId = last.id;
+            dragListPosition = "bottom";
+        } else {
+            dragOverListId = "__root__";
+            dragListPosition = "top";
+        }
     }
 
     async function handleRootCardDrop(e: DragEvent) {
         e.preventDefault();
         e.stopPropagation();
-        handleListDragEnd();
-        showDragForbiddenNotice();
+
+        if (isDraggingGroup) {
+            handleListDragEnd();
+            showDragForbiddenNotice();
+            return;
+        }
+
+        const draggedItem = getDraggedItem();
+        if (!draggedItem || draggedItem.type === "group") {
+            handleListDragEnd();
+            return;
+        }
+
+        if (rootCategories.length > 0) {
+            const last = rootCategories[rootCategories.length - 1];
+            await handleListDrop(last, "bottom");
+        } else {
+            await handleListDrop({ id: "__root__", name: "Lists", type: "category", filepath: "" } as any, "top");
+        }
     }
 
     async function handleGroupCardDrop(e: DragEvent, group: GroupInfo, isItemsContainer: boolean = false) {
         e.preventDefault();
         e.stopPropagation();
-        handleListDragEnd();
-        showDragForbiddenNotice();
+
+        if (isDraggingGroup) {
+            handleListDragEnd();
+            showDragForbiddenNotice();
+            return;
+        }
+
+        const draggedItem = getDraggedItem();
+        if (!draggedItem || draggedItem.type === "group") {
+            handleListDragEnd();
+            return;
+        }
+
+        await handleListDrop(group, "inside");
     }
 
     async function handleListDrop(target?: SidebarItem | CategoryInfo, forcedPosition?: "top" | "bottom" | "inside") {
+        if (isDraggingGroup) {
+            handleListDragEnd();
+            showDragForbiddenNotice();
+            return;
+        }
+
+        const movedId = draggedListId;
+        const targetId = target?.id || dragOverListId || "";
+        const pos = forcedPosition || dragListPosition;
+        const draggedItem = getDraggedItem();
+
         handleListDragEnd();
-        showDragForbiddenNotice();
+
+        if (!movedId || !targetId || !pos || movedId === targetId) return;
+
+        // Invariant: groups cannot be moved in Quick View
+        if (draggedItem?.type === "group") {
+            showDragForbiddenNotice();
+            return;
+        }
+
+        // 1. Move item in sidebar tree
+        sidebarItems = moveSidebarItem(sidebarItems, movedId, targetId, pos);
+        categories = getFlatCategories(sidebarItems);
+
+        // 2. Invalidate card measurement cache to ensure complete recalculation
+        measuredCardHeights.clear();
+
+        // 3. Await reactivity tick so derived stores ($: groupItems, $: rootCategories) refresh
+        await tick();
+
+        // 4. Force immediate grid layout recalculation
+        if (isGridLayout) {
+            updateLayoutColumns(true);
+            scheduleAdjustSpacing();
+        }
+
+        // 5. Persist to disk and notify peers
+        await dataService.saveSidebarState(sidebarItems);
+        EventBus.emit(EventName.CATEGORY_LIST_CHANGED, { sidebarItems });
     }
 
     // =============================================
@@ -1515,7 +1676,7 @@
     class="quick-modal-container quick-list-only-container"
     class:is-centered-titles={titleAlignment === 'center'}
     class:is-picking-focus={isPickingDefaultFocus}
-    class:is-dragging-list={!!draggedListId}
+    class:is-dragging-group={isDraggingGroup}
     bind:this={modalContainerEl}
     on:pointerleave={handlePointerLeave}
     tabindex="0"
@@ -1915,7 +2076,7 @@
                                                 {/each}
                                             {:else}
                                                 <div class="quick-grid-card-empty-dropzone">
-                                                    (Empty)
+                                                    Drop lists here
                                                 </div>
                                             {/if}
                                         </div>

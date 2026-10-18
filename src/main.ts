@@ -114,6 +114,7 @@ interface TaskMainViewComponent extends TaskMainView {
     cancelRenameCategory: () => void;
     isHoveringOrFocusedCategoryTitle: () => boolean;
     toggleStarByTaskId: (taskId: string) => Promise<void>;
+    applySettingsUpdate: (settings?: any) => void;
 }
 
 class TaskMainViewWrapper extends ItemView {
@@ -877,11 +878,25 @@ export default class FluentTasksPlugin extends Plugin {
 
     async loadSettings() {
         this.settings = Object.assign({}, DEFAULT_SETTINGS, (await this.loadData()) as Partial<FluentTasksSettings> | null);
+        if ((this.settings as any).disableStars !== undefined && this.settings.hiddenStarMode === undefined) {
+            this.settings.hiddenStarMode = (this.settings as any).disableStars;
+        }
+        this.settings.disableStars = this.settings.hiddenStarMode;
     }
 
     async saveSettings() {
+        this.settings.disableStars = this.settings.hiddenStarMode;
         await this.saveData(this.settings);
         EventBus.emit(EventName.SETTINGS_CHANGED, { settings: this.settings });
+
+        // Direct notification to all active main view leaves for instant reactivity
+        const mainLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MAIN);
+        for (const leaf of mainLeaves) {
+            if (leaf.view instanceof TaskMainViewWrapper) {
+                const comp = leaf.view.getComponent();
+                comp?.applySettingsUpdate?.(this.settings);
+            }
+        }
     }
 
     applySettings() {

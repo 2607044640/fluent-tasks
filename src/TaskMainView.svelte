@@ -44,8 +44,8 @@
     let wrapTaskTitles: boolean = plugin?.settings?.wrapTaskTitles ?? true;
     let enableTaskWeightMode: boolean = plugin?.settings?.enableTaskWeightMode ?? false;
     let centerAlignTasks: boolean = plugin?.settings?.centerAlignTasks ?? true;
-    let disableStars: boolean = plugin?.settings?.disableStars ?? false;
     let hiddenStarMode: boolean = plugin?.settings?.hiddenStarMode ?? plugin?.settings?.disableStars ?? false;
+    let disableStars: boolean = hiddenStarMode;
     let hideLeftSidebar: boolean = plugin?.settings?.hideLeftSidebar ?? false;
     let hasFloatingModalHotkey: boolean = true;
     $: showNoHotkeyWarning = hideLeftSidebar && !hasFloatingModalHotkey;
@@ -858,11 +858,13 @@
         }
     }
 
-    function handleSettingsChanged() {
-        wrapTaskTitles = plugin?.settings?.wrapTaskTitles ?? true;
-        enableTaskWeightMode = plugin?.settings?.enableTaskWeightMode ?? false;
-        centerAlignTasks = plugin?.settings?.centerAlignTasks ?? true;
-        hiddenStarMode = plugin?.settings?.hiddenStarMode ?? plugin?.settings?.disableStars ?? false;
+    export function applySettingsUpdate(settings?: any) {
+        const s = settings || plugin?.settings;
+        if (!s) return;
+        wrapTaskTitles = s.wrapTaskTitles ?? true;
+        enableTaskWeightMode = s.enableTaskWeightMode ?? false;
+        centerAlignTasks = s.centerAlignTasks ?? true;
+        hiddenStarMode = s.hiddenStarMode !== undefined ? s.hiddenStarMode : (s.disableStars ?? false);
         disableStars = hiddenStarMode;
         checkHotkeyStatus();
         incompleteTasks = applyWeightSort(rawIncompleteTasks, enableTaskWeightMode);
@@ -871,6 +873,12 @@
             rawIncompleteTasks = [...incompleteTasks];
             rawCompletedTasks = [...completedTasks];
         }
+        incompleteTasks = [...incompleteTasks];
+        completedTasks = [...completedTasks];
+    }
+
+    function handleSettingsChanged(payload?: any) {
+        applySettingsUpdate(payload?.settings);
     }
 
     interface TaskMetaBadgeItem {
@@ -932,7 +940,7 @@
         }
 
         // Count right-side interactive controls (star & priority weight)
-        const controlsCount = (!disableStars ? 1 : 0) + (enableTaskWeightMode ? 1 : 0);
+        const controlsCount = (!hiddenStarMode ? 1 : 0) + (enableTaskWeightMode ? 1 : 0);
         const totalIcons = badges.length + controlsCount;
 
         if (totalIcons > 9) {
@@ -1234,7 +1242,8 @@
         selectedTaskId = "";
         showCompleted = false;
         enableTaskWeightMode = plugin?.settings?.enableTaskWeightMode ?? false;
-        disableStars = plugin?.settings?.disableStars ?? false;
+        hiddenStarMode = plugin?.settings?.hiddenStarMode ?? plugin?.settings?.disableStars ?? false;
+        disableStars = hiddenStarMode;
         await loadTasks();
         if (plugin?.app && cat?.filepath) {
             void LinkedNoteService.autoSyncCategoryLinkedNotes(plugin.app, dataService, cat.filepath);
@@ -2235,7 +2244,7 @@
         }
     }
 
-    export { scheduleHidePopover, openSearch, closeSearch, toggleSearch, startRenameCategory, cancelRenameCategory, isHoveringOrFocusedCategoryTitle, toggleStarByTaskId };
+    export { scheduleHidePopover, openSearch, closeSearch, toggleSearch, startRenameCategory, cancelRenameCategory, isHoveringOrFocusedCategoryTitle, toggleStarByTaskId, applySettingsUpdate };
 </script>
 
 <svelte:window 
@@ -2354,7 +2363,7 @@
                         </span>
 
                         <!-- Batch Star -->
-                        {#if !disableStars}
+                        {#if !hiddenStarMode}
                             <span class="icon-btn"
                                   class:is-disabled={selectedTaskIds.size === 0}
                                   on:click|stopPropagation={() => selectedTaskIds.size > 0 && handleBatchStar()}
@@ -2708,12 +2717,12 @@
                         {/if}
 
                         <!-- Star -->
-                        {#if !disableStars && !hiddenStarMode}
+                        {#if !hiddenStarMode}
                             <span class="star" class:active={task.starred}
                                   on:click|stopPropagation={() => toggleStar(task)}
                                   role="button" tabindex="0"
                                   on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleStar(task)}>
-                                <svg width="18" height="18" viewBox="0 0 24 24"
+                                <svg width="14" height="14" viewBox="0 0 24 24"
                                      fill={task.starred ? "currentColor" : "none"}
                                      stroke="currentColor" stroke-width="2">
                                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
@@ -2955,12 +2964,12 @@
                                     {/if}
 
                                     <!-- Star -->
-                                    {#if !disableStars && !hiddenStarMode}
+                                    {#if !hiddenStarMode}
                                         <span class="star" class:active={task.starred}
                                               on:click|stopPropagation={() => toggleStar(task)}
                                               role="button" tabindex="0"
                                               on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleStar(task)}>
-                                            <svg width="18" height="18" viewBox="0 0 24 24"
+                                            <svg width="14" height="14" viewBox="0 0 24 24"
                                                  fill={task.starred ? "currentColor" : "none"}
                                                  stroke="currentColor" stroke-width="2">
                                                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>

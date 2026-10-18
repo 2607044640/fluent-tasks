@@ -621,12 +621,18 @@
 
 .star {
     cursor: pointer;
-    padding: 4px;
+    padding: 3px;
     display: flex;
     align-items: center;
+    justify-content: center;
     flex-shrink: 0;
     color: var(--todo-text-muted);
     transition: color var(--todo-transition);
+}
+
+.star svg {
+    width: 14.5px;
+    height: 14.5px;
 }
 
 .star:hover {
@@ -3366,11 +3372,12 @@ body .quick-modal-task-item.is-focused {
 
 .quick-modal-star-btn {
     cursor: pointer;
-    font-size: 14px;
+    font-size: 11.5px;
     color: var(--text-muted);
     padding: 0 4px;
     user-select: none;
     flex-shrink: 0;
+    line-height: 1;
 }
 
 .quick-modal-star-btn:hover,
@@ -3592,17 +3599,33 @@ body .quick-modal-task-item.is-focused {
     padding: 5px 8px;
 }
 
-/* Drag and Drop Disabled / Forbidden Indicators for Lists & Groups in Quick Modal */
-.quick-modal-container.is-dragging-list,
-.quick-modal-container.is-dragging-list *,
-.task-quick-list-modal.is-dragging-list,
-.task-quick-list-modal.is-dragging-list * {
+/* Drag and Drop Disabled / Forbidden Indicators for Groups in Quick Modal */
+.quick-modal-container.is-dragging-group,
+.quick-modal-container.is-dragging-group *,
+.task-quick-list-modal.is-dragging-group,
+.task-quick-list-modal.is-dragging-group * {
     cursor: not-allowed !important;
+}
+
+.quick-modal-group-header,
+.quick-grid-card-header {
+    cursor: not-allowed;
+}
+
+.quick-modal-group-chevron,
+.quick-modal-group-title,
+.quick-grid-card-title-wrap,
+.quick-grid-card-title {
+    cursor: pointer;
 }
 
 .is-dragging {
     opacity: 0.38 !important;
     filter: grayscale(20%);
+}
+
+.quick-modal-group-header.is-dragging,
+.quick-grid-card.is-dragging {
     cursor: not-allowed !important;
 }
 

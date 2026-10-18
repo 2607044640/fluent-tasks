@@ -137,6 +137,9 @@
         } else if (plugin?.settings?.centerAlignTasks !== undefined) {
             centerAlignTasks = plugin.settings.centerAlignTasks;
         }
+        incompleteTasks = [...incompleteTasks];
+        completedTasks = [...completedTasks];
+        searchResults = [...searchResults];
     }
 
     function handleExternalListChanged() {
@@ -363,7 +366,24 @@
     // =============================================
     // Sidebar Drag & Drop (Tree Reordering)
     // =============================================
+    let lastDragNoticeTime: number = 0;
+    function showDragForbiddenNotice() {
+        const now = Date.now();
+        if (now - lastDragNoticeTime > 2500) {
+            lastDragNoticeTime = now;
+            const message = isChinese()
+                ? "当前悬浮UI不支持拖拽分组。\n原因：排列list代码本身覆盖了拖拽操作；如需调整分组顺序，请在左侧边栏操作。"
+                : "Dragging groups is not supported in Quick View.\nReason: List arrangement code overrides drag operations; to adjust group order, please use the sidebar.";
+            new Notice(message, 5000);
+        }
+    }
+
     function handleListDragStart(e: DragEvent, item: SidebarItem | CategoryInfo) {
+        if (item.type === "group") {
+            if (e.dataTransfer) e.dataTransfer.effectAllowed = "none";
+            showDragForbiddenNotice();
+            return;
+        }
         draggedListId = item.id;
         if (e.dataTransfer) {
             e.dataTransfer.setData("text/plain", item.id);
@@ -409,6 +429,12 @@
         dragListPosition = null;
 
         if (movedId === targetId) return;
+
+        const movedItem = sidebarItems.find(i => i.id === movedId);
+        if (movedItem?.type === "group") {
+            showDragForbiddenNotice();
+            return;
+        }
 
         sidebarItems = moveSidebarItem(sidebarItems, movedId, targetId, pos);
         await dataService.saveSidebarState(sidebarItems);
@@ -1395,7 +1421,7 @@
                                             {/if}
                                         </span>
                                     {/if}
-                                    {#if !disableStars && !hiddenStarMode}
+                                    {#if !hiddenStarMode}
                                         <span 
                                             class="quick-modal-star-btn"
                                             class:is-starred={result.task.starred}
@@ -1488,7 +1514,7 @@
                                             {/if}
                                         </span>
                                     {/if}
-                                    {#if !disableStars && !hiddenStarMode}
+                                    {#if !hiddenStarMode}
                                         <span 
                                             class="quick-modal-star-btn"
                                             class:is-starred={task.starred}
@@ -1580,7 +1606,7 @@
                                                 {/if}
                                             </span>
                                         {/if}
-                                        {#if !disableStars && !hiddenStarMode}
+                                        {#if !hiddenStarMode}
                                             <span 
                                                 class="quick-modal-star-btn"
                                                 class:is-starred={task.starred}
