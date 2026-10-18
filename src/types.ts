@@ -85,12 +85,18 @@ export interface GroupInfo {
 
 export type SidebarItem = CategoryInfo | GroupInfo;
 
+export interface SidebarCategoryEntry {
+    name: string;
+    file?: string;
+}
+
 export interface SidebarItemState {
     type: "category" | "group";
     id?: string; // Group ID
     name: string; // Group name or Category name
+    file?: string; // Physical file basename without .md if different from name
     isExpanded?: boolean;
-    children?: string[]; // Array of Category names for groups
+    children?: Array<string | SidebarCategoryEntry>; // Array of Category names or objects for groups
 }
 
 // =============================================

@@ -18,6 +18,7 @@
     import { promptDeleteTaskWithLinkedNote } from "./modals/ConfirmDeleteLinkedNoteModal";
     import { TaskStepsModal } from "./modals/TaskStepsModal";
     import { BackupModal } from "./modals/BackupModal";
+    import { MoveToSuggestModal } from "./modals/MoveToSuggestModal";
     import { t, isChinese } from "./lang/helpers";
     import { Logger } from "./Logger";
     import { isQuickListHotkeyAssigned, openHotkeySettingsForQuickList } from "./utils/hotkeyUtils";
@@ -1866,6 +1867,35 @@
         }
     }
 
+    async function moveTaskToCategory(task: TaskItem, targetCat: CategoryInfo) {
+        if (!currentCategory) return;
+        const currentCatPath = currentCategory.filepath;
+        const actualSource = (currentCatPath === STARRED_CATEGORY_PATH && task.sourceFilepath)
+            ? task.sourceFilepath
+            : currentCatPath;
+
+        if (targetCat.filepath === actualSource) return;
+
+        // Anti-flicker: kill all transitions for the duration of the move
+        injectDndGhostShield();
+
+        // Optimistic UI: remove from local list
+        incompleteTasks = incompleteTasks.filter(t => t.id !== task.id);
+        completedTasks = completedTasks.filter(t => t.id !== task.id);
+        rawIncompleteTasks = rawIncompleteTasks.filter(t => t.id !== task.id);
+        rawCompletedTasks = rawCompletedTasks.filter(t => t.id !== task.id);
+
+        await dataService.moveTask(task, actualSource, targetCat.filepath);
+        EventBus.emit(EventName.TASK_MOVED, {
+            task,
+            sourcePath: actualSource,
+            targetPath: targetCat.filepath,
+        });
+
+        new Notice(isChinese() ? `已将任务移动至 "${targetCat.name}"` : `Moved task to "${targetCat.name}"`);
+        setTimeout(() => removeDndGhostShield(), ANTI_FLICKER_DURATION_MS);
+    }
+
     // =============================================
     // Context Menu (Right-click → Move to...)
     // =============================================
@@ -1886,31 +1916,107 @@
 
         menu.addSeparator();
 
-        const categories = await dataService.getCategories();
+        const sidebarItems = await dataService.getSidebarItems();
+        const allCategories = await dataService.getCategories();
+        const currentCatPath = currentCategory.filepath;
+        const actualSource = (currentCatPath === STARRED_CATEGORY_PATH && task.sourceFilepath)
+            ? task.sourceFilepath
+            : currentCatPath;
 
-        // Build "Move to..." submenu
-        for (const cat of categories) {
-            if (cat.filepath === currentCategory.filepath) continue;
+        const eligibleCategories = allCategories.filter(
+            c => c.filepath !== actualSource && c.filepath !== STARRED_CATEGORY_PATH
+        );
+
+        if (eligibleCategories.length > 0) {
             menu.addItem((item: any) => {
-                item.setTitle(`Move to "${cat.name}"`)
-                    .setIcon("folder")
-                    .onClick(async () => {
-                        // Anti-flicker: kill all transitions for the duration of the move
-                        injectDndGhostShield();
+                item.setTitle(t("move_to_menu_title") || "Move to")
+                    .setIcon("folder-input");
 
-                        // Optimistic UI: remove from local list
-                        incompleteTasks = incompleteTasks.filter(t => t.id !== task.id);
-                        completedTasks = completedTasks.filter(t => t.id !== task.id);
+                if (typeof item.setSubmenu === "function") {
+                    const subMenu = item.setSubmenu() as Menu;
 
-                        await dataService.moveTask(task, currentCategory!.filepath, cat.filepath);
-                        EventBus.emit(EventName.TASK_MOVED, {
-                            task,
-                            sourcePath: currentCategory!.filepath,
-                            targetPath: cat.filepath,
-                        });
-
-                        setTimeout(() => removeDndGhostShield(), ANTI_FLICKER_DURATION_MS);
+                    // Quick search modal option
+                    subMenu.addItem((searchItem: any) => {
+                        searchItem.setTitle(t("search_list_to_move") || "Search destination list...")
+                            .setIcon("search")
+                            .onClick(() => {
+                                if (plugin?.app) {
+                                    new MoveToSuggestModal(plugin.app, eligibleCategories, (targetCat) => {
+                                        void moveTaskToCategory(task, targetCat);
+                                    }).open();
+                                }
+                            });
                     });
+
+                    subMenu.addSeparator();
+
+                    const hasGroups = sidebarItems.some(i => i.type === "group");
+
+                    if (hasGroups) {
+                        for (const sItem of sidebarItems) {
+                            if (sItem.type === "group") {
+                                const groupCats = (sItem.items || []).filter(
+                                    c => c.filepath !== actualSource && c.filepath !== STARRED_CATEGORY_PATH
+                                );
+                                if (groupCats.length > 0) {
+                                    subMenu.addItem((groupMenuItem: any) => {
+                                        groupMenuItem.setTitle(sItem.name)
+                                            .setIcon("folder");
+
+                                        if (typeof groupMenuItem.setSubmenu === "function") {
+                                            const groupSubMenu = groupMenuItem.setSubmenu() as Menu;
+                                            for (const cat of groupCats) {
+                                                groupSubMenu.addItem((catItem: any) => {
+                                                    catItem.setTitle(cat.name)
+                                                        .setIcon("file-text")
+                                                        .onClick(() => {
+                                                            void moveTaskToCategory(task, cat);
+                                                        });
+                                                });
+                                            }
+                                        } else {
+                                            groupMenuItem.onClick(() => {
+                                                if (plugin?.app) {
+                                                    new MoveToSuggestModal(plugin.app, groupCats, (targetCat) => {
+                                                        void moveTaskToCategory(task, targetCat);
+                                                    }).open();
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
+                            } else if (sItem.type === "category") {
+                                if (sItem.filepath !== actualSource && sItem.filepath !== STARRED_CATEGORY_PATH) {
+                                    subMenu.addItem((catItem: any) => {
+                                        catItem.setTitle(sItem.name)
+                                            .setIcon("file-text")
+                                            .onClick(() => {
+                                                void moveTaskToCategory(task, sItem as CategoryInfo);
+                                            });
+                                    });
+                                }
+                            }
+                        }
+                    } else {
+                        for (const cat of eligibleCategories) {
+                            subMenu.addItem((catItem: any) => {
+                                catItem.setTitle(cat.name)
+                                    .setIcon("file-text")
+                                    .onClick(() => {
+                                        void moveTaskToCategory(task, cat);
+                                    });
+                            });
+                        }
+                    }
+                } else {
+                    item.onClick(() => {
+                        if (plugin?.app) {
+                            new MoveToSuggestModal(plugin.app, eligibleCategories, (targetCat) => {
+                                void moveTaskToCategory(task, targetCat);
+                            }).open();
+                        }
+                    });
+                }
             });
         }
 

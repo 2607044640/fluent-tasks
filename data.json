@@ -1,7 +1,7 @@
 {
   "accentColor": "#006eff",
   "openDetailInModal": false,
-  "hideLeftSidebar": true,
+  "hideLeftSidebar": false,
   "autoExpandSidebar": true,
   "autoCollapseSidebarOnSwitch": true,
   "searchHideCompleted": true,
@@ -9,6 +9,7 @@
   "wrapTaskTitles": true,
   "centerAlignTasks": true,
   "disableStars": true,
+  "hiddenStarMode": true,
   "showStepsProgressPill": false,
   "quickModalAction": "direct",
   "quickModalTipCount": 0,

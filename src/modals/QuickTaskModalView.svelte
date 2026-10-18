@@ -11,7 +11,8 @@
     import { promptDeleteTaskWithLinkedNote } from "./ConfirmDeleteLinkedNoteModal";
     import { LinkedNoteService } from "../services/LinkedNoteService";
     import { TaskStepsModal } from "./TaskStepsModal";
-    import { t } from "../lang/helpers";
+    import { MoveToSuggestModal } from "./MoveToSuggestModal";
+    import { t, isChinese } from "../lang/helpers";
 
     // =============================================
     // Props
@@ -619,6 +620,37 @@
         new Notice(taskItem.starred ? `Starred task: "${taskItem.title}"` : `Removed star from: "${taskItem.title}"`);
     }
 
+    async function moveTaskToCategory(task: TaskItem, targetCat: CategoryInfo) {
+        const catPath = isSearching 
+            ? searchResults.find(r => r.task.id === task.id)?.category.filepath 
+            : selectedCategory?.filepath;
+        if (!catPath || !plugin?.app) return;
+
+        const actualSource = (catPath === STARRED_CATEGORY_PATH && task.sourceFilepath)
+            ? task.sourceFilepath
+            : catPath;
+
+        if (targetCat.filepath === actualSource) return;
+
+        // Optimistic UI: remove from local list
+        incompleteTasks = incompleteTasks.filter(t => t.id !== task.id);
+        completedTasks = completedTasks.filter(t => t.id !== task.id);
+        if (isSearching) {
+            searchResults = searchResults.filter(r => r.task.id !== task.id);
+        }
+
+        await dataService.moveTask(task, actualSource, targetCat.filepath);
+        EventBus.emit(EventName.TASK_MOVED, {
+            task,
+            sourcePath: actualSource,
+            targetPath: targetCat.filepath,
+        });
+
+        await refreshTaskCounts();
+        await refreshStarredCount();
+        new Notice(isChinese() ? `已将任务移动至 "${targetCat.name}"` : `Moved task to "${targetCat.name}"`);
+    }
+
     function handleTaskContextMenu(e: MouseEvent, task: TaskItem) {
         e.preventDefault();
         e.stopPropagation();
@@ -642,6 +674,112 @@
         });
 
         menu.addSeparator();
+
+        const catPath = isSearching 
+            ? searchResults.find(r => r.task.id === task.id)?.category.filepath 
+            : selectedCategory?.filepath;
+        const actualSource = (catPath === STARRED_CATEGORY_PATH && task.sourceFilepath)
+            ? task.sourceFilepath
+            : catPath;
+
+        const eligibleCategories = categories.filter(
+            c => c.filepath !== actualSource && c.filepath !== STARRED_CATEGORY_PATH
+        );
+
+        if (eligibleCategories.length > 0) {
+            menu.addItem((item: any) => {
+                item.setTitle(t("move_to_menu_title") || "Move to")
+                    .setIcon("folder-input");
+
+                if (typeof item.setSubmenu === "function") {
+                    const subMenu = item.setSubmenu() as Menu;
+
+                    // Quick search modal option
+                    subMenu.addItem((searchItem: any) => {
+                        searchItem.setTitle(t("search_list_to_move") || "Search destination list...")
+                            .setIcon("search")
+                            .onClick(() => {
+                                if (plugin?.app) {
+                                    new MoveToSuggestModal(plugin.app, eligibleCategories, (targetCat) => {
+                                        void moveTaskToCategory(task, targetCat);
+                                    }).open();
+                                }
+                            });
+                    });
+
+                    subMenu.addSeparator();
+
+                    const hasGroups = sidebarItems.some(i => i.type === "group");
+
+                    if (hasGroups) {
+                        for (const sItem of sidebarItems) {
+                            if (sItem.type === "group") {
+                                const groupCats = (sItem.items || []).filter(
+                                    c => c.filepath !== actualSource && c.filepath !== STARRED_CATEGORY_PATH
+                                );
+                                if (groupCats.length > 0) {
+                                    subMenu.addItem((groupMenuItem: any) => {
+                                        groupMenuItem.setTitle(sItem.name)
+                                            .setIcon("folder");
+
+                                        if (typeof groupMenuItem.setSubmenu === "function") {
+                                            const groupSubMenu = groupMenuItem.setSubmenu() as Menu;
+                                            for (const cat of groupCats) {
+                                                groupSubMenu.addItem((catItem: any) => {
+                                                    catItem.setTitle(cat.name)
+                                                        .setIcon("file-text")
+                                                        .onClick(() => {
+                                                            void moveTaskToCategory(task, cat);
+                                                        });
+                                                });
+                                            }
+                                        } else {
+                                            groupMenuItem.onClick(() => {
+                                                if (plugin?.app) {
+                                                    new MoveToSuggestModal(plugin.app, groupCats, (targetCat) => {
+                                                        void moveTaskToCategory(task, targetCat);
+                                                    }).open();
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
+                            } else if (sItem.type === "category") {
+                                if (sItem.filepath !== actualSource && sItem.filepath !== STARRED_CATEGORY_PATH) {
+                                    subMenu.addItem((catItem: any) => {
+                                        catItem.setTitle(sItem.name)
+                                            .setIcon("file-text")
+                                            .onClick(() => {
+                                                void moveTaskToCategory(task, sItem as CategoryInfo);
+                                            });
+                                    });
+                                }
+                            }
+                        }
+                    } else {
+                        for (const cat of eligibleCategories) {
+                            subMenu.addItem((catItem: any) => {
+                                catItem.setTitle(cat.name)
+                                    .setIcon("file-text")
+                                    .onClick(() => {
+                                        void moveTaskToCategory(task, cat);
+                                    });
+                            });
+                        }
+                    }
+                } else {
+                    item.onClick(() => {
+                        if (plugin?.app) {
+                            new MoveToSuggestModal(plugin.app, eligibleCategories, (targetCat) => {
+                                void moveTaskToCategory(task, targetCat);
+                            }).open();
+                        }
+                    });
+                }
+            });
+
+            menu.addSeparator();
+        }
 
         menu.addItem((item) => {
             item.setTitle("Delete task")

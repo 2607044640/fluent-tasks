@@ -138,6 +138,8 @@ const zhCn: typeof en = {
     confirm_save_btn: "保存 (Enter)",
     confirm_dont_save_btn: "不保存 / 放弃",
     confirm_keep_editing_btn: "继续编辑 (Esc)",
+    move_to_menu_title: "移动到",
+    search_list_to_move: "搜索目标列表...",
 };
 
 export default zhCn;

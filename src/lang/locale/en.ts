@@ -136,6 +136,8 @@ const en = {
     confirm_save_btn: "Save (Enter)",
     confirm_dont_save_btn: "Don't Save",
     confirm_keep_editing_btn: "Keep Editing (Esc)",
+    move_to_menu_title: "Move to",
+    search_list_to_move: "Search destination list...",
 };
 
 export default en;

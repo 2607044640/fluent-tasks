@@ -48,7 +48,9 @@ export class CategoryService {
                 seenGroupIds.add(groupId);
 
                 const groupItems: CategoryInfo[] = [];
-                for (const childName of itemState.children || []) {
+                for (const child of itemState.children || []) {
+                    const childName = typeof child === "string" ? child : child.name;
+                    if (!childName) continue;
                     if (usedFiles.has(childName)) {
                         hasDuplicateMetadata = true;
                         continue;
