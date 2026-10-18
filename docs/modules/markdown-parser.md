@@ -22,8 +22,8 @@ Pure Markdown ↔ `TaskItem[]` codec. No vault access, no plugin state. Not a to
 1. `parseTasksFromMarkdown(content)` splits on `\n` and accumulates lines into `RawTaskBlock` objects using `TASK_START_REGEX = /^- \[([ x])\](?:\s+(.*))?$/`.
 2. Continuation lines without checklist prefixes are accumulated into the active task block until its `%%{...}%%` metadata is detected.
 3. Checkbox `x` → `completed: true`. Title is extracted with `%%...%%` tail stripped, then `<br>` / `<br/>` tags are decoded to `\n`.
-4. `JSON.parse` of `%%(\{.*?\})%%` fills `starred`, `steps`, `note`, `createdAt`, optional `completedAt`, `dueDate`, `msGraphId`, `msGraphListId`, `recurrence`, `why`, `svgs`, `note_link` (or legacy `noteLink`), `customMeta`.
-5. `serializeTasksToMarkdown(tasks)` encodes all `\r?\n` in titles to `<br>` and writes one physical line per task: `- [x]? {title} %%{...}%%`. Empty optional fields are omitted. Serialize always writes `note_link` (never `noteLink`).
+4. `JSON.parse` of `%%(\{.*?\})%%` fills `starred`, `steps` (including step `images`), `note`, `createdAt`, optional `completedAt`, `dueDate`, `msGraphId`, `msGraphListId`, `recurrence`, `why`, `svgs`, `note_link` (or legacy `noteLink`), `images`, `customMeta`.
+5. `serializeTasksToMarkdown(tasks)` encodes all `\r?\n` in titles to `<br>` and writes one physical line per task: `- [x]? {title} %%{...}%%`. Empty optional fields and empty arrays (e.g. `images: []`) are omitted. Serialize always writes `note_link` (never `noteLink`).
 6. `createTask(title)` sets `completed/starred` false, empty `steps`/`note`, `createdAt` now, hashed `id`.
 
 ## Side-effects API
