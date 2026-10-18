@@ -485,20 +485,8 @@
                             {/if}
                         </span>
 
-                        <!-- Multi-line auto-resizing textarea with thumbnail row -->
+                        <!-- Multi-line auto-resizing textarea with thumbnail row placed ABOVE the text -->
                         <div class="steps-modal-text-col">
-                            <textarea
-                                use:autosize={step.text}
-                                rows="1"
-                                class="steps-modal-textarea"
-                                class:completed={step.done}
-                                value={step.text}
-                                placeholder="Step description..."
-                                on:focus={() => { focusedStepId = step.id || null; }}
-                                on:input={(e) => handleStepInput(step.id, e.currentTarget.value)}
-                                on:blur={flushSaveSync}
-                                on:keydown={(e) => handleStepKeydown(e, step.id)}
-                            />
                             {#if getStepImages(step).length > 0}
                                 <div class="steps-modal-thumbnails-row">
                                     {#each getStepImages(step) as imgRef}
@@ -518,6 +506,18 @@
                                     {/each}
                                 </div>
                             {/if}
+                            <textarea
+                                use:autosize={step.text}
+                                rows="1"
+                                class="steps-modal-textarea"
+                                class:completed={step.done}
+                                value={step.text}
+                                placeholder="Step description..."
+                                on:focus={() => { focusedStepId = step.id || null; }}
+                                on:input={(e) => handleStepInput(step.id, e.currentTarget.value)}
+                                on:blur={flushSaveSync}
+                                on:keydown={(e) => handleStepKeydown(e, step.id)}
+                            />
                         </div>
 
                         <!-- Delete step button -->

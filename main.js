@@ -11179,7 +11179,7 @@ function create_else_block4(ctx) {
       }
     },
     p(ctx2, dirty) {
-      if (dirty[0] & /*steps, deleteStep, getStepImages, actualApp, removeImageFromStep, hoveredImageRef, focusedStepId, handleStepInput, flushSaveSync, toggleStep*/
+      if (dirty[0] & /*steps, deleteStep, focusedStepId, handleStepInput, flushSaveSync, getStepImages, actualApp, removeImageFromStep, hoveredImageRef, toggleStep*/
       3384856) {
         each_value_1 = ensure_array_like(
           /*steps*/
@@ -11409,7 +11409,7 @@ function create_each_block_2(ctx) {
   function func2() {
     return (
       /*func*/
-      ctx[35](
+      ctx[32](
         /*step*/
         ctx[61],
         /*imgRef*/
@@ -11420,7 +11420,7 @@ function create_each_block_2(ctx) {
   function func_12() {
     return (
       /*func_1*/
-      ctx[36](
+      ctx[33](
         /*step*/
         ctx[61],
         /*imgRef*/
@@ -11431,7 +11431,7 @@ function create_each_block_2(ctx) {
   function func_23(...args) {
     return (
       /*func_2*/
-      ctx[37](
+      ctx[34](
         /*step*/
         ctx[61],
         /*imgRef*/
@@ -11509,10 +11509,6 @@ function create_each_block_12(key_1, ctx) {
   let span1_aria_label_value;
   let t1;
   let div0;
-  let textarea;
-  let textarea_value_value;
-  let autosize_action;
-  let t2;
   let show_if = (
     /*getStepImages*/
     ctx[20](
@@ -11520,6 +11516,10 @@ function create_each_block_12(key_1, ctx) {
       ctx[61]
     ).length > 0
   );
+  let t2;
+  let textarea;
+  let textarea_value_value;
+  let autosize_action;
   let t3;
   let span2;
   let t4;
@@ -11557,10 +11557,11 @@ function create_each_block_12(key_1, ctx) {
       )
     );
   }
+  let if_block1 = show_if && create_if_block_32(ctx);
   function focus_handler() {
     return (
       /*focus_handler*/
-      ctx[32](
+      ctx[35](
         /*step*/
         ctx[61]
       )
@@ -11569,7 +11570,7 @@ function create_each_block_12(key_1, ctx) {
   function input_handler(...args) {
     return (
       /*input_handler*/
-      ctx[33](
+      ctx[36](
         /*step*/
         ctx[61],
         ...args
@@ -11579,14 +11580,13 @@ function create_each_block_12(key_1, ctx) {
   function keydown_handler_1(...args) {
     return (
       /*keydown_handler_1*/
-      ctx[34](
+      ctx[37](
         /*step*/
         ctx[61],
         ...args
       )
     );
   }
-  let if_block1 = show_if && create_if_block_32(ctx);
   function click_handler_12() {
     return (
       /*click_handler_1*/
@@ -11618,10 +11618,10 @@ function create_each_block_12(key_1, ctx) {
       if_block0.c();
       t1 = space();
       div0 = element("div");
-      textarea = element("textarea");
-      t2 = space();
       if (if_block1)
         if_block1.c();
+      t2 = space();
+      textarea = element("textarea");
       t3 = space();
       span2 = element("span");
       span2.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
@@ -11675,10 +11675,10 @@ function create_each_block_12(key_1, ctx) {
       if_block0.m(span1, null);
       append(div1, t1);
       append(div1, div0);
-      append(div0, textarea);
-      append(div0, t2);
       if (if_block1)
         if_block1.m(div0, null);
+      append(div0, t2);
+      append(div0, textarea);
       append(div1, t3);
       append(div1, span2);
       append(div1, t4);
@@ -11737,6 +11737,33 @@ function create_each_block_12(key_1, ctx) {
           ctx[61].done
         );
       }
+      if (dirty[0] & /*steps*/
+      16)
+        show_if = /*getStepImages*/
+        ctx[20](
+          /*step*/
+          ctx[61]
+        ).length > 0;
+      if (show_if) {
+        if (if_block1) {
+          if_block1.p(ctx, dirty);
+          if (dirty[0] & /*steps*/
+          16) {
+            transition_in(if_block1, 1);
+          }
+        } else {
+          if_block1 = create_if_block_32(ctx);
+          if_block1.c();
+          transition_in(if_block1, 1);
+          if_block1.m(div0, t2);
+        }
+      } else if (if_block1) {
+        group_outros();
+        transition_out(if_block1, 1, 1, () => {
+          if_block1 = null;
+        });
+        check_outros();
+      }
       if (!current || dirty[0] & /*steps*/
       16 && textarea_value_value !== (textarea_value_value = /*step*/
       ctx[61].text)) {
@@ -11757,33 +11784,6 @@ function create_each_block_12(key_1, ctx) {
           /*step*/
           ctx[61].done
         );
-      }
-      if (dirty[0] & /*steps*/
-      16)
-        show_if = /*getStepImages*/
-        ctx[20](
-          /*step*/
-          ctx[61]
-        ).length > 0;
-      if (show_if) {
-        if (if_block1) {
-          if_block1.p(ctx, dirty);
-          if (dirty[0] & /*steps*/
-          16) {
-            transition_in(if_block1, 1);
-          }
-        } else {
-          if_block1 = create_if_block_32(ctx);
-          if_block1.c();
-          transition_in(if_block1, 1);
-          if_block1.m(div0, null);
-        }
-      } else if (if_block1) {
-        group_outros();
-        transition_out(if_block1, 1, 1, () => {
-          if_block1 = null;
-        });
-        check_outros();
       }
       if (!current || dirty[0] & /*steps*/
       16) {
@@ -12780,11 +12780,6 @@ function instance4($$self, $$props, $$invalidate) {
   });
   const click_handler = (step) => toggleStep(step.id);
   const keydown_handler = (step, e) => (e.key === "Enter" || e.key === " ") && toggleStep(step.id);
-  const focus_handler = (step) => {
-    $$invalidate(9, focusedStepId = step.id || null);
-  };
-  const input_handler = (step, e) => handleStepInput(step.id, e.currentTarget.value);
-  const keydown_handler_1 = (step, e) => handleStepKeydown(e, step.id);
   const func2 = (step, imgRef) => removeImageFromStep(step.id, imgRef);
   const func_12 = (step, imgRef) => removeImageFromStep(step.id, imgRef);
   const func_23 = (step, imgRef, isHovered) => {
@@ -12794,6 +12789,11 @@ function instance4($$self, $$props, $$invalidate) {
       $$invalidate(10, hoveredImageRef = null);
     }
   };
+  const focus_handler = (step) => {
+    $$invalidate(9, focusedStepId = step.id || null);
+  };
+  const input_handler = (step, e) => handleStepInput(step.id, e.currentTarget.value);
+  const keydown_handler_1 = (step, e) => handleStepKeydown(e, step.id);
   const click_handler_12 = (step) => deleteStep(step.id);
   const keydown_handler_2 = (step, e) => e.key === "Enter" && deleteStep(step.id);
   const func_32 = (imgRef) => removeNewStepImage(imgRef);
@@ -12897,12 +12897,12 @@ function instance4($$self, $$props, $$invalidate) {
     closeModal,
     click_handler,
     keydown_handler,
-    focus_handler,
-    input_handler,
-    keydown_handler_1,
     func2,
     func_12,
     func_23,
+    focus_handler,
+    input_handler,
+    keydown_handler_1,
     click_handler_12,
     keydown_handler_2,
     func_32,
@@ -27626,8 +27626,8 @@ function create_if_block_332(ctx) {
       }
     },
     p(ctx2, dirty) {
-      if (dirty[0] & /*task, actualApp, hoveredImageRef, focusedTarget*/
-      4194692 | dirty[1] & /*deleteStep, getStepImages, removeImageFromStep, updateStepText, toggleStepDone*/
+      if (dirty[0] & /*task, focusedTarget, actualApp, hoveredImageRef*/
+      4194692 | dirty[1] & /*deleteStep, updateStepText, getStepImages, removeImageFromStep, toggleStepDone*/
       3680256) {
         each_value_9 = ensure_array_like(
           /*task*/
@@ -27835,7 +27835,7 @@ function create_each_block_10(ctx) {
   function func2() {
     return (
       /*func*/
-      ctx[95](
+      ctx[93](
         /*step*/
         ctx[212],
         /*imgRef*/
@@ -27846,7 +27846,7 @@ function create_each_block_10(ctx) {
   function func_12() {
     return (
       /*func_1*/
-      ctx[96](
+      ctx[94](
         /*step*/
         ctx[212],
         /*imgRef*/
@@ -27857,7 +27857,7 @@ function create_each_block_10(ctx) {
   function func_23(...args) {
     return (
       /*func_2*/
-      ctx[97](
+      ctx[95](
         /*step*/
         ctx[212],
         /*imgRef*/
@@ -27935,10 +27935,6 @@ function create_each_block_9(key_1, ctx) {
   let span1_aria_checked_value;
   let t1;
   let div0;
-  let textarea;
-  let textarea_value_value;
-  let autosize_action;
-  let t2;
   let show_if = (
     /*getStepImages*/
     ctx[42](
@@ -27946,6 +27942,10 @@ function create_each_block_9(key_1, ctx) {
       ctx[212]
     ).length > 0
   );
+  let t2;
+  let textarea;
+  let textarea_value_value;
+  let autosize_action;
   let t3;
   let span2;
   let t4;
@@ -27983,10 +27983,11 @@ function create_each_block_9(key_1, ctx) {
       )
     );
   }
+  let if_block1 = show_if && create_if_block_342(ctx);
   function focus_handler() {
     return (
       /*focus_handler*/
-      ctx[93](
+      ctx[96](
         /*step*/
         ctx[212]
       )
@@ -27995,14 +27996,13 @@ function create_each_block_9(key_1, ctx) {
   function input_handler(...args) {
     return (
       /*input_handler*/
-      ctx[94](
+      ctx[97](
         /*step*/
         ctx[212],
         ...args
       )
     );
   }
-  let if_block1 = show_if && create_if_block_342(ctx);
   function click_handler_2() {
     return (
       /*click_handler_2*/
@@ -28034,10 +28034,10 @@ function create_each_block_9(key_1, ctx) {
       if_block0.c();
       t1 = space();
       div0 = element("div");
-      textarea = element("textarea");
-      t2 = space();
       if (if_block1)
         if_block1.c();
+      t2 = space();
+      textarea = element("textarea");
       t3 = space();
       span2 = element("span");
       span2.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
@@ -28074,10 +28074,10 @@ function create_each_block_9(key_1, ctx) {
       if_block0.m(span1, null);
       append(div1, t1);
       append(div1, div0);
-      append(div0, textarea);
-      append(div0, t2);
       if (if_block1)
         if_block1.m(div0, null);
+      append(div0, t2);
+      append(div0, textarea);
       append(div1, t3);
       append(div1, span2);
       append(div1, t4);
@@ -28116,6 +28116,33 @@ function create_each_block_9(key_1, ctx) {
       ctx[212].done)) {
         attr(span1, "aria-checked", span1_aria_checked_value);
       }
+      if (dirty[0] & /*task*/
+      4)
+        show_if = /*getStepImages*/
+        ctx[42](
+          /*step*/
+          ctx[212]
+        ).length > 0;
+      if (show_if) {
+        if (if_block1) {
+          if_block1.p(ctx, dirty);
+          if (dirty[0] & /*task*/
+          4) {
+            transition_in(if_block1, 1);
+          }
+        } else {
+          if_block1 = create_if_block_342(ctx);
+          if_block1.c();
+          transition_in(if_block1, 1);
+          if_block1.m(div0, t2);
+        }
+      } else if (if_block1) {
+        group_outros();
+        transition_out(if_block1, 1, 1, () => {
+          if_block1 = null;
+        });
+        check_outros();
+      }
       if (!current || dirty[0] & /*task*/
       4 && textarea_value_value !== (textarea_value_value = /*step*/
       ctx[212].text)) {
@@ -28136,33 +28163,6 @@ function create_each_block_9(key_1, ctx) {
           /*step*/
           ctx[212].done
         );
-      }
-      if (dirty[0] & /*task*/
-      4)
-        show_if = /*getStepImages*/
-        ctx[42](
-          /*step*/
-          ctx[212]
-        ).length > 0;
-      if (show_if) {
-        if (if_block1) {
-          if_block1.p(ctx, dirty);
-          if (dirty[0] & /*task*/
-          4) {
-            transition_in(if_block1, 1);
-          }
-        } else {
-          if_block1 = create_if_block_342(ctx);
-          if_block1.c();
-          transition_in(if_block1, 1);
-          if_block1.m(div0, null);
-        }
-      } else if (if_block1) {
-        group_outros();
-        transition_out(if_block1, 1, 1, () => {
-          if_block1 = null;
-        });
-        check_outros();
       }
     },
     r() {
@@ -33620,11 +33620,6 @@ function instance7($$self, $$props, $$invalidate) {
   const keydown_handler_2 = (e) => e.key === "Enter" && closePanel();
   const click_handler_12 = (step) => toggleStepDone(step.id);
   const keydown_handler_3 = (step, e) => e.key === "Enter" && toggleStepDone(step.id);
-  const focus_handler = (step) => {
-    if (step.id)
-      $$invalidate(7, focusedTarget = { type: "step", stepId: step.id });
-  };
-  const input_handler = (step, e) => updateStepText(step.id, e.currentTarget.value);
   const func2 = (step, imgRef) => removeImageFromStep(step.id, imgRef);
   const func_12 = (step, imgRef) => removeImageFromStep(step.id, imgRef);
   const func_23 = (step, imgRef, isHovered) => {
@@ -33634,6 +33629,11 @@ function instance7($$self, $$props, $$invalidate) {
       $$invalidate(8, hoveredImageRef = null);
     }
   };
+  const focus_handler = (step) => {
+    if (step.id)
+      $$invalidate(7, focusedTarget = { type: "step", stepId: step.id });
+  };
+  const input_handler = (step, e) => updateStepText(step.id, e.currentTarget.value);
   const click_handler_2 = (step) => deleteStep(step.id);
   const keydown_handler_5 = (step, e) => e.key === "Enter" && deleteStep(step.id);
   const func_32 = (imgRef) => removeNewStepImage(imgRef);
@@ -33880,11 +33880,11 @@ function instance7($$self, $$props, $$invalidate) {
     keydown_handler_2,
     click_handler_12,
     keydown_handler_3,
-    focus_handler,
-    input_handler,
     func2,
     func_12,
     func_23,
+    focus_handler,
+    input_handler,
     click_handler_2,
     keydown_handler_5,
     func_32,

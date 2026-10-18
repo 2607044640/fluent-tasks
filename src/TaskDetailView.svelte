@@ -1438,21 +1438,6 @@
                                     {/if}
                                 </span>
                                 <div class="step-content-col">
-                                    <textarea
-                                        use:autosize={step.text}
-                                        rows="1"
-                                        value={step.text}
-                                        class:completed={step.done}
-                                        on:focus={() => { if (step.id) focusedTarget = { type: 'step', stepId: step.id }; }}
-                                        on:input={(e) => updateStepText(step.id, e.currentTarget.value)}
-                                        on:keydown={(e) => {
-                                            if (e.key === "Enter" && !e.shiftKey) {
-                                                e.preventDefault();
-                                                e.currentTarget.blur();
-                                            }
-                                        }}
-                                        placeholder="Step text"
-                                    />
                                     {#if getStepImages(step).length > 0}
                                         <div class="step-thumbnails-row">
                                             {#each getStepImages(step) as imgRef}
@@ -1473,6 +1458,21 @@
                                             {/each}
                                         </div>
                                     {/if}
+                                    <textarea
+                                        use:autosize={step.text}
+                                        rows="1"
+                                        value={step.text}
+                                        class:completed={step.done}
+                                        on:focus={() => { if (step.id) focusedTarget = { type: 'step', stepId: step.id }; }}
+                                        on:input={(e) => updateStepText(step.id, e.currentTarget.value)}
+                                        on:keydown={(e) => {
+                                            if (e.key === "Enter" && !e.shiftKey) {
+                                                e.preventDefault();
+                                                e.currentTarget.blur();
+                                            }
+                                        }}
+                                        placeholder="Step text"
+                                    />
                                 </div>
                                 <span class="delete-step" on:click|stopPropagation={() => deleteStep(step.id)}
                                       role="button" tabindex="0"
