@@ -25467,6 +25467,11 @@ function instance6($$self, $$props, $$invalidate) {
         openStepsModal(task);
       });
     });
+    menu.addItem((item) => {
+      item.setTitle(task.starred ? "Remove star" : "Star task").setIcon("star").onClick(async () => {
+        await toggleStar(task, true);
+      });
+    });
     menu.addSeparator();
     const sidebarItems = await dataService.getSidebarItems();
     const allCategories = await dataService.getCategories();
@@ -40217,6 +40222,11 @@ function instance9($$self, $$props, $$invalidate) {
     menu.addItem((item) => {
       item.setTitle(t("add_side_step") || "Add side step").setIcon("list-plus").onClick(() => {
         openStepsModal(task);
+      });
+    });
+    menu.addItem((item) => {
+      item.setTitle(task.starred ? "Remove star" : "Star task").setIcon("star").onClick(() => {
+        void toggleTaskStar(task);
       });
     });
     menu.addItem((item) => {

@@ -694,6 +694,16 @@
                 });
         });
 
+        // 2nd item: Star / Remove star
+        menu.addItem((item) => {
+            item.setTitle(task.starred ? "Remove star" : "Star task")
+                .setIcon("star")
+                .onClick(() => {
+                    void toggleTaskStar(task);
+                });
+        });
+
+        // 3rd item: Mark as completed / uncompleted
         menu.addItem((item) => {
             item.setTitle(task.completed ? "Mark as uncompleted" : "Mark as completed")
                 .setIcon("check-square")

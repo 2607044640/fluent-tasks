@@ -2239,6 +2239,15 @@
                 });
         });
 
+        // 2nd item: Star / Remove star
+        menu.addItem((item: any) => {
+            item.setTitle(task.starred ? "Remove star" : "Star task")
+                .setIcon("star")
+                .onClick(async () => {
+                    await toggleStar(task, true);
+                });
+        });
+
         menu.addSeparator();
 
         const sidebarItems = await dataService.getSidebarItems();
