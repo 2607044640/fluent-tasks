@@ -26032,17 +26032,12 @@ function instance6($$self, $$props, $$invalidate) {
         isNavigatingHistory = true;
         try {
           EventBus.emit("category:selected" /* CATEGORY_SELECTED */, { category: prevCat, fromHistory: true });
-          new import_obsidian17.Notice(`\u2190 ${prevCat.name}`, 1200);
         } finally {
           isNavigatingHistory = false;
         }
         return true;
       }
     }
-    new import_obsidian17.Notice(
-      isChinese() ? "\u5DF2\u7ECF\u662F\u6700\u65E9\u7684\u5217\u8868\u8BB0\u5F55" : "No earlier list in history",
-      1200
-    );
     return false;
   }
   async function navigateForward() {
@@ -26062,17 +26057,12 @@ function instance6($$self, $$props, $$invalidate) {
         isNavigatingHistory = true;
         try {
           EventBus.emit("category:selected" /* CATEGORY_SELECTED */, { category: nextCat, fromHistory: true });
-          new import_obsidian17.Notice(`\u2192 ${nextCat.name}`, 1200);
         } finally {
           isNavigatingHistory = false;
         }
         return true;
       }
     }
-    new import_obsidian17.Notice(
-      isChinese() ? "\u5DF2\u7ECF\u662F\u6700\u65B0\u7684\u5217\u8868\u8BB0\u5F55" : "No forward list in history",
-      1200
-    );
     return false;
   }
   async function handleCategorySelected(payload) {

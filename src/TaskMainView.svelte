@@ -1725,14 +1725,12 @@
                 isNavigatingHistory = true;
                 try {
                     EventBus.emit(EventName.CATEGORY_SELECTED, { category: prevCat, fromHistory: true });
-                    new Notice(`← ${prevCat.name}`, 1200);
                 } finally {
                     isNavigatingHistory = false;
                 }
                 return true;
             }
         }
-        new Notice(isChinese() ? "已经是最早的列表记录" : "No earlier list in history", 1200);
         return false;
     }
 
@@ -1753,14 +1751,12 @@
                 isNavigatingHistory = true;
                 try {
                     EventBus.emit(EventName.CATEGORY_SELECTED, { category: nextCat, fromHistory: true });
-                    new Notice(`→ ${nextCat.name}`, 1200);
                 } finally {
                     isNavigatingHistory = false;
                 }
                 return true;
             }
         }
-        new Notice(isChinese() ? "已经是最新的列表记录" : "No forward list in history", 1200);
         return false;
     }
 
