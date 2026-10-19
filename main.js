@@ -11245,20 +11245,301 @@ function add_css3(target) {
 }
 function get_each_context2(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[58] = list[i];
+  child_ctx[75] = list[i];
   return child_ctx;
 }
 function get_each_context_12(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[61] = list[i];
+  child_ctx[78] = list[i];
   return child_ctx;
 }
 function get_each_context_2(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[58] = list[i];
+  child_ctx[75] = list[i];
   return child_ctx;
 }
-function create_if_block_52(ctx) {
+function create_if_block_72(ctx) {
+  let div2;
+  let div0;
+  let svg0;
+  let circle;
+  let line0;
+  let t0;
+  let input;
+  let t1;
+  let show_if = (
+    /*searchQuery*/
+    ctx[14].trim()
+  );
+  let t2;
+  let div1;
+  let button0;
+  let svg1;
+  let polyline0;
+  let button0_disabled_value;
+  let t3;
+  let button1;
+  let svg2;
+  let polyline1;
+  let button1_disabled_value;
+  let t4;
+  let button2;
+  let mounted;
+  let dispose;
+  let if_block = show_if && create_if_block_82(ctx);
+  return {
+    c() {
+      div2 = element("div");
+      div0 = element("div");
+      svg0 = svg_element("svg");
+      circle = svg_element("circle");
+      line0 = svg_element("line");
+      t0 = space();
+      input = element("input");
+      t1 = space();
+      if (if_block)
+        if_block.c();
+      t2 = space();
+      div1 = element("div");
+      button0 = element("button");
+      svg1 = svg_element("svg");
+      polyline0 = svg_element("polyline");
+      t3 = space();
+      button1 = element("button");
+      svg2 = svg_element("svg");
+      polyline1 = svg_element("polyline");
+      t4 = space();
+      button2 = element("button");
+      button2.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+      attr(circle, "cx", "11");
+      attr(circle, "cy", "11");
+      attr(circle, "r", "8");
+      attr(line0, "x1", "21");
+      attr(line0, "y1", "21");
+      attr(line0, "x2", "16.65");
+      attr(line0, "y2", "16.65");
+      attr(svg0, "class", "task-steps-search-icon");
+      attr(svg0, "width", "14");
+      attr(svg0, "height", "14");
+      attr(svg0, "viewBox", "0 0 24 24");
+      attr(svg0, "fill", "none");
+      attr(svg0, "stroke", "currentColor");
+      attr(svg0, "stroke-width", "2");
+      attr(svg0, "stroke-linecap", "round");
+      attr(svg0, "stroke-linejoin", "round");
+      attr(input, "type", "text");
+      attr(input, "class", "task-steps-search-input");
+      attr(input, "placeholder", "Search in steps...");
+      attr(input, "aria-label", "Search steps");
+      attr(div0, "class", "task-steps-search-input-wrapper");
+      attr(polyline0, "points", "18 15 12 9 6 15");
+      attr(svg1, "width", "14");
+      attr(svg1, "height", "14");
+      attr(svg1, "viewBox", "0 0 24 24");
+      attr(svg1, "fill", "none");
+      attr(svg1, "stroke", "currentColor");
+      attr(svg1, "stroke-width", "2.2");
+      attr(svg1, "stroke-linecap", "round");
+      attr(svg1, "stroke-linejoin", "round");
+      attr(button0, "type", "button");
+      attr(button0, "class", "task-steps-search-btn");
+      attr(button0, "title", "Previous match (Shift+Enter)");
+      attr(button0, "aria-label", "Previous match");
+      button0.disabled = button0_disabled_value = /*allMatches*/
+      ctx[16].length === 0;
+      attr(polyline1, "points", "6 9 12 15 18 9");
+      attr(svg2, "width", "14");
+      attr(svg2, "height", "14");
+      attr(svg2, "viewBox", "0 0 24 24");
+      attr(svg2, "fill", "none");
+      attr(svg2, "stroke", "currentColor");
+      attr(svg2, "stroke-width", "2.2");
+      attr(svg2, "stroke-linecap", "round");
+      attr(svg2, "stroke-linejoin", "round");
+      attr(button1, "type", "button");
+      attr(button1, "class", "task-steps-search-btn");
+      attr(button1, "title", "Next match (Enter)");
+      attr(button1, "aria-label", "Next match");
+      button1.disabled = button1_disabled_value = /*allMatches*/
+      ctx[16].length === 0;
+      attr(button2, "type", "button");
+      attr(button2, "class", "task-steps-search-btn task-steps-search-close-btn");
+      attr(button2, "title", "Close search (Esc)");
+      attr(button2, "aria-label", "Close search");
+      attr(div1, "class", "task-steps-search-actions");
+      attr(div2, "class", "task-steps-search-bar");
+      attr(div2, "role", "search");
+      attr(div2, "aria-label", "Search within steps");
+    },
+    m(target, anchor) {
+      insert(target, div2, anchor);
+      append(div2, div0);
+      append(div0, svg0);
+      append(svg0, circle);
+      append(svg0, line0);
+      append(div0, t0);
+      append(div0, input);
+      ctx[43](input);
+      set_input_value(
+        input,
+        /*searchQuery*/
+        ctx[14]
+      );
+      append(div0, t1);
+      if (if_block)
+        if_block.m(div0, null);
+      append(div2, t2);
+      append(div2, div1);
+      append(div1, button0);
+      append(button0, svg1);
+      append(svg1, polyline0);
+      append(div1, t3);
+      append(div1, button1);
+      append(button1, svg2);
+      append(svg2, polyline1);
+      append(div1, t4);
+      append(div1, button2);
+      if (!mounted) {
+        dispose = [
+          listen(
+            input,
+            "input",
+            /*input_input_handler*/
+            ctx[44]
+          ),
+          listen(
+            input,
+            "input",
+            /*handleSearchInput*/
+            ctx[24]
+          ),
+          listen(
+            input,
+            "keydown",
+            /*handleSearchKeydown*/
+            ctx[25]
+          ),
+          listen(
+            button0,
+            "click",
+            /*prevMatch*/
+            ctx[23]
+          ),
+          listen(
+            button1,
+            "click",
+            /*nextMatch*/
+            ctx[22]
+          ),
+          listen(
+            button2,
+            "click",
+            /*closeSearch*/
+            ctx[21]
+          )
+        ];
+        mounted = true;
+      }
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*searchQuery*/
+      16384 && input.value !== /*searchQuery*/
+      ctx2[14]) {
+        set_input_value(
+          input,
+          /*searchQuery*/
+          ctx2[14]
+        );
+      }
+      if (dirty[0] & /*searchQuery*/
+      16384)
+        show_if = /*searchQuery*/
+        ctx2[14].trim();
+      if (show_if) {
+        if (if_block) {
+          if_block.p(ctx2, dirty);
+        } else {
+          if_block = create_if_block_82(ctx2);
+          if_block.c();
+          if_block.m(div0, null);
+        }
+      } else if (if_block) {
+        if_block.d(1);
+        if_block = null;
+      }
+      if (dirty[0] & /*allMatches*/
+      65536 && button0_disabled_value !== (button0_disabled_value = /*allMatches*/
+      ctx2[16].length === 0)) {
+        button0.disabled = button0_disabled_value;
+      }
+      if (dirty[0] & /*allMatches*/
+      65536 && button1_disabled_value !== (button1_disabled_value = /*allMatches*/
+      ctx2[16].length === 0)) {
+        button1.disabled = button1_disabled_value;
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div2);
+      }
+      ctx[43](null);
+      if (if_block)
+        if_block.d();
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
+function create_if_block_82(ctx) {
+  let span;
+  let t_1_value = (
+    /*allMatches*/
+    ctx[16].length === 0 ? "0/0" : `${/*activeMatchIndex*/
+    ctx[17] + 1}/${/*allMatches*/
+    ctx[16].length}`
+  );
+  let t_1;
+  return {
+    c() {
+      span = element("span");
+      t_1 = text(t_1_value);
+      attr(span, "class", "task-steps-search-count");
+      toggle_class(
+        span,
+        "no-match",
+        /*allMatches*/
+        ctx[16].length === 0
+      );
+    },
+    m(target, anchor) {
+      insert(target, span, anchor);
+      append(span, t_1);
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*allMatches, activeMatchIndex*/
+      196608 && t_1_value !== (t_1_value = /*allMatches*/
+      ctx2[16].length === 0 ? "0/0" : `${/*activeMatchIndex*/
+      ctx2[17] + 1}/${/*allMatches*/
+      ctx2[16].length}`))
+        set_data(t_1, t_1_value);
+      if (dirty[0] & /*allMatches*/
+      65536) {
+        toggle_class(
+          span,
+          "no-match",
+          /*allMatches*/
+          ctx2[16].length === 0
+        );
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(span);
+      }
+    }
+  };
+}
+function create_if_block_62(ctx) {
   let div1;
   let div0;
   return {
@@ -11270,7 +11551,7 @@ function create_if_block_52(ctx) {
         div0,
         "width",
         /*progressPercent*/
-        ctx[14] + "%"
+        ctx[19] + "%"
       );
       attr(div1, "class", "task-steps-progress-track");
     },
@@ -11280,12 +11561,12 @@ function create_if_block_52(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*progressPercent*/
-      16384) {
+      524288) {
         set_style(
           div0,
           "width",
           /*progressPercent*/
-          ctx2[14] + "%"
+          ctx2[19] + "%"
         );
       }
     },
@@ -11310,7 +11591,7 @@ function create_else_block4(ctx) {
   );
   const get_key = (ctx2) => (
     /*step*/
-    ctx2[61].id
+    ctx2[78].id
   );
   for (let i = 0; i < each_value_1.length; i += 1) {
     let child_ctx = get_each_context_12(ctx, each_value_1, i);
@@ -11350,21 +11631,22 @@ function create_else_block4(ctx) {
             div,
             "consider",
             /*handleDndConsider*/
-            ctx[18]
+            ctx[30]
           ),
           listen(
             div,
             "finalize",
             /*handleDndFinalize*/
-            ctx[19]
+            ctx[31]
           )
         ];
         mounted = true;
       }
     },
     p(ctx2, dirty) {
-      if (dirty[0] & /*steps, deleteStep, focusedStepId, handleStepInput, flushSaveSync, getStepImages, actualApp, removeImageFromStep, hoveredImageRef, toggleStep*/
-      3384856) {
+      if (dirty[0] & /*steps, deleteStep, focusedStepId, handleStepInput, flushSaveSync, renderHighlightedText, searchQuery, activeMatchIndex, showSearchBar, actualApp, hoveredImageRef, toggleStep*/
+      1007052312 | dirty[1] & /*getStepImages, removeImageFromStep*/
+      6) {
         each_value_1 = ensure_array_like(
           /*steps*/
           ctx2[4]
@@ -11466,7 +11748,7 @@ function create_else_block_12(ctx) {
     }
   };
 }
-function create_if_block_42(ctx) {
+function create_if_block_52(ctx) {
   let svg;
   let circle;
   let polyline;
@@ -11500,14 +11782,14 @@ function create_if_block_42(ctx) {
     }
   };
 }
-function create_if_block_32(ctx) {
+function create_if_block_42(ctx) {
   let div;
   let current;
   let each_value_2 = ensure_array_like(
     /*getStepImages*/
-    ctx[20](
+    ctx[32](
       /*step*/
-      ctx[61]
+      ctx[78]
     )
   );
   let each_blocks = [];
@@ -11535,13 +11817,14 @@ function create_if_block_32(ctx) {
       current = true;
     },
     p(ctx2, dirty) {
-      if (dirty[0] & /*getStepImages, steps, actualApp, removeImageFromStep, hoveredImageRef*/
-      3154960) {
+      if (dirty[0] & /*steps, actualApp, hoveredImageRef*/
+      263184 | dirty[1] & /*getStepImages, removeImageFromStep*/
+      6) {
         each_value_2 = ensure_array_like(
           /*getStepImages*/
-          ctx2[20](
+          ctx2[32](
             /*step*/
-            ctx2[61]
+            ctx2[78]
           )
         );
         let i;
@@ -11593,33 +11876,33 @@ function create_each_block_2(ctx) {
   function func2() {
     return (
       /*func*/
-      ctx[32](
+      ctx[47](
         /*step*/
-        ctx[61],
+        ctx[78],
         /*imgRef*/
-        ctx[58]
+        ctx[75]
       )
     );
   }
   function func_12() {
     return (
       /*func_1*/
-      ctx[33](
+      ctx[48](
         /*step*/
-        ctx[61],
+        ctx[78],
         /*imgRef*/
-        ctx[58]
+        ctx[75]
       )
     );
   }
   function func_23(...args) {
     return (
       /*func_2*/
-      ctx[34](
+      ctx[49](
         /*step*/
-        ctx[61],
+        ctx[78],
         /*imgRef*/
-        ctx[58],
+        ctx[75],
         ...args
       )
     );
@@ -11628,11 +11911,11 @@ function create_each_block_2(ctx) {
     props: {
       imageRef: (
         /*imgRef*/
-        ctx[58]
+        ctx[75]
       ),
       app: (
         /*actualApp*/
-        ctx[13]
+        ctx[18]
       ),
       onDelete: func2,
       onCut: func_12,
@@ -11653,11 +11936,11 @@ function create_each_block_2(ctx) {
       if (dirty[0] & /*steps*/
       16)
         taskimagethumbnail_changes.imageRef = /*imgRef*/
-        ctx[58];
+        ctx[75];
       if (dirty[0] & /*actualApp*/
-      8192)
+      262144)
         taskimagethumbnail_changes.app = /*actualApp*/
-        ctx[13];
+        ctx[18];
       if (dirty[0] & /*steps*/
       16)
         taskimagethumbnail_changes.onDelete = func2;
@@ -11684,29 +11967,84 @@ function create_each_block_2(ctx) {
     }
   };
 }
+function create_if_block_32(ctx) {
+  let div;
+  let raw_value = (
+    /*renderHighlightedText*/
+    ctx[26](
+      /*step*/
+      ctx[78].text,
+      /*step*/
+      ctx[78].id,
+      /*searchQuery*/
+      ctx[14],
+      /*activeMatchIndex*/
+      ctx[17]
+    ) + ""
+  );
+  return {
+    c() {
+      div = element("div");
+      attr(div, "class", "steps-modal-text-backdrop");
+      attr(div, "aria-hidden", "true");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      div.innerHTML = raw_value;
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*steps, searchQuery, activeMatchIndex*/
+      147472 && raw_value !== (raw_value = /*renderHighlightedText*/
+      ctx2[26](
+        /*step*/
+        ctx2[78].text,
+        /*step*/
+        ctx2[78].id,
+        /*searchQuery*/
+        ctx2[14],
+        /*activeMatchIndex*/
+        ctx2[17]
+      ) + ""))
+        div.innerHTML = raw_value;
+      ;
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+    }
+  };
+}
 function create_each_block_12(key_1, ctx) {
-  let div1;
+  let div2;
   let span0;
   let t0;
   let span1;
   let span1_aria_checked_value;
   let span1_aria_label_value;
   let t1;
-  let div0;
-  let show_if = (
+  let div1;
+  let show_if_1 = (
     /*getStepImages*/
-    ctx[20](
+    ctx[32](
       /*step*/
-      ctx[61]
+      ctx[78]
     ).length > 0
   );
   let t2;
+  let div0;
+  let show_if = (
+    /*showSearchBar*/
+    ctx[13] && /*searchQuery*/
+    ctx[14].trim()
+  );
+  let t3;
   let textarea;
   let textarea_value_value;
   let autosize_action;
-  let t3;
-  let span2;
   let t4;
+  let span2;
+  let t5;
   let rect;
   let stop_animation = noop;
   let current;
@@ -11715,48 +12053,49 @@ function create_each_block_12(key_1, ctx) {
   function select_block_type_1(ctx2, dirty) {
     if (
       /*step*/
-      ctx2[61].done
+      ctx2[78].done
     )
-      return create_if_block_42;
+      return create_if_block_52;
     return create_else_block_12;
   }
   let current_block_type = select_block_type_1(ctx, [-1, -1, -1]);
   let if_block0 = current_block_type(ctx);
-  function click_handler() {
+  function click_handler_12() {
     return (
-      /*click_handler*/
-      ctx[30](
+      /*click_handler_1*/
+      ctx[45](
         /*step*/
-        ctx[61]
+        ctx[78]
       )
     );
   }
   function keydown_handler(...args) {
     return (
       /*keydown_handler*/
-      ctx[31](
+      ctx[46](
         /*step*/
-        ctx[61],
+        ctx[78],
         ...args
       )
     );
   }
-  let if_block1 = show_if && create_if_block_32(ctx);
+  let if_block1 = show_if_1 && create_if_block_42(ctx);
+  let if_block2 = show_if && create_if_block_32(ctx);
   function focus_handler() {
     return (
       /*focus_handler*/
-      ctx[35](
+      ctx[50](
         /*step*/
-        ctx[61]
+        ctx[78]
       )
     );
   }
   function input_handler(...args) {
     return (
       /*input_handler*/
-      ctx[36](
+      ctx[51](
         /*step*/
-        ctx[61],
+        ctx[78],
         ...args
       )
     );
@@ -11764,28 +12103,28 @@ function create_each_block_12(key_1, ctx) {
   function keydown_handler_1(...args) {
     return (
       /*keydown_handler_1*/
-      ctx[37](
+      ctx[52](
         /*step*/
-        ctx[61],
+        ctx[78],
         ...args
       )
     );
   }
-  function click_handler_12() {
+  function click_handler_2() {
     return (
-      /*click_handler_1*/
-      ctx[38](
+      /*click_handler_2*/
+      ctx[53](
         /*step*/
-        ctx[61]
+        ctx[78]
       )
     );
   }
   function keydown_handler_2(...args) {
     return (
       /*keydown_handler_2*/
-      ctx[39](
+      ctx[54](
         /*step*/
-        ctx[61],
+        ctx[78],
         ...args
       )
     );
@@ -11794,88 +12133,97 @@ function create_each_block_12(key_1, ctx) {
     key: key_1,
     first: null,
     c() {
-      div1 = element("div");
+      div2 = element("div");
       span0 = element("span");
       span0.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="5" r="1.8"></circle><circle cx="15" cy="5" r="1.8"></circle><circle cx="9" cy="12" r="1.8"></circle><circle cx="15" cy="12" r="1.8"></circle><circle cx="9" cy="19" r="1.8"></circle><circle cx="15" cy="19" r="1.8"></circle></svg>`;
       t0 = space();
       span1 = element("span");
       if_block0.c();
       t1 = space();
-      div0 = element("div");
+      div1 = element("div");
       if (if_block1)
         if_block1.c();
       t2 = space();
-      textarea = element("textarea");
+      div0 = element("div");
+      if (if_block2)
+        if_block2.c();
       t3 = space();
+      textarea = element("textarea");
+      t4 = space();
       span2 = element("span");
       span2.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
-      t4 = space();
+      t5 = space();
       attr(span0, "class", "steps-modal-drag-handle");
       attr(span0, "title", "Drag to reorder");
       attr(span1, "class", "steps-modal-checkbox");
       attr(span1, "role", "checkbox");
       attr(span1, "aria-checked", span1_aria_checked_value = /*step*/
-      ctx[61].done);
+      ctx[78].done);
       attr(span1, "tabindex", "0");
       attr(span1, "aria-label", span1_aria_label_value = /*step*/
-      ctx[61].done ? "Mark step incomplete" : "Mark step complete");
+      ctx[78].done ? "Mark step incomplete" : "Mark step complete");
       toggle_class(
         span1,
         "checked",
         /*step*/
-        ctx[61].done
+        ctx[78].done
       );
       attr(textarea, "rows", "1");
       attr(textarea, "class", "steps-modal-textarea");
       textarea.value = textarea_value_value = /*step*/
-      ctx[61].text;
+      ctx[78].text;
       attr(textarea, "placeholder", "Step description...");
       toggle_class(
         textarea,
         "completed",
         /*step*/
-        ctx[61].done
+        ctx[78].done
       );
-      attr(div0, "class", "steps-modal-text-col svelte-stsw6s");
+      attr(div0, "class", "steps-modal-text-wrapper");
+      attr(div1, "class", "steps-modal-text-col svelte-stsw6s");
       attr(span2, "class", "steps-modal-delete-btn");
       attr(span2, "role", "button");
       attr(span2, "tabindex", "0");
       attr(span2, "title", "Delete step");
       attr(span2, "aria-label", "Delete step");
-      attr(div1, "class", "steps-modal-item");
+      attr(div2, "class", "steps-modal-item");
       toggle_class(
-        div1,
+        div2,
         "is-done",
         /*step*/
-        ctx[61].done
+        ctx[78].done
       );
-      this.first = div1;
+      this.first = div2;
     },
     m(target, anchor) {
-      insert(target, div1, anchor);
-      append(div1, span0);
-      append(div1, t0);
-      append(div1, span1);
+      insert(target, div2, anchor);
+      append(div2, span0);
+      append(div2, t0);
+      append(div2, span1);
       if_block0.m(span1, null);
-      append(div1, t1);
-      append(div1, div0);
+      append(div2, t1);
+      append(div2, div1);
       if (if_block1)
-        if_block1.m(div0, null);
-      append(div0, t2);
+        if_block1.m(div1, null);
+      append(div1, t2);
+      append(div1, div0);
+      if (if_block2)
+        if_block2.m(div0, null);
+      append(div0, t3);
       append(div0, textarea);
-      append(div1, t3);
-      append(div1, span2);
-      append(div1, t4);
+      append(div2, t4);
+      append(div2, span2);
+      append(div2, t5);
       current = true;
       if (!mounted) {
         dispose = [
-          listen(span1, "click", stop_propagation(click_handler)),
+          listen(span1, "click", stop_propagation(click_handler_12)),
           listen(span1, "keydown", stop_propagation(keydown_handler)),
           action_destroyer(autosize_action = autosize.call(
             null,
             textarea,
             /*step*/
-            ctx[61].text
+            ctx[78].text
           )),
           listen(textarea, "focus", focus_handler),
           listen(textarea, "input", input_handler),
@@ -11886,7 +12234,7 @@ function create_each_block_12(key_1, ctx) {
             ctx[3]
           ),
           listen(textarea, "keydown", keydown_handler_1),
-          listen(span2, "click", stop_propagation(click_handler_12)),
+          listen(span2, "click", stop_propagation(click_handler_2)),
           listen(span2, "keydown", stop_propagation(keydown_handler_2))
         ];
         mounted = true;
@@ -11904,12 +12252,12 @@ function create_each_block_12(key_1, ctx) {
       }
       if (!current || dirty[0] & /*steps*/
       16 && span1_aria_checked_value !== (span1_aria_checked_value = /*step*/
-      ctx[61].done)) {
+      ctx[78].done)) {
         attr(span1, "aria-checked", span1_aria_checked_value);
       }
       if (!current || dirty[0] & /*steps*/
       16 && span1_aria_label_value !== (span1_aria_label_value = /*step*/
-      ctx[61].done ? "Mark step incomplete" : "Mark step complete")) {
+      ctx[78].done ? "Mark step incomplete" : "Mark step complete")) {
         attr(span1, "aria-label", span1_aria_label_value);
       }
       if (!current || dirty[0] & /*steps*/
@@ -11918,17 +12266,17 @@ function create_each_block_12(key_1, ctx) {
           span1,
           "checked",
           /*step*/
-          ctx[61].done
+          ctx[78].done
         );
       }
       if (dirty[0] & /*steps*/
       16)
-        show_if = /*getStepImages*/
-        ctx[20](
+        show_if_1 = /*getStepImages*/
+        ctx[32](
           /*step*/
-          ctx[61]
+          ctx[78]
         ).length > 0;
-      if (show_if) {
+      if (show_if_1) {
         if (if_block1) {
           if_block1.p(ctx, dirty);
           if (dirty[0] & /*steps*/
@@ -11936,10 +12284,10 @@ function create_each_block_12(key_1, ctx) {
             transition_in(if_block1, 1);
           }
         } else {
-          if_block1 = create_if_block_32(ctx);
+          if_block1 = create_if_block_42(ctx);
           if_block1.c();
           transition_in(if_block1, 1);
-          if_block1.m(div0, t2);
+          if_block1.m(div1, t2);
         }
       } else if (if_block1) {
         group_outros();
@@ -11948,9 +12296,26 @@ function create_each_block_12(key_1, ctx) {
         });
         check_outros();
       }
+      if (dirty[0] & /*showSearchBar, searchQuery*/
+      24576)
+        show_if = /*showSearchBar*/
+        ctx[13] && /*searchQuery*/
+        ctx[14].trim();
+      if (show_if) {
+        if (if_block2) {
+          if_block2.p(ctx, dirty);
+        } else {
+          if_block2 = create_if_block_32(ctx);
+          if_block2.c();
+          if_block2.m(div0, t3);
+        }
+      } else if (if_block2) {
+        if_block2.d(1);
+        if_block2 = null;
+      }
       if (!current || dirty[0] & /*steps*/
       16 && textarea_value_value !== (textarea_value_value = /*step*/
-      ctx[61].text)) {
+      ctx[78].text)) {
         textarea.value = textarea_value_value;
       }
       if (autosize_action && is_function(autosize_action.update) && dirty[0] & /*steps*/
@@ -11958,7 +12323,7 @@ function create_each_block_12(key_1, ctx) {
         autosize_action.update.call(
           null,
           /*step*/
-          ctx[61].text
+          ctx[78].text
         );
       if (!current || dirty[0] & /*steps*/
       16) {
@@ -11966,29 +12331,29 @@ function create_each_block_12(key_1, ctx) {
           textarea,
           "completed",
           /*step*/
-          ctx[61].done
+          ctx[78].done
         );
       }
       if (!current || dirty[0] & /*steps*/
       16) {
         toggle_class(
-          div1,
+          div2,
           "is-done",
           /*step*/
-          ctx[61].done
+          ctx[78].done
         );
       }
     },
     r() {
-      rect = div1.getBoundingClientRect();
+      rect = div2.getBoundingClientRect();
     },
     f() {
-      fix_position(div1);
+      fix_position(div2);
       stop_animation();
     },
     a() {
       stop_animation();
-      stop_animation = create_animation(div1, rect, flip, { duration: DND_FLIP_DURATION });
+      stop_animation = create_animation(div2, rect, flip, { duration: DND_FLIP_DURATION });
     },
     i(local) {
       if (current)
@@ -12002,11 +12367,13 @@ function create_each_block_12(key_1, ctx) {
     },
     d(detaching) {
       if (detaching) {
-        detach(div1);
+        detach(div2);
       }
       if_block0.d();
       if (if_block1)
         if_block1.d();
+      if (if_block2)
+        if_block2.d();
       mounted = false;
       run_all(dispose);
     }
@@ -12044,8 +12411,9 @@ function create_if_block_13(ctx) {
       current = true;
     },
     p(ctx2, dirty) {
-      if (dirty[0] & /*newStepImages, actualApp, removeNewStepImage, hoveredImageRef*/
-      4203776) {
+      if (dirty[0] & /*newStepImages, actualApp, hoveredImageRef*/
+      263424 | dirty[1] & /*removeNewStepImage*/
+      8) {
         each_value = ensure_array_like(
           /*newStepImages*/
           ctx2[8]
@@ -12099,27 +12467,27 @@ function create_each_block2(ctx) {
   function func_32() {
     return (
       /*func_3*/
-      ctx[40](
+      ctx[55](
         /*imgRef*/
-        ctx[58]
+        ctx[75]
       )
     );
   }
   function func_42() {
     return (
       /*func_4*/
-      ctx[41](
+      ctx[56](
         /*imgRef*/
-        ctx[58]
+        ctx[75]
       )
     );
   }
   function func_52(...args) {
     return (
       /*func_5*/
-      ctx[42](
+      ctx[57](
         /*imgRef*/
-        ctx[58],
+        ctx[75],
         ...args
       )
     );
@@ -12128,11 +12496,11 @@ function create_each_block2(ctx) {
     props: {
       imageRef: (
         /*imgRef*/
-        ctx[58]
+        ctx[75]
       ),
       app: (
         /*actualApp*/
-        ctx[13]
+        ctx[18]
       ),
       onDelete: func_32,
       onCut: func_42,
@@ -12153,11 +12521,11 @@ function create_each_block2(ctx) {
       if (dirty[0] & /*newStepImages*/
       256)
         taskimagethumbnail_changes.imageRef = /*imgRef*/
-        ctx[58];
+        ctx[75];
       if (dirty[0] & /*actualApp*/
-      8192)
+      262144)
         taskimagethumbnail_changes.app = /*actualApp*/
-        ctx[13];
+        ctx[18];
       if (dirty[0] & /*newStepImages*/
       256)
         taskimagethumbnail_changes.onDelete = func_32;
@@ -12254,8 +12622,8 @@ function create_if_block4(ctx) {
   };
 }
 function create_fragment4(ctx) {
-  let div6;
-  let div2;
+  let div7;
+  let div3;
   let div1;
   let svg0;
   let polyline;
@@ -12269,29 +12637,41 @@ function create_fragment4(ctx) {
   let t1;
   let div0_title_value;
   let t2;
+  let div2;
+  let button0;
+  let svg1;
+  let circle;
+  let line0;
+  let button0_title_value;
   let t3;
-  let div5;
-  let current_block_type_index;
-  let if_block1;
   let t4;
-  let div4;
   let t5;
-  let div3;
-  let span;
+  let div6;
+  let current_block_type_index;
+  let if_block2;
   let t6;
+  let div5;
+  let t7;
+  let div4;
+  let span;
+  let t8;
   let textarea;
   let autosize_action;
-  let t7;
-  let button;
-  let t8;
-  let button_disabled_value;
   let t9;
+  let button1;
+  let t10;
+  let button1_disabled_value;
+  let t11;
   let current;
   let mounted;
   let dispose;
   let if_block0 = (
+    /*showSearchBar*/
+    ctx[13] && create_if_block_72(ctx)
+  );
+  let if_block1 = (
     /*totalCount*/
-    ctx[5] > 0 && create_if_block_52(ctx)
+    ctx[5] > 0 && create_if_block_62(ctx)
   );
   const if_block_creators = [create_if_block_22, create_else_block4];
   const if_blocks = [];
@@ -12304,20 +12684,20 @@ function create_fragment4(ctx) {
     return 1;
   }
   current_block_type_index = select_block_type(ctx, [-1, -1, -1]);
-  if_block1 = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
-  let if_block2 = (
+  if_block2 = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
+  let if_block3 = (
     /*newStepImages*/
     ctx[8].length > 0 && create_if_block_13(ctx)
   );
-  let if_block3 = (
+  let if_block4 = (
     /*showStepsProgressPill*/
     ctx[2] && /*totalCount*/
     ctx[5] > 0 && create_if_block4(ctx)
   );
   return {
     c() {
-      div6 = element("div");
-      div2 = element("div");
+      div7 = element("div");
+      div3 = element("div");
       div1 = element("div");
       svg0 = svg_element("svg");
       polyline = svg_element("polyline");
@@ -12326,27 +12706,36 @@ function create_fragment4(ctx) {
       div0 = element("div");
       t1 = text(t1_value);
       t2 = space();
+      div2 = element("div");
+      button0 = element("button");
+      svg1 = svg_element("svg");
+      circle = svg_element("circle");
+      line0 = svg_element("line");
+      t3 = space();
       if (if_block0)
         if_block0.c();
-      t3 = space();
-      div5 = element("div");
-      if_block1.c();
       t4 = space();
-      div4 = element("div");
-      if (if_block2)
-        if_block2.c();
+      if (if_block1)
+        if_block1.c();
       t5 = space();
-      div3 = element("div");
-      span = element("span");
-      span.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--todo-accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`;
+      div6 = element("div");
+      if_block2.c();
       t6 = space();
-      textarea = element("textarea");
-      t7 = space();
-      button = element("button");
-      t8 = text("Add");
-      t9 = space();
+      div5 = element("div");
       if (if_block3)
         if_block3.c();
+      t7 = space();
+      div4 = element("div");
+      span = element("span");
+      span.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--todo-accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`;
+      t8 = space();
+      textarea = element("textarea");
+      t9 = space();
+      button1 = element("button");
+      t10 = text("Add");
+      t11 = space();
+      if (if_block4)
+        if_block4.c();
       attr(polyline, "points", "9 11 12 14 22 4");
       attr(path, "d", "M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11");
       attr(svg0, "class", "task-steps-header-icon");
@@ -12362,68 +12751,110 @@ function create_fragment4(ctx) {
       attr(div0, "title", div0_title_value = /*task*/
       ctx[0].title);
       attr(div1, "class", "task-steps-modal-title-box");
-      attr(div2, "class", "task-steps-modal-header");
+      attr(circle, "cx", "11");
+      attr(circle, "cy", "11");
+      attr(circle, "r", "8");
+      attr(line0, "x1", "21");
+      attr(line0, "y1", "21");
+      attr(line0, "x2", "16.65");
+      attr(line0, "y2", "16.65");
+      attr(svg1, "width", "16");
+      attr(svg1, "height", "16");
+      attr(svg1, "viewBox", "0 0 24 24");
+      attr(svg1, "fill", "none");
+      attr(svg1, "stroke", "currentColor");
+      attr(svg1, "stroke-width", "2");
+      attr(svg1, "stroke-linecap", "round");
+      attr(svg1, "stroke-linejoin", "round");
+      attr(button0, "type", "button");
+      attr(button0, "class", "task-steps-header-search-btn");
+      attr(button0, "title", button0_title_value = /*showSearchBar*/
+      ctx[13] ? "Close search (Ctrl+F / Esc)" : "Search steps (Ctrl+F)");
+      attr(button0, "aria-label", "Search steps");
+      toggle_class(
+        button0,
+        "is-active",
+        /*showSearchBar*/
+        ctx[13]
+      );
+      attr(div2, "class", "task-steps-modal-header-actions");
+      attr(div3, "class", "task-steps-modal-header");
       attr(span, "class", "steps-modal-add-icon");
       attr(textarea, "rows", "1");
       attr(textarea, "class", "steps-modal-add-input");
       attr(textarea, "placeholder", "Add a step... (Press Enter to add, Shift+Enter for newline, Ctrl+V to paste image)");
-      attr(button, "type", "button");
-      attr(button, "class", "steps-modal-add-btn");
-      button.disabled = button_disabled_value = !/*newStepText*/
+      attr(button1, "type", "button");
+      attr(button1, "class", "steps-modal-add-btn");
+      button1.disabled = button1_disabled_value = !/*newStepText*/
       ctx[7].trim() && /*newStepImages*/
       ctx[8].length === 0;
-      attr(div3, "class", "steps-modal-add-row");
-      attr(div4, "class", "steps-modal-add-card svelte-stsw6s");
-      attr(div5, "class", "task-steps-modal-body");
-      attr(div6, "class", "task-steps-modal-container");
+      attr(div4, "class", "steps-modal-add-row");
+      attr(div5, "class", "steps-modal-add-card svelte-stsw6s");
+      attr(div6, "class", "task-steps-modal-body");
+      attr(div7, "class", "task-steps-modal-container");
       toggle_class(
-        div6,
+        div7,
         "is-center-aligned",
         /*centerAlignTasks*/
         ctx[1]
       );
     },
     m(target, anchor) {
-      insert(target, div6, anchor);
-      append(div6, div2);
-      append(div2, div1);
+      insert(target, div7, anchor);
+      append(div7, div3);
+      append(div3, div1);
       append(div1, svg0);
       append(svg0, polyline);
       append(svg0, path);
       append(div1, t0);
       append(div1, div0);
       append(div0, t1);
-      append(div6, t2);
+      append(div3, t2);
+      append(div3, div2);
+      append(div2, button0);
+      append(button0, svg1);
+      append(svg1, circle);
+      append(svg1, line0);
+      append(div7, t3);
       if (if_block0)
-        if_block0.m(div6, null);
-      append(div6, t3);
+        if_block0.m(div7, null);
+      append(div7, t4);
+      if (if_block1)
+        if_block1.m(div7, null);
+      append(div7, t5);
+      append(div7, div6);
+      if_blocks[current_block_type_index].m(div6, null);
+      append(div6, t6);
       append(div6, div5);
-      if_blocks[current_block_type_index].m(div5, null);
-      append(div5, t4);
+      if (if_block3)
+        if_block3.m(div5, null);
+      append(div5, t7);
       append(div5, div4);
-      if (if_block2)
-        if_block2.m(div4, null);
-      append(div4, t5);
-      append(div4, div3);
-      append(div3, span);
-      append(div3, t6);
-      append(div3, textarea);
+      append(div4, span);
+      append(div4, t8);
+      append(div4, textarea);
       set_input_value(
         textarea,
         /*newStepText*/
         ctx[7]
       );
-      ctx[44](textarea);
-      append(div3, t7);
-      append(div3, button);
-      append(button, t8);
-      ctx[46](div5);
-      append(div6, t9);
-      if (if_block3)
-        if_block3.m(div6, null);
+      ctx[59](textarea);
+      append(div4, t9);
+      append(div4, button1);
+      append(button1, t10);
+      ctx[61](div6);
+      append(div7, t11);
+      if (if_block4)
+        if_block4.m(div7, null);
       current = true;
       if (!mounted) {
         dispose = [
+          listen(
+            button0,
+            "click",
+            /*click_handler*/
+            ctx[42]
+          ),
           action_destroyer(autosize_action = autosize.call(
             null,
             textarea,
@@ -12434,25 +12865,25 @@ function create_fragment4(ctx) {
             textarea,
             "input",
             /*textarea_input_handler*/
-            ctx[43]
+            ctx[58]
           ),
           listen(
             textarea,
             "focus",
             /*focus_handler_1*/
-            ctx[45]
+            ctx[60]
           ),
           listen(
             textarea,
             "keydown",
             /*handleAddInputKeydown*/
-            ctx[24]
+            ctx[36]
           ),
           listen(
-            button,
+            button1,
             "click",
             /*addStep*/
-            ctx[23]
+            ctx[35]
           )
         ];
         mounted = true;
@@ -12468,20 +12899,49 @@ function create_fragment4(ctx) {
       ctx2[0].title)) {
         attr(div0, "title", div0_title_value);
       }
+      if (!current || dirty[0] & /*showSearchBar*/
+      8192 && button0_title_value !== (button0_title_value = /*showSearchBar*/
+      ctx2[13] ? "Close search (Ctrl+F / Esc)" : "Search steps (Ctrl+F)")) {
+        attr(button0, "title", button0_title_value);
+      }
+      if (!current || dirty[0] & /*showSearchBar*/
+      8192) {
+        toggle_class(
+          button0,
+          "is-active",
+          /*showSearchBar*/
+          ctx2[13]
+        );
+      }
       if (
-        /*totalCount*/
-        ctx2[5] > 0
+        /*showSearchBar*/
+        ctx2[13]
       ) {
         if (if_block0) {
           if_block0.p(ctx2, dirty);
         } else {
-          if_block0 = create_if_block_52(ctx2);
+          if_block0 = create_if_block_72(ctx2);
           if_block0.c();
-          if_block0.m(div6, t3);
+          if_block0.m(div7, t4);
         }
       } else if (if_block0) {
         if_block0.d(1);
         if_block0 = null;
+      }
+      if (
+        /*totalCount*/
+        ctx2[5] > 0
+      ) {
+        if (if_block1) {
+          if_block1.p(ctx2, dirty);
+        } else {
+          if_block1 = create_if_block_62(ctx2);
+          if_block1.c();
+          if_block1.m(div7, t5);
+        }
+      } else if (if_block1) {
+        if_block1.d(1);
+        if_block1 = null;
       }
       let previous_block_index = current_block_type_index;
       current_block_type_index = select_block_type(ctx2, dirty);
@@ -12493,36 +12953,36 @@ function create_fragment4(ctx) {
           if_blocks[previous_block_index] = null;
         });
         check_outros();
-        if_block1 = if_blocks[current_block_type_index];
-        if (!if_block1) {
-          if_block1 = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx2);
-          if_block1.c();
+        if_block2 = if_blocks[current_block_type_index];
+        if (!if_block2) {
+          if_block2 = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx2);
+          if_block2.c();
         } else {
-          if_block1.p(ctx2, dirty);
+          if_block2.p(ctx2, dirty);
         }
-        transition_in(if_block1, 1);
-        if_block1.m(div5, t4);
+        transition_in(if_block2, 1);
+        if_block2.m(div6, t6);
       }
       if (
         /*newStepImages*/
         ctx2[8].length > 0
       ) {
-        if (if_block2) {
-          if_block2.p(ctx2, dirty);
+        if (if_block3) {
+          if_block3.p(ctx2, dirty);
           if (dirty[0] & /*newStepImages*/
           256) {
-            transition_in(if_block2, 1);
+            transition_in(if_block3, 1);
           }
         } else {
-          if_block2 = create_if_block_13(ctx2);
-          if_block2.c();
-          transition_in(if_block2, 1);
-          if_block2.m(div4, t5);
+          if_block3 = create_if_block_13(ctx2);
+          if_block3.c();
+          transition_in(if_block3, 1);
+          if_block3.m(div5, t7);
         }
-      } else if (if_block2) {
+      } else if (if_block3) {
         group_outros();
-        transition_out(if_block2, 1, 1, () => {
-          if_block2 = null;
+        transition_out(if_block3, 1, 1, () => {
+          if_block3 = null;
         });
         check_outros();
       }
@@ -12542,31 +13002,31 @@ function create_fragment4(ctx) {
         );
       }
       if (!current || dirty[0] & /*newStepText, newStepImages*/
-      384 && button_disabled_value !== (button_disabled_value = !/*newStepText*/
+      384 && button1_disabled_value !== (button1_disabled_value = !/*newStepText*/
       ctx2[7].trim() && /*newStepImages*/
       ctx2[8].length === 0)) {
-        button.disabled = button_disabled_value;
+        button1.disabled = button1_disabled_value;
       }
       if (
         /*showStepsProgressPill*/
         ctx2[2] && /*totalCount*/
         ctx2[5] > 0
       ) {
-        if (if_block3) {
-          if_block3.p(ctx2, dirty);
+        if (if_block4) {
+          if_block4.p(ctx2, dirty);
         } else {
-          if_block3 = create_if_block4(ctx2);
-          if_block3.c();
-          if_block3.m(div6, null);
+          if_block4 = create_if_block4(ctx2);
+          if_block4.c();
+          if_block4.m(div7, null);
         }
-      } else if (if_block3) {
-        if_block3.d(1);
-        if_block3 = null;
+      } else if (if_block4) {
+        if_block4.d(1);
+        if_block4 = null;
       }
       if (!current || dirty[0] & /*centerAlignTasks*/
       2) {
         toggle_class(
-          div6,
+          div7,
           "is-center-aligned",
           /*centerAlignTasks*/
           ctx2[1]
@@ -12576,28 +13036,30 @@ function create_fragment4(ctx) {
     i(local) {
       if (current)
         return;
-      transition_in(if_block1);
       transition_in(if_block2);
+      transition_in(if_block3);
       current = true;
     },
     o(local) {
-      transition_out(if_block1);
       transition_out(if_block2);
+      transition_out(if_block3);
       current = false;
     },
     d(detaching) {
       if (detaching) {
-        detach(div6);
+        detach(div7);
       }
       if (if_block0)
         if_block0.d();
+      if (if_block1)
+        if_block1.d();
       if_blocks[current_block_type_index].d();
-      if (if_block2)
-        if_block2.d();
-      ctx[44](null);
-      ctx[46](null);
       if (if_block3)
         if_block3.d();
+      ctx[59](null);
+      ctx[61](null);
+      if (if_block4)
+        if_block4.d();
       mounted = false;
       run_all(dispose);
     }
@@ -12605,6 +13067,9 @@ function create_fragment4(ctx) {
 }
 var SAVE_DEBOUNCE_MS2 = 400;
 var DND_FLIP_DURATION = 150;
+function escapeHtml(str) {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
 function hasActiveTextSelection() {
   const active2 = document.activeElement;
   if (active2 instanceof HTMLInputElement || active2 instanceof HTMLTextAreaElement) {
@@ -12657,6 +13122,148 @@ function instance4($$self, $$props, $$invalidate) {
   let saveTimeout = null;
   let isDraggingSteps = false;
   let preDndSteps = [];
+  let showSearchBar = false;
+  let searchQuery = "";
+  let searchInputEl;
+  let allMatches = [];
+  let activeMatchIndex = -1;
+  function updateSearchMatches() {
+    $$invalidate(16, allMatches = []);
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) {
+      $$invalidate(17, activeMatchIndex = -1);
+      return;
+    }
+    let globalCounter = 0;
+    for (let sIdx = 0; sIdx < steps.length; sIdx++) {
+      const step = steps[sIdx];
+      const text2 = step.text || "";
+      const lowerText = text2.toLowerCase();
+      let matchIndexInStep = 0;
+      let startIndex = 0;
+      while (startIndex < lowerText.length) {
+        const foundIdx = lowerText.indexOf(query, startIndex);
+        if (foundIdx === -1)
+          break;
+        allMatches.push({
+          id: `${step.id}-m-${matchIndexInStep}`,
+          globalIndex: globalCounter++,
+          stepId: step.id || `step-${sIdx}`,
+          stepIndex: sIdx,
+          start: foundIdx,
+          end: foundIdx + query.length,
+          text: text2.substring(foundIdx, foundIdx + query.length)
+        });
+        matchIndexInStep++;
+        startIndex = foundIdx + Math.max(1, query.length);
+      }
+    }
+    if (allMatches.length > 0) {
+      if (activeMatchIndex >= allMatches.length || activeMatchIndex < 0) {
+        $$invalidate(17, activeMatchIndex = 0);
+      }
+    } else {
+      $$invalidate(17, activeMatchIndex = -1);
+    }
+  }
+  async function scrollToActiveMatch() {
+    await tick();
+    if (activeMatchIndex < 0 || activeMatchIndex >= allMatches.length)
+      return;
+    const currentMatch = allMatches[activeMatchIndex];
+    if (!currentMatch)
+      return;
+    const markEl = modalBodyEl == null ? void 0 : modalBodyEl.querySelector(`#step-search-mark-${currentMatch.globalIndex}`);
+    if (markEl && modalBodyEl) {
+      const containerRect = modalBodyEl.getBoundingClientRect();
+      const markRect = markEl.getBoundingClientRect();
+      const markCenterFromContainerTop = markRect.top - containerRect.top + markRect.height / 2;
+      const targetScrollTop = modalBodyEl.scrollTop + markCenterFromContainerTop - containerRect.height / 2;
+      modalBodyEl.scrollTo({
+        top: Math.max(0, targetScrollTop),
+        behavior: "smooth"
+      });
+    }
+  }
+  async function openSearch() {
+    $$invalidate(13, showSearchBar = true);
+    await tick();
+    searchInputEl == null ? void 0 : searchInputEl.focus();
+    searchInputEl == null ? void 0 : searchInputEl.select();
+    updateSearchMatches();
+    if (allMatches.length > 0) {
+      void scrollToActiveMatch();
+    }
+  }
+  function closeSearch() {
+    $$invalidate(13, showSearchBar = false);
+    $$invalidate(14, searchQuery = "");
+    $$invalidate(16, allMatches = []);
+    $$invalidate(17, activeMatchIndex = -1);
+  }
+  function nextMatch() {
+    if (allMatches.length === 0)
+      return;
+    $$invalidate(17, activeMatchIndex = (activeMatchIndex + 1) % allMatches.length);
+    void scrollToActiveMatch();
+  }
+  function prevMatch() {
+    if (allMatches.length === 0)
+      return;
+    $$invalidate(17, activeMatchIndex = (activeMatchIndex - 1 + allMatches.length) % allMatches.length);
+    void scrollToActiveMatch();
+  }
+  function handleSearchInput() {
+    updateSearchMatches();
+    if (allMatches.length > 0) {
+      void scrollToActiveMatch();
+    }
+  }
+  function handleSearchKeydown(e) {
+    if (e.isComposing || e.keyCode === 229)
+      return;
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (e.shiftKey) {
+        prevMatch();
+      } else {
+        nextMatch();
+      }
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      closeSearch();
+    }
+  }
+  function renderHighlightedText(text2, stepId, query, currentActiveIdx) {
+    if (!text2)
+      return "";
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery)
+      return escapeHtml(text2);
+    const stepMatches = allMatches.filter((m) => m.stepId === stepId);
+    if (stepMatches.length === 0) {
+      return escapeHtml(text2);
+    }
+    let html = "";
+    let lastIdx = 0;
+    for (const match of stepMatches) {
+      if (match.start > lastIdx) {
+        html += escapeHtml(text2.substring(lastIdx, match.start));
+      }
+      const isActive = match.globalIndex === currentActiveIdx;
+      const matchedChunk = text2.substring(match.start, match.end);
+      html += `<mark class="task-steps-search-mark ${isActive ? "is-active" : ""}" id="step-search-mark-${match.globalIndex}">${escapeHtml(matchedChunk)}</mark>`;
+      lastIdx = match.end;
+    }
+    if (lastIdx < text2.length) {
+      html += escapeHtml(text2.substring(lastIdx));
+    }
+    if (text2.endsWith("\n")) {
+      html += "\n&nbsp;";
+    }
+    return html;
+  }
   async function persistTask() {
     if (saveTimeout) {
       window.clearTimeout(saveTimeout);
@@ -12708,6 +13315,9 @@ function instance4($$self, $$props, $$invalidate) {
     if (!step)
       return;
     step.text = newText;
+    if (showSearchBar && searchQuery.trim()) {
+      updateSearchMatches();
+    }
     scheduleSave();
   }
   async function deleteStep(stepId) {
@@ -12718,6 +13328,9 @@ function instance4($$self, $$props, $$invalidate) {
       return;
     const deletedStep = { ...steps[index] };
     $$invalidate(4, steps = steps.filter((s) => s.id !== stepId));
+    if (showSearchBar && searchQuery.trim()) {
+      updateSearchMatches();
+    }
     void Logger.log(`[DND Modal] Deleted step: taskId=${task.id}, stepId=${stepId}, text="${deletedStep.text}", remaining=${steps.length}`);
     console.log(`[FluentTasks Modal] Deleted step: taskId=${task.id}, stepId=${stepId}, remaining=${steps.length}`);
     await persistTask();
@@ -12878,6 +13491,9 @@ function instance4($$self, $$props, $$invalidate) {
     $$invalidate(4, steps = [...steps, newStep]);
     $$invalidate(7, newStepText = "");
     $$invalidate(8, newStepImages = []);
+    if (showSearchBar && searchQuery.trim()) {
+      updateSearchMatches();
+    }
     void Logger.log(`[DND Modal] Added step: taskId=${task.id}, stepId=${newStep.id}, text="${newStep.text}", images=${((_a = newStep.images) == null ? void 0 : _a.length) || 0}, totalSteps=${steps.length}`);
     console.log(`[FluentTasks Modal] Added step: taskId=${task.id}, stepId=${newStep.id}, total=${steps.length}`);
     await persistTask();
@@ -12923,12 +13539,39 @@ function instance4($$self, $$props, $$invalidate) {
         return;
       }
       if (e.key === "Escape") {
+        if (showSearchBar) {
+          e.stopPropagation();
+          e.preventDefault();
+          closeSearch();
+          return;
+        }
         e.stopPropagation();
         e.preventDefault();
         handleClose();
         return;
       }
       if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey) {
+        if (e.key === "f" || e.key === "F") {
+          e.preventDefault();
+          e.stopPropagation();
+          let initialQuery = "";
+          const active2 = document.activeElement;
+          if (active2 instanceof HTMLInputElement || active2 instanceof HTMLTextAreaElement) {
+            if (typeof active2.selectionStart === "number" && typeof active2.selectionEnd === "number" && active2.selectionStart !== active2.selectionEnd) {
+              initialQuery = active2.value.substring(active2.selectionStart, active2.selectionEnd).trim();
+            }
+          } else {
+            const sel = window.getSelection();
+            if (sel && !sel.isCollapsed) {
+              initialQuery = sel.toString().trim();
+            }
+          }
+          if (initialQuery) {
+            $$invalidate(14, searchQuery = initialQuery);
+          }
+          void openSearch();
+          return;
+        }
         if (hasActiveTextSelection())
           return;
         if ((e.key === "c" || e.key === "C") && hoveredImageRef) {
@@ -12962,7 +13605,24 @@ function instance4($$self, $$props, $$invalidate) {
   onDestroy(() => {
     flushSaveSync();
   });
-  const click_handler = (step) => toggleStep(step.id);
+  const click_handler = () => {
+    if (showSearchBar) {
+      closeSearch();
+    } else {
+      void openSearch();
+    }
+  };
+  function input_binding($$value) {
+    binding_callbacks[$$value ? "unshift" : "push"](() => {
+      searchInputEl = $$value;
+      $$invalidate(15, searchInputEl);
+    });
+  }
+  function input_input_handler() {
+    searchQuery = this.value;
+    $$invalidate(14, searchQuery);
+  }
+  const click_handler_12 = (step) => toggleStep(step.id);
   const keydown_handler = (step, e) => (e.key === "Enter" || e.key === " ") && toggleStep(step.id);
   const func2 = (step, imgRef) => removeImageFromStep(step.id, imgRef);
   const func_12 = (step, imgRef) => removeImageFromStep(step.id, imgRef);
@@ -12978,7 +13638,7 @@ function instance4($$self, $$props, $$invalidate) {
   };
   const input_handler = (step, e) => handleStepInput(step.id, e.currentTarget.value);
   const keydown_handler_1 = (step, e) => handleStepKeydown(e, step.id);
-  const click_handler_12 = (step) => deleteStep(step.id);
+  const click_handler_2 = (step) => deleteStep(step.id);
   const keydown_handler_2 = (step, e) => e.key === "Enter" && deleteStep(step.id);
   const func_32 = (imgRef) => removeNewStepImage(imgRef);
   const func_42 = (imgRef) => removeNewStepImage(imgRef);
@@ -13002,7 +13662,7 @@ function instance4($$self, $$props, $$invalidate) {
   const focus_handler_1 = () => {
     $$invalidate(9, focusedStepId = "__new__");
   };
-  function div5_binding($$value) {
+  function div6_binding($$value) {
     binding_callbacks[$$value ? "unshift" : "push"](() => {
       modalBodyEl = $$value;
       $$invalidate(12, modalBodyEl);
@@ -13010,27 +13670,27 @@ function instance4($$self, $$props, $$invalidate) {
   }
   $$self.$$set = ($$props2) => {
     if ("app" in $$props2)
-      $$invalidate(25, app = $$props2.app);
+      $$invalidate(37, app = $$props2.app);
     if ("plugin" in $$props2)
-      $$invalidate(26, plugin = $$props2.plugin);
+      $$invalidate(38, plugin = $$props2.plugin);
     if ("task" in $$props2)
       $$invalidate(0, task = $$props2.task);
     if ("categoryFilepath" in $$props2)
-      $$invalidate(27, categoryFilepath = $$props2.categoryFilepath);
+      $$invalidate(39, categoryFilepath = $$props2.categoryFilepath);
     if ("dataService" in $$props2)
-      $$invalidate(28, dataService = $$props2.dataService);
+      $$invalidate(40, dataService = $$props2.dataService);
     if ("closeModal" in $$props2)
-      $$invalidate(29, closeModal = $$props2.closeModal);
+      $$invalidate(41, closeModal = $$props2.closeModal);
     if ("centerAlignTasks" in $$props2)
       $$invalidate(1, centerAlignTasks = $$props2.centerAlignTasks);
     if ("showStepsProgressPill" in $$props2)
       $$invalidate(2, showStepsProgressPill = $$props2.showStepsProgressPill);
   };
   $$self.$$.update = () => {
-    if ($$self.$$.dirty[0] & /*app, dataService, plugin*/
-    369098752) {
+    if ($$self.$$.dirty[1] & /*app, dataService, plugin*/
+    704) {
       $:
-        $$invalidate(13, actualApp = app || (dataService == null ? void 0 : dataService.app) || (plugin == null ? void 0 : plugin.app) || window.app);
+        $$invalidate(18, actualApp = app || (dataService == null ? void 0 : dataService.app) || (plugin == null ? void 0 : plugin.app) || window.app);
     }
     if ($$self.$$.dirty[0] & /*steps*/
     16) {
@@ -13045,7 +13705,7 @@ function instance4($$self, $$props, $$invalidate) {
     if ($$self.$$.dirty[0] & /*totalCount, completedCount*/
     96) {
       $:
-        $$invalidate(14, progressPercent = totalCount > 0 ? Math.round(completedCount / totalCount * 100) : 0);
+        $$invalidate(19, progressPercent = totalCount > 0 ? Math.round(completedCount / totalCount * 100) : 0);
     }
   };
   return [
@@ -13062,8 +13722,20 @@ function instance4($$self, $$props, $$invalidate) {
     hoveredImageRef,
     addInputEl,
     modalBodyEl,
+    showSearchBar,
+    searchQuery,
+    searchInputEl,
+    allMatches,
+    activeMatchIndex,
     actualApp,
     progressPercent,
+    openSearch,
+    closeSearch,
+    nextMatch,
+    prevMatch,
+    handleSearchInput,
+    handleSearchKeydown,
+    renderHighlightedText,
     toggleStep,
     handleStepInput,
     deleteStep,
@@ -13080,6 +13752,9 @@ function instance4($$self, $$props, $$invalidate) {
     dataService,
     closeModal,
     click_handler,
+    input_binding,
+    input_input_handler,
+    click_handler_12,
     keydown_handler,
     func2,
     func_12,
@@ -13087,7 +13762,7 @@ function instance4($$self, $$props, $$invalidate) {
     focus_handler,
     input_handler,
     keydown_handler_1,
-    click_handler_12,
+    click_handler_2,
     keydown_handler_2,
     func_32,
     func_42,
@@ -13095,7 +13770,7 @@ function instance4($$self, $$props, $$invalidate) {
     textarea_input_handler,
     textarea_binding,
     focus_handler_1,
-    div5_binding
+    div6_binding
   ];
 }
 var TaskStepsModalView = class extends SvelteComponent {
@@ -13108,12 +13783,12 @@ var TaskStepsModalView = class extends SvelteComponent {
       create_fragment4,
       safe_not_equal,
       {
-        app: 25,
-        plugin: 26,
+        app: 37,
+        plugin: 38,
         task: 0,
-        categoryFilepath: 27,
-        dataService: 28,
-        closeModal: 29,
+        categoryFilepath: 39,
+        dataService: 40,
+        closeModal: 41,
         centerAlignTasks: 1,
         showStepsProgressPill: 2,
         flushSaveSync: 3
@@ -15388,7 +16063,7 @@ function create_if_block_71(ctx) {
   let mounted;
   let dispose;
   let if_block = !/*hiddenStarMode*/
-  ctx[14] && create_if_block_72(ctx);
+  ctx[14] && create_if_block_722(ctx);
   return {
     c() {
       div = element("div");
@@ -15650,7 +16325,7 @@ function create_if_block_71(ctx) {
         if (if_block) {
           if_block.p(ctx2, dirty);
         } else {
-          if_block = create_if_block_72(ctx2);
+          if_block = create_if_block_722(ctx2);
           if_block.c();
           if_block.m(div, t5);
         }
@@ -15679,7 +16354,7 @@ function create_if_block_71(ctx) {
     }
   };
 }
-function create_if_block_72(ctx) {
+function create_if_block_722(ctx) {
   let span;
   let span_aria_label_value;
   let span_title_value;
@@ -16382,7 +17057,7 @@ function create_each_block_7(key_1, ctx) {
     }
   };
 }
-function create_if_block_62(ctx) {
+function create_if_block_622(ctx) {
   let span1;
   let span0;
   let show_if = (
@@ -17704,7 +18379,7 @@ function create_each_block_5(key_1, ctx) {
   let dispose;
   let if_block0 = (
     /*isMultiSelectMode*/
-    ctx[29] && create_if_block_62(ctx)
+    ctx[29] && create_if_block_622(ctx)
   );
   function click_handler_8() {
     return (
@@ -17996,7 +18671,7 @@ function create_each_block_5(key_1, ctx) {
         if (if_block0) {
           if_block0.p(ctx, dirty);
         } else {
-          if_block0 = create_if_block_62(ctx);
+          if_block0 = create_if_block_622(ctx);
           if_block0.c();
           if_block0.m(div0, t0);
         }
@@ -22474,7 +23149,7 @@ function create_if_block_10(ctx) {
     }
   };
 }
-function create_if_block_82(ctx) {
+function create_if_block_83(ctx) {
   let div4;
   let div3;
   let div0;
@@ -23504,7 +24179,7 @@ function create_fragment6(ctx) {
   );
   let if_block3 = (
     /*showSvgSaveConfirmModal*/
-    ctx[41] && create_if_block_82(ctx)
+    ctx[41] && create_if_block_83(ctx)
   );
   let if_block4 = (
     /*showSvgDeleteConfirmModal*/
@@ -23653,7 +24328,7 @@ function create_fragment6(ctx) {
         if (if_block3) {
           if_block3.p(ctx2, dirty);
         } else {
-          if_block3 = create_if_block_82(ctx2);
+          if_block3 = create_if_block_83(ctx2);
           if_block3.c();
           if_block3.m(div, t3);
         }
@@ -32552,7 +33227,7 @@ function create_if_block_78(ctx) {
   let if_block1 = (
     /*activeNoteLink*/
     ctx[196] && /*plugin*/
-    ((_a = ctx[0]) == null ? void 0 : _a.app) && create_if_block_83(ctx)
+    ((_a = ctx[0]) == null ? void 0 : _a.app) && create_if_block_84(ctx)
   );
   return {
     c() {
@@ -32654,7 +33329,7 @@ function create_if_block_78(ctx) {
         if (if_block1) {
           if_block1.p(ctx2, dirty);
         } else {
-          if_block1 = create_if_block_83(ctx2);
+          if_block1 = create_if_block_84(ctx2);
           if_block1.c();
           if_block1.m(div1, null);
         }
@@ -32745,7 +33420,7 @@ function create_if_block_92(ctx) {
     }
   };
 }
-function create_if_block_83(ctx) {
+function create_if_block_84(ctx) {
   let button;
   let mounted;
   let dispose;
@@ -37514,7 +38189,7 @@ function create_else_block_24(ctx) {
   }
   let if_block = (
     /*completedTasks*/
-    ctx[5].length > 0 && create_if_block_84(ctx)
+    ctx[5].length > 0 && create_if_block_85(ctx)
   );
   return {
     c() {
@@ -37558,7 +38233,7 @@ function create_else_block_24(ctx) {
         if (if_block) {
           if_block.p(ctx2, dirty);
         } else {
-          if_block = create_if_block_84(ctx2);
+          if_block = create_if_block_85(ctx2);
           if_block.c();
           if_block.m(if_block_anchor.parentNode, if_block_anchor);
         }
@@ -38413,7 +39088,7 @@ function create_each_block_53(key_1, ctx) {
     }
   };
 }
-function create_if_block_84(ctx) {
+function create_if_block_85(ctx) {
   let div0;
   let t0;
   let t1_value = (
@@ -45432,7 +46107,7 @@ function create_if_block_316(ctx) {
     }
   };
 }
-function create_if_block_85(ctx) {
+function create_if_block_86(ctx) {
   let div2;
   let div1;
   let div0;
@@ -47267,10 +47942,10 @@ function create_each_block_16(key_1, ctx) {
       ctx2[219].type === "group" && /*card*/
       ctx2[219].group
     )
-      return create_if_block_85;
+      return create_if_block_86;
   }
   function select_block_ctx(ctx2, type) {
-    if (type === create_if_block_85)
+    if (type === create_if_block_86)
       return get_if_ctx3(ctx2);
     return ctx2;
   }
