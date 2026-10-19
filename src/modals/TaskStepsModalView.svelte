@@ -138,15 +138,40 @@
         }
     }
 
+    function focusSearchInput() {
+        if (searchInputEl) {
+            searchInputEl.focus();
+            searchInputEl.select();
+        }
+        requestAnimationFrame(() => {
+            if (searchInputEl) {
+                searchInputEl.focus();
+                searchInputEl.select();
+            }
+        });
+        setTimeout(() => {
+            if (searchInputEl) {
+                searchInputEl.focus();
+                searchInputEl.select();
+            }
+        }, 30);
+        setTimeout(() => {
+            if (searchInputEl) {
+                searchInputEl.focus();
+                searchInputEl.select();
+            }
+        }, 100);
+    }
+
     async function openSearch() {
         showSearchBar = true;
         await tick();
-        searchInputEl?.focus();
-        searchInputEl?.select();
+        focusSearchInput();
         updateSearchMatches();
         if (allMatches.length > 0) {
             void scrollToActiveMatch();
         }
+        focusSearchInput();
     }
 
     function closeSearch() {

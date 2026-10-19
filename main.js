@@ -11245,17 +11245,17 @@ function add_css3(target) {
 }
 function get_each_context2(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[75] = list[i];
+  child_ctx[76] = list[i];
   return child_ctx;
 }
 function get_each_context_12(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[78] = list[i];
+  child_ctx[79] = list[i];
   return child_ctx;
 }
 function get_each_context_2(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[75] = list[i];
+  child_ctx[76] = list[i];
   return child_ctx;
 }
 function create_if_block_72(ctx) {
@@ -11591,7 +11591,7 @@ function create_else_block4(ctx) {
   );
   const get_key = (ctx2) => (
     /*step*/
-    ctx2[78].id
+    ctx2[79].id
   );
   for (let i = 0; i < each_value_1.length; i += 1) {
     let child_ctx = get_each_context_12(ctx, each_value_1, i);
@@ -11789,7 +11789,7 @@ function create_if_block_42(ctx) {
     /*getStepImages*/
     ctx[32](
       /*step*/
-      ctx[78]
+      ctx[79]
     )
   );
   let each_blocks = [];
@@ -11824,7 +11824,7 @@ function create_if_block_42(ctx) {
           /*getStepImages*/
           ctx2[32](
             /*step*/
-            ctx2[78]
+            ctx2[79]
           )
         );
         let i;
@@ -11878,9 +11878,9 @@ function create_each_block_2(ctx) {
       /*func*/
       ctx[47](
         /*step*/
-        ctx[78],
+        ctx[79],
         /*imgRef*/
-        ctx[75]
+        ctx[76]
       )
     );
   }
@@ -11889,9 +11889,9 @@ function create_each_block_2(ctx) {
       /*func_1*/
       ctx[48](
         /*step*/
-        ctx[78],
+        ctx[79],
         /*imgRef*/
-        ctx[75]
+        ctx[76]
       )
     );
   }
@@ -11900,9 +11900,9 @@ function create_each_block_2(ctx) {
       /*func_2*/
       ctx[49](
         /*step*/
-        ctx[78],
+        ctx[79],
         /*imgRef*/
-        ctx[75],
+        ctx[76],
         ...args
       )
     );
@@ -11911,7 +11911,7 @@ function create_each_block_2(ctx) {
     props: {
       imageRef: (
         /*imgRef*/
-        ctx[75]
+        ctx[76]
       ),
       app: (
         /*actualApp*/
@@ -11936,7 +11936,7 @@ function create_each_block_2(ctx) {
       if (dirty[0] & /*steps*/
       16)
         taskimagethumbnail_changes.imageRef = /*imgRef*/
-        ctx[75];
+        ctx[76];
       if (dirty[0] & /*actualApp*/
       262144)
         taskimagethumbnail_changes.app = /*actualApp*/
@@ -11973,9 +11973,9 @@ function create_if_block_32(ctx) {
     /*renderHighlightedText*/
     ctx[26](
       /*step*/
-      ctx[78].text,
+      ctx[79].text,
       /*step*/
-      ctx[78].id,
+      ctx[79].id,
       /*searchQuery*/
       ctx[14],
       /*activeMatchIndex*/
@@ -11997,9 +11997,9 @@ function create_if_block_32(ctx) {
       147472 && raw_value !== (raw_value = /*renderHighlightedText*/
       ctx2[26](
         /*step*/
-        ctx2[78].text,
+        ctx2[79].text,
         /*step*/
-        ctx2[78].id,
+        ctx2[79].id,
         /*searchQuery*/
         ctx2[14],
         /*activeMatchIndex*/
@@ -12028,7 +12028,7 @@ function create_each_block_12(key_1, ctx) {
     /*getStepImages*/
     ctx[32](
       /*step*/
-      ctx[78]
+      ctx[79]
     ).length > 0
   );
   let t2;
@@ -12053,7 +12053,7 @@ function create_each_block_12(key_1, ctx) {
   function select_block_type_1(ctx2, dirty) {
     if (
       /*step*/
-      ctx2[78].done
+      ctx2[79].done
     )
       return create_if_block_52;
     return create_else_block_12;
@@ -12065,7 +12065,7 @@ function create_each_block_12(key_1, ctx) {
       /*click_handler_1*/
       ctx[45](
         /*step*/
-        ctx[78]
+        ctx[79]
       )
     );
   }
@@ -12074,7 +12074,7 @@ function create_each_block_12(key_1, ctx) {
       /*keydown_handler*/
       ctx[46](
         /*step*/
-        ctx[78],
+        ctx[79],
         ...args
       )
     );
@@ -12086,7 +12086,7 @@ function create_each_block_12(key_1, ctx) {
       /*focus_handler*/
       ctx[50](
         /*step*/
-        ctx[78]
+        ctx[79]
       )
     );
   }
@@ -12095,7 +12095,7 @@ function create_each_block_12(key_1, ctx) {
       /*input_handler*/
       ctx[51](
         /*step*/
-        ctx[78],
+        ctx[79],
         ...args
       )
     );
@@ -12105,7 +12105,7 @@ function create_each_block_12(key_1, ctx) {
       /*keydown_handler_1*/
       ctx[52](
         /*step*/
-        ctx[78],
+        ctx[79],
         ...args
       )
     );
@@ -12115,7 +12115,7 @@ function create_each_block_12(key_1, ctx) {
       /*click_handler_2*/
       ctx[53](
         /*step*/
-        ctx[78]
+        ctx[79]
       )
     );
   }
@@ -12124,7 +12124,7 @@ function create_each_block_12(key_1, ctx) {
       /*keydown_handler_2*/
       ctx[54](
         /*step*/
-        ctx[78],
+        ctx[79],
         ...args
       )
     );
@@ -12158,26 +12158,26 @@ function create_each_block_12(key_1, ctx) {
       attr(span1, "class", "steps-modal-checkbox");
       attr(span1, "role", "checkbox");
       attr(span1, "aria-checked", span1_aria_checked_value = /*step*/
-      ctx[78].done);
+      ctx[79].done);
       attr(span1, "tabindex", "0");
       attr(span1, "aria-label", span1_aria_label_value = /*step*/
-      ctx[78].done ? "Mark step incomplete" : "Mark step complete");
+      ctx[79].done ? "Mark step incomplete" : "Mark step complete");
       toggle_class(
         span1,
         "checked",
         /*step*/
-        ctx[78].done
+        ctx[79].done
       );
       attr(textarea, "rows", "1");
       attr(textarea, "class", "steps-modal-textarea");
       textarea.value = textarea_value_value = /*step*/
-      ctx[78].text;
+      ctx[79].text;
       attr(textarea, "placeholder", "Step description...");
       toggle_class(
         textarea,
         "completed",
         /*step*/
-        ctx[78].done
+        ctx[79].done
       );
       attr(div0, "class", "steps-modal-text-wrapper");
       attr(div1, "class", "steps-modal-text-col svelte-stsw6s");
@@ -12191,7 +12191,7 @@ function create_each_block_12(key_1, ctx) {
         div2,
         "is-done",
         /*step*/
-        ctx[78].done
+        ctx[79].done
       );
       this.first = div2;
     },
@@ -12223,7 +12223,7 @@ function create_each_block_12(key_1, ctx) {
             null,
             textarea,
             /*step*/
-            ctx[78].text
+            ctx[79].text
           )),
           listen(textarea, "focus", focus_handler),
           listen(textarea, "input", input_handler),
@@ -12252,12 +12252,12 @@ function create_each_block_12(key_1, ctx) {
       }
       if (!current || dirty[0] & /*steps*/
       16 && span1_aria_checked_value !== (span1_aria_checked_value = /*step*/
-      ctx[78].done)) {
+      ctx[79].done)) {
         attr(span1, "aria-checked", span1_aria_checked_value);
       }
       if (!current || dirty[0] & /*steps*/
       16 && span1_aria_label_value !== (span1_aria_label_value = /*step*/
-      ctx[78].done ? "Mark step incomplete" : "Mark step complete")) {
+      ctx[79].done ? "Mark step incomplete" : "Mark step complete")) {
         attr(span1, "aria-label", span1_aria_label_value);
       }
       if (!current || dirty[0] & /*steps*/
@@ -12266,7 +12266,7 @@ function create_each_block_12(key_1, ctx) {
           span1,
           "checked",
           /*step*/
-          ctx[78].done
+          ctx[79].done
         );
       }
       if (dirty[0] & /*steps*/
@@ -12274,7 +12274,7 @@ function create_each_block_12(key_1, ctx) {
         show_if_1 = /*getStepImages*/
         ctx[32](
           /*step*/
-          ctx[78]
+          ctx[79]
         ).length > 0;
       if (show_if_1) {
         if (if_block1) {
@@ -12315,7 +12315,7 @@ function create_each_block_12(key_1, ctx) {
       }
       if (!current || dirty[0] & /*steps*/
       16 && textarea_value_value !== (textarea_value_value = /*step*/
-      ctx[78].text)) {
+      ctx[79].text)) {
         textarea.value = textarea_value_value;
       }
       if (autosize_action && is_function(autosize_action.update) && dirty[0] & /*steps*/
@@ -12323,7 +12323,7 @@ function create_each_block_12(key_1, ctx) {
         autosize_action.update.call(
           null,
           /*step*/
-          ctx[78].text
+          ctx[79].text
         );
       if (!current || dirty[0] & /*steps*/
       16) {
@@ -12331,7 +12331,7 @@ function create_each_block_12(key_1, ctx) {
           textarea,
           "completed",
           /*step*/
-          ctx[78].done
+          ctx[79].done
         );
       }
       if (!current || dirty[0] & /*steps*/
@@ -12340,7 +12340,7 @@ function create_each_block_12(key_1, ctx) {
           div2,
           "is-done",
           /*step*/
-          ctx[78].done
+          ctx[79].done
         );
       }
     },
@@ -12469,7 +12469,7 @@ function create_each_block2(ctx) {
       /*func_3*/
       ctx[55](
         /*imgRef*/
-        ctx[75]
+        ctx[76]
       )
     );
   }
@@ -12478,7 +12478,7 @@ function create_each_block2(ctx) {
       /*func_4*/
       ctx[56](
         /*imgRef*/
-        ctx[75]
+        ctx[76]
       )
     );
   }
@@ -12487,7 +12487,7 @@ function create_each_block2(ctx) {
       /*func_5*/
       ctx[57](
         /*imgRef*/
-        ctx[75],
+        ctx[76],
         ...args
       )
     );
@@ -12496,7 +12496,7 @@ function create_each_block2(ctx) {
     props: {
       imageRef: (
         /*imgRef*/
-        ctx[75]
+        ctx[76]
       ),
       app: (
         /*actualApp*/
@@ -12521,7 +12521,7 @@ function create_each_block2(ctx) {
       if (dirty[0] & /*newStepImages*/
       256)
         taskimagethumbnail_changes.imageRef = /*imgRef*/
-        ctx[75];
+        ctx[76];
       if (dirty[0] & /*actualApp*/
       262144)
         taskimagethumbnail_changes.app = /*actualApp*/
@@ -13185,15 +13185,45 @@ function instance4($$self, $$props, $$invalidate) {
       });
     }
   }
+  function focusSearchInput() {
+    if (searchInputEl) {
+      searchInputEl.focus();
+      searchInputEl.select();
+    }
+    requestAnimationFrame(() => {
+      if (searchInputEl) {
+        searchInputEl.focus();
+        searchInputEl.select();
+      }
+    });
+    setTimeout(
+      () => {
+        if (searchInputEl) {
+          searchInputEl.focus();
+          searchInputEl.select();
+        }
+      },
+      30
+    );
+    setTimeout(
+      () => {
+        if (searchInputEl) {
+          searchInputEl.focus();
+          searchInputEl.select();
+        }
+      },
+      100
+    );
+  }
   async function openSearch() {
     $$invalidate(13, showSearchBar = true);
     await tick();
-    searchInputEl == null ? void 0 : searchInputEl.focus();
-    searchInputEl == null ? void 0 : searchInputEl.select();
+    focusSearchInput();
     updateSearchMatches();
     if (allMatches.length > 0) {
       void scrollToActiveMatch();
     }
+    focusSearchInput();
   }
   function closeSearch() {
     $$invalidate(13, showSearchBar = false);
