@@ -1,6 +1,6 @@
 # Fluent Tasks
 
-Obsidian plugin: a three-pane, drag-and-drop task manager inspired by Microsoft To Do, Todoist, and TickTick. Version **1.0.43** (`manifest.json`). Desktop and mobile (`isDesktopOnly: false`). Minimum Obsidian **1.8.7**.
+Obsidian plugin: a three-pane, drag-and-drop task manager inspired by Microsoft To Do, Todoist, and TickTick. Version **1.0.44** (`manifest.json`). Desktop and mobile (`isDesktopOnly: false`). Minimum Obsidian **1.8.7**.
 
 Architecture documentation: [ARCHITECTURE.md](./ARCHITECTURE.md).
 
@@ -24,6 +24,8 @@ There is no cloud lock-in or external server dependency. All data remains 100% l
 
 ## Key Features
 
+- **List Navigation History (Alt+Left / Alt+Right)**: In-memory session history stack enabling effortless traversal across recently viewed lists. Jump backwards and forwards seamlessly via `Alt + ←` / `Alt + →`, `Alt + Left/Right click`, or mouse side buttons (Back / Forward).
+- **In-Modal Subtask Search (Ctrl+F)**: Dedicated search inside the subtasks floating modal (`TaskStepsModal`) with auto-focus, subtle soft-accent backdrop highlighting, and centered viewport scrolling.
 - **Lists & Groups**: Create custom lists and organize them into collapsible groups. Different groups can have lists with identical display names, with automated sibling collision disambiguation (`name(1)`). Drag-and-drop lists into groups or reorder them freely. Press **F2** to rename hovered or active lists.
 - **Star Mode (Smart Aggregation)**: Dedicated virtual Star Mode aggregating all starred tasks across all lists into a single unified view. Toggling stars in Star Mode directly updates the task's originating list with live setting reactivity.
 - **In-List Task Search (Ctrl+F)**: Fast in-page search bar triggered by `Ctrl+F` (or `Cmd+F` on macOS) or the more options menu. Scopes search strictly to the active list, supporting deep matching across titles, checklist steps, and notes, with keyboard navigation (`↑`/`↓`/`Enter`) and automatic scroll-to-task highlighting.
