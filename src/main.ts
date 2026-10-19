@@ -105,6 +105,8 @@ interface TaskMainViewComponent extends TaskMainView {
     scheduleHidePopover: () => void;
     getCurrentCategory: () => CategoryInfo | null;
     loadCategory: (cat: CategoryInfo) => Promise<void>;
+    navigateBack: () => Promise<boolean>;
+    navigateForward: () => Promise<boolean>;
     toggleMultiSelect: () => void;
     openBackupModal: () => void;
     openSearch?: () => void;
@@ -140,6 +142,20 @@ class TaskMainViewWrapper extends ItemView {
         this.scope.register([], "F2", (evt) => {
             if (this.component?.isHoveringOrFocusedCategoryTitle?.()) {
                 this.component.startRenameCategory?.();
+                evt.preventDefault();
+                return false;
+            }
+        });
+        this.scope.register(["Alt"], "ArrowLeft", (evt) => {
+            if (this.component?.navigateBack) {
+                void this.component.navigateBack();
+                evt.preventDefault();
+                return false;
+            }
+        });
+        this.scope.register(["Alt"], "ArrowRight", (evt) => {
+            if (this.component?.navigateForward) {
+                void this.component.navigateForward();
                 evt.preventDefault();
                 return false;
             }
@@ -515,6 +531,38 @@ export default class FluentTasksPlugin extends Plugin {
             callback: () => {
                 this.toggleStarOnHoveredTask();
             },
+        });
+
+        this.addCommand({
+            id: "navigate-list-back",
+            name: "Navigate to previous list (Back)",
+            checkCallback: (checking: boolean) => {
+                const mainLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MAIN);
+                if (mainLeaves.length > 0) {
+                    if (!checking) {
+                        const comp = (mainLeaves[0].view as any).getComponent?.() as TaskMainViewComponent | undefined;
+                        void comp?.navigateBack?.();
+                    }
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        this.addCommand({
+            id: "navigate-list-forward",
+            name: "Navigate to next list (Forward)",
+            checkCallback: (checking: boolean) => {
+                const mainLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MAIN);
+                if (mainLeaves.length > 0) {
+                    if (!checking) {
+                        const comp = (mainLeaves[0].view as any).getComponent?.() as TaskMainViewComponent | undefined;
+                        void comp?.navigateForward?.();
+                    }
+                    return true;
+                }
+                return false;
+            }
         });
 
         // FIX: All workspace/vault operations MUST wait until layout is ready.

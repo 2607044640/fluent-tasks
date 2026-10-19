@@ -1000,6 +1000,29 @@
     }
 
     function handleGlobalKeyDown(e: KeyboardEvent) {
+        // List navigation history shortcuts (Alt + Left / Alt + Right)
+        if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+            if (e.key === "ArrowLeft") {
+                const activeType = plugin?.app?.workspace?.getActiveViewOfType(ItemView)?.getViewType();
+                const isInsideMain = mainContainerEl && (mainContainerEl.contains(document.activeElement) || activeType === VIEW_TYPE_MAIN);
+                if (isInsideMain) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void navigateBack();
+                    return;
+                }
+            } else if (e.key === "ArrowRight") {
+                const activeType = plugin?.app?.workspace?.getActiveViewOfType(ItemView)?.getViewType();
+                const isInsideMain = mainContainerEl && (mainContainerEl.contains(document.activeElement) || activeType === VIEW_TYPE_MAIN);
+                if (isInsideMain) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void navigateForward();
+                    return;
+                }
+            }
+        }
+
         // Ctrl+F / Cmd+F handler for in-list search
         const isF = e.key === "f" || e.key === "F" || e.code === "KeyF";
         const isMod = Platform.isMacOS ? (e.metaKey || e.ctrlKey) : (e.ctrlKey && !e.metaKey);
@@ -1580,6 +1603,9 @@
         enableTaskWeightMode = plugin?.settings?.enableTaskWeightMode ?? false;
         hiddenStarMode = plugin?.settings?.hiddenStarMode ?? plugin?.settings?.disableStars ?? false;
         disableStars = hiddenStarMode;
+        if (!isNavigatingHistory) {
+            pushListHistory(cat);
+        }
         await loadTasks();
         if (plugin?.app && cat?.filepath) {
             void LinkedNoteService.autoSyncCategoryLinkedNotes(plugin.app, dataService, cat.filepath);
@@ -1652,6 +1678,93 @@
     }
 
     // =============================================
+    // In-Memory List Navigation History Stack (Temporary / Session)
+    // =============================================
+    let listHistory: CategoryInfo[] = [];
+    let historyIndex: number = -1;
+    let isNavigatingHistory: boolean = false;
+    const MAX_LIST_HISTORY = 50;
+
+    function pushListHistory(cat: CategoryInfo) {
+        if (!cat || !cat.filepath) return;
+        // Skip consecutive duplicates
+        if (historyIndex >= 0 && listHistory[historyIndex]?.filepath === cat.filepath) {
+            return;
+        }
+        // Truncate forward history if user navigated back and then chose a new list
+        if (historyIndex >= 0 && historyIndex < listHistory.length - 1) {
+            listHistory = listHistory.slice(0, historyIndex + 1);
+        }
+        listHistory.push({
+            id: cat.id || cat.filepath,
+            name: cat.name,
+            filepath: cat.filepath,
+            type: cat.type || "category",
+            isSmartList: cat.isSmartList,
+        });
+        if (listHistory.length > MAX_LIST_HISTORY) {
+            listHistory.shift();
+        }
+        historyIndex = listHistory.length - 1;
+    }
+
+    export async function navigateBack(): Promise<boolean> {
+        if (historyIndex > 0) {
+            let targetIndex = historyIndex - 1;
+            // Skip any deleted categories
+            while (targetIndex >= 0) {
+                const cat = listHistory[targetIndex];
+                if (cat.filepath === STARRED_CATEGORY_PATH || (plugin?.app?.vault?.getAbstractFileByPath(cat.filepath))) {
+                    break;
+                }
+                targetIndex--;
+            }
+            if (targetIndex >= 0) {
+                historyIndex = targetIndex;
+                const prevCat = listHistory[historyIndex];
+                isNavigatingHistory = true;
+                try {
+                    EventBus.emit(EventName.CATEGORY_SELECTED, { category: prevCat, fromHistory: true });
+                    new Notice(`← ${prevCat.name}`, 1200);
+                } finally {
+                    isNavigatingHistory = false;
+                }
+                return true;
+            }
+        }
+        new Notice(isChinese() ? "已经是最早的列表记录" : "No earlier list in history", 1200);
+        return false;
+    }
+
+    export async function navigateForward(): Promise<boolean> {
+        if (historyIndex >= 0 && historyIndex < listHistory.length - 1) {
+            let targetIndex = historyIndex + 1;
+            // Skip any deleted categories
+            while (targetIndex < listHistory.length) {
+                const cat = listHistory[targetIndex];
+                if (cat.filepath === STARRED_CATEGORY_PATH || (plugin?.app?.vault?.getAbstractFileByPath(cat.filepath))) {
+                    break;
+                }
+                targetIndex++;
+            }
+            if (targetIndex < listHistory.length) {
+                historyIndex = targetIndex;
+                const nextCat = listHistory[historyIndex];
+                isNavigatingHistory = true;
+                try {
+                    EventBus.emit(EventName.CATEGORY_SELECTED, { category: nextCat, fromHistory: true });
+                    new Notice(`→ ${nextCat.name}`, 1200);
+                } finally {
+                    isNavigatingHistory = false;
+                }
+                return true;
+            }
+        }
+        new Notice(isChinese() ? "已经是最新的列表记录" : "No forward list in history", 1200);
+        return false;
+    }
+
+    // =============================================
     // Event Handlers
     // =============================================
     async function handleCategorySelected(payload: any) {
@@ -1659,6 +1772,12 @@
         currentCategory = payload.category;
         selectedTaskId = "";
         showCompleted = false;
+
+        // Record history unless this is a history navigation traversal
+        if (!payload.fromHistory && !isNavigatingHistory) {
+            pushListHistory(payload.category);
+        }
+
         await loadTasks();
         if (plugin?.app && payload.category.filepath) {
             void LinkedNoteService.autoSyncCategoryLinkedNotes(plugin.app, dataService, payload.category.filepath);
@@ -1674,6 +1793,20 @@
     async function handleCategoryRenamed(payload: any) {
         if (!payload?.category || !payload?.oldFilepath) return;
         const oldPath = payload.oldFilepath;
+
+        // Update listHistory paths and names if a category was renamed
+        listHistory = listHistory.map(item => {
+            if (item.filepath === oldPath || item.id === oldPath) {
+                return {
+                    ...item,
+                    filepath: payload.category.filepath,
+                    name: payload.category.name,
+                    id: payload.category.id || payload.category.filepath
+                };
+            }
+            return item;
+        });
+
         if (currentCategory && (currentCategory.filepath === oldPath || currentCategory.id === oldPath)) {
             currentCategory = payload.category;
             await loadTasks();
@@ -2613,7 +2746,64 @@
         }
     }
 
-    export { scheduleHidePopover, openSearch, closeSearch, toggleSearch, startRenameCategory, cancelRenameCategory, isHoveringOrFocusedCategoryTitle, toggleStarByTaskId, applySettingsUpdate };
+    function handleMainPointerDown(e: MouseEvent) {
+        if (e.button === 3) {
+            e.preventDefault();
+            e.stopPropagation();
+            void navigateBack();
+            return;
+        }
+        if (e.button === 4) {
+            e.preventDefault();
+            e.stopPropagation();
+            void navigateForward();
+            return;
+        }
+        if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+            if (e.button === 0) { // Alt + Left Click -> Back
+                e.preventDefault();
+                e.stopPropagation();
+                void navigateBack();
+                return;
+            } else if (e.button === 2) { // Alt + Right Click -> Forward
+                e.preventDefault();
+                e.stopPropagation();
+                void navigateForward();
+                return;
+            }
+        }
+    }
+
+    function handleMainContextMenu(e: MouseEvent) {
+        if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    }
+
+    function handleMainAuxClick(e: MouseEvent) {
+        if (e.button === 3) {
+            e.preventDefault();
+            e.stopPropagation();
+            void navigateBack();
+        } else if (e.button === 4) {
+            e.preventDefault();
+            e.stopPropagation();
+            void navigateForward();
+        }
+    }
+
+    export {
+        scheduleHidePopover,
+        openSearch,
+        closeSearch,
+        toggleSearch,
+        startRenameCategory,
+        cancelRenameCategory,
+        isHoveringOrFocusedCategoryTitle,
+        toggleStarByTaskId,
+        applySettingsUpdate,
+    };
 </script>
 
 <svelte:window 
@@ -2634,7 +2824,16 @@
     }}
 />
 
-<div class="main-container" bind:this={mainContainerEl} class:wrap-titles={wrapTaskTitles} class:center-tasks={centerAlignTasks} role="application">
+<div 
+    class="main-container" 
+    bind:this={mainContainerEl} 
+    class:wrap-titles={wrapTaskTitles} 
+    class:center-tasks={centerAlignTasks} 
+    role="application"
+    on:pointerdown|capture={handleMainPointerDown}
+    on:auxclick={handleMainAuxClick}
+    on:contextmenu|capture={handleMainContextMenu}
+>
     {#if currentCategory}
         <!-- Header -->
         <div class="main-header">
@@ -3931,6 +4130,10 @@
                             <div class="guide-card">
                                 <div class="guide-card-header"><span class="guide-badge-pill">Right Click</span> Instant Dismiss & Context Actions</div>
                                 <div class="guide-card-body">Right-click anywhere to immediately dismiss any open hover popover or full-screen SVG Lightbox. Right-click tasks to open move/delete context menus.</div>
+                            </div>
+                            <div class="guide-card">
+                                <div class="guide-card-header"><span class="guide-badge-pill">Alt + Left / Right</span> List History Navigation</div>
+                                <div class="guide-card-body">Quickly jump back and forward across previously visited lists using <kbd>Alt</kbd> + <kbd>←</kbd> / <kbd>→</kbd>, Alt + mouse left/right click, or mouse side buttons.</div>
                             </div>
                         </div>
                     </div>
