@@ -1002,6 +1002,7 @@
     function handleGlobalKeyDown(e: KeyboardEvent) {
         // List navigation history shortcuts (Alt + Left / Alt + Right)
         if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+            if (e.repeat) return;
             if (e.key === "ArrowLeft") {
                 const activeType = plugin?.app?.workspace?.getActiveViewOfType(ItemView)?.getViewType();
                 const isInsideMain = mainContainerEl && (mainContainerEl.contains(document.activeElement) || activeType === VIEW_TYPE_MAIN);
@@ -1708,7 +1709,15 @@
         historyIndex = listHistory.length - 1;
     }
 
+    let lastNavTime = 0;
+    const NAV_DEBOUNCE_MS = 250;
+
     export async function navigateBack(): Promise<boolean> {
+        const now = Date.now();
+        if (now - lastNavTime < NAV_DEBOUNCE_MS) {
+            return false;
+        }
+        lastNavTime = now;
         if (historyIndex > 0) {
             let targetIndex = historyIndex - 1;
             // Skip any deleted categories
@@ -1735,6 +1744,11 @@
     }
 
     export async function navigateForward(): Promise<boolean> {
+        const now = Date.now();
+        if (now - lastNavTime < NAV_DEBOUNCE_MS) {
+            return false;
+        }
+        lastNavTime = now;
         if (historyIndex >= 0 && historyIndex < listHistory.length - 1) {
             let targetIndex = historyIndex + 1;
             // Skip any deleted categories
@@ -2743,6 +2757,22 @@
     }
 
     function handleMainPointerDown(e: MouseEvent) {
+        if (e.button === 3 || e.button === 4) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+        if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+            if (e.button === 0 || e.button === 2) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+        }
+        return;
+    }
+
+    /*
         if (e.button === 3) {
             e.preventDefault();
             e.stopPropagation();
@@ -2770,6 +2800,38 @@
         }
     }
 
+    }
+
+    */
+
+    function handleMainPointerUp(e: MouseEvent) {
+        if (e.button === 3) {
+            e.preventDefault();
+            e.stopPropagation();
+            void navigateBack();
+            return;
+        }
+        if (e.button === 4) {
+            e.preventDefault();
+            e.stopPropagation();
+            void navigateForward();
+            return;
+        }
+        if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+            if (e.button === 0) {
+                e.preventDefault();
+                e.stopPropagation();
+                void navigateBack();
+                return;
+            } else if (e.button === 2) {
+                e.preventDefault();
+                e.stopPropagation();
+                void navigateForward();
+                return;
+            }
+        }
+    }
+
     function handleMainContextMenu(e: MouseEvent) {
         if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
             e.preventDefault();
@@ -2778,6 +2840,14 @@
     }
 
     function handleMainAuxClick(e: MouseEvent) {
+        if (e.button === 3 || e.button === 4) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+    }
+
+    /*
         if (e.button === 3) {
             e.preventDefault();
             e.stopPropagation();
@@ -2788,6 +2858,10 @@
             void navigateForward();
         }
     }
+
+    }
+
+    */
 
     export {
         scheduleHidePopover,
@@ -2827,6 +2901,7 @@
     class:center-tasks={centerAlignTasks} 
     role="application"
     on:pointerdown|capture={handleMainPointerDown}
+    on:pointerup|capture={handleMainPointerUp}
     on:auxclick={handleMainAuxClick}
     on:contextmenu|capture={handleMainContextMenu}
 >

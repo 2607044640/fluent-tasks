@@ -147,6 +147,7 @@ class TaskMainViewWrapper extends ItemView {
             }
         });
         this.scope.register(["Alt"], "ArrowLeft", (evt) => {
+            if (evt.repeat) return false;
             if (this.component?.navigateBack) {
                 void this.component.navigateBack();
                 evt.preventDefault();
@@ -154,6 +155,7 @@ class TaskMainViewWrapper extends ItemView {
             }
         });
         this.scope.register(["Alt"], "ArrowRight", (evt) => {
+            if (evt.repeat) return false;
             if (this.component?.navigateForward) {
                 void this.component.navigateForward();
                 evt.preventDefault();
