@@ -139,6 +139,8 @@ const zhCn: typeof en = {
     main_view_search_all_tasks_hint: "如果想要搜索全部任务 (All tasks)，请在 Obsidian【设置 -> 快捷键】中为本插件命令【Search all tasks】绑定快捷键。",
     setting_hide_left_sidebar_title: "隐藏左侧侧边栏（悬浮UI模式）",
     setting_hide_left_sidebar_desc: "完全隐藏左侧侧边栏列表面板，改用快速列表悬浮UI弹窗进行导航与切换。强烈建议为该悬浮UI绑定快捷键。",
+    setting_auto_expand_sidebar_on_drag_title: "拖拽任务时自动展开左侧边栏",
+    setting_auto_expand_sidebar_on_drag_desc: "拖拽任务时暂时展开左侧边栏以便移动到其他清单，松开时自动收起（若原本处于折叠状态）。若左侧边栏本来已展开且显示本插件列表，则仅定位清单而不重新展开收起。",
     warn_bind_hotkey_btn: "请绑定悬浮UI快捷键",
     warn_bind_hotkey_tooltip: "你开启了「隐藏左侧侧边栏」设置，请在「设置 -> 快捷键」中为「打开快速列表弹窗」绑定快捷键，以便随时调出悬浮UI切换列表。",
     warn_bind_hotkey_notice: "⚠️ [Fluent Tasks] 你开启了「隐藏左侧侧边栏」设置，但尚未为悬浮UI绑定快捷键！请前往「设置 -> 快捷键」绑定快捷键。",

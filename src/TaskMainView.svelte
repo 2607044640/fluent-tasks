@@ -2248,15 +2248,13 @@
     function handleDndConsider(e: CustomEvent, listType: 'incomplete' | 'completed') {
         if (!isDndActive) {
             isDndActive = true;
-            if (hideLeftSidebar) {
-                const draggedId = e.detail?.info?.id;
-                const items = listType === 'incomplete' ? (e.detail?.items || incompleteTasks) : (e.detail?.items || completedTasks);
-                const draggedTask = items.find((t: TaskItem) => t.id === draggedId);
-                const relevantCatPath = (currentCategory?.filepath === STARRED_CATEGORY_PATH && draggedTask?.sourceFilepath)
-                    ? draggedTask.sourceFilepath
-                    : currentCategory?.filepath;
-                void plugin?.handleTaskDragStart?.(relevantCatPath);
-            }
+            const draggedId = e.detail?.info?.id;
+            const items = listType === 'incomplete' ? (e.detail?.items || incompleteTasks) : (e.detail?.items || completedTasks);
+            const draggedTask = items.find((t: TaskItem) => t.id === draggedId);
+            const relevantCatPath = (currentCategory?.filepath === STARRED_CATEGORY_PATH && draggedTask?.sourceFilepath)
+                ? draggedTask.sourceFilepath
+                : currentCategory?.filepath;
+            void plugin?.handleTaskDragStart?.(relevantCatPath);
             if (preDragIncompleteTasks.length === 0) preDragIncompleteTasks = [...incompleteTasks];
             if (preDragCompletedTasks.length === 0) preDragCompletedTasks = [...completedTasks];
         }
@@ -2277,9 +2275,7 @@
     }
 
     async function handleDndFinalize(e: CustomEvent, listType: 'incomplete' | 'completed') {
-        if (hideLeftSidebar) {
-            plugin?.handleTaskDragEnd?.();
-        }
+        plugin?.handleTaskDragEnd?.();
         isDndActive = false;
         stopAutoScroll();
 

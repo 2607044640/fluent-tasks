@@ -387,16 +387,20 @@
         let targetCategory: CategoryInfo | null = null;
         let parentGroup: GroupInfo | null = null;
 
-        for (const item of sidebarItems) {
-            if (item.type === "category" && item.filepath === filepath) {
-                targetCategory = item;
-                break;
-            } else if (item.type === "group") {
-                const child = item.items.find(c => c.filepath === filepath);
-                if (child) {
-                    targetCategory = child;
-                    parentGroup = item;
+        if (filepath === STARRED_CATEGORY_PATH) {
+            targetCategory = { id: STARRED_CATEGORY_PATH, name: STARRED_CATEGORY_NAME, filepath: STARRED_CATEGORY_PATH, isSmartList: true };
+        } else {
+            for (const item of sidebarItems) {
+                if (item.type === "category" && item.filepath === filepath) {
+                    targetCategory = item;
                     break;
+                } else if (item.type === "group") {
+                    const child = item.items.find(c => c.filepath === filepath);
+                    if (child) {
+                        targetCategory = child;
+                        parentGroup = item;
+                        break;
+                    }
                 }
             }
         }
@@ -903,6 +907,20 @@
         if (!found) dragOverPath = "";
     }
 
+    function findCategoryName(filepath: string): string {
+        if (filepath === STARRED_CATEGORY_PATH) return STARRED_CATEGORY_NAME;
+        for (const item of sidebarItems) {
+            if (item.type !== "group" && (item as CategoryInfo).filepath === filepath) {
+                return (item as CategoryInfo).name;
+            }
+            if (item.type === "group" && (item as GroupInfo).items) {
+                const child = (item as GroupInfo).items.find(c => c.filepath === filepath);
+                if (child) return child.name;
+            }
+        }
+        return filepath.replace(/\.md$/, "").split("/").pop() || filepath;
+    }
+
     async function handleGlobalPointerUp(e: PointerEvent) {
         const dragData = (window as any).__mstodo_drag_data;
         if (!dragData) return;
@@ -949,6 +967,8 @@
             EventBus.emit(EventName.TASK_MOVED, {
                 task, sourcePath: sourceFilepath, targetPath
             });
+            const targetName = findCategoryName(targetPath);
+            new Notice(`Moved to "${targetName}"`);
         } catch (err) {
             console.error("[MStodo Sidebar] Move failed:", err);
         }

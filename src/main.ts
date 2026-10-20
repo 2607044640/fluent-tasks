@@ -1095,8 +1095,8 @@ export default class FluentTasksPlugin extends Plugin {
             this.suppressAutoSidebarExpansion(suppressAutoExpandDurationMs);
         }
         const leftSplit = this.app.workspace.leftSplit as { collapsed?: boolean; collapse: () => void } | null;
-        if (leftSplit && !leftSplit.collapsed) {
-            if (force || this.isPluginLeftSidebarActive() || (this.settings.hideLeftSidebar && !this.isSidebarTemporarilyExpandedForDrag)) {
+        if (leftSplit && !leftSplit.collapsed && !this.isSidebarTemporarilyExpandedForDrag) {
+            if (force || this.isPluginLeftSidebarActive() || this.settings.hideLeftSidebar) {
                 leftSplit.collapse();
             }
         }
@@ -1132,37 +1132,48 @@ export default class FluentTasksPlugin extends Plugin {
     }
 
     /**
-     * When hideLeftSidebar (Floating UI mode) is enabled, temporarily open the left sidebar
-     * when a task starts being dragged, and locate/reveal the current category in the tree.
+     * When hideLeftSidebar (Floating UI mode) or autoExpandSidebarOnDrag is enabled,
+     * temporarily open the left sidebar when a task starts being dragged,
+     * and locate/reveal the current category in the tree.
+     * If the sidebar is already open and displaying Fluent Tasks sidebar,
+     * do not open again, only locate the list.
      */
     async handleTaskDragStart(targetCategoryPath?: string): Promise<void> {
-        if (!this.settings.hideLeftSidebar) return;
+        const isEnabled = this.settings.hideLeftSidebar || this.settings.autoExpandSidebarOnDrag;
+        if (!isEnabled) return;
 
         if (this.dragEndCollapseTimeout !== null) {
             window.clearTimeout(this.dragEndCollapseTimeout);
             this.dragEndCollapseTimeout = null;
         }
 
-        this.isSidebarTemporarilyExpandedForDrag = true;
-
-        let sidebarLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR);
-        let sidebarLeaf = sidebarLeaves.length > 0 ? sidebarLeaves[0] : null;
-        if (!sidebarLeaf) {
-            sidebarLeaf = await this.activateView(VIEW_TYPE_SIDEBAR, "left");
-        }
-
         const leftSplit = this.app.workspace.leftSplit as { collapsed?: boolean; expand: () => void; collapse: () => void } | null;
-        if (leftSplit?.collapsed) {
-            leftSplit.expand();
-        }
-        if (sidebarLeaf) {
-            void this.app.workspace.revealLeaf(sidebarLeaf);
+        const isAlreadyExpandedWithPlugin = !!(leftSplit && !leftSplit.collapsed && this.isPluginLeftSidebarActive());
+
+        if (isAlreadyExpandedWithPlugin) {
+            // Sidebar is already expanded and showing our plugin's sidebar!
+            // No need to expand or mark for auto-collapse; just locate and reveal the list.
+            this.isSidebarTemporarilyExpandedForDrag = false;
+        } else {
+            this.isSidebarTemporarilyExpandedForDrag = true;
+
+            let sidebarLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR);
+            let sidebarLeaf = sidebarLeaves.length > 0 ? sidebarLeaves[0] : null;
+            if (!sidebarLeaf) {
+                sidebarLeaf = await this.activateView(VIEW_TYPE_SIDEBAR, "left");
+            }
+
+            if (leftSplit?.collapsed) {
+                leftSplit.expand();
+            }
+            if (sidebarLeaf) {
+                void this.app.workspace.revealLeaf(sidebarLeaf);
+            }
         }
 
         const catPath = targetCategoryPath || this.getActiveCenterCategory()?.filepath;
         if (catPath) {
             window.setTimeout(() => {
-                if (!this.isSidebarTemporarilyExpandedForDrag) return;
                 const currentLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR);
                 if (currentLeaves.length > 0 && currentLeaves[0].view instanceof TaskSidebarViewWrapper) {
                     void currentLeaves[0].view.getComponent()?.locateAndRevealCategory(catPath);
@@ -1185,7 +1196,6 @@ export default class FluentTasksPlugin extends Plugin {
     handleTaskDragEnd(): void {
         if (!this.isSidebarTemporarilyExpandedForDrag) return;
         this.isSidebarTemporarilyExpandedForDrag = false;
-        if (!this.settings.hideLeftSidebar) return;
 
         if (this.dragEndCollapseTimeout !== null) {
             window.clearTimeout(this.dragEndCollapseTimeout);

@@ -137,6 +137,8 @@ const en = {
     main_view_search_all_tasks_hint: "To search across all tasks, set a hotkey for plugin command 'Search all tasks' in Settings -> Hotkeys.",
     setting_hide_left_sidebar_title: "Hide Left Sidebar (Floating UI Mode)",
     setting_hide_left_sidebar_desc: "Hide the left sidebar list view completely. Navigate lists using the Quick List Floating UI (modal). Recommended to bind a hotkey for quick access.",
+    setting_auto_expand_sidebar_on_drag_title: "Auto-Expand Left Sidebar on Task Drag",
+    setting_auto_expand_sidebar_on_drag_desc: "Temporarily expands the left sidebar when dragging a task to easily move it to other lists, and auto-collapses on release (if it was collapsed). If the sidebar is already open with Fluent Tasks, it only reveals the list.",
     warn_bind_hotkey_btn: "Set Floating UI Hotkey",
     warn_bind_hotkey_tooltip: "You enabled 'Hide Left Sidebar'. Please bind a hotkey for 'Open Quick List Modal' in Settings -> Hotkeys to switch lists conveniently.",
     warn_bind_hotkey_notice: "⚠️ [Fluent Tasks] 'Hide Left Sidebar' is enabled, but no hotkey is bound for the Floating UI! Please assign a hotkey in Settings -> Hotkeys.",

@@ -6,6 +6,7 @@ export interface FluentTasksSettings {
     accentColor: string;
     openDetailInModal: boolean;
     hideLeftSidebar: boolean;
+    autoExpandSidebarOnDrag: boolean;
     autoExpandSidebar: boolean;
     autoCollapseSidebarOnSwitch: boolean;
     searchHideCompleted: boolean;
@@ -35,6 +36,7 @@ export const DEFAULT_SETTINGS: FluentTasksSettings = {
     accentColor: "#8b5cf6",
     openDetailInModal: false,
     hideLeftSidebar: false,
+    autoExpandSidebarOnDrag: false,
     autoExpandSidebar: true,
     autoCollapseSidebarOnSwitch: true,
     searchHideCompleted: true,
@@ -124,6 +126,16 @@ export class FluentTasksSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                     this.plugin.applySettings();
                     await this.plugin.handleHideLeftSidebarChanged(value);
+                }));
+
+        new Setting(containerEl)
+            .setName(t("setting_auto_expand_sidebar_on_drag_title") || "Auto-Expand Left Sidebar on Task Drag")
+            .setDesc(t("setting_auto_expand_sidebar_on_drag_desc") || "Temporarily expand the left sidebar when dragging a task to easily move it to other lists, and auto-collapse on release (if it was collapsed). If the sidebar is already open with Fluent Tasks, it only reveals the list.")
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.autoExpandSidebarOnDrag ?? false)
+                .onChange(async (value) => {
+                    this.plugin.settings.autoExpandSidebarOnDrag = value;
+                    await this.plugin.saveSettings();
                 }));
 
         new Setting(containerEl)
