@@ -86,6 +86,7 @@
     });
 
     onDestroy(() => {
+        stopSidebarAutoScroll();
         window.removeEventListener("pointermove", handleGlobalPointerMove, true);
         window.removeEventListener("pointerup", handleGlobalPointerUp, true);
         window.removeEventListener("keydown", handleWindowKeydown, true);
@@ -182,9 +183,14 @@
     // Renaming Logic (F2 on Hover or Focus)
     // =============================================
     let sidebarContainerEl: HTMLElement | null = null;
+    let customListsEl: HTMLElement | null = null;
     let isMouseInsideSidebar: boolean = false;
     let lastMouseX: number = 0;
     let lastMouseY: number = 0;
+    let sidebarScrollAnimId: number | null = null;
+    let sidebarScrollSpeed: number = 0;
+    const AUTO_SCROLL_EDGE_ZONE = 70;
+    const AUTO_SCROLL_MAX_SPEED = 14;
 
     function handleSidebarMouseEnter() {
         isMouseInsideSidebar = true;
@@ -631,17 +637,100 @@
         }
     }
 
+    function startSidebarAutoScroll() {
+        if (sidebarScrollAnimId !== null) return;
+        sidebarScrollAnimId = window.requestAnimationFrame(stepSidebarAutoScroll);
+    }
+
+    function stopSidebarAutoScroll() {
+        if (sidebarScrollAnimId !== null) {
+            window.cancelAnimationFrame(sidebarScrollAnimId);
+            sidebarScrollAnimId = null;
+        }
+        sidebarScrollSpeed = 0;
+    }
+
+    function stepSidebarAutoScroll() {
+        if (!customListsEl || sidebarScrollSpeed === 0) {
+            sidebarScrollAnimId = null;
+            return;
+        }
+
+        const prevScrollTop = customListsEl.scrollTop;
+        customListsEl.scrollTop += sidebarScrollSpeed;
+
+        if (customListsEl.scrollTop === prevScrollTop) {
+            stopSidebarAutoScroll();
+            return;
+        }
+
+        updateDragOverUnderMouse();
+        sidebarScrollAnimId = window.requestAnimationFrame(stepSidebarAutoScroll);
+    }
+
+    function updateSidebarAutoScroll(clientY: number, listsRect: DOMRect) {
+        if (!customListsEl) return;
+
+        // Top edge zone: scroll UP if there is room to scroll up
+        if (clientY < listsRect.top + AUTO_SCROLL_EDGE_ZONE) {
+            if (customListsEl.scrollTop <= 0) {
+                stopSidebarAutoScroll();
+                return;
+            }
+            const proximity = Math.min(2.5, Math.max(0.2, (listsRect.top + AUTO_SCROLL_EDGE_ZONE - clientY) / AUTO_SCROLL_EDGE_ZONE));
+            sidebarScrollSpeed = -Math.round(proximity * AUTO_SCROLL_MAX_SPEED);
+            startSidebarAutoScroll();
+        } 
+        // Bottom edge zone: scroll DOWN if there is room to scroll down
+        else if (clientY > listsRect.bottom - AUTO_SCROLL_EDGE_ZONE) {
+            if (customListsEl.scrollTop + customListsEl.clientHeight >= customListsEl.scrollHeight - 1) {
+                stopSidebarAutoScroll();
+                return;
+            }
+            const proximity = Math.min(2.5, Math.max(0.2, (clientY - (listsRect.bottom - AUTO_SCROLL_EDGE_ZONE)) / AUTO_SCROLL_EDGE_ZONE));
+            sidebarScrollSpeed = Math.round(proximity * AUTO_SCROLL_MAX_SPEED);
+            startSidebarAutoScroll();
+        } 
+        // Middle dead zone
+        else {
+            stopSidebarAutoScroll();
+        }
+    }
+
+    function updateDragOverUnderMouse() {
+        const dragData = (window as any).__mstodo_drag_data;
+        if (!dragData) {
+            if (dragOverPath) dragOverPath = "";
+            return;
+        }
+
+        const categoryEls = document.querySelectorAll(".category-item[data-filepath]");
+        let found = false;
+        for (let i = 0; i < categoryEls.length; i++) {
+            const el = categoryEls[i];
+            const rect = el.getBoundingClientRect();
+            if (
+                lastMouseX >= rect.left && lastMouseX <= rect.right &&
+                lastMouseY >= rect.top && lastMouseY <= rect.bottom
+            ) {
+                dragOverPath = el.getAttribute("data-filepath") || "";
+                found = true;
+                break;
+            }
+        }
+        if (!found) dragOverPath = "";
+    }
+
     function checkAutoScroll(e: DragEvent) {
-        const container = document.querySelector(".custom-lists") as HTMLElement;
-        if (!container) return;
-        const rect = container.getBoundingClientRect();
-        const y = e.clientY;
-        const threshold = 45;
-        const speed = 8;
-        if (y - rect.top < threshold && container.scrollTop > 0) {
-            container.scrollTop -= speed;
-        } else if (rect.bottom - y < threshold) {
-            container.scrollTop += speed;
+        if (!customListsEl || !sidebarContainerEl) return;
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+        const sidebarRect = sidebarContainerEl.getBoundingClientRect();
+        const listsRect = customListsEl.getBoundingClientRect();
+        if (e.clientX >= sidebarRect.left - 20 && e.clientX <= sidebarRect.right + 20) {
+            updateSidebarAutoScroll(e.clientY, listsRect);
+        } else {
+            stopSidebarAutoScroll();
         }
     }
 
@@ -709,6 +798,7 @@
     }
 
     function handleDragEnd() {
+        stopSidebarAutoScroll();
         draggedItemId = "";
         dragOverId = "";
         dragPosition = null;
@@ -882,6 +972,7 @@
             ghost.style.opacity = overModal ? '0' : '1';
             if (overModal) {
                 dragOverPath = "";
+                stopSidebarAutoScroll();
                 return;
             }
         }
@@ -889,22 +980,28 @@
         const dragData = (window as any).__mstodo_drag_data;
         if (!dragData) {
             if (dragOverPath) dragOverPath = "";
+            stopSidebarAutoScroll();
             return;
         }
 
-        const categoryEls = document.querySelectorAll(".category-item[data-filepath]");
-        let found = false;
-        categoryEls.forEach((el) => {
-            const rect = el.getBoundingClientRect();
-            if (
-                e.clientX >= rect.left && e.clientX <= rect.right &&
-                e.clientY >= rect.top && e.clientY <= rect.bottom
-            ) {
-                dragOverPath = el.getAttribute("data-filepath") || "";
-                found = true;
+        if (sidebarContainerEl && customListsEl) {
+            const sidebarRect = sidebarContainerEl.getBoundingClientRect();
+            const isHorizontallyInSidebar = (
+                e.clientX >= sidebarRect.left - 20 &&
+                e.clientX <= sidebarRect.right + 20
+            );
+
+            if (isHorizontallyInSidebar && e.clientY >= sidebarRect.top && e.clientY <= sidebarRect.bottom) {
+                const listsRect = customListsEl.getBoundingClientRect();
+                updateSidebarAutoScroll(e.clientY, listsRect);
+            } else {
+                stopSidebarAutoScroll();
             }
-        });
-        if (!found) dragOverPath = "";
+        } else {
+            stopSidebarAutoScroll();
+        }
+
+        updateDragOverUnderMouse();
     }
 
     function findCategoryName(filepath: string): string {
@@ -922,6 +1019,7 @@
     }
 
     async function handleGlobalPointerUp(e: PointerEvent) {
+        stopSidebarAutoScroll();
         const dragData = (window as any).__mstodo_drag_data;
         if (!dragData) return;
 
@@ -977,6 +1075,7 @@
     }
 
     function handleRescuePointerUp(e: PointerEvent) {
+        stopSidebarAutoScroll();
         const isDraggingTask = !!(window as any).__mstodo_drag_data;
         const isDraggingCat = !!draggedItemId;
         
@@ -1048,6 +1147,7 @@
         </div>
     {/if}
     <div class="custom-lists" 
+         bind:this={customListsEl}
          data-root="true"
          role="list"
          class:drag-over-bottom={dragOverId === "root-bottom"}
