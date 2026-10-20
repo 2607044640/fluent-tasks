@@ -1,6 +1,6 @@
 # Fluent Tasks
 
-Obsidian plugin: a three-pane, drag-and-drop task manager inspired by Microsoft To Do, Todoist, and TickTick. Version **1.0.44** (`manifest.json`). Desktop and mobile (`isDesktopOnly: false`). Minimum Obsidian **1.8.7**.
+Obsidian plugin: a three-pane, drag-and-drop task manager inspired by Microsoft To Do, Todoist, and TickTick. Version **1.0.45** (`manifest.json`). Desktop and mobile (`isDesktopOnly: false`). Minimum Obsidian **1.8.7**.
 
 Architecture documentation: [ARCHITECTURE.md](./ARCHITECTURE.md).
 
@@ -17,20 +17,20 @@ All lists are stored as ordinary Markdown files inside your vault:
 ```
 
 - Sidebar groups and list ordering: `TodoData/.metadata.json`
-- Dedicated linked notes: `TodoData/<ListName>/<ListName> <taskId>.md` with YAML frontmatter `title: "<TaskTitle>"`
+- Dedicated linked notes: `TodoData/<ListName>/<Title5>_<ListName>_<GroupName>_<taskId>.md` with YAML frontmatter `title: "<TaskTitle>"`
 - Plugin options: Obsidian plugin data (`accentColor`, modal/sidebar toggles, Quick List grid settings, backup toggles, undo durations, task weight mode, center align tasks mode)
 
 There is no cloud lock-in or external server dependency. All data remains 100% local in your Obsidian vault.
 
 ## Key Features
 
-- **List Navigation History (Alt+Left / Alt+Right)**: In-memory session history stack enabling effortless traversal across recently viewed lists. Jump backwards and forwards seamlessly via `Alt + ←` / `Alt + →`, `Alt + Left/Right click`, or mouse side buttons (Back / Forward).
+- **List Navigation History (Alt+Left / Alt+Right)**: In-memory session history stack enabling effortless traversal across recently viewed lists. Jump backwards and forwards seamlessly via `Alt + ←` / `Alt + →`, `Alt + Left/Right click` (triggering strictly on release to prevent duplicate jumps), or mouse side buttons (Back / Forward).
 - **In-Modal Subtask Search (Ctrl+F)**: Dedicated search inside the subtasks floating modal (`TaskStepsModal`) with auto-focus, subtle soft-accent backdrop highlighting, and centered viewport scrolling.
 - **Lists & Groups**: Create custom lists and organize them into collapsible groups. Different groups can have lists with identical display names, with automated sibling collision disambiguation (`name(1)`). Drag-and-drop lists into groups or reorder them freely. Press **F2** to rename hovered or active lists.
 - **Star Mode (Smart Aggregation)**: Dedicated virtual Star Mode aggregating all starred tasks across all lists into a single unified view. Toggling stars in Star Mode directly updates the task's originating list with live setting reactivity.
 - **In-List Task Search (Ctrl+F)**: Fast in-page search bar triggered by `Ctrl+F` (or `Cmd+F` on macOS) or the more options menu. Scopes search strictly to the active list, supporting deep matching across titles, checklist steps, and notes, with keyboard navigation (`↑`/`↓`/`Enter`) and automatic scroll-to-task highlighting.
 - **Task Management & Priority Weight Scoring**: Inline task creation, completion toggles, star/pin priority, drag-and-drop task reordering, and moving tasks between lists via hierarchical submenus with fuzzy search fallback. Optional 1-9 priority score weighting with stepper controls and dynamic stable sorting.
-- **Linked Notes & Frontmatter Synchronization**: One-click linked note creation per task. Files use clean immutable paths (`<ListName> <taskId>.md`) and two-way synchronize the task title via the note's YAML frontmatter `title` property. Renaming a list automatically renames note folders, note filenames, and note links across all tasks with full auto-healing. Automatic migration of legacy notes.
+- **Linked Notes & Frontmatter Synchronization**: One-click linked note creation per task. Files use identifiable, tab-friendly paths (`<Title5>_<ListName>_<GroupName>_<taskId>.md`) starting with the first 5 sanitized characters of the task title so notes are immediately readable in truncated Obsidian tabs. Two-way synchronizes the task title via the note's YAML frontmatter `title` property. Renaming a list or task automatically updates note paths with full auto-healing. Automatic migration of legacy notes.
 - **More Options Menu & Batch Operations**: Clean three-dots header menu consolidating list search, multi-select mode, backup manager, shortcuts guide, and display alignment. Multi-select supports batch star/unstar and batch deletion.
 - **Center-Align Tasks Mode**: Toggle center alignment for task titles, steps counters, and wrapped multi-line text directly from the more options menu or plugin settings.
 - **Subtasks & Quick Context Menu**: Dedicated detail panel and floating modal for step checklists. Full vertical drag-and-drop step reordering with zero-loss safety reconciliation. Right-click any task to instantly access **Add side step** as the top context menu action, followed by **Star task** and hierarchical **Move to**.
