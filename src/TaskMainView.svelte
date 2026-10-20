@@ -2248,6 +2248,15 @@
     function handleDndConsider(e: CustomEvent, listType: 'incomplete' | 'completed') {
         if (!isDndActive) {
             isDndActive = true;
+            if (hideLeftSidebar) {
+                const draggedId = e.detail?.info?.id;
+                const items = listType === 'incomplete' ? (e.detail?.items || incompleteTasks) : (e.detail?.items || completedTasks);
+                const draggedTask = items.find((t: TaskItem) => t.id === draggedId);
+                const relevantCatPath = (currentCategory?.filepath === STARRED_CATEGORY_PATH && draggedTask?.sourceFilepath)
+                    ? draggedTask.sourceFilepath
+                    : currentCategory?.filepath;
+                void plugin?.handleTaskDragStart?.(relevantCatPath);
+            }
             if (preDragIncompleteTasks.length === 0) preDragIncompleteTasks = [...incompleteTasks];
             if (preDragCompletedTasks.length === 0) preDragCompletedTasks = [...completedTasks];
         }
@@ -2261,13 +2270,16 @@
             (window as any).__mstodo_drag_data = {
                 taskId: task.id,
                 task,
-                sourceFilepath: currentCategory.filepath,
+                sourceFilepath: (currentCategory.filepath === STARRED_CATEGORY_PATH && task?.sourceFilepath) ? task.sourceFilepath : currentCategory.filepath,
                 movedToTarget: null,
             };
         }
     }
 
     async function handleDndFinalize(e: CustomEvent, listType: 'incomplete' | 'completed') {
+        if (hideLeftSidebar) {
+            plugin?.handleTaskDragEnd?.();
+        }
         isDndActive = false;
         stopAutoScroll();
 
@@ -2373,7 +2385,7 @@
             (window as any).__mstodo_drag_data = {
                 taskId: task.id,
                 task,
-                sourceFilepath: currentCategory.filepath,
+                sourceFilepath: (currentCategory.filepath === STARRED_CATEGORY_PATH && task?.sourceFilepath) ? task.sourceFilepath : currentCategory.filepath,
                 movedToTarget: null,
             };
         }

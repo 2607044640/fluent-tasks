@@ -308,6 +308,8 @@ export default class FluentTasksPlugin extends Plugin {
     public lastSelectedTask?: TaskItem;
     public lastSelectedCategoryFilepath?: string;
     private isUserClosingSidebar = false;
+    public isSidebarTemporarilyExpandedForDrag = false;
+    private dragEndCollapseTimeout: number | null = null;
     private undoContainerEl: HTMLElement | null = null;
     private undoToastComponent: UndoToastContainer | null = null;
 
@@ -612,7 +614,7 @@ export default class FluentTasksPlugin extends Plugin {
 
                         // When switching focus from an external tab (e.g. Markdown note via Ctrl+Tab / Ctrl+Shift+Tab) to Fluent Tasks
                         if (isPluginView && !wasPluginView) {
-                            if (this.settings.hideLeftSidebar) {
+                            if (this.settings.hideLeftSidebar && !this.isSidebarTemporarilyExpandedForDrag) {
                                 this.app.workspace.detachLeavesOfType(VIEW_TYPE_SIDEBAR);
                                 const leftSplit = this.app.workspace.leftSplit as { collapsed?: boolean; collapse: () => void } | null;
                                 if (leftSplit && !leftSplit.collapsed) {
@@ -1094,7 +1096,7 @@ export default class FluentTasksPlugin extends Plugin {
         }
         const leftSplit = this.app.workspace.leftSplit as { collapsed?: boolean; collapse: () => void } | null;
         if (leftSplit && !leftSplit.collapsed) {
-            if (force || this.isPluginLeftSidebarActive() || this.settings.hideLeftSidebar) {
+            if (force || this.isPluginLeftSidebarActive() || (this.settings.hideLeftSidebar && !this.isSidebarTemporarilyExpandedForDrag)) {
                 leftSplit.collapse();
             }
         }
@@ -1127,6 +1129,76 @@ export default class FluentTasksPlugin extends Plugin {
                 this.locateActiveCategoryInSidebar();
             }
         }, 120);
+    }
+
+    /**
+     * When hideLeftSidebar (Floating UI mode) is enabled, temporarily open the left sidebar
+     * when a task starts being dragged, and locate/reveal the current category in the tree.
+     */
+    async handleTaskDragStart(targetCategoryPath?: string): Promise<void> {
+        if (!this.settings.hideLeftSidebar) return;
+
+        if (this.dragEndCollapseTimeout !== null) {
+            window.clearTimeout(this.dragEndCollapseTimeout);
+            this.dragEndCollapseTimeout = null;
+        }
+
+        this.isSidebarTemporarilyExpandedForDrag = true;
+
+        let sidebarLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR);
+        let sidebarLeaf = sidebarLeaves.length > 0 ? sidebarLeaves[0] : null;
+        if (!sidebarLeaf) {
+            sidebarLeaf = await this.activateView(VIEW_TYPE_SIDEBAR, "left");
+        }
+
+        const leftSplit = this.app.workspace.leftSplit as { collapsed?: boolean; expand: () => void; collapse: () => void } | null;
+        if (leftSplit?.collapsed) {
+            leftSplit.expand();
+        }
+        if (sidebarLeaf) {
+            void this.app.workspace.revealLeaf(sidebarLeaf);
+        }
+
+        const catPath = targetCategoryPath || this.getActiveCenterCategory()?.filepath;
+        if (catPath) {
+            window.setTimeout(() => {
+                if (!this.isSidebarTemporarilyExpandedForDrag) return;
+                const currentLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR);
+                if (currentLeaves.length > 0 && currentLeaves[0].view instanceof TaskSidebarViewWrapper) {
+                    void currentLeaves[0].view.getComponent()?.locateAndRevealCategory(catPath);
+                }
+            }, 60);
+        }
+
+        const safetyCleanup = () => {
+            window.removeEventListener("pointerup", safetyCleanup, true);
+            window.removeEventListener("pointercancel", safetyCleanup, true);
+            this.handleTaskDragEnd();
+        };
+        window.addEventListener("pointerup", safetyCleanup, { once: true, capture: true });
+        window.addEventListener("pointercancel", safetyCleanup, { once: true, capture: true });
+    }
+
+    /**
+     * When task dragging finishes, hide the temporarily opened left sidebar.
+     */
+    handleTaskDragEnd(): void {
+        if (!this.isSidebarTemporarilyExpandedForDrag) return;
+        this.isSidebarTemporarilyExpandedForDrag = false;
+        if (!this.settings.hideLeftSidebar) return;
+
+        if (this.dragEndCollapseTimeout !== null) {
+            window.clearTimeout(this.dragEndCollapseTimeout);
+        }
+
+        this.dragEndCollapseTimeout = window.setTimeout(() => {
+            this.dragEndCollapseTimeout = null;
+            if (this.isSidebarTemporarilyExpandedForDrag) return;
+            const leftSplit = this.app.workspace.leftSplit as { collapsed?: boolean; collapse: () => void } | null;
+            if (leftSplit && !leftSplit.collapsed) {
+                leftSplit.collapse();
+            }
+        }, 150);
     }
 
     /**
@@ -1329,7 +1401,7 @@ export default class FluentTasksPlugin extends Plugin {
         viewType: string,
         position: "left" | "center" | "right"
     ): Promise<WorkspaceLeaf | null> {
-        if (viewType === VIEW_TYPE_SIDEBAR && this.settings.hideLeftSidebar) {
+        if (viewType === VIEW_TYPE_SIDEBAR && this.settings.hideLeftSidebar && !this.isSidebarTemporarilyExpandedForDrag) {
             return null;
         }
         if (viewType === VIEW_TYPE_DETAIL && this.settings.openDetailInModal) {

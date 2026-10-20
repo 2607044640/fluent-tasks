@@ -26553,8 +26553,16 @@ function instance6($$self, $$props, $$invalidate) {
     updateAutoScroll(e.clientY);
   }
   function handleDndConsider(e, listType) {
+    var _a2, _b2, _c2, _d2, _e2;
     if (!isDndActive) {
       isDndActive = true;
+      if (hideLeftSidebar) {
+        const draggedId2 = (_b2 = (_a2 = e.detail) == null ? void 0 : _a2.info) == null ? void 0 : _b2.id;
+        const items = listType === "incomplete" ? ((_c2 = e.detail) == null ? void 0 : _c2.items) || incompleteTasks : ((_d2 = e.detail) == null ? void 0 : _d2.items) || completedTasks;
+        const draggedTask = items.find((t2) => t2.id === draggedId2);
+        const relevantCatPath = (currentCategory == null ? void 0 : currentCategory.filepath) === STARRED_CATEGORY_PATH && (draggedTask == null ? void 0 : draggedTask.sourceFilepath) ? draggedTask.sourceFilepath : currentCategory == null ? void 0 : currentCategory.filepath;
+        void ((_e2 = plugin == null ? void 0 : plugin.handleTaskDragStart) == null ? void 0 : _e2.call(plugin, relevantCatPath));
+      }
       if (preDragIncompleteTasks.length === 0)
         preDragIncompleteTasks = [...incompleteTasks];
       if (preDragCompletedTasks.length === 0)
@@ -26570,12 +26578,16 @@ function instance6($$self, $$props, $$invalidate) {
       window.__mstodo_drag_data = {
         taskId: task.id,
         task,
-        sourceFilepath: currentCategory.filepath,
+        sourceFilepath: currentCategory.filepath === STARRED_CATEGORY_PATH && (task == null ? void 0 : task.sourceFilepath) ? task.sourceFilepath : currentCategory.filepath,
         movedToTarget: null
       };
     }
   }
   async function handleDndFinalize(e, listType) {
+    var _a2;
+    if (hideLeftSidebar) {
+      (_a2 = plugin == null ? void 0 : plugin.handleTaskDragEnd) == null ? void 0 : _a2.call(plugin);
+    }
     isDndActive = false;
     stopAutoScroll();
     const dragData = window.__mstodo_drag_data;
@@ -26583,21 +26595,21 @@ function instance6($$self, $$props, $$invalidate) {
     if (dragData && dragData.movedToTarget && dragData.movedToTarget !== (currentCategory == null ? void 0 : currentCategory.filepath)) {
       if (listType === "incomplete") {
         rawIncompleteTasks = rawIncompleteTasks.filter((t2) => {
-          var _a2;
-          return t2.id !== draggedId && t2.id !== ((_a2 = dragData.task) == null ? void 0 : _a2.id);
+          var _a3;
+          return t2.id !== draggedId && t2.id !== ((_a3 = dragData.task) == null ? void 0 : _a3.id);
         });
         $$invalidate(5, incompleteTasks = incompleteTasks.filter((t2) => {
-          var _a2;
-          return t2.id !== draggedId && t2.id !== ((_a2 = dragData.task) == null ? void 0 : _a2.id);
+          var _a3;
+          return t2.id !== draggedId && t2.id !== ((_a3 = dragData.task) == null ? void 0 : _a3.id);
         }));
       } else {
         rawCompletedTasks = rawCompletedTasks.filter((t2) => {
-          var _a2;
-          return t2.id !== draggedId && t2.id !== ((_a2 = dragData.task) == null ? void 0 : _a2.id);
+          var _a3;
+          return t2.id !== draggedId && t2.id !== ((_a3 = dragData.task) == null ? void 0 : _a3.id);
         });
         $$invalidate(6, completedTasks = completedTasks.filter((t2) => {
-          var _a2;
-          return t2.id !== draggedId && t2.id !== ((_a2 = dragData.task) == null ? void 0 : _a2.id);
+          var _a3;
+          return t2.id !== draggedId && t2.id !== ((_a3 = dragData.task) == null ? void 0 : _a3.id);
         }));
       }
       const domNode = document.getElementById("task-" + draggedId);
@@ -26675,7 +26687,7 @@ function instance6($$self, $$props, $$invalidate) {
       window.__mstodo_drag_data = {
         taskId: task.id,
         task,
-        sourceFilepath: currentCategory.filepath,
+        sourceFilepath: currentCategory.filepath === STARRED_CATEGORY_PATH && (task == null ? void 0 : task.sourceFilepath) ? task.sourceFilepath : currentCategory.filepath,
         movedToTarget: null
       };
     }
@@ -51550,6 +51562,8 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
     this.settings = Object.assign({}, DEFAULT_SETTINGS);
     this.activeDetailModal = null;
     this.isUserClosingSidebar = false;
+    this.isSidebarTemporarilyExpandedForDrag = false;
+    this.dragEndCollapseTimeout = null;
     this.undoContainerEl = null;
     this.undoToastComponent = null;
     this.isRollingOver = false;
@@ -51823,7 +51837,7 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
             const isPluginView = currentType === VIEW_TYPE_MAIN || currentType === VIEW_TYPE_SIDEBAR || currentType === VIEW_TYPE_DETAIL;
             const wasPluginView = lastActiveViewType === VIEW_TYPE_MAIN || lastActiveViewType === VIEW_TYPE_SIDEBAR || lastActiveViewType === VIEW_TYPE_DETAIL;
             if (isPluginView && !wasPluginView) {
-              if (this.settings.hideLeftSidebar) {
+              if (this.settings.hideLeftSidebar && !this.isSidebarTemporarilyExpandedForDrag) {
                 this.app.workspace.detachLeavesOfType(VIEW_TYPE_SIDEBAR);
                 const leftSplit = this.app.workspace.leftSplit;
                 if (leftSplit && !leftSplit.collapsed) {
@@ -52219,7 +52233,7 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
     }
     const leftSplit = this.app.workspace.leftSplit;
     if (leftSplit && !leftSplit.collapsed) {
-      if (force || this.isPluginLeftSidebarActive() || this.settings.hideLeftSidebar) {
+      if (force || this.isPluginLeftSidebarActive() || this.settings.hideLeftSidebar && !this.isSidebarTemporarilyExpandedForDrag) {
         leftSplit.collapse();
       }
     }
@@ -52252,6 +52266,73 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
         this.locateActiveCategoryInSidebar();
       }
     }, 120);
+  }
+  /**
+   * When hideLeftSidebar (Floating UI mode) is enabled, temporarily open the left sidebar
+   * when a task starts being dragged, and locate/reveal the current category in the tree.
+   */
+  async handleTaskDragStart(targetCategoryPath) {
+    var _a;
+    if (!this.settings.hideLeftSidebar)
+      return;
+    if (this.dragEndCollapseTimeout !== null) {
+      window.clearTimeout(this.dragEndCollapseTimeout);
+      this.dragEndCollapseTimeout = null;
+    }
+    this.isSidebarTemporarilyExpandedForDrag = true;
+    let sidebarLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR);
+    let sidebarLeaf = sidebarLeaves.length > 0 ? sidebarLeaves[0] : null;
+    if (!sidebarLeaf) {
+      sidebarLeaf = await this.activateView(VIEW_TYPE_SIDEBAR, "left");
+    }
+    const leftSplit = this.app.workspace.leftSplit;
+    if (leftSplit == null ? void 0 : leftSplit.collapsed) {
+      leftSplit.expand();
+    }
+    if (sidebarLeaf) {
+      void this.app.workspace.revealLeaf(sidebarLeaf);
+    }
+    const catPath = targetCategoryPath || ((_a = this.getActiveCenterCategory()) == null ? void 0 : _a.filepath);
+    if (catPath) {
+      window.setTimeout(() => {
+        var _a2;
+        if (!this.isSidebarTemporarilyExpandedForDrag)
+          return;
+        const currentLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR);
+        if (currentLeaves.length > 0 && currentLeaves[0].view instanceof TaskSidebarViewWrapper) {
+          void ((_a2 = currentLeaves[0].view.getComponent()) == null ? void 0 : _a2.locateAndRevealCategory(catPath));
+        }
+      }, 60);
+    }
+    const safetyCleanup = () => {
+      window.removeEventListener("pointerup", safetyCleanup, true);
+      window.removeEventListener("pointercancel", safetyCleanup, true);
+      this.handleTaskDragEnd();
+    };
+    window.addEventListener("pointerup", safetyCleanup, { once: true, capture: true });
+    window.addEventListener("pointercancel", safetyCleanup, { once: true, capture: true });
+  }
+  /**
+   * When task dragging finishes, hide the temporarily opened left sidebar.
+   */
+  handleTaskDragEnd() {
+    if (!this.isSidebarTemporarilyExpandedForDrag)
+      return;
+    this.isSidebarTemporarilyExpandedForDrag = false;
+    if (!this.settings.hideLeftSidebar)
+      return;
+    if (this.dragEndCollapseTimeout !== null) {
+      window.clearTimeout(this.dragEndCollapseTimeout);
+    }
+    this.dragEndCollapseTimeout = window.setTimeout(() => {
+      this.dragEndCollapseTimeout = null;
+      if (this.isSidebarTemporarilyExpandedForDrag)
+        return;
+      const leftSplit = this.app.workspace.leftSplit;
+      if (leftSplit && !leftSplit.collapsed) {
+        leftSplit.collapse();
+      }
+    }, 150);
   }
   /**
    * Check whether the active workspace focus or visible center leaf belongs to Fluent Tasks.
@@ -52423,7 +52504,7 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
    */
   async activateView(viewType, position) {
     var _a;
-    if (viewType === VIEW_TYPE_SIDEBAR && this.settings.hideLeftSidebar) {
+    if (viewType === VIEW_TYPE_SIDEBAR && this.settings.hideLeftSidebar && !this.isSidebarTemporarilyExpandedForDrag) {
       return null;
     }
     if (viewType === VIEW_TYPE_DETAIL && this.settings.openDetailInModal) {
