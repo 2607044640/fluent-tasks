@@ -559,6 +559,20 @@ var CategoryService = class {
     }
     return sidebarItems;
   }
+  /** Sidebar group display name for a list file. Root lists are "ungrouped". */
+  async findGroupNameForCategory(categoryFilepath) {
+    const target = categoryFilepath.replace(/\\/g, "/");
+    const items = await this.getSidebarItems();
+    for (const item of items) {
+      if (item.type !== "group")
+        continue;
+      for (const child of item.items || []) {
+        if (child.filepath.replace(/\\/g, "/") === target)
+          return item.name;
+      }
+    }
+    return "ungrouped";
+  }
   async loadSidebarState() {
     try {
       const path = this.getMetadataPath();
@@ -1452,6 +1466,27 @@ var LinkedNoteService = class {
     return cleaned.slice(0, 100) || "Untitled Note";
   }
   /**
+   * First 5 filename-safe characters of a task title.
+   * Newlines and <br> are skipped (the next line continues the count);
+   * * " \ / < > : | ? and other non-letters/digits are dropped, not replaced.
+   */
+  static noteTitlePrefix(title) {
+    const chars = [];
+    const source = (title || "").replace(/<br\s*\/?>/gi, "\n");
+    for (const ch of source) {
+      if (chars.length >= 5)
+        break;
+      if (/[\p{L}\p{N}]/u.test(ch))
+        chars.push(ch);
+    }
+    return chars.join("") || "note";
+  }
+  /** One filename segment: illegal characters removed, no spaces. */
+  static sanitizeFilenameSegment(name) {
+    const cleaned = (name || "").replace(/[\\/:*?"<>|#^[\]\r\n]/g, "").replace(/\s+/g, "").replace(/^\.+/, "").trim();
+    return cleaned || "x";
+  }
+  /**
    * Extract category name from category filepath
    * e.g. TodoData/编程.md -> 编程
    */
@@ -1468,25 +1503,49 @@ var LinkedNoteService = class {
     return `${DATA_FOLDER}/${listName}`;
   }
   /**
-   * Determine standard note path for a task: TodoData/<CategoryName>/<CategoryName> <taskId>.md
-   * e.g. TodoData/编程/编程 ge20uj.md
+   * Note basename: <first 5 title chars>_<List>_<Group>_<taskId>
+   * e.g. my1ni_note_daily_oigj31o  (title "my1\nniceday", list note, group daily)
    */
-  static getStandardNotePath(categoryFilepath, taskId) {
-    const categoryName = this.getCategoryName(categoryFilepath);
-    const targetFolder = `${DATA_FOLDER}/${categoryName}`;
-    return `${targetFolder}/${categoryName} ${taskId}.md`;
+  static buildNoteBasename(title, listName, groupName, taskId) {
+    const prefix = this.noteTitlePrefix(title);
+    const list = this.sanitizeFilenameSegment(listName);
+    const group = this.sanitizeFilenameSegment(groupName || "ungrouped");
+    const id = this.sanitizeFilenameSegment(taskId);
+    return `${prefix}_${list}_${group}_${id}`;
   }
   /**
-   * Extract task ID from note filename
-   * Matches `<CategoryName> <taskId>` where taskId is the last space-separated token
+   * Determine standard note path for a task:
+   * TodoData/<List>/<title5>_<List>_<Group>_<taskId>.md
+   */
+  static getStandardNotePath(categoryFilepath, taskId, title = "", groupName = "ungrouped") {
+    const categoryName = this.getCategoryName(categoryFilepath);
+    const targetFolder = `${DATA_FOLDER}/${categoryName}`;
+    const basename = this.buildNoteBasename(title, categoryName, groupName, taskId);
+    return `${targetFolder}/${basename}.md`;
+  }
+  /**
+   * Extract task ID from a note filename.
+   * Current names end in _<taskId>; legacy names end in " <taskId>".
    */
   static extractTaskIdFromFilename(basename) {
     const clean = basename.replace(/\.md$/, "").trim();
+    const lastUnderscore = clean.lastIndexOf("_");
+    if (lastUnderscore !== -1 && lastUnderscore < clean.length - 1) {
+      const candidate = clean.slice(lastUnderscore + 1).trim();
+      if (candidate && !candidate.includes(" "))
+        return candidate;
+    }
     const lastSpace = clean.lastIndexOf(" ");
     if (lastSpace === -1)
       return null;
-    const candidate = clean.slice(lastSpace + 1).trim();
-    return candidate || null;
+    const legacy = clean.slice(lastSpace + 1).trim();
+    return legacy || null;
+  }
+  /** True when a basename ends with the task id, current `_id` or legacy ` id`. */
+  static filenameHasTaskId(basename, taskId) {
+    if (!basename || !taskId)
+      return false;
+    return basename.endsWith(`_${taskId}`) || basename.endsWith(` ${taskId}`);
   }
   /**
    * Ensure a vault folder exists, creating parents if missing
@@ -1528,7 +1587,7 @@ var LinkedNoteService = class {
       if (folder && folder instanceof import_obsidian4.TFolder) {
         for (const child of folder.children) {
           if (child instanceof import_obsidian4.TFile && child.extension === "md") {
-            if (child.basename.endsWith(` ${taskId}`)) {
+            if (this.filenameHasTaskId(child.basename, taskId)) {
               return child;
             }
             const cache = (_a = app.metadataCache) == null ? void 0 : _a.getFileCache(child);
@@ -1550,7 +1609,7 @@ var LinkedNoteService = class {
           } else if (child instanceof import_obsidian4.TFile && child.extension === "md") {
             if (this.isCategoryListFile(child))
               continue;
-            if (child.basename.endsWith(` ${taskId}`)) {
+            if (this.filenameHasTaskId(child.basename, taskId)) {
               return child;
             }
             const cache = (_c = app.metadataCache) == null ? void 0 : _c.getFileCache(child);
@@ -1578,7 +1637,7 @@ var LinkedNoteService = class {
           if (child instanceof import_obsidian4.TFile && child.extension === "md") {
             if (this.isCategoryListFile(child))
               continue;
-            if (child.basename.endsWith(` ${taskId}`)) {
+            if (this.filenameHasTaskId(child.basename, taskId)) {
               return child;
             }
             try {
@@ -1780,7 +1839,7 @@ var LinkedNoteService = class {
       return null;
     const effectiveCategoryPath = categoryFilepath === STARRED_CATEGORY_PATH && task.sourceFilepath ? task.sourceFilepath : categoryFilepath || task.sourceFilepath || "";
     if (effectiveCategoryPath && task.id) {
-      const stdPath = this.getStandardNotePath(effectiveCategoryPath, task.id);
+      const stdPath = this.getStandardNotePath(effectiveCategoryPath, task.id, task.title || "");
       const stdFile = app.vault.getAbstractFileByPath(stdPath);
       if (stdFile instanceof import_obsidian4.TFile && !this.isCategoryListFile(stdFile))
         return stdFile;
@@ -1820,12 +1879,6 @@ var LinkedNoteService = class {
         if (resolved && !this.isCategoryListFile(resolved))
           return resolved;
       }
-    }
-    if (sourcePath && taskId) {
-      const stdPath = this.getStandardNotePath(sourcePath, taskId);
-      const stdFile = app.vault.getAbstractFileByPath(stdPath);
-      if (stdFile instanceof import_obsidian4.TFile && !this.isCategoryListFile(stdFile))
-        return stdFile;
     }
     if (taskId) {
       const fileByTaskId = this.findFileByTaskId(app, taskId, sourcePath);
@@ -1942,13 +1995,13 @@ ${content}`;
   }
   /**
    * Create or retrieve the dedicated task note for a task.
-   * Note file format: TodoData/<CategoryName>/<CategoryName> <taskId>.md
-   * Frontmatter contains `title: <taskTitle>` property.
+   * Note file: TodoData/<List>/<title5>_<List>_<Group>_<taskId>.md
+   * Frontmatter `title` stays the full task title.
    */
-  static async createOrGetTaskNote(app, task, categoryFilepath) {
+  static async createOrGetTaskNote(app, task, categoryFilepath, dataService) {
     const effectiveCategoryPath = categoryFilepath === STARRED_CATEGORY_PATH && task.sourceFilepath ? task.sourceFilepath : categoryFilepath;
-    const categoryName = this.getCategoryName(effectiveCategoryPath);
-    const standardPath = this.getStandardNotePath(effectiveCategoryPath, task.id);
+    const groupName = dataService ? await dataService.findGroupNameForCategory(effectiveCategoryPath) : "ungrouped";
+    const standardPath = this.getStandardNotePath(effectiveCategoryPath, task.id, task.title || "", groupName);
     const stdFile = app.vault.getAbstractFileByPath(standardPath);
     if (stdFile instanceof import_obsidian4.TFile) {
       const cleanPath2 = stdFile.path.replace(/\.md$/, "");
@@ -2000,21 +2053,21 @@ title: ${escapedTitle}
   /**
    * Backward-compatible alias for createOrGetTaskNote
    */
-  static async createOrGetLinkedNote(app, task, categoryFilepath) {
-    return this.createOrGetTaskNote(app, task, categoryFilepath);
+  static async createOrGetLinkedNote(app, task, categoryFilepath, dataService) {
+    return this.createOrGetTaskNote(app, task, categoryFilepath, dataService);
   }
   /**
-   * Synchronize Task Title -> Note Property
-   * When task title is modified in Fluent Tasks:
-   * - Does NOT rename the note file on disk! (Filename stays `<Category> <taskId>.md`)
-   * - Only updates the YAML frontmatter `title` property in the note.
-   * - Auto-migrates legacy non-standard notes if found.
+   * Synchronize Task Title -> Note
+   * When the task title changes:
+   * - Renames the file to <title5>_<List>_<Group>_<taskId>.md
+   * - Writes the full task title into the YAML `title` property.
    */
   static async syncTaskTitleToNote(app, task, categoryFilepath, dataService) {
     if (!task.task_note && !task.note_link && !task.id)
       return { noteRenamed: false };
     const effectiveCategoryPath = categoryFilepath === STARRED_CATEGORY_PATH && task.sourceFilepath ? task.sourceFilepath : categoryFilepath;
-    const standardPath = this.getStandardNotePath(effectiveCategoryPath, task.id);
+    const groupName = dataService ? await dataService.findGroupNameForCategory(effectiveCategoryPath) : "ungrouped";
+    const standardPath = this.getStandardNotePath(effectiveCategoryPath, task.id, task.title || "", groupName);
     let file = this.resolveTaskNoteFile(app, task, effectiveCategoryPath);
     if (!file && task.id) {
       file = await this.findFileByTaskIdAsync(app, task.id, effectiveCategoryPath);
@@ -2134,7 +2187,7 @@ title: ${escapedTitle}
         if (isTaskNoteMatch) {
           task.task_note = `[[${newClean}]]`;
           const fmTitle = (_f = (_e = (_d = app.metadataCache) == null ? void 0 : _d.getFileCache(newFile)) == null ? void 0 : _e.frontmatter) == null ? void 0 : _f.title;
-          const isStandardIdFilename = newTitle.endsWith(` ${task.id}`);
+          const isStandardIdFilename = this.filenameHasTaskId(newTitle, task.id);
           if (!isStandardIdFilename && fmTitle === void 0) {
             const cleanNewTitle = this.stripCollisionSuffix(newTitle) || newTitle;
             const hasLineBreaks = task.title && (task.title.includes("\n") || /<br\s*\/?>/i.test(task.title));
@@ -2244,11 +2297,8 @@ title: ${escapedTitle}
   }
   /**
    * Handle category list rename:
-   * When a list (Category) name changes from OldName to NewName:
-   * 1. Renames dedicated note folder TodoData/OldName -> TodoData/NewName
-   * 2. Renames all notes inside from `<OldName> <taskId>.md` -> `<NewName> <taskId>.md`
-   * 3. Updates `note_link` in tasks of the renamed category file
-   * 4. Updates open markdown tabs if any were open
+   * When a list name changes, move TodoData/<OldList> to TodoData/<NewList>
+   * and rebuild each note basename with the new list segment.
    */
   static async handleCategoryRename(app, dataService, oldCategoryFilepath, newCategoryFilepath) {
     const oldName = this.getCategoryName(oldCategoryFilepath);
@@ -2301,17 +2351,11 @@ title: ${escapedTitle}
     return { renamedNotesCount, updatedTasksCount };
   }
   /**
-   * Auto-detect and heal all tasks and linked notes in a category:
-   * - Scans all tasks in the category file
-   * - For each task with a linked note (or matching taskId):
-   *   Ensures the note file is named `<CategoryName> <taskId>.md` inside `TodoData/<CategoryName>/`
-   *   If named after an old list name or in an old folder, renames it to standard path
-   *   Ensures `task.note_link` points to standard wikilink `[[TodoData/<CategoryName>/<CategoryName> <taskId>]]`
-   * - Scans `TodoData/<CategoryName>/` folder for any notes with stale list prefixes and updates them
+   * Heal every dedicated note in a list to <title5>_<List>_<Group>_<taskId>.md
+   * and point task_note at that path.
    */
   static async autoSyncCategoryLinkedNotes(app, dataService, categoryFilepath) {
     var _a, _b, _c, _d;
-    const categoryName = this.getCategoryName(categoryFilepath);
     const targetFolderPath = this.getTaskNotesFolder(categoryFilepath).replace(/\\/g, "/");
     let healedNotesCount = 0;
     let updatedTasksCount = 0;
@@ -2321,9 +2365,10 @@ title: ${escapedTitle}
     } catch (e) {
       return { healedNotesCount: 0, updatedTasksCount: 0 };
     }
+    const groupName = await dataService.findGroupNameForCategory(categoryFilepath);
     let tasksChanged = false;
     for (const task of tasks2) {
-      const standardPath = this.getStandardNotePath(categoryFilepath, task.id);
+      const standardPath = this.getStandardNotePath(categoryFilepath, task.id, task.title || "", groupName);
       const standardClean = standardPath.replace(/\.md$/, "");
       const standardNoteLink = `[[${standardClean}]]`;
       let noteFile = app.vault.getAbstractFileByPath(standardPath);
@@ -2384,8 +2429,8 @@ title: ${escapedTitle}
           }
         }
         if (taskId) {
-          const expectedBasename = `${categoryName} ${taskId}`;
-          const expectedPath = `${targetFolderPath}/${expectedBasename}.md`;
+          const matchingTask = tasks2.find((t2) => t2.id === taskId);
+          const expectedPath = matchingTask ? this.getStandardNotePath(categoryFilepath, taskId, matchingTask.title || "", groupName) : `${targetFolderPath}/${child.basename}.md`;
           if (child.path !== expectedPath) {
             this.markInternalRename(child.path, expectedPath);
             dataService.markInternalWrite(child.path, 4e3);
@@ -2398,7 +2443,6 @@ title: ${escapedTitle}
               void Logger.log(`[LinkedNote AutoSync] Error re-aligning ${child.path}:`, e);
             }
           }
-          const matchingTask = tasks2.find((t2) => t2.id === taskId);
           if (matchingTask) {
             const cleanPath = expectedPath.replace(/\.md$/, "");
             const expectedLink = `[[${cleanPath}]]`;
@@ -2423,12 +2467,12 @@ title: ${escapedTitle}
     return { healedNotesCount, updatedTasksCount };
   }
   /**
-   * Handle moving a task from one category to another:
-   * If the task has a dedicated task note, moves/renames it from:
-   * TodoData/<SourceCategory>/<SourceCategory> <taskId>.md ->
-   * TodoData/<TargetCategory>/<TargetCategory> <taskId>.md
-   * And updates task.task_note accordingly.
+   * Move a task's dedicated note into the target list folder and rebuild its basename.
    */
+  /** Rebuild note basenames after the sidebar group that owns this list is renamed. */
+  static async handleGroupRename(app, dataService, categoryFilepath) {
+    await this.autoSyncCategoryLinkedNotes(app, dataService, categoryFilepath);
+  }
   static async handleTaskMove(app, dataService, task, sourceCategoryFilepath, targetCategoryFilepath) {
     if (sourceCategoryFilepath === targetCategoryFilepath)
       return false;
@@ -2441,7 +2485,8 @@ title: ${escapedTitle}
       return false;
     const targetFolder = this.getTaskNotesFolder(targetCategoryFilepath);
     await this.ensureFolderExists(app, targetFolder);
-    const newStandardPath = this.getStandardNotePath(targetCategoryFilepath, task.id);
+    const groupName = await dataService.findGroupNameForCategory(targetCategoryFilepath);
+    const newStandardPath = this.getStandardNotePath(targetCategoryFilepath, task.id, task.title || "", groupName);
     if (noteFile.path === newStandardPath)
       return false;
     this.markInternalRename(noteFile.path, newStandardPath);
@@ -2462,12 +2507,8 @@ title: ${escapedTitle}
     }
   }
   /**
-   * Automatically scan and migrate legacy linked notes:
-   * - Detects old documents by checking if frontmatter has `taskId`
-   * - Replaces `taskId` with `title: <taskTitle>` in YAML frontmatter
-   * - Renames file to standard format: `<CategoryName> <taskId>.md`
-   * - Updates corresponding task's `note_link` to standard wikilink
-   * - Auto-syncs all categories to ensure note filenames match current category names
+   * Migrate notes that still store `taskId` in frontmatter onto the current basename,
+   * then realign every list.
    */
   static async migrateOldLinkedNotes(app, dataService) {
     var _a, _b, _c, _d, _e;
@@ -2497,8 +2538,6 @@ title: ${escapedTitle}
         }
         if (!oldTaskId)
           continue;
-        const standardFilename = `${categoryName} ${oldTaskId}.md`;
-        const standardPath = `${child.path}/${standardFilename}`;
         let targetTask = null;
         let targetCatPath = categoryFilepath;
         try {
@@ -2524,6 +2563,13 @@ title: ${escapedTitle}
           }
         }
         const taskTitle = targetTask ? targetTask.title : noteFile.basename;
+        const groupName = await dataService.findGroupNameForCategory(targetCatPath);
+        const standardPath = this.getStandardNotePath(
+          targetCatPath,
+          oldTaskId,
+          taskTitle,
+          groupName
+        );
         await this.updateNoteFrontmatterTitle(app, noteFile, taskTitle);
         let finalFile = noteFile;
         if (noteFile.path !== standardPath) {
@@ -2608,7 +2654,19 @@ var DataService = class {
     return this.categorySvc.createGroup(name);
   }
   async renameGroup(groupId, newName) {
-    return this.categorySvc.renameGroup(groupId, newName);
+    const items = await this.categorySvc.getSidebarItems();
+    const group = items.find((i) => i.type === "group" && i.id === groupId);
+    const oldName = group && group.type === "group" ? group.name : "";
+    const memberPaths = group && group.type === "group" ? (group.items || []).map((c) => c.filepath) : [];
+    await this.categorySvc.renameGroup(groupId, newName);
+    if (oldName && oldName !== newName) {
+      for (const filepath of memberPaths) {
+        await LinkedNoteService.handleGroupRename(this.app, this, filepath);
+      }
+    }
+  }
+  async findGroupNameForCategory(categoryFilepath) {
+    return this.categorySvc.findGroupNameForCategory(categoryFilepath);
   }
   async deleteGroup(groupId) {
     return this.categorySvc.deleteGroup(groupId);
@@ -34734,7 +34792,7 @@ function instance7($$self, $$props, $$invalidate) {
         }
         await LinkedNoteService.openLinkedNoteFile(plugin.app, file);
       } else {
-        const res = await LinkedNoteService.createOrGetTaskNote(plugin.app, task, categoryFilepath);
+        const res = await LinkedNoteService.createOrGetTaskNote(plugin.app, task, categoryFilepath, dataService);
         $$invalidate(2, task.task_note = res.noteLink, task);
         $$invalidate(2, task);
         await immediateSave();
@@ -34742,7 +34800,7 @@ function instance7($$self, $$props, $$invalidate) {
         new import_obsidian18.Notice(t("task_note_recreated", res.file.basename));
       }
     } else {
-      const res = await LinkedNoteService.createOrGetTaskNote(plugin.app, task, categoryFilepath);
+      const res = await LinkedNoteService.createOrGetTaskNote(plugin.app, task, categoryFilepath, dataService);
       $$invalidate(2, task.task_note = res.noteLink, task);
       $$invalidate(2, task);
       await immediateSave();

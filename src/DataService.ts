@@ -50,7 +50,21 @@ export class DataService {
         return this.categorySvc.createGroup(name);
     }
     async renameGroup(groupId: string, newName: string): Promise<void> {
-        return this.categorySvc.renameGroup(groupId, newName);
+        const items = await this.categorySvc.getSidebarItems();
+        const group = items.find(i => i.type === "group" && i.id === groupId);
+        const oldName = group && group.type === "group" ? group.name : "";
+        const memberPaths = group && group.type === "group"
+            ? (group.items || []).map(c => c.filepath)
+            : [];
+        await this.categorySvc.renameGroup(groupId, newName);
+        if (oldName && oldName !== newName) {
+            for (const filepath of memberPaths) {
+                await LinkedNoteService.handleGroupRename(this.app, this, filepath);
+            }
+        }
+    }
+    async findGroupNameForCategory(categoryFilepath: string): Promise<string> {
+        return this.categorySvc.findGroupNameForCategory(categoryFilepath);
     }
     async deleteGroup(groupId: string): Promise<void> {
         return this.categorySvc.deleteGroup(groupId);

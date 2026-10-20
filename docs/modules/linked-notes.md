@@ -13,11 +13,11 @@ Optional hard-bound Markdown notes under `TodoData/<ListName>/` with YAML `taskI
 
 ## Key Invariants
 
-1. Dedicated notes live at `TodoData/<listBasename>/<sanitizedTitle>.md` with frontmatter `taskId: "<task.id>"`. (Why chosen over embedding long notes in `%%{}%%`: Obsidian editing/preview for the body.)
+1. Dedicated notes live at `TodoData/<List>/<title5>_<List>_<Group>_<taskId>.md`. `<title5>` is the first 5 letters or digits of the task title (a newline is skipped, so `my1\nniceday` yields `my1ni`; `* " \ / < > : | ?` and other symbols are dropped). A list with no sidebar group uses `ungrouped`. Frontmatter `title` is the full task title. (Why the title leads: Obsidian tabs truncate the filename, so `<List> <id>` made every tab look the same.)
 2. Plugin-driven renames call `markInternalRename` (default 2000ms) + `markInternalWrite` so vault `rename` does not bounce the title back. (Why chosen over a lock file: short TTL map.)
 3. `isHardBoundNote(note_link)` is true when the cleaned path starts with `TodoData/`. Soft wikilinks elsewhere are still stored on `TaskItem.note_link` but delete-prompt / sync treat missing files as “no physical note”. (Why chosen over requiring every link to be hard-bound: users can paste `[[Note]]`.)
 4. Non-intrusive rename sync: when a linked note's title is renamed outside Fluent Tasks (e.g. in Obsidian Markdown editor), task metadata and wikilinks synchronize in the background without popping open the right detail sidebar (`isPluginPageActive` check).
-5. Multi-line preservation & self-healing: task titles with `<br>` or `\n` line breaks are sanitized to spaces for filenames without `-br-` artifacts; note renames preserve sub-line structure; severed/stale `note_link` values auto-heal by matching YAML frontmatter `taskId`. IME composition suppresses premature keystroke renames.
+5. Multi-line preservation: `<br>` and `\n` are skipped while collecting the 5-character filename prefix, never written as `-br-`. A task-title change renames the file to the new prefix and rewrites frontmatter `title`. IME composition suppresses premature keystroke renames.
 
 ## Numbered Data Flow
 
@@ -38,7 +38,7 @@ Optional hard-bound Markdown notes under `TodoData/<ListName>/` with YAML `taskI
 | `resolveLinkedNoteFile` | `(app, noteLink?, sourcePath?, taskId?): TFile \| null` | Path lookup with `taskId` fallback |
 | `openLinkedNoteFile` | `(app, file): Promise<void>` | Focus existing markdown leaf or `getLeaf("tab").openFile` |
 | `getAvailableNotePath` | `(app, folder, baseTitle, currentFilePath?): string` | None (lookup) |
-| `createOrGetLinkedNote` | `(app, task, categoryFilepath)` | May create folder + `.md` |
+| `createOrGetLinkedNote` | `(app, task, categoryFilepath, dataService?)` | May create folder + `.md` named `<title5>_<List>_<Group>_<id>` |
 | `syncTaskTitleToNote` | `(app, task, categoryFilepath, dataService?)` | May `renameFile`, auto-heals `note_link` |
 | `syncNoteRenameToTasks` | `(app, dataService, oldPath, newFile)` | May `updateTask` + EventBus, preserves lines |
 | `promptDeleteTaskWithLinkedNote` | `(app, task, categoryFilepath, dataService, onDeleted?)` | Modal; optional `trashFile`; `deleteTask`; `TASK_DELETED` |

@@ -31,7 +31,7 @@ Static commands: `open-all-views`, `open-sidebar`, `open-main-view`, `open-detai
 
 Models in `src/types.ts`: `TaskItem` and `TaskStep` (both support optional `images?: string[]` attachments), `RecurrenceRule` (`daily` | `weekdays` | `weekly` | `custom`), `CategoryInfo`, `GroupInfo`, `SidebarItem`. Virtual category: `STARRED_CATEGORY_PATH = "__starred__"` aggregates starred tasks across all lists into a unified view. Context menu: task right-click places `Add side step` (`TaskStepsModal`) as item 1, followed by `Star task` / `Remove star` as item 2. Timing: `src/constants.ts`.
 
-On disk: `TodoData/<List>.md` (tasks), `TodoData/.metadata.json` (tree), `TodoData/<List>/<List> <taskId>.md` (bound notes with frontmatter title property), `TodoData/attachments/` (or vault attachment path for pasted/dragged images), `TodoData/debug.log` (`Logger`). Plugin options: Obsidian `saveData` (`FluentTasksSettings`).
+On disk: `TodoData/<List>.md` (tasks), `TodoData/.metadata.json` (tree), `TodoData/<List>/<title5>_<List>_<Group>_<taskId>.md` (bound notes; frontmatter `title` is the full task title; `<title5>` is the first 5 letters or digits, newlines skipped), `TodoData/attachments/` (or vault attachment path for pasted/dragged images), `TodoData/debug.log` (`Logger`). Plugin options: Obsidian `saveData` (`FluentTasksSettings`).
 
 `onload` (sync): `new DataService(app)`, setting tab, `Logger.init`, `loadSettings`, `registerView` ×3, ribbon, commands. `onLayoutReady`: `ensureDataFolder`, vault `modify`/`create`/`delete`/`rename`, EventBus wiring, `registerCategoryCommands`, `checkRecurringTasksRollover(true)` then 10s interval + `focus`. `onunload`: ribbon off, `EventBus.destroy()`, clear `__mstodo_drag_data`.
 

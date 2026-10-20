@@ -587,7 +587,7 @@
                 await LinkedNoteService.openLinkedNoteFile(plugin.app, file);
             } else {
                 // Re-create dedicated note if file was removed
-                const res = await LinkedNoteService.createOrGetTaskNote(plugin.app, task, categoryFilepath);
+                const res = await LinkedNoteService.createOrGetTaskNote(plugin.app, task, categoryFilepath, dataService);
                 task.task_note = res.noteLink;
                 task = task;
                 await immediateSave();
@@ -596,7 +596,7 @@
             }
         } else {
             // Create brand new dedicated task note and jump to it
-            const res = await LinkedNoteService.createOrGetTaskNote(plugin.app, task, categoryFilepath);
+            const res = await LinkedNoteService.createOrGetTaskNote(plugin.app, task, categoryFilepath, dataService);
             task.task_note = res.noteLink;
             task = task;
             await immediateSave();

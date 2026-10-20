@@ -46,6 +46,31 @@ export class LinkedNoteService {
     }
 
     /**
+     * First 5 filename-safe characters of a task title.
+     * Newlines and <br> are skipped (the next line continues the count);
+     * * " \ / < > : | ? and other non-letters/digits are dropped, not replaced.
+     */
+    static noteTitlePrefix(title: string): string {
+        const chars: string[] = [];
+        const source = (title || "").replace(/<br\s*\/?>/gi, "\n");
+        for (const ch of source) {
+            if (chars.length >= 5) break;
+            if (/[\p{L}\p{N}]/u.test(ch)) chars.push(ch);
+        }
+        return chars.join("") || "note";
+    }
+
+    /** One filename segment: illegal characters removed, no spaces. */
+    static sanitizeFilenameSegment(name: string): string {
+        const cleaned = (name || "")
+            .replace(/[\\/:*?"<>|#^[\]\r\n]/g, "")
+            .replace(/\s+/g, "")
+            .replace(/^\.+/, "")
+            .trim();
+        return cleaned || "x";
+    }
+
+    /**
      * Extract category name from category filepath
      * e.g. TodoData/编程.md -> 编程
      */
@@ -67,25 +92,54 @@ export class LinkedNoteService {
     }
 
     /**
-     * Determine standard note path for a task: TodoData/<CategoryName>/<CategoryName> <taskId>.md
-     * e.g. TodoData/编程/编程 ge20uj.md
+     * Note basename: <first 5 title chars>_<List>_<Group>_<taskId>
+     * e.g. my1ni_note_daily_oigj31o  (title "my1\nniceday", list note, group daily)
      */
-    static getStandardNotePath(categoryFilepath: string, taskId: string): string {
-        const categoryName = this.getCategoryName(categoryFilepath);
-        const targetFolder = `${DATA_FOLDER}/${categoryName}`;
-        return `${targetFolder}/${categoryName} ${taskId}.md`;
+    static buildNoteBasename(title: string, listName: string, groupName: string, taskId: string): string {
+        const prefix = this.noteTitlePrefix(title);
+        const list = this.sanitizeFilenameSegment(listName);
+        const group = this.sanitizeFilenameSegment(groupName || "ungrouped");
+        const id = this.sanitizeFilenameSegment(taskId);
+        return `${prefix}_${list}_${group}_${id}`;
     }
 
     /**
-     * Extract task ID from note filename
-     * Matches `<CategoryName> <taskId>` where taskId is the last space-separated token
+     * Determine standard note path for a task:
+     * TodoData/<List>/<title5>_<List>_<Group>_<taskId>.md
+     */
+    static getStandardNotePath(
+        categoryFilepath: string,
+        taskId: string,
+        title = "",
+        groupName = "ungrouped"
+    ): string {
+        const categoryName = this.getCategoryName(categoryFilepath);
+        const targetFolder = `${DATA_FOLDER}/${categoryName}`;
+        const basename = this.buildNoteBasename(title, categoryName, groupName, taskId);
+        return `${targetFolder}/${basename}.md`;
+    }
+
+    /**
+     * Extract task ID from a note filename.
+     * Current names end in _<taskId>; legacy names end in " <taskId>".
      */
     static extractTaskIdFromFilename(basename: string): string | null {
         const clean = basename.replace(/\.md$/, "").trim();
+        const lastUnderscore = clean.lastIndexOf("_");
+        if (lastUnderscore !== -1 && lastUnderscore < clean.length - 1) {
+            const candidate = clean.slice(lastUnderscore + 1).trim();
+            if (candidate && !candidate.includes(" ")) return candidate;
+        }
         const lastSpace = clean.lastIndexOf(" ");
         if (lastSpace === -1) return null;
-        const candidate = clean.slice(lastSpace + 1).trim();
-        return candidate || null;
+        const legacy = clean.slice(lastSpace + 1).trim();
+        return legacy || null;
+    }
+
+    /** True when a basename ends with the task id, current `_id` or legacy ` id`. */
+    static filenameHasTaskId(basename: string, taskId: string): boolean {
+        if (!basename || !taskId) return false;
+        return basename.endsWith(`_${taskId}`) || basename.endsWith(` ${taskId}`);
     }
 
     /**
@@ -131,7 +185,7 @@ export class LinkedNoteService {
             if (folder && folder instanceof TFolder) {
                 for (const child of folder.children) {
                     if (child instanceof TFile && child.extension === "md") {
-                        if (child.basename.endsWith(` ${taskId}`)) {
+                        if (this.filenameHasTaskId(child.basename, taskId)) {
                             return child;
                         }
                         const cache = app.metadataCache?.getFileCache(child);
@@ -154,7 +208,7 @@ export class LinkedNoteService {
                         stack.push(child);
                     } else if (child instanceof TFile && child.extension === "md") {
                         if (this.isCategoryListFile(child)) continue; // Never match category list files
-                        if (child.basename.endsWith(` ${taskId}`)) {
+                        if (this.filenameHasTaskId(child.basename, taskId)) {
                             return child;
                         }
                         const cache = app.metadataCache?.getFileCache(child);
@@ -183,7 +237,7 @@ export class LinkedNoteService {
                 for (const child of folder.children) {
                     if (child instanceof TFile && child.extension === "md") {
                         if (this.isCategoryListFile(child)) continue;
-                        if (child.basename.endsWith(` ${taskId}`)) {
+                        if (this.filenameHasTaskId(child.basename, taskId)) {
                             return child;
                         }
                         try {
@@ -427,9 +481,9 @@ export class LinkedNoteService {
             ? task.sourceFilepath
             : (categoryFilepath || task.sourceFilepath || "");
 
-        // 1. Direct standard path lookup: TodoData/<Category>/<Category> <taskId>.md
+        // 1. Direct standard path lookup: TodoData/<List>/<title5>_<List>_<Group>_<taskId>.md
         if (effectiveCategoryPath && task.id) {
-            const stdPath = this.getStandardNotePath(effectiveCategoryPath, task.id);
+            const stdPath = this.getStandardNotePath(effectiveCategoryPath, task.id, task.title || "");
             const stdFile = app.vault.getAbstractFileByPath(stdPath);
             if (stdFile instanceof TFile && !this.isCategoryListFile(stdFile)) return stdFile;
         }
@@ -478,14 +532,7 @@ export class LinkedNoteService {
             }
         }
 
-        // 2. Fallback: Direct standard path lookup if sourcePath and taskId are known (O(1))
-        if (sourcePath && taskId) {
-            const stdPath = this.getStandardNotePath(sourcePath, taskId);
-            const stdFile = app.vault.getAbstractFileByPath(stdPath);
-            if (stdFile instanceof TFile && !this.isCategoryListFile(stdFile)) return stdFile;
-        }
-
-        // 3. Fallback: Search by taskId if provided
+        // 2. Fallback: a hard-bound note whose filename ends with this task id
         if (taskId) {
             const fileByTaskId = this.findFileByTaskId(app, taskId, sourcePath);
             if (fileByTaskId && !this.isCategoryListFile(fileByTaskId)) return fileByTaskId;
@@ -598,19 +645,22 @@ export class LinkedNoteService {
 
     /**
      * Create or retrieve the dedicated task note for a task.
-     * Note file format: TodoData/<CategoryName>/<CategoryName> <taskId>.md
-     * Frontmatter contains `title: <taskTitle>` property.
+     * Note file: TodoData/<List>/<title5>_<List>_<Group>_<taskId>.md
+     * Frontmatter `title` stays the full task title.
      */
     static async createOrGetTaskNote(
         app: App,
         task: TaskItem,
-        categoryFilepath: string
+        categoryFilepath: string,
+        dataService?: DataService
     ): Promise<{ file: TFile; noteLink: string; cleanPath: string }> {
         const effectiveCategoryPath = (categoryFilepath === STARRED_CATEGORY_PATH && task.sourceFilepath)
             ? task.sourceFilepath
             : categoryFilepath;
-        const categoryName = this.getCategoryName(effectiveCategoryPath);
-        const standardPath = this.getStandardNotePath(effectiveCategoryPath, task.id);
+        const groupName = dataService
+            ? await dataService.findGroupNameForCategory(effectiveCategoryPath)
+            : "ungrouped";
+        const standardPath = this.getStandardNotePath(effectiveCategoryPath, task.id, task.title || "", groupName);
 
         // 1. Check if standard note file already exists
         const stdFile = app.vault.getAbstractFileByPath(standardPath);
@@ -673,17 +723,17 @@ export class LinkedNoteService {
     static async createOrGetLinkedNote(
         app: App,
         task: TaskItem,
-        categoryFilepath: string
+        categoryFilepath: string,
+        dataService?: DataService
     ): Promise<{ file: TFile; noteLink: string; cleanPath: string }> {
-        return this.createOrGetTaskNote(app, task, categoryFilepath);
+        return this.createOrGetTaskNote(app, task, categoryFilepath, dataService);
     }
 
     /**
-     * Synchronize Task Title -> Note Property
-     * When task title is modified in Fluent Tasks:
-     * - Does NOT rename the note file on disk! (Filename stays `<Category> <taskId>.md`)
-     * - Only updates the YAML frontmatter `title` property in the note.
-     * - Auto-migrates legacy non-standard notes if found.
+     * Synchronize Task Title -> Note
+     * When the task title changes:
+     * - Renames the file to <title5>_<List>_<Group>_<taskId>.md
+     * - Writes the full task title into the YAML `title` property.
      */
     static async syncTaskTitleToNote(
         app: App,
@@ -697,7 +747,10 @@ export class LinkedNoteService {
             ? task.sourceFilepath
             : categoryFilepath;
 
-        const standardPath = this.getStandardNotePath(effectiveCategoryPath, task.id);
+        const groupName = dataService
+            ? await dataService.findGroupNameForCategory(effectiveCategoryPath)
+            : "ungrouped";
+        const standardPath = this.getStandardNotePath(effectiveCategoryPath, task.id, task.title || "", groupName);
         let file = this.resolveTaskNoteFile(app, task, effectiveCategoryPath);
         if (!file && task.id) {
             file = await this.findFileByTaskIdAsync(app, task.id, effectiveCategoryPath);
@@ -838,7 +891,7 @@ export class LinkedNoteService {
                 if (isTaskNoteMatch) {
                     task.task_note = `[[${newClean}]]`;
                     const fmTitle = app.metadataCache?.getFileCache(newFile)?.frontmatter?.title;
-                    const isStandardIdFilename = newTitle.endsWith(` ${task.id}`);
+                    const isStandardIdFilename = this.filenameHasTaskId(newTitle, task.id);
                     if (!isStandardIdFilename && fmTitle === undefined) {
                         const cleanNewTitle = this.stripCollisionSuffix(newTitle) || newTitle;
                         const hasLineBreaks = task.title && (task.title.includes("\n") || /<br\s*\/?>/i.test(task.title));
@@ -962,11 +1015,8 @@ export class LinkedNoteService {
 
     /**
      * Handle category list rename:
-     * When a list (Category) name changes from OldName to NewName:
-     * 1. Renames dedicated note folder TodoData/OldName -> TodoData/NewName
-     * 2. Renames all notes inside from `<OldName> <taskId>.md` -> `<NewName> <taskId>.md`
-     * 3. Updates `note_link` in tasks of the renamed category file
-     * 4. Updates open markdown tabs if any were open
+     * When a list name changes, move TodoData/<OldList> to TodoData/<NewList>
+     * and rebuild each note basename with the new list segment.
      */
     static async handleCategoryRename(
         app: App,
@@ -1032,20 +1082,14 @@ export class LinkedNoteService {
     }
 
     /**
-     * Auto-detect and heal all tasks and linked notes in a category:
-     * - Scans all tasks in the category file
-     * - For each task with a linked note (or matching taskId):
-     *   Ensures the note file is named `<CategoryName> <taskId>.md` inside `TodoData/<CategoryName>/`
-     *   If named after an old list name or in an old folder, renames it to standard path
-     *   Ensures `task.note_link` points to standard wikilink `[[TodoData/<CategoryName>/<CategoryName> <taskId>]]`
-     * - Scans `TodoData/<CategoryName>/` folder for any notes with stale list prefixes and updates them
+     * Heal every dedicated note in a list to <title5>_<List>_<Group>_<taskId>.md
+     * and point task_note at that path.
      */
     static async autoSyncCategoryLinkedNotes(
         app: App,
         dataService: DataService,
         categoryFilepath: string
     ): Promise<{ healedNotesCount: number; updatedTasksCount: number }> {
-        const categoryName = this.getCategoryName(categoryFilepath);
         const targetFolderPath = this.getTaskNotesFolder(categoryFilepath).replace(/\\/g, "/");
 
         let healedNotesCount = 0;
@@ -1058,11 +1102,12 @@ export class LinkedNoteService {
             return { healedNotesCount: 0, updatedTasksCount: 0 };
         }
 
+        const groupName = await dataService.findGroupNameForCategory(categoryFilepath);
         let tasksChanged = false;
 
         // 1. Check each task in category
         for (const task of tasks) {
-            const standardPath = this.getStandardNotePath(categoryFilepath, task.id);
+            const standardPath = this.getStandardNotePath(categoryFilepath, task.id, task.title || "", groupName);
             const standardClean = standardPath.replace(/\.md$/, "");
             const standardNoteLink = `[[${standardClean}]]`;
 
@@ -1129,8 +1174,10 @@ export class LinkedNoteService {
                 }
 
                 if (taskId) {
-                    const expectedBasename = `${categoryName} ${taskId}`;
-                    const expectedPath = `${targetFolderPath}/${expectedBasename}.md`;
+                    const matchingTask = tasks.find(t => t.id === taskId);
+                    const expectedPath = matchingTask
+                        ? this.getStandardNotePath(categoryFilepath, taskId, matchingTask.title || "", groupName)
+                        : `${targetFolderPath}/${child.basename}.md`;
                     if (child.path !== expectedPath) {
                         this.markInternalRename(child.path, expectedPath);
                         dataService.markInternalWrite(child.path, 4000);
@@ -1144,7 +1191,6 @@ export class LinkedNoteService {
                         }
                     }
 
-                    const matchingTask = tasks.find(t => t.id === taskId);
                     if (matchingTask) {
                         const cleanPath = expectedPath.replace(/\.md$/, "");
                         const expectedLink = `[[${cleanPath}]]`;
@@ -1172,12 +1218,17 @@ export class LinkedNoteService {
     }
 
     /**
-     * Handle moving a task from one category to another:
-     * If the task has a dedicated task note, moves/renames it from:
-     * TodoData/<SourceCategory>/<SourceCategory> <taskId>.md ->
-     * TodoData/<TargetCategory>/<TargetCategory> <taskId>.md
-     * And updates task.task_note accordingly.
+     * Move a task's dedicated note into the target list folder and rebuild its basename.
      */
+    /** Rebuild note basenames after the sidebar group that owns this list is renamed. */
+    static async handleGroupRename(
+        app: App,
+        dataService: DataService,
+        categoryFilepath: string
+    ): Promise<void> {
+        await this.autoSyncCategoryLinkedNotes(app, dataService, categoryFilepath);
+    }
+
     static async handleTaskMove(
         app: App,
         dataService: DataService,
@@ -1199,7 +1250,8 @@ export class LinkedNoteService {
         const targetFolder = this.getTaskNotesFolder(targetCategoryFilepath);
         await this.ensureFolderExists(app, targetFolder);
 
-        const newStandardPath = this.getStandardNotePath(targetCategoryFilepath, task.id);
+        const groupName = await dataService.findGroupNameForCategory(targetCategoryFilepath);
+        const newStandardPath = this.getStandardNotePath(targetCategoryFilepath, task.id, task.title || "", groupName);
         if (noteFile.path === newStandardPath) return false;
 
         this.markInternalRename(noteFile.path, newStandardPath);
@@ -1221,12 +1273,8 @@ export class LinkedNoteService {
     }
 
     /**
-     * Automatically scan and migrate legacy linked notes:
-     * - Detects old documents by checking if frontmatter has `taskId`
-     * - Replaces `taskId` with `title: <taskTitle>` in YAML frontmatter
-     * - Renames file to standard format: `<CategoryName> <taskId>.md`
-     * - Updates corresponding task's `note_link` to standard wikilink
-     * - Auto-syncs all categories to ensure note filenames match current category names
+     * Migrate notes that still store `taskId` in frontmatter onto the current basename,
+     * then realign every list.
      */
     static async migrateOldLinkedNotes(
         app: App,
@@ -1260,10 +1308,6 @@ export class LinkedNoteService {
 
                 if (!oldTaskId) continue; // Not a legacy document with taskId
 
-                // LEGACY DOCUMENT DETECTED!
-                const standardFilename = `${categoryName} ${oldTaskId}.md`;
-                const standardPath = `${child.path}/${standardFilename}`;
-
                 // 1. Locate corresponding task
                 let targetTask: TaskItem | null = null;
                 let targetCatPath = categoryFilepath;
@@ -1289,6 +1333,10 @@ export class LinkedNoteService {
                 }
 
                 const taskTitle = targetTask ? targetTask.title : noteFile.basename;
+                const groupName = await dataService.findGroupNameForCategory(targetCatPath);
+                const standardPath = this.getStandardNotePath(
+                    targetCatPath, oldTaskId, taskTitle, groupName
+                );
 
                 // 2. Update frontmatter: replace taskId with title
                 await this.updateNoteFrontmatterTitle(app, noteFile, taskTitle);

@@ -161,6 +161,19 @@ export class CategoryService {
         return sidebarItems;
     }
 
+    /** Sidebar group display name for a list file. Root lists are "ungrouped". */
+    async findGroupNameForCategory(categoryFilepath: string): Promise<string> {
+        const target = categoryFilepath.replace(/\\/g, "/");
+        const items = await this.getSidebarItems();
+        for (const item of items) {
+            if (item.type !== "group") continue;
+            for (const child of item.items || []) {
+                if (child.filepath.replace(/\\/g, "/") === target) return item.name;
+            }
+        }
+        return "ungrouped";
+    }
+
     async loadSidebarState(): Promise<SidebarItemState[]> {
         try {
             const path = this.getMetadataPath();
