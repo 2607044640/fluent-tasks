@@ -1,5 +1,6 @@
 import { App, Notice, TFile } from "obsidian";
 import { t } from "../lang/helpers";
+import type { TaskItem, TaskStep } from "../types";
 
 /**
  * Cleanly format current timestamp for attachment filenames: YYYYMMDDHHmmss
@@ -415,4 +416,100 @@ export function isSameImageRef(a: string, b: string): boolean {
     const baseA = cleanA.split("/").pop();
     const baseB = cleanB.split("/").pop();
     return !!baseA && baseA === baseB;
+}
+
+/**
+ * Extracts all unique image references associated with a task's title.
+ * Combines task.titleImages and embedded image markdown from task.title.
+ */
+export function getTitleImages(t: TaskItem | null | undefined): string[] {
+    if (!t) return [];
+    const fromArray = t.titleImages || [];
+    const fromText = extractImageRefs(t.title || "");
+    const combined = [...fromArray];
+    for (const ref of fromText) {
+        if (!combined.some(existing => isSameImageRef(existing, ref))) {
+            combined.push(ref);
+        }
+    }
+    return combined;
+}
+
+/**
+ * Extracts all unique image references associated with a task's note/detail.
+ * Combines task.images and embedded image markdown from task.note.
+ */
+export function getNoteImages(t: TaskItem | null | undefined): string[] {
+    if (!t) return [];
+    const fromArray = t.images || [];
+    const fromText = extractImageRefs(t.note || "");
+    const combined = [...fromArray];
+    for (const ref of fromText) {
+        if (!combined.some(existing => isSameImageRef(existing, ref))) {
+            combined.push(ref);
+        }
+    }
+    return combined;
+}
+
+/**
+ * Extracts all unique image references associated with a subtask step.
+ * Combines step.images and embedded image markdown from step.text.
+ */
+export function getStepImages(step: TaskStep | null | undefined): string[] {
+    if (!step) return [];
+    const fromArray = step.images || [];
+    const fromText = extractImageRefs(step.text || "");
+    const combined = [...fromArray];
+    for (const ref of fromText) {
+        if (!combined.some(existing => isSameImageRef(existing, ref))) {
+            combined.push(ref);
+        }
+    }
+    return combined;
+}
+
+/**
+ * Strips raw markdown image embeds (![[...]] or ![...](...)) from titles for clean display.
+ */
+export function cleanDisplayTitle(title: string): string {
+    if (!title) return "";
+    return title
+        .replace(/!\[\[([^\]\n]+)\]\]/g, "")
+        .replace(/!\[.*?\]\(([^)\n]+)\)/g, "")
+        .replace(/\n\s*\n\s*\n/g, "\n\n")
+        .trim();
+}
+
+/**
+ * Removes an image reference from a task's titleImages array and title text.
+ */
+export function removeImageFromTaskTitle(task: TaskItem, imageRef: string): void {
+    if (!task || !imageRef) return;
+    if (task.titleImages) {
+        task.titleImages = task.titleImages.filter(img => !isSameImageRef(img, imageRef));
+    }
+    task.title = removeImageRefFromText(task.title || "", imageRef);
+}
+
+/**
+ * Removes an image reference from a task's images array and note text.
+ */
+export function removeImageFromTaskNote(task: TaskItem, imageRef: string): void {
+    if (!task || !imageRef) return;
+    if (task.images) {
+        task.images = task.images.filter(img => !isSameImageRef(img, imageRef));
+    }
+    task.note = removeImageRefFromText(task.note || "", imageRef);
+}
+
+/**
+ * Removes an image reference from a step's images array and text.
+ */
+export function removeImageFromStepItem(step: TaskStep, imageRef: string): void {
+    if (!step || !imageRef) return;
+    if (step.images) {
+        step.images = step.images.filter(img => !isSameImageRef(img, imageRef));
+    }
+    step.text = removeImageRefFromText(step.text || "", imageRef);
 }

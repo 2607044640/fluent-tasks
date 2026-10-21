@@ -152,6 +152,7 @@ export class MarkdownParser {
                 note: typeof meta.note === "string" ? meta.note : "",
                 createdAt,
                 ...(Array.isArray(meta.images) && meta.images.length > 0 ? { images: (meta.images as unknown[]).filter((img): img is string => typeof img === "string") } : {}),
+                ...(Array.isArray(meta.titleImages) && meta.titleImages.length > 0 ? { titleImages: (meta.titleImages as unknown[]).filter((img): img is string => typeof img === "string") } : {}),
                 ...(typeof meta.completedAt === "string" ? { completedAt: meta.completedAt } : {}),
                 ...(typeof meta.dueDate === "string" ? { dueDate: meta.dueDate } : {}),
                 ...(typeof meta.msGraphId === "string" ? { msGraphId: meta.msGraphId } : {}),
@@ -200,6 +201,7 @@ export class MarkdownParser {
                 createdAt: task.createdAt,
             };
             if (Array.isArray(task.images) && task.images.length > 0) meta.images = task.images;
+            if (Array.isArray(task.titleImages) && task.titleImages.length > 0) meta.titleImages = task.titleImages;
             if (task.completedAt) meta.completedAt = task.completedAt;
             if (task.dueDate) meta.dueDate = task.dueDate;
             if (task.msGraphId) meta.msGraphId = task.msGraphId;

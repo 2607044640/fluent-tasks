@@ -15,6 +15,7 @@
     import { t, isChinese } from "./lang/helpers";
     import { Logger } from "./Logger";
     import TaskImageThumbnail from "./components/TaskImageThumbnail.svelte";
+    import TaskImageStrip from "./components/TaskImageStrip.svelte";
     import {
         saveImageAttachment,
         copyImageToClipboard,
@@ -22,6 +23,12 @@
         removeImageRefFromText,
         getImagesFromClipboard,
         isSameImageRef,
+        getTitleImages,
+        getNoteImages,
+        getStepImages,
+        removeImageFromTaskTitle,
+        removeImageFromTaskNote,
+        removeImageFromStepItem,
     } from "./utils/imageAttachmentUtils";
 
     const DND_FLIP_DURATION = 150;
@@ -42,8 +49,8 @@
     let categoryFilepath: string = "";
     let newStepText: string = "";
     let newStepImages: string[] = [];
-    let focusedTarget: { type: 'step'; stepId: string } | { type: 'newStep' } | { type: 'note' } | null = null;
-    let hoveredImageRef: { imageRef: string; stepId?: string; isNewDraft?: boolean; isNote?: boolean } | null = null;
+    let focusedTarget: { type: 'step'; stepId: string } | { type: 'newStep' } | { type: 'note' } | { type: 'title' } | null = null;
+    let hoveredImageRef: { imageRef: string; stepId?: string; isNewDraft?: boolean; isNote?: boolean; isTitle?: boolean } | null = null;
     let showScheduleSection: boolean = false;
     let showRepeatPicker: boolean = false;
     let detailBodyEl: HTMLElement | null = null;
@@ -637,37 +644,18 @@
     // =============================================
     // Image Attachment Helpers
     // =============================================
-    function getStepImages(step: TaskStep): string[] {
-        const fromArray = step.images || [];
-        const fromText = extractImageRefs(step.text);
-        const combined = [...fromArray];
-        for (const ref of fromText) {
-            if (!combined.some(existing => isSameImageRef(existing, ref))) {
-                combined.push(ref);
-            }
-        }
-        return combined;
-    }
-
-    function getNoteImages(t: TaskItem | null): string[] {
-        if (!t) return [];
-        const fromArray = t.images || [];
-        const fromText = extractImageRefs(t.note || "");
-        const combined = [...fromArray];
-        for (const ref of fromText) {
-            if (!combined.some(existing => isSameImageRef(existing, ref))) {
-                combined.push(ref);
-            }
-        }
-        return combined;
+    function removeImageFromTitle(imageRef: string) {
+        if (!task) return;
+        removeImageFromTaskTitle(task, imageRef);
+        task = task;
+        immediateSave();
     }
 
     function removeImageFromStep(stepId: string | undefined, imageRef: string) {
         if (!task || !task.steps || !stepId) return;
         const step = task.steps.find(s => s.id === stepId);
         if (!step) return;
-        step.images = (step.images || []).filter(img => !isSameImageRef(img, imageRef));
-        step.text = removeImageRefFromText(step.text, imageRef);
+        removeImageFromStepItem(step, imageRef);
         task = task;
         immediateSave();
     }
@@ -678,20 +666,21 @@
 
     function removeImageFromNote(imageRef: string) {
         if (!task) return;
-        task.images = (task.images || []).filter(img => !isSameImageRef(img, imageRef));
-        task.note = removeImageRefFromText(task.note || "", imageRef);
+        removeImageFromTaskNote(task, imageRef);
         task = task;
         immediateSave();
     }
 
     async function handleCutHoveredImage() {
         if (!hoveredImageRef || !actualApp) return;
-        const { imageRef, stepId, isNewDraft, isNote } = hoveredImageRef;
+        const { imageRef, stepId, isNewDraft, isNote, isTitle } = hoveredImageRef;
         await copyImageToClipboard(imageRef, actualApp, t("image_cut") || "Image cut to clipboard / 图片已剪切至剪贴板");
         if (isNewDraft) {
             removeNewStepImage(imageRef);
         } else if (stepId) {
             removeImageFromStep(stepId, imageRef);
+        } else if (isTitle) {
+            removeImageFromTitle(imageRef);
         } else if (isNote) {
             removeImageFromNote(imageRef);
         }
@@ -719,7 +708,14 @@
 
                 new Notice(t("image_pasted") || "Image attached / 图片已附加");
 
-                if (ft && ft.type === "step") {
+                if (ft && ft.type === "title") {
+                    if (task) {
+                        task.titleImages = [...(task.titleImages || []), savedPath];
+                        task = task;
+                        immediateSave();
+                        continue;
+                    }
+                } else if (ft && ft.type === "step") {
                     const targetStep = task?.steps?.find(s => s.id === ft.stepId);
                     if (targetStep) {
                         targetStep.images = [...(targetStep.images || []), savedPath];
@@ -762,7 +758,12 @@
             if (!savedPath) continue;
             new Notice(t("image_pasted") || "Image attached / 图片已附加");
 
-            if (ft && ft.type === "step") {
+            if (ft && ft.type === "title") {
+                task.titleImages = [...(task.titleImages || []), savedPath];
+                task = task;
+                immediateSave();
+                continue;
+            } else if (ft && ft.type === "step") {
                 const targetStep = task.steps?.find(s => s.id === ft.stepId);
                 if (targetStep) {
                     targetStep.images = [...(targetStep.images || []), savedPath];
@@ -1435,19 +1436,38 @@
                     {/if}
                 </span>
 
-                <!-- Title input (auto-resizing textarea for full multi-line title wrapping) -->
-                <textarea
-                    use:autosize={task.title}
-                    class="detail-title-input"
-                    rows="1"
-                    bind:value={task.title}
-                    on:input={handleTitleInput}
-                    on:compositionstart={handleTitleCompositionStart}
-                    on:compositionend={handleTitleCompositionEnd}
-                    on:blur={handleTitleBlur}
-                    on:keydown={handleTitleKeydown}
-                    placeholder="Task title"
-                />
+                <!-- Title content column (Thumbnails + Divider + Title textarea) -->
+                <div class="title-content-col">
+                    {#if getTitleImages(task).length > 0}
+                        <TaskImageStrip
+                            images={getTitleImages(task)}
+                            app={actualApp}
+                            size={44}
+                            onDelete={(imgRef) => removeImageFromTitle(imgRef)}
+                            onCut={(imgRef) => removeImageFromTitle(imgRef)}
+                            onHover={(imgRef, isHovered) => {
+                                if (isHovered) {
+                                    hoveredImageRef = { imageRef: imgRef, isTitle: true };
+                                } else if (hoveredImageRef?.imageRef === imgRef) {
+                                    hoveredImageRef = null;
+                                }
+                            }}
+                        />
+                    {/if}
+                    <textarea
+                        use:autosize={task.title}
+                        class="detail-title-input"
+                        rows="1"
+                        bind:value={task.title}
+                        on:focus={() => { focusedTarget = { type: 'title' }; }}
+                        on:input={handleTitleInput}
+                        on:compositionstart={handleTitleCompositionStart}
+                        on:compositionend={handleTitleCompositionEnd}
+                        on:blur={handleTitleBlur}
+                        on:keydown={handleTitleKeydown}
+                        placeholder="Task title"
+                    />
+                </div>
 
                 <!-- Task Note Button (dedicated note for this task) -->
                 <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -1542,24 +1562,20 @@
                                 </span>
                                 <div class="step-content-col">
                                     {#if getStepImages(step).length > 0}
-                                        <div class="step-thumbnails-row">
-                                            {#each getStepImages(step) as imgRef}
-                                                <TaskImageThumbnail
-                                                    imageRef={imgRef}
-                                                    app={actualApp}
-                                                    size={38}
-                                                    onDelete={() => removeImageFromStep(step.id, imgRef)}
-                                                    onCut={() => removeImageFromStep(step.id, imgRef)}
-                                                    onHover={(isHovered) => {
-                                                        if (isHovered && step.id) {
-                                                            hoveredImageRef = { imageRef: imgRef, stepId: step.id };
-                                                        } else if (hoveredImageRef?.imageRef === imgRef) {
-                                                            hoveredImageRef = null;
-                                                        }
-                                                    }}
-                                                />
-                                            {/each}
-                                        </div>
+                                        <TaskImageStrip
+                                            images={getStepImages(step)}
+                                            app={actualApp}
+                                            size={38}
+                                            onDelete={(imgRef) => removeImageFromStep(step.id, imgRef)}
+                                            onCut={(imgRef) => removeImageFromStep(step.id, imgRef)}
+                                            onHover={(imgRef, isHovered) => {
+                                                if (isHovered && step.id) {
+                                                    hoveredImageRef = { imageRef: imgRef, stepId: step.id };
+                                                } else if (hoveredImageRef?.imageRef === imgRef) {
+                                                    hoveredImageRef = null;
+                                                }
+                                            }}
+                                        />
                                     {/if}
                                     <textarea
                                         use:autosize={step.text}
@@ -1594,24 +1610,20 @@
                 <!-- Add step row (kept outside dndzone so dndzone children strictly equal items) -->
                 <div class="add-step-card">
                     {#if newStepImages.length > 0}
-                        <div class="step-draft-thumbnails-row">
-                            {#each newStepImages as imgRef}
-                                <TaskImageThumbnail
-                                    imageRef={imgRef}
-                                    app={actualApp}
-                                    size={38}
-                                    onDelete={() => removeNewStepImage(imgRef)}
-                                    onCut={() => removeNewStepImage(imgRef)}
-                                    onHover={(isHovered) => {
-                                        if (isHovered) {
-                                            hoveredImageRef = { imageRef: imgRef, isNewDraft: true };
-                                        } else if (hoveredImageRef?.imageRef === imgRef) {
-                                            hoveredImageRef = null;
-                                        }
-                                    }}
-                                />
-                            {/each}
-                        </div>
+                        <TaskImageStrip
+                            images={newStepImages}
+                            app={actualApp}
+                            size={38}
+                            onDelete={(imgRef) => removeNewStepImage(imgRef)}
+                            onCut={(imgRef) => removeNewStepImage(imgRef)}
+                            onHover={(imgRef, isHovered) => {
+                                if (isHovered) {
+                                    hoveredImageRef = { imageRef: imgRef, isNewDraft: true };
+                                } else if (hoveredImageRef?.imageRef === imgRef) {
+                                    hoveredImageRef = null;
+                                }
+                            }}
+                        />
                     {/if}
                     <div class="add-step-row">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
@@ -1636,24 +1648,20 @@
         <!-- svelte-ignore a11y-no-static-element-interactions -->
         <div class="note-section" on:focusin={() => { focusedTarget = { type: 'note' }; }}>
             {#if getNoteImages(task).length > 0}
-                <div class="note-thumbnails-row">
-                    {#each getNoteImages(task) as imgRef}
-                        <TaskImageThumbnail
-                            imageRef={imgRef}
-                            app={actualApp}
-                            size={44}
-                            onDelete={() => removeImageFromNote(imgRef)}
-                            onCut={() => removeImageFromNote(imgRef)}
-                            onHover={(isHovered) => {
-                                if (isHovered) {
-                                    hoveredImageRef = { imageRef: imgRef, isNote: true };
-                                } else if (hoveredImageRef?.imageRef === imgRef) {
-                                    hoveredImageRef = null;
-                                }
-                            }}
-                        />
-                    {/each}
-                </div>
+                <TaskImageStrip
+                    images={getNoteImages(task)}
+                    app={actualApp}
+                    size={44}
+                    onDelete={(imgRef) => removeImageFromNote(imgRef)}
+                    onCut={(imgRef) => removeImageFromNote(imgRef)}
+                    onHover={(imgRef, isHovered) => {
+                        if (isHovered) {
+                            hoveredImageRef = { imageRef: imgRef, isNote: true };
+                        } else if (hoveredImageRef?.imageRef === imgRef) {
+                            hoveredImageRef = null;
+                        }
+                    }}
+                />
             {/if}
             <textarea
                 class="note-textarea"
@@ -2212,38 +2220,9 @@
         gap: 4px;
     }
 
-    .step-thumbnails-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        align-items: center;
-        padding-top: 2px;
-    }
-
     .add-step-card {
         display: flex;
         flex-direction: column;
         gap: 6px;
-    }
-
-    .step-draft-thumbnails-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        align-items: center;
-        padding: 4px 8px;
-        background-color: var(--background-secondary);
-        border: 1px dashed var(--background-modifier-border);
-        border-radius: 6px;
-    }
-
-    .note-thumbnails-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        align-items: center;
-        margin-bottom: 8px;
-        padding-bottom: 6px;
-        border-bottom: 1px dashed var(--background-modifier-border);
     }
 </style>

@@ -43,6 +43,8 @@ export interface TaskItem {
     note: string;
     /** Attached image paths or wikilinks for task / note */
     images?: string[];
+    /** Attached image paths or wikilinks for title */
+    titleImages?: string[];
     createdAt: string; // ISO 8601
     completedAt?: string;   // ISO 8601 timestamp when task was completed
     dueDate?: string;       // ISO date "YYYY-MM-DD", synced from MS Graph

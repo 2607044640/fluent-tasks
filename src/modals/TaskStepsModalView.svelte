@@ -10,6 +10,7 @@
     import { ensureStepIds, persistableSteps, reconcileDndSteps } from "../utils/stepIds";
     import { Logger } from "../Logger";
     import TaskImageThumbnail from "../components/TaskImageThumbnail.svelte";
+    import TaskImageStrip from "../components/TaskImageStrip.svelte";
     import {
         saveImageAttachment,
         copyImageToClipboard,
@@ -17,6 +18,8 @@
         removeImageRefFromText,
         getImagesFromClipboard,
         isSameImageRef,
+        getStepImages,
+        removeImageFromStepItem,
     } from "../utils/imageAttachmentUtils";
     import { t } from "../lang/helpers";
     import { Notice } from "obsidian";
@@ -401,8 +404,7 @@
         if (!stepId) return;
         const step = steps.find(s => s.id === stepId);
         if (!step) return;
-        step.images = (step.images || []).filter(img => !isSameImageRef(img, imageRef));
-        step.text = removeImageRefFromText(step.text, imageRef);
+        removeImageFromStepItem(step, imageRef);
         steps = [...steps];
         scheduleSave();
     }
@@ -812,23 +814,20 @@
                         <!-- Multi-line auto-resizing textarea with thumbnail row placed ABOVE the text -->
                         <div class="steps-modal-text-col">
                             {#if getStepImages(step).length > 0}
-                                <div class="steps-modal-thumbnails-row">
-                                    {#each getStepImages(step) as imgRef}
-                                        <TaskImageThumbnail
-                                            imageRef={imgRef}
-                                            app={actualApp}
-                                            onDelete={() => removeImageFromStep(step.id, imgRef)}
-                                            onCut={() => removeImageFromStep(step.id, imgRef)}
-                                            onHover={(isHovered) => {
-                                                if (isHovered && step.id) {
-                                                    hoveredImageRef = { imageRef: imgRef, stepId: step.id };
-                                                } else if (hoveredImageRef?.imageRef === imgRef) {
-                                                    hoveredImageRef = null;
-                                                }
-                                            }}
-                                        />
-                                    {/each}
-                                </div>
+                                <TaskImageStrip
+                                    images={getStepImages(step)}
+                                    app={actualApp}
+                                    size={44}
+                                    onDelete={(imgRef) => removeImageFromStep(step.id, imgRef)}
+                                    onCut={(imgRef) => removeImageFromStep(step.id, imgRef)}
+                                    onHover={(imgRef, isHovered) => {
+                                        if (isHovered && step.id) {
+                                            hoveredImageRef = { imageRef: imgRef, stepId: step.id };
+                                        } else if (hoveredImageRef?.imageRef === imgRef) {
+                                            hoveredImageRef = null;
+                                        }
+                                    }}
+                                />
                             {/if}
                             <div class="steps-modal-text-wrapper">
                                 {#if showSearchBar && searchQuery.trim()}
@@ -875,23 +874,20 @@
         <!-- Add Step Container -->
         <div class="steps-modal-add-card">
             {#if newStepImages.length > 0}
-                <div class="steps-modal-draft-thumbnails-row">
-                    {#each newStepImages as imgRef}
-                        <TaskImageThumbnail
-                            imageRef={imgRef}
-                            app={actualApp}
-                            onDelete={() => removeNewStepImage(imgRef)}
-                            onCut={() => removeNewStepImage(imgRef)}
-                            onHover={(isHovered) => {
-                                if (isHovered) {
-                                    hoveredImageRef = { imageRef: imgRef, isNewDraft: true };
-                                } else if (hoveredImageRef?.imageRef === imgRef) {
-                                    hoveredImageRef = null;
-                                }
-                            }}
-                        />
-                    {/each}
-                </div>
+                <TaskImageStrip
+                    images={newStepImages}
+                    app={actualApp}
+                    size={44}
+                    onDelete={(imgRef) => removeNewStepImage(imgRef)}
+                    onCut={(imgRef) => removeNewStepImage(imgRef)}
+                    onHover={(imgRef, isHovered) => {
+                        if (isHovered) {
+                            hoveredImageRef = { imageRef: imgRef, isNewDraft: true };
+                        } else if (hoveredImageRef?.imageRef === imgRef) {
+                            hoveredImageRef = null;
+                        }
+                    }}
+                />
             {/if}
             <div class="steps-modal-add-row">
                 <span class="steps-modal-add-icon">
@@ -940,29 +936,10 @@
         gap: 6px;
     }
 
-    .steps-modal-thumbnails-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        align-items: center;
-        padding-top: 2px;
-    }
-
     .steps-modal-add-card {
         display: flex;
         flex-direction: column;
         gap: 6px;
         flex-shrink: 0;
-    }
-
-    .steps-modal-draft-thumbnails-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        align-items: center;
-        padding: 6px 12px;
-        background-color: var(--background-primary-alt, rgba(255, 255, 255, 0.02));
-        border: 1px dashed var(--todo-border, var(--background-modifier-border, #444));
-        border-radius: 8px;
     }
 </style>

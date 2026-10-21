@@ -22,6 +22,19 @@
     import { t, isChinese } from "./lang/helpers";
     import { Logger } from "./Logger";
     import { isQuickListHotkeyAssigned, openHotkeySettingsForQuickList } from "./utils/hotkeyUtils";
+    import TaskImageStrip from "./components/TaskImageStrip.svelte";
+    import {
+        getTitleImages,
+        cleanDisplayTitle,
+        removeImageFromTaskTitle,
+        copyImageToClipboard,
+        getImagesFromClipboard,
+        saveImageAttachment,
+    } from "./utils/imageAttachmentUtils";
+
+    let hoveredThumbnail: { task: TaskItem; imageRef: string } | null = null;
+    let currentHoveredTask: TaskItem | null = null;
+    $: actualApp = (dataService?.app || plugin?.app || (window as any).app) as App;
 
     // =============================================
     // Props
@@ -1000,6 +1013,22 @@
     }
 
     function handleGlobalKeyDown(e: KeyboardEvent) {
+        if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && hoveredThumbnail) {
+            const { task, imageRef } = hoveredThumbnail;
+            if (e.key === "c" || e.key === "C") {
+                e.preventDefault();
+                e.stopPropagation();
+                void copyImageToClipboard(imageRef, actualApp, t("image_copied") || "Image copied to clipboard / 图片已复制到剪贴板");
+                return;
+            }
+            if (e.key === "x" || e.key === "X") {
+                e.preventDefault();
+                e.stopPropagation();
+                void cutImageFromMainTaskTitle(task, imageRef);
+                return;
+            }
+        }
+
         // List navigation history shortcuts (Alt + Left / Alt + Right)
         if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
             if (e.repeat) return;
@@ -1421,6 +1450,7 @@
         window.addEventListener('keydown', handleGlobalKeyDown, true);
         window.addEventListener('keyup', handleGlobalKeyUp, true);
         window.addEventListener('blur', handleWindowBlur);
+        window.addEventListener('paste', handleGlobalPaste);
         window.addEventListener('a1-svg-updated', handleSvgUpdated);
         window.addEventListener('fluent-tasks-svg-deleted', handleExternalSvgDeleted);
 
@@ -1443,6 +1473,7 @@
         window.removeEventListener('keydown', handleGlobalKeyDown, true);
         window.removeEventListener('keyup', handleGlobalKeyUp, true);
         window.removeEventListener('blur', handleWindowBlur);
+        window.removeEventListener('paste', handleGlobalPaste);
         window.removeEventListener('a1-svg-updated', handleSvgUpdated);
         window.removeEventListener('fluent-tasks-svg-deleted', handleExternalSvgDeleted);
         if (vaultModifyRef && plugin?.app?.vault) {
@@ -1997,6 +2028,7 @@
     }
 
     function handleTaskMouseEnter(task: TaskItem) {
+        currentHoveredTask = task;
         (window as any).__fluent_tasks_hovered_task = {
             task,
             categoryFilepath: currentCategory?.filepath || "",
@@ -2005,9 +2037,84 @@
     }
 
     function handleTaskMouseLeave(task: TaskItem) {
+        if (currentHoveredTask?.id === task.id) {
+            currentHoveredTask = null;
+        }
         if ((window as any).__fluent_tasks_hovered_task?.task?.id === task.id) {
             (window as any).__fluent_tasks_hovered_task = null;
         }
+    }
+
+    function handleThumbnailHover(task: TaskItem, imageRef: string, isHovered: boolean) {
+        if (isHovered) {
+            hoveredThumbnail = { task, imageRef };
+        } else if (hoveredThumbnail?.imageRef === imageRef) {
+            hoveredThumbnail = null;
+        }
+    }
+
+    async function removeImageFromMainTaskTitle(task: TaskItem, imageRef: string) {
+        removeImageFromTaskTitle(task, imageRef);
+        if (hoveredThumbnail?.imageRef === imageRef) hoveredThumbnail = null;
+        incompleteTasks = [...incompleteTasks];
+        completedTasks = [...completedTasks];
+        const targetCatPath = (currentCategory?.filepath === STARRED_CATEGORY_PATH && task.sourceFilepath)
+            ? task.sourceFilepath
+            : (currentCategory?.filepath || task.sourceFilepath || "");
+        if (targetCatPath) {
+            await dataService.updateTask(targetCatPath, task);
+            EventBus.emit(EventName.TASK_UPDATED, {
+                task,
+                categoryFilepath: targetCatPath,
+                source: 'main-view',
+            });
+        }
+    }
+
+    async function cutImageFromMainTaskTitle(task: TaskItem, imageRef: string) {
+        await copyImageToClipboard(imageRef, actualApp, t("image_cut") || "Image cut to clipboard / 图片已剪切至剪贴板");
+        await removeImageFromMainTaskTitle(task, imageRef);
+    }
+
+    function handleGlobalPaste(e: ClipboardEvent) {
+        const activeEl = document.activeElement;
+        if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || (activeEl as HTMLElement).isContentEditable)) {
+            return;
+        }
+        const activeType = plugin?.app?.workspace?.getActiveViewOfType(ItemView)?.getViewType();
+        const isInsideMain = mainContainerEl && (mainContainerEl.contains(activeEl) || activeType === VIEW_TYPE_MAIN);
+        if (!isInsideMain) return;
+
+        const files = getImagesFromClipboard(e);
+        if (!files || files.length === 0) return;
+
+        const targetTask = currentHoveredTask || (selectedTaskId ? incompleteTasks.concat(completedTasks).find(t => t.id === selectedTaskId) : null);
+        if (!targetTask) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        void (async () => {
+            const targetCatPath = (currentCategory?.filepath === STARRED_CATEGORY_PATH && targetTask.sourceFilepath)
+                ? targetTask.sourceFilepath
+                : (currentCategory?.filepath || targetTask.sourceFilepath || "");
+            for (const file of files) {
+                const savedPath = await saveImageAttachment(file, actualApp, targetCatPath);
+                if (!savedPath) continue;
+                new Notice(t("image_pasted") || "Image attached / 图片已附加");
+                targetTask.titleImages = [...(targetTask.titleImages || []), savedPath];
+                incompleteTasks = [...incompleteTasks];
+                completedTasks = [...completedTasks];
+                if (targetCatPath) {
+                    await dataService.updateTask(targetCatPath, targetTask);
+                    EventBus.emit(EventName.TASK_UPDATED, {
+                        task: targetTask,
+                        categoryFilepath: targetCatPath,
+                        source: 'main-view',
+                    });
+                }
+            }
+        })();
     }
 
     async function jumpToSourceCategory(filepath?: string) {
@@ -3190,6 +3297,7 @@
                     id={'task-' + task.id}
                     animate:flip={{duration: DND_FLIP_DURATION}}
                     class="task-item"
+                    class:has-images={getTitleImages(task).length > 0}
                     class:is-center-aligned={centerAlignTasks}
                     class:selected={selectedTaskId === task.id}
                     class:is-multi-selected={isMultiSelectMode && selectedTaskIds.has(task.id)}
@@ -3228,12 +3336,22 @@
                     </div>
 
                     <div class="task-content">
+                        {#if getTitleImages(task).length > 0}
+                            <TaskImageStrip
+                                images={getTitleImages(task)}
+                                app={actualApp}
+                                size={38}
+                                onDelete={(imgRef) => removeImageFromMainTaskTitle(task, imgRef)}
+                                onCut={(imgRef) => cutImageFromMainTaskTitle(task, imgRef)}
+                                onHover={(imgRef, isHovered) => handleThumbnailHover(task, imgRef, isHovered)}
+                            />
+                        {/if}
                         <!-- svelte-ignore a11y-no-static-element-interactions -->
                         <span class="task-title"
                               on:mouseenter={(e) => handleTitleHover(e, task)}
                               on:mousemove={(e) => handleTitleMouseMove(e, task)}
                               on:mouseleave={handleTitleMouseLeave}>
-                            {task.title}
+                            {cleanDisplayTitle(task.title) || task.title}
                         </span>
                         <div class="task-meta-row">
                             {#if currentCategory?.filepath === STARRED_CATEGORY_PATH && task.sourceCategoryName}
@@ -3441,6 +3559,7 @@
                                 id={'task-' + task.id}
                                 animate:flip={{duration: DND_FLIP_DURATION}}
                                 class="task-item completed"
+                                class:has-images={getTitleImages(task).length > 0}
                                 class:is-center-aligned={centerAlignTasks}
                                 class:selected={selectedTaskId === task.id}
                                 class:is-multi-selected={isMultiSelectMode && selectedTaskIds.has(task.id)}
@@ -3479,12 +3598,22 @@
                                 </div>
 
                                 <div class="task-content">
+                                    {#if getTitleImages(task).length > 0}
+                                        <TaskImageStrip
+                                            images={getTitleImages(task)}
+                                            app={actualApp}
+                                            size={38}
+                                            onDelete={(imgRef) => removeImageFromMainTaskTitle(task, imgRef)}
+                                            onCut={(imgRef) => cutImageFromMainTaskTitle(task, imgRef)}
+                                            onHover={(imgRef, isHovered) => handleThumbnailHover(task, imgRef, isHovered)}
+                                        />
+                                    {/if}
                                     <!-- svelte-ignore a11y-no-static-element-interactions -->
                                     <span class="task-title"
                                           on:mouseenter={(e) => handleTitleHover(e, task)}
                                           on:mousemove={(e) => handleTitleMouseMove(e, task)}
                                           on:mouseleave={handleTitleMouseLeave}>
-                                        {task.title}
+                                        {cleanDisplayTitle(task.title) || task.title}
                                     </span>
                                     <div class="task-meta-row">
                                         {#if currentCategory?.filepath === STARRED_CATEGORY_PATH && task.sourceCategoryName}
