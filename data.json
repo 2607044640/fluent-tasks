@@ -5,7 +5,7 @@
   "autoExpandSidebarOnDrag": true,
   "autoExpandSidebar": true,
   "autoCollapseSidebarOnSwitch": true,
-  "searchHideCompleted": true,
+  "searchHideCompleted": false,
   "hideRibbonIcon": true,
   "wrapTaskTitles": true,
   "centerAlignTasks": true,

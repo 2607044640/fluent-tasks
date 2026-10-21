@@ -2177,6 +2177,7 @@ body.is-dragging-ghost #dnd-action-dragged-el {
 }
 
 .meta-form-input, .meta-form-textarea {
+    field-sizing: content;
     background-color: var(--todo-item-bg, var(--background-primary-alt, #282828));
     border: 1px solid var(--todo-border, var(--background-modifier-border, #444));
     border-radius: 6px;
@@ -4401,6 +4402,7 @@ body .task-steps-floating-modal .steps-modal-checkbox:active {
 .steps-modal-textarea,
 body .task-steps-floating-modal .steps-modal-textarea,
 body .task-steps-modal-container .steps-modal-textarea {
+    field-sizing: content;
     flex-grow: 1;
     width: 100% !important;
     min-width: 0 !important;

@@ -20,52 +20,61 @@ export function portal(node: HTMLElement) {
 
 /**
  * Svelte Action: Bulletproof auto-resizing for textareas.
- * Uses native field-sizing where supported, with robust scrollHeight calculation
- * and scrollTop zeroing to eliminate cursor jumping, top-line clipping, and residual height.
+ * Dual-engine: applies native field-sizing: content when supported, but ALWAYS
+ * enforces a scrollHeight fail-safe check to guarantee multiline text is never
+ * clipped or squished into a single line.
  */
 export function autosize(node: HTMLTextAreaElement, _value?: string) {
     const supportsFieldSizing = typeof CSS !== "undefined" && CSS.supports && CSS.supports("field-sizing", "content");
 
+    if (supportsFieldSizing) {
+        node.style.setProperty("field-sizing", "content");
+    }
+
     function resize() {
         node.scrollTop = 0;
-        if (supportsFieldSizing) {
-            // Native Chromium field-sizing dynamically computes content height without layout shifts
-            // Reset inline height to auto so field-sizing: content can shrink/grow natively on value updates
-            node.setCssStyles({
-                boxSizing: "border-box",
-                height: "auto",
-                minHeight: "0px",
-            });
-            node.scrollTop = 0;
-            return;
-        }
 
-        // Fallback for environments without CSS field-sizing: content
+        // Reset to auto so both field-sizing and scrollHeight can measure natural content height
         node.setCssStyles({
             boxSizing: "border-box",
             height: "auto",
             minHeight: "0px",
         });
+
         const targetHeight = node.scrollHeight;
         if (targetHeight > 0) {
-            node.setCssStyles({
-                height: `${targetHeight}px`
-            });
+            // Fail-safe guarantee: if field-sizing didn't expand the element (e.g. missing CSS rule,
+            // modal animation layout delay, font metric race), or if field-sizing is unsupported:
+            if (!supportsFieldSizing || targetHeight > node.clientHeight + 1) {
+                node.setCssStyles({
+                    height: `${targetHeight}px`
+                });
+            }
         }
         node.scrollTop = 0;
     }
 
     node.addEventListener("input", resize);
     node.addEventListener("focus", resize);
+    window.addEventListener("resize", resize);
+
+    // Initial resize passes (synchronous + rAF + microtask + delayed for modal layout reflow)
+    resize();
     window.requestAnimationFrame(resize);
+    window.setTimeout(resize, 0);
+    window.setTimeout(resize, 50);
+    window.setTimeout(resize, 150);
 
     return {
         update(_newValue?: string) {
+            resize();
             window.requestAnimationFrame(resize);
+            window.setTimeout(resize, 0);
         },
         destroy() {
             node.removeEventListener("input", resize);
             node.removeEventListener("focus", resize);
+            window.removeEventListener("resize", resize);
         }
     };
 }

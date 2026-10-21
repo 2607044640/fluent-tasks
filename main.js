@@ -9793,17 +9793,11 @@ function portal(node) {
 }
 function autosize(node, _value) {
   const supportsFieldSizing = typeof CSS !== "undefined" && CSS.supports && CSS.supports("field-sizing", "content");
+  if (supportsFieldSizing) {
+    node.style.setProperty("field-sizing", "content");
+  }
   function resize() {
     node.scrollTop = 0;
-    if (supportsFieldSizing) {
-      node.setCssStyles({
-        boxSizing: "border-box",
-        height: "auto",
-        minHeight: "0px"
-      });
-      node.scrollTop = 0;
-      return;
-    }
     node.setCssStyles({
       boxSizing: "border-box",
       height: "auto",
@@ -9811,22 +9805,32 @@ function autosize(node, _value) {
     });
     const targetHeight = node.scrollHeight;
     if (targetHeight > 0) {
-      node.setCssStyles({
-        height: `${targetHeight}px`
-      });
+      if (!supportsFieldSizing || targetHeight > node.clientHeight + 1) {
+        node.setCssStyles({
+          height: `${targetHeight}px`
+        });
+      }
     }
     node.scrollTop = 0;
   }
   node.addEventListener("input", resize);
   node.addEventListener("focus", resize);
+  window.addEventListener("resize", resize);
+  resize();
   window.requestAnimationFrame(resize);
+  window.setTimeout(resize, 0);
+  window.setTimeout(resize, 50);
+  window.setTimeout(resize, 150);
   return {
     update(_newValue) {
+      resize();
       window.requestAnimationFrame(resize);
+      window.setTimeout(resize, 0);
     },
     destroy() {
       node.removeEventListener("input", resize);
       node.removeEventListener("focus", resize);
+      window.removeEventListener("resize", resize);
     }
   };
 }
