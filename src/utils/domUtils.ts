@@ -28,7 +28,7 @@ export function autosize(node: HTMLTextAreaElement, _value?: string) {
     const supportsFieldSizing = typeof CSS !== "undefined" && CSS.supports && CSS.supports("field-sizing", "content");
 
     if (supportsFieldSizing) {
-        node.style.setProperty("field-sizing", "content");
+        node.addClass("autosize-field-sizing");
     }
 
     function resize() {

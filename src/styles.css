@@ -4399,6 +4399,10 @@ body .task-steps-floating-modal .steps-modal-checkbox:active {
     transform: scale(0.9);
 }
 
+.autosize-field-sizing {
+    field-sizing: content;
+}
+
 .steps-modal-textarea,
 body .task-steps-floating-modal .steps-modal-textarea,
 body .task-steps-modal-container .steps-modal-textarea {
@@ -5411,7 +5415,11 @@ body .task-steps-floating-modal .steps-modal-delete-btn:hover {
     justify-content: center;
 }
 
-.task-steps-floating-modal.is-center-aligned .steps-modal-textarea,
+.task-steps-floating-modal.is-center-aligned .autosize-field-sizing {
+    field-sizing: content;
+}
+
+.steps-modal-textarea,
 .task-steps-modal-container.is-center-aligned .steps-modal-textarea {
     text-align: center !important;
 }
