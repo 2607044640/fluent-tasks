@@ -1,6 +1,6 @@
 # Fluent Tasks
 
-Obsidian plugin: a three-pane, drag-and-drop task manager inspired by Microsoft To Do, Todoist, and TickTick. Version **1.0.45** (`manifest.json`). Desktop and mobile (`isDesktopOnly: false`). Minimum Obsidian **1.8.7**.
+Obsidian plugin: a three-pane, drag-and-drop task manager inspired by Microsoft To Do, Todoist, and TickTick. Version **1.0.46** (`manifest.json`). Desktop and mobile (`isDesktopOnly: false`). Minimum Obsidian **1.8.7**.
 
 Architecture documentation: [ARCHITECTURE.md](./ARCHITECTURE.md).
 
@@ -24,6 +24,7 @@ There is no cloud lock-in or external server dependency. All data remains 100% l
 
 ## Key Features
 
+- **Interactive Drag Sidebar Integration & Smooth Auto-Scroll**: When dragging tasks across lists, automatically expands the left sidebar and highlights/reveals the source list (active in Floating UI mode, or optionally enabled in normal mode via `Auto-Expand Left Sidebar on Task Drag`). Features continuous rAF auto-scrolling when hovering near the top or bottom edges of the list view, with instant top-right toasts confirming successful cross-list moves.
 - **List Navigation History (Alt+Left / Alt+Right)**: In-memory session history stack enabling effortless traversal across recently viewed lists. Jump backwards and forwards seamlessly via `Alt + ←` / `Alt + →`, `Alt + Left/Right click` (triggering strictly on release to prevent duplicate jumps), or mouse side buttons (Back / Forward).
 - **In-Modal Subtask Search (Ctrl+F)**: Dedicated search inside the subtasks floating modal (`TaskStepsModal`) with auto-focus, subtle soft-accent backdrop highlighting, and centered viewport scrolling.
 - **Lists & Groups**: Create custom lists and organize them into collapsible groups. Different groups can have lists with identical display names, with automated sibling collision disambiguation (`name(1)`). Drag-and-drop lists into groups or reorder them freely. Press **F2** to rename hovered or active lists.
