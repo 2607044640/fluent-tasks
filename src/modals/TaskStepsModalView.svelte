@@ -317,6 +317,9 @@
 
     async function deleteStep(stepId?: string) {
         if (!stepId || !task) return;
+        if (focusedStepId === stepId) {
+            focusedStepId = null;
+        }
         const index = steps.findIndex(s => s.id === stepId);
         if (index === -1) return;
         const deletedStep = { ...steps[index] };
@@ -523,6 +526,18 @@
     function handleStepKeydown(e: KeyboardEvent, stepId?: string) {
         if (!stepId || e.isComposing || e.keyCode === 229) return;
         if (e.key === "Enter" && !e.shiftKey) {
+            const currentVal = (e.currentTarget as HTMLTextAreaElement)?.value || "";
+            const step = steps.find(s => s.id === stepId);
+            const hasText = currentVal.trim().length > 0 || (!!step?.text && step.text.trim().length > 0);
+            const hasImages = !!step && getStepImages(step).length > 0;
+
+            if (!hasText && !hasImages) {
+                e.preventDefault();
+                e.stopPropagation();
+                void deleteStep(stepId);
+                return;
+            }
+
             e.preventDefault();
             (e.currentTarget as HTMLElement).blur();
         }

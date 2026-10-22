@@ -1652,6 +1652,18 @@
                                         on:input={(e) => updateStepText(step.id, e.currentTarget.value)}
                                         on:keydown={(e) => {
                                             if (e.key === "Enter" && !e.shiftKey) {
+                                                const currentVal = e.currentTarget?.value || "";
+                                                const hasText = currentVal.trim().length > 0 || (!!step.text && step.text.trim().length > 0);
+                                                const hasImages = getStepImages(step).length > 0;
+                                                if (!hasText && !hasImages) {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    if (focusedTarget?.type === 'step' && focusedTarget.stepId === step.id) {
+                                                        focusedTarget = null;
+                                                    }
+                                                    void deleteStep(step.id);
+                                                    return;
+                                                }
                                                 e.preventDefault();
                                                 e.currentTarget.blur();
                                             }
