@@ -673,13 +673,34 @@
         immediateSave();
     }
 
+    function isStepEmpty(step: TaskStep): boolean {
+        const hasText = !!step.text && step.text.trim().length > 0;
+        const hasImages = getStepImages(step).length > 0;
+        return !hasText && !hasImages;
+    }
+
     function removeImageFromStep(stepId: string | undefined, imageRef: string) {
         if (!task || !task.steps || !stepId) return;
         const step = task.steps.find(s => s.id === stepId);
         if (!step) return;
         removeImageFromStepItem(step, imageRef);
+        if (isStepEmpty(step)) {
+            void deleteStep(stepId);
+            return;
+        }
         task = task;
         immediateSave();
+    }
+
+    function handleStepBlur(stepId: string | undefined) {
+        if (stepId && task?.steps) {
+            const step = task.steps.find(s => s.id === stepId);
+            if (step && isStepEmpty(step)) {
+                void deleteStep(stepId);
+                return;
+            }
+        }
+        scheduleSave();
     }
 
     function removeNewStepImage(imageRef: string) {
@@ -1650,12 +1671,10 @@
                                         class:completed={step.done}
                                         on:focus={() => { if (step.id) focusedTarget = { type: 'step', stepId: step.id }; }}
                                         on:input={(e) => updateStepText(step.id, e.currentTarget.value)}
+                                        on:blur={() => handleStepBlur(step.id)}
                                         on:keydown={(e) => {
                                             if (e.key === "Enter" && !e.shiftKey) {
-                                                const currentVal = e.currentTarget?.value || "";
-                                                const hasText = currentVal.trim().length > 0 || (!!step.text && step.text.trim().length > 0);
-                                                const hasImages = getStepImages(step).length > 0;
-                                                if (!hasText && !hasImages) {
+                                                if (isStepEmpty(step)) {
                                                     e.preventDefault();
                                                     e.stopPropagation();
                                                     if (focusedTarget?.type === 'step' && focusedTarget.stepId === step.id) {

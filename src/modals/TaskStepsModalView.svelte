@@ -403,11 +403,21 @@
         return combined;
     }
 
+    function isStepEmpty(step: TaskStep): boolean {
+        const hasText = !!step.text && step.text.trim().length > 0;
+        const hasImages = getStepImages(step).length > 0;
+        return !hasText && !hasImages;
+    }
+
     function removeImageFromStep(stepId: string | undefined, imageRef: string) {
         if (!stepId) return;
         const step = steps.find(s => s.id === stepId);
         if (!step) return;
         removeImageFromStepItem(step, imageRef);
+        if (isStepEmpty(step)) {
+            void deleteStep(stepId);
+            return;
+        }
         steps = [...steps];
         scheduleSave();
     }
@@ -523,15 +533,22 @@
         modalBodyEl?.scrollTo({ top: modalBodyEl.scrollHeight, behavior: 'smooth' });
     }
 
+    function handleStepBlur(stepId?: string) {
+        if (stepId) {
+            const step = steps.find(s => s.id === stepId);
+            if (step && isStepEmpty(step)) {
+                void deleteStep(stepId);
+                return;
+            }
+        }
+        flushSaveSync();
+    }
+
     function handleStepKeydown(e: KeyboardEvent, stepId?: string) {
         if (!stepId || e.isComposing || e.keyCode === 229) return;
         if (e.key === "Enter" && !e.shiftKey) {
-            const currentVal = (e.currentTarget as HTMLTextAreaElement)?.value || "";
             const step = steps.find(s => s.id === stepId);
-            const hasText = currentVal.trim().length > 0 || (!!step?.text && step.text.trim().length > 0);
-            const hasImages = !!step && getStepImages(step).length > 0;
-
-            if (!hasText && !hasImages) {
+            if (step && isStepEmpty(step)) {
                 e.preventDefault();
                 e.stopPropagation();
                 void deleteStep(stepId);
@@ -552,6 +569,7 @@
     }
 
     function handleClose() {
+        steps = steps.filter(s => !isStepEmpty(s));
         flushSaveSync();
         closeModal();
     }
@@ -575,6 +593,12 @@
     }
 
     onMount(() => {
+        // Automatically prune any stray empty steps
+        if (steps.some(s => isStepEmpty(s))) {
+            steps = steps.filter(s => !isStepEmpty(s));
+            scheduleSave();
+        }
+
         // Esc guard in capture phase to prevent conflicts with parent modal listeners
         const handleCaptureKeydown = (e: KeyboardEvent) => {
             if (document.querySelector(".task-img-preview-modal-shell")) {
@@ -859,7 +883,7 @@
                                     placeholder="Step description..."
                                     on:focus={() => { focusedStepId = step.id || null; }}
                                     on:input={(e) => handleStepInput(step.id, e.currentTarget.value)}
-                                    on:blur={flushSaveSync}
+                                    on:blur={() => handleStepBlur(step.id)}
                                     on:keydown={(e) => handleStepKeydown(e, step.id)}
                                 />
                             </div>
