@@ -27,7 +27,7 @@ export class TaskDetailModal extends Modal {
         this.initialTask = task;
         this.initialCategoryFilepath = categoryFilepath;
         this.detailCloseHandler = () => {
-            this.close();
+            this.forceClose();
         };
     }
 
@@ -45,7 +45,7 @@ export class TaskDetailModal extends Modal {
                 dataService: this.dataService,
                 plugin: this.plugin,
                 isModal: true,
-                onCloseModal: () => this.close(),
+                onCloseModal: () => this.forceClose(),
             },
         });
 
@@ -58,6 +58,33 @@ export class TaskDetailModal extends Modal {
         if (this.component) {
             this.component.loadTask(task, categoryFilepath);
         }
+    }
+
+    hasActiveChildDialog(): boolean {
+        return !!(
+            this.contentEl?.querySelector(".meta-modal-backdrop") ||
+            this.modalEl?.querySelector(".meta-modal-backdrop") ||
+            this.containerEl?.querySelector(".meta-modal-backdrop") ||
+            this.contentEl?.querySelector(".svg-confirm-backdrop") ||
+            this.modalEl?.querySelector(".svg-confirm-backdrop") ||
+            this.contentEl?.querySelector(".repeat-picker-panel") ||
+            document.querySelector(".meta-modal-backdrop") ||
+            document.querySelector(".svg-confirm-backdrop") ||
+            document.querySelector(".task-img-preview-modal-shell")
+        );
+    }
+
+    close() {
+        // When a nested child dialog (e.g. Task Metadata, SVG confirm, or repeat picker) is active,
+        // intercept and ignore the outer modal's close request (such as Obsidian's Escape hotkey).
+        if (this.hasActiveChildDialog()) {
+            return;
+        }
+        super.close();
+    }
+
+    forceClose() {
+        super.close();
     }
 
     onClose() {

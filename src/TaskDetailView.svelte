@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount, onDestroy } from "svelte";
+    import { onMount, onDestroy, tick } from "svelte";
     import { dndzone } from "svelte-dnd-action";
     import { flip } from "svelte/animate";
     import { EventBus } from "./EventBus";
@@ -592,6 +592,9 @@
                     await immediateSave();
                 }
                 await LinkedNoteService.openLinkedNoteFile(plugin.app, file);
+                if (isModal) {
+                    closePanel();
+                }
             } else {
                 // Re-create dedicated note if file was removed
                 const res = await LinkedNoteService.createOrGetTaskNote(plugin.app, task, categoryFilepath, dataService);
@@ -600,6 +603,9 @@
                 await immediateSave();
                 await LinkedNoteService.openLinkedNoteFile(plugin.app, res.file);
                 new Notice(t("task_note_recreated", res.file.basename));
+                if (isModal) {
+                    closePanel();
+                }
             }
         } else {
             // Create brand new dedicated task note and jump to it
@@ -609,6 +615,9 @@
             await immediateSave();
             await LinkedNoteService.openLinkedNoteFile(plugin.app, res.file);
             new Notice(t("task_note_created", res.file.basename));
+            if (isModal) {
+                closePanel();
+            }
         }
     }
 
@@ -1000,6 +1009,14 @@
         return [];
     }
 
+    async function focusMetaEditorInput() {
+        await tick();
+        const editor = document.querySelector(".meta-item-editor input, .meta-item-editor textarea") as HTMLElement | null;
+        if (editor) {
+            editor.focus();
+        }
+    }
+
     function openAddMetaModal(type: "why" | "note_link" | "svg" | "custom" = "why", targetIndexOrKey?: number | string) {
         if (!task) return;
         metaFormType = type;
@@ -1042,6 +1059,7 @@
         showAddMetaModal = true;
         showMetaSaveConfirmModal = false;
         initialMetaSnapshot = getMetaSnapshot();
+        void focusMetaEditorInput();
     }
 
     function closeAddMetaModal() {
@@ -1051,6 +1069,7 @@
     function addNewSvgItem() {
         metaSvgList = [...metaSvgList, ""];
         selectedSvgIndex = metaSvgList.length - 1;
+        void focusMetaEditorInput();
     }
 
     function removeSvgItem(idx: number) {
@@ -1063,6 +1082,7 @@
     function addNewWhyItem() {
         metaWhyList = [...metaWhyList, ""];
         selectedWhyIndex = metaWhyList.length - 1;
+        void focusMetaEditorInput();
     }
 
     function removeWhyItem(idx: number) {
@@ -1075,6 +1095,7 @@
     function addNewNoteLinkItem() {
         metaNoteLinks = [...metaNoteLinks, ""];
         selectedNoteLinkIndex = metaNoteLinks.length - 1;
+        void focusMetaEditorInput();
     }
 
     function removeNoteLinkItem(idx: number) {
@@ -1105,6 +1126,7 @@
     function addNewCustomEntry() {
         metaCustomEntries = [...metaCustomEntries, { key: "", value: "" }];
         selectedCustomIndex = metaCustomEntries.length - 1;
+        void focusMetaEditorInput();
     }
 
     function removeCustomEntry(idx: number) {
@@ -1407,6 +1429,9 @@
     function handleOpenSvgFile(resolved: { isInline: boolean; cleanPath: string }) {
         if (!resolved.isInline && resolved.cleanPath && plugin?.app) {
             plugin.app.workspace.openLinkText(resolved.cleanPath, categoryFilepath || "", false);
+            if (isModal) {
+                closePanel();
+            }
         }
     }
 </script>
@@ -1929,7 +1954,10 @@
             <!-- svelte-ignore a11y-no-static-element-interactions -->
             <div use:portal
                  class="meta-modal-backdrop" on:click|stopPropagation={(e) => e.target === e.currentTarget && requestCloseAddMetaModal()} role="presentation">
-                <div class="meta-modal-dialog" role="dialog" aria-modal="true" tabindex="-1" on:click|stopPropagation>
+                <div class="meta-modal-dialog" role="dialog" aria-modal="true" tabindex="-1"
+                     on:pointerdown|stopPropagation
+                     on:mousedown|stopPropagation
+                     on:click|stopPropagation>
                     <div class="meta-modal-header">
                         <div class="meta-modal-title">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--todo-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1945,13 +1973,13 @@
 
                     <div class="meta-modal-tabs">
                         <button type="button" class="meta-modal-tab" class:active={metaFormType === 'why'}
-                                on:click={() => metaFormType = 'why'}>Why ({metaWhyList.length})</button>
+                                on:click={() => { metaFormType = 'why'; void focusMetaEditorInput(); }}>Why ({metaWhyList.length})</button>
                         <button type="button" class="meta-modal-tab" class:active={metaFormType === 'note_link'}
-                                on:click={() => metaFormType = 'note_link'}>Note Links ({metaNoteLinks.length})</button>
+                                on:click={() => { metaFormType = 'note_link'; void focusMetaEditorInput(); }}>Note Links ({metaNoteLinks.length})</button>
                         <button type="button" class="meta-modal-tab" class:active={metaFormType === 'svg'}
-                                on:click={() => metaFormType = 'svg'}>Visual SVG ({metaSvgList.length})</button>
+                                on:click={() => { metaFormType = 'svg'; void focusMetaEditorInput(); }}>Visual SVG ({metaSvgList.length})</button>
                         <button type="button" class="meta-modal-tab" class:active={metaFormType === 'custom'}
-                                on:click={() => metaFormType = 'custom'}>Custom ({metaCustomEntries.length})</button>
+                                on:click={() => { metaFormType = 'custom'; void focusMetaEditorInput(); }}>Custom ({metaCustomEntries.length})</button>
                     </div>
 
                     <div class="meta-modal-body">
@@ -1968,7 +1996,7 @@
                                         <!-- svelte-ignore a11y-click-events-have-key-events -->
                                         <!-- svelte-ignore a11y-no-static-element-interactions -->
                                         <div class="meta-item-card" class:active={selectedWhyIndex === i}
-                                             on:click={() => selectedWhyIndex = i}>
+                                             on:click={() => { selectedWhyIndex = i; void focusMetaEditorInput(); }}>
                                             <span class="item-badge">#{i + 1}</span>
                                             <span class="item-preview">{whyItem.trim() ? (whyItem.length > 32 ? whyItem.slice(0, 32) + '...' : whyItem) : '(Empty Rationale)'}</span>
                                             <span class="item-delete" title="Delete this rationale"
@@ -1981,7 +2009,10 @@
                                 <div class="meta-item-editor">
                                     <div class="meta-editor-title">Editing Rationale #{selectedWhyIndex + 1}</div>
                                     <textarea class="meta-form-textarea" placeholder="Core rationale or mental model behind this instruction..."
-                                              bind:value={metaWhyList[selectedWhyIndex]} rows="3"></textarea>
+                                              bind:value={metaWhyList[selectedWhyIndex]} rows="3"
+                                              on:pointerdown|stopPropagation
+                                              on:mousedown|stopPropagation
+                                              on:click|stopPropagation></textarea>
                                 </div>
                             {/if}
                         {:else if metaFormType === 'note_link'}
@@ -1997,7 +2028,7 @@
                                         <!-- svelte-ignore a11y-click-events-have-key-events -->
                                         <!-- svelte-ignore a11y-no-static-element-interactions -->
                                         <div class="meta-item-card" class:active={selectedNoteLinkIndex === i}
-                                             on:click={() => selectedNoteLinkIndex = i}>
+                                             on:click={() => { selectedNoteLinkIndex = i; void focusMetaEditorInput(); }}>
                                             <span class="item-badge">#{i + 1}</span>
                                             <span class="item-preview">{noteLinkItem.trim() ? (noteLinkItem.length > 32 ? noteLinkItem.slice(0, 32) + '...' : noteLinkItem) : '(Empty Note Link)'}</span>
                                             <span class="item-delete" title="Delete this note link"
@@ -2016,7 +2047,10 @@
                                     <div class="meta-form-field">
                                         <span class="meta-field-label">Linked Obsidian / OneNote Note</span>
                                         <input class="meta-form-input" type="text" placeholder="e.g. [[My Note]] or OneNote/Domain/Section/Topic.md"
-                                               bind:value={metaNoteLinks[selectedNoteLinkIndex]} />
+                                               bind:value={metaNoteLinks[selectedNoteLinkIndex]}
+                                               on:pointerdown|stopPropagation
+                                               on:mousedown|stopPropagation
+                                               on:click|stopPropagation />
                                         <span class="meta-form-hint">
                                             {#if activeHintFile}
                                                 <span style="color: var(--text-success, #48c774); font-weight: 500;">✓ Matched: {activeHintFile.path}</span>
@@ -2049,7 +2083,7 @@
                                         <!-- svelte-ignore a11y-click-events-have-key-events -->
                                         <!-- svelte-ignore a11y-no-static-element-interactions -->
                                         <div class="meta-item-card" class:active={selectedSvgIndex === i}
-                                             on:click={() => selectedSvgIndex = i}>
+                                             on:click={() => { selectedSvgIndex = i; void focusMetaEditorInput(); }}>
                                             <span class="item-badge">#{i + 1}</span>
                                             <div class="item-svg-mini-thumb">
                                                 {#if resolvedThumb.isInline}
@@ -2108,7 +2142,10 @@
                                         </div>
                                         <div class="meta-svg-editor-inputs">
                                             <textarea class="meta-form-textarea monospace" placeholder="OneNote/Original Game/AI Draw/assets/name.svg or <svg...>...</svg>"
-                                                      bind:value={metaSvgList[selectedSvgIndex]} rows="3"></textarea>
+                                                      bind:value={metaSvgList[selectedSvgIndex]} rows="3"
+                                                      on:pointerdown|stopPropagation
+                                                      on:mousedown|stopPropagation
+                                                      on:click|stopPropagation></textarea>
                                             <span class="meta-form-hint">Path to .svg asset in vault, or raw &lt;svg&gt; XML markup.</span>
                                         </div>
                                     </div>
@@ -2127,7 +2164,7 @@
                                         <!-- svelte-ignore a11y-click-events-have-key-events -->
                                         <!-- svelte-ignore a11y-no-static-element-interactions -->
                                         <div class="meta-item-card" class:active={selectedCustomIndex === i}
-                                             on:click={() => selectedCustomIndex = i}>
+                                             on:click={() => { selectedCustomIndex = i; void focusMetaEditorInput(); }}>
                                             <span class="item-badge custom-badge">{entry.key.trim() || 'Key'}</span>
                                             <span class="item-preview">{entry.value.trim() || '(Empty value)'}</span>
                                             <span class="item-delete" title="Delete this property"
@@ -2143,12 +2180,18 @@
                                         <div class="meta-form-field">
                                             <span class="meta-field-label">Key</span>
                                             <input class="meta-form-input" type="text" placeholder="e.g. priority, author"
-                                                   bind:value={metaCustomEntries[selectedCustomIndex].key} />
+                                                   bind:value={metaCustomEntries[selectedCustomIndex].key}
+                                                   on:pointerdown|stopPropagation
+                                                   on:mousedown|stopPropagation
+                                                   on:click|stopPropagation />
                                         </div>
                                         <div class="meta-form-field">
                                             <span class="meta-field-label">Value</span>
                                             <input class="meta-form-input" type="text" placeholder="e.g. high, Opus"
-                                                   bind:value={metaCustomEntries[selectedCustomIndex].value} />
+                                                   bind:value={metaCustomEntries[selectedCustomIndex].value}
+                                                   on:pointerdown|stopPropagation
+                                                   on:mousedown|stopPropagation
+                                                   on:click|stopPropagation />
                                         </div>
                                     </div>
                                 </div>

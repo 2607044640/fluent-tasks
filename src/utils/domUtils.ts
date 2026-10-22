@@ -4,11 +4,30 @@
  */
 
 /**
- * Svelte Action: Portal a DOM node directly to document.body.
- * Ensures the element escapes any parent overflow clipping or stacking context.
+ * Svelte Action: Portal a DOM node directly to document.body (or parent modal container).
+ * Ensures the element escapes any parent overflow clipping or stacking context, while
+ * keeping it within any active modal scope to prevent focus trap hijacking.
  */
-export function portal(node: HTMLElement) {
-    document.body.appendChild(node);
+export function portal(node: HTMLElement, target?: HTMLElement | string) {
+    let dest: HTMLElement | null = null;
+    if (target instanceof HTMLElement) {
+        dest = target;
+    } else if (typeof target === "string") {
+        dest = document.querySelector(target);
+    }
+
+    if (!dest) {
+        // If node originates inside an Obsidian Modal, portal to that modal's modal element (modalEl)
+        // so it remains within Obsidian's modal DOM tree and focus trap scope.
+        const modalEl = (node.closest(".modal") || document.querySelector(".modal.task-detail-floating-modal")) as HTMLElement | null;
+        if (modalEl) {
+            dest = modalEl;
+        } else {
+            dest = document.body;
+        }
+    }
+
+    dest.appendChild(node);
     return {
         destroy() {
             if (node.parentNode) {
