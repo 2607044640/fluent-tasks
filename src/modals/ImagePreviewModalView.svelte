@@ -17,6 +17,12 @@
     $: resolvedSrc = resolveImageResourceUrl(imageRef, app);
     $: fileName = getImageBaseName(imageRef);
 
+    let isZoomed: boolean = false;
+
+    function toggleZoom() {
+        isZoomed = !isZoomed;
+    }
+
     async function handleCopy() {
         await copyImageToClipboard(imageRef, app, t("image_copied") || "Image copied to clipboard / 图片已复制到剪贴板");
     }
@@ -136,11 +142,16 @@
         <!-- Main Image Container -->
         <div class="task-img-preview-body">
             {#if resolvedSrc}
+                <!-- svelte-ignore a11y-click-events-have-key-events -->
+                <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
                 <img
                     src={resolvedSrc}
                     alt={fileName}
                     class="task-img-preview-image"
+                    class:is-zoomed={isZoomed}
                     data-no-toolkit="true"
+                    on:click={toggleZoom}
+                    title={isZoomed ? (t("image_zoom_out") || "Click to fit screen / 点击适应屏幕") : (t("image_zoom_in") || "Click to zoom 1:1 / 点击放大原图")}
                 />
             {:else}
                 <div class="task-img-preview-placeholder">Loading image...</div>
@@ -149,6 +160,9 @@
 
         <!-- Footer keyboard helper badges -->
         <div class="task-img-preview-footer">
+            <span class="task-img-preview-badge">
+                <kbd>Click</kbd> {isZoomed ? (t("image_hint_fit") || "Fit / 适应屏幕") : (t("image_hint_zoom") || "Zoom 1:1 / 放大原图")}
+            </span>
             <span class="task-img-preview-badge">
                 <kbd>Ctrl+C</kbd> {t("image_hint_copy") || "Copy / 复制"}
             </span>
@@ -262,8 +276,6 @@
     .task-img-preview-body {
         flex: 1;
         display: flex;
-        align-items: center;
-        justify-content: center;
         padding: 16px;
         overflow: auto;
         background: var(--background-primary-alt);
@@ -271,12 +283,21 @@
     }
 
     .task-img-preview-image {
+        margin: auto;
         max-width: 86vw;
         max-height: 72vh;
         object-fit: contain;
         border-radius: 6px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
         user-select: none;
+        cursor: zoom-in;
+        transition: max-width 0.15s ease, max-height 0.15s ease;
+    }
+
+    .task-img-preview-image.is-zoomed {
+        max-width: none;
+        max-height: none;
+        cursor: zoom-out;
     }
 
     .task-img-preview-placeholder {

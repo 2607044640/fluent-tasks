@@ -49,6 +49,13 @@ export class TaskStepsModal extends Modal {
         });
     }
 
+    close() {
+        if (document.querySelector(".task-img-preview-modal-shell")) {
+            return;
+        }
+        super.close();
+    }
+
     onClose() {
         if (this.component) {
             this.component.flushSaveSync();

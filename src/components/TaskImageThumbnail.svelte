@@ -25,7 +25,12 @@
             onClick();
             return;
         }
-        new ImagePreviewModal(app, imageRef, {
+        const effectiveApp = app || (window as any).app;
+        if (!effectiveApp) {
+            console.error("[fluent-tasks] Cannot open image preview modal: app instance missing");
+            return;
+        }
+        new ImagePreviewModal(effectiveApp, imageRef, {
             onCut,
             onDelete,
         }).open();

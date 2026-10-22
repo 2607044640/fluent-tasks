@@ -22,10 +22,10 @@
                     {app}
                     {size}
                     {canDelete}
-                    onDelete={() => onDelete && onDelete(imgRef)}
-                    onCut={() => onCut && onCut(imgRef)}
-                    onHover={(isHovered) => onHover && onHover(imgRef, isHovered)}
-                    onClick={() => onClick && onClick(imgRef)}
+                    onDelete={onDelete ? () => onDelete(imgRef) : undefined}
+                    onCut={onCut ? () => onCut(imgRef) : undefined}
+                    onHover={onHover ? (isHovered) => onHover(imgRef, isHovered) : undefined}
+                    onClick={onClick ? () => onClick(imgRef) : undefined}
                 />
             {/each}
         </div>

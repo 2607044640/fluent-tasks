@@ -4146,6 +4146,10 @@ var en = {
   image_hint_copy: "Copy",
   image_hint_cut: "Cut",
   image_hint_close: "Close",
+  image_zoom_in: "Click to zoom 1:1",
+  image_zoom_out: "Click to fit screen",
+  image_hint_zoom: "Zoom 1:1",
+  image_hint_fit: "Fit screen",
   copy: "Copy",
   cut: "Cut",
   close: "Close"
@@ -4312,6 +4316,10 @@ var zhCn = {
   image_hint_copy: "\u590D\u5236",
   image_hint_cut: "\u526A\u5207",
   image_hint_close: "\u5173\u95ED",
+  image_zoom_in: "\u70B9\u51FB\u653E\u5927\u539F\u56FE",
+  image_zoom_out: "\u70B9\u51FB\u9002\u5E94\u5C4F\u5E55",
+  image_hint_zoom: "\u653E\u5927\u539F\u56FE",
+  image_hint_fit: "\u9002\u5E94\u5C4F\u5E55",
   copy: "\u590D\u5236",
   cut: "\u526A\u5207",
   close: "\u5173\u95ED"
@@ -10564,7 +10572,7 @@ var import_obsidian10 = require("obsidian");
 
 // src/modals/ImagePreviewModalView.svelte
 function add_css(target) {
-  append_styles(target, "svelte-1y7wt0j", ".task-img-preview-backdrop.svelte-1y7wt0j.svelte-1y7wt0j{position:fixed;top:0;left:0;width:100vw;height:100vh;background-color:rgba(0, 0, 0, 0.75);backdrop-filter:blur(4px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;animation:svelte-1y7wt0j-fadeIn 0.15s ease-out}@keyframes svelte-1y7wt0j-fadeIn{from{opacity:0}to{opacity:1}}.task-img-preview-card.svelte-1y7wt0j.svelte-1y7wt0j{max-width:92vw;max-height:92vh;background:var(--background-primary);border:1px solid var(--background-modifier-border);border-radius:10px;box-shadow:0 16px 48px rgba(0, 0, 0, 0.6);display:flex;flex-direction:column;overflow:hidden}.task-img-preview-header.svelte-1y7wt0j.svelte-1y7wt0j{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--background-secondary);border-bottom:1px solid var(--background-modifier-border);gap:12px}.task-img-preview-title.svelte-1y7wt0j.svelte-1y7wt0j{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--text-normal);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%}.task-img-preview-actions.svelte-1y7wt0j.svelte-1y7wt0j{display:flex;align-items:center;gap:8px}.task-img-preview-btn.svelte-1y7wt0j.svelte-1y7wt0j{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;font-size:12px;border-radius:6px;border:1px solid var(--background-modifier-border);background:var(--background-primary);color:var(--text-normal);cursor:pointer;transition:all 0.15s ease}.task-img-preview-btn.svelte-1y7wt0j.svelte-1y7wt0j:hover{background:var(--background-modifier-hover);border-color:var(--interactive-accent);color:var(--interactive-accent)}.task-img-preview-btn.is-cut.svelte-1y7wt0j.svelte-1y7wt0j:hover{border-color:var(--text-error, #e54d2e);color:var(--text-error, #e54d2e)}.task-img-preview-btn.is-close.svelte-1y7wt0j.svelte-1y7wt0j{padding:4px 6px}.task-img-preview-btn.is-close.svelte-1y7wt0j.svelte-1y7wt0j:hover{color:var(--text-error, #e54d2e)}.task-img-preview-body.svelte-1y7wt0j.svelte-1y7wt0j{flex:1;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto;background:var(--background-primary-alt);min-height:200px}.task-img-preview-image.svelte-1y7wt0j.svelte-1y7wt0j{max-width:86vw;max-height:72vh;object-fit:contain;border-radius:6px;box-shadow:0 4px 20px rgba(0, 0, 0, 0.35);user-select:none}.task-img-preview-placeholder.svelte-1y7wt0j.svelte-1y7wt0j{color:var(--text-muted);font-size:13px}.task-img-preview-footer.svelte-1y7wt0j.svelte-1y7wt0j{display:flex;align-items:center;justify-content:center;gap:16px;padding:8px 16px;background:var(--background-secondary);border-top:1px solid var(--background-modifier-border)}.task-img-preview-badge.svelte-1y7wt0j.svelte-1y7wt0j{font-size:11px;color:var(--text-muted);display:inline-flex;align-items:center;gap:4px}.task-img-preview-badge.svelte-1y7wt0j kbd.svelte-1y7wt0j{background:var(--background-primary);border:1px solid var(--background-modifier-border);border-radius:4px;padding:1px 4px;font-size:10px;font-family:var(--font-monospace);color:var(--text-normal)}");
+  append_styles(target, "svelte-1weyku7", ".task-img-preview-backdrop.svelte-1weyku7.svelte-1weyku7{position:fixed;top:0;left:0;width:100vw;height:100vh;background-color:rgba(0, 0, 0, 0.75);backdrop-filter:blur(4px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;animation:svelte-1weyku7-fadeIn 0.15s ease-out}@keyframes svelte-1weyku7-fadeIn{from{opacity:0}to{opacity:1}}.task-img-preview-card.svelte-1weyku7.svelte-1weyku7{max-width:92vw;max-height:92vh;background:var(--background-primary);border:1px solid var(--background-modifier-border);border-radius:10px;box-shadow:0 16px 48px rgba(0, 0, 0, 0.6);display:flex;flex-direction:column;overflow:hidden}.task-img-preview-header.svelte-1weyku7.svelte-1weyku7{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--background-secondary);border-bottom:1px solid var(--background-modifier-border);gap:12px}.task-img-preview-title.svelte-1weyku7.svelte-1weyku7{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--text-normal);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%}.task-img-preview-actions.svelte-1weyku7.svelte-1weyku7{display:flex;align-items:center;gap:8px}.task-img-preview-btn.svelte-1weyku7.svelte-1weyku7{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;font-size:12px;border-radius:6px;border:1px solid var(--background-modifier-border);background:var(--background-primary);color:var(--text-normal);cursor:pointer;transition:all 0.15s ease}.task-img-preview-btn.svelte-1weyku7.svelte-1weyku7:hover{background:var(--background-modifier-hover);border-color:var(--interactive-accent);color:var(--interactive-accent)}.task-img-preview-btn.is-cut.svelte-1weyku7.svelte-1weyku7:hover{border-color:var(--text-error, #e54d2e);color:var(--text-error, #e54d2e)}.task-img-preview-btn.is-close.svelte-1weyku7.svelte-1weyku7{padding:4px 6px}.task-img-preview-btn.is-close.svelte-1weyku7.svelte-1weyku7:hover{color:var(--text-error, #e54d2e)}.task-img-preview-body.svelte-1weyku7.svelte-1weyku7{flex:1;display:flex;padding:16px;overflow:auto;background:var(--background-primary-alt);min-height:200px}.task-img-preview-image.svelte-1weyku7.svelte-1weyku7{margin:auto;max-width:86vw;max-height:72vh;object-fit:contain;border-radius:6px;box-shadow:0 4px 20px rgba(0, 0, 0, 0.35);user-select:none;cursor:zoom-in;transition:max-width 0.15s ease, max-height 0.15s ease}.task-img-preview-image.is-zoomed.svelte-1weyku7.svelte-1weyku7{max-width:none;max-height:none;cursor:zoom-out}.task-img-preview-placeholder.svelte-1weyku7.svelte-1weyku7{color:var(--text-muted);font-size:13px}.task-img-preview-footer.svelte-1weyku7.svelte-1weyku7{display:flex;align-items:center;justify-content:center;gap:16px;padding:8px 16px;background:var(--background-secondary);border-top:1px solid var(--background-modifier-border)}.task-img-preview-badge.svelte-1weyku7.svelte-1weyku7{font-size:11px;color:var(--text-muted);display:inline-flex;align-items:center;gap:4px}.task-img-preview-badge.svelte-1weyku7 kbd.svelte-1weyku7{background:var(--background-primary);border:1px solid var(--background-modifier-border);border-radius:4px;padding:1px 4px;font-size:10px;font-family:var(--font-monospace);color:var(--text-normal)}");
 }
 function create_else_block2(ctx) {
   let div;
@@ -10572,7 +10580,7 @@ function create_else_block2(ctx) {
     c() {
       div = element("div");
       div.textContent = "Loading image...";
-      attr(div, "class", "task-img-preview-placeholder svelte-1y7wt0j");
+      attr(div, "class", "task-img-preview-placeholder svelte-1weyku7");
     },
     m(target, anchor) {
       insert(target, div, anchor);
@@ -10588,36 +10596,70 @@ function create_else_block2(ctx) {
 function create_if_block2(ctx) {
   let img;
   let img_src_value;
+  let img_title_value;
+  let mounted;
+  let dispose;
   return {
     c() {
       img = element("img");
       if (!src_url_equal(img.src, img_src_value = /*resolvedSrc*/
-      ctx[2]))
+      ctx[3]))
         attr(img, "src", img_src_value);
       attr(
         img,
         "alt",
         /*fileName*/
+        ctx[2]
+      );
+      attr(img, "class", "task-img-preview-image svelte-1weyku7");
+      attr(img, "data-no-toolkit", "true");
+      attr(img, "title", img_title_value = /*isZoomed*/
+      ctx[1] ? t("image_zoom_out") || "Click to fit screen / \u70B9\u51FB\u9002\u5E94\u5C4F\u5E55" : t("image_zoom_in") || "Click to zoom 1:1 / \u70B9\u51FB\u653E\u5927\u539F\u56FE");
+      toggle_class(
+        img,
+        "is-zoomed",
+        /*isZoomed*/
         ctx[1]
       );
-      attr(img, "class", "task-img-preview-image svelte-1y7wt0j");
-      attr(img, "data-no-toolkit", "true");
     },
     m(target, anchor) {
       insert(target, img, anchor);
+      if (!mounted) {
+        dispose = listen(
+          img,
+          "click",
+          /*toggleZoom*/
+          ctx[4]
+        );
+        mounted = true;
+      }
     },
     p(ctx2, dirty) {
       if (dirty & /*resolvedSrc*/
-      4 && !src_url_equal(img.src, img_src_value = /*resolvedSrc*/
-      ctx2[2])) {
+      8 && !src_url_equal(img.src, img_src_value = /*resolvedSrc*/
+      ctx2[3])) {
         attr(img, "src", img_src_value);
       }
       if (dirty & /*fileName*/
-      2) {
+      4) {
         attr(
           img,
           "alt",
           /*fileName*/
+          ctx2[2]
+        );
+      }
+      if (dirty & /*isZoomed*/
+      2 && img_title_value !== (img_title_value = /*isZoomed*/
+      ctx2[1] ? t("image_zoom_out") || "Click to fit screen / \u70B9\u51FB\u9002\u5E94\u5C4F\u5E55" : t("image_zoom_in") || "Click to zoom 1:1 / \u70B9\u51FB\u653E\u5927\u539F\u56FE")) {
+        attr(img, "title", img_title_value);
+      }
+      if (dirty & /*isZoomed*/
+      2) {
+        toggle_class(
+          img,
+          "is-zoomed",
+          /*isZoomed*/
           ctx2[1]
         );
       }
@@ -10626,6 +10668,8 @@ function create_if_block2(ctx) {
       if (detaching) {
         detach(img);
       }
+      mounted = false;
+      dispose();
     }
   };
 }
@@ -10671,26 +10715,35 @@ function create_fragment2(ctx) {
   let span3;
   let kbd0;
   let t12;
-  let t13_value = (t("image_hint_copy") || "Copy / \u590D\u5236") + "";
+  let t13_value = (
+    /*isZoomed*/
+    (ctx[1] ? t("image_hint_fit") || "Fit / \u9002\u5E94\u5C4F\u5E55" : t("image_hint_zoom") || "Zoom 1:1 / \u653E\u5927\u539F\u56FE") + ""
+  );
   let t13;
   let t14;
   let span4;
   let kbd1;
   let t16;
-  let t17_value = (t("image_hint_cut") || "Cut / \u526A\u5207") + "";
+  let t17_value = (t("image_hint_copy") || "Copy / \u590D\u5236") + "";
   let t17;
   let t18;
   let span5;
   let kbd2;
   let t20;
-  let t21_value = (t("image_hint_close") || "Close / \u5173\u95ED") + "";
+  let t21_value = (t("image_hint_cut") || "Cut / \u526A\u5207") + "";
   let t21;
+  let t22;
+  let span6;
+  let kbd3;
+  let t24;
+  let t25_value = (t("image_hint_close") || "Close / \u5173\u95ED") + "";
+  let t25;
   let mounted;
   let dispose;
   function select_block_type(ctx2, dirty) {
     if (
       /*resolvedSrc*/
-      ctx2[2]
+      ctx2[3]
     )
       return create_if_block2;
     return create_else_block2;
@@ -10711,7 +10764,7 @@ function create_fragment2(ctx) {
       span0 = element("span");
       t1 = text(
         /*fileName*/
-        ctx[1]
+        ctx[2]
       );
       t2 = space();
       div1 = element("div");
@@ -10743,21 +10796,27 @@ function create_fragment2(ctx) {
       div4 = element("div");
       span3 = element("span");
       kbd0 = element("kbd");
-      kbd0.textContent = "Ctrl+C";
+      kbd0.textContent = "Click";
       t12 = space();
       t13 = text(t13_value);
       t14 = space();
       span4 = element("span");
       kbd1 = element("kbd");
-      kbd1.textContent = "Ctrl+X";
+      kbd1.textContent = "Ctrl+C";
       t16 = space();
       t17 = text(t17_value);
       t18 = space();
       span5 = element("span");
       kbd2 = element("kbd");
-      kbd2.textContent = "Esc";
+      kbd2.textContent = "Ctrl+X";
       t20 = space();
       t21 = text(t21_value);
+      t22 = space();
+      span6 = element("span");
+      kbd3 = element("kbd");
+      kbd3.textContent = "Esc";
+      t24 = space();
+      t25 = text(t25_value);
       attr(rect0, "x", "3");
       attr(rect0, "y", "3");
       attr(rect0, "width", "18");
@@ -10776,12 +10835,12 @@ function create_fragment2(ctx) {
       attr(svg0, "stroke-width", "2");
       attr(svg0, "stroke-linecap", "round");
       attr(svg0, "stroke-linejoin", "round");
-      attr(div0, "class", "task-img-preview-title svelte-1y7wt0j");
+      attr(div0, "class", "task-img-preview-title svelte-1weyku7");
       attr(
         div0,
         "title",
         /*fileName*/
-        ctx[1]
+        ctx[2]
       );
       attr(rect1, "x", "9");
       attr(rect1, "y", "9");
@@ -10799,7 +10858,7 @@ function create_fragment2(ctx) {
       attr(svg1, "stroke-linecap", "round");
       attr(svg1, "stroke-linejoin", "round");
       attr(button0, "type", "button");
-      attr(button0, "class", "task-img-preview-btn svelte-1y7wt0j");
+      attr(button0, "class", "task-img-preview-btn svelte-1weyku7");
       attr(button0, "title", button0_title_value = t("image_copy_tooltip") || "Copy image (Ctrl+C) / \u590D\u5236\u56FE\u7247");
       attr(circle1, "cx", "6");
       attr(circle1, "cy", "6");
@@ -10828,24 +10887,26 @@ function create_fragment2(ctx) {
       attr(svg2, "stroke-linecap", "round");
       attr(svg2, "stroke-linejoin", "round");
       attr(button1, "type", "button");
-      attr(button1, "class", "task-img-preview-btn is-cut svelte-1y7wt0j");
+      attr(button1, "class", "task-img-preview-btn is-cut svelte-1weyku7");
       attr(button1, "title", button1_title_value = t("image_cut_tooltip") || "Cut image (Ctrl+X) / \u526A\u5207\u56FE\u7247");
       attr(button2, "type", "button");
-      attr(button2, "class", "task-img-preview-btn is-close svelte-1y7wt0j");
+      attr(button2, "class", "task-img-preview-btn is-close svelte-1weyku7");
       attr(button2, "title", button2_title_value = t("close") || "Close (Esc) / \u5173\u95ED");
-      attr(div1, "class", "task-img-preview-actions svelte-1y7wt0j");
-      attr(div2, "class", "task-img-preview-header svelte-1y7wt0j");
-      attr(div3, "class", "task-img-preview-body svelte-1y7wt0j");
-      attr(kbd0, "class", "svelte-1y7wt0j");
-      attr(span3, "class", "task-img-preview-badge svelte-1y7wt0j");
-      attr(kbd1, "class", "svelte-1y7wt0j");
-      attr(span4, "class", "task-img-preview-badge svelte-1y7wt0j");
-      attr(kbd2, "class", "svelte-1y7wt0j");
-      attr(span5, "class", "task-img-preview-badge svelte-1y7wt0j");
-      attr(div4, "class", "task-img-preview-footer svelte-1y7wt0j");
-      attr(div5, "class", "task-img-preview-card svelte-1y7wt0j");
+      attr(div1, "class", "task-img-preview-actions svelte-1weyku7");
+      attr(div2, "class", "task-img-preview-header svelte-1weyku7");
+      attr(div3, "class", "task-img-preview-body svelte-1weyku7");
+      attr(kbd0, "class", "svelte-1weyku7");
+      attr(span3, "class", "task-img-preview-badge svelte-1weyku7");
+      attr(kbd1, "class", "svelte-1weyku7");
+      attr(span4, "class", "task-img-preview-badge svelte-1weyku7");
+      attr(kbd2, "class", "svelte-1weyku7");
+      attr(span5, "class", "task-img-preview-badge svelte-1weyku7");
+      attr(kbd3, "class", "svelte-1weyku7");
+      attr(span6, "class", "task-img-preview-badge svelte-1weyku7");
+      attr(div4, "class", "task-img-preview-footer svelte-1weyku7");
+      attr(div5, "class", "task-img-preview-card svelte-1weyku7");
       attr(div5, "data-no-toolkit", "true");
-      attr(div6, "class", "task-img-preview-backdrop svelte-1y7wt0j");
+      attr(div6, "class", "task-img-preview-backdrop svelte-1weyku7");
     },
     m(target, anchor) {
       insert(target, div6, anchor);
@@ -10898,19 +10959,24 @@ function create_fragment2(ctx) {
       append(span5, kbd2);
       append(span5, t20);
       append(span5, t21);
+      append(div4, t22);
+      append(div4, span6);
+      append(span6, kbd3);
+      append(span6, t24);
+      append(span6, t25);
       if (!mounted) {
         dispose = [
           listen(
             button0,
             "click",
             /*handleCopy*/
-            ctx[3]
+            ctx[5]
           ),
           listen(
             button1,
             "click",
             /*handleCut*/
-            ctx[4]
+            ctx[6]
           ),
           listen(button2, "click", function() {
             if (is_function(
@@ -10921,7 +10987,7 @@ function create_fragment2(ctx) {
           }),
           listen(div5, "click", stop_propagation(
             /*click_handler*/
-            ctx[9]
+            ctx[11]
           )),
           listen(div6, "click", function() {
             if (is_function(
@@ -10937,19 +11003,19 @@ function create_fragment2(ctx) {
     p(new_ctx, [dirty]) {
       ctx = new_ctx;
       if (dirty & /*fileName*/
-      2)
+      4)
         set_data(
           t1,
           /*fileName*/
-          ctx[1]
+          ctx[2]
         );
       if (dirty & /*fileName*/
-      2) {
+      4) {
         attr(
           div0,
           "title",
           /*fileName*/
-          ctx[1]
+          ctx[2]
         );
       }
       if (current_block_type === (current_block_type = select_block_type(ctx, dirty)) && if_block) {
@@ -10962,6 +11028,10 @@ function create_fragment2(ctx) {
           if_block.m(div3, null);
         }
       }
+      if (dirty & /*isZoomed*/
+      2 && t13_value !== (t13_value = /*isZoomed*/
+      (ctx[1] ? t("image_hint_fit") || "Fit / \u9002\u5E94\u5C4F\u5E55" : t("image_hint_zoom") || "Zoom 1:1 / \u653E\u5927\u539F\u56FE") + ""))
+        set_data(t13, t13_value);
     },
     i: noop,
     o: noop,
@@ -10983,6 +11053,10 @@ function instance2($$self, $$props, $$invalidate) {
   let { onCut = void 0 } = $$props;
   let { onDelete = void 0 } = $$props;
   let { closeModal } = $$props;
+  let isZoomed = false;
+  function toggleZoom() {
+    $$invalidate(1, isZoomed = !isZoomed);
+  }
   async function handleCopy() {
     await copyImageToClipboard(imageRef, app, t("image_copied") || "Image copied to clipboard / \u56FE\u7247\u5DF2\u590D\u5236\u5230\u526A\u8D34\u677F");
   }
@@ -11040,32 +11114,34 @@ function instance2($$self, $$props, $$invalidate) {
   }
   $$self.$$set = ($$props2) => {
     if ("app" in $$props2)
-      $$invalidate(5, app = $$props2.app);
+      $$invalidate(7, app = $$props2.app);
     if ("imageRef" in $$props2)
-      $$invalidate(6, imageRef = $$props2.imageRef);
+      $$invalidate(8, imageRef = $$props2.imageRef);
     if ("onCut" in $$props2)
-      $$invalidate(7, onCut = $$props2.onCut);
+      $$invalidate(9, onCut = $$props2.onCut);
     if ("onDelete" in $$props2)
-      $$invalidate(8, onDelete = $$props2.onDelete);
+      $$invalidate(10, onDelete = $$props2.onDelete);
     if ("closeModal" in $$props2)
       $$invalidate(0, closeModal = $$props2.closeModal);
   };
   $$self.$$.update = () => {
     if ($$self.$$.dirty & /*imageRef, app*/
-    96) {
+    384) {
       $:
-        $$invalidate(2, resolvedSrc = resolveImageResourceUrl(imageRef, app));
+        $$invalidate(3, resolvedSrc = resolveImageResourceUrl(imageRef, app));
     }
     if ($$self.$$.dirty & /*imageRef*/
-    64) {
+    256) {
       $:
-        $$invalidate(1, fileName = getImageBaseName(imageRef));
+        $$invalidate(2, fileName = getImageBaseName(imageRef));
     }
   };
   return [
     closeModal,
+    isZoomed,
     fileName,
     resolvedSrc,
+    toggleZoom,
     handleCopy,
     handleCut,
     app,
@@ -11085,10 +11161,10 @@ var ImagePreviewModalView = class extends SvelteComponent {
       create_fragment2,
       safe_not_equal,
       {
-        app: 5,
-        imageRef: 6,
-        onCut: 7,
-        onDelete: 8,
+        app: 7,
+        imageRef: 8,
+        onCut: 9,
+        onDelete: 10,
         closeModal: 0
       },
       add_css
@@ -11409,7 +11485,12 @@ function instance3($$self, $$props, $$invalidate) {
       onClick();
       return;
     }
-    new ImagePreviewModal(app, imageRef, { onCut, onDelete }).open();
+    const effectiveApp = app || window.app;
+    if (!effectiveApp) {
+      console.error("[fluent-tasks] Cannot open image preview modal: app instance missing");
+      return;
+    }
+    new ImagePreviewModal(effectiveApp, imageRef, { onCut, onDelete }).open();
   }
   function handleMouseEnter() {
     if (onHover)
@@ -11564,7 +11645,7 @@ function create_if_block4(ctx) {
       current = true;
     },
     p(ctx2, dirty) {
-      if (dirty & /*images, app, size, canDelete, onDelete, onCut, onHover, onClick*/
+      if (dirty & /*images, app, size, canDelete, onDelete, undefined, onCut, onHover, onClick*/
       495) {
         each_value = ensure_array_like(
           /*images*/
@@ -11674,10 +11755,22 @@ function create_each_block2(key_1, ctx) {
         /*canDelete*/
         ctx[3]
       ),
-      onDelete: func2,
-      onCut: func_12,
-      onHover: func_22,
-      onClick: func_3
+      onDelete: (
+        /*onDelete*/
+        ctx[5] ? func2 : void 0
+      ),
+      onCut: (
+        /*onCut*/
+        ctx[6] ? func_12 : void 0
+      ),
+      onHover: (
+        /*onHover*/
+        ctx[7] ? func_22 : void 0
+      ),
+      onClick: (
+        /*onClick*/
+        ctx[8] ? func_3 : void 0
+      )
     }
   });
   return {
@@ -11714,16 +11807,20 @@ function create_each_block2(key_1, ctx) {
         ctx[3];
       if (dirty & /*onDelete, images*/
       34)
-        taskimagethumbnail_changes.onDelete = func2;
+        taskimagethumbnail_changes.onDelete = /*onDelete*/
+        ctx[5] ? func2 : void 0;
       if (dirty & /*onCut, images*/
       66)
-        taskimagethumbnail_changes.onCut = func_12;
+        taskimagethumbnail_changes.onCut = /*onCut*/
+        ctx[6] ? func_12 : void 0;
       if (dirty & /*onHover, images*/
       130)
-        taskimagethumbnail_changes.onHover = func_22;
+        taskimagethumbnail_changes.onHover = /*onHover*/
+        ctx[7] ? func_22 : void 0;
       if (dirty & /*onClick, images*/
       258)
-        taskimagethumbnail_changes.onClick = func_3;
+        taskimagethumbnail_changes.onClick = /*onClick*/
+        ctx[8] ? func_3 : void 0;
       taskimagethumbnail.$set(taskimagethumbnail_changes);
     },
     i(local) {
@@ -11836,10 +11933,10 @@ function instance4($$self, $$props, $$invalidate) {
   let { onCut = void 0 } = $$props;
   let { onHover = void 0 } = $$props;
   let { onClick = void 0 } = $$props;
-  const func2 = (imgRef) => onDelete && onDelete(imgRef);
-  const func_12 = (imgRef) => onCut && onCut(imgRef);
-  const func_22 = (imgRef, isHovered) => onHover && onHover(imgRef, isHovered);
-  const func_3 = (imgRef) => onClick && onClick(imgRef);
+  const func2 = (imgRef) => onDelete(imgRef);
+  const func_12 = (imgRef) => onCut(imgRef);
+  const func_22 = (imgRef, isHovered) => onHover(imgRef, isHovered);
+  const func_3 = (imgRef) => onClick(imgRef);
   $$self.$$set = ($$props2) => {
     if ("app" in $$props2)
       $$invalidate(0, app = $$props2.app);
@@ -14327,6 +14424,12 @@ var TaskStepsModal = class extends import_obsidian12.Modal {
         showStepsProgressPill: (_i = (_h = (_g = this.plugin) == null ? void 0 : _g.settings) == null ? void 0 : _h.showStepsProgressPill) != null ? _i : false
       }
     });
+  }
+  close() {
+    if (document.querySelector(".task-img-preview-modal-shell")) {
+      return;
+    }
+    super.close();
   }
   onClose() {
     if (this.component) {
