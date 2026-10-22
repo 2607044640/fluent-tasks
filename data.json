@@ -1,7 +1,7 @@
 {
   "accentColor": "#006eff",
-  "openDetailInModal": false,
-  "hideLeftSidebar": false,
+  "openDetailInModal": true,
+  "hideLeftSidebar": true,
   "autoExpandSidebarOnDrag": true,
   "autoExpandSidebar": true,
   "autoCollapseSidebarOnSwitch": true,
