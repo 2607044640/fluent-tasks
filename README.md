@@ -1,6 +1,6 @@
 # Fluent Tasks
 
-Obsidian plugin: a three-pane, drag-and-drop task manager inspired by Microsoft To Do, Todoist, and TickTick. Version **1.0.47** (`manifest.json`). Desktop and mobile (`isDesktopOnly: false`). Minimum Obsidian **1.8.7**.
+Obsidian plugin: a three-pane, drag-and-drop task manager inspired by Microsoft To Do, Todoist, and TickTick. Version **1.0.48** (`manifest.json`). Desktop and mobile (`isDesktopOnly: false`). Minimum Obsidian **1.8.7**.
 
 Architecture documentation: [ARCHITECTURE.md](./ARCHITECTURE.md).
 
@@ -35,7 +35,7 @@ There is no cloud lock-in or external server dependency. All data remains 100% l
 - **More Options Menu & Batch Operations**: Clean three-dots header menu consolidating list search, multi-select mode, backup manager, shortcuts guide, and display alignment. Multi-select supports batch star/unstar and batch deletion.
 - **Center-Align Tasks Mode**: Toggle center alignment for task titles, steps counters, and wrapped multi-line text directly from the more options menu or plugin settings.
 - **Subtasks & Quick Context Menu**: Dedicated detail panel and floating modal for step checklists. Full vertical drag-and-drop step reordering with zero-loss safety reconciliation. Right-click any task to instantly access **Add side step** as the top context menu action, followed by **Star task** and hierarchical **Move to**.
-- **Image Attachments & Antigravity-Style Thumbnails**: Paste screenshots directly via `Ctrl+V` or drag-and-drop into subtasks and task notes. Compact, top-aligned thumbnails appear right above the text with hover shortcuts (`Ctrl+C` to copy to clipboard, `Ctrl+X` to cut) and single-click full-screen lightbox preview. Images store locally in your vault's attachment directory.
+- **Image Attachments & Antigravity-Style Thumbnails**: Paste screenshots directly via `Ctrl+V` or drag-and-drop into task titles, notes, and subtasks. Features a unified top thumbnail strip with a subtle divider line across title, detail, and sidesteps, with hover shortcuts (`Ctrl+C` to copy to clipboard, `Ctrl+X` to cut), single-click full-screen lightbox preview, and isolation from external image toolkits. Images store locally in your vault's attachment directory.
 - **Multi-Tier Deletion Undo**: Instant floating toast undo mechanism for deleted tasks (single or batch), subtasks, and lists, with configurable undo timer in settings.
 - **Due Dates & Recurrence**: Schedule tasks with smart presets (today, tomorrow, next week) and flexible recurrence rules (daily, weekdays, weekly, custom). Overdue recurring tasks automatically roll over.
 - **Quick Modals & Dashboard Grid**: Access Quick List board (`Ctrl+Shift+L` or command) and Quick Task popup for rapid task capture and navigation. Dynamically adapts viewport padding, margins, and column layouts to user font sizes.
