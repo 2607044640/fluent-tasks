@@ -39,7 +39,20 @@
     export let dataService: DataService;
     export let plugin: any = undefined;
     export let isModal: boolean = false;
+    export let isFullscreen: boolean = plugin?.settings?.fullscreenDetailModal ?? true;
     export let onCloseModal: (() => void) | undefined = undefined;
+    export let onToggleFullscreen: ((fullscreen: boolean) => void) | undefined = undefined;
+
+    function toggleFullscreen() {
+        isFullscreen = !isFullscreen;
+        if (plugin?.settings) {
+            plugin.settings.fullscreenDetailModal = isFullscreen;
+            void plugin.saveSettings();
+        }
+        if (onToggleFullscreen) {
+            onToggleFullscreen(isFullscreen);
+        }
+    }
 
     // =============================================
     // State
@@ -1526,19 +1539,47 @@
                 </span>
 
                 {#if isModal}
-                    <!-- Close button in modal mode -->
-                    <!-- svelte-ignore a11y-click-events-have-key-events -->
-                    <span class="detail-modal-close-btn"
-                          on:click={closePanel}
-                          role="button" tabindex="0"
-                          title="Close details (Esc)"
-                          on:keydown={(e) => e.key === "Enter" && closePanel()}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="18" y1="6" x2="6" y2="18"/>
-                            <line x1="6" y1="6" x2="18" y2="18"/>
-                        </svg>
-                    </span>
+                    <div class="detail-modal-actions">
+                        <!-- Fullscreen / Restore Toggle Button -->
+                        <!-- svelte-ignore a11y-click-events-have-key-events -->
+                        <span class="detail-modal-fullscreen-btn"
+                              on:click={toggleFullscreen}
+                              role="button" tabindex="0"
+                              title={isFullscreen ? (t("restore_window") || "Restore window / 还原窗口") : (t("fullscreen_window") || "Full screen / 全屏放大")}
+                              on:keydown={(e) => e.key === "Enter" && toggleFullscreen()}>
+                            {#if isFullscreen}
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="4 14 10 14 10 20"/>
+                                    <polyline points="20 10 14 10 14 4"/>
+                                    <line x1="14" y1="10" x2="21" y2="3"/>
+                                    <line x1="3" y1="21" x2="10" y2="14"/>
+                                </svg>
+                            {:else}
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="15 3 21 3 21 9"/>
+                                    <polyline points="9 21 3 21 3 15"/>
+                                    <line x1="21" y1="3" x2="14" y2="10"/>
+                                    <line x1="3" y1="21" x2="10" y2="14"/>
+                                </svg>
+                            {/if}
+                        </span>
+
+                        <!-- Close button in modal mode -->
+                        <!-- svelte-ignore a11y-click-events-have-key-events -->
+                        <span class="detail-modal-close-btn"
+                              on:click={closePanel}
+                              role="button" tabindex="0"
+                              title="Close details (Esc)"
+                              on:keydown={(e) => e.key === "Enter" && closePanel()}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </span>
+                    </div>
                 {/if}
             </div>
 
@@ -2236,6 +2277,29 @@
             {#if isModal}
                 <!-- svelte-ignore a11y-click-events-have-key-events -->
                 <div class="detail-empty-modal-header">
+                    <span class="detail-modal-fullscreen-btn"
+                          on:click={toggleFullscreen}
+                          role="button" tabindex="0"
+                          title={isFullscreen ? (t("restore_window") || "Restore window / 还原窗口") : (t("fullscreen_window") || "Full screen / 全屏放大")}
+                          on:keydown={(e) => e.key === "Enter" && toggleFullscreen()}>
+                        {#if isFullscreen}
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="4 14 10 14 10 20"/>
+                                <polyline points="20 10 14 10 14 4"/>
+                                <line x1="14" y1="10" x2="21" y2="3"/>
+                                <line x1="3" y1="21" x2="10" y2="14"/>
+                            </svg>
+                        {:else}
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="15 3 21 3 21 9"/>
+                                <polyline points="9 21 3 21 3 15"/>
+                                <line x1="21" y1="3" x2="14" y2="10"/>
+                                <line x1="3" y1="21" x2="10" y2="14"/>
+                            </svg>
+                        {/if}
+                    </span>
                     <span class="detail-modal-close-btn"
                           on:click={closePanel}
                           role="button" tabindex="0"

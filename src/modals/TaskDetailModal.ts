@@ -37,6 +37,12 @@ export class TaskDetailModal extends Modal {
         modalEl.addClass("task-detail-floating-modal");
         contentEl.addClass("task-detail-modal-content");
 
+        const isFullscreen = this.plugin?.settings?.fullscreenDetailModal ?? true;
+        if (isFullscreen) {
+            modalEl.addClass("is-fullscreen");
+            this.containerEl.addClass("has-fullscreen-detail-modal");
+        }
+
         EventBus.on(EventName.DETAIL_CLOSE, this.detailCloseHandler);
 
         this.component = new TaskDetailView({
@@ -45,12 +51,25 @@ export class TaskDetailModal extends Modal {
                 dataService: this.dataService,
                 plugin: this.plugin,
                 isModal: true,
+                isFullscreen: isFullscreen,
                 onCloseModal: () => this.forceClose(),
+                onToggleFullscreen: (fullscreen: boolean) => {
+                    modalEl.toggleClass("is-fullscreen", fullscreen);
+                    this.containerEl.toggleClass("has-fullscreen-detail-modal", fullscreen);
+                },
             },
         });
 
         if (this.initialTask && this.initialCategoryFilepath) {
             this.component.loadTask(this.initialTask, this.initialCategoryFilepath);
+        }
+    }
+
+    public setFullscreen(fullscreen: boolean) {
+        this.modalEl.toggleClass("is-fullscreen", fullscreen);
+        this.containerEl.toggleClass("has-fullscreen-detail-modal", fullscreen);
+        if (this.component) {
+            this.component.$set({ isFullscreen: fullscreen });
         }
     }
 
@@ -89,6 +108,7 @@ export class TaskDetailModal extends Modal {
 
     onClose() {
         EventBus.off(EventName.DETAIL_CLOSE, this.detailCloseHandler);
+        this.containerEl.removeClass("has-fullscreen-detail-modal");
         if (this.component) {
             this.component.$destroy();
             this.component = null;

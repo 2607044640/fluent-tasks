@@ -173,6 +173,10 @@ const en = {
     copy: "Copy",
     cut: "Cut",
     close: "Close",
+    setting_fullscreen_detail_modal_title: "Full-Screen Task Details Modal",
+    setting_fullscreen_detail_modal_desc: "Open floating task details modal in full-screen mode (similar to Subtasks modal). When disabled, displays as a centered window card.",
+    restore_window: "Restore window",
+    fullscreen_window: "Full screen",
 };
 
 export default en;

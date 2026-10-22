@@ -175,6 +175,10 @@ const zhCn: typeof en = {
     copy: "复制",
     cut: "剪切",
     close: "关闭",
+    setting_fullscreen_detail_modal_title: "全屏任务详情弹窗",
+    setting_fullscreen_detail_modal_desc: "悬浮打开任务详情时以全屏状态展示（类似于子步骤全屏模式）。关闭后恢复为居中小窗口卡片。",
+    restore_window: "还原窗口",
+    fullscreen_window: "全屏放大",
 };
 
 export default zhCn;

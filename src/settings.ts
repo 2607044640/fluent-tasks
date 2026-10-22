@@ -5,6 +5,7 @@ import { t } from "./lang/helpers";
 export interface FluentTasksSettings {
     accentColor: string;
     openDetailInModal: boolean;
+    fullscreenDetailModal: boolean;
     hideLeftSidebar: boolean;
     autoExpandSidebarOnDrag: boolean;
     autoExpandSidebar: boolean;
@@ -35,6 +36,7 @@ export interface FluentTasksSettings {
 export const DEFAULT_SETTINGS: FluentTasksSettings = {
     accentColor: "#8b5cf6",
     openDetailInModal: false,
+    fullscreenDetailModal: true,
     hideLeftSidebar: false,
     autoExpandSidebarOnDrag: false,
     autoExpandSidebar: true,
@@ -113,6 +115,19 @@ export class FluentTasksSettingTab extends PluginSettingTab {
                         if (this.plugin.activeDetailModal) {
                             this.plugin.activeDetailModal.close();
                         }
+                    }
+                }));
+
+        new Setting(containerEl)
+            .setName(t("setting_fullscreen_detail_modal_title") || "Full-Screen Task Details Modal")
+            .setDesc(t("setting_fullscreen_detail_modal_desc") || "Open floating task details modal in full-screen mode (similar to Subtasks modal). When disabled, displays as a centered window card.")
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.fullscreenDetailModal ?? true)
+                .onChange(async (value) => {
+                    this.plugin.settings.fullscreenDetailModal = value;
+                    await this.plugin.saveSettings();
+                    if (this.plugin.activeDetailModal) {
+                        this.plugin.activeDetailModal.setFullscreen(value);
                     }
                 }));
 
