@@ -80,7 +80,7 @@
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <div class="task-img-preview-backdrop" on:click={closeModal}>
-    <div class="task-img-preview-card" on:click|stopPropagation>
+    <div class="task-img-preview-card" data-no-toolkit="true" on:click|stopPropagation>
         <!-- Top Toolbar -->
         <div class="task-img-preview-header">
             <div class="task-img-preview-title" title={fileName}>
@@ -140,6 +140,7 @@
                     src={resolvedSrc}
                     alt={fileName}
                     class="task-img-preview-image"
+                    data-no-toolkit="true"
                 />
             {:else}
                 <div class="task-img-preview-placeholder">Loading image...</div>

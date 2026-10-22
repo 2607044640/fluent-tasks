@@ -10587,6 +10587,7 @@ function create_if_block2(ctx) {
         ctx[1]
       );
       attr(img, "class", "task-img-preview-image svelte-1y7wt0j");
+      attr(img, "data-no-toolkit", "true");
     },
     m(target, anchor) {
       insert(target, img, anchor);
@@ -10829,6 +10830,7 @@ function create_fragment2(ctx) {
       attr(span5, "class", "task-img-preview-badge svelte-1y7wt0j");
       attr(div4, "class", "task-img-preview-footer svelte-1y7wt0j");
       attr(div5, "class", "task-img-preview-card svelte-1y7wt0j");
+      attr(div5, "data-no-toolkit", "true");
       attr(div6, "class", "task-img-preview-backdrop svelte-1y7wt0j");
     },
     m(target, anchor) {
@@ -11115,7 +11117,7 @@ var ImagePreviewModal = class extends import_obsidian10.Modal {
 
 // src/components/TaskImageThumbnail.svelte
 function add_css2(target) {
-  append_styles(target, "svelte-12hnrw5", ".task-image-thumbnail-container.svelte-12hnrw5.svelte-12hnrw5{position:relative;border-radius:8px;overflow:hidden;background-color:var(--background-secondary-alt);border:1px solid var(--background-modifier-border);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all 0.15s cubic-bezier(0.4, 0, 0.2, 1);box-sizing:border-box;flex-shrink:0;user-select:none}.task-image-thumbnail-container.svelte-12hnrw5.svelte-12hnrw5:hover{border-color:var(--interactive-accent);box-shadow:0 0 0 1px var(--interactive-accent), 0 2px 8px rgba(0, 0, 0, 0.25);transform:translateY(-1px)}.task-image-thumbnail-img.svelte-12hnrw5.svelte-12hnrw5{width:100%;height:100%;object-fit:cover;display:block;user-select:none;-webkit-user-drag:none}.task-image-thumbnail-empty.svelte-12hnrw5.svelte-12hnrw5{font-size:14px;opacity:0.6}.task-image-thumb-delete-btn.svelte-12hnrw5.svelte-12hnrw5{position:absolute;top:2px;right:2px;width:16px;height:16px;border-radius:50%;background:rgba(0, 0, 0, 0.68);color:#ffffff;border:none;padding:0;display:none;align-items:center;justify-content:center;cursor:pointer;transition:background-color 0.15s ease, transform 0.1s ease;z-index:2}.task-image-thumbnail-container.svelte-12hnrw5:hover .task-image-thumb-delete-btn.svelte-12hnrw5{display:flex}.task-image-thumb-delete-btn.svelte-12hnrw5.svelte-12hnrw5:hover{background:var(--text-error, #e54d2e);transform:scale(1.15)}");
+  append_styles(target, "svelte-lstc4e", ".task-image-thumbnail-container.svelte-lstc4e.svelte-lstc4e{position:relative;border-radius:8px;overflow:hidden;background-color:var(--background-secondary-alt);border:1px solid var(--background-modifier-border);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all 0.15s cubic-bezier(0.4, 0, 0.2, 1);box-sizing:border-box;flex-shrink:0;user-select:none}.task-image-thumbnail-container.svelte-lstc4e.svelte-lstc4e:hover{border-color:var(--interactive-accent);box-shadow:0 0 0 1px var(--interactive-accent), 0 2px 8px rgba(0, 0, 0, 0.25);transform:translateY(-1px)}.task-image-thumbnail-img.svelte-lstc4e.svelte-lstc4e{width:100%;height:100%;background-size:cover;background-position:center;background-repeat:no-repeat;display:block;user-select:none;-webkit-user-drag:none;border-radius:6px}.task-image-thumbnail-empty.svelte-lstc4e.svelte-lstc4e{font-size:14px;opacity:0.6}.task-image-thumb-delete-btn.svelte-lstc4e.svelte-lstc4e{position:absolute;top:2px;right:2px;width:16px;height:16px;border-radius:50%;background:rgba(0, 0, 0, 0.68);color:#ffffff;border:none;padding:0;display:none;align-items:center;justify-content:center;cursor:pointer;transition:background-color 0.15s ease, transform 0.1s ease;z-index:2}.task-image-thumbnail-container.svelte-lstc4e:hover .task-image-thumb-delete-btn.svelte-lstc4e{display:flex}.task-image-thumb-delete-btn.svelte-lstc4e.svelte-lstc4e:hover{background:var(--text-error, #e54d2e);transform:scale(1.15)}");
 }
 function create_else_block3(ctx) {
   let div;
@@ -11123,7 +11125,7 @@ function create_else_block3(ctx) {
     c() {
       div = element("div");
       div.textContent = "\u{1F5BC}\uFE0F";
-      attr(div, "class", "task-image-thumbnail-empty svelte-12hnrw5");
+      attr(div, "class", "task-image-thumbnail-empty svelte-lstc4e");
     },
     m(target, anchor) {
       insert(target, div, anchor);
@@ -11137,37 +11139,35 @@ function create_else_block3(ctx) {
   };
 }
 function create_if_block_12(ctx) {
-  let img;
-  let img_src_value;
+  let div;
   return {
     c() {
-      img = element("img");
-      if (!src_url_equal(img.src, img_src_value = /*resolvedSrc*/
-      ctx[4]))
-        attr(img, "src", img_src_value);
+      div = element("div");
+      attr(div, "class", "task-image-thumbnail-img svelte-lstc4e");
+      set_style(div, "background-image", "url('" + /*resolvedSrc*/
+      ctx[4] + "')");
+      attr(div, "role", "img");
       attr(
-        img,
-        "alt",
+        div,
+        "aria-label",
         /*fileName*/
         ctx[3]
       );
-      attr(img, "class", "task-image-thumbnail-img svelte-12hnrw5");
-      attr(img, "loading", "lazy");
     },
     m(target, anchor) {
-      insert(target, img, anchor);
+      insert(target, div, anchor);
     },
     p(ctx2, dirty) {
       if (dirty & /*resolvedSrc*/
-      16 && !src_url_equal(img.src, img_src_value = /*resolvedSrc*/
-      ctx2[4])) {
-        attr(img, "src", img_src_value);
+      16) {
+        set_style(div, "background-image", "url('" + /*resolvedSrc*/
+        ctx2[4] + "')");
       }
       if (dirty & /*fileName*/
       8) {
         attr(
-          img,
-          "alt",
+          div,
+          "aria-label",
           /*fileName*/
           ctx2[3]
         );
@@ -11175,7 +11175,7 @@ function create_if_block_12(ctx) {
     },
     d(detaching) {
       if (detaching) {
-        detach(img);
+        detach(div);
       }
     }
   };
@@ -11190,7 +11190,7 @@ function create_if_block3(ctx) {
       button = element("button");
       button.innerHTML = `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
       attr(button, "type", "button");
-      attr(button, "class", "task-image-thumb-delete-btn svelte-12hnrw5");
+      attr(button, "class", "task-image-thumb-delete-btn svelte-lstc4e");
       attr(button, "title", button_title_value = t("image_delete_tooltip") || "Remove image (Ctrl+X) / \u79FB\u9664\u56FE\u7247");
     },
     m(target, anchor) {
@@ -11243,7 +11243,8 @@ function create_fragment3(ctx) {
       t_1 = space();
       if (if_block1)
         if_block1.c();
-      attr(div, "class", "task-image-thumbnail-container svelte-12hnrw5");
+      attr(div, "class", "task-image-thumbnail-container svelte-lstc4e");
+      attr(div, "data-no-toolkit", "true");
       set_style(
         div,
         "width",

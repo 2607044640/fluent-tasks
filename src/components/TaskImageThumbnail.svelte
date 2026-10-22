@@ -57,6 +57,7 @@
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <div
     class="task-image-thumbnail-container"
+    data-no-toolkit="true"
     style="width: {size}px; height: {size}px; min-width: {size}px; min-height: {size}px;"
     role="button"
     tabindex="0"
@@ -66,12 +67,12 @@
     on:mouseleave={handleMouseLeave}
 >
     {#if resolvedSrc}
-        <img
-            src={resolvedSrc}
-            alt={fileName}
+        <div
             class="task-image-thumbnail-img"
-            loading="lazy"
-        />
+            style="background-image: url('{resolvedSrc}');"
+            role="img"
+            aria-label={fileName}
+        ></div>
     {:else}
         <div class="task-image-thumbnail-empty">🖼️</div>
     {/if}
@@ -117,10 +118,13 @@
     .task-image-thumbnail-img {
         width: 100%;
         height: 100%;
-        object-fit: cover;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
         display: block;
         user-select: none;
         -webkit-user-drag: none;
+        border-radius: 6px;
     }
 
     .task-image-thumbnail-empty {
