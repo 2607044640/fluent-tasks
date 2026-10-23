@@ -8,6 +8,7 @@
     import { SAVE_DEBOUNCE_MS } from "./constants";
     import { portal, autosize, longPress } from "./utils/domUtils";
     import { ensureStepIds, persistableSteps, reconcileDndSteps } from "./utils/stepIds";
+    import { isTaskEmpty, isStepEmpty } from "./utils/taskUtils";
     import { DAY_LABELS, formatExactTime, getRelativeTime, getRecurrenceLabel } from "./utils/timeUtils";
     import { LinkedNoteService } from "./services/LinkedNoteService";
     import { promptDeleteTaskWithLinkedNote } from "./modals/ConfirmDeleteLinkedNoteModal";
@@ -373,7 +374,41 @@
         loadTask(payload.task, payload.categoryFilepath);
     }
 
+    async function checkAndDeleteEmptyTask(): Promise<boolean> {
+        if (!task || !categoryFilepath || !isTaskEmpty(task)) {
+            return false;
+        }
+        if (saveTimeout) {
+            clearTimeout(saveTimeout);
+            saveTimeout = null;
+        }
+        const toDelete = task;
+        const path = categoryFilepath;
+        task = null;
+        categoryFilepath = "";
+        showScheduleSection = false;
+        showRepeatPicker = false;
+        showAddMetaModal = false;
+        showMetaSaveConfirmModal = false;
+        initialMetaSnapshot = "";
+        EventBus.emit(EventName.DETAIL_CLOSE, {});
+        try {
+            await dataService.deleteTask(path, toDelete);
+            EventBus.emit(EventName.TASK_DELETED, { task: toDelete, categoryFilepath: path });
+        } catch (err) {
+            console.error("Failed to delete empty task:", err);
+        }
+        if (isModal && onCloseModal) {
+            onCloseModal();
+        }
+        return true;
+    }
+
     function handleClose() {
+        if (task && isTaskEmpty(task)) {
+            void checkAndDeleteEmptyTask();
+            return;
+        }
         if (saveTimeout) {
             clearTimeout(saveTimeout);
             saveTimeout = null;
@@ -429,6 +464,13 @@
         if (saveTimeout) clearTimeout(saveTimeout);
         saveTimeout = setTimeout(async () => {
             if (!task || !categoryFilepath || isDraggingSteps) return;
+            if (isTaskEmpty(task)) {
+                if (focusedTarget?.type === 'title') {
+                    return;
+                }
+                await checkAndDeleteEmptyTask();
+                return;
+            }
             task.steps = persistableSteps(task.steps);
             if (task.task_note && plugin?.app) {
                 const syncRes = await LinkedNoteService.syncTaskTitleToNote(plugin.app, task, categoryFilepath, dataService);
@@ -467,12 +509,21 @@
         if (isComposingTitle) {
             isComposingTitle = false;
         }
+        if (task && isTaskEmpty(task)) {
+            void checkAndDeleteEmptyTask();
+            return;
+        }
         void immediateSave();
     }
 
     function handleTitleKeydown(e: KeyboardEvent) {
+        if (e.isComposing || isComposingTitle || e.keyCode === 229) return;
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
+            if (task && isTaskEmpty(task)) {
+                void checkAndDeleteEmptyTask();
+                return;
+            }
             (e.currentTarget as HTMLElement).blur();
         }
     }
@@ -499,6 +550,10 @@
     async function immediateSave() {
         if (saveTimeout) clearTimeout(saveTimeout);
         if (!task || !categoryFilepath || isDraggingSteps) return;
+        if (isTaskEmpty(task)) {
+            await checkAndDeleteEmptyTask();
+            return;
+        }
         task.steps = persistableSteps(task.steps);
         if (task.task_note && plugin?.app) {
             const syncRes = await LinkedNoteService.syncTaskTitleToNote(plugin.app, task, categoryFilepath, dataService);
@@ -670,13 +725,11 @@
         if (!task) return;
         removeImageFromTaskTitle(task, imageRef);
         task = task;
+        if (isTaskEmpty(task)) {
+            void checkAndDeleteEmptyTask();
+            return;
+        }
         immediateSave();
-    }
-
-    function isStepEmpty(step: TaskStep): boolean {
-        const hasText = !!step.text && step.text.trim().length > 0;
-        const hasImages = getStepImages(step).length > 0;
-        return !hasText && !hasImages;
     }
 
     function removeImageFromStep(stepId: string | undefined, imageRef: string) {
@@ -944,6 +997,10 @@
     // Footer Actions
     // =============================================
     function closePanel() {
+        if (task && isTaskEmpty(task)) {
+            void checkAndDeleteEmptyTask();
+            return;
+        }
         if (saveTimeout) {
             clearTimeout(saveTimeout);
             saveTimeout = null;

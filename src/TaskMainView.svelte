@@ -9,7 +9,7 @@
     import { portal } from "./utils/domUtils";
     import { calculatePopoverPosition, type PopoverContentType } from "./utils/popoverUtils";
     import { getRelativeTime, getRecurrenceLabel } from "./utils/timeUtils";
-    import { getTaskWeight, clampTaskWeight, applyWeightSort } from "./utils/taskUtils";
+    import { getTaskWeight, clampTaskWeight, applyWeightSort, isTaskEmpty } from "./utils/taskUtils";
     import { DISK_SYNC_DELAY_MS, ANTI_FLICKER_DURATION_MS, POPOVER_HIDE_DELAY_MS } from "./constants";
     import { Menu, setIcon, Platform, Notice, ItemView, type App } from "obsidian";
     import { TaskSearchModal } from "./TaskSearchModal";
@@ -2058,11 +2058,22 @@
     async function removeImageFromMainTaskTitle(task: TaskItem, imageRef: string) {
         removeImageFromTaskTitle(task, imageRef);
         if (hoveredThumbnail?.imageRef === imageRef) hoveredThumbnail = null;
-        incompleteTasks = [...incompleteTasks];
-        completedTasks = [...completedTasks];
         const targetCatPath = (currentCategory?.filepath === STARRED_CATEGORY_PATH && task.sourceFilepath)
             ? task.sourceFilepath
             : (currentCategory?.filepath || task.sourceFilepath || "");
+        if (isTaskEmpty(task)) {
+            incompleteTasks = incompleteTasks.filter(t => t.id !== task.id);
+            completedTasks = completedTasks.filter(t => t.id !== task.id);
+            rawIncompleteTasks = rawIncompleteTasks.filter(t => t.id !== task.id);
+            rawCompletedTasks = rawCompletedTasks.filter(t => t.id !== task.id);
+            if (targetCatPath) {
+                await dataService.deleteTask(targetCatPath, task);
+                EventBus.emit(EventName.TASK_DELETED, { task, categoryFilepath: targetCatPath });
+            }
+            return;
+        }
+        incompleteTasks = [...incompleteTasks];
+        completedTasks = [...completedTasks];
         if (targetCatPath) {
             await dataService.updateTask(targetCatPath, task);
             EventBus.emit(EventName.TASK_UPDATED, {

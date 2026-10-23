@@ -10087,7 +10087,431 @@ function calculatePopoverPosition(targetEl, type) {
   return { placement, x, y };
 }
 
+// src/utils/imageAttachmentUtils.ts
+var import_obsidian8 = require("obsidian");
+function getTimestampString() {
+  const d = /* @__PURE__ */ new Date();
+  const pad = (n) => n.toString().padStart(2, "0");
+  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+}
+async function saveImageAttachment(file, app, sourceFilepath) {
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    let ext = "png";
+    if (file.type === "image/jpeg")
+      ext = "jpg";
+    else if (file.type === "image/webp")
+      ext = "webp";
+    else if (file.type === "image/gif")
+      ext = "gif";
+    else if (file.type === "image/svg+xml")
+      ext = "svg";
+    else if ("name" in file && typeof file.name === "string" && file.name.includes(".")) {
+      const parts = file.name.split(".");
+      ext = parts[parts.length - 1].toLowerCase();
+    }
+    const filename = `Pasted image ${getTimestampString()}.${ext}`;
+    let availablePath;
+    const fileManager = app.fileManager;
+    if (fileManager && typeof fileManager.getAvailablePathForAttachment === "function") {
+      try {
+        availablePath = await fileManager.getAvailablePathForAttachment(filename, sourceFilepath);
+      } catch (err) {
+        console.warn("[FluentTasks] getAvailablePathForAttachment fallback:", err);
+        availablePath = await fallbackAttachmentPath(app, filename);
+      }
+    } else {
+      availablePath = await fallbackAttachmentPath(app, filename);
+    }
+    const lastSlash = availablePath.lastIndexOf("/");
+    if (lastSlash > 0) {
+      const parentDir = availablePath.substring(0, lastSlash);
+      if (!await app.vault.adapter.exists(parentDir)) {
+        await app.vault.createFolder(parentDir).catch(() => {
+        });
+      }
+    }
+    const createdFile = await app.vault.createBinary(availablePath, arrayBuffer);
+    return createdFile.path;
+  } catch (error) {
+    console.error("[FluentTasks] Failed to save image attachment:", error);
+    new import_obsidian8.Notice("Failed to save image attachment / \u4FDD\u5B58\u56FE\u7247\u9644\u4EF6\u5931\u8D25");
+    return null;
+  }
+}
+async function fallbackAttachmentPath(app, filename) {
+  const defaultFolder = "TodoData/attachments";
+  if (!await app.vault.adapter.exists(defaultFolder)) {
+    try {
+      await app.vault.createFolder(defaultFolder);
+    } catch (e) {
+    }
+  }
+  let targetPath = `${defaultFolder}/${filename}`;
+  let counter = 1;
+  while (await app.vault.adapter.exists(targetPath)) {
+    const extIdx = filename.lastIndexOf(".");
+    const base = extIdx > 0 ? filename.slice(0, extIdx) : filename;
+    const ext = extIdx > 0 ? filename.slice(extIdx) : ".png";
+    targetPath = `${defaultFolder}/${base} ${counter}${ext}`;
+    counter++;
+  }
+  return targetPath;
+}
+function resolveImageResourceUrl(imageRef, app) {
+  var _a, _b;
+  if (!imageRef)
+    return "";
+  const trimmed = imageRef.trim();
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("data:") || trimmed.startsWith("app://")) {
+    return trimmed;
+  }
+  let clean = trimmed.replace(/^!*\[\[(.*?)\]\]$/, "$1").trim();
+  if (clean.includes("|")) {
+    clean = clean.split("|")[0].trim();
+  }
+  const mdMatch = clean.match(/^!\[.*?\]\((.*?)\)$/);
+  if (mdMatch) {
+    clean = mdMatch[1].trim();
+  }
+  const directFile = app.vault.getAbstractFileByPath(clean);
+  if (directFile instanceof import_obsidian8.TFile) {
+    return app.vault.getResourcePath(directFile);
+  }
+  const linkFile = app.metadataCache.getFirstLinkpathDest(clean, "");
+  if (linkFile instanceof import_obsidian8.TFile) {
+    return app.vault.getResourcePath(linkFile);
+  }
+  if ((_b = (_a = app.vault) == null ? void 0 : _a.adapter) == null ? void 0 : _b.getResourcePath) {
+    try {
+      return app.vault.adapter.getResourcePath(clean);
+    } catch (e) {
+    }
+  }
+  return clean;
+}
+async function copyImageToClipboard(imageRef, app, noticeMsg) {
+  if (!imageRef)
+    return false;
+  let clean = imageRef.trim().replace(/^!*\[\[(.*?)\]\]$/, "$1").trim();
+  if (clean.includes("|")) {
+    clean = clean.split("|")[0].trim();
+  }
+  const mdMatch = clean.match(/^!\[.*?\]\((.*?)\)$/);
+  if (mdMatch) {
+    clean = mdMatch[1].trim();
+  }
+  let file = app.vault.getAbstractFileByPath(clean);
+  if (!(file instanceof import_obsidian8.TFile)) {
+    file = app.metadataCache.getFirstLinkpathDest(clean, "");
+  }
+  let copied = false;
+  const electron = window.require ? window.require("electron") : null;
+  if (file instanceof import_obsidian8.TFile && (electron == null ? void 0 : electron.clipboard) && (electron == null ? void 0 : electron.nativeImage)) {
+    try {
+      const ext = file.extension.toLowerCase();
+      if (ext !== "svg" && app.vault.adapter.getFullPath) {
+        const fullDiskPath = app.vault.adapter.getFullPath(file.path);
+        const nativeImg = electron.nativeImage.createFromPath(fullDiskPath);
+        if (nativeImg && !nativeImg.isEmpty()) {
+          electron.clipboard.writeImage(nativeImg);
+          copied = true;
+        }
+      }
+    } catch (e) {
+    }
+  }
+  const resourceUrl = resolveImageResourceUrl(imageRef, app);
+  if (resourceUrl) {
+    try {
+      await new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+          try {
+            const canvas = createEl("canvas");
+            canvas.width = img.naturalWidth || img.width || 400;
+            canvas.height = img.naturalHeight || img.height || 300;
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+              ctx.imageSmoothingEnabled = true;
+              ctx.imageSmoothingQuality = "high";
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+              if (!copied && (electron == null ? void 0 : electron.clipboard) && (electron == null ? void 0 : electron.nativeImage)) {
+                try {
+                  const dataUrl = canvas.toDataURL("image/png");
+                  const nativeImg = electron.nativeImage.createFromDataURL(dataUrl);
+                  if (nativeImg && !nativeImg.isEmpty()) {
+                    electron.clipboard.writeImage(nativeImg);
+                    copied = true;
+                  }
+                } catch (e) {
+                  console.warn("[FluentTasks] Canvas to nativeImage failed:", e);
+                }
+              }
+              canvas.toBlob(async (blob) => {
+                if (blob && navigator.clipboard && navigator.clipboard.write) {
+                  try {
+                    await navigator.clipboard.write([
+                      new ClipboardItem({ "image/png": blob })
+                    ]);
+                    copied = true;
+                  } catch (err) {
+                    if (!copied)
+                      console.warn("[FluentTasks] Web Clipboard write failed:", err);
+                  }
+                }
+                resolve();
+              }, "image/png");
+              return;
+            }
+          } catch (e) {
+            console.warn("[FluentTasks] Canvas processing error:", e);
+          }
+          resolve();
+        };
+        img.onerror = () => resolve();
+        img.src = resourceUrl;
+      });
+    } catch (err) {
+      console.warn("[FluentTasks] Canvas copy error:", err);
+    }
+  }
+  if (!copied && file instanceof import_obsidian8.TFile && (electron == null ? void 0 : electron.clipboard) && (electron == null ? void 0 : electron.nativeImage)) {
+    try {
+      const arrayBuf = await app.vault.readBinary(file);
+      const winBuf = window.Buffer;
+      const nodeBuf = winBuf ? winBuf.from(arrayBuf) : null;
+      if (nodeBuf) {
+        const nativeImg = electron.nativeImage.createFromBuffer(nodeBuf);
+        if (nativeImg && !nativeImg.isEmpty()) {
+          electron.clipboard.writeImage(nativeImg);
+          copied = true;
+        }
+      }
+    } catch (err) {
+      console.warn("[FluentTasks] Buffer copy fallback error:", err);
+    }
+  }
+  if (copied) {
+    new import_obsidian8.Notice(noticeMsg || t("image_copied") || "Image copied to clipboard / \u56FE\u7247\u5DF2\u590D\u5236\u5230\u526A\u8D34\u677F");
+    return true;
+  } else {
+    new import_obsidian8.Notice("Failed to copy image / \u590D\u5236\u56FE\u7247\u5931\u8D25");
+    return false;
+  }
+}
+function extractImageRefs(text2) {
+  if (!text2)
+    return [];
+  const results = [];
+  const wikiRegex = /!\[\[([^\]\n]+)\]\]/g;
+  let match;
+  while ((match = wikiRegex.exec(text2)) !== null) {
+    let ref = match[1].trim();
+    if (ref.includes("|")) {
+      ref = ref.split("|")[0].trim();
+    }
+    if (isImageExtension(ref) && !results.includes(ref)) {
+      results.push(ref);
+    }
+  }
+  const mdRegex = /!\[.*?\]\(([^)\n]+)\)/g;
+  while ((match = mdRegex.exec(text2)) !== null) {
+    const ref = match[1].trim();
+    if (isImageExtension(ref) && !results.includes(ref)) {
+      results.push(ref);
+    }
+  }
+  return results;
+}
+function isImageExtension(path) {
+  const lower = path.toLowerCase().split("?")[0].split("#")[0];
+  return lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".webp") || lower.endsWith(".gif") || lower.endsWith(".svg") || lower.endsWith(".bmp");
+}
+function removeImageRefFromText(text2, imageRef) {
+  if (!text2 || !imageRef)
+    return text2;
+  let clean = imageRef.replace(/^!*\[\[(.*?)\]\]$/, "$1").trim();
+  if (clean.includes("|"))
+    clean = clean.split("|")[0].trim();
+  const escapedClean = clean.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const wikiPattern = new RegExp(`!\\s*\\[\\[${escapedClean}(?:\\|[^\\]]*)?\\]\\]`, "gi");
+  let updated = text2.replace(wikiPattern, "");
+  const mdPattern = new RegExp(`!\\s*\\[[^\\]]*\\]\\(${escapedClean}\\)`, "gi");
+  updated = updated.replace(mdPattern, "");
+  return updated.replace(/\n\s*\n\s*\n/g, "\n\n").trim();
+}
+function getImageBaseName(imageRef) {
+  if (!imageRef)
+    return "";
+  let clean = imageRef.replace(/^!*\[\[(.*?)\]\]$/, "$1").trim();
+  if (clean.includes("|"))
+    clean = clean.split("|")[0].trim();
+  const parts = clean.split("/");
+  return parts[parts.length - 1] || clean;
+}
+function getImagesFromClipboard(e) {
+  const result = [];
+  const clipboardData = e.clipboardData;
+  if (clipboardData) {
+    const items = clipboardData.items;
+    if (items && items.length > 0) {
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.startsWith("image/")) {
+          const file = items[i].getAsFile();
+          if (file)
+            result.push(file);
+        }
+      }
+    }
+    if (result.length === 0 && clipboardData.files && clipboardData.files.length > 0) {
+      for (let i = 0; i < clipboardData.files.length; i++) {
+        if (clipboardData.files[i].type.startsWith("image/")) {
+          result.push(clipboardData.files[i]);
+        }
+      }
+    }
+  }
+  if (result.length === 0) {
+    try {
+      const electron = window.require ? window.require("electron") : null;
+      if (electron == null ? void 0 : electron.clipboard) {
+        const nativeImg = electron.clipboard.readImage();
+        if (nativeImg && !nativeImg.isEmpty()) {
+          const buf = nativeImg.toPNG();
+          const file = new File([buf], `Pasted image ${getTimestampString()}.png`, {
+            type: "image/png"
+          });
+          result.push(file);
+        }
+      }
+    } catch (e2) {
+    }
+  }
+  return result;
+}
+function isSameImageRef(a, b) {
+  if (!a || !b)
+    return false;
+  if (a === b)
+    return true;
+  const cleanA = a.replace(/^!*\[\[(.*?)\]\]$/, "$1").split("|")[0].trim().toLowerCase();
+  const cleanB = b.replace(/^!*\[\[(.*?)\]\]$/, "$1").split("|")[0].trim().toLowerCase();
+  if (cleanA === cleanB)
+    return true;
+  const baseA = cleanA.split("/").pop();
+  const baseB = cleanB.split("/").pop();
+  return !!baseA && baseA === baseB;
+}
+function getTitleImages(t2) {
+  if (!t2)
+    return [];
+  const fromArray = t2.titleImages || [];
+  const fromText = extractImageRefs(t2.title || "");
+  const combined = [...fromArray];
+  for (const ref of fromText) {
+    if (!combined.some((existing) => isSameImageRef(existing, ref))) {
+      combined.push(ref);
+    }
+  }
+  return combined;
+}
+function getNoteImages(t2) {
+  if (!t2)
+    return [];
+  const fromArray = t2.images || [];
+  const fromText = extractImageRefs(t2.note || "");
+  const combined = [...fromArray];
+  for (const ref of fromText) {
+    if (!combined.some((existing) => isSameImageRef(existing, ref))) {
+      combined.push(ref);
+    }
+  }
+  return combined;
+}
+function getStepImages(step) {
+  if (!step)
+    return [];
+  const fromArray = step.images || [];
+  const fromText = extractImageRefs(step.text || "");
+  const combined = [...fromArray];
+  for (const ref of fromText) {
+    if (!combined.some((existing) => isSameImageRef(existing, ref))) {
+      combined.push(ref);
+    }
+  }
+  return combined;
+}
+function cleanDisplayTitle(title) {
+  if (!title)
+    return "";
+  return title.replace(/!\[\[([^\]\n]+)\]\]/g, "").replace(/!\[.*?\]\(([^)\n]+)\)/g, "").replace(/\n\s*\n\s*\n/g, "\n\n").trim();
+}
+function removeImageFromTaskTitle(task, imageRef) {
+  if (!task || !imageRef)
+    return;
+  if (task.titleImages) {
+    task.titleImages = task.titleImages.filter((img) => !isSameImageRef(img, imageRef));
+  }
+  task.title = removeImageRefFromText(task.title || "", imageRef);
+}
+function removeImageFromTaskNote(task, imageRef) {
+  if (!task || !imageRef)
+    return;
+  if (task.images) {
+    task.images = task.images.filter((img) => !isSameImageRef(img, imageRef));
+  }
+  task.note = removeImageRefFromText(task.note || "", imageRef);
+}
+function removeImageFromStepItem(step, imageRef) {
+  if (!step || !imageRef)
+    return;
+  if (step.images) {
+    step.images = step.images.filter((img) => !isSameImageRef(img, imageRef));
+  }
+  step.text = removeImageRefFromText(step.text || "", imageRef);
+}
+
 // src/utils/taskUtils.ts
+function isStepEmpty(step) {
+  const hasText = !!step.text && step.text.trim().length > 0;
+  const hasImages = getStepImages(step).length > 0;
+  return !hasText && !hasImages;
+}
+function isTaskEmpty(task) {
+  if (!task)
+    return false;
+  const hasTitle = cleanDisplayTitle(task.title || "").trim().length > 0 || getTitleImages(task).length > 0;
+  if (hasTitle)
+    return false;
+  const noteClean = (task.note || "").replace(/!\[\[([^\]\n]+)\]\]/g, "").replace(/!\[.*?\]\(([^)\n]+)\)/g, "").trim();
+  const hasNote = noteClean.length > 0 || getNoteImages(task).length > 0;
+  if (hasNote)
+    return false;
+  const hasWhy = !!task.why && task.why.trim().length > 0 || !!task.whys && task.whys.some((w) => !!w && w.trim().length > 0);
+  if (hasWhy)
+    return false;
+  const hasSteps = !!task.steps && task.steps.some((s) => !isStepEmpty(s));
+  if (hasSteps)
+    return false;
+  const hasSvgs = !!task.svgs && task.svgs.length > 0;
+  if (hasSvgs)
+    return false;
+  const hasTaskNote = !!task.task_note && task.task_note.trim().length > 0;
+  if (hasTaskNote)
+    return false;
+  const hasNoteLink = !!task.note_link && task.note_link.trim().length > 0;
+  if (hasNoteLink)
+    return false;
+  const hasNoteLinks = !!task.note_links && task.note_links.some((nl) => !!nl && nl.trim().length > 0);
+  if (hasNoteLinks)
+    return false;
+  const hasCustom = !!task.customMeta && Object.values(task.customMeta).some((v) => v !== null && v !== void 0 && (typeof v !== "string" || v.trim().length > 0));
+  if (hasCustom)
+    return false;
+  return true;
+}
 function getTaskWeight(task) {
   if (typeof task.weight === "number" && !isNaN(task.weight) && task.weight >= MIN_TASK_WEIGHT && task.weight <= MAX_TASK_WEIGHT) {
     return task.weight;
@@ -10113,8 +10537,8 @@ function applyWeightSort(items, enableWeightMode = false) {
 var import_obsidian17 = require("obsidian");
 
 // src/modals/ConfirmDeleteLinkedNoteModal.ts
-var import_obsidian8 = require("obsidian");
-var ConfirmDeleteLinkedNoteModal = class extends import_obsidian8.Modal {
+var import_obsidian9 = require("obsidian");
+var ConfirmDeleteLinkedNoteModal = class extends import_obsidian9.Modal {
   constructor(app, task, noteFile, onDecision) {
     super(app);
     this.hasDecided = false;
@@ -10320,392 +10744,6 @@ function reconcileDndSteps(preDragSteps, incomingItems, trigger) {
     result.push(...missing);
   }
   return result;
-}
-
-// src/utils/imageAttachmentUtils.ts
-var import_obsidian9 = require("obsidian");
-function getTimestampString() {
-  const d = /* @__PURE__ */ new Date();
-  const pad = (n) => n.toString().padStart(2, "0");
-  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
-}
-async function saveImageAttachment(file, app, sourceFilepath) {
-  try {
-    const arrayBuffer = await file.arrayBuffer();
-    let ext = "png";
-    if (file.type === "image/jpeg")
-      ext = "jpg";
-    else if (file.type === "image/webp")
-      ext = "webp";
-    else if (file.type === "image/gif")
-      ext = "gif";
-    else if (file.type === "image/svg+xml")
-      ext = "svg";
-    else if ("name" in file && typeof file.name === "string" && file.name.includes(".")) {
-      const parts = file.name.split(".");
-      ext = parts[parts.length - 1].toLowerCase();
-    }
-    const filename = `Pasted image ${getTimestampString()}.${ext}`;
-    let availablePath;
-    const fileManager = app.fileManager;
-    if (fileManager && typeof fileManager.getAvailablePathForAttachment === "function") {
-      try {
-        availablePath = await fileManager.getAvailablePathForAttachment(filename, sourceFilepath);
-      } catch (err) {
-        console.warn("[FluentTasks] getAvailablePathForAttachment fallback:", err);
-        availablePath = await fallbackAttachmentPath(app, filename);
-      }
-    } else {
-      availablePath = await fallbackAttachmentPath(app, filename);
-    }
-    const lastSlash = availablePath.lastIndexOf("/");
-    if (lastSlash > 0) {
-      const parentDir = availablePath.substring(0, lastSlash);
-      if (!await app.vault.adapter.exists(parentDir)) {
-        await app.vault.createFolder(parentDir).catch(() => {
-        });
-      }
-    }
-    const createdFile = await app.vault.createBinary(availablePath, arrayBuffer);
-    return createdFile.path;
-  } catch (error) {
-    console.error("[FluentTasks] Failed to save image attachment:", error);
-    new import_obsidian9.Notice("Failed to save image attachment / \u4FDD\u5B58\u56FE\u7247\u9644\u4EF6\u5931\u8D25");
-    return null;
-  }
-}
-async function fallbackAttachmentPath(app, filename) {
-  const defaultFolder = "TodoData/attachments";
-  if (!await app.vault.adapter.exists(defaultFolder)) {
-    try {
-      await app.vault.createFolder(defaultFolder);
-    } catch (e) {
-    }
-  }
-  let targetPath = `${defaultFolder}/${filename}`;
-  let counter = 1;
-  while (await app.vault.adapter.exists(targetPath)) {
-    const extIdx = filename.lastIndexOf(".");
-    const base = extIdx > 0 ? filename.slice(0, extIdx) : filename;
-    const ext = extIdx > 0 ? filename.slice(extIdx) : ".png";
-    targetPath = `${defaultFolder}/${base} ${counter}${ext}`;
-    counter++;
-  }
-  return targetPath;
-}
-function resolveImageResourceUrl(imageRef, app) {
-  var _a, _b;
-  if (!imageRef)
-    return "";
-  const trimmed = imageRef.trim();
-  if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("data:") || trimmed.startsWith("app://")) {
-    return trimmed;
-  }
-  let clean = trimmed.replace(/^!*\[\[(.*?)\]\]$/, "$1").trim();
-  if (clean.includes("|")) {
-    clean = clean.split("|")[0].trim();
-  }
-  const mdMatch = clean.match(/^!\[.*?\]\((.*?)\)$/);
-  if (mdMatch) {
-    clean = mdMatch[1].trim();
-  }
-  const directFile = app.vault.getAbstractFileByPath(clean);
-  if (directFile instanceof import_obsidian9.TFile) {
-    return app.vault.getResourcePath(directFile);
-  }
-  const linkFile = app.metadataCache.getFirstLinkpathDest(clean, "");
-  if (linkFile instanceof import_obsidian9.TFile) {
-    return app.vault.getResourcePath(linkFile);
-  }
-  if ((_b = (_a = app.vault) == null ? void 0 : _a.adapter) == null ? void 0 : _b.getResourcePath) {
-    try {
-      return app.vault.adapter.getResourcePath(clean);
-    } catch (e) {
-    }
-  }
-  return clean;
-}
-async function copyImageToClipboard(imageRef, app, noticeMsg) {
-  if (!imageRef)
-    return false;
-  let clean = imageRef.trim().replace(/^!*\[\[(.*?)\]\]$/, "$1").trim();
-  if (clean.includes("|")) {
-    clean = clean.split("|")[0].trim();
-  }
-  const mdMatch = clean.match(/^!\[.*?\]\((.*?)\)$/);
-  if (mdMatch) {
-    clean = mdMatch[1].trim();
-  }
-  let file = app.vault.getAbstractFileByPath(clean);
-  if (!(file instanceof import_obsidian9.TFile)) {
-    file = app.metadataCache.getFirstLinkpathDest(clean, "");
-  }
-  let copied = false;
-  const electron = window.require ? window.require("electron") : null;
-  if (file instanceof import_obsidian9.TFile && (electron == null ? void 0 : electron.clipboard) && (electron == null ? void 0 : electron.nativeImage)) {
-    try {
-      const ext = file.extension.toLowerCase();
-      if (ext !== "svg" && app.vault.adapter.getFullPath) {
-        const fullDiskPath = app.vault.adapter.getFullPath(file.path);
-        const nativeImg = electron.nativeImage.createFromPath(fullDiskPath);
-        if (nativeImg && !nativeImg.isEmpty()) {
-          electron.clipboard.writeImage(nativeImg);
-          copied = true;
-        }
-      }
-    } catch (e) {
-    }
-  }
-  const resourceUrl = resolveImageResourceUrl(imageRef, app);
-  if (resourceUrl) {
-    try {
-      await new Promise((resolve) => {
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.onload = () => {
-          try {
-            const canvas = createEl("canvas");
-            canvas.width = img.naturalWidth || img.width || 400;
-            canvas.height = img.naturalHeight || img.height || 300;
-            const ctx = canvas.getContext("2d");
-            if (ctx) {
-              ctx.imageSmoothingEnabled = true;
-              ctx.imageSmoothingQuality = "high";
-              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-              if (!copied && (electron == null ? void 0 : electron.clipboard) && (electron == null ? void 0 : electron.nativeImage)) {
-                try {
-                  const dataUrl = canvas.toDataURL("image/png");
-                  const nativeImg = electron.nativeImage.createFromDataURL(dataUrl);
-                  if (nativeImg && !nativeImg.isEmpty()) {
-                    electron.clipboard.writeImage(nativeImg);
-                    copied = true;
-                  }
-                } catch (e) {
-                  console.warn("[FluentTasks] Canvas to nativeImage failed:", e);
-                }
-              }
-              canvas.toBlob(async (blob) => {
-                if (blob && navigator.clipboard && navigator.clipboard.write) {
-                  try {
-                    await navigator.clipboard.write([
-                      new ClipboardItem({ "image/png": blob })
-                    ]);
-                    copied = true;
-                  } catch (err) {
-                    if (!copied)
-                      console.warn("[FluentTasks] Web Clipboard write failed:", err);
-                  }
-                }
-                resolve();
-              }, "image/png");
-              return;
-            }
-          } catch (e) {
-            console.warn("[FluentTasks] Canvas processing error:", e);
-          }
-          resolve();
-        };
-        img.onerror = () => resolve();
-        img.src = resourceUrl;
-      });
-    } catch (err) {
-      console.warn("[FluentTasks] Canvas copy error:", err);
-    }
-  }
-  if (!copied && file instanceof import_obsidian9.TFile && (electron == null ? void 0 : electron.clipboard) && (electron == null ? void 0 : electron.nativeImage)) {
-    try {
-      const arrayBuf = await app.vault.readBinary(file);
-      const winBuf = window.Buffer;
-      const nodeBuf = winBuf ? winBuf.from(arrayBuf) : null;
-      if (nodeBuf) {
-        const nativeImg = electron.nativeImage.createFromBuffer(nodeBuf);
-        if (nativeImg && !nativeImg.isEmpty()) {
-          electron.clipboard.writeImage(nativeImg);
-          copied = true;
-        }
-      }
-    } catch (err) {
-      console.warn("[FluentTasks] Buffer copy fallback error:", err);
-    }
-  }
-  if (copied) {
-    new import_obsidian9.Notice(noticeMsg || t("image_copied") || "Image copied to clipboard / \u56FE\u7247\u5DF2\u590D\u5236\u5230\u526A\u8D34\u677F");
-    return true;
-  } else {
-    new import_obsidian9.Notice("Failed to copy image / \u590D\u5236\u56FE\u7247\u5931\u8D25");
-    return false;
-  }
-}
-function extractImageRefs(text2) {
-  if (!text2)
-    return [];
-  const results = [];
-  const wikiRegex = /!\[\[([^\]\n]+)\]\]/g;
-  let match;
-  while ((match = wikiRegex.exec(text2)) !== null) {
-    let ref = match[1].trim();
-    if (ref.includes("|")) {
-      ref = ref.split("|")[0].trim();
-    }
-    if (isImageExtension(ref) && !results.includes(ref)) {
-      results.push(ref);
-    }
-  }
-  const mdRegex = /!\[.*?\]\(([^)\n]+)\)/g;
-  while ((match = mdRegex.exec(text2)) !== null) {
-    const ref = match[1].trim();
-    if (isImageExtension(ref) && !results.includes(ref)) {
-      results.push(ref);
-    }
-  }
-  return results;
-}
-function isImageExtension(path) {
-  const lower = path.toLowerCase().split("?")[0].split("#")[0];
-  return lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".webp") || lower.endsWith(".gif") || lower.endsWith(".svg") || lower.endsWith(".bmp");
-}
-function removeImageRefFromText(text2, imageRef) {
-  if (!text2 || !imageRef)
-    return text2;
-  let clean = imageRef.replace(/^!*\[\[(.*?)\]\]$/, "$1").trim();
-  if (clean.includes("|"))
-    clean = clean.split("|")[0].trim();
-  const escapedClean = clean.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const wikiPattern = new RegExp(`!\\s*\\[\\[${escapedClean}(?:\\|[^\\]]*)?\\]\\]`, "gi");
-  let updated = text2.replace(wikiPattern, "");
-  const mdPattern = new RegExp(`!\\s*\\[[^\\]]*\\]\\(${escapedClean}\\)`, "gi");
-  updated = updated.replace(mdPattern, "");
-  return updated.replace(/\n\s*\n\s*\n/g, "\n\n").trim();
-}
-function getImageBaseName(imageRef) {
-  if (!imageRef)
-    return "";
-  let clean = imageRef.replace(/^!*\[\[(.*?)\]\]$/, "$1").trim();
-  if (clean.includes("|"))
-    clean = clean.split("|")[0].trim();
-  const parts = clean.split("/");
-  return parts[parts.length - 1] || clean;
-}
-function getImagesFromClipboard(e) {
-  const result = [];
-  const clipboardData = e.clipboardData;
-  if (clipboardData) {
-    const items = clipboardData.items;
-    if (items && items.length > 0) {
-      for (let i = 0; i < items.length; i++) {
-        if (items[i].type.startsWith("image/")) {
-          const file = items[i].getAsFile();
-          if (file)
-            result.push(file);
-        }
-      }
-    }
-    if (result.length === 0 && clipboardData.files && clipboardData.files.length > 0) {
-      for (let i = 0; i < clipboardData.files.length; i++) {
-        if (clipboardData.files[i].type.startsWith("image/")) {
-          result.push(clipboardData.files[i]);
-        }
-      }
-    }
-  }
-  if (result.length === 0) {
-    try {
-      const electron = window.require ? window.require("electron") : null;
-      if (electron == null ? void 0 : electron.clipboard) {
-        const nativeImg = electron.clipboard.readImage();
-        if (nativeImg && !nativeImg.isEmpty()) {
-          const buf = nativeImg.toPNG();
-          const file = new File([buf], `Pasted image ${getTimestampString()}.png`, {
-            type: "image/png"
-          });
-          result.push(file);
-        }
-      }
-    } catch (e2) {
-    }
-  }
-  return result;
-}
-function isSameImageRef(a, b) {
-  if (!a || !b)
-    return false;
-  if (a === b)
-    return true;
-  const cleanA = a.replace(/^!*\[\[(.*?)\]\]$/, "$1").split("|")[0].trim().toLowerCase();
-  const cleanB = b.replace(/^!*\[\[(.*?)\]\]$/, "$1").split("|")[0].trim().toLowerCase();
-  if (cleanA === cleanB)
-    return true;
-  const baseA = cleanA.split("/").pop();
-  const baseB = cleanB.split("/").pop();
-  return !!baseA && baseA === baseB;
-}
-function getTitleImages(t2) {
-  if (!t2)
-    return [];
-  const fromArray = t2.titleImages || [];
-  const fromText = extractImageRefs(t2.title || "");
-  const combined = [...fromArray];
-  for (const ref of fromText) {
-    if (!combined.some((existing) => isSameImageRef(existing, ref))) {
-      combined.push(ref);
-    }
-  }
-  return combined;
-}
-function getNoteImages(t2) {
-  if (!t2)
-    return [];
-  const fromArray = t2.images || [];
-  const fromText = extractImageRefs(t2.note || "");
-  const combined = [...fromArray];
-  for (const ref of fromText) {
-    if (!combined.some((existing) => isSameImageRef(existing, ref))) {
-      combined.push(ref);
-    }
-  }
-  return combined;
-}
-function getStepImages(step) {
-  if (!step)
-    return [];
-  const fromArray = step.images || [];
-  const fromText = extractImageRefs(step.text || "");
-  const combined = [...fromArray];
-  for (const ref of fromText) {
-    if (!combined.some((existing) => isSameImageRef(existing, ref))) {
-      combined.push(ref);
-    }
-  }
-  return combined;
-}
-function cleanDisplayTitle(title) {
-  if (!title)
-    return "";
-  return title.replace(/!\[\[([^\]\n]+)\]\]/g, "").replace(/!\[.*?\]\(([^)\n]+)\)/g, "").replace(/\n\s*\n\s*\n/g, "\n\n").trim();
-}
-function removeImageFromTaskTitle(task, imageRef) {
-  if (!task || !imageRef)
-    return;
-  if (task.titleImages) {
-    task.titleImages = task.titleImages.filter((img) => !isSameImageRef(img, imageRef));
-  }
-  task.title = removeImageRefFromText(task.title || "", imageRef);
-}
-function removeImageFromTaskNote(task, imageRef) {
-  if (!task || !imageRef)
-    return;
-  if (task.images) {
-    task.images = task.images.filter((img) => !isSameImageRef(img, imageRef));
-  }
-  task.note = removeImageRefFromText(task.note || "", imageRef);
-}
-function removeImageFromStepItem(step, imageRef) {
-  if (!step || !imageRef)
-    return;
-  if (step.images) {
-    step.images = step.images.filter((img) => !isSameImageRef(img, imageRef));
-  }
-  step.text = removeImageRefFromText(step.text || "", imageRef);
 }
 
 // src/modals/ImagePreviewModal.ts
@@ -14116,7 +14154,7 @@ function instance5($$self, $$props, $$invalidate) {
     }
     return combined;
   }
-  function isStepEmpty(step) {
+  function isStepEmpty2(step) {
     const hasText = !!step.text && step.text.trim().length > 0;
     const hasImages = getStepImages2(step).length > 0;
     return !hasText && !hasImages;
@@ -14128,7 +14166,7 @@ function instance5($$self, $$props, $$invalidate) {
     if (!step)
       return;
     removeImageFromStepItem(step, imageRef);
-    if (isStepEmpty(step)) {
+    if (isStepEmpty2(step)) {
       void deleteStep(stepId);
       return;
     }
@@ -14245,7 +14283,7 @@ function instance5($$self, $$props, $$invalidate) {
   function handleStepBlur(stepId) {
     if (stepId) {
       const step = steps.find((s) => s.id === stepId);
-      if (step && isStepEmpty(step)) {
+      if (step && isStepEmpty2(step)) {
         void deleteStep(stepId);
         return;
       }
@@ -14257,7 +14295,7 @@ function instance5($$self, $$props, $$invalidate) {
       return;
     if (e.key === "Enter" && !e.shiftKey) {
       const step = steps.find((s) => s.id === stepId);
-      if (step && isStepEmpty(step)) {
+      if (step && isStepEmpty2(step)) {
         e.preventDefault();
         e.stopPropagation();
         void deleteStep(stepId);
@@ -14276,7 +14314,7 @@ function instance5($$self, $$props, $$invalidate) {
     }
   }
   function handleClose() {
-    $$invalidate(3, steps = steps.filter((s) => !isStepEmpty(s)));
+    $$invalidate(3, steps = steps.filter((s) => !isStepEmpty2(s)));
     flushSaveSync();
     closeModal();
   }
@@ -14298,8 +14336,8 @@ function instance5($$self, $$props, $$invalidate) {
     }
   }
   onMount(() => {
-    if (steps.some((s) => isStepEmpty(s))) {
-      $$invalidate(3, steps = steps.filter((s) => !isStepEmpty(s)));
+    if (steps.some((s) => isStepEmpty2(s))) {
+      $$invalidate(3, steps = steps.filter((s) => !isStepEmpty2(s)));
       scheduleSave();
     }
     const handleCaptureKeydown = (e) => {
@@ -27518,9 +27556,20 @@ function instance7($$self, $$props, $$invalidate) {
     removeImageFromTaskTitle(task, imageRef);
     if ((hoveredThumbnail == null ? void 0 : hoveredThumbnail.imageRef) === imageRef)
       hoveredThumbnail = null;
+    const targetCatPath = (currentCategory == null ? void 0 : currentCategory.filepath) === STARRED_CATEGORY_PATH && task.sourceFilepath ? task.sourceFilepath : (currentCategory == null ? void 0 : currentCategory.filepath) || task.sourceFilepath || "";
+    if (isTaskEmpty(task)) {
+      $$invalidate(5, incompleteTasks = incompleteTasks.filter((t2) => t2.id !== task.id));
+      $$invalidate(6, completedTasks = completedTasks.filter((t2) => t2.id !== task.id));
+      rawIncompleteTasks = rawIncompleteTasks.filter((t2) => t2.id !== task.id);
+      rawCompletedTasks = rawCompletedTasks.filter((t2) => t2.id !== task.id);
+      if (targetCatPath) {
+        await dataService.deleteTask(targetCatPath, task);
+        EventBus.emit("task:deleted" /* TASK_DELETED */, { task, categoryFilepath: targetCatPath });
+      }
+      return;
+    }
     $$invalidate(5, incompleteTasks = [...incompleteTasks]);
     $$invalidate(6, completedTasks = [...completedTasks]);
-    const targetCatPath = (currentCategory == null ? void 0 : currentCategory.filepath) === STARRED_CATEGORY_PATH && task.sourceFilepath ? task.sourceFilepath : (currentCategory == null ? void 0 : currentCategory.filepath) || task.sourceFilepath || "";
     if (targetCatPath) {
       await dataService.updateTask(targetCatPath, task);
       EventBus.emit("task:updated" /* TASK_UPDATED */, {
@@ -28861,8 +28910,8 @@ function add_css5(target) {
 }
 function get_each_context_32(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[234] = list[i];
-  child_ctx[225] = i;
+  child_ctx[235] = list[i];
+  child_ctx[226] = i;
   return child_ctx;
 }
 function get_if_ctx_12(ctx) {
@@ -28877,21 +28926,21 @@ function get_if_ctx_12(ctx) {
       ]
     )
   );
-  child_ctx[230] = constants_0;
+  child_ctx[231] = constants_0;
   return child_ctx;
 }
 function get_each_context_22(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[231] = list[i];
-  child_ctx[225] = i;
+  child_ctx[232] = list[i];
+  child_ctx[226] = i;
   const constants_0 = (
     /*resolveSvgItem*/
     child_ctx[84](
       /*svgItem*/
-      child_ctx[231]
+      child_ctx[232]
     )
   );
-  child_ctx[232] = constants_0;
+  child_ctx[233] = constants_0;
   return child_ctx;
 }
 function get_if_ctx2(ctx) {
@@ -28904,66 +28953,66 @@ function get_if_ctx2(ctx) {
       child_ctx[21]
     ]
   );
-  child_ctx[226] = constants_0;
+  child_ctx[227] = constants_0;
   const constants_1 = (
     /*activeNoteLink*/
-    child_ctx[226] && /*plugin*/
+    child_ctx[227] && /*plugin*/
     ((_a = child_ctx[0]) == null ? void 0 : _a.app) ? LinkedNoteService.resolveLinkedNoteFile(
       /*plugin*/
       child_ctx[0].app,
       /*activeNoteLink*/
-      child_ctx[226],
+      child_ctx[227],
       /*categoryFilepath*/
       child_ctx[5]
     ) : null
   );
-  child_ctx[227] = constants_1;
+  child_ctx[228] = constants_1;
   return child_ctx;
 }
 function get_each_context_13(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[228] = list[i];
-  child_ctx[225] = i;
+  child_ctx[229] = list[i];
+  child_ctx[226] = i;
   return child_ctx;
 }
 function get_each_context6(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[223] = list[i];
-  child_ctx[225] = i;
+  child_ctx[224] = list[i];
+  child_ctx[226] = i;
   return child_ctx;
 }
 function get_each_context_42(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[236] = list[i];
+  child_ctx[237] = list[i];
   return child_ctx;
 }
 function get_each_context_52(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[239] = list[i][0];
-  child_ctx[240] = list[i][1];
+  child_ctx[240] = list[i][0];
+  child_ctx[241] = list[i][1];
   return child_ctx;
 }
 function get_each_context_62(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[231] = list[i];
-  child_ctx[244] = i;
+  child_ctx[232] = list[i];
+  child_ctx[245] = i;
   return child_ctx;
 }
 function get_each_context_72(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[245] = list[i];
-  child_ctx[244] = i;
+  child_ctx[246] = list[i];
+  child_ctx[245] = i;
   return child_ctx;
 }
 function get_each_context_8(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[223] = list[i];
-  child_ctx[244] = i;
+  child_ctx[224] = list[i];
+  child_ctx[245] = i;
   return child_ctx;
 }
 function get_each_context_9(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[248] = list[i];
+  child_ctx[249] = list[i];
   return child_ctx;
 }
 function create_else_block_123(ctx) {
@@ -29061,7 +29110,7 @@ function create_if_block8(ctx) {
     /*task*/
     ctx[3]
   ).length > 0 || /*getTaskNoteLinks*/
-  ctx[42](
+  ctx[43](
     /*task*/
     ctx[3]
   ).length > 0 || /*task*/
@@ -29437,7 +29486,7 @@ function create_if_block8(ctx) {
             span0,
             "click",
             /*toggleComplete*/
-            ctx[41]
+            ctx[42]
           ),
           listen(
             span0,
@@ -29487,24 +29536,29 @@ function create_if_block8(ctx) {
             /*handleTitleBlur*/
             ctx[40]
           ),
-          listen(textarea0, "keydown", handleTitleKeydown),
+          listen(
+            textarea0,
+            "keydown",
+            /*handleTitleKeydown*/
+            ctx[41]
+          ),
           listen(
             span1,
             "click",
             /*handleTaskNoteClick*/
-            ctx[45]
+            ctx[46]
           ),
           listen(
             span1,
             "mouseenter",
             /*handleTaskNoteHover*/
-            ctx[43]
+            ctx[44]
           ),
           listen(
             span1,
             "contextmenu",
             /*handleTaskNoteContextMenu*/
-            ctx[46]
+            ctx[47]
           ),
           listen(
             span1,
@@ -29791,7 +29845,7 @@ function create_if_block8(ctx) {
           /*task*/
           ctx2[3]
         ).length > 0 || /*getTaskNoteLinks*/
-        ctx2[42](
+        ctx2[43](
           /*task*/
           ctx2[3]
         ).length > 0 || /*task*/
@@ -30592,7 +30646,7 @@ function create_if_block_352(ctx) {
   );
   const get_key = (ctx2) => (
     /*step*/
-    ctx2[248].id
+    ctx2[249].id
   );
   for (let i = 0; i < each_value_9.length; i += 1) {
     let child_ctx = get_each_context_9(ctx, each_value_9, i);
@@ -30646,8 +30700,8 @@ function create_if_block_352(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*task, focusedTarget, actualApp, hoveredImageRef*/
-      16777992 | dirty[1] & /*deleteStep, updateStepText, handleStepBlur, isStepEmpty, removeImageFromStep, toggleStepDone*/
-      235798528) {
+      16777992 | dirty[1] & /*deleteStep, updateStepText, handleStepBlur, removeImageFromStep, toggleStepDone*/
+      235667456) {
         each_value_9 = ensure_array_like(
           /*task*/
           ctx2[3].steps
@@ -30768,7 +30822,7 @@ function create_if_block_362(ctx) {
       /*func_3*/
       ctx[123](
         /*step*/
-        ctx[248],
+        ctx[249],
         ...args
       )
     );
@@ -30778,7 +30832,7 @@ function create_if_block_362(ctx) {
       /*func_4*/
       ctx[124](
         /*step*/
-        ctx[248],
+        ctx[249],
         ...args
       )
     );
@@ -30788,7 +30842,7 @@ function create_if_block_362(ctx) {
       /*func_5*/
       ctx[125](
         /*step*/
-        ctx[248],
+        ctx[249],
         ...args
       )
     );
@@ -30797,7 +30851,7 @@ function create_if_block_362(ctx) {
     props: {
       images: getStepImages(
         /*step*/
-        ctx[248]
+        ctx[249]
       ),
       app: (
         /*actualApp*/
@@ -30824,7 +30878,7 @@ function create_if_block_362(ctx) {
       8)
         taskimagestrip_changes.images = getStepImages(
           /*step*/
-          ctx[248]
+          ctx[249]
         );
       if (dirty[0] & /*actualApp*/
       16777216)
@@ -30866,7 +30920,7 @@ function create_each_block_9(key_1, ctx) {
   let div0;
   let show_if = getStepImages(
     /*step*/
-    ctx[248]
+    ctx[249]
   ).length > 0;
   let t2;
   let textarea;
@@ -30883,7 +30937,7 @@ function create_each_block_9(key_1, ctx) {
   function select_block_type_4(ctx2, dirty) {
     if (
       /*step*/
-      ctx2[248].done
+      ctx2[249].done
     )
       return create_if_block_372;
     return create_else_block_82;
@@ -30895,7 +30949,7 @@ function create_each_block_9(key_1, ctx) {
       /*click_handler_6*/
       ctx[121](
         /*step*/
-        ctx[248]
+        ctx[249]
       )
     );
   }
@@ -30904,7 +30958,7 @@ function create_each_block_9(key_1, ctx) {
       /*keydown_handler_4*/
       ctx[122](
         /*step*/
-        ctx[248],
+        ctx[249],
         ...args
       )
     );
@@ -30915,7 +30969,7 @@ function create_each_block_9(key_1, ctx) {
       /*focus_handler_1*/
       ctx[126](
         /*step*/
-        ctx[248]
+        ctx[249]
       )
     );
   }
@@ -30924,7 +30978,7 @@ function create_each_block_9(key_1, ctx) {
       /*input_handler*/
       ctx[127](
         /*step*/
-        ctx[248],
+        ctx[249],
         ...args
       )
     );
@@ -30934,7 +30988,7 @@ function create_each_block_9(key_1, ctx) {
       /*blur_handler*/
       ctx[128](
         /*step*/
-        ctx[248]
+        ctx[249]
       )
     );
   }
@@ -30943,7 +30997,7 @@ function create_each_block_9(key_1, ctx) {
       /*keydown_handler_5*/
       ctx[129](
         /*step*/
-        ctx[248],
+        ctx[249],
         ...args
       )
     );
@@ -30953,7 +31007,7 @@ function create_each_block_9(key_1, ctx) {
       /*click_handler_7*/
       ctx[130](
         /*step*/
-        ctx[248]
+        ctx[249]
       )
     );
   }
@@ -30962,7 +31016,7 @@ function create_each_block_9(key_1, ctx) {
       /*keydown_handler_6*/
       ctx[131](
         /*step*/
-        ctx[248],
+        ctx[249],
         ...args
       )
     );
@@ -30992,17 +31046,17 @@ function create_each_block_9(key_1, ctx) {
       attr(span1, "class", "checkbox");
       attr(span1, "role", "checkbox");
       attr(span1, "aria-checked", span1_aria_checked_value = /*step*/
-      ctx[248].done);
+      ctx[249].done);
       attr(span1, "tabindex", "0");
       attr(textarea, "rows", "1");
       textarea.value = textarea_value_value = /*step*/
-      ctx[248].text;
+      ctx[249].text;
       attr(textarea, "placeholder", "Step text");
       toggle_class(
         textarea,
         "completed",
         /*step*/
-        ctx[248].done
+        ctx[249].done
       );
       attr(div0, "class", "step-content-col svelte-17zoiaq");
       attr(span2, "class", "delete-step");
@@ -31035,7 +31089,7 @@ function create_each_block_9(key_1, ctx) {
             null,
             textarea,
             /*step*/
-            ctx[248].text
+            ctx[249].text
           )),
           listen(textarea, "focus", focus_handler_1),
           listen(textarea, "input", input_handler),
@@ -31059,14 +31113,14 @@ function create_each_block_9(key_1, ctx) {
       }
       if (!current || dirty[0] & /*task*/
       8 && span1_aria_checked_value !== (span1_aria_checked_value = /*step*/
-      ctx[248].done)) {
+      ctx[249].done)) {
         attr(span1, "aria-checked", span1_aria_checked_value);
       }
       if (dirty[0] & /*task*/
       8)
         show_if = getStepImages(
           /*step*/
-          ctx[248]
+          ctx[249]
         ).length > 0;
       if (show_if) {
         if (if_block1) {
@@ -31090,7 +31144,7 @@ function create_each_block_9(key_1, ctx) {
       }
       if (!current || dirty[0] & /*task*/
       8 && textarea_value_value !== (textarea_value_value = /*step*/
-      ctx[248].text)) {
+      ctx[249].text)) {
         textarea.value = textarea_value_value;
       }
       if (autosize_action && is_function(autosize_action.update) && dirty[0] & /*task*/
@@ -31098,7 +31152,7 @@ function create_each_block_9(key_1, ctx) {
         autosize_action.update.call(
           null,
           /*step*/
-          ctx[248].text
+          ctx[249].text
         );
       if (!current || dirty[0] & /*task*/
       8) {
@@ -31106,7 +31160,7 @@ function create_each_block_9(key_1, ctx) {
           textarea,
           "completed",
           /*step*/
-          ctx[248].done
+          ctx[249].done
         );
       }
     },
@@ -31288,7 +31342,7 @@ function create_if_block_282(ctx) {
   let t0;
   let show_if = (
     /*getTaskNoteLinks*/
-    ctx[42](
+    ctx[43](
       /*task*/
       ctx[3]
     ).length > 0
@@ -31358,7 +31412,7 @@ function create_if_block_282(ctx) {
       if (dirty[0] & /*task*/
       8)
         show_if = /*getTaskNoteLinks*/
-        ctx2[42](
+        ctx2[43](
           /*task*/
           ctx2[3]
         ).length > 0;
@@ -31486,13 +31540,13 @@ function create_each_block_8(ctx) {
     /*task*/
     ctx[3]
   ).length > 1 ? `Why #${/*idx*/
-  ctx[244] + 1}` : "Why";
+  ctx[245] + 1}` : "Why";
   let t0;
   let t1;
   let span1;
   let t2_value = (
     /*whyItem*/
-    ctx[223] + ""
+    ctx[224] + ""
   );
   let t2;
   let t3;
@@ -31507,7 +31561,7 @@ function create_each_block_8(ctx) {
       /*click_handler_8*/
       ctx[143](
         /*idx*/
-        ctx[244]
+        ctx[245]
       )
     );
   }
@@ -31516,7 +31570,7 @@ function create_each_block_8(ctx) {
       /*click_handler_9*/
       ctx[144](
         /*idx*/
-        ctx[244]
+        ctx[245]
       )
     );
   }
@@ -31538,10 +31592,10 @@ function create_each_block_8(ctx) {
       attr(span2, "role", "button");
       attr(span2, "tabindex", "0");
       attr(span2, "title", span2_title_value = `Remove Why #${/*idx*/
-      ctx[244] + 1}`);
+      ctx[245] + 1}`);
       attr(div, "class", "meta-chip why-chip");
       attr(div, "title", div_title_value = /*whyItem*/
-      ctx[223]);
+      ctx[224]);
       attr(div, "role", "button");
       attr(div, "tabindex", "0");
     },
@@ -31570,15 +31624,15 @@ function create_each_block_8(ctx) {
         /*task*/
         ctx[3]
       ).length > 1 ? `Why #${/*idx*/
-      ctx[244] + 1}` : "Why"))
+      ctx[245] + 1}` : "Why"))
         set_data(t0, t0_value);
       if (dirty[0] & /*task*/
       8 && t2_value !== (t2_value = /*whyItem*/
-      ctx[223] + ""))
+      ctx[224] + ""))
         set_data(t2, t2_value);
       if (dirty[0] & /*task*/
       8 && div_title_value !== (div_title_value = /*whyItem*/
-      ctx[223])) {
+      ctx[224])) {
         attr(div, "title", div_title_value);
       }
     },
@@ -31595,7 +31649,7 @@ function create_if_block_312(ctx) {
   let each_1_anchor;
   let each_value_7 = ensure_array_like(
     /*getTaskNoteLinks*/
-    ctx[42](
+    ctx[43](
       /*task*/
       ctx[3]
     )
@@ -31622,11 +31676,11 @@ function create_if_block_312(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*task*/
       8 | dirty[1] & /*getTaskNoteLinks, handleNoteChipHover*/
-      10240 | dirty[2] & /*openAddMetaModal, deleteNoteLinkEntry*/
+      20480 | dirty[2] & /*openAddMetaModal, deleteNoteLinkEntry*/
       16512) {
         each_value_7 = ensure_array_like(
           /*getTaskNoteLinks*/
-          ctx2[42](
+          ctx2[43](
             /*task*/
             ctx2[3]
           )
@@ -31661,18 +31715,18 @@ function create_each_block_72(ctx) {
   let span0;
   let t0_value = (
     /*getTaskNoteLinks*/
-    ctx[42](
+    ctx[43](
       /*task*/
       ctx[3]
     ).length > 1 ? `Note #${/*idx*/
-    ctx[244] + 1}` : "Note"
+    ctx[245] + 1}` : "Note"
   );
   let t0;
   let t1;
   let span1;
   let t2_value = (
     /*noteItem*/
-    ctx[245] + ""
+    ctx[246] + ""
   );
   let t2;
   let t3;
@@ -31687,7 +31741,7 @@ function create_each_block_72(ctx) {
       /*click_handler_10*/
       ctx[145](
         /*idx*/
-        ctx[244]
+        ctx[245]
       )
     );
   }
@@ -31696,7 +31750,7 @@ function create_each_block_72(ctx) {
       /*mouseenter_handler*/
       ctx[146](
         /*noteItem*/
-        ctx[245],
+        ctx[246],
         ...args
       )
     );
@@ -31706,7 +31760,7 @@ function create_each_block_72(ctx) {
       /*click_handler_11*/
       ctx[147](
         /*idx*/
-        ctx[244]
+        ctx[245]
       )
     );
   }
@@ -31728,10 +31782,10 @@ function create_each_block_72(ctx) {
       attr(span2, "role", "button");
       attr(span2, "tabindex", "0");
       attr(span2, "title", span2_title_value = `Remove Note #${/*idx*/
-      ctx[244] + 1}`);
+      ctx[245] + 1}`);
       attr(div, "class", "meta-chip note-chip");
       attr(div, "title", div_title_value = /*noteItem*/
-      ctx[245]);
+      ctx[246]);
       attr(div, "role", "button");
       attr(div, "tabindex", "0");
     },
@@ -31758,19 +31812,19 @@ function create_each_block_72(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*task*/
       8 && t0_value !== (t0_value = /*getTaskNoteLinks*/
-      ctx[42](
+      ctx[43](
         /*task*/
         ctx[3]
       ).length > 1 ? `Note #${/*idx*/
-      ctx[244] + 1}` : "Note"))
+      ctx[245] + 1}` : "Note"))
         set_data(t0, t0_value);
       if (dirty[0] & /*task*/
       8 && t2_value !== (t2_value = /*noteItem*/
-      ctx[245] + ""))
+      ctx[246] + ""))
         set_data(t2, t2_value);
       if (dirty[0] & /*task*/
       8 && div_title_value !== (div_title_value = /*noteItem*/
-      ctx[245])) {
+      ctx[246])) {
         attr(div, "title", div_title_value);
       }
     },
@@ -31847,19 +31901,19 @@ function create_each_block_62(ctx) {
   let t0_value = (
     /*task*/
     ctx[3].svgs.length > 1 ? `SVG #${/*idx*/
-    ctx[244] + 1}` : "SVG"
+    ctx[245] + 1}` : "SVG"
   );
   let t0;
   let t1;
   let span1;
   let t2_value = (
     /*svgItem*/
-    (ctx[231].length > 30 ? (
+    (ctx[232].length > 30 ? (
       /*svgItem*/
-      ctx[231].slice(0, 30) + "..."
+      ctx[232].slice(0, 30) + "..."
     ) : (
       /*svgItem*/
-      ctx[231]
+      ctx[232]
     )) + ""
   );
   let t2;
@@ -31876,7 +31930,7 @@ function create_each_block_62(ctx) {
       /*longPress_function*/
       ctx[148](
         /*idx*/
-        ctx[244]
+        ctx[245]
       )
     );
   }
@@ -31885,7 +31939,7 @@ function create_each_block_62(ctx) {
       /*longPress_function_1*/
       ctx[149](
         /*idx*/
-        ctx[244]
+        ctx[245]
       )
     );
   }
@@ -31894,7 +31948,7 @@ function create_each_block_62(ctx) {
       /*keydown_handler_7*/
       ctx[150](
         /*idx*/
-        ctx[244],
+        ctx[245],
         ...args
       )
     );
@@ -31904,7 +31958,7 @@ function create_each_block_62(ctx) {
       /*click_handler_12*/
       ctx[151](
         /*idx*/
-        ctx[244]
+        ctx[245]
       )
     );
   }
@@ -31928,7 +31982,7 @@ function create_each_block_62(ctx) {
       attr(span2, "title", span2_title_value = `Click to remove, hold 1.5s to trash source file / \u957F\u63091.5\u79D2\u76F4\u63A5\u5220\u9664\u6E90\u6587\u4EF6\u81F3\u5783\u573E\u6876`);
       attr(div, "class", "meta-chip svg-chip");
       attr(div, "title", div_title_value = /*svgItem*/
-      ctx[231]);
+      ctx[232]);
       attr(div, "role", "button");
       attr(div, "tabindex", "0");
     },
@@ -31960,21 +32014,21 @@ function create_each_block_62(ctx) {
       if (dirty[0] & /*task*/
       8 && t0_value !== (t0_value = /*task*/
       ctx[3].svgs.length > 1 ? `SVG #${/*idx*/
-      ctx[244] + 1}` : "SVG"))
+      ctx[245] + 1}` : "SVG"))
         set_data(t0, t0_value);
       if (dirty[0] & /*task*/
       8 && t2_value !== (t2_value = /*svgItem*/
-      (ctx[231].length > 30 ? (
+      (ctx[232].length > 30 ? (
         /*svgItem*/
-        ctx[231].slice(0, 30) + "..."
+        ctx[232].slice(0, 30) + "..."
       ) : (
         /*svgItem*/
-        ctx[231]
+        ctx[232]
       )) + ""))
         set_data(t2, t2_value);
       if (dirty[0] & /*task*/
       8 && div_title_value !== (div_title_value = /*svgItem*/
-      ctx[231])) {
+      ctx[232])) {
         attr(div, "title", div_title_value);
       }
     },
@@ -32050,14 +32104,14 @@ function create_each_block_52(ctx) {
   let span0;
   let t0_value = (
     /*k*/
-    ctx[239] + ""
+    ctx[240] + ""
   );
   let t0;
   let t1;
   let span1;
   let t2_value = (
     /*v*/
-    ctx[240] + ""
+    ctx[241] + ""
   );
   let t2;
   let t3;
@@ -32073,7 +32127,7 @@ function create_each_block_52(ctx) {
       /*click_handler_13*/
       ctx[152](
         /*k*/
-        ctx[239]
+        ctx[240]
       )
     );
   }
@@ -32082,7 +32136,7 @@ function create_each_block_52(ctx) {
       /*click_handler_14*/
       ctx[153](
         /*k*/
-        ctx[239]
+        ctx[240]
       )
     );
   }
@@ -32104,11 +32158,11 @@ function create_each_block_52(ctx) {
       attr(span2, "role", "button");
       attr(span2, "tabindex", "0");
       attr(span2, "title", span2_title_value = `Remove ${/*k*/
-      ctx[239]}`);
+      ctx[240]}`);
       attr(div, "class", "meta-chip custom-chip");
       attr(div, "title", div_title_value = `${/*k*/
-      ctx[239]}: ${/*v*/
-      ctx[240]}`);
+      ctx[240]}: ${/*v*/
+      ctx[241]}`);
       attr(div, "role", "button");
       attr(div, "tabindex", "0");
     },
@@ -32135,21 +32189,21 @@ function create_each_block_52(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*task*/
       8 && t0_value !== (t0_value = /*k*/
-      ctx[239] + ""))
+      ctx[240] + ""))
         set_data(t0, t0_value);
       if (dirty[0] & /*task*/
       8 && t2_value !== (t2_value = /*v*/
-      ctx[240] + ""))
+      ctx[241] + ""))
         set_data(t2, t2_value);
       if (dirty[0] & /*task*/
       8 && span2_title_value !== (span2_title_value = `Remove ${/*k*/
-      ctx[239]}`)) {
+      ctx[240]}`)) {
         attr(span2, "title", span2_title_value);
       }
       if (dirty[0] & /*task*/
       8 && div_title_value !== (div_title_value = `${/*k*/
-      ctx[239]}: ${/*v*/
-      ctx[240]}`)) {
+      ctx[240]}: ${/*v*/
+      ctx[241]}`)) {
         attr(div, "title", div_title_value);
       }
     },
@@ -32688,7 +32742,7 @@ function create_each_block_42(ctx) {
       /*click_handler_19*/
       ctx[163](
         /*day*/
-        ctx[236]
+        ctx[237]
       )
     );
   }
@@ -32698,7 +32752,7 @@ function create_each_block_42(ctx) {
       button = element("button");
       button.textContent = `${DAY_LABELS[
         /*day*/
-        ctx[236]
+        ctx[237]
       ]} `;
       attr(button, "type", "button");
       attr(button, "class", "weekday-chip");
@@ -32708,7 +32762,7 @@ function create_each_block_42(ctx) {
         /*task*/
         (_b = (_a = ctx[3].recurrence) == null ? void 0 : _a.daysOfWeek) == null ? void 0 : _b.includes(
           /*day*/
-          ctx[236]
+          ctx[237]
         )
       );
     },
@@ -32730,7 +32784,7 @@ function create_each_block_42(ctx) {
           /*task*/
           (_b = (_a = ctx[3].recurrence) == null ? void 0 : _a.daysOfWeek) == null ? void 0 : _b.includes(
             /*day*/
-            ctx[236]
+            ctx[237]
           )
         );
       }
@@ -33813,14 +33867,14 @@ function create_each_block_32(ctx) {
   let span0;
   let t0_value = (
     /*entry*/
-    (ctx[234].key.trim() || "Key") + ""
+    (ctx[235].key.trim() || "Key") + ""
   );
   let t0;
   let t1;
   let span1;
   let t2_value = (
     /*entry*/
-    (ctx[234].value.trim() || "(Empty value)") + ""
+    (ctx[235].value.trim() || "(Empty value)") + ""
   );
   let t2;
   let t3;
@@ -33833,7 +33887,7 @@ function create_each_block_32(ctx) {
       /*click_handler_32*/
       ctx[189](
         /*i*/
-        ctx[225]
+        ctx[226]
       )
     );
   }
@@ -33842,7 +33896,7 @@ function create_each_block_32(ctx) {
       /*click_handler_33*/
       ctx[190](
         /*i*/
-        ctx[225]
+        ctx[226]
       )
     );
   }
@@ -33868,7 +33922,7 @@ function create_each_block_32(ctx) {
         "active",
         /*selectedCustomIndex*/
         ctx[23] === /*i*/
-        ctx[225]
+        ctx[226]
       );
     },
     m(target, anchor) {
@@ -33893,11 +33947,11 @@ function create_each_block_32(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*metaCustomEntries*/
       4194304 && t0_value !== (t0_value = /*entry*/
-      (ctx[234].key.trim() || "Key") + ""))
+      (ctx[235].key.trim() || "Key") + ""))
         set_data(t0, t0_value);
       if (dirty[0] & /*metaCustomEntries*/
       4194304 && t2_value !== (t2_value = /*entry*/
-      (ctx[234].value.trim() || "(Empty value)") + ""))
+      (ctx[235].value.trim() || "(Empty value)") + ""))
         set_data(t2, t2_value);
       if (dirty[0] & /*selectedCustomIndex*/
       8388608) {
@@ -33906,7 +33960,7 @@ function create_each_block_32(ctx) {
           "active",
           /*selectedCustomIndex*/
           ctx[23] === /*i*/
-          ctx[225]
+          ctx[226]
         );
       }
     },
@@ -34216,7 +34270,7 @@ function create_if_block_182(ctx) {
     c() {
       img = element("img");
       if (!src_url_equal(img.src, img_src_value = /*resolvedThumb*/
-      ctx[232].srcUrl))
+      ctx[233].srcUrl))
         attr(img, "src", img_src_value);
       attr(img, "alt", "");
       attr(img, "class", "item-svg-mini-thumb-img");
@@ -34227,7 +34281,7 @@ function create_if_block_182(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*metaSvgList*/
       262144 && !src_url_equal(img.src, img_src_value = /*resolvedThumb*/
-      ctx2[232].srcUrl)) {
+      ctx2[233].srcUrl)) {
         attr(img, "src", img_src_value);
       }
     },
@@ -34242,7 +34296,7 @@ function create_if_block_172(ctx) {
   let div;
   let raw_value = (
     /*resolvedThumb*/
-    ctx[232].content + ""
+    ctx[233].content + ""
   );
   return {
     c() {
@@ -34256,7 +34310,7 @@ function create_if_block_172(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*metaSvgList*/
       262144 && raw_value !== (raw_value = /*resolvedThumb*/
-      ctx2[232].content + ""))
+      ctx2[233].content + ""))
         div.innerHTML = raw_value;
       ;
     },
@@ -34276,14 +34330,14 @@ function create_each_block_22(ctx) {
   let span1;
   let t4_value = (
     /*svgItem*/
-    (ctx[231].trim() ? (
+    (ctx[232].trim() ? (
       /*svgItem*/
-      ctx[231].length > 32 ? (
+      ctx[232].length > 32 ? (
         /*svgItem*/
-        ctx[231].slice(0, 32) + "..."
+        ctx[232].slice(0, 32) + "..."
       ) : (
         /*svgItem*/
-        ctx[231]
+        ctx[232]
       )
     ) : "(Empty SVG)") + ""
   );
@@ -34297,12 +34351,12 @@ function create_each_block_22(ctx) {
   function select_block_type_11(ctx2, dirty) {
     if (
       /*resolvedThumb*/
-      ctx2[232].isInline
+      ctx2[233].isInline
     )
       return create_if_block_172;
     if (
       /*resolvedThumb*/
-      ctx2[232].srcUrl
+      ctx2[233].srcUrl
     )
       return create_if_block_182;
     return create_else_block_52;
@@ -34314,7 +34368,7 @@ function create_each_block_22(ctx) {
       /*longPress_function_4*/
       ctx[183](
         /*i*/
-        ctx[225]
+        ctx[226]
       )
     );
   }
@@ -34323,7 +34377,7 @@ function create_each_block_22(ctx) {
       /*longPress_function_5*/
       ctx[184](
         /*i*/
-        ctx[225]
+        ctx[226]
       )
     );
   }
@@ -34332,7 +34386,7 @@ function create_each_block_22(ctx) {
       /*keydown_handler_15*/
       ctx[185](
         /*i*/
-        ctx[225],
+        ctx[226],
         ...args
       )
     );
@@ -34342,7 +34396,7 @@ function create_each_block_22(ctx) {
       /*click_handler_30*/
       ctx[186](
         /*i*/
-        ctx[225]
+        ctx[226]
       )
     );
   }
@@ -34351,7 +34405,7 @@ function create_each_block_22(ctx) {
       div1 = element("div");
       span0 = element("span");
       span0.textContent = `#${/*i*/
-      ctx[225] + 1}`;
+      ctx[226] + 1}`;
       t2 = space();
       div0 = element("div");
       if_block.c();
@@ -34375,7 +34429,7 @@ function create_each_block_22(ctx) {
         "active",
         /*selectedSvgIndex*/
         ctx[19] === /*i*/
-        ctx[225]
+        ctx[226]
       );
     },
     m(target, anchor) {
@@ -34417,14 +34471,14 @@ function create_each_block_22(ctx) {
       }
       if (dirty[0] & /*metaSvgList*/
       262144 && t4_value !== (t4_value = /*svgItem*/
-      (ctx[231].trim() ? (
+      (ctx[232].trim() ? (
         /*svgItem*/
-        ctx[231].length > 32 ? (
+        ctx[232].length > 32 ? (
           /*svgItem*/
-          ctx[231].slice(0, 32) + "..."
+          ctx[232].slice(0, 32) + "..."
         ) : (
           /*svgItem*/
-          ctx[231]
+          ctx[232]
         )
       ) : "(Empty SVG)") + ""))
         set_data(t4, t4_value);
@@ -34435,7 +34489,7 @@ function create_each_block_22(ctx) {
           "active",
           /*selectedSvgIndex*/
           ctx[19] === /*i*/
-          ctx[225]
+          ctx[226]
         );
       }
     },
@@ -34472,12 +34526,12 @@ function create_if_block_133(ctx) {
   function select_block_type_12(ctx2, dirty) {
     if (
       /*activeResolved*/
-      ctx2[230].isInline
+      ctx2[231].isInline
     )
       return create_if_block_143;
     if (
       /*activeResolved*/
-      ctx2[230].srcUrl
+      ctx2[231].srcUrl
     )
       return create_if_block_153;
     return create_else_block_33;
@@ -34489,7 +34543,7 @@ function create_if_block_133(ctx) {
       /*click_handler_31*/
       ctx[187](
         /*activeResolved*/
-        ctx[230]
+        ctx[231]
       )
     );
   }
@@ -34512,12 +34566,12 @@ function create_if_block_133(ctx) {
       attr(div0, "class", "meta-editor-title");
       attr(div1, "class", "meta-svg-preview-box");
       attr(div1, "title", div1_title_value = !/*activeResolved*/
-      ctx[230].isInline && /*activeResolved*/
-      ctx[230].cleanPath ? `Click to open: ${/*activeResolved*/
-      ctx[230].cleanPath}` : "SVG \u5B9E\u65F6\u9884\u89C8");
+      ctx[231].isInline && /*activeResolved*/
+      ctx[231].cleanPath ? `Click to open: ${/*activeResolved*/
+      ctx[231].cleanPath}` : "SVG \u5B9E\u65F6\u9884\u89C8");
       toggle_class(div1, "clickable", !/*activeResolved*/
-      ctx[230].isInline && !!/*activeResolved*/
-      ctx[230].cleanPath);
+      ctx[231].isInline && !!/*activeResolved*/
+      ctx[231].cleanPath);
       attr(textarea, "class", "meta-form-textarea monospace");
       attr(textarea, "placeholder", "OneNote/Original Game/AI Draw/assets/name.svg or <svg...>...</svg>");
       attr(textarea, "rows", "3");
@@ -34591,17 +34645,17 @@ function create_if_block_133(ctx) {
       }
       if (dirty[0] & /*metaSvgList, selectedSvgIndex*/
       786432 && div1_title_value !== (div1_title_value = !/*activeResolved*/
-      ctx[230].isInline && /*activeResolved*/
-      ctx[230].cleanPath ? `Click to open: ${/*activeResolved*/
-      ctx[230].cleanPath}` : "SVG \u5B9E\u65F6\u9884\u89C8")) {
+      ctx[231].isInline && /*activeResolved*/
+      ctx[231].cleanPath ? `Click to open: ${/*activeResolved*/
+      ctx[231].cleanPath}` : "SVG \u5B9E\u65F6\u9884\u89C8")) {
         attr(div1, "title", div1_title_value);
       }
       if (dirty[0] & /*metaSvgList, selectedSvgIndex*/
       786432 | dirty[2] & /*resolveSvgItem*/
       4194304) {
         toggle_class(div1, "clickable", !/*activeResolved*/
-        ctx[230].isInline && !!/*activeResolved*/
-        ctx[230].cleanPath);
+        ctx[231].isInline && !!/*activeResolved*/
+        ctx[231].cleanPath);
       }
       if (dirty[0] & /*metaSvgList, selectedSvgIndex*/
       786432) {
@@ -34651,7 +34705,7 @@ function create_if_block_153(ctx) {
     c() {
       img = element("img");
       if (!src_url_equal(img.src, img_src_value = /*activeResolved*/
-      ctx[230].srcUrl))
+      ctx[231].srcUrl))
         attr(img, "src", img_src_value);
       attr(img, "alt", "SVG Preview");
       attr(img, "class", "meta-svg-preview-img");
@@ -34662,7 +34716,7 @@ function create_if_block_153(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*metaSvgList, selectedSvgIndex*/
       786432 && !src_url_equal(img.src, img_src_value = /*activeResolved*/
-      ctx2[230].srcUrl)) {
+      ctx2[231].srcUrl)) {
         attr(img, "src", img_src_value);
       }
     },
@@ -34677,7 +34731,7 @@ function create_if_block_143(ctx) {
   let div;
   let raw_value = (
     /*activeResolved*/
-    ctx[230].content + ""
+    ctx[231].content + ""
   );
   return {
     c() {
@@ -34691,7 +34745,7 @@ function create_if_block_143(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*metaSvgList, selectedSvgIndex*/
       786432 && raw_value !== (raw_value = /*activeResolved*/
-      ctx2[230].content + ""))
+      ctx2[231].content + ""))
         div.innerHTML = raw_value;
       ;
     },
@@ -34787,14 +34841,14 @@ function create_each_block_13(ctx) {
   let span1;
   let t3_value = (
     /*noteLinkItem*/
-    (ctx[228].trim() ? (
+    (ctx[229].trim() ? (
       /*noteLinkItem*/
-      ctx[228].length > 32 ? (
+      ctx[229].length > 32 ? (
         /*noteLinkItem*/
-        ctx[228].slice(0, 32) + "..."
+        ctx[229].slice(0, 32) + "..."
       ) : (
         /*noteLinkItem*/
-        ctx[228]
+        ctx[229]
       )
     ) : "(Empty Note Link)") + ""
   );
@@ -34809,7 +34863,7 @@ function create_each_block_13(ctx) {
       /*click_handler_27*/
       ctx[179](
         /*i*/
-        ctx[225]
+        ctx[226]
       )
     );
   }
@@ -34818,7 +34872,7 @@ function create_each_block_13(ctx) {
       /*click_handler_28*/
       ctx[180](
         /*i*/
-        ctx[225]
+        ctx[226]
       )
     );
   }
@@ -34827,7 +34881,7 @@ function create_each_block_13(ctx) {
       div = element("div");
       span0 = element("span");
       span0.textContent = `#${/*i*/
-      ctx[225] + 1}`;
+      ctx[226] + 1}`;
       t2 = space();
       span1 = element("span");
       t3 = text(t3_value);
@@ -34845,7 +34899,7 @@ function create_each_block_13(ctx) {
         "active",
         /*selectedNoteLinkIndex*/
         ctx[21] === /*i*/
-        ctx[225]
+        ctx[226]
       );
     },
     m(target, anchor) {
@@ -34869,14 +34923,14 @@ function create_each_block_13(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*metaNoteLinks*/
       1048576 && t3_value !== (t3_value = /*noteLinkItem*/
-      (ctx[228].trim() ? (
+      (ctx[229].trim() ? (
         /*noteLinkItem*/
-        ctx[228].length > 32 ? (
+        ctx[229].length > 32 ? (
           /*noteLinkItem*/
-          ctx[228].slice(0, 32) + "..."
+          ctx[229].slice(0, 32) + "..."
         ) : (
           /*noteLinkItem*/
-          ctx[228]
+          ctx[229]
         )
       ) : "(Empty Note Link)") + ""))
         set_data(t3, t3_value);
@@ -34887,7 +34941,7 @@ function create_each_block_13(ctx) {
           "active",
           /*selectedNoteLinkIndex*/
           ctx[21] === /*i*/
-          ctx[225]
+          ctx[226]
         );
       }
     },
@@ -34927,13 +34981,13 @@ function create_if_block_710(ctx) {
       show_if = null;
     if (
       /*activeHintFile*/
-      ctx2[227]
+      ctx2[228]
     )
       return create_if_block_92;
     if (show_if == null)
       show_if = !!/*activeNoteLink*/
-      (ctx2[226] && /*activeNoteLink*/
-      ctx2[226].trim());
+      (ctx2[227] && /*activeNoteLink*/
+      ctx2[227].trim());
     if (show_if)
       return create_if_block_102;
     return create_else_block_15;
@@ -34942,7 +34996,7 @@ function create_if_block_710(ctx) {
   let if_block0 = current_block_type(ctx);
   let if_block1 = (
     /*activeNoteLink*/
-    ctx[226] && /*plugin*/
+    ctx[227] && /*plugin*/
     ((_a = ctx[0]) == null ? void 0 : _a.app) && create_if_block_84(ctx)
   );
   return {
@@ -35053,7 +35107,7 @@ function create_if_block_710(ctx) {
       }
       if (
         /*activeNoteLink*/
-        ctx2[226] && /*plugin*/
+        ctx2[227] && /*plugin*/
         ((_a2 = ctx2[0]) == null ? void 0 : _a2.app)
       ) {
         if (if_block1) {
@@ -35121,7 +35175,7 @@ function create_if_block_92(ctx) {
   let t0;
   let t1_value = (
     /*activeHintFile*/
-    ctx[227].path + ""
+    ctx[228].path + ""
   );
   let t1;
   return {
@@ -35140,7 +35194,7 @@ function create_if_block_92(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*metaNoteLinks, selectedNoteLinkIndex, plugin, categoryFilepath*/
       3145761 && t1_value !== (t1_value = /*activeHintFile*/
-      ctx2[227].path + ""))
+      ctx2[228].path + ""))
         set_data(t1, t1_value);
     },
     d(detaching) {
@@ -35159,7 +35213,7 @@ function create_if_block_84(ctx) {
       /*click_handler_29*/
       ctx[182](
         /*activeNoteLink*/
-        ctx[226]
+        ctx[227]
       )
     );
   }
@@ -35278,14 +35332,14 @@ function create_each_block6(ctx) {
   let span1;
   let t3_value = (
     /*whyItem*/
-    (ctx[223].trim() ? (
+    (ctx[224].trim() ? (
       /*whyItem*/
-      ctx[223].length > 32 ? (
+      ctx[224].length > 32 ? (
         /*whyItem*/
-        ctx[223].slice(0, 32) + "..."
+        ctx[224].slice(0, 32) + "..."
       ) : (
         /*whyItem*/
-        ctx[223]
+        ctx[224]
       )
     ) : "(Empty Rationale)") + ""
   );
@@ -35300,7 +35354,7 @@ function create_each_block6(ctx) {
       /*click_handler_25*/
       ctx[176](
         /*i*/
-        ctx[225]
+        ctx[226]
       )
     );
   }
@@ -35309,7 +35363,7 @@ function create_each_block6(ctx) {
       /*click_handler_26*/
       ctx[177](
         /*i*/
-        ctx[225]
+        ctx[226]
       )
     );
   }
@@ -35318,7 +35372,7 @@ function create_each_block6(ctx) {
       div = element("div");
       span0 = element("span");
       span0.textContent = `#${/*i*/
-      ctx[225] + 1}`;
+      ctx[226] + 1}`;
       t2 = space();
       span1 = element("span");
       t3 = text(t3_value);
@@ -35336,7 +35390,7 @@ function create_each_block6(ctx) {
         "active",
         /*selectedWhyIndex*/
         ctx[17] === /*i*/
-        ctx[225]
+        ctx[226]
       );
     },
     m(target, anchor) {
@@ -35360,14 +35414,14 @@ function create_each_block6(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*metaWhyList*/
       65536 && t3_value !== (t3_value = /*whyItem*/
-      (ctx[223].trim() ? (
+      (ctx[224].trim() ? (
         /*whyItem*/
-        ctx[223].length > 32 ? (
+        ctx[224].length > 32 ? (
           /*whyItem*/
-          ctx[223].slice(0, 32) + "..."
+          ctx[224].slice(0, 32) + "..."
         ) : (
           /*whyItem*/
-          ctx[223]
+          ctx[224]
         )
       ) : "(Empty Rationale)") + ""))
         set_data(t3, t3_value);
@@ -35378,7 +35432,7 @@ function create_each_block6(ctx) {
           "active",
           /*selectedWhyIndex*/
           ctx[17] === /*i*/
-          ctx[225]
+          ctx[226]
         );
       }
     },
@@ -35699,12 +35753,6 @@ function hasActiveTextSelection2() {
     return true;
   }
   return false;
-}
-function handleTitleKeydown(e) {
-  if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault();
-    e.currentTarget.blur();
-  }
 }
 function getTaskWhys(t2) {
   if (t2.whys && Array.isArray(t2.whys) && t2.whys.length > 0) {
@@ -36036,7 +36084,40 @@ function instance8($$self, $$props, $$invalidate) {
   function handleTaskSelected(payload) {
     loadTask(payload.task, payload.categoryFilepath);
   }
+  async function checkAndDeleteEmptyTask() {
+    if (!task || !categoryFilepath || !isTaskEmpty(task)) {
+      return false;
+    }
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
+      saveTimeout = null;
+    }
+    const toDelete = task;
+    const path = categoryFilepath;
+    $$invalidate(3, task = null);
+    $$invalidate(5, categoryFilepath = "");
+    $$invalidate(10, showScheduleSection = false);
+    $$invalidate(11, showRepeatPicker = false);
+    $$invalidate(13, showAddMetaModal = false);
+    $$invalidate(14, showMetaSaveConfirmModal = false);
+    initialMetaSnapshot = "";
+    EventBus.emit("detail:close" /* DETAIL_CLOSE */, {});
+    try {
+      await dataService.deleteTask(path, toDelete);
+      EventBus.emit("task:deleted" /* TASK_DELETED */, { task: toDelete, categoryFilepath: path });
+    } catch (err) {
+      console.error("Failed to delete empty task:", err);
+    }
+    if (isModal && onCloseModal) {
+      onCloseModal();
+    }
+    return true;
+  }
   function handleClose() {
+    if (task && isTaskEmpty(task)) {
+      void checkAndDeleteEmptyTask();
+      return;
+    }
     if (saveTimeout) {
       clearTimeout(saveTimeout);
       saveTimeout = null;
@@ -36096,6 +36177,13 @@ function instance8($$self, $$props, $$invalidate) {
       async () => {
         if (!task || !categoryFilepath || isDraggingSteps)
           return;
+        if (isTaskEmpty(task)) {
+          if ((focusedTarget == null ? void 0 : focusedTarget.type) === "title") {
+            return;
+          }
+          await checkAndDeleteEmptyTask();
+          return;
+        }
         $$invalidate(3, task.steps = persistableSteps(task.steps), task);
         if (task.task_note && (plugin == null ? void 0 : plugin.app)) {
           const syncRes = await LinkedNoteService.syncTaskTitleToNote(plugin.app, task, categoryFilepath, dataService);
@@ -36126,7 +36214,23 @@ function instance8($$self, $$props, $$invalidate) {
     if (isComposingTitle) {
       isComposingTitle = false;
     }
+    if (task && isTaskEmpty(task)) {
+      void checkAndDeleteEmptyTask();
+      return;
+    }
     void immediateSave();
+  }
+  function handleTitleKeydown(e) {
+    if (e.isComposing || isComposingTitle || e.keyCode === 229)
+      return;
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (task && isTaskEmpty(task)) {
+        void checkAndDeleteEmptyTask();
+        return;
+      }
+      e.currentTarget.blur();
+    }
   }
   async function toggleComplete() {
     if (!task)
@@ -36152,6 +36256,10 @@ function instance8($$self, $$props, $$invalidate) {
       clearTimeout(saveTimeout);
     if (!task || !categoryFilepath || isDraggingSteps)
       return;
+    if (isTaskEmpty(task)) {
+      await checkAndDeleteEmptyTask();
+      return;
+    }
     $$invalidate(3, task.steps = persistableSteps(task.steps), task);
     if (task.task_note && (plugin == null ? void 0 : plugin.app)) {
       const syncRes = await LinkedNoteService.syncTaskTitleToNote(plugin.app, task, categoryFilepath, dataService);
@@ -36307,12 +36415,11 @@ function instance8($$self, $$props, $$invalidate) {
       return;
     removeImageFromTaskTitle(task, imageRef);
     $$invalidate(3, task);
+    if (isTaskEmpty(task)) {
+      void checkAndDeleteEmptyTask();
+      return;
+    }
     immediateSave();
-  }
-  function isStepEmpty(step) {
-    const hasText = !!step.text && step.text.trim().length > 0;
-    const hasImages = getStepImages(step).length > 0;
-    return !hasText && !hasImages;
   }
   function removeImageFromStep(stepId, imageRef) {
     if (!task || !task.steps || !stepId)
@@ -36562,6 +36669,10 @@ function instance8($$self, $$props, $$invalidate) {
     scheduleSave();
   }
   function closePanel() {
+    if (task && isTaskEmpty(task)) {
+      void checkAndDeleteEmptyTask();
+      return;
+    }
     if (saveTimeout) {
       clearTimeout(saveTimeout);
       saveTimeout = null;
@@ -37356,6 +37467,7 @@ function instance8($$self, $$props, $$invalidate) {
     handleTitleCompositionEnd,
     handleTitleInput,
     handleTitleBlur,
+    handleTitleKeydown,
     toggleComplete,
     getTaskNoteLinks,
     handleTaskNoteHover,
@@ -37363,7 +37475,6 @@ function instance8($$self, $$props, $$invalidate) {
     handleTaskNoteClick,
     handleTaskNoteContextMenu,
     removeImageFromTitle,
-    isStepEmpty,
     removeImageFromStep,
     handleStepBlur,
     removeNewStepImage,
