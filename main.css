@@ -1595,7 +1595,7 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     position: fixed;
     z-index: 100000;
     min-width: 220px;
-    max-width: 360px;
+    max-width: min(480px, 92vw);
     max-height: 380px;
     overflow-y: auto;
     background-color: var(--todo-item-bg, var(--background-primary-alt, #1e1e2e));
@@ -2715,7 +2715,7 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     flex-direction: column;
     gap: 6px;
     min-width: 220px;
-    max-width: 340px;
+    max-width: min(460px, 90vw);
     max-height: 380px;
     overflow-y: auto;
 }
@@ -2771,7 +2771,7 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     align-items: flex-start;
     gap: 6px;
     font-size: 11.5px;
-    line-height: 1.35;
+    line-height: 1.45;
     color: var(--todo-text-main);
 }
 
@@ -2784,10 +2784,21 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     font-size: 11px;
     color: var(--todo-accent);
     flex-shrink: 0;
+    line-height: 1.45;
+    margin-top: 1px;
 }
 
 .popover-step-item.done .step-bullet {
     color: var(--todo-text-muted);
+}
+
+.popover-step-item .step-text {
+    flex: 1;
+    min-width: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    line-height: 1.45;
 }
 
 .popover-note-box {

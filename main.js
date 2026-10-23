@@ -10078,7 +10078,7 @@ function longPress(node, options) {
 function calculatePopoverPosition(targetEl, type) {
   const rect = targetEl.getBoundingClientRect();
   const estimatedHeight = type === "svg" ? 320 : type === "guide" ? 460 : type === "title" ? 240 : type === "steps" ? 200 : type === "custom" ? 180 : 140;
-  const estimatedHalfWidth = type === "svg" ? 150 : type === "guide" ? 170 : type === "title" ? 170 : type === "steps" ? 150 : 140;
+  const estimatedHalfWidth = type === "svg" ? 150 : type === "guide" ? 170 : type === "title" ? 170 : type === "steps" ? 180 : 140;
   const fitsAbove = rect.top >= estimatedHeight + 24;
   const placement = fitsAbove ? "top" : "bottom";
   const centerX = rect.left + rect.width / 2;
@@ -23063,10 +23063,11 @@ function create_each_block_2(ctx) {
   let t0;
   let t1;
   let span1;
-  let t2_value = (
+  let t2_value = (cleanDisplayTitle(
     /*step*/
-    ctx[331].text + ""
-  );
+    ctx[331].text
+  ) || /*step*/
+  ctx[331].text) + "";
   let t2;
   let t3;
   return {
@@ -23103,8 +23104,11 @@ function create_each_block_2(ctx) {
       ctx2[331].done ? "\u2713" : "\u25CB"))
         set_data(t0, t0_value);
       if (dirty[1] & /*popoverTask*/
-      4 && t2_value !== (t2_value = /*step*/
-      ctx2[331].text + ""))
+      4 && t2_value !== (t2_value = (cleanDisplayTitle(
+        /*step*/
+        ctx2[331].text
+      ) || /*step*/
+      ctx2[331].text) + ""))
         set_data(t2, t2_value);
       if (dirty[1] & /*popoverTask*/
       4) {
@@ -23357,10 +23361,11 @@ function create_each_block_12(ctx) {
   let t0;
   let t1;
   let span1;
-  let t2_value = (
+  let t2_value = (cleanDisplayTitle(
     /*step*/
-    ctx[331].text + ""
-  );
+    ctx[331].text
+  ) || /*step*/
+  ctx[331].text) + "";
   let t2;
   let t3;
   return {
@@ -23397,8 +23402,11 @@ function create_each_block_12(ctx) {
       ctx2[331].done ? "\u2713" : "\u25CB"))
         set_data(t0, t0_value);
       if (dirty[1] & /*popoverTask*/
-      4 && t2_value !== (t2_value = /*step*/
-      ctx2[331].text + ""))
+      4 && t2_value !== (t2_value = (cleanDisplayTitle(
+        /*step*/
+        ctx2[331].text
+      ) || /*step*/
+      ctx2[331].text) + ""))
         set_data(t2, t2_value);
       if (dirty[1] & /*popoverTask*/
       4) {
@@ -42817,10 +42825,11 @@ function create_each_block8(ctx) {
   let t0;
   let t1;
   let span1;
-  let t2_value = (
+  let t2_value = (cleanDisplayTitle(
     /*step*/
-    ctx[175].text + ""
-  );
+    ctx[175].text
+  ) || /*step*/
+  ctx[175].text) + "";
   let t2;
   let t3;
   return {
@@ -42857,8 +42866,11 @@ function create_each_block8(ctx) {
       ctx2[175].done ? "\u2713" : "\u25CB"))
         set_data(t0, t0_value);
       if (dirty[1] & /*popoverTask*/
-      4 && t2_value !== (t2_value = /*step*/
-      ctx2[175].text + ""))
+      4 && t2_value !== (t2_value = (cleanDisplayTitle(
+        /*step*/
+        ctx2[175].text
+      ) || /*step*/
+      ctx2[175].text) + ""))
         set_data(t2, t2_value);
       if (dirty[1] & /*popoverTask*/
       4) {

@@ -13,6 +13,7 @@
     import { TaskStepsModal } from "./TaskStepsModal";
     import { MoveToSuggestModal } from "./MoveToSuggestModal";
     import { t, isChinese } from "../lang/helpers";
+    import { cleanDisplayTitle } from "../utils/imageAttachmentUtils";
 
     // =============================================
     // Props
@@ -1742,7 +1743,7 @@
                     {#each popoverTask.steps as step}
                         <div class="popover-step-item" class:done={step.done}>
                             <span class="step-bullet">{step.done ? "✓" : "○"}</span>
-                            <span class="step-text">{step.text}</span>
+                            <span class="step-text">{cleanDisplayTitle(step.text) || step.text}</span>
                         </div>
                     {/each}
                 </div>

@@ -17,7 +17,7 @@ export function calculatePopoverPosition(
     const rect = targetEl.getBoundingClientRect();
 
     const estimatedHeight = type === 'svg' ? 320 : type === 'guide' ? 460 : type === 'title' ? 240 : type === 'steps' ? 200 : type === 'custom' ? 180 : 140;
-    const estimatedHalfWidth = type === 'svg' ? 150 : type === 'guide' ? 170 : type === 'title' ? 170 : type === 'steps' ? 150 : 140;
+    const estimatedHalfWidth = type === 'svg' ? 150 : type === 'guide' ? 170 : type === 'title' ? 170 : type === 'steps' ? 180 : 140;
 
     const fitsAbove = rect.top >= estimatedHeight + 24;
     const placement: 'top' | 'bottom' = fitsAbove ? 'top' : 'bottom';

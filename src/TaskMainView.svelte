@@ -3946,7 +3946,7 @@
                         {#each popoverTask.steps as step}
                             <div class="popover-step-item" class:done={step.done}>
                                 <span class="step-bullet">{step.done ? "✓" : "○"}</span>
-                                <span class="step-text">{step.text}</span>
+                                <span class="step-text">{cleanDisplayTitle(step.text) || step.text}</span>
                             </div>
                         {/each}
                     </div>
@@ -3995,7 +3995,7 @@
                                 {#each popoverTask.steps as step}
                                     <div class="popover-step-item" class:done={step.done}>
                                         <span class="step-bullet">{step.done ? "✓" : "○"}</span>
-                                        <span class="step-text">{step.text}</span>
+                                        <span class="step-text">{cleanDisplayTitle(step.text) || step.text}</span>
                                     </div>
                                 {/each}
                             </div>
