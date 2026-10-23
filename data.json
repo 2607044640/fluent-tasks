@@ -1,6 +1,7 @@
 {
   "accentColor": "#006eff",
   "openDetailInModal": true,
+  "fullscreenDetailModal": true,
   "hideLeftSidebar": true,
   "autoExpandSidebarOnDrag": true,
   "autoExpandSidebar": true,
@@ -19,7 +20,7 @@
   "quickListMinRowGap": 16,
   "quickListMaxCardWidth": 320,
   "quickListFocusCenter": false,
-  "defaultQuickListFocusFilepath": "TodoData/Loopferno(1).md",
+  "defaultQuickListFocusFilepath": "TodoData/工作心流.md",
   "dailyBackupEnabled": true,
   "lastDailyBackupDate": "2026-10-23",
   "undoDurationSeconds": 2.5,
