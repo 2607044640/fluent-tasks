@@ -1,6 +1,6 @@
 # Fluent Tasks
 
-Obsidian plugin: a three-pane, drag-and-drop task manager inspired by Microsoft To Do, Todoist, and TickTick. Version **1.0.48** (`manifest.json`). Desktop and mobile (`isDesktopOnly: false`). Minimum Obsidian **1.8.7**.
+Obsidian plugin: a three-pane, drag-and-drop task manager inspired by Microsoft To Do, Todoist, and TickTick. Version **1.0.49** (`manifest.json`). Desktop and mobile (`isDesktopOnly: false`). Minimum Obsidian **1.8.7**.
 
 Architecture documentation: [ARCHITECTURE.md](./ARCHITECTURE.md).
 
@@ -24,7 +24,7 @@ There is no cloud lock-in or external server dependency. All data remains 100% l
 
 ## Key Features
 
-- **Interactive Drag Sidebar Integration & Smooth Auto-Scroll**: When dragging tasks across lists, automatically expands the left sidebar and highlights/reveals the source list (active in Floating UI mode, or optionally enabled in normal mode via `Auto-Expand Left Sidebar on Task Drag`). Features continuous rAF auto-scrolling when hovering near the top or bottom edges of the list view, with instant top-right toasts confirming successful cross-list moves.
+- **Interactive Drag Sidebar Integration, Smooth Auto-Scroll & In-Flight Wheel Scrolling**: When dragging tasks or lists, automatically expands the left sidebar and highlights/reveals the target list. Supports rolling the mouse wheel in-flight while holding left-click drag to smoothly scroll lists without having to drag all the way down to container boundaries, alongside continuous rAF edge auto-scrolling.
 - **List Navigation History (Alt+Left / Alt+Right)**: In-memory session history stack enabling effortless traversal across recently viewed lists. Jump backwards and forwards seamlessly via `Alt + ←` / `Alt + →`, `Alt + Left/Right click` (triggering strictly on release to prevent duplicate jumps), or mouse side buttons (Back / Forward).
 - **In-Modal Subtask Search (Ctrl+F)**: Dedicated search inside the subtasks floating modal (`TaskStepsModal`) with auto-focus, subtle soft-accent backdrop highlighting, and centered viewport scrolling.
 - **Lists & Groups**: Create custom lists and organize them into collapsible groups. Different groups can have lists with identical display names, with automated sibling collision disambiguation (`name(1)`). Drag-and-drop lists into groups or reorder them freely. Press **F2** to rename hovered or active lists.
@@ -34,7 +34,7 @@ There is no cloud lock-in or external server dependency. All data remains 100% l
 - **Linked Notes & Frontmatter Synchronization**: One-click linked note creation per task. Files use identifiable, tab-friendly paths (`<Title5>_<ListName>_<GroupName>_<taskId>.md`) starting with the first 5 sanitized characters of the task title so notes are immediately readable in truncated Obsidian tabs. Two-way synchronizes the task title via the note's YAML frontmatter `title` property. Renaming a list or task automatically updates note paths with full auto-healing. Automatic migration of legacy notes.
 - **More Options Menu & Batch Operations**: Clean three-dots header menu consolidating list search, multi-select mode, backup manager, shortcuts guide, and display alignment. Multi-select supports batch star/unstar and batch deletion.
 - **Center-Align Tasks Mode**: Toggle center alignment for task titles, steps counters, and wrapped multi-line text directly from the more options menu or plugin settings.
-- **Subtasks & Quick Context Menu**: Dedicated detail panel and floating modal for step checklists. Full vertical drag-and-drop step reordering with zero-loss safety reconciliation. Right-click any task to instantly access **Add side step** as the top context menu action, followed by **Star task** and hierarchical **Move to**.
+- **Subtasks & Full-Screen Detail Modal**: Dedicated detail panel and floating modal for step checklists with full-screen maximization toggle (configurable default in settings), automatic prune of empty steps on Enter, blur, or image removal, and full vertical drag-and-drop step reordering with zero-loss safety reconciliation. Right-click any task to instantly access **Add side step** as the top context menu action, followed by **Star task** and hierarchical **Move to**.
 - **Image Attachments & Antigravity-Style Thumbnails**: Paste screenshots directly via `Ctrl+V` or drag-and-drop into task titles, notes, and subtasks. Features a unified top thumbnail strip with a subtle divider line across title, detail, and sidesteps, with hover shortcuts (`Ctrl+C` to copy to clipboard, `Ctrl+X` to cut), single-click full-screen lightbox preview, and isolation from external image toolkits. Images store locally in your vault's attachment directory.
 - **Multi-Tier Deletion Undo**: Instant floating toast undo mechanism for deleted tasks (single or batch), subtasks, and lists, with configurable undo timer in settings.
 - **Due Dates & Recurrence**: Schedule tasks with smart presets (today, tomorrow, next week) and flexible recurrence rules (daily, weekdays, weekly, custom). Overdue recurring tasks automatically roll over.
