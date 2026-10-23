@@ -1447,6 +1447,7 @@
         EventBus.on(EventName.TASK_NAVIGATE, handleTaskNavigate);
         EventBus.on(EventName.SETTINGS_CHANGED, handleSettingsChanged);
         window.addEventListener('pointermove', handleDragPointerMove);
+        window.addEventListener('wheel', handleWheelDuringDnd, { passive: false, capture: true });
         window.addEventListener('keydown', handleGlobalKeyDown, true);
         window.addEventListener('keyup', handleGlobalKeyUp, true);
         window.addEventListener('blur', handleWindowBlur);
@@ -1470,6 +1471,7 @@
         stopAutoScroll();
         if (popoverTimeout) clearTimeout(popoverTimeout);
         window.removeEventListener('pointermove', handleDragPointerMove);
+        window.removeEventListener('wheel', handleWheelDuringDnd, { capture: true });
         window.removeEventListener('keydown', handleGlobalKeyDown, true);
         window.removeEventListener('keyup', handleGlobalKeyUp, true);
         window.removeEventListener('blur', handleWindowBlur);
@@ -2347,6 +2349,46 @@
     function handleDragPointerMove(e: PointerEvent) {
         if (!isDndActive) return;
         updateAutoScroll(e.clientY);
+    }
+
+    function handleWheelDuringDnd(e: WheelEvent) {
+        if (!isDndActive && !(window as any).__mstodo_drag_data) return;
+        if (!scrollContainerEl) {
+            scrollContainerEl = document.querySelector('.task-list') as HTMLElement;
+        }
+        if (!scrollContainerEl) return;
+
+        let isOverMain = false;
+        if (mainContainerEl) {
+            const rect = mainContainerEl.getBoundingClientRect();
+            if (
+                e.clientX >= rect.left &&
+                e.clientX <= rect.right &&
+                e.clientY >= rect.top &&
+                e.clientY <= rect.bottom
+            ) {
+                isOverMain = true;
+            }
+        }
+        if (!isOverMain && scrollContainerEl) {
+            const rect = scrollContainerEl.getBoundingClientRect();
+            if (
+                e.clientX >= rect.left &&
+                e.clientX <= rect.right &&
+                e.clientY >= rect.top &&
+                e.clientY <= rect.bottom
+            ) {
+                isOverMain = true;
+            }
+        }
+
+        if (isOverMain) {
+            e.preventDefault();
+            e.stopPropagation();
+            stopAutoScroll();
+            const delta = e.deltaMode === 1 ? e.deltaY * 24 : (e.deltaMode === 2 ? e.deltaY * window.innerHeight : e.deltaY);
+            scrollContainerEl.scrollTop += delta;
+        }
     }
 
     // =============================================

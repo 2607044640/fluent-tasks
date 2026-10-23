@@ -658,6 +658,22 @@
             }
         };
 
+        const handleWheelDuringDnd = (e: WheelEvent) => {
+            if (!isDraggingSteps || !modalBodyEl) return;
+            const rect = modalBodyEl.getBoundingClientRect();
+            if (
+                e.clientX >= rect.left &&
+                e.clientX <= rect.right &&
+                e.clientY >= rect.top &&
+                e.clientY <= rect.bottom
+            ) {
+                e.preventDefault();
+                e.stopPropagation();
+                const delta = e.deltaMode === 1 ? e.deltaY * 24 : (e.deltaMode === 2 ? e.deltaY * window.innerHeight : e.deltaY);
+                modalBodyEl.scrollTop += delta;
+            }
+        };
+        window.addEventListener("wheel", handleWheelDuringDnd, { capture: true, passive: false });
         window.addEventListener("keydown", handleCaptureKeydown, { capture: true });
         window.addEventListener("paste", handlePaste);
         window.addEventListener("dragover", handleDragOver);
@@ -665,6 +681,7 @@
         EventBus.on(EventName.TASK_UPDATED, handleExternalTaskUpdate);
 
         return () => {
+            window.removeEventListener("wheel", handleWheelDuringDnd, { capture: true });
             window.removeEventListener("keydown", handleCaptureKeydown, { capture: true });
             window.removeEventListener("paste", handlePaste);
             window.removeEventListener("dragover", handleDragOver);

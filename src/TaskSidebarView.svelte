@@ -83,6 +83,7 @@
         window.addEventListener("pointermove", handleGlobalPointerMove, true);
         window.addEventListener("pointerup", handleGlobalPointerUp, true);
         window.addEventListener("keydown", handleWindowKeydown, true);
+        window.addEventListener("wheel", handleGlobalWheel, { capture: true, passive: false });
     });
 
     onDestroy(() => {
@@ -90,6 +91,7 @@
         window.removeEventListener("pointermove", handleGlobalPointerMove, true);
         window.removeEventListener("pointerup", handleGlobalPointerUp, true);
         window.removeEventListener("keydown", handleWindowKeydown, true);
+        window.removeEventListener("wheel", handleGlobalWheel, { capture: true });
         EventBus.off(EventName.CATEGORY_SELECTED, handleExternalCategorySelected);
         EventBus.off(EventName.CATEGORY_LIST_CHANGED, handleExternalCategoryListChanged);
         EventBus.off(EventName.CATEGORY_RENAMED, handleCategoryRenamed);
@@ -665,6 +667,7 @@
         }
 
         updateDragOverUnderMouse();
+        updateCategoryDragOverUnderMouse(lastMouseX, lastMouseY);
         sidebarScrollAnimId = window.requestAnimationFrame(stepSidebarAutoScroll);
     }
 
@@ -719,6 +722,144 @@
             }
         }
         if (!found) dragOverPath = "";
+    }
+
+    function updateCategoryDragOverUnderMouse(clientX: number, clientY: number) {
+        if (!draggedItemId && !(window as any).__mstodo_category_drag) return;
+        const draggedItem = getDraggedItem();
+        if (!draggedItem || !customListsEl) return;
+
+        const listsRect = customListsEl.getBoundingClientRect();
+
+        // If cursor is past the bottom of the items, drop at root-bottom
+        if (clientY > listsRect.bottom - 24) {
+            const lastItem = getLastItem();
+            if (lastItem) {
+                dragOverId = lastItem.id;
+                dragPosition = "bottom";
+            } else {
+                dragOverId = "root-bottom";
+                dragPosition = "bottom";
+            }
+            return;
+        }
+
+        const elUnder = document.elementFromPoint(clientX, clientY) as HTMLElement | null;
+        if (!elUnder) return;
+
+        const itemEl = elUnder.closest(".category-item, .group-header") as HTMLElement | null;
+        if (!itemEl) {
+            return;
+        }
+
+        const itemId = itemEl.dataset.itemid || itemEl.dataset.groupid;
+        if (!itemId || itemId === draggedItemId) {
+            dragOverId = "";
+            dragPosition = null;
+            return;
+        }
+
+        let targetItem: SidebarItem | CategoryInfo | null = null;
+        let parentGroup: any = null;
+        for (const item of sidebarItems) {
+            if (item.id === itemId) {
+                targetItem = item;
+                break;
+            }
+            if (item.type === "group" && item.items) {
+                const child = item.items.find(c => c.id === itemId);
+                if (child) {
+                    targetItem = child;
+                    parentGroup = item;
+                    break;
+                }
+            }
+        }
+
+        if (!targetItem) return;
+
+        // Groups cannot be placed inside groups or next to children inside groups
+        if (draggedItem.type === "group" && parentGroup) {
+            dragOverId = "";
+            dragPosition = null;
+            return;
+        }
+
+        dragOverId = targetItem.id;
+        const rect = itemEl.getBoundingClientRect();
+        const relativeY = clientY - rect.top;
+
+        if (targetItem.type === "group") {
+            if (draggedItem.type === "group") {
+                dragPosition = relativeY < rect.height * 0.5 ? "top" : "bottom";
+            } else if (!targetItem.isExpanded || targetItem.items.length === 0) {
+                if (relativeY < rect.height * 0.33) {
+                    dragPosition = "top";
+                } else if (relativeY > rect.height * 0.67) {
+                    dragPosition = "bottom";
+                } else {
+                    dragPosition = "inside";
+                }
+            } else {
+                if (relativeY < rect.height * 0.4) {
+                    dragPosition = "top";
+                } else {
+                    dragPosition = "inside";
+                }
+            }
+        } else {
+            dragPosition = relativeY < rect.height * 0.5 ? "top" : "bottom";
+        }
+    }
+
+    function handleGlobalWheel(e: WheelEvent) {
+        const isCategoryDragging = !!draggedItemId || !!(window as any).__mstodo_category_drag;
+        const isTaskDragging = !!(window as any).__mstodo_drag_data;
+        if (!isCategoryDragging && !isTaskDragging) return;
+        if (!customListsEl) return;
+
+        let isOverSidebar = false;
+        if (sidebarContainerEl) {
+            const rect = sidebarContainerEl.getBoundingClientRect();
+            if (
+                e.clientX >= rect.left - 30 &&
+                e.clientX <= rect.right + 30 &&
+                e.clientY >= rect.top &&
+                e.clientY <= rect.bottom
+            ) {
+                isOverSidebar = true;
+            }
+        }
+        if (!isOverSidebar && customListsEl) {
+            const rect = customListsEl.getBoundingClientRect();
+            if (
+                e.clientX >= rect.left - 30 &&
+                e.clientX <= rect.right + 30 &&
+                e.clientY >= rect.top &&
+                e.clientY <= rect.bottom
+            ) {
+                isOverSidebar = true;
+            }
+        }
+
+        if (!isOverSidebar) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        stopSidebarAutoScroll();
+
+        const delta = e.deltaMode === 1 ? e.deltaY * 24 : (e.deltaMode === 2 ? e.deltaY * window.innerHeight : e.deltaY);
+        customListsEl.scrollTop += delta;
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+
+        if (isTaskDragging) {
+            updateDragOverUnderMouse();
+        }
+        if (isCategoryDragging) {
+            updateCategoryDragOverUnderMouse(e.clientX, e.clientY);
+        }
     }
 
     function checkAutoScroll(e: DragEvent) {
@@ -1111,6 +1252,7 @@
     tabindex="-1"
     on:mouseenter={handleSidebarMouseEnter}
     on:mouseleave={handleSidebarMouseLeave}
+    on:wheel={handleGlobalWheel}
 >
     <div class="sidebar-header" style="display: flex; align-items: center; justify-content: space-between;">
         <span>Lists</span>
@@ -1153,6 +1295,7 @@
          class:drag-over-bottom={dragOverId === "root-bottom"}
          on:dragover={handleRootDragOver}
          on:drop={handleRootDrop}
+         on:wheel={handleGlobalWheel}
     >
         {#each sidebarItems as item (item.id)}
             {#if item.type === 'category'}
