@@ -920,6 +920,86 @@
         }
     }
 
+    function handleGroupCardDragLeave(e: DragEvent, group: GroupInfo) {
+        const el = e.currentTarget as HTMLElement;
+        const related = e.relatedTarget as HTMLElement | null;
+        if (!related || !el.contains(related)) {
+            const isChildTarget = group.items?.some(c => c.id === dragOverListId) ?? false;
+            if (dragOverListId === group.id || isChildTarget) {
+                dragOverListId = "";
+                dragListPosition = null;
+            }
+        }
+    }
+
+    function handleRootCardDragLeave(e: DragEvent) {
+        const el = e.currentTarget as HTMLElement;
+        const related = e.relatedTarget as HTMLElement | null;
+        if (!related || !el.contains(related)) {
+            const isRootChildTarget = rootCategories.some(c => c.id === dragOverListId);
+            if (dragOverListId === "__root__" || isRootChildTarget) {
+                dragOverListId = "";
+                dragListPosition = null;
+            }
+        }
+    }
+
+    function resolveListChildDropTarget(
+        clientY: number,
+        items: CategoryInfo[],
+        cardSelector: string,
+        contextEl?: HTMLElement | null
+    ): { targetId: string; position: "top" | "bottom" } | null {
+        if (!items || items.length === 0) return null;
+
+        const cardEl =
+            (contextEl?.closest(cardSelector) as HTMLElement | null) ||
+            modalContainerEl?.querySelector<HTMLElement>(cardSelector) ||
+            null;
+
+        const itemEls = cardEl
+            ? Array.from(cardEl.querySelectorAll<HTMLElement>(".quick-modal-list-item"))
+            : [];
+
+        if (itemEls.length === 0) {
+            return { targetId: items[items.length - 1].id, position: "bottom" };
+        }
+
+        const firstRect = itemEls[0].getBoundingClientRect();
+        if (clientY < firstRect.top + firstRect.height * 0.5) {
+            return {
+                targetId: itemEls[0].dataset.itemId || items[0].id,
+                position: "top",
+            };
+        }
+
+        for (let i = 0; i < itemEls.length - 1; i++) {
+            const rectA = itemEls[i].getBoundingClientRect();
+            const rectB = itemEls[i + 1].getBoundingClientRect();
+            const gapMid = (rectA.bottom + rectB.top) * 0.5;
+            const midB = rectB.top + rectB.height * 0.5;
+
+            if (clientY <= gapMid) {
+                return {
+                    targetId: itemEls[i].dataset.itemId || items[i]?.id || "",
+                    position: "bottom",
+                };
+            }
+            if (clientY < midB) {
+                return {
+                    targetId: itemEls[i + 1].dataset.itemId || items[i + 1]?.id || "",
+                    position: "top",
+                };
+            }
+        }
+
+        const lastIdx = itemEls.length - 1;
+        return {
+            targetId: itemEls[lastIdx].dataset.itemId || items[lastIdx]?.id || "",
+            position: "bottom",
+        };
+    }
+
     function handleListDragOver(e: DragEvent, target: SidebarItem | CategoryInfo, isGroupHeader: boolean = false, parentGroup?: any) {
         e.preventDefault();
         e.stopPropagation();
@@ -930,8 +1010,6 @@
             dragListPosition = null;
             return;
         }
-
-        if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
 
         if (!draggedListId || target.id === draggedListId) {
             dragOverListId = "";
@@ -946,16 +1024,38 @@
             return;
         }
 
-        dragOverListId = target.id || "";
         const el = e.currentTarget as HTMLElement;
-        const rect = el.getBoundingClientRect();
-        const relY = e.clientY - rect.top;
 
         if (isGroupHeader) {
-            dragListPosition = relY < rect.height * 0.35 ? "top" : "inside";
-        } else {
-            dragListPosition = relY < rect.height * 0.5 ? "top" : "bottom";
+            const grp = target as GroupInfo;
+            const hasItems = !!(grp.items && grp.items.length > 0);
+            if (!hasItems) {
+                if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+                dragOverListId = grp.id;
+                dragListPosition = "inside";
+            } else if (grp.isExpanded) {
+                if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+                const resolved = resolveListChildDropTarget(e.clientY, grp.items!, `[data-group-id="${grp.id}"]`, el);
+                if (resolved && resolved.targetId && resolved.targetId !== draggedListId) {
+                    dragOverListId = resolved.targetId;
+                    dragListPosition = resolved.position;
+                } else {
+                    dragOverListId = "";
+                    dragListPosition = null;
+                }
+            } else {
+                if (e.dataTransfer) e.dataTransfer.dropEffect = "none";
+                dragOverListId = "";
+                dragListPosition = null;
+            }
+            return;
         }
+
+        if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+        dragOverListId = target.id || "";
+        const rect = el.getBoundingClientRect();
+        const relY = e.clientY - rect.top;
+        dragListPosition = relY < rect.height * 0.5 ? "top" : "bottom";
     }
 
     function handleGroupCardDragOver(e: DragEvent, group: GroupInfo, isItemsContainer: boolean = false) {
@@ -968,8 +1068,6 @@
             dragListPosition = null;
             return;
         }
-
-        if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
 
         if (!draggedListId || group.id === draggedListId) {
             dragOverListId = "";
@@ -984,8 +1082,35 @@
             return;
         }
 
-        dragOverListId = group.id;
-        dragListPosition = "inside";
+        const hasItems = !!(group.items && group.items.length > 0);
+        if (!hasItems) {
+            if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+            dragOverListId = group.id;
+            dragListPosition = "inside";
+            return;
+        }
+
+        if (!group.isExpanded) {
+            if (e.dataTransfer) e.dataTransfer.dropEffect = "none";
+            dragOverListId = "";
+            dragListPosition = null;
+            return;
+        }
+
+        if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+        const resolved = resolveListChildDropTarget(
+            e.clientY,
+            group.items!,
+            `[data-group-id="${group.id}"]`,
+            e.currentTarget as HTMLElement
+        );
+        if (resolved && resolved.targetId && resolved.targetId !== draggedListId) {
+            dragOverListId = resolved.targetId;
+            dragListPosition = resolved.position;
+        } else {
+            dragOverListId = "";
+            dragListPosition = null;
+        }
     }
 
     function handleRootCardDragOver(e: DragEvent) {
@@ -1010,9 +1135,19 @@
         }
 
         if (rootCategories.length > 0) {
-            const last = rootCategories[rootCategories.length - 1];
-            dragOverListId = last.id;
-            dragListPosition = "bottom";
+            const resolved = resolveListChildDropTarget(
+                e.clientY,
+                rootCategories,
+                `[data-card-id="__root__"]`,
+                e.currentTarget as HTMLElement
+            );
+            if (resolved && resolved.targetId && resolved.targetId !== draggedListId) {
+                dragOverListId = resolved.targetId;
+                dragListPosition = resolved.position;
+            } else {
+                dragOverListId = "";
+                dragListPosition = null;
+            }
         } else {
             dragOverListId = "__root__";
             dragListPosition = "top";
@@ -1036,8 +1171,20 @@
         }
 
         if (rootCategories.length > 0) {
-            const last = rootCategories[rootCategories.length - 1];
-            await handleListDrop(last, "bottom");
+            const resolved = resolveListChildDropTarget(
+                e.clientY,
+                rootCategories,
+                `[data-card-id="__root__"]`,
+                e.currentTarget as HTMLElement
+            );
+            if (resolved && resolved.targetId && resolved.targetId !== draggedListId) {
+                const targetCat = rootCategories.find(c => c.id === resolved.targetId);
+                if (targetCat) {
+                    await handleListDrop(targetCat, resolved.position);
+                    return;
+                }
+            }
+            handleListDragEnd();
         } else {
             await handleListDrop({ id: "__root__", name: "Lists", type: "category", filepath: "" } as any, "top");
         }
@@ -1059,7 +1206,31 @@
             return;
         }
 
-        await handleListDrop(group, "inside");
+        const hasItems = !!(group.items && group.items.length > 0);
+        if (!hasItems) {
+            await handleListDrop(group, "inside");
+            return;
+        }
+
+        if (!group.isExpanded) {
+            handleListDragEnd();
+            return;
+        }
+
+        const resolved = resolveListChildDropTarget(
+            e.clientY,
+            group.items!,
+            `[data-group-id="${group.id}"]`,
+            e.currentTarget as HTMLElement
+        );
+        if (resolved && resolved.targetId && resolved.targetId !== draggedListId) {
+            const targetChild = group.items!.find(c => c.id === resolved.targetId);
+            if (targetChild) {
+                await handleListDrop(targetChild, resolved.position);
+                return;
+            }
+        }
+        handleListDragEnd();
     }
 
     async function handleListDrop(target?: SidebarItem | CategoryInfo, forcedPosition?: "top" | "bottom" | "inside") {
@@ -2067,9 +2238,9 @@
                                 <div 
                                     class="quick-grid-card is-root-card" 
                                     data-card-id="__root__"
-                                    class:drag-over-inside={dragOverListId === "__root__"}
+                                    class:drag-over-inside={rootCategories.length === 0 && dragOverListId === "__root__"}
                                     on:dragover={handleRootCardDragOver}
-                                    on:dragleave={(e) => handleListDragLeave(e, "__root__")}
+                                    on:dragleave={handleRootCardDragLeave}
                                     on:drop|preventDefault={handleRootCardDrop}
                                 >
                                     <div class="quick-grid-card-header">
@@ -2087,7 +2258,6 @@
                                         class="quick-grid-card-items"
                                         class:is-empty={rootCategories.length === 0}
                                         on:dragover={handleRootCardDragOver}
-                                        on:dragleave={(e) => handleListDragLeave(e, "__root__")}
                                         on:drop|preventDefault={handleRootCardDrop}
                                     >
                                         {#each rootCategories as cat (cat.id)}
@@ -2172,9 +2342,9 @@
                                     class:is-dragging={draggedListId === group.id}
                                     class:drag-over-top={dragOverListId === group.id && dragListPosition === "top"}
                                     class:drag-over-bottom={dragOverListId === group.id && dragListPosition === "bottom"}
-                                    class:drag-over-inside={dragOverListId === group.id && dragListPosition === "inside"}
+                                    class:drag-over-inside={(!group.items || group.items.length === 0) && dragOverListId === group.id && dragListPosition === "inside"}
                                     on:dragover={(e) => handleGroupCardDragOver(e, group)}
-                                    on:dragleave={(e) => handleListDragLeave(e, group.id)}
+                                    on:dragleave={(e) => handleGroupCardDragLeave(e, group)}
                                     on:drop|preventDefault={(e) => handleGroupCardDrop(e, group)}
                                 >
                                     <div 
@@ -2186,8 +2356,7 @@
                                         on:dragstart={(e) => handleListDragStart(e, group)}
                                         on:dragend={handleListDragEnd}
                                         on:dragover={(e) => handleListDragOver(e, group, true)}
-                                        on:dragleave={(e) => handleListDragLeave(e, group.id)}
-                                        on:drop|preventDefault={() => handleListDrop(group)}
+                                        on:drop|preventDefault={(e) => handleGroupCardDrop(e, group)}
                                         on:contextmenu={(e) => showItemContextMenu(e, { id: group.id, name: group.name, type: "group" })}
                                     >
                                         <div class="quick-grid-card-title-wrap">
@@ -2221,9 +2390,8 @@
                                         <div 
                                             class="quick-grid-card-items"
                                             class:is-empty={!group.items || group.items.length === 0}
-                                            class:drag-over-inside={dragOverListId === group.id && dragListPosition === "inside"}
+                                            class:drag-over-inside={(!group.items || group.items.length === 0) && dragOverListId === group.id && dragListPosition === "inside"}
                                             on:dragover={(e) => handleGroupCardDragOver(e, group, true)}
-                                            on:dragleave={(e) => handleListDragLeave(e, group.id)}
                                             on:drop|preventDefault={(e) => handleGroupCardDrop(e, group, true)}
                                         >
                                             {#if group.items && group.items.length > 0}
@@ -2360,7 +2528,8 @@
                             class:is-dragging={draggedListId === item.id}
                             class:drag-over-top={dragOverListId === item.id && dragListPosition === "top"}
                             class:drag-over-bottom={dragOverListId === item.id && dragListPosition === "bottom"}
-                            class:drag-over-inside={dragOverListId === item.id && dragListPosition === "inside"}
+                            class:drag-over-inside={(!item.items || item.items.length === 0) && dragOverListId === item.id && dragListPosition === "inside"}
+                            on:dragleave={(e) => handleGroupCardDragLeave(e, item)}
                         >
                             <div 
                                 class="quick-modal-group-header"
@@ -2371,8 +2540,7 @@
                                 on:dragstart={(e) => handleListDragStart(e, item)}
                                 on:dragend={handleListDragEnd}
                                 on:dragover={(e) => handleListDragOver(e, item, true)}
-                                on:dragleave={(e) => handleListDragLeave(e, item.id)}
-                                on:drop|preventDefault={() => handleListDrop(item)}
+                                on:drop|preventDefault={(e) => handleGroupCardDrop(e, item)}
                                 on:contextmenu={(e) => showItemContextMenu(e, { id: item.id, name: item.name, type: "group" })}
                             >
                                 <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -2401,7 +2569,6 @@
                                 <div 
                                     class="quick-modal-group-children"
                                     on:dragover={(e) => handleGroupCardDragOver(e, item, true)}
-                                    on:dragleave={(e) => handleListDragLeave(e, item.id)}
                                     on:drop|preventDefault={(e) => handleGroupCardDrop(e, item, true)}
                                 >
                                     {#each item.items as child (child.id)}
