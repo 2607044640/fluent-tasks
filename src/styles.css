@@ -6218,311 +6218,102 @@ body .task-focused-lists-modal .modal-content {
     flex-direction: column;
 }
 
-.focused-modal-container {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow: hidden;
-    background: var(--background-primary);
-    color: var(--text-normal);
-    font-family: var(--font-interface);
-    user-select: none;
-    outline: none;
-}
-
-.focused-modal-header {
-    position: relative;
-    display: flex;
-    align-items: center;
-    padding: 10px 16px;
-    background-color: var(--background-secondary);
-    border-bottom: 1px solid var(--background-modifier-border);
-    gap: 10px;
-    flex-shrink: 0;
-}
-
-.focused-modal-search-wrap {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex: 1;
-    min-width: 180px;
-}
-
-.focused-modal-search-icon {
-    color: var(--text-muted);
-    flex-shrink: 0;
-}
-
-.focused-modal-search-input {
-    flex: 1;
-    background: transparent !important;
-    border: none !important;
-    outline: none !important;
-    box-shadow: none !important;
-    font-size: 13px !important;
-    color: var(--text-normal) !important;
-    padding: 4px 0 !important;
-}
-
-.focused-modal-search-input::placeholder {
-    color: var(--text-muted);
-    font-style: italic;
-}
-
-.focused-modal-search-clear {
+/* Focused List Mode Enhancements */
+.focused-list-item-checkbox {
+    width: 14px;
+    height: 14px;
     cursor: pointer;
-    background: transparent;
-    border: none;
-    font-size: 12px;
-    color: var(--text-muted);
-    padding: 2px 6px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.focused-modal-search-clear:hover {
-    color: var(--text-normal);
-    background-color: var(--background-modifier-hover);
-}
-
-.focused-modal-header-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    margin: 0 4px 0 0;
     flex-shrink: 0;
+    accent-color: var(--todo-accent, #8b5cf6);
 }
 
-.focused-modal-count-badge {
+.quick-modal-list-item.is-focused-selected {
+    background-color: var(--todo-accent-light, rgba(139, 92, 246, 0.16)) !important;
+    border-color: var(--todo-accent, #8b5cf6) !important;
+    color: var(--text-normal);
+}
+
+.quick-modal-starred-btn.is-focused-selected {
+    border-color: var(--todo-accent, #8b5cf6) !important;
+    background-color: var(--todo-accent-light, rgba(139, 92, 246, 0.16)) !important;
+}
+
+.focused-clear-all-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     font-size: 11.5px;
+    font-weight: 500;
     color: var(--text-muted);
     padding: 3px 8px;
-    border-radius: 12px;
-    background: var(--background-primary);
-    border: 1px solid var(--background-modifier-border);
-}
-
-.focused-modal-text-btn {
-    font-size: 11.5px;
-    padding: 4px 8px;
-    border-radius: 5px;
-    border: 1px solid var(--background-modifier-border);
-    background: var(--background-primary);
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: all 0.15s ease;
-}
-
-.focused-modal-text-btn:hover {
-    color: var(--text-normal);
-    background: var(--background-modifier-hover);
-    border-color: var(--todo-accent, #8b5cf6);
-}
-
-.focused-modal-save-btn {
-    font-size: 12px;
-    font-weight: 600;
-    padding: 5px 14px;
-    border-radius: 6px;
-    border: 1px solid var(--todo-accent, #8b5cf6);
-    background: var(--todo-accent, #8b5cf6);
-    color: #ffffff;
-    cursor: pointer;
-    transition: opacity 0.15s ease, transform 0.05s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.focused-modal-save-btn:hover {
-    opacity: 0.9;
-}
-
-.focused-modal-save-btn:active {
-    transform: scale(0.98);
-}
-
-.focused-modal-close-btn {
-    width: 28px;
-    height: 28px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
     border-radius: 6px;
     border: 1px solid var(--background-modifier-border);
     background: var(--background-primary);
-    color: var(--text-muted);
     cursor: pointer;
     transition: all 0.15s ease;
-    font-size: 14px;
+    user-select: none;
 }
 
-.focused-modal-close-btn:hover {
+.focused-clear-all-btn:hover:not(:disabled) {
     color: var(--text-error, #f87171);
     border-color: var(--text-error, #f87171);
     background: var(--background-modifier-hover);
 }
 
-.focused-modal-board {
-    flex: 1 1 0;
-    min-height: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px;
-    padding: 24px 28px;
-    align-content: start;
-    box-sizing: border-box;
+.focused-clear-all-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
 }
 
-.focused-modal-card {
+.focused-clear-shortcut-badge {
+    display: inline-block;
+    font-size: 9.5px;
+    font-family: inherit;
+    font-weight: 600;
+    padding: 1px 4px;
+    border-radius: 3px;
     background: var(--background-secondary);
     border: 1px solid var(--background-modifier-border);
-    border-radius: 8px;
-    padding: 10px 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    box-sizing: border-box;
-    transition: border-color 0.15s ease;
-}
-
-.focused-modal-card:hover {
-    border-color: var(--background-modifier-border-hover, #444);
-}
-
-.focused-modal-card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-bottom: 6px;
-    margin-bottom: 4px;
-    border-bottom: 1px solid var(--background-modifier-border);
-    user-select: none;
-}
-
-.focused-modal-card-title-wrap {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    overflow: hidden;
-    flex: 1;
-}
-
-.focused-modal-card-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
     color: var(--text-muted);
-    opacity: 0.75;
-    flex-shrink: 0;
+    line-height: 1.1;
 }
 
-.focused-modal-card-title {
-    font-size: 12.5px;
-    font-weight: 700;
-    color: var(--text-normal);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    letter-spacing: 0.2px;
-}
-
-.focused-modal-card-count {
-    font-size: 10px;
-    font-weight: 600;
-    color: var(--text-muted);
-    background: var(--background-primary);
-    padding: 1px 6px;
-    border-radius: 10px;
-    border: 1px solid var(--background-modifier-border);
-    flex-shrink: 0;
-}
-
-.focused-modal-card-items {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.focused-modal-list-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 5px 8px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 12.5px;
-    background: transparent;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
-    border: 1px solid transparent;
-    user-select: none;
-}
-
-.focused-modal-list-item:hover {
-    background-color: var(--background-modifier-hover);
-}
-
-.focused-modal-list-item.is-checked {
-    background-color: var(--todo-accent-light, rgba(139, 92, 246, 0.14));
-    border-color: var(--todo-accent, #8b5cf6);
-}
-
-.focused-modal-checkbox {
-    width: 15px;
-    height: 15px;
-    cursor: pointer;
-    margin: 0;
-    flex-shrink: 0;
-    accent-color: var(--todo-accent, #8b5cf6);
-}
-
-.focused-modal-list-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-muted);
-    opacity: 0.8;
-    flex-shrink: 0;
-}
-
-.focused-modal-list-name {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    color: var(--text-normal);
-}
-
-.focused-modal-badge {
-    font-size: 10px;
-    padding: 0 6px;
-    border-radius: 10px;
-    background: var(--background-primary);
-    color: var(--text-muted);
-    border: 1px solid var(--background-modifier-border);
-    flex-shrink: 0;
-}
-
-.focused-modal-loading,
-.focused-modal-empty {
-    grid-column: 1 / -1;
-    text-align: center;
-    padding: 40px 20px;
-    color: var(--text-muted);
-    font-size: 13px;
-}
-
-.focused-modal-empty-group {
-    padding: 8px 10px;
-    color: var(--text-faint);
+.focused-selected-count-badge {
     font-size: 11px;
-    font-style: italic;
+    font-weight: 600;
+    color: var(--todo-accent, #8b5cf6);
+    background: var(--todo-accent-light, rgba(139, 92, 246, 0.12));
+    border: 1px solid var(--todo-accent, #8b5cf6);
+    padding: 2px 7px;
+    border-radius: 10px;
+    white-space: nowrap;
+    user-select: none;
 }
+
+.quick-modal-close-icon-btn {
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    border: 1px solid var(--background-modifier-border);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.quick-modal-close-icon-btn:hover {
+    color: var(--text-normal);
+    background: var(--background-modifier-hover);
+    border-color: var(--text-muted);
+}
+
+
 
 
 

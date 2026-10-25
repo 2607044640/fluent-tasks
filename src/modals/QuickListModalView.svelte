@@ -63,6 +63,7 @@
         if (plugin?.settings) {
             plugin.settings.focusedLists = Array.from(focusedListSet);
             await plugin.saveSettings();
+            EventBus.emit(EventName.SETTINGS_CHANGED, plugin.settings);
         }
     }
 
@@ -73,6 +74,7 @@
         if (plugin?.settings) {
             plugin.settings.focusedLists = [];
             await plugin.saveSettings();
+            EventBus.emit(EventName.SETTINGS_CHANGED, plugin.settings);
         }
     }
 
@@ -1715,6 +1717,17 @@
             }
         }
 
+        if (isFocusedListMode && e.key === " ") {
+            if (document.activeElement !== searchInputEl && !editingItemId && !isAddingList && !isAddingGroup) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (flatCategories.length > 0 && flatCategories[focusedIndex]) {
+                    void handleCategoryClick(flatCategories[focusedIndex]);
+                }
+                return;
+            }
+        }
+
         if (e.key === "Enter") {
             e.preventDefault();
             e.stopPropagation();
@@ -1809,9 +1822,11 @@
         <input 
             type="text" 
             class="quick-modal-filter-input"
-            placeholder={searchMode === 'task' 
-                ? (t("quick_list_task_search_placeholder") || "Search all tasks (title, steps, notes)...") 
-                : "Type to filter lists (↑↓←→ navigate, F2 rename, Enter to open in center)..."}
+            placeholder={isFocusedListMode
+                ? (t("focused_lists_search_placeholder") || "Search lists...")
+                : (searchMode === 'task' 
+                    ? (t("quick_list_task_search_placeholder") || "Search all tasks (title, steps, notes)...") 
+                    : "Type to filter lists (↑↓←→ navigate, F2 rename, Enter to open in center)...")}
             bind:value={searchQuery}
             bind:this={searchInputEl}
             on:compositionstart={handleCompositionStart}
@@ -1825,141 +1840,179 @@
             <button 
                 class="quick-modal-header-btn quick-modal-starred-btn quick-modal-list-item is-smart-item"
                 class:is-focused={flatCategories[focusedIndex]?.filepath === STARRED_CATEGORY_PATH}
+                class:is-focused-selected={isFocusedListMode && focusedListSet.has(STARRED_CATEGORY_PATH)}
                 data-filepath={STARRED_CATEGORY_PATH}
                 data-item-id={STARRED_CATEGORY_PATH}
-                title="Starred tasks ({starredCount}): click to open in center view"
+                title={isFocusedListMode ? "Starred tasks: click to toggle focused list" : `Starred tasks (${starredCount}): click to open in center view`}
                 on:click={() => handleCategoryClick(starredCategory)}
             >
+                {#if isFocusedListMode}
+                    <input 
+                        type="checkbox" 
+                        class="focused-list-item-checkbox" 
+                        checked={focusedListSet.has(STARRED_CATEGORY_PATH)}
+                        tabindex="-1"
+                        on:click|stopPropagation={() => toggleFocusedList(STARRED_CATEGORY_PATH)}
+                    />
+                {/if}
                 <span class="quick-modal-smart-star-icon">★</span>
                 <span class="quick-modal-starred-label">{STARRED_CATEGORY_NAME}</span>
                 <span class="quick-modal-badge smart-count-badge">{starredCount}</span>
             </button>
         {/if}
 
-        {#if searchMode === 'task'}
+        {#if isFocusedListMode}
             <button 
-                class="quick-modal-header-btn todo-search-filter-btn"
-                class:is-active={hideCompleted}
-                aria-label={t("quick_list_search_filter_tooltip") || "Toggle completed tasks filter"}
-                title={t("quick_list_search_filter_tooltip") || "Toggle completed tasks filter"}
-                tabindex="-1"
-                on:click={toggleHideCompleted}
+                class="quick-modal-header-btn focused-clear-all-btn"
+                title="Clear all focused lists (Delete)"
+                disabled={focusedListSet.size === 0}
+                on:click={handleClearAllFocused}
             >
-                {hideCompleted 
-                    ? (t("quick_list_search_filter_active_only") || "Active only") 
-                    : (t("quick_list_search_filter_all_tasks") || "All tasks")}
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                <span>{t("focused_lists_clear_all") || "Clear all"}</span>
+                <kbd class="focused-clear-shortcut-badge">Delete</kbd>
             </button>
-        {/if}
-
-        <button 
-            class="quick-modal-header-btn quick-modal-search-mode-btn"
-            class:is-task-mode={searchMode === 'task'}
-            title={searchMode === 'task' 
-                ? (t("quick_list_search_mode_title_to_list") || "Currently searching tasks. Click to permanently switch to list search.") 
-                : (t("quick_list_search_mode_title_to_task") || "Currently searching lists. Click to permanently switch to task search.")}
-            on:click={toggleSearchMode}
-        >
+            {#if focusedListSet.size > 0}
+                <span class="focused-selected-count-badge">
+                    {t("focused_lists_selected_count", focusedListSet.size)}
+                </span>
+            {/if}
+            <button 
+                class="quick-modal-header-btn quick-modal-close-icon-btn" 
+                title="Close (Esc)" 
+                on:click={closeModal}
+            >
+                ✕
+            </button>
+        {:else}
             {#if searchMode === 'task'}
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="9 11 12 14 22 4"></polyline>
-                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1 2-2h11"></path>
-                </svg>
-                <span>{t("quick_list_search_mode_task") || "Tasks"}</span>
-            {:else}
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="8" y1="6" x2="21" y2="6"></line>
-                    <line x1="8" y1="12" x2="21" y2="12"></line>
-                    <line x1="8" y1="18" x2="21" y2="18"></line>
-                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                </svg>
-                <span>{t("quick_list_search_mode_list") || "Lists"}</span>
+                <button 
+                    class="quick-modal-header-btn todo-search-filter-btn"
+                    class:is-active={hideCompleted}
+                    aria-label={t("quick_list_search_filter_tooltip") || "Toggle completed tasks filter"}
+                    title={t("quick_list_search_filter_tooltip") || "Toggle completed tasks filter"}
+                    tabindex="-1"
+                    on:click={toggleHideCompleted}
+                >
+                    {hideCompleted 
+                        ? (t("quick_list_search_filter_active_only") || "Active only") 
+                        : (t("quick_list_search_filter_all_tasks") || "All tasks")}
+                </button>
             {/if}
-        </button>
 
-        {#if isGridLayout}
             <button 
-                class="quick-modal-header-btn quick-modal-focus-picker-btn"
-                class:is-active={isPickingDefaultFocus}
-                on:click={togglePickingDefaultFocus}
-                on:contextmenu|preventDefault={async () => {
-                    if (plugin?.settings) {
-                        plugin.settings.defaultQuickListFocusFilepath = "";
-                        await plugin.saveSettings();
-                        new Notice(t("focus_restored_default_notice"));
-                        applyInitialFocus();
-                    }
-                }}
-                on:mouseenter={showFocusTooltip}
-                on:mouseleave={hideFocusTooltip}
+                class="quick-modal-header-btn quick-modal-search-mode-btn"
+                class:is-task-mode={searchMode === 'task'}
+                title={searchMode === 'task' 
+                    ? (t("quick_list_search_mode_title_to_list") || "Currently searching tasks. Click to permanently switch to list search.") 
+                    : (t("quick_list_search_mode_title_to_task") || "Currently searching lists. Click to permanently switch to task search.")}
+                on:click={toggleSearchMode}
             >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <circle cx="12" cy="12" r="3"></circle>
-                    <line x1="12" y1="2" x2="12" y2="5"></line>
-                    <line x1="12" y1="19" x2="12" y2="22"></line>
-                    <line x1="2" y1="12" x2="5" y2="12"></line>
-                    <line x1="19" y1="12" x2="22" y2="12"></line>
-                </svg>
-                <span>{isPickingDefaultFocus ? t("focus_picking_target") : (defaultFocusListName ? t("focus_target_label", defaultFocusListName) : t("focus_set_btn"))}</span>
+                {#if searchMode === 'task'}
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 11 12 14 22 4"></polyline>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1 2-2h11"></path>
+                    </svg>
+                    <span>{t("quick_list_search_mode_task") || "Tasks"}</span>
+                {:else}
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                    </svg>
+                    <span>{t("quick_list_search_mode_list") || "Lists"}</span>
+                {/if}
             </button>
-            {#if showFocusPopover}
-                <div class="quick-modal-focus-popover">
-                    <div class="focus-popover-title">{t("focus_popover_title")}</div>
-                    <div class="focus-popover-desc">
-                        {#if defaultFocusListName}
-                            {t("focus_current_prefix")}<b>{defaultFocusListName}</b>
-                        {:else}
-                            {t("focus_unset_prefix")}<b>{t("focus_top_left_default")}</b>
-                        {/if}
-                    </div>
-                    <div class="focus-popover-hint">
-                        {t("focus_instruction_desc")}
-                    </div>
-                </div>
-            {/if}
-        {/if}
 
-        <button 
-            class="quick-modal-header-btn quick-modal-layout-toggle-btn"
-            title={isGridLayout ? "Switch to Classic Single-Column List" : "Switch to Grid Board Layout"}
-            on:click={toggleLayoutMode}
-        >
             {#if isGridLayout}
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="14" width="7" height="7"></rect>
-                    <rect x="3" y="14" width="7" height="7"></rect>
-                </svg>
-                <span>Grid</span>
-            {:else}
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="8" y1="6" x2="21" y2="6"></line>
-                    <line x1="8" y1="12" x2="21" y2="12"></line>
-                    <line x1="8" y1="18" x2="21" y2="18"></line>
-                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                </svg>
-                <span>List</span>
+                <button 
+                    class="quick-modal-header-btn quick-modal-focus-picker-btn"
+                    class:is-active={isPickingDefaultFocus}
+                    on:click={togglePickingDefaultFocus}
+                    on:contextmenu|preventDefault={async () => {
+                        if (plugin?.settings) {
+                            plugin.settings.defaultQuickListFocusFilepath = "";
+                            await plugin.saveSettings();
+                            new Notice(t("focus_restored_default_notice"));
+                            applyInitialFocus();
+                        }
+                    }}
+                    on:mouseenter={showFocusTooltip}
+                    on:mouseleave={hideFocusTooltip}
+                >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <line x1="12" y1="2" x2="12" y2="5"></line>
+                        <line x1="12" y1="19" x2="12" y2="22"></line>
+                        <line x1="2" y1="12" x2="5" y2="12"></line>
+                        <line x1="19" y1="12" x2="22" y2="12"></line>
+                    </svg>
+                    <span>{isPickingDefaultFocus ? t("focus_picking_target") : (defaultFocusListName ? t("focus_target_label", defaultFocusListName) : t("focus_set_btn"))}</span>
+                </button>
+                {#if showFocusPopover}
+                    <div class="quick-modal-focus-popover">
+                        <div class="focus-popover-title">{t("focus_popover_title")}</div>
+                        <div class="focus-popover-desc">
+                            {#if defaultFocusListName}
+                                {t("focus_current_prefix")}<b>{defaultFocusListName}</b>
+                            {:else}
+                                {t("focus_unset_prefix")}<b>{t("focus_top_left_default")}</b>
+                            {/if}
+                        </div>
+                        <div class="focus-popover-hint">
+                            {t("focus_instruction_desc")}
+                        </div>
+                    </div>
+                {/if}
             {/if}
-        </button>
 
-        {#if showNoHotkeyWarning}
             <button 
-                class="quick-modal-header-btn quick-modal-warning-btn"
-                title={t("warn_bind_hotkey_tooltip")}
-                on:click={handleOpenHotkeySettings}
+                class="quick-modal-header-btn quick-modal-layout-toggle-btn"
+                title={isGridLayout ? "Switch to Classic Single-Column List" : "Switch to Grid Board Layout"}
+                on:click={toggleLayoutMode}
             >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                    <line x1="12" y1="9" x2="12" y2="13"/>
-                    <line x1="12" y1="17" x2="12.01" y2="17"/>
-                </svg>
-                <span>{t("warn_bind_hotkey_btn")}</span>
+                {#if isGridLayout}
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    <span>Grid</span>
+                {:else}
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                    </svg>
+                    <span>List</span>
+                {/if}
             </button>
+
+            {#if showNoHotkeyWarning}
+                <button 
+                    class="quick-modal-header-btn quick-modal-warning-btn"
+                    title={t("warn_bind_hotkey_tooltip")}
+                    on:click={handleOpenHotkeySettings}
+                >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    <span>{t("warn_bind_hotkey_btn")}</span>
+                </button>
+            {/if}
         {/if}
 
         {#if searchMode === 'task' && searchQuery.trim().length > 0}
@@ -2048,7 +2101,8 @@
                                             <div 
                                                 class="quick-modal-list-item is-grid-item"
                                                 class:is-focused={flatCategories[focusedIndex]?.filepath === cat.filepath}
-                                                class:is-default-focus={plugin?.settings?.defaultQuickListFocusFilepath === cat.filepath}
+                                                class:is-focused-selected={isFocusedListMode && focusedListSet.has(cat.filepath)}
+                                                class:is-default-focus={!isFocusedListMode && plugin?.settings?.defaultQuickListFocusFilepath === cat.filepath}
                                                 class:is-dragging={draggedListId === cat.id}
                                                 class:drag-over-top={dragOverListId === cat.id && dragListPosition === "top"}
                                                 class:drag-over-bottom={dragOverListId === cat.id && dragListPosition === "bottom"}
@@ -2067,6 +2121,15 @@
                                                 on:click={() => handleCategoryClick(cat)}
                                                 on:contextmenu={(e) => showItemContextMenu(e, { id: cat.id || "", name: cat.name, type: "category", filepath: cat.filepath })}
                                             >
+                                                {#if isFocusedListMode}
+                                                    <input 
+                                                        type="checkbox" 
+                                                        class="focused-list-item-checkbox" 
+                                                        checked={focusedListSet.has(cat.filepath)}
+                                                        tabindex="-1"
+                                                        on:click|stopPropagation={() => toggleFocusedList(cat.filepath)}
+                                                    />
+                                                {/if}
                                                 <span class="quick-modal-list-icon">
                                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                         <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
@@ -2175,7 +2238,8 @@
                                                     <div 
                                                         class="quick-modal-list-item is-grid-item"
                                                         class:is-focused={flatCategories[focusedIndex]?.filepath === child.filepath}
-                                                        class:is-default-focus={plugin?.settings?.defaultQuickListFocusFilepath === child.filepath}
+                                                        class:is-focused-selected={isFocusedListMode && focusedListSet.has(child.filepath)}
+                                                        class:is-default-focus={!isFocusedListMode && plugin?.settings?.defaultQuickListFocusFilepath === child.filepath}
                                                         class:is-dragging={draggedListId === child.id}
                                                         class:drag-over-top={dragOverListId === child.id && dragListPosition === "top"}
                                                         class:drag-over-bottom={dragOverListId === child.id && dragListPosition === "bottom"}
@@ -2194,6 +2258,15 @@
                                                         on:click={() => handleCategoryClick(child)}
                                                         on:contextmenu={(e) => showItemContextMenu(e, { id: child.id || "", name: child.name, type: "category", filepath: child.filepath })}
                                                     >
+                                                        {#if isFocusedListMode}
+                                                            <input 
+                                                                type="checkbox" 
+                                                                class="focused-list-item-checkbox" 
+                                                                checked={focusedListSet.has(child.filepath)}
+                                                                tabindex="-1"
+                                                                on:click|stopPropagation={() => toggleFocusedList(child.filepath)}
+                                                            />
+                                                        {/if}
                                                         <span class="quick-modal-list-icon">
                                                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                                 <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
@@ -2256,13 +2329,23 @@
                 <div 
                     class="quick-modal-list-item is-smart-item"
                     class:is-focused={flatCategories[focusedIndex]?.filepath === STARRED_CATEGORY_PATH}
+                    class:is-focused-selected={isFocusedListMode && focusedListSet.has(STARRED_CATEGORY_PATH)}
                     data-filepath={STARRED_CATEGORY_PATH}
                     data-item-id={STARRED_CATEGORY_PATH}
                     role="button"
                     tabindex="0"
                     on:click={() => handleCategoryClick(starredCategory)}
-                    title="Open Starred tasks list in center view"
+                    title={isFocusedListMode ? "Starred tasks: click to toggle focused list" : "Open Starred tasks list in center view"}
                 >
+                    {#if isFocusedListMode}
+                        <input 
+                            type="checkbox" 
+                            class="focused-list-item-checkbox" 
+                            checked={focusedListSet.has(STARRED_CATEGORY_PATH)}
+                            tabindex="-1"
+                            on:click|stopPropagation={() => toggleFocusedList(STARRED_CATEGORY_PATH)}
+                        />
+                    {/if}
                     <span class="quick-modal-smart-star-icon">★</span>
                     <span class="quick-modal-list-name">{STARRED_CATEGORY_NAME}</span>
                     <div class="quick-modal-item-meta-right">
@@ -2330,7 +2413,8 @@
                                         <div 
                                             class="quick-modal-list-item is-nested"
                                             class:is-focused={flatCategories[focusedIndex]?.filepath === child.filepath}
-                                            class:is-default-focus={plugin?.settings?.defaultQuickListFocusFilepath === child.filepath}
+                                            class:is-focused-selected={isFocusedListMode && focusedListSet.has(child.filepath)}
+                                            class:is-default-focus={!isFocusedListMode && plugin?.settings?.defaultQuickListFocusFilepath === child.filepath}
                                             class:is-dragging={draggedListId === child.id}
                                             class:drag-over-top={dragOverListId === child.id && dragListPosition === "top"}
                                             class:drag-over-bottom={dragOverListId === child.id && dragListPosition === "bottom"}
@@ -2349,6 +2433,15 @@
                                             on:click={() => handleCategoryClick(child)}
                                             on:contextmenu={(e) => showItemContextMenu(e, { id: child.id || "", name: child.name, type: "category", filepath: child.filepath })}
                                         >
+                                            {#if isFocusedListMode}
+                                                <input 
+                                                    type="checkbox" 
+                                                    class="focused-list-item-checkbox" 
+                                                    checked={focusedListSet.has(child.filepath)}
+                                                    tabindex="-1"
+                                                    on:click|stopPropagation={() => toggleFocusedList(child.filepath)}
+                                                />
+                                            {/if}
                                             <span class="quick-modal-list-icon">
                                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                     <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
@@ -2395,7 +2488,8 @@
                         <div 
                             class="quick-modal-list-item"
                             class:is-focused={flatCategories[focusedIndex]?.filepath === item.filepath}
-                            class:is-default-focus={plugin?.settings?.defaultQuickListFocusFilepath === item.filepath}
+                            class:is-focused-selected={isFocusedListMode && focusedListSet.has(item.filepath)}
+                            class:is-default-focus={!isFocusedListMode && plugin?.settings?.defaultQuickListFocusFilepath === item.filepath}
                             class:is-dragging={draggedListId === item.id}
                             class:drag-over-top={dragOverListId === item.id && dragListPosition === "top"}
                             class:drag-over-bottom={dragOverListId === item.id && dragListPosition === "bottom"}
@@ -2414,6 +2508,15 @@
                             on:click={() => handleCategoryClick(item)}
                             on:contextmenu={(e) => showItemContextMenu(e, { id: item.id || "", name: item.name, type: "category", filepath: item.filepath })}
                         >
+                            {#if isFocusedListMode}
+                                <input 
+                                    type="checkbox" 
+                                    class="focused-list-item-checkbox" 
+                                    checked={focusedListSet.has(item.filepath)}
+                                    tabindex="-1"
+                                    on:click|stopPropagation={() => toggleFocusedList(item.filepath)}
+                                />
+                            {/if}
                             <span class="quick-modal-list-icon">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
@@ -2512,11 +2615,19 @@
     </div>
 
     <div class="quick-modal-status-bar">
-        <span><b>↑↓←→</b> Navigate</span>
-        <span><b>F2</b> Rename</span>
-        <span><b>Enter</b> Open in Center View</span>
-        <span><b>Tab</b> Switch to {searchMode === 'task' ? 'Lists' : 'Tasks'}</span>
-        <!-- svelte-ignore a11y-click-events-have-key-events -->
-        <span class="quick-status-close-btn" on:click={closeModal} role="button" tabindex="0" title="Close (Esc)"><b>Esc</b> Close</span>
+        {#if isFocusedListMode}
+            <span><b>↑↓←→</b> Navigate</span>
+            <span><b>Click / Space / Enter</b> Toggle List</span>
+            <span><b>Delete</b> Clear all</span>
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <span class="quick-status-close-btn" on:click={closeModal} role="button" tabindex="0" title="Close (Esc)"><b>Esc</b> Close</span>
+        {:else}
+            <span><b>↑↓←→</b> Navigate</span>
+            <span><b>F2</b> Rename</span>
+            <span><b>Enter</b> Open in Center View</span>
+            <span><b>Tab</b> Switch to {searchMode === 'task' ? 'Lists' : 'Tasks'}</span>
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <span class="quick-status-close-btn" on:click={closeModal} role="button" tabindex="0" title="Close (Esc)"><b>Esc</b> Close</span>
+        {/if}
     </div>
 </div>
