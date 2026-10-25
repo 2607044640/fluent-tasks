@@ -179,6 +179,16 @@ const zhCn: typeof en = {
     setting_fullscreen_detail_modal_desc: "悬浮打开任务详情时以全屏状态展示（类似于子步骤全屏模式）。关闭后恢复为居中小窗口卡片。",
     restore_window: "还原窗口",
     fullscreen_window: "全屏放大",
+    setting_focused_lists_title: "聚焦清单 (Focused lists)",
+    setting_focused_lists_desc: "在标题旁显示聚焦清单按钮及快捷切换胶囊。默认关闭。",
+    focused_lists_btn_tooltip: "聚焦清单",
+    focused_lists_save_btn: "保存",
+    focused_lists_saved_notice: "聚焦清单已保存",
+    focused_lists_selected_count: "已选 {0} 个",
+    focused_lists_select_all: "全选",
+    focused_lists_clear_all: "清空",
+    focused_lists_search_placeholder: "搜索清单...",
+    focused_lists_no_results: "未找到匹配的清单。",
 };
 
 export default zhCn;

@@ -177,6 +177,16 @@ const en = {
     setting_fullscreen_detail_modal_desc: "Open floating task details modal in full-screen mode (similar to Subtasks modal). When disabled, displays as a centered window card.",
     restore_window: "Restore window",
     fullscreen_window: "Full screen",
+    setting_focused_lists_title: "Focused lists",
+    setting_focused_lists_desc: "Display focused list shortcuts and a quick selector next to the list title in the header. Disabled by default.",
+    focused_lists_btn_tooltip: "Focused lists",
+    focused_lists_save_btn: "Save",
+    focused_lists_saved_notice: "Focused lists saved",
+    focused_lists_selected_count: "{0} selected",
+    focused_lists_select_all: "Select all",
+    focused_lists_clear_all: "Clear all",
+    focused_lists_search_placeholder: "Search lists...",
+    focused_lists_no_results: "No matching lists found.",
 };
 
 export default en;

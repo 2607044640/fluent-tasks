@@ -31,6 +31,8 @@ export interface FluentTasksSettings {
     quickListTitleAlignment: 'center' | 'left';
     quickListMaxCardWidth: number;
     showStepsProgressPill: boolean;
+    enableFocusedLists: boolean;
+    focusedLists: string[];
 }
 
 export const DEFAULT_SETTINGS: FluentTasksSettings = {
@@ -62,6 +64,8 @@ export const DEFAULT_SETTINGS: FluentTasksSettings = {
     enableTaskWeightMode: false,
     quickListSearchMode: 'list',
     quickListTitleAlignment: 'center',
+    enableFocusedLists: false,
+    focusedLists: [],
 }
 
 export class FluentTasksSettingTab extends PluginSettingTab {
@@ -191,6 +195,16 @@ export class FluentTasksSettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.showStepsProgressPill ?? false)
                 .onChange(async (value) => {
                     this.plugin.settings.showStepsProgressPill = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName(t("setting_focused_lists_title" as any) || "Focused lists")
+            .setDesc(t("setting_focused_lists_desc" as any) || "Display focused list shortcuts and a quick selector next to the list title in the header. Disabled by default.")
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.enableFocusedLists ?? false)
+                .onChange(async (value) => {
+                    this.plugin.settings.enableFocusedLists = value;
                     await this.plugin.saveSettings();
                 }));
 

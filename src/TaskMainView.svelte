@@ -17,6 +17,7 @@
     import { LinkedNoteService } from "./services/LinkedNoteService";
     import { promptDeleteTaskWithLinkedNote } from "./modals/ConfirmDeleteLinkedNoteModal";
     import { TaskStepsModal } from "./modals/TaskStepsModal";
+    import { FocusedListsModal } from "./modals/FocusedListsModal";
     import { BackupModal } from "./modals/BackupModal";
     import { MoveToSuggestModal } from "./modals/MoveToSuggestModal";
     import { t, isChinese } from "./lang/helpers";
@@ -62,6 +63,54 @@
     let hideLeftSidebar: boolean = plugin?.settings?.hideLeftSidebar ?? false;
     let hasFloatingModalHotkey: boolean = true;
     $: showNoHotkeyWarning = hideLeftSidebar && !hasFloatingModalHotkey;
+
+    // Focused Lists State
+    let enableFocusedLists: boolean = plugin?.settings?.enableFocusedLists ?? false;
+    let focusedCategories: CategoryInfo[] = [];
+
+    async function updateFocusedCategories() {
+        enableFocusedLists = plugin?.settings?.enableFocusedLists ?? false;
+        if (!enableFocusedLists) {
+            focusedCategories = [];
+            return;
+        }
+        const paths: string[] = plugin?.settings?.focusedLists || [];
+        if (paths.length === 0) {
+            focusedCategories = [];
+            return;
+        }
+        try {
+            const allCats = await dataService.getCategories();
+            const map = new Map<string, CategoryInfo>();
+            for (const c of allCats) {
+                map.set(c.filepath, c);
+            }
+            map.set(STARRED_CATEGORY_PATH, {
+                id: STARRED_CATEGORY_PATH,
+                name: STARRED_CATEGORY_NAME,
+                filepath: STARRED_CATEGORY_PATH,
+                type: "category",
+                isSmartList: true
+            });
+            const list: CategoryInfo[] = [];
+            for (const p of paths) {
+                const found = map.get(p);
+                if (found) list.push(found);
+            }
+            focusedCategories = list;
+        } catch (err) {
+            console.error("[TaskMainView] Error updating focused categories:", err);
+        }
+    }
+
+    function openFocusedListsModal() {
+        new FocusedListsModal(actualApp, plugin, dataService).open();
+    }
+
+    function handleSelectFocusedCategory(cat: CategoryInfo) {
+        if (!cat || currentCategory?.filepath === cat.filepath) return;
+        EventBus.emit(EventName.CATEGORY_SELECTED, { category: cat });
+    }
 
     // Inline Category Rename State
     let isEditingCategoryName: boolean = false;
@@ -1216,6 +1265,7 @@
         hiddenStarMode = s.hiddenStarMode !== undefined ? s.hiddenStarMode : (s.disableStars ?? false);
         disableStars = hiddenStarMode;
         checkHotkeyStatus();
+        void updateFocusedCategories();
         incompleteTasks = applyWeightSort(rawIncompleteTasks, enableTaskWeightMode);
         completedTasks = applyWeightSort(rawCompletedTasks, enableTaskWeightMode);
         if (enableTaskWeightMode) {
@@ -1439,8 +1489,10 @@
     // =============================================
     onMount(() => {
         checkHotkeyStatus();
+        void updateFocusedCategories();
         EventBus.on(EventName.CATEGORY_SELECTED, handleCategorySelected);
         EventBus.on(EventName.CATEGORY_RENAMED, handleCategoryRenamed);
+        EventBus.on(EventName.CATEGORY_LIST_CHANGED, updateFocusedCategories);
         EventBus.on(EventName.TASK_UPDATED, handleTaskUpdated);
         EventBus.on(EventName.TASK_MOVED, handleTaskMoved);
         EventBus.on(EventName.TASK_DELETED, handleTaskDeleted);
@@ -1486,6 +1538,7 @@
         document.removeEventListener('visibilitychange', handleWindowFocusOrVisibility);
         EventBus.off(EventName.CATEGORY_SELECTED, handleCategorySelected);
         EventBus.off(EventName.CATEGORY_RENAMED, handleCategoryRenamed);
+        EventBus.off(EventName.CATEGORY_LIST_CHANGED, updateFocusedCategories);
         EventBus.off(EventName.TASK_UPDATED, handleTaskUpdated);
         EventBus.off(EventName.TASK_MOVED, handleTaskMoved);
         EventBus.off(EventName.TASK_DELETED, handleTaskDeleted);
@@ -1858,6 +1911,7 @@
                 (leaf as any).updateHeader?.();
             }
         }
+        void updateFocusedCategories();
         if (taskSearchResults.length > 0) {
             taskSearchResults = taskSearchResults.map(res => {
                 if (res.category && (res.category.filepath === oldPath || res.category.id === oldPath)) {
@@ -3076,39 +3130,77 @@
     {#if currentCategory}
         <!-- Header -->
         <div class="main-header">
-            {#if isEditingCategoryName}
-                <div class="category-title-edit-wrap">
-                    <input 
-                        type="text"
-                        class="category-title-input"
-                        bind:this={categoryRenameInputEl}
-                        bind:value={editingCategoryName}
-                        on:compositionstart={() => { isComposingCategoryTitle = true; }}
-                        on:compositionend={() => { isComposingCategoryTitle = false; }}
-                        on:keydown={handleCategoryTitleKeydown}
-                        on:blur={commitRenameCategory}
-                    />
-                </div>
-            {:else if currentCategory.filepath === STARRED_CATEGORY_PATH}
-                <h1 class="category-title is-smart-title" style="cursor: default; display: flex; align-items: center; gap: 8px;">
-                    <span style="color: var(--todo-star, var(--todo-accent, #8b5cf6)); font-size: 1.1em;">★</span>
-                    <span>{currentCategory.name}</span>
-                </h1>
-            {:else}
-                <!-- svelte-ignore a11y-click-events-have-key-events -->
-                <h1 
-                    class="category-title" 
-                    role="button"
-                    tabindex="0"
-                    title={t("rename_list_tooltip")}
-                    on:click={startRenameCategory}
-                    on:keydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); startRenameCategory(); } }}
-                    on:mouseenter={() => { isCategoryTitleHovered = true; }}
-                    on:mouseleave={() => { isCategoryTitleHovered = false; }}
-                >
-                    {currentCategory.name}
-                </h1>
-            {/if}
+            <div class="main-header-left">
+                {#if isEditingCategoryName}
+                    <div class="category-title-edit-wrap">
+                        <input 
+                            type="text"
+                            class="category-title-input"
+                            bind:this={categoryRenameInputEl}
+                            bind:value={editingCategoryName}
+                            on:compositionstart={() => { isComposingCategoryTitle = true; }}
+                            on:compositionend={() => { isComposingCategoryTitle = false; }}
+                            on:keydown={handleCategoryTitleKeydown}
+                            on:blur={commitRenameCategory}
+                        />
+                    </div>
+                {:else if currentCategory.filepath === STARRED_CATEGORY_PATH}
+                    <h1 class="category-title is-smart-title" style="cursor: default; display: flex; align-items: center; gap: 8px;">
+                        <span style="color: var(--todo-star, var(--todo-accent, #8b5cf6)); font-size: 1.1em;">★</span>
+                        <span>{currentCategory.name}</span>
+                    </h1>
+                {:else}
+                    <!-- svelte-ignore a11y-click-events-have-key-events -->
+                    <h1 
+                        class="category-title" 
+                        role="button"
+                        tabindex="0"
+                        title={t("rename_list_tooltip")}
+                        on:click={startRenameCategory}
+                        on:keydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); startRenameCategory(); } }}
+                        on:mouseenter={() => { isCategoryTitleHovered = true; }}
+                        on:mouseleave={() => { isCategoryTitleHovered = false; }}
+                    >
+                        {currentCategory.name}
+                    </h1>
+                {/if}
+
+                {#if enableFocusedLists}
+                    <div class="focused-lists-bar">
+                        <button 
+                            class="focused-lists-config-btn"
+                            type="button"
+                            title={t("focused_lists_btn_tooltip") || "Focused lists"}
+                            aria-label="Focused lists"
+                            on:click={openFocusedListsModal}
+                        >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="14" width="7" height="7"></rect>
+                                <rect x="3" y="14" width="7" height="7"></rect>
+                            </svg>
+                        </button>
+
+                        {#if focusedCategories.length > 0}
+                            <div class="focused-lists-pills">
+                                {#each focusedCategories as cat (cat.filepath)}
+                                    <button 
+                                        class="focused-list-pill"
+                                        class:is-active={currentCategory?.filepath === cat.filepath}
+                                        type="button"
+                                        title={cat.name}
+                                        on:click={() => handleSelectFocusedCategory(cat)}
+                                    >
+                                        {cat.name}
+                                    </button>
+                                {/each}
+                            </div>
+                        {/if}
+                    </div>
+                {/if}
+            </div>
+
             <div class="main-header-actions">
                 {#if showNoHotkeyWarning}
                     <button class="header-hotkey-warning-pill"
