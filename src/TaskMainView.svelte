@@ -31,7 +31,11 @@
         copyImageToClipboard,
         getImagesFromClipboard,
         saveImageAttachment,
+        getAllImagesInTask,
+        cleanupOrphanImages,
+        isSameImageRef,
     } from "./utils/imageAttachmentUtils";
+    import type { TrashedImageBackup } from "./types";
 
     let hoveredThumbnail: { task: TaskItem; imageRef: string } | null = null;
     let currentHoveredTask: TaskItem | null = null;
@@ -3064,9 +3068,23 @@
         const toDelete = all.filter(t => selectedTaskIds.has(t.id));
         if (toDelete.length === 0) return;
 
+        const imagesToInspect: string[] = [];
+        for (const t of toDelete) {
+            for (const img of getAllImagesInTask(t)) {
+                if (!imagesToInspect.some(existing => isSameImageRef(existing, img))) {
+                    imagesToInspect.push(img);
+                }
+            }
+        }
+
         incompleteTasks = incompleteTasks.filter(t => !selectedTaskIds.has(t.id));
         completedTasks = completedTasks.filter(t => !selectedTaskIds.has(t.id));
         await dataService.saveTasks(currentCategory.filepath, [...incompleteTasks, ...completedTasks]);
+
+        let trashedImages: TrashedImageBackup[] = [];
+        if (imagesToInspect.length > 0 && plugin?.app) {
+            trashedImages = await cleanupOrphanImages(imagesToInspect, plugin.app, dataService);
+        }
         
         selectedTaskIds.clear();
         selectedTaskIds = selectedTaskIds;
@@ -3076,6 +3094,7 @@
         EventBus.emit(EventName.TASK_DELETED, {
             categoryFilepath: currentCategory.filepath,
             tasks: toDelete,
+            trashedImages,
             isBatch: true,
         });
     }

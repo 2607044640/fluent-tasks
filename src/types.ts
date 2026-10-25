@@ -167,11 +167,17 @@ export interface CategoryRenamedPayload {
     category: CategoryInfo;
 }
 
+export interface TrashedImageBackup {
+    path: string;
+    binary: ArrayBuffer;
+}
+
 export interface StepDeletedPayload {
     taskId: string;
     categoryFilepath: string;
     step: TaskStep;
     index: number;
+    trashedImages?: TrashedImageBackup[];
 }
 
 export interface CategoryDeletedPayload {

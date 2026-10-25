@@ -1,10 +1,11 @@
 import { App } from "obsidian";
-import { TaskItem, CategoryInfo, SidebarItem, GroupInfo, STARRED_CATEGORY_PATH } from "./types";
+import { TaskItem, CategoryInfo, SidebarItem, GroupInfo, STARRED_CATEGORY_PATH, TrashedImageBackup } from "./types";
 import { AtomicIOPipeline } from "./services/AtomicIOPipeline";
 import { CategoryService } from "./services/CategoryService";
 import { TaskService } from "./services/TaskService";
 import { LinkedNoteService } from "./services/LinkedNoteService";
 import { getFlatCategories } from "./utils/sidebarTreeUtils";
+import { getAllImagesInTask, cleanupOrphanImages } from "./utils/imageAttachmentUtils";
 
 /**
  * DataService.ts
@@ -196,15 +197,24 @@ export class DataService {
         return this.taskSvc.updateTask(categoryFilepath, updatedTask);
     }
 
-    async deleteTask(categoryFilepath: string, task: TaskItem): Promise<void> {
+    async deleteTask(categoryFilepath: string, task: TaskItem): Promise<TrashedImageBackup[]> {
+        const imagesToInspect = getAllImagesInTask(task);
         if (categoryFilepath === STARRED_CATEGORY_PATH) {
             const targetFile = task.sourceFilepath || await this.findCategoryForTaskId(task.id);
             if (targetFile) {
-                return this.taskSvc.deleteTask(targetFile, task);
+                await this.taskSvc.deleteTask(targetFile, task);
+                if (imagesToInspect.length > 0) {
+                    return cleanupOrphanImages(imagesToInspect, this.app, this);
+                }
+                return [];
             }
             throw new Error(`Failed to locate source category for task ${task.id}`);
         }
-        return this.taskSvc.deleteTask(categoryFilepath, task);
+        await this.taskSvc.deleteTask(categoryFilepath, task);
+        if (imagesToInspect.length > 0) {
+            return cleanupOrphanImages(imagesToInspect, this.app, this);
+        }
+        return [];
     }
 
     async moveTask(task: TaskItem, sourceFilepath: string, targetFilepath: string): Promise<void> {

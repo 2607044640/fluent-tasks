@@ -110,8 +110,8 @@ export async function promptDeleteTaskWithLinkedNote(
 
     if (!taskNoteFile || LinkedNoteService.isCategoryListFile(taskNoteFile)) {
         // No dedicated physical task note file exists on disk (or safety check), delete task directly without prompt
-        await dataService.deleteTask(categoryFilepath, task);
-        EventBus.emit(EventName.TASK_DELETED, { task, categoryFilepath });
+        const trashedImages = await dataService.deleteTask(categoryFilepath, task);
+        EventBus.emit(EventName.TASK_DELETED, { task, categoryFilepath, trashedImages });
         if (onDeleted) await onDeleted();
         return true;
     }
@@ -143,11 +143,12 @@ export async function promptDeleteTaskWithLinkedNote(
                 }
             }
 
-            await dataService.deleteTask(categoryFilepath, task);
+            const trashedImages = await dataService.deleteTask(categoryFilepath, task);
             EventBus.emit(EventName.TASK_DELETED, { 
                 task, 
                 categoryFilepath,
-                trashedTaskNote 
+                trashedTaskNote,
+                trashedImages
             });
             if (onDeleted) await onDeleted();
             resolve(true);

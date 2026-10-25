@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount, onDestroy } from "svelte";
     import { Notice } from "obsidian";
-    import type { TaskItem, StepDeletedPayload, CategoryDeletedPayload } from "./types";
+    import type { TaskItem, StepDeletedPayload, CategoryDeletedPayload, TrashedImageBackup } from "./types";
     import { EventName } from "./types";
     import { EventBus } from "./EventBus";
     import type { DataService } from "./DataService";
@@ -16,6 +16,7 @@
         categoryFilepath: string;
         tasks?: TaskItem[];
         trashedTaskNotes?: Array<{ path: string; name: string; content?: string }>;
+        trashedImages?: TrashedImageBackup[];
         stepPayload?: StepDeletedPayload;
         categoryPayload?: CategoryDeletedPayload;
         message: string;
@@ -94,7 +95,8 @@
         categoryFilepath: string, 
         tasks: TaskItem[], 
         isBatch: boolean = false, 
-        trashedTaskNotes?: Array<{ path: string; name: string; content?: string }>
+        trashedTaskNotes?: Array<{ path: string; name: string; content?: string }>,
+        trashedImages?: TrashedImageBackup[]
     ) {
         if (!tasks || tasks.length === 0) return;
         const count = tasks.length;
@@ -107,6 +109,7 @@
             categoryFilepath,
             tasks,
             trashedTaskNotes,
+            trashedImages,
             message,
             isBatch: isBatch || count > 1,
         });
@@ -162,6 +165,26 @@
                 targetTask.steps = existingSteps;
 
                 await dataService.updateTask(categoryFilepath, targetTask);
+
+                if (toast.stepPayload.trashedImages && Array.isArray(toast.stepPayload.trashedImages)) {
+                    for (const img of toast.stepPayload.trashedImages) {
+                        try {
+                            const exists = await plugin.app.vault.adapter.exists(img.path);
+                            if (!exists && img.binary && img.binary.byteLength > 0) {
+                                const lastSlash = img.path.lastIndexOf("/");
+                                if (lastSlash > 0) {
+                                    const parentDir = img.path.substring(0, lastSlash);
+                                    if (!(await plugin.app.vault.adapter.exists(parentDir))) {
+                                        await plugin.app.vault.createFolder(parentDir).catch(() => {});
+                                    }
+                                }
+                                await plugin.app.vault.createBinary(img.path, img.binary);
+                            }
+                        } catch (e) {
+                            console.warn("[FluentTasks] Failed to restore step image on undo:", e);
+                        }
+                    }
+                }
 
                 EventBus.emit(EventName.TASK_UPDATED, {
                     task: targetTask,
@@ -240,6 +263,27 @@
                     }
                 }
 
+                // Restore any trashed task images (from memory binary backup)
+                if (toast.trashedImages && Array.isArray(toast.trashedImages)) {
+                    for (const img of toast.trashedImages) {
+                        try {
+                            const exists = await plugin.app.vault.adapter.exists(img.path);
+                            if (!exists && img.binary && img.binary.byteLength > 0) {
+                                const lastSlash = img.path.lastIndexOf("/");
+                                if (lastSlash > 0) {
+                                    const parentDir = img.path.substring(0, lastSlash);
+                                    if (!(await plugin.app.vault.adapter.exists(parentDir))) {
+                                        await plugin.app.vault.createFolder(parentDir).catch(() => {});
+                                    }
+                                }
+                                await plugin.app.vault.createBinary(img.path, img.binary);
+                            }
+                        } catch (imgErr) {
+                            console.error("Failed to restore trashed task image:", imgErr);
+                        }
+                    }
+                }
+
                 new Notice(
                     newRestores.length === 1 
                         ? `Restored: "${formatToastTitle(newRestores[0].title)}"` 
@@ -255,10 +299,11 @@
     function handleTaskDeleted(payload: any) {
         if (!payload || !payload.categoryFilepath) return;
         const trashedTaskNotes = payload.trashedTaskNotes || (payload.trashedTaskNote ? [payload.trashedTaskNote] : undefined);
+        const trashedImages = payload.trashedImages;
         if (payload.tasks && Array.isArray(payload.tasks)) {
-            pushTaskUndoToast(payload.categoryFilepath, payload.tasks, true, trashedTaskNotes);
+            pushTaskUndoToast(payload.categoryFilepath, payload.tasks, true, trashedTaskNotes, trashedImages);
         } else if (payload.task && !payload.isBatch) {
-            pushTaskUndoToast(payload.categoryFilepath, [payload.task], false, trashedTaskNotes);
+            pushTaskUndoToast(payload.categoryFilepath, [payload.task], false, trashedTaskNotes, trashedImages);
         }
     }
 

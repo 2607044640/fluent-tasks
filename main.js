@@ -2626,6 +2626,927 @@ title: ${escapedTitle}
 };
 LinkedNoteService.internalRenames = /* @__PURE__ */ new Map();
 
+// src/utils/imageAttachmentUtils.ts
+var import_obsidian6 = require("obsidian");
+
+// src/lang/helpers.ts
+var import_obsidian5 = require("obsidian");
+
+// src/lang/locale/en.ts
+var en = {
+  // Action ribbon & Commands
+  action_multi_select: "Multi-select Tasks (Batch Delete/Star)",
+  action_backup_manager: "Data Backup Manager (Snapshots & Restore)",
+  cmd_backup_manager: "Open Backup Manager (Snapshots & Restore)",
+  // Backup Service
+  backup_dir: "Backup folder: {0}",
+  backup_file_not_found: "Backup file not found",
+  backup_invalid_format: "\u274C Invalid backup format: missing files payload",
+  backup_restore_success: "\u2705 Backup restored: recovered {0} files containing {1} tasks",
+  backup_restore_failed: "\u274C Restore failed: {0}",
+  backup_deleted: "\u{1F5D1}\uFE0F Backup deleted",
+  backup_import_dialog_title: "Select Backup File to Import",
+  backup_file_filter_name: "Fluent Tasks Backup File (*.json)",
+  // Backup Modal UI
+  backup_modal_title: "Task Data Backup Manager",
+  daily_backup_title: "Daily Auto Backup",
+  daily_backup_desc: "Automatically creates a local snapshot on first launch each day",
+  daily_backup_enabled: "\u2705 Daily auto backup enabled",
+  daily_backup_disabled: "\u26A0\uFE0F Daily auto backup disabled",
+  backup_now: "Backup Now",
+  backing_up: "Backing up...",
+  data_saved_to: "Data saved to {0}",
+  backup_failed: "\u274C Backup failed: {0}",
+  import_backup: "Import Backup",
+  backup_history_title: "Backup History ({0})",
+  open_backup_folder: "\u{1F4C2} Open Folder",
+  open_backup_folder_tooltip: "Open backup folder in file explorer",
+  delete_all_backups: "\u{1F5D1}\uFE0F Delete All Backups",
+  delete_all_backups_tooltip: "Delete all local backup files",
+  no_backups_to_delete: "No backups to delete",
+  refresh_list: "Refresh list",
+  loading_backups: "Loading backup records...",
+  no_local_backups: "\u{1F4E6} No local backups found",
+  no_local_backups_hint: 'Click "Backup Now" above to create your first snapshot',
+  daily_backup_badge: "Daily Backup",
+  manual_backup_badge: "Manual Backup",
+  task_count_label: "{0} tasks",
+  list_count_label: "{0} lists",
+  restore_snapshot_tooltip: "Restore this snapshot",
+  restore: "Restore",
+  delete_backup_tooltip: "Delete backup",
+  confirm_restore_backup: 'Are you sure you want to restore backup "{0}"?\nAll task lists will be restored with data from this snapshot.',
+  confirm_delete_backup: 'Are you sure you want to delete backup "{0}"?',
+  confirm_delete_all_backups: "\u26A0\uFE0F Dangerous action: Delete all {0} local backup files?\nThis action cannot be undone!",
+  all_backups_deleted: "\u{1F5D1}\uFE0F Deleted all {0} backup files",
+  // Task Note Modal
+  confirm_delete_task_note_title: 'Delete task note for "{0}"?',
+  confirm_delete_task_note_p1: "The task to be deleted has a dedicated task note:",
+  confirm_delete_task_note_p2: "You can delete only the task itself, or move both the task and its task note to trash.",
+  confirm_delete_linked_note_title: 'Delete task note for "{0}"?',
+  confirm_delete_linked_note_p1: "The task to be deleted has a dedicated task note:",
+  confirm_delete_linked_note_p2: "You can delete only the task itself, or move both the task and its task note to trash.",
+  cancel: "Cancel",
+  delete_task_only_keep_note: "Delete Task Only (Keep Note)",
+  delete_task_and_note: "Delete Task & Task Note",
+  // Task Note Tooltips & Notices (TaskDetailView)
+  task_note_tooltip_exists: "Task note: {0} (Click to open, hover to preview, right-click to manage)",
+  task_note_tooltip_create: "Task Note (Click to create dedicated note and open)",
+  task_note_recreated: "Recreated and opened task note: {0}",
+  task_note_created: "Created and opened task note: {0}",
+  open_task_note: "Open task note",
+  unlink_task_note: "Unlink task note",
+  unlink_task_note_success: "Task note unlinked successfully",
+  // Legacy Aliases
+  linked_note_tooltip_exists: "Task note: {0} (Click to open, hover to preview, right-click to manage)",
+  linked_note_tooltip_create: "Task Note (Click to create dedicated note and open)",
+  linked_note_recreated: "Recreated and opened task note: {0}",
+  linked_note_created: "Created and opened task note: {0}",
+  open_linked_note: "Open task note",
+  unlink_note: "Unlink note",
+  unlink_note_success: "Note unlinked successfully",
+  // TaskMainView Multi-Select & Batch
+  multi_select_mode_enabled: "\u2611\uFE0F Multi-select mode enabled: Select tasks for batch operations",
+  batch_starred_tasks: "\u2B50 Starred {0} selected tasks",
+  batch_unstarred_tasks: "Unstarred {0} selected tasks",
+  confirm_batch_delete_tasks: "Are you sure you want to delete {0} selected tasks? This action cannot be undone.",
+  batch_deleted_tasks_notice: "\u{1F5D1}\uFE0F Batch deleted {0} tasks",
+  multi_select_tooltip: "Multi-select Tasks (Batch Delete/Star)",
+  backup_btn_tooltip: "Data Backup Manager",
+  guide_btn_tooltip: "Features & Shortcuts Guide",
+  search_list_tooltip: "Search this list",
+  linked_note_preview_tooltip: "Linked note: {0} (Click to open, hover to preview)",
+  selected_items_label: "Selected {0} items",
+  deselect_all: "Deselect All",
+  select_all: "Select All",
+  select_incomplete_tasks: "Select Incomplete Tasks",
+  select_completed_tasks: "Select Completed Tasks",
+  batch_star: "Batch Star / Unstar",
+  batch_delete: "Batch Delete",
+  exit: "\u2715 Exit",
+  exit_multi_select: "Exit Selection Mode",
+  // Quick Task Modal
+  quick_task_tip: "\u{1F4A1} Tip: Set a hotkey for <code>Fluent Tasks: Open Quick Task Modal</code> in <b>Settings \u2192 Hotkeys</b> for instant access ({0} reminders left)",
+  // Quick List Modal
+  focus_pick_mode_enabled: "\u{1F3AF} Selection mode enabled: Click a list to set as default focus (Press ESC to cancel)",
+  focus_default_set: '\u{1F3AF} Set "{0}" as default focus list on open',
+  focus_cancel_default: "Remove default focus (revert to top-left)",
+  focus_set_default: "Set as default focus (opened first)",
+  focus_restored_default: "Restored default focus (top-left item)",
+  focus_restored_default_notice: "\u{1F3AF} Restored default focus: Top-left first item",
+  focus_pick_cancelled: "Cancelled default focus list selection",
+  quick_list_tip: "\u{1F4A1} Tip: Set a hotkey for <code>Fluent Tasks: Open Quick List Modal</code> in <b>Settings \u2192 Hotkeys</b> ({0} reminders left)",
+  focus_btn_aria_label: "Set default focus list: Click to enter selection mode, right click to reset to top-left",
+  focus_picking_target: "Select target list...",
+  focus_target_label: "Focus: {0}",
+  focus_set_btn: "Set Focus",
+  focus_popover_title: "\u{1F3AF} Initial Focus Settings",
+  focus_current_prefix: "Current default focus: ",
+  focus_unset_prefix: "Not set, defaults to: ",
+  focus_top_left_default: "Top-left first item",
+  focus_instruction_desc: "Click button to enter selection mode then click target list; right click button to reset to top-left.",
+  focus_tag_tooltip: "Default focus target",
+  quick_list_search_mode_list: "Lists",
+  quick_list_search_mode_task: "Tasks",
+  quick_list_search_mode_title_to_task: "Currently searching lists. Click to permanently switch to task search.",
+  quick_list_search_mode_title_to_list: "Currently searching tasks. Click to permanently switch to list search.",
+  quick_list_task_search_placeholder: "Search all tasks (title, steps, notes)...",
+  quick_list_task_search_no_results: "No results found.",
+  quick_list_task_search_title: "Search all tasks",
+  quick_list_task_search_empty_hint: "Type keywords to search across task titles, checklist steps, and notes.",
+  quick_list_search_filter_active_only: "Active only",
+  quick_list_search_filter_all_tasks: "All tasks",
+  quick_list_search_filter_tooltip: "Toggle completed tasks filter",
+  main_view_task_search_placeholder: "Search tasks in this list (title, steps, notes)...",
+  main_view_search_list_only_btn: "List only",
+  main_view_search_list_only_tooltip: "Current scope: List only. Click for info on searching all tasks.",
+  main_view_search_all_tasks_hint: "To search across all tasks, set a hotkey for plugin command 'Search all tasks' in Settings -> Hotkeys.",
+  setting_hide_left_sidebar_title: "Hide Left Sidebar (Floating UI Mode)",
+  setting_hide_left_sidebar_desc: "Hide the left sidebar list view completely. Navigate lists using the Quick List Floating UI (modal). Recommended to bind a hotkey for quick access.",
+  setting_auto_expand_sidebar_on_drag_title: "Auto-Expand Left Sidebar on Task Drag",
+  setting_auto_expand_sidebar_on_drag_desc: "Temporarily expands the left sidebar when dragging a task to easily move it to other lists, and auto-collapses on release (if it was collapsed). If the sidebar is already open with Fluent Tasks, it only reveals the list.",
+  warn_bind_hotkey_btn: "Set Floating UI Hotkey",
+  warn_bind_hotkey_tooltip: "You enabled 'Hide Left Sidebar'. Please bind a hotkey for 'Open Quick List Modal' in Settings -> Hotkeys to switch lists conveniently.",
+  warn_bind_hotkey_notice: "\u26A0\uFE0F [Fluent Tasks] 'Hide Left Sidebar' is enabled, but no hotkey is bound for the Floating UI! Please assign a hotkey in Settings -> Hotkeys.",
+  empty_state_hide_sidebar_desc: "Sidebar is hidden. Use Quick List (Floating UI) to select a list.",
+  rename_list_tooltip: "Click to rename list (F2)",
+  rename_list_menu_item: "Rename list (F2)",
+  confirm_save_title: "Save changes?",
+  confirm_save_meta_desc: "Task metadata has unsaved changes. Do you want to save changes before exiting?",
+  confirm_save_btn: "Save (Enter)",
+  confirm_dont_save_btn: "Don't Save",
+  confirm_keep_editing_btn: "Keep Editing (Esc)",
+  move_to_menu_title: "Move to",
+  search_list_to_move: "Search destination list...",
+  add_side_step: "Add side step",
+  // Image attachment & clipboard operations
+  image_copied: "Image copied to clipboard",
+  image_cut: "Image cut to clipboard",
+  image_deleted: "Image removed",
+  image_pasted: "Image attached",
+  image_preview_title: "Image Preview",
+  image_tooltip: "Click to preview \u2022 Hover + Ctrl+C to copy \u2022 Hover + Ctrl+X to cut",
+  image_copy_tooltip: "Copy image (Ctrl+C)",
+  image_cut_tooltip: "Cut image (Ctrl+X)",
+  image_delete_tooltip: "Remove image (Ctrl+X)",
+  image_hint_copy: "Copy",
+  image_hint_cut: "Cut",
+  image_hint_close: "Close",
+  image_zoom_in: "Click to zoom 1:1",
+  image_zoom_out: "Click to fit screen",
+  image_hint_zoom: "Zoom 1:1",
+  image_hint_fit: "Fit screen",
+  copy: "Copy",
+  cut: "Cut",
+  close: "Close",
+  setting_fullscreen_detail_modal_title: "Full-Screen Task Details Modal",
+  setting_fullscreen_detail_modal_desc: "Open floating task details modal in full-screen mode (similar to Subtasks modal). When disabled, displays as a centered window card.",
+  restore_window: "Restore window",
+  fullscreen_window: "Full screen",
+  setting_focused_lists_title: "Focused lists",
+  setting_focused_lists_desc: "Display focused list shortcuts and a quick selector next to the list title in the header. Disabled by default.",
+  focused_lists_btn_tooltip: "Focused lists",
+  focused_lists_save_btn: "Save",
+  focused_lists_saved_notice: "Focused lists saved",
+  focused_lists_selected_count: "{0} selected",
+  focused_lists_select_all: "Select all",
+  focused_lists_clear_all: "Clear all",
+  focused_lists_search_placeholder: "Search lists...",
+  focused_lists_no_results: "No matching lists found."
+};
+var en_default = en;
+
+// src/lang/locale/zh-cn.ts
+var zhCn = {
+  // Action ribbon & Commands
+  action_multi_select: "\u591A\u9009\u4EFB\u52A1 (\u6279\u91CF\u5220\u9664/\u6536\u85CF)",
+  action_backup_manager: "\u6570\u636E\u5907\u4EFD\u5668 (\u5FEB\u7167\u4E0E\u6062\u590D)",
+  cmd_backup_manager: "\u6253\u5F00\u5907\u4EFD\u7BA1\u7406\u5668 (\u6570\u636E\u5907\u4EFD\u4E0E\u6062\u590D)",
+  // Backup Service
+  backup_dir: "\u5907\u4EFD\u76EE\u5F55: {0}",
+  backup_file_not_found: "\u672A\u627E\u5230\u6307\u5B9A\u7684\u5907\u4EFD\u6587\u4EF6",
+  backup_invalid_format: "\u274C \u5907\u4EFD\u6587\u4EF6\u683C\u5F0F\u65E0\u6548\uFF1A\u7F3A\u5C11 files \u6570\u636E\u9879",
+  backup_restore_success: "\u2705 \u6210\u529F\u8FD8\u539F\u5907\u4EFD\uFF1A\u5171\u6062\u590D {0} \u4E2A\u6587\u4EF6\uFF0C\u5305\u542B {1} \u9879\u4EFB\u52A1",
+  backup_restore_failed: "\u274C \u8FD8\u539F\u5931\u8D25: {0}",
+  backup_deleted: "\u{1F5D1}\uFE0F \u5907\u4EFD\u5DF2\u5220\u9664",
+  backup_import_dialog_title: "\u9009\u62E9\u8981\u5BFC\u5165\u7684\u5907\u4EFD\u6587\u4EF6",
+  backup_file_filter_name: "Fluent Tasks \u5907\u4EFD\u6587\u4EF6 (*.json)",
+  // Backup Modal UI
+  backup_modal_title: "\u4EFB\u52A1\u6570\u636E\u5907\u4EFD\u5668",
+  daily_backup_title: "\u6BCF\u65E5\u81EA\u52A8\u5907\u4EFD",
+  daily_backup_desc: "\u6BCF\u5929\u9996\u6B21\u6253\u5F00\u65F6\u81EA\u52A8\u5728\u672C\u5730\u751F\u6210\u5FEB\u7167",
+  daily_backup_enabled: "\u2705 \u5DF2\u5F00\u542F\u6BCF\u65E5\u81EA\u52A8\u5907\u4EFD",
+  daily_backup_disabled: "\u26A0\uFE0F \u5DF2\u5173\u95ED\u6BCF\u65E5\u81EA\u52A8\u5907\u4EFD",
+  backup_now: "\u73B0\u5728\u5907\u4EFD",
+  backing_up: "\u5907\u4EFD\u4E2D...",
+  data_saved_to: "\u6570\u636E\u5DF2\u4FDD\u5B58\u5230 {0}",
+  backup_failed: "\u274C \u5907\u4EFD\u5931\u8D25: {0}",
+  import_backup: "\u5BFC\u5165\u5907\u4EFD",
+  backup_history_title: "\u5386\u53F2\u5907\u4EFD\u8BB0\u5F55 ({0})",
+  open_backup_folder: "\u{1F4C2} \u6253\u5F00\u76EE\u5F55",
+  open_backup_folder_tooltip: "\u5728\u6587\u4EF6\u7BA1\u7406\u5668\u4E2D\u6253\u5F00\u5907\u4EFD\u6240\u5728\u6587\u4EF6\u5939",
+  delete_all_backups: "\u{1F5D1}\uFE0F \u5220\u9664\u5168\u90E8\u5907\u4EFD",
+  delete_all_backups_tooltip: "\u6E05\u7A7A\u5E76\u5220\u9664\u5168\u90E8\u672C\u5730\u5907\u4EFD\u6587\u4EF6",
+  no_backups_to_delete: "\u6682\u65E0\u5907\u4EFD\u53EF\u5220\u9664",
+  refresh_list: "\u5237\u65B0\u5217\u8868",
+  loading_backups: "\u6B63\u5728\u8BFB\u53D6\u5907\u4EFD\u8BB0\u5F55...",
+  no_local_backups: "\u{1F4E6} \u6682\u65E0\u672C\u5730\u5907\u4EFD\u6587\u4EF6",
+  no_local_backups_hint: "\u70B9\u51FB\u4E0A\u65B9\u300C\u73B0\u5728\u5907\u4EFD\u300D\u5373\u53EF\u521B\u5EFA\u7B2C\u4E00\u4E2A\u5B8C\u6574\u6570\u636E\u5FEB\u7167",
+  daily_backup_badge: "\u6BCF\u65E5\u5907\u4EFD",
+  manual_backup_badge: "\u624B\u52A8\u5907\u4EFD",
+  task_count_label: "{0} \u9879\u4EFB\u52A1",
+  list_count_label: "{0} \u4E2A\u5217\u8868",
+  restore_snapshot_tooltip: "\u8FD8\u539F\u6B64\u5FEB\u7167",
+  restore: "\u8FD8\u539F",
+  delete_backup_tooltip: "\u5220\u9664\u5907\u4EFD",
+  confirm_restore_backup: "\u786E\u8BA4\u8FD8\u539F\u5907\u4EFD\u300C{0}\u300D\uFF1F\n\u6B64\u64CD\u4F5C\u5C06\u7528\u5907\u4EFD\u4E2D\u7684\u6570\u636E\u6062\u590D\u6240\u6709\u4EFB\u52A1\u5217\u8868\u3002",
+  confirm_delete_backup: "\u786E\u8BA4\u5220\u9664\u5907\u4EFD\u300C{0}\u300D\uFF1F",
+  confirm_delete_all_backups: "\u26A0\uFE0F \u5371\u9669\u64CD\u4F5C\uFF1A\u786E\u8BA4\u6E05\u7A7A\u5E76\u5220\u9664\u5168\u90E8 {0} \u4E2A\u672C\u5730\u5907\u4EFD\u6587\u4EF6\uFF1F\n\u6B64\u64CD\u4F5C\u4E0D\u53EF\u64A4\u9500\uFF01",
+  all_backups_deleted: "\u{1F5D1}\uFE0F \u5DF2\u6E05\u7A7A\u5220\u9664\u5168\u90E8 {0} \u4E2A\u5907\u4EFD\u6587\u4EF6",
+  // Task Note Modal
+  confirm_delete_task_note_title: "\u662F\u5426\u5220\u9664\u4EFB\u52A1\u4E13\u5C5E\u7B14\u8BB0\uFF08{0}\uFF09\uFF1F",
+  confirm_delete_task_note_p1: "\u5F85\u5220\u9664\u7684\u4EFB\u52A1\u62E5\u6709\u4E13\u5C5E\u7B14\u8BB0\uFF1A",
+  confirm_delete_task_note_p2: "\u60A8\u53EF\u4EE5\u9009\u62E9\u4EC5\u5220\u9664\u4EFB\u52A1\u672C\u8EAB\uFF0C\u6216\u540C\u65F6\u5C06\u8BE5\u4E13\u5C5E\u7B14\u8BB0\u79FB\u5165\u56DE\u6536\u7AD9\u3002",
+  confirm_delete_linked_note_title: "\u662F\u5426\u5220\u9664\u4EFB\u52A1\u4E13\u5C5E\u7B14\u8BB0\uFF08{0}\uFF09\uFF1F",
+  confirm_delete_linked_note_p1: "\u5F85\u5220\u9664\u7684\u4EFB\u52A1\u62E5\u6709\u4E13\u5C5E\u7B14\u8BB0\uFF1A",
+  confirm_delete_linked_note_p2: "\u60A8\u53EF\u4EE5\u9009\u62E9\u4EC5\u5220\u9664\u4EFB\u52A1\u672C\u8EAB\uFF0C\u6216\u540C\u65F6\u5C06\u8BE5\u4E13\u5C5E\u7B14\u8BB0\u79FB\u5165\u56DE\u6536\u7AD9\u3002",
+  cancel: "\u53D6\u6D88",
+  delete_task_only_keep_note: "\u4EC5\u5220\u9664\u4EFB\u52A1\uFF08\u4FDD\u7559\u7B14\u8BB0\uFF09",
+  delete_task_and_note: "\u5220\u9664\u4EFB\u52A1\u4E0E\u4E13\u5C5E\u7B14\u8BB0",
+  // Task Note Tooltips & Notices (TaskDetailView)
+  task_note_tooltip_exists: "\u4EFB\u52A1\u4E13\u5C5E\u7B14\u8BB0: {0} (\u70B9\u51FB\u8DF3\u8F6C\uFF0C\u60AC\u505C\u9884\u89C8\uFF0C\u53F3\u952E\u7BA1\u7406)",
+  task_note_tooltip_create: "\u4EFB\u52A1\u4E13\u5C5E\u7B14\u8BB0 (\u70B9\u51FB\u81EA\u52A8\u521B\u5EFA\u5E76\u8DF3\u8F6C)",
+  task_note_recreated: "\u5DF2\u91CD\u65B0\u521B\u5EFA\u5E76\u6253\u5F00\u4EFB\u52A1\u7B14\u8BB0: {0}",
+  task_note_created: "\u5DF2\u521B\u5EFA\u5E76\u6253\u5F00\u4EFB\u52A1\u7B14\u8BB0: {0}",
+  open_task_note: "\u6253\u5F00\u4EFB\u52A1\u7B14\u8BB0",
+  unlink_task_note: "\u53D6\u6D88\u5173\u8054\u4E13\u5C5E\u7B14\u8BB0",
+  unlink_task_note_success: "\u5DF2\u53D6\u6D88\u4E13\u5C5E\u7B14\u8BB0\u5173\u8054",
+  // Legacy Aliases
+  linked_note_tooltip_exists: "\u4EFB\u52A1\u4E13\u5C5E\u7B14\u8BB0: {0} (\u70B9\u51FB\u8DF3\u8F6C\uFF0C\u60AC\u505C\u9884\u89C8\uFF0C\u53F3\u952E\u7BA1\u7406)",
+  linked_note_tooltip_create: "\u4EFB\u52A1\u4E13\u5C5E\u7B14\u8BB0 (\u70B9\u51FB\u81EA\u52A8\u521B\u5EFA\u5E76\u8DF3\u8F6C)",
+  linked_note_recreated: "\u5DF2\u91CD\u65B0\u521B\u5EFA\u5E76\u6253\u5F00\u4EFB\u52A1\u7B14\u8BB0: {0}",
+  linked_note_created: "\u5DF2\u521B\u5EFA\u5E76\u6253\u5F00\u4EFB\u52A1\u7B14\u8BB0: {0}",
+  open_linked_note: "\u6253\u5F00\u4EFB\u52A1\u7B14\u8BB0",
+  unlink_note: "\u53D6\u6D88\u5173\u8054\u4E13\u5C5E\u7B14\u8BB0",
+  unlink_note_success: "\u5DF2\u53D6\u6D88\u4E13\u5C5E\u7B14\u8BB0\u5173\u8054",
+  // TaskMainView Multi-Select & Batch
+  multi_select_mode_enabled: "\u2611\uFE0F \u591A\u9009\u6A21\u5F0F\u5DF2\u5F00\u542F\uFF1A\u53EF\u52FE\u9009\u4EFB\u52A1\u8FDB\u884C\u6279\u91CF\u64CD\u4F5C",
+  batch_starred_tasks: "\u2B50 \u5DF2\u6536\u85CF\u9009\u4E2D\u7684 {0} \u9879\u4EFB\u52A1",
+  batch_unstarred_tasks: "\u5DF2\u53D6\u6D88\u6536\u85CF\u9009\u4E2D\u7684 {0} \u9879\u4EFB\u52A1",
+  confirm_batch_delete_tasks: "\u786E\u8BA4\u6279\u91CF\u5220\u9664\u9009\u4E2D\u7684 {0} \u9879\u4EFB\u52A1\uFF1F\u6B64\u64CD\u4F5C\u4E0D\u53EF\u9006\u3002",
+  batch_deleted_tasks_notice: "\u{1F5D1}\uFE0F \u5DF2\u6279\u91CF\u5220\u9664 {0} \u9879\u4EFB\u52A1",
+  multi_select_tooltip: "\u591A\u9009\u4EFB\u52A1 (\u6279\u91CF\u5220\u9664/\u6536\u85CF)",
+  backup_btn_tooltip: "\u6570\u636E\u5907\u4EFD\u5668",
+  guide_btn_tooltip: "\u529F\u80FD\u4E0E\u5FEB\u6377\u952E\u6307\u5357",
+  search_list_tooltip: "\u641C\u7D22\u5F53\u524D\u5217\u8868",
+  linked_note_preview_tooltip: "\u5173\u8054\u7B14\u8BB0: {0} (\u70B9\u51FB\u8DF3\u8F6C\uFF0C\u60AC\u505C\u9884\u89C8)",
+  selected_items_label: "\u5DF2\u9009 {0} \u9879",
+  deselect_all: "\u53D6\u6D88\u5168\u9009",
+  select_all: "\u5168\u9009",
+  select_incomplete_tasks: "\u9009\u62E9\u672A\u5B8C\u6210\u4EFB\u52A1",
+  select_completed_tasks: "\u9009\u62E9\u5DF2\u5B8C\u6210\u4EFB\u52A1",
+  batch_star: "\u6279\u91CF\u6536\u85CF / \u53D6\u6D88\u6536\u85CF",
+  batch_delete: "\u6279\u91CF\u5220\u9664",
+  exit: "\u2715 \u9000\u51FA",
+  exit_multi_select: "\u9000\u51FA\u591A\u9009\u6A21\u5F0F",
+  // Quick Task Modal
+  quick_task_tip: "\u{1F4A1} \u63D0\u793A: \u5728 <b>\u8BBE\u7F6E \u2192 \u5FEB\u6377\u952E</b> \u4E2D\u4E3A <code>Fluent Tasks: Open Quick Task Modal</code> \u8BBE\u7F6E\u5FEB\u6377\u952E\u5373\u53EF\u79D2\u7EA7\u547C\u51FA (\u5269\u4F59 {0} \u6B21\u63D0\u9192)",
+  // Quick List Modal
+  focus_pick_mode_enabled: "\u{1F3AF} \u9009\u62E9\u6A21\u5F0F\u5DF2\u5F00\u542F\uFF1A\u8BF7\u70B9\u51FB\u60F3\u8981\u8BBE\u4E3A\u9ED8\u8BA4\u805A\u7126\u7684\u5217\u8868 (\u6309 ESC \u53D6\u6D88)",
+  focus_default_set: '\u{1F3AF} \u5DF2\u5C06 "{0}" \u8BBE\u4E3A\u6253\u5F00\u65F6\u7684\u9ED8\u8BA4\u805A\u7126\u5217\u8868',
+  focus_cancel_default: "\u53D6\u6D88\u9ED8\u8BA4\u805A\u7126 (\u6062\u590D\u9996\u9879)",
+  focus_set_default: "\u8BBE\u4E3A\u9ED8\u8BA4\u805A\u7126 (\u6253\u5F00\u65F6\u9996\u9009)",
+  focus_restored_default: "\u5DF2\u6062\u590D\u9ED8\u8BA4\u805A\u7126 (\u5DE6\u4E0A\u89D2\u9996\u9879)",
+  focus_restored_default_notice: "\u{1F3AF} \u5DF2\u6062\u590D\u9ED8\u8BA4\u805A\u7126\uFF1A\u5DE6\u4E0A\u89D2\u9996\u9879",
+  focus_pick_cancelled: "\u5DF2\u53D6\u6D88\u9009\u62E9\u9ED8\u8BA4\u805A\u7126\u5217\u8868",
+  quick_list_tip: "\u{1F4A1} \u63D0\u793A: \u5728 <b>\u8BBE\u7F6E \u2192 \u5FEB\u6377\u952E</b> \u4E2D\u4E3A <code>Fluent Tasks: Open Quick List Modal</code> \u8BBE\u7F6E\u5FEB\u6377\u952E (\u5269\u4F59 {0} \u6B21\u63D0\u9192)",
+  focus_btn_aria_label: "\u8BBE\u7F6E\u9ED8\u8BA4\u805A\u7126\u5217\u8868\uFF1A\u70B9\u51FB\u8FDB\u5165\u9009\u62E9\u6A21\u5F0F\uFF0C\u53F3\u952E\u53EF\u91CD\u7F6E\u4E3A\u5DE6\u4E0A\u89D2\u9996\u9879",
+  focus_picking_target: "\u9009\u62E9\u76EE\u6807\u5217\u8868...",
+  focus_target_label: "\u805A\u7126: {0}",
+  focus_set_btn: "\u8BBE\u7F6E\u805A\u7126",
+  focus_popover_title: "\u{1F3AF} \u521D\u59CB\u9ED8\u8BA4\u805A\u7126\u8BBE\u7F6E",
+  focus_current_prefix: "\u5F53\u524D\u9ED8\u8BA4\u805A\u7126\uFF1A",
+  focus_unset_prefix: "\u5F53\u524D\u672A\u8BBE\u7F6E\uFF0C\u9ED8\u8BA4\u805A\u7126\uFF1A",
+  focus_top_left_default: "\u5DE6\u4E0A\u89D2\u9996\u9879",
+  focus_instruction_desc: "\u70B9\u51FB\u6309\u94AE\u8FDB\u5165\u9009\u62E9\u6A21\u5F0F\u540E\u70B9\u51FB\u76EE\u6807\u5217\u8868\uFF1B\u53F3\u952E\u6B64\u6309\u94AE\u53EF\u91CD\u7F6E\u4E3A\u5DE6\u4E0A\u89D2\u9996\u9879\u3002",
+  focus_tag_tooltip: "\u9ED8\u8BA4\u805A\u7126\u76EE\u6807",
+  quick_list_search_mode_list: "\u641C\u5217\u8868",
+  quick_list_search_mode_task: "\u641C\u4EFB\u52A1",
+  quick_list_search_mode_title_to_task: "\u5F53\u524D\u6A21\u5F0F\uFF1A\u641C\u5217\u8868\u3002\u70B9\u51FB\u6C38\u4E45\u5207\u6362\u4E3A\u641C\u4EFB\u52A1\u3002",
+  quick_list_search_mode_title_to_list: "\u5F53\u524D\u6A21\u5F0F\uFF1A\u641C\u4EFB\u52A1\u3002\u70B9\u51FB\u6C38\u4E45\u5207\u6362\u4E3A\u641C\u5217\u8868\u3002",
+  quick_list_task_search_placeholder: "\u641C\u7D22\u6240\u6709\u4EFB\u52A1 (\u6807\u9898\u3001\u6B65\u9AA4\u3001\u5907\u6CE8)...",
+  quick_list_task_search_no_results: "\u672A\u627E\u5230\u5339\u914D\u4EFB\u52A1\u3002",
+  quick_list_task_search_title: "\u641C\u7D22\u6240\u6709\u4EFB\u52A1",
+  quick_list_task_search_empty_hint: "\u8F93\u5165\u5173\u952E\u8BCD\u4EE5\u641C\u7D22\u6240\u6709\u4EFB\u52A1\u7684\u6807\u9898\u3001\u5B50\u6B65\u9AA4\u6216\u8BE6\u7EC6\u5907\u6CE8\u3002",
+  quick_list_search_filter_active_only: "\u4EC5\u672A\u5B8C\u6210",
+  quick_list_search_filter_all_tasks: "\u6240\u6709\u4EFB\u52A1",
+  quick_list_search_filter_tooltip: "\u5207\u6362\u662F\u5426\u5305\u542B\u5DF2\u5B8C\u6210\u4EFB\u52A1",
+  main_view_task_search_placeholder: "\u5728\u5F53\u524D\u5217\u8868\u4E2D\u641C\u7D22\u4EFB\u52A1 (\u6807\u9898\u3001\u6B65\u9AA4\u3001\u5907\u6CE8)...",
+  main_view_search_list_only_btn: "List only",
+  main_view_search_list_only_tooltip: "\u5F53\u524D\u68C0\u7D22\u8303\u56F4\uFF1A\u4EC5\u5F53\u524D\u5217\u8868\u3002\u70B9\u51FB\u67E5\u770B\u5982\u4F55\u641C\u7D22\u5168\u90E8\u4EFB\u52A1\u3002",
+  main_view_search_all_tasks_hint: "\u5982\u679C\u60F3\u8981\u641C\u7D22\u5168\u90E8\u4EFB\u52A1 (All tasks)\uFF0C\u8BF7\u5728 Obsidian\u3010\u8BBE\u7F6E -> \u5FEB\u6377\u952E\u3011\u4E2D\u4E3A\u672C\u63D2\u4EF6\u547D\u4EE4\u3010Search all tasks\u3011\u7ED1\u5B9A\u5FEB\u6377\u952E\u3002",
+  setting_hide_left_sidebar_title: "\u9690\u85CF\u5DE6\u4FA7\u4FA7\u8FB9\u680F\uFF08\u60AC\u6D6EUI\u6A21\u5F0F\uFF09",
+  setting_hide_left_sidebar_desc: "\u5B8C\u5168\u9690\u85CF\u5DE6\u4FA7\u4FA7\u8FB9\u680F\u5217\u8868\u9762\u677F\uFF0C\u6539\u7528\u5FEB\u901F\u5217\u8868\u60AC\u6D6EUI\u5F39\u7A97\u8FDB\u884C\u5BFC\u822A\u4E0E\u5207\u6362\u3002\u5F3A\u70C8\u5EFA\u8BAE\u4E3A\u8BE5\u60AC\u6D6EUI\u7ED1\u5B9A\u5FEB\u6377\u952E\u3002",
+  setting_auto_expand_sidebar_on_drag_title: "\u62D6\u62FD\u4EFB\u52A1\u65F6\u81EA\u52A8\u5C55\u5F00\u5DE6\u4FA7\u8FB9\u680F",
+  setting_auto_expand_sidebar_on_drag_desc: "\u62D6\u62FD\u4EFB\u52A1\u65F6\u6682\u65F6\u5C55\u5F00\u5DE6\u4FA7\u8FB9\u680F\u4EE5\u4FBF\u79FB\u52A8\u5230\u5176\u4ED6\u6E05\u5355\uFF0C\u677E\u5F00\u65F6\u81EA\u52A8\u6536\u8D77\uFF08\u82E5\u539F\u672C\u5904\u4E8E\u6298\u53E0\u72B6\u6001\uFF09\u3002\u82E5\u5DE6\u4FA7\u8FB9\u680F\u672C\u6765\u5DF2\u5C55\u5F00\u4E14\u663E\u793A\u672C\u63D2\u4EF6\u5217\u8868\uFF0C\u5219\u4EC5\u5B9A\u4F4D\u6E05\u5355\u800C\u4E0D\u91CD\u65B0\u5C55\u5F00\u6536\u8D77\u3002",
+  warn_bind_hotkey_btn: "\u8BF7\u7ED1\u5B9A\u60AC\u6D6EUI\u5FEB\u6377\u952E",
+  warn_bind_hotkey_tooltip: "\u4F60\u5F00\u542F\u4E86\u300C\u9690\u85CF\u5DE6\u4FA7\u4FA7\u8FB9\u680F\u300D\u8BBE\u7F6E\uFF0C\u8BF7\u5728\u300C\u8BBE\u7F6E -> \u5FEB\u6377\u952E\u300D\u4E2D\u4E3A\u300C\u6253\u5F00\u5FEB\u901F\u5217\u8868\u5F39\u7A97\u300D\u7ED1\u5B9A\u5FEB\u6377\u952E\uFF0C\u4EE5\u4FBF\u968F\u65F6\u8C03\u51FA\u60AC\u6D6EUI\u5207\u6362\u5217\u8868\u3002",
+  warn_bind_hotkey_notice: "\u26A0\uFE0F [Fluent Tasks] \u4F60\u5F00\u542F\u4E86\u300C\u9690\u85CF\u5DE6\u4FA7\u4FA7\u8FB9\u680F\u300D\u8BBE\u7F6E\uFF0C\u4F46\u5C1A\u672A\u4E3A\u60AC\u6D6EUI\u7ED1\u5B9A\u5FEB\u6377\u952E\uFF01\u8BF7\u524D\u5F80\u300C\u8BBE\u7F6E -> \u5FEB\u6377\u952E\u300D\u7ED1\u5B9A\u5FEB\u6377\u952E\u3002",
+  empty_state_hide_sidebar_desc: "\u4FA7\u8FB9\u680F\u5DF2\u9690\u85CF\u3002\u4F7F\u7528\u5FEB\u901F\u5217\u8868\uFF08\u60AC\u6D6EUI\uFF09\u9009\u62E9\u5217\u8868\u3002",
+  rename_list_tooltip: "\u70B9\u51FB\u91CD\u547D\u540D\u5217\u8868 (F2)",
+  rename_list_menu_item: "\u91CD\u547D\u540D\u5217\u8868 (F2)",
+  confirm_save_title: "\u662F\u5426\u4FDD\u5B58\uFF1F",
+  confirm_save_meta_desc: "\u4EFB\u52A1\u5143\u6570\u636E\uFF08SVG / Why / \u94FE\u63A5\u7B49\uFF09\u5DF2\u6709\u6539\u52A8\uFF0C\u9000\u51FA\u524D\u662F\u5426\u4FDD\u5B58\u66F4\u6539\uFF1F",
+  confirm_save_btn: "\u4FDD\u5B58 (Enter)",
+  confirm_dont_save_btn: "\u4E0D\u4FDD\u5B58 / \u653E\u5F03",
+  confirm_keep_editing_btn: "\u7EE7\u7EED\u7F16\u8F91 (Esc)",
+  move_to_menu_title: "\u79FB\u52A8\u5230",
+  search_list_to_move: "\u641C\u7D22\u76EE\u6807\u5217\u8868...",
+  add_side_step: "\u6DFB\u52A0\u5B50\u6B65\u9AA4",
+  // Image attachment & clipboard operations
+  image_copied: "\u56FE\u7247\u5DF2\u590D\u5236\u5230\u526A\u8D34\u677F",
+  image_cut: "\u56FE\u7247\u5DF2\u526A\u5207\u81F3\u526A\u8D34\u677F",
+  image_deleted: "\u56FE\u7247\u5DF2\u79FB\u9664",
+  image_pasted: "\u56FE\u7247\u5DF2\u9644\u52A0",
+  image_preview_title: "\u56FE\u7247\u9884\u89C8",
+  image_tooltip: "\u70B9\u51FB\u67E5\u770B\u5927\u56FE \u2022 \u60AC\u6D6E Ctrl+C \u590D\u5236 \u2022 \u60AC\u6D6E Ctrl+X \u526A\u5207",
+  image_copy_tooltip: "\u590D\u5236\u56FE\u7247 (Ctrl+C)",
+  image_cut_tooltip: "\u526A\u5207\u56FE\u7247 (Ctrl+X)",
+  image_delete_tooltip: "\u79FB\u9664\u56FE\u7247 (Ctrl+X)",
+  image_hint_copy: "\u590D\u5236",
+  image_hint_cut: "\u526A\u5207",
+  image_hint_close: "\u5173\u95ED",
+  image_zoom_in: "\u70B9\u51FB\u653E\u5927\u539F\u56FE",
+  image_zoom_out: "\u70B9\u51FB\u9002\u5E94\u5C4F\u5E55",
+  image_hint_zoom: "\u653E\u5927\u539F\u56FE",
+  image_hint_fit: "\u9002\u5E94\u5C4F\u5E55",
+  copy: "\u590D\u5236",
+  cut: "\u526A\u5207",
+  close: "\u5173\u95ED",
+  setting_fullscreen_detail_modal_title: "\u5168\u5C4F\u4EFB\u52A1\u8BE6\u60C5\u5F39\u7A97",
+  setting_fullscreen_detail_modal_desc: "\u60AC\u6D6E\u6253\u5F00\u4EFB\u52A1\u8BE6\u60C5\u65F6\u4EE5\u5168\u5C4F\u72B6\u6001\u5C55\u793A\uFF08\u7C7B\u4F3C\u4E8E\u5B50\u6B65\u9AA4\u5168\u5C4F\u6A21\u5F0F\uFF09\u3002\u5173\u95ED\u540E\u6062\u590D\u4E3A\u5C45\u4E2D\u5C0F\u7A97\u53E3\u5361\u7247\u3002",
+  restore_window: "\u8FD8\u539F\u7A97\u53E3",
+  fullscreen_window: "\u5168\u5C4F\u653E\u5927",
+  setting_focused_lists_title: "\u805A\u7126\u6E05\u5355 (Focused lists)",
+  setting_focused_lists_desc: "\u5728\u6807\u9898\u65C1\u663E\u793A\u805A\u7126\u6E05\u5355\u6309\u94AE\u53CA\u5FEB\u6377\u5207\u6362\u80F6\u56CA\u3002\u9ED8\u8BA4\u5173\u95ED\u3002",
+  focused_lists_btn_tooltip: "\u805A\u7126\u6E05\u5355",
+  focused_lists_save_btn: "\u4FDD\u5B58",
+  focused_lists_saved_notice: "\u805A\u7126\u6E05\u5355\u5DF2\u4FDD\u5B58",
+  focused_lists_selected_count: "\u5DF2\u9009 {0} \u4E2A",
+  focused_lists_select_all: "\u5168\u9009",
+  focused_lists_clear_all: "\u6E05\u7A7A",
+  focused_lists_search_placeholder: "\u641C\u7D22\u6E05\u5355...",
+  focused_lists_no_results: "\u672A\u627E\u5230\u5339\u914D\u7684\u6E05\u5355\u3002"
+};
+var zh_cn_default = zhCn;
+
+// src/lang/helpers.ts
+function detectLanguage() {
+  try {
+    const lang = (0, import_obsidian5.getLanguage)();
+    if (lang) {
+      return lang.toLowerCase();
+    }
+  } catch (e) {
+  }
+  return "en";
+}
+function isChinese() {
+  const lang = detectLanguage();
+  return lang === "zh" || lang.startsWith("zh-") || lang.startsWith("zh_");
+}
+function getLocaleDict() {
+  if (isChinese()) {
+    return zh_cn_default;
+  }
+  return en_default;
+}
+function t(key, ...params) {
+  const dict = getLocaleDict();
+  let text2 = dict[key] || en_default[key] || key;
+  if (params && params.length > 0) {
+    for (let i = 0; i < params.length; i++) {
+      text2 = text2.replace(new RegExp(`\\{${i}\\}`, "g"), String(params[i]));
+    }
+  }
+  return text2;
+}
+
+// src/utils/imageAttachmentUtils.ts
+function getTimestampString() {
+  const d = /* @__PURE__ */ new Date();
+  const pad = (n) => n.toString().padStart(2, "0");
+  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+}
+async function saveImageAttachment(file, app, sourceFilepath) {
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    let ext = "png";
+    if (file.type === "image/jpeg")
+      ext = "jpg";
+    else if (file.type === "image/webp")
+      ext = "webp";
+    else if (file.type === "image/gif")
+      ext = "gif";
+    else if (file.type === "image/svg+xml")
+      ext = "svg";
+    else if ("name" in file && typeof file.name === "string" && file.name.includes(".")) {
+      const parts = file.name.split(".");
+      ext = parts[parts.length - 1].toLowerCase();
+    }
+    const filename = `Pasted image ${getTimestampString()}.${ext}`;
+    let availablePath;
+    const fileManager = app.fileManager;
+    if (fileManager && typeof fileManager.getAvailablePathForAttachment === "function") {
+      try {
+        availablePath = await fileManager.getAvailablePathForAttachment(filename, sourceFilepath);
+      } catch (err) {
+        console.warn("[FluentTasks] getAvailablePathForAttachment fallback:", err);
+        availablePath = await fallbackAttachmentPath(app, filename);
+      }
+    } else {
+      availablePath = await fallbackAttachmentPath(app, filename);
+    }
+    const lastSlash = availablePath.lastIndexOf("/");
+    if (lastSlash > 0) {
+      const parentDir = availablePath.substring(0, lastSlash);
+      if (!await app.vault.adapter.exists(parentDir)) {
+        await app.vault.createFolder(parentDir).catch(() => {
+        });
+      }
+    }
+    const createdFile = await app.vault.createBinary(availablePath, arrayBuffer);
+    return createdFile.path;
+  } catch (error) {
+    console.error("[FluentTasks] Failed to save image attachment:", error);
+    new import_obsidian6.Notice("Failed to save image attachment / \u4FDD\u5B58\u56FE\u7247\u9644\u4EF6\u5931\u8D25");
+    return null;
+  }
+}
+async function fallbackAttachmentPath(app, filename) {
+  const defaultFolder = "TodoData/attachments";
+  if (!await app.vault.adapter.exists(defaultFolder)) {
+    try {
+      await app.vault.createFolder(defaultFolder);
+    } catch (e) {
+    }
+  }
+  let targetPath = `${defaultFolder}/${filename}`;
+  let counter = 1;
+  while (await app.vault.adapter.exists(targetPath)) {
+    const extIdx = filename.lastIndexOf(".");
+    const base = extIdx > 0 ? filename.slice(0, extIdx) : filename;
+    const ext = extIdx > 0 ? filename.slice(extIdx) : ".png";
+    targetPath = `${defaultFolder}/${base} ${counter}${ext}`;
+    counter++;
+  }
+  return targetPath;
+}
+function resolveImageResourceUrl(imageRef, app) {
+  var _a, _b;
+  if (!imageRef)
+    return "";
+  const trimmed = imageRef.trim();
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("data:") || trimmed.startsWith("app://")) {
+    return trimmed;
+  }
+  let clean = trimmed.replace(/^!*\[\[(.*?)\]\]$/, "$1").trim();
+  if (clean.includes("|")) {
+    clean = clean.split("|")[0].trim();
+  }
+  const mdMatch = clean.match(/^!\[.*?\]\((.*?)\)$/);
+  if (mdMatch) {
+    clean = mdMatch[1].trim();
+  }
+  const directFile = app.vault.getAbstractFileByPath(clean);
+  if (directFile instanceof import_obsidian6.TFile) {
+    return app.vault.getResourcePath(directFile);
+  }
+  const linkFile = app.metadataCache.getFirstLinkpathDest(clean, "");
+  if (linkFile instanceof import_obsidian6.TFile) {
+    return app.vault.getResourcePath(linkFile);
+  }
+  if ((_b = (_a = app.vault) == null ? void 0 : _a.adapter) == null ? void 0 : _b.getResourcePath) {
+    try {
+      return app.vault.adapter.getResourcePath(clean);
+    } catch (e) {
+    }
+  }
+  return clean;
+}
+async function copyImageToClipboard(imageRef, app, noticeMsg) {
+  if (!imageRef)
+    return false;
+  let clean = imageRef.trim().replace(/^!*\[\[(.*?)\]\]$/, "$1").trim();
+  if (clean.includes("|")) {
+    clean = clean.split("|")[0].trim();
+  }
+  const mdMatch = clean.match(/^!\[.*?\]\((.*?)\)$/);
+  if (mdMatch) {
+    clean = mdMatch[1].trim();
+  }
+  let file = app.vault.getAbstractFileByPath(clean);
+  if (!(file instanceof import_obsidian6.TFile)) {
+    file = app.metadataCache.getFirstLinkpathDest(clean, "");
+  }
+  let copied = false;
+  const electron = window.require ? window.require("electron") : null;
+  if (file instanceof import_obsidian6.TFile && (electron == null ? void 0 : electron.clipboard) && (electron == null ? void 0 : electron.nativeImage)) {
+    try {
+      const ext = file.extension.toLowerCase();
+      if (ext !== "svg" && app.vault.adapter.getFullPath) {
+        const fullDiskPath = app.vault.adapter.getFullPath(file.path);
+        const nativeImg = electron.nativeImage.createFromPath(fullDiskPath);
+        if (nativeImg && !nativeImg.isEmpty()) {
+          electron.clipboard.writeImage(nativeImg);
+          copied = true;
+        }
+      }
+    } catch (e) {
+    }
+  }
+  const resourceUrl = resolveImageResourceUrl(imageRef, app);
+  if (resourceUrl) {
+    try {
+      await new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+          try {
+            const canvas = createEl("canvas");
+            canvas.width = img.naturalWidth || img.width || 400;
+            canvas.height = img.naturalHeight || img.height || 300;
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+              ctx.imageSmoothingEnabled = true;
+              ctx.imageSmoothingQuality = "high";
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+              if (!copied && (electron == null ? void 0 : electron.clipboard) && (electron == null ? void 0 : electron.nativeImage)) {
+                try {
+                  const dataUrl = canvas.toDataURL("image/png");
+                  const nativeImg = electron.nativeImage.createFromDataURL(dataUrl);
+                  if (nativeImg && !nativeImg.isEmpty()) {
+                    electron.clipboard.writeImage(nativeImg);
+                    copied = true;
+                  }
+                } catch (e) {
+                  console.warn("[FluentTasks] Canvas to nativeImage failed:", e);
+                }
+              }
+              canvas.toBlob(async (blob) => {
+                if (blob && navigator.clipboard && navigator.clipboard.write) {
+                  try {
+                    await navigator.clipboard.write([
+                      new ClipboardItem({ "image/png": blob })
+                    ]);
+                    copied = true;
+                  } catch (err) {
+                    if (!copied)
+                      console.warn("[FluentTasks] Web Clipboard write failed:", err);
+                  }
+                }
+                resolve();
+              }, "image/png");
+              return;
+            }
+          } catch (e) {
+            console.warn("[FluentTasks] Canvas processing error:", e);
+          }
+          resolve();
+        };
+        img.onerror = () => resolve();
+        img.src = resourceUrl;
+      });
+    } catch (err) {
+      console.warn("[FluentTasks] Canvas copy error:", err);
+    }
+  }
+  if (!copied && file instanceof import_obsidian6.TFile && (electron == null ? void 0 : electron.clipboard) && (electron == null ? void 0 : electron.nativeImage)) {
+    try {
+      const arrayBuf = await app.vault.readBinary(file);
+      const winBuf = window.Buffer;
+      const nodeBuf = winBuf ? winBuf.from(arrayBuf) : null;
+      if (nodeBuf) {
+        const nativeImg = electron.nativeImage.createFromBuffer(nodeBuf);
+        if (nativeImg && !nativeImg.isEmpty()) {
+          electron.clipboard.writeImage(nativeImg);
+          copied = true;
+        }
+      }
+    } catch (err) {
+      console.warn("[FluentTasks] Buffer copy fallback error:", err);
+    }
+  }
+  if (copied) {
+    new import_obsidian6.Notice(noticeMsg || t("image_copied") || "Image copied to clipboard / \u56FE\u7247\u5DF2\u590D\u5236\u5230\u526A\u8D34\u677F");
+    return true;
+  } else {
+    new import_obsidian6.Notice("Failed to copy image / \u590D\u5236\u56FE\u7247\u5931\u8D25");
+    return false;
+  }
+}
+function extractImageRefs(text2) {
+  if (!text2)
+    return [];
+  const results = [];
+  const wikiRegex = /!\[\[([^\]\n]+)\]\]/g;
+  let match;
+  while ((match = wikiRegex.exec(text2)) !== null) {
+    let ref = match[1].trim();
+    if (ref.includes("|")) {
+      ref = ref.split("|")[0].trim();
+    }
+    if (isImageExtension(ref) && !results.includes(ref)) {
+      results.push(ref);
+    }
+  }
+  const mdRegex = /!\[.*?\]\(([^)\n]+)\)/g;
+  while ((match = mdRegex.exec(text2)) !== null) {
+    const ref = match[1].trim();
+    if (isImageExtension(ref) && !results.includes(ref)) {
+      results.push(ref);
+    }
+  }
+  return results;
+}
+function isImageExtension(path) {
+  const lower = path.toLowerCase().split("?")[0].split("#")[0];
+  return lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".webp") || lower.endsWith(".gif") || lower.endsWith(".svg") || lower.endsWith(".bmp");
+}
+function removeImageRefFromText(text2, imageRef) {
+  if (!text2 || !imageRef)
+    return text2;
+  let clean = imageRef.replace(/^!*\[\[(.*?)\]\]$/, "$1").trim();
+  if (clean.includes("|"))
+    clean = clean.split("|")[0].trim();
+  const escapedClean = clean.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const wikiPattern = new RegExp(`!\\s*\\[\\[${escapedClean}(?:\\|[^\\]]*)?\\]\\]`, "gi");
+  let updated = text2.replace(wikiPattern, "");
+  const mdPattern = new RegExp(`!\\s*\\[[^\\]]*\\]\\(${escapedClean}\\)`, "gi");
+  updated = updated.replace(mdPattern, "");
+  return updated.replace(/\n\s*\n\s*\n/g, "\n\n").trim();
+}
+function getImageBaseName(imageRef) {
+  if (!imageRef)
+    return "";
+  let clean = imageRef.replace(/^!*\[\[(.*?)\]\]$/, "$1").trim();
+  if (clean.includes("|"))
+    clean = clean.split("|")[0].trim();
+  const parts = clean.split("/");
+  return parts[parts.length - 1] || clean;
+}
+function getImagesFromClipboard(e) {
+  const result = [];
+  const clipboardData = e.clipboardData;
+  if (clipboardData) {
+    const items = clipboardData.items;
+    if (items && items.length > 0) {
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.startsWith("image/")) {
+          const file = items[i].getAsFile();
+          if (file)
+            result.push(file);
+        }
+      }
+    }
+    if (result.length === 0 && clipboardData.files && clipboardData.files.length > 0) {
+      for (let i = 0; i < clipboardData.files.length; i++) {
+        if (clipboardData.files[i].type.startsWith("image/")) {
+          result.push(clipboardData.files[i]);
+        }
+      }
+    }
+  }
+  if (result.length === 0) {
+    try {
+      const electron = window.require ? window.require("electron") : null;
+      if (electron == null ? void 0 : electron.clipboard) {
+        const nativeImg = electron.clipboard.readImage();
+        if (nativeImg && !nativeImg.isEmpty()) {
+          const buf = nativeImg.toPNG();
+          const file = new File([buf], `Pasted image ${getTimestampString()}.png`, {
+            type: "image/png"
+          });
+          result.push(file);
+        }
+      }
+    } catch (e2) {
+    }
+  }
+  return result;
+}
+function isSameImageRef(a, b) {
+  if (!a || !b)
+    return false;
+  if (a === b)
+    return true;
+  const cleanA = a.replace(/^!*\[\[(.*?)\]\]$/, "$1").split("|")[0].trim().toLowerCase();
+  const cleanB = b.replace(/^!*\[\[(.*?)\]\]$/, "$1").split("|")[0].trim().toLowerCase();
+  if (cleanA === cleanB)
+    return true;
+  const baseA = cleanA.split("/").pop();
+  const baseB = cleanB.split("/").pop();
+  return !!baseA && baseA === baseB;
+}
+function getTitleImages(t2) {
+  if (!t2)
+    return [];
+  const fromArray = t2.titleImages || [];
+  const fromText = extractImageRefs(t2.title || "");
+  const combined = [...fromArray];
+  for (const ref of fromText) {
+    if (!combined.some((existing) => isSameImageRef(existing, ref))) {
+      combined.push(ref);
+    }
+  }
+  return combined;
+}
+function getNoteImages(t2) {
+  if (!t2)
+    return [];
+  const fromArray = t2.images || [];
+  const fromText = extractImageRefs(t2.note || "");
+  const combined = [...fromArray];
+  for (const ref of fromText) {
+    if (!combined.some((existing) => isSameImageRef(existing, ref))) {
+      combined.push(ref);
+    }
+  }
+  return combined;
+}
+function getStepImages(step) {
+  if (!step)
+    return [];
+  const fromArray = step.images || [];
+  const fromText = extractImageRefs(step.text || "");
+  const combined = [...fromArray];
+  for (const ref of fromText) {
+    if (!combined.some((existing) => isSameImageRef(existing, ref))) {
+      combined.push(ref);
+    }
+  }
+  return combined;
+}
+function cleanDisplayTitle(title) {
+  if (!title)
+    return "";
+  return title.replace(/!\[\[([^\]\n]+)\]\]/g, "").replace(/!\[.*?\]\(([^)\n]+)\)/g, "").replace(/\n\s*\n\s*\n/g, "\n\n").trim();
+}
+function removeImageFromTaskTitle(task, imageRef) {
+  if (!task || !imageRef)
+    return;
+  if (task.titleImages) {
+    task.titleImages = task.titleImages.filter((img) => !isSameImageRef(img, imageRef));
+  }
+  task.title = removeImageRefFromText(task.title || "", imageRef);
+}
+function removeImageFromTaskNote(task, imageRef) {
+  if (!task || !imageRef)
+    return;
+  if (task.images) {
+    task.images = task.images.filter((img) => !isSameImageRef(img, imageRef));
+  }
+  task.note = removeImageRefFromText(task.note || "", imageRef);
+}
+function removeImageFromStepItem(step, imageRef) {
+  if (!step || !imageRef)
+    return;
+  if (step.images) {
+    step.images = step.images.filter((img) => !isSameImageRef(img, imageRef));
+  }
+  step.text = removeImageRefFromText(step.text || "", imageRef);
+}
+function getAllImagesInTask(task) {
+  if (!task)
+    return [];
+  const images = [];
+  const addAll = (refs) => {
+    for (const r of refs) {
+      if (r && !images.some((existing) => isSameImageRef(existing, r))) {
+        images.push(r);
+      }
+    }
+  };
+  addAll(getTitleImages(task));
+  addAll(getNoteImages(task));
+  if (task.steps && Array.isArray(task.steps)) {
+    for (const s of task.steps) {
+      addAll(getStepImages(s));
+    }
+  }
+  return images;
+}
+function resolveImageTFile(imageRef, app) {
+  if (!imageRef || !app)
+    return null;
+  let clean = imageRef.trim().replace(/^!*\[\[(.*?)\]\]$/, "$1").trim();
+  if (clean.includes("|"))
+    clean = clean.split("|")[0].trim();
+  const mdMatch = clean.match(/^!\[.*?\]\((.*?)\)$/);
+  if (mdMatch)
+    clean = mdMatch[1].trim();
+  const file = app.vault.getAbstractFileByPath(clean);
+  if (file instanceof import_obsidian6.TFile)
+    return file;
+  const linkFile = app.metadataCache.getFirstLinkpathDest(clean, "");
+  return linkFile instanceof import_obsidian6.TFile ? linkFile : null;
+}
+async function isImageReferencedAcrossVault(imageRef, app, dataService, excludeTaskId, excludeStepId) {
+  var _a;
+  if (!imageRef || !app)
+    return false;
+  if (dataService && typeof dataService.getCategories === "function") {
+    try {
+      const categories = await dataService.getCategories();
+      for (const cat of categories) {
+        const tasks2 = await dataService.getTasks(cat.filepath);
+        for (const t2 of tasks2) {
+          if (excludeTaskId && t2.id === excludeTaskId)
+            continue;
+          const titleImgs = getTitleImages(t2);
+          if (titleImgs.some((r) => isSameImageRef(r, imageRef)))
+            return true;
+          const noteImgs = getNoteImages(t2);
+          if (noteImgs.some((r) => isSameImageRef(r, imageRef)))
+            return true;
+          if (t2.steps && Array.isArray(t2.steps)) {
+            for (const s of t2.steps) {
+              if (excludeStepId && s.id === excludeStepId)
+                continue;
+              const stepImgs = getStepImages(s);
+              if (stepImgs.some((r) => isSameImageRef(r, imageRef)))
+                return true;
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("[FluentTasks] Error checking tasks for image references:", err);
+    }
+  }
+  try {
+    const targetFile = resolveImageTFile(imageRef, app);
+    if (targetFile) {
+      const resolvedLinks = (_a = app.metadataCache) == null ? void 0 : _a.resolvedLinks;
+      if (resolvedLinks) {
+        for (const [sourcePath, links] of Object.entries(resolvedLinks)) {
+          if (!sourcePath.startsWith("TodoData/")) {
+            if (links && (links[targetFile.path] || links[targetFile.name])) {
+              return true;
+            }
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("[FluentTasks] Error checking metadataCache for image references:", err);
+  }
+  return false;
+}
+async function cleanupOrphanImageAttachment(imageRef, app, dataService, excludeTaskId, excludeStepId) {
+  if (!imageRef || !app)
+    return null;
+  const targetFile = resolveImageTFile(imageRef, app);
+  if (!targetFile)
+    return null;
+  const isAttachment = targetFile.path.startsWith("TodoData/attachments/") || targetFile.path.includes("/attachments/") || targetFile.name.startsWith("Pasted image ");
+  if (!isAttachment) {
+    return null;
+  }
+  const isReferenced = await isImageReferencedAcrossVault(imageRef, app, dataService, excludeTaskId, excludeStepId);
+  if (!isReferenced) {
+    try {
+      let binary = void 0;
+      try {
+        binary = await app.vault.readBinary(targetFile);
+      } catch (e) {
+      }
+      const originalPath = targetFile.path;
+      await app.fileManager.trashFile(targetFile);
+      Logger.log(`[FluentTasks] Trashed orphan image attachment (0 references): ${originalPath}`);
+      return {
+        path: originalPath,
+        binary: binary || new ArrayBuffer(0)
+      };
+    } catch (err) {
+      console.error(`[FluentTasks] Failed to trash orphan image ${targetFile.path}:`, err);
+    }
+  }
+  return null;
+}
+async function cleanupOrphanImages(imageRefs, app, dataService, excludeTaskId, excludeStepId) {
+  if (!imageRefs || imageRefs.length === 0 || !app)
+    return [];
+  const trashed = [];
+  for (const ref of imageRefs) {
+    const backup = await cleanupOrphanImageAttachment(ref, app, dataService, excludeTaskId, excludeStepId);
+    if (backup) {
+      trashed.push(backup);
+    }
+  }
+  return trashed;
+}
+
 // src/DataService.ts
 var DataService = class {
   constructor(app) {
@@ -2787,14 +3708,23 @@ var DataService = class {
     return this.taskSvc.updateTask(categoryFilepath, updatedTask);
   }
   async deleteTask(categoryFilepath, task) {
+    const imagesToInspect = getAllImagesInTask(task);
     if (categoryFilepath === STARRED_CATEGORY_PATH) {
       const targetFile = task.sourceFilepath || await this.findCategoryForTaskId(task.id);
       if (targetFile) {
-        return this.taskSvc.deleteTask(targetFile, task);
+        await this.taskSvc.deleteTask(targetFile, task);
+        if (imagesToInspect.length > 0) {
+          return cleanupOrphanImages(imagesToInspect, this.app, this);
+        }
+        return [];
       }
       throw new Error(`Failed to locate source category for task ${task.id}`);
     }
-    return this.taskSvc.deleteTask(categoryFilepath, task);
+    await this.taskSvc.deleteTask(categoryFilepath, task);
+    if (imagesToInspect.length > 0) {
+      return cleanupOrphanImages(imagesToInspect, this.app, this);
+    }
+    return [];
   }
   async moveTask(task, sourceFilepath, targetFilepath) {
     const actualSource = sourceFilepath === STARRED_CATEGORY_PATH ? task.sourceFilepath || await this.findCategoryForTaskId(task.id) || sourceFilepath : sourceFilepath;
@@ -3978,416 +4908,11 @@ var MIN_TASK_WEIGHT = 1;
 var MAX_TASK_WEIGHT = 9;
 
 // src/TaskSidebarView.svelte
+var import_obsidian8 = require("obsidian");
+
+// src/TaskSearchModal.ts
 var import_obsidian7 = require("obsidian");
-
-// src/TaskSearchModal.ts
-var import_obsidian6 = require("obsidian");
-
-// src/lang/helpers.ts
-var import_obsidian5 = require("obsidian");
-
-// src/lang/locale/en.ts
-var en = {
-  // Action ribbon & Commands
-  action_multi_select: "Multi-select Tasks (Batch Delete/Star)",
-  action_backup_manager: "Data Backup Manager (Snapshots & Restore)",
-  cmd_backup_manager: "Open Backup Manager (Snapshots & Restore)",
-  // Backup Service
-  backup_dir: "Backup folder: {0}",
-  backup_file_not_found: "Backup file not found",
-  backup_invalid_format: "\u274C Invalid backup format: missing files payload",
-  backup_restore_success: "\u2705 Backup restored: recovered {0} files containing {1} tasks",
-  backup_restore_failed: "\u274C Restore failed: {0}",
-  backup_deleted: "\u{1F5D1}\uFE0F Backup deleted",
-  backup_import_dialog_title: "Select Backup File to Import",
-  backup_file_filter_name: "Fluent Tasks Backup File (*.json)",
-  // Backup Modal UI
-  backup_modal_title: "Task Data Backup Manager",
-  daily_backup_title: "Daily Auto Backup",
-  daily_backup_desc: "Automatically creates a local snapshot on first launch each day",
-  daily_backup_enabled: "\u2705 Daily auto backup enabled",
-  daily_backup_disabled: "\u26A0\uFE0F Daily auto backup disabled",
-  backup_now: "Backup Now",
-  backing_up: "Backing up...",
-  data_saved_to: "Data saved to {0}",
-  backup_failed: "\u274C Backup failed: {0}",
-  import_backup: "Import Backup",
-  backup_history_title: "Backup History ({0})",
-  open_backup_folder: "\u{1F4C2} Open Folder",
-  open_backup_folder_tooltip: "Open backup folder in file explorer",
-  delete_all_backups: "\u{1F5D1}\uFE0F Delete All Backups",
-  delete_all_backups_tooltip: "Delete all local backup files",
-  no_backups_to_delete: "No backups to delete",
-  refresh_list: "Refresh list",
-  loading_backups: "Loading backup records...",
-  no_local_backups: "\u{1F4E6} No local backups found",
-  no_local_backups_hint: 'Click "Backup Now" above to create your first snapshot',
-  daily_backup_badge: "Daily Backup",
-  manual_backup_badge: "Manual Backup",
-  task_count_label: "{0} tasks",
-  list_count_label: "{0} lists",
-  restore_snapshot_tooltip: "Restore this snapshot",
-  restore: "Restore",
-  delete_backup_tooltip: "Delete backup",
-  confirm_restore_backup: 'Are you sure you want to restore backup "{0}"?\nAll task lists will be restored with data from this snapshot.',
-  confirm_delete_backup: 'Are you sure you want to delete backup "{0}"?',
-  confirm_delete_all_backups: "\u26A0\uFE0F Dangerous action: Delete all {0} local backup files?\nThis action cannot be undone!",
-  all_backups_deleted: "\u{1F5D1}\uFE0F Deleted all {0} backup files",
-  // Task Note Modal
-  confirm_delete_task_note_title: 'Delete task note for "{0}"?',
-  confirm_delete_task_note_p1: "The task to be deleted has a dedicated task note:",
-  confirm_delete_task_note_p2: "You can delete only the task itself, or move both the task and its task note to trash.",
-  confirm_delete_linked_note_title: 'Delete task note for "{0}"?',
-  confirm_delete_linked_note_p1: "The task to be deleted has a dedicated task note:",
-  confirm_delete_linked_note_p2: "You can delete only the task itself, or move both the task and its task note to trash.",
-  cancel: "Cancel",
-  delete_task_only_keep_note: "Delete Task Only (Keep Note)",
-  delete_task_and_note: "Delete Task & Task Note",
-  // Task Note Tooltips & Notices (TaskDetailView)
-  task_note_tooltip_exists: "Task note: {0} (Click to open, hover to preview, right-click to manage)",
-  task_note_tooltip_create: "Task Note (Click to create dedicated note and open)",
-  task_note_recreated: "Recreated and opened task note: {0}",
-  task_note_created: "Created and opened task note: {0}",
-  open_task_note: "Open task note",
-  unlink_task_note: "Unlink task note",
-  unlink_task_note_success: "Task note unlinked successfully",
-  // Legacy Aliases
-  linked_note_tooltip_exists: "Task note: {0} (Click to open, hover to preview, right-click to manage)",
-  linked_note_tooltip_create: "Task Note (Click to create dedicated note and open)",
-  linked_note_recreated: "Recreated and opened task note: {0}",
-  linked_note_created: "Created and opened task note: {0}",
-  open_linked_note: "Open task note",
-  unlink_note: "Unlink note",
-  unlink_note_success: "Note unlinked successfully",
-  // TaskMainView Multi-Select & Batch
-  multi_select_mode_enabled: "\u2611\uFE0F Multi-select mode enabled: Select tasks for batch operations",
-  batch_starred_tasks: "\u2B50 Starred {0} selected tasks",
-  batch_unstarred_tasks: "Unstarred {0} selected tasks",
-  confirm_batch_delete_tasks: "Are you sure you want to delete {0} selected tasks? This action cannot be undone.",
-  batch_deleted_tasks_notice: "\u{1F5D1}\uFE0F Batch deleted {0} tasks",
-  multi_select_tooltip: "Multi-select Tasks (Batch Delete/Star)",
-  backup_btn_tooltip: "Data Backup Manager",
-  guide_btn_tooltip: "Features & Shortcuts Guide",
-  search_list_tooltip: "Search this list",
-  linked_note_preview_tooltip: "Linked note: {0} (Click to open, hover to preview)",
-  selected_items_label: "Selected {0} items",
-  deselect_all: "Deselect All",
-  select_all: "Select All",
-  select_incomplete_tasks: "Select Incomplete Tasks",
-  select_completed_tasks: "Select Completed Tasks",
-  batch_star: "Batch Star / Unstar",
-  batch_delete: "Batch Delete",
-  exit: "\u2715 Exit",
-  exit_multi_select: "Exit Selection Mode",
-  // Quick Task Modal
-  quick_task_tip: "\u{1F4A1} Tip: Set a hotkey for <code>Fluent Tasks: Open Quick Task Modal</code> in <b>Settings \u2192 Hotkeys</b> for instant access ({0} reminders left)",
-  // Quick List Modal
-  focus_pick_mode_enabled: "\u{1F3AF} Selection mode enabled: Click a list to set as default focus (Press ESC to cancel)",
-  focus_default_set: '\u{1F3AF} Set "{0}" as default focus list on open',
-  focus_cancel_default: "Remove default focus (revert to top-left)",
-  focus_set_default: "Set as default focus (opened first)",
-  focus_restored_default: "Restored default focus (top-left item)",
-  focus_restored_default_notice: "\u{1F3AF} Restored default focus: Top-left first item",
-  focus_pick_cancelled: "Cancelled default focus list selection",
-  quick_list_tip: "\u{1F4A1} Tip: Set a hotkey for <code>Fluent Tasks: Open Quick List Modal</code> in <b>Settings \u2192 Hotkeys</b> ({0} reminders left)",
-  focus_btn_aria_label: "Set default focus list: Click to enter selection mode, right click to reset to top-left",
-  focus_picking_target: "Select target list...",
-  focus_target_label: "Focus: {0}",
-  focus_set_btn: "Set Focus",
-  focus_popover_title: "\u{1F3AF} Initial Focus Settings",
-  focus_current_prefix: "Current default focus: ",
-  focus_unset_prefix: "Not set, defaults to: ",
-  focus_top_left_default: "Top-left first item",
-  focus_instruction_desc: "Click button to enter selection mode then click target list; right click button to reset to top-left.",
-  focus_tag_tooltip: "Default focus target",
-  quick_list_search_mode_list: "Lists",
-  quick_list_search_mode_task: "Tasks",
-  quick_list_search_mode_title_to_task: "Currently searching lists. Click to permanently switch to task search.",
-  quick_list_search_mode_title_to_list: "Currently searching tasks. Click to permanently switch to list search.",
-  quick_list_task_search_placeholder: "Search all tasks (title, steps, notes)...",
-  quick_list_task_search_no_results: "No results found.",
-  quick_list_task_search_title: "Search all tasks",
-  quick_list_task_search_empty_hint: "Type keywords to search across task titles, checklist steps, and notes.",
-  quick_list_search_filter_active_only: "Active only",
-  quick_list_search_filter_all_tasks: "All tasks",
-  quick_list_search_filter_tooltip: "Toggle completed tasks filter",
-  main_view_task_search_placeholder: "Search tasks in this list (title, steps, notes)...",
-  main_view_search_list_only_btn: "List only",
-  main_view_search_list_only_tooltip: "Current scope: List only. Click for info on searching all tasks.",
-  main_view_search_all_tasks_hint: "To search across all tasks, set a hotkey for plugin command 'Search all tasks' in Settings -> Hotkeys.",
-  setting_hide_left_sidebar_title: "Hide Left Sidebar (Floating UI Mode)",
-  setting_hide_left_sidebar_desc: "Hide the left sidebar list view completely. Navigate lists using the Quick List Floating UI (modal). Recommended to bind a hotkey for quick access.",
-  setting_auto_expand_sidebar_on_drag_title: "Auto-Expand Left Sidebar on Task Drag",
-  setting_auto_expand_sidebar_on_drag_desc: "Temporarily expands the left sidebar when dragging a task to easily move it to other lists, and auto-collapses on release (if it was collapsed). If the sidebar is already open with Fluent Tasks, it only reveals the list.",
-  warn_bind_hotkey_btn: "Set Floating UI Hotkey",
-  warn_bind_hotkey_tooltip: "You enabled 'Hide Left Sidebar'. Please bind a hotkey for 'Open Quick List Modal' in Settings -> Hotkeys to switch lists conveniently.",
-  warn_bind_hotkey_notice: "\u26A0\uFE0F [Fluent Tasks] 'Hide Left Sidebar' is enabled, but no hotkey is bound for the Floating UI! Please assign a hotkey in Settings -> Hotkeys.",
-  empty_state_hide_sidebar_desc: "Sidebar is hidden. Use Quick List (Floating UI) to select a list.",
-  rename_list_tooltip: "Click to rename list (F2)",
-  rename_list_menu_item: "Rename list (F2)",
-  confirm_save_title: "Save changes?",
-  confirm_save_meta_desc: "Task metadata has unsaved changes. Do you want to save changes before exiting?",
-  confirm_save_btn: "Save (Enter)",
-  confirm_dont_save_btn: "Don't Save",
-  confirm_keep_editing_btn: "Keep Editing (Esc)",
-  move_to_menu_title: "Move to",
-  search_list_to_move: "Search destination list...",
-  add_side_step: "Add side step",
-  // Image attachment & clipboard operations
-  image_copied: "Image copied to clipboard",
-  image_cut: "Image cut to clipboard",
-  image_deleted: "Image removed",
-  image_pasted: "Image attached",
-  image_preview_title: "Image Preview",
-  image_tooltip: "Click to preview \u2022 Hover + Ctrl+C to copy \u2022 Hover + Ctrl+X to cut",
-  image_copy_tooltip: "Copy image (Ctrl+C)",
-  image_cut_tooltip: "Cut image (Ctrl+X)",
-  image_delete_tooltip: "Remove image (Ctrl+X)",
-  image_hint_copy: "Copy",
-  image_hint_cut: "Cut",
-  image_hint_close: "Close",
-  image_zoom_in: "Click to zoom 1:1",
-  image_zoom_out: "Click to fit screen",
-  image_hint_zoom: "Zoom 1:1",
-  image_hint_fit: "Fit screen",
-  copy: "Copy",
-  cut: "Cut",
-  close: "Close",
-  setting_fullscreen_detail_modal_title: "Full-Screen Task Details Modal",
-  setting_fullscreen_detail_modal_desc: "Open floating task details modal in full-screen mode (similar to Subtasks modal). When disabled, displays as a centered window card.",
-  restore_window: "Restore window",
-  fullscreen_window: "Full screen",
-  setting_focused_lists_title: "Focused lists",
-  setting_focused_lists_desc: "Display focused list shortcuts and a quick selector next to the list title in the header. Disabled by default.",
-  focused_lists_btn_tooltip: "Focused lists",
-  focused_lists_save_btn: "Save",
-  focused_lists_saved_notice: "Focused lists saved",
-  focused_lists_selected_count: "{0} selected",
-  focused_lists_select_all: "Select all",
-  focused_lists_clear_all: "Clear all",
-  focused_lists_search_placeholder: "Search lists...",
-  focused_lists_no_results: "No matching lists found."
-};
-var en_default = en;
-
-// src/lang/locale/zh-cn.ts
-var zhCn = {
-  // Action ribbon & Commands
-  action_multi_select: "\u591A\u9009\u4EFB\u52A1 (\u6279\u91CF\u5220\u9664/\u6536\u85CF)",
-  action_backup_manager: "\u6570\u636E\u5907\u4EFD\u5668 (\u5FEB\u7167\u4E0E\u6062\u590D)",
-  cmd_backup_manager: "\u6253\u5F00\u5907\u4EFD\u7BA1\u7406\u5668 (\u6570\u636E\u5907\u4EFD\u4E0E\u6062\u590D)",
-  // Backup Service
-  backup_dir: "\u5907\u4EFD\u76EE\u5F55: {0}",
-  backup_file_not_found: "\u672A\u627E\u5230\u6307\u5B9A\u7684\u5907\u4EFD\u6587\u4EF6",
-  backup_invalid_format: "\u274C \u5907\u4EFD\u6587\u4EF6\u683C\u5F0F\u65E0\u6548\uFF1A\u7F3A\u5C11 files \u6570\u636E\u9879",
-  backup_restore_success: "\u2705 \u6210\u529F\u8FD8\u539F\u5907\u4EFD\uFF1A\u5171\u6062\u590D {0} \u4E2A\u6587\u4EF6\uFF0C\u5305\u542B {1} \u9879\u4EFB\u52A1",
-  backup_restore_failed: "\u274C \u8FD8\u539F\u5931\u8D25: {0}",
-  backup_deleted: "\u{1F5D1}\uFE0F \u5907\u4EFD\u5DF2\u5220\u9664",
-  backup_import_dialog_title: "\u9009\u62E9\u8981\u5BFC\u5165\u7684\u5907\u4EFD\u6587\u4EF6",
-  backup_file_filter_name: "Fluent Tasks \u5907\u4EFD\u6587\u4EF6 (*.json)",
-  // Backup Modal UI
-  backup_modal_title: "\u4EFB\u52A1\u6570\u636E\u5907\u4EFD\u5668",
-  daily_backup_title: "\u6BCF\u65E5\u81EA\u52A8\u5907\u4EFD",
-  daily_backup_desc: "\u6BCF\u5929\u9996\u6B21\u6253\u5F00\u65F6\u81EA\u52A8\u5728\u672C\u5730\u751F\u6210\u5FEB\u7167",
-  daily_backup_enabled: "\u2705 \u5DF2\u5F00\u542F\u6BCF\u65E5\u81EA\u52A8\u5907\u4EFD",
-  daily_backup_disabled: "\u26A0\uFE0F \u5DF2\u5173\u95ED\u6BCF\u65E5\u81EA\u52A8\u5907\u4EFD",
-  backup_now: "\u73B0\u5728\u5907\u4EFD",
-  backing_up: "\u5907\u4EFD\u4E2D...",
-  data_saved_to: "\u6570\u636E\u5DF2\u4FDD\u5B58\u5230 {0}",
-  backup_failed: "\u274C \u5907\u4EFD\u5931\u8D25: {0}",
-  import_backup: "\u5BFC\u5165\u5907\u4EFD",
-  backup_history_title: "\u5386\u53F2\u5907\u4EFD\u8BB0\u5F55 ({0})",
-  open_backup_folder: "\u{1F4C2} \u6253\u5F00\u76EE\u5F55",
-  open_backup_folder_tooltip: "\u5728\u6587\u4EF6\u7BA1\u7406\u5668\u4E2D\u6253\u5F00\u5907\u4EFD\u6240\u5728\u6587\u4EF6\u5939",
-  delete_all_backups: "\u{1F5D1}\uFE0F \u5220\u9664\u5168\u90E8\u5907\u4EFD",
-  delete_all_backups_tooltip: "\u6E05\u7A7A\u5E76\u5220\u9664\u5168\u90E8\u672C\u5730\u5907\u4EFD\u6587\u4EF6",
-  no_backups_to_delete: "\u6682\u65E0\u5907\u4EFD\u53EF\u5220\u9664",
-  refresh_list: "\u5237\u65B0\u5217\u8868",
-  loading_backups: "\u6B63\u5728\u8BFB\u53D6\u5907\u4EFD\u8BB0\u5F55...",
-  no_local_backups: "\u{1F4E6} \u6682\u65E0\u672C\u5730\u5907\u4EFD\u6587\u4EF6",
-  no_local_backups_hint: "\u70B9\u51FB\u4E0A\u65B9\u300C\u73B0\u5728\u5907\u4EFD\u300D\u5373\u53EF\u521B\u5EFA\u7B2C\u4E00\u4E2A\u5B8C\u6574\u6570\u636E\u5FEB\u7167",
-  daily_backup_badge: "\u6BCF\u65E5\u5907\u4EFD",
-  manual_backup_badge: "\u624B\u52A8\u5907\u4EFD",
-  task_count_label: "{0} \u9879\u4EFB\u52A1",
-  list_count_label: "{0} \u4E2A\u5217\u8868",
-  restore_snapshot_tooltip: "\u8FD8\u539F\u6B64\u5FEB\u7167",
-  restore: "\u8FD8\u539F",
-  delete_backup_tooltip: "\u5220\u9664\u5907\u4EFD",
-  confirm_restore_backup: "\u786E\u8BA4\u8FD8\u539F\u5907\u4EFD\u300C{0}\u300D\uFF1F\n\u6B64\u64CD\u4F5C\u5C06\u7528\u5907\u4EFD\u4E2D\u7684\u6570\u636E\u6062\u590D\u6240\u6709\u4EFB\u52A1\u5217\u8868\u3002",
-  confirm_delete_backup: "\u786E\u8BA4\u5220\u9664\u5907\u4EFD\u300C{0}\u300D\uFF1F",
-  confirm_delete_all_backups: "\u26A0\uFE0F \u5371\u9669\u64CD\u4F5C\uFF1A\u786E\u8BA4\u6E05\u7A7A\u5E76\u5220\u9664\u5168\u90E8 {0} \u4E2A\u672C\u5730\u5907\u4EFD\u6587\u4EF6\uFF1F\n\u6B64\u64CD\u4F5C\u4E0D\u53EF\u64A4\u9500\uFF01",
-  all_backups_deleted: "\u{1F5D1}\uFE0F \u5DF2\u6E05\u7A7A\u5220\u9664\u5168\u90E8 {0} \u4E2A\u5907\u4EFD\u6587\u4EF6",
-  // Task Note Modal
-  confirm_delete_task_note_title: "\u662F\u5426\u5220\u9664\u4EFB\u52A1\u4E13\u5C5E\u7B14\u8BB0\uFF08{0}\uFF09\uFF1F",
-  confirm_delete_task_note_p1: "\u5F85\u5220\u9664\u7684\u4EFB\u52A1\u62E5\u6709\u4E13\u5C5E\u7B14\u8BB0\uFF1A",
-  confirm_delete_task_note_p2: "\u60A8\u53EF\u4EE5\u9009\u62E9\u4EC5\u5220\u9664\u4EFB\u52A1\u672C\u8EAB\uFF0C\u6216\u540C\u65F6\u5C06\u8BE5\u4E13\u5C5E\u7B14\u8BB0\u79FB\u5165\u56DE\u6536\u7AD9\u3002",
-  confirm_delete_linked_note_title: "\u662F\u5426\u5220\u9664\u4EFB\u52A1\u4E13\u5C5E\u7B14\u8BB0\uFF08{0}\uFF09\uFF1F",
-  confirm_delete_linked_note_p1: "\u5F85\u5220\u9664\u7684\u4EFB\u52A1\u62E5\u6709\u4E13\u5C5E\u7B14\u8BB0\uFF1A",
-  confirm_delete_linked_note_p2: "\u60A8\u53EF\u4EE5\u9009\u62E9\u4EC5\u5220\u9664\u4EFB\u52A1\u672C\u8EAB\uFF0C\u6216\u540C\u65F6\u5C06\u8BE5\u4E13\u5C5E\u7B14\u8BB0\u79FB\u5165\u56DE\u6536\u7AD9\u3002",
-  cancel: "\u53D6\u6D88",
-  delete_task_only_keep_note: "\u4EC5\u5220\u9664\u4EFB\u52A1\uFF08\u4FDD\u7559\u7B14\u8BB0\uFF09",
-  delete_task_and_note: "\u5220\u9664\u4EFB\u52A1\u4E0E\u4E13\u5C5E\u7B14\u8BB0",
-  // Task Note Tooltips & Notices (TaskDetailView)
-  task_note_tooltip_exists: "\u4EFB\u52A1\u4E13\u5C5E\u7B14\u8BB0: {0} (\u70B9\u51FB\u8DF3\u8F6C\uFF0C\u60AC\u505C\u9884\u89C8\uFF0C\u53F3\u952E\u7BA1\u7406)",
-  task_note_tooltip_create: "\u4EFB\u52A1\u4E13\u5C5E\u7B14\u8BB0 (\u70B9\u51FB\u81EA\u52A8\u521B\u5EFA\u5E76\u8DF3\u8F6C)",
-  task_note_recreated: "\u5DF2\u91CD\u65B0\u521B\u5EFA\u5E76\u6253\u5F00\u4EFB\u52A1\u7B14\u8BB0: {0}",
-  task_note_created: "\u5DF2\u521B\u5EFA\u5E76\u6253\u5F00\u4EFB\u52A1\u7B14\u8BB0: {0}",
-  open_task_note: "\u6253\u5F00\u4EFB\u52A1\u7B14\u8BB0",
-  unlink_task_note: "\u53D6\u6D88\u5173\u8054\u4E13\u5C5E\u7B14\u8BB0",
-  unlink_task_note_success: "\u5DF2\u53D6\u6D88\u4E13\u5C5E\u7B14\u8BB0\u5173\u8054",
-  // Legacy Aliases
-  linked_note_tooltip_exists: "\u4EFB\u52A1\u4E13\u5C5E\u7B14\u8BB0: {0} (\u70B9\u51FB\u8DF3\u8F6C\uFF0C\u60AC\u505C\u9884\u89C8\uFF0C\u53F3\u952E\u7BA1\u7406)",
-  linked_note_tooltip_create: "\u4EFB\u52A1\u4E13\u5C5E\u7B14\u8BB0 (\u70B9\u51FB\u81EA\u52A8\u521B\u5EFA\u5E76\u8DF3\u8F6C)",
-  linked_note_recreated: "\u5DF2\u91CD\u65B0\u521B\u5EFA\u5E76\u6253\u5F00\u4EFB\u52A1\u7B14\u8BB0: {0}",
-  linked_note_created: "\u5DF2\u521B\u5EFA\u5E76\u6253\u5F00\u4EFB\u52A1\u7B14\u8BB0: {0}",
-  open_linked_note: "\u6253\u5F00\u4EFB\u52A1\u7B14\u8BB0",
-  unlink_note: "\u53D6\u6D88\u5173\u8054\u4E13\u5C5E\u7B14\u8BB0",
-  unlink_note_success: "\u5DF2\u53D6\u6D88\u4E13\u5C5E\u7B14\u8BB0\u5173\u8054",
-  // TaskMainView Multi-Select & Batch
-  multi_select_mode_enabled: "\u2611\uFE0F \u591A\u9009\u6A21\u5F0F\u5DF2\u5F00\u542F\uFF1A\u53EF\u52FE\u9009\u4EFB\u52A1\u8FDB\u884C\u6279\u91CF\u64CD\u4F5C",
-  batch_starred_tasks: "\u2B50 \u5DF2\u6536\u85CF\u9009\u4E2D\u7684 {0} \u9879\u4EFB\u52A1",
-  batch_unstarred_tasks: "\u5DF2\u53D6\u6D88\u6536\u85CF\u9009\u4E2D\u7684 {0} \u9879\u4EFB\u52A1",
-  confirm_batch_delete_tasks: "\u786E\u8BA4\u6279\u91CF\u5220\u9664\u9009\u4E2D\u7684 {0} \u9879\u4EFB\u52A1\uFF1F\u6B64\u64CD\u4F5C\u4E0D\u53EF\u9006\u3002",
-  batch_deleted_tasks_notice: "\u{1F5D1}\uFE0F \u5DF2\u6279\u91CF\u5220\u9664 {0} \u9879\u4EFB\u52A1",
-  multi_select_tooltip: "\u591A\u9009\u4EFB\u52A1 (\u6279\u91CF\u5220\u9664/\u6536\u85CF)",
-  backup_btn_tooltip: "\u6570\u636E\u5907\u4EFD\u5668",
-  guide_btn_tooltip: "\u529F\u80FD\u4E0E\u5FEB\u6377\u952E\u6307\u5357",
-  search_list_tooltip: "\u641C\u7D22\u5F53\u524D\u5217\u8868",
-  linked_note_preview_tooltip: "\u5173\u8054\u7B14\u8BB0: {0} (\u70B9\u51FB\u8DF3\u8F6C\uFF0C\u60AC\u505C\u9884\u89C8)",
-  selected_items_label: "\u5DF2\u9009 {0} \u9879",
-  deselect_all: "\u53D6\u6D88\u5168\u9009",
-  select_all: "\u5168\u9009",
-  select_incomplete_tasks: "\u9009\u62E9\u672A\u5B8C\u6210\u4EFB\u52A1",
-  select_completed_tasks: "\u9009\u62E9\u5DF2\u5B8C\u6210\u4EFB\u52A1",
-  batch_star: "\u6279\u91CF\u6536\u85CF / \u53D6\u6D88\u6536\u85CF",
-  batch_delete: "\u6279\u91CF\u5220\u9664",
-  exit: "\u2715 \u9000\u51FA",
-  exit_multi_select: "\u9000\u51FA\u591A\u9009\u6A21\u5F0F",
-  // Quick Task Modal
-  quick_task_tip: "\u{1F4A1} \u63D0\u793A: \u5728 <b>\u8BBE\u7F6E \u2192 \u5FEB\u6377\u952E</b> \u4E2D\u4E3A <code>Fluent Tasks: Open Quick Task Modal</code> \u8BBE\u7F6E\u5FEB\u6377\u952E\u5373\u53EF\u79D2\u7EA7\u547C\u51FA (\u5269\u4F59 {0} \u6B21\u63D0\u9192)",
-  // Quick List Modal
-  focus_pick_mode_enabled: "\u{1F3AF} \u9009\u62E9\u6A21\u5F0F\u5DF2\u5F00\u542F\uFF1A\u8BF7\u70B9\u51FB\u60F3\u8981\u8BBE\u4E3A\u9ED8\u8BA4\u805A\u7126\u7684\u5217\u8868 (\u6309 ESC \u53D6\u6D88)",
-  focus_default_set: '\u{1F3AF} \u5DF2\u5C06 "{0}" \u8BBE\u4E3A\u6253\u5F00\u65F6\u7684\u9ED8\u8BA4\u805A\u7126\u5217\u8868',
-  focus_cancel_default: "\u53D6\u6D88\u9ED8\u8BA4\u805A\u7126 (\u6062\u590D\u9996\u9879)",
-  focus_set_default: "\u8BBE\u4E3A\u9ED8\u8BA4\u805A\u7126 (\u6253\u5F00\u65F6\u9996\u9009)",
-  focus_restored_default: "\u5DF2\u6062\u590D\u9ED8\u8BA4\u805A\u7126 (\u5DE6\u4E0A\u89D2\u9996\u9879)",
-  focus_restored_default_notice: "\u{1F3AF} \u5DF2\u6062\u590D\u9ED8\u8BA4\u805A\u7126\uFF1A\u5DE6\u4E0A\u89D2\u9996\u9879",
-  focus_pick_cancelled: "\u5DF2\u53D6\u6D88\u9009\u62E9\u9ED8\u8BA4\u805A\u7126\u5217\u8868",
-  quick_list_tip: "\u{1F4A1} \u63D0\u793A: \u5728 <b>\u8BBE\u7F6E \u2192 \u5FEB\u6377\u952E</b> \u4E2D\u4E3A <code>Fluent Tasks: Open Quick List Modal</code> \u8BBE\u7F6E\u5FEB\u6377\u952E (\u5269\u4F59 {0} \u6B21\u63D0\u9192)",
-  focus_btn_aria_label: "\u8BBE\u7F6E\u9ED8\u8BA4\u805A\u7126\u5217\u8868\uFF1A\u70B9\u51FB\u8FDB\u5165\u9009\u62E9\u6A21\u5F0F\uFF0C\u53F3\u952E\u53EF\u91CD\u7F6E\u4E3A\u5DE6\u4E0A\u89D2\u9996\u9879",
-  focus_picking_target: "\u9009\u62E9\u76EE\u6807\u5217\u8868...",
-  focus_target_label: "\u805A\u7126: {0}",
-  focus_set_btn: "\u8BBE\u7F6E\u805A\u7126",
-  focus_popover_title: "\u{1F3AF} \u521D\u59CB\u9ED8\u8BA4\u805A\u7126\u8BBE\u7F6E",
-  focus_current_prefix: "\u5F53\u524D\u9ED8\u8BA4\u805A\u7126\uFF1A",
-  focus_unset_prefix: "\u5F53\u524D\u672A\u8BBE\u7F6E\uFF0C\u9ED8\u8BA4\u805A\u7126\uFF1A",
-  focus_top_left_default: "\u5DE6\u4E0A\u89D2\u9996\u9879",
-  focus_instruction_desc: "\u70B9\u51FB\u6309\u94AE\u8FDB\u5165\u9009\u62E9\u6A21\u5F0F\u540E\u70B9\u51FB\u76EE\u6807\u5217\u8868\uFF1B\u53F3\u952E\u6B64\u6309\u94AE\u53EF\u91CD\u7F6E\u4E3A\u5DE6\u4E0A\u89D2\u9996\u9879\u3002",
-  focus_tag_tooltip: "\u9ED8\u8BA4\u805A\u7126\u76EE\u6807",
-  quick_list_search_mode_list: "\u641C\u5217\u8868",
-  quick_list_search_mode_task: "\u641C\u4EFB\u52A1",
-  quick_list_search_mode_title_to_task: "\u5F53\u524D\u6A21\u5F0F\uFF1A\u641C\u5217\u8868\u3002\u70B9\u51FB\u6C38\u4E45\u5207\u6362\u4E3A\u641C\u4EFB\u52A1\u3002",
-  quick_list_search_mode_title_to_list: "\u5F53\u524D\u6A21\u5F0F\uFF1A\u641C\u4EFB\u52A1\u3002\u70B9\u51FB\u6C38\u4E45\u5207\u6362\u4E3A\u641C\u5217\u8868\u3002",
-  quick_list_task_search_placeholder: "\u641C\u7D22\u6240\u6709\u4EFB\u52A1 (\u6807\u9898\u3001\u6B65\u9AA4\u3001\u5907\u6CE8)...",
-  quick_list_task_search_no_results: "\u672A\u627E\u5230\u5339\u914D\u4EFB\u52A1\u3002",
-  quick_list_task_search_title: "\u641C\u7D22\u6240\u6709\u4EFB\u52A1",
-  quick_list_task_search_empty_hint: "\u8F93\u5165\u5173\u952E\u8BCD\u4EE5\u641C\u7D22\u6240\u6709\u4EFB\u52A1\u7684\u6807\u9898\u3001\u5B50\u6B65\u9AA4\u6216\u8BE6\u7EC6\u5907\u6CE8\u3002",
-  quick_list_search_filter_active_only: "\u4EC5\u672A\u5B8C\u6210",
-  quick_list_search_filter_all_tasks: "\u6240\u6709\u4EFB\u52A1",
-  quick_list_search_filter_tooltip: "\u5207\u6362\u662F\u5426\u5305\u542B\u5DF2\u5B8C\u6210\u4EFB\u52A1",
-  main_view_task_search_placeholder: "\u5728\u5F53\u524D\u5217\u8868\u4E2D\u641C\u7D22\u4EFB\u52A1 (\u6807\u9898\u3001\u6B65\u9AA4\u3001\u5907\u6CE8)...",
-  main_view_search_list_only_btn: "List only",
-  main_view_search_list_only_tooltip: "\u5F53\u524D\u68C0\u7D22\u8303\u56F4\uFF1A\u4EC5\u5F53\u524D\u5217\u8868\u3002\u70B9\u51FB\u67E5\u770B\u5982\u4F55\u641C\u7D22\u5168\u90E8\u4EFB\u52A1\u3002",
-  main_view_search_all_tasks_hint: "\u5982\u679C\u60F3\u8981\u641C\u7D22\u5168\u90E8\u4EFB\u52A1 (All tasks)\uFF0C\u8BF7\u5728 Obsidian\u3010\u8BBE\u7F6E -> \u5FEB\u6377\u952E\u3011\u4E2D\u4E3A\u672C\u63D2\u4EF6\u547D\u4EE4\u3010Search all tasks\u3011\u7ED1\u5B9A\u5FEB\u6377\u952E\u3002",
-  setting_hide_left_sidebar_title: "\u9690\u85CF\u5DE6\u4FA7\u4FA7\u8FB9\u680F\uFF08\u60AC\u6D6EUI\u6A21\u5F0F\uFF09",
-  setting_hide_left_sidebar_desc: "\u5B8C\u5168\u9690\u85CF\u5DE6\u4FA7\u4FA7\u8FB9\u680F\u5217\u8868\u9762\u677F\uFF0C\u6539\u7528\u5FEB\u901F\u5217\u8868\u60AC\u6D6EUI\u5F39\u7A97\u8FDB\u884C\u5BFC\u822A\u4E0E\u5207\u6362\u3002\u5F3A\u70C8\u5EFA\u8BAE\u4E3A\u8BE5\u60AC\u6D6EUI\u7ED1\u5B9A\u5FEB\u6377\u952E\u3002",
-  setting_auto_expand_sidebar_on_drag_title: "\u62D6\u62FD\u4EFB\u52A1\u65F6\u81EA\u52A8\u5C55\u5F00\u5DE6\u4FA7\u8FB9\u680F",
-  setting_auto_expand_sidebar_on_drag_desc: "\u62D6\u62FD\u4EFB\u52A1\u65F6\u6682\u65F6\u5C55\u5F00\u5DE6\u4FA7\u8FB9\u680F\u4EE5\u4FBF\u79FB\u52A8\u5230\u5176\u4ED6\u6E05\u5355\uFF0C\u677E\u5F00\u65F6\u81EA\u52A8\u6536\u8D77\uFF08\u82E5\u539F\u672C\u5904\u4E8E\u6298\u53E0\u72B6\u6001\uFF09\u3002\u82E5\u5DE6\u4FA7\u8FB9\u680F\u672C\u6765\u5DF2\u5C55\u5F00\u4E14\u663E\u793A\u672C\u63D2\u4EF6\u5217\u8868\uFF0C\u5219\u4EC5\u5B9A\u4F4D\u6E05\u5355\u800C\u4E0D\u91CD\u65B0\u5C55\u5F00\u6536\u8D77\u3002",
-  warn_bind_hotkey_btn: "\u8BF7\u7ED1\u5B9A\u60AC\u6D6EUI\u5FEB\u6377\u952E",
-  warn_bind_hotkey_tooltip: "\u4F60\u5F00\u542F\u4E86\u300C\u9690\u85CF\u5DE6\u4FA7\u4FA7\u8FB9\u680F\u300D\u8BBE\u7F6E\uFF0C\u8BF7\u5728\u300C\u8BBE\u7F6E -> \u5FEB\u6377\u952E\u300D\u4E2D\u4E3A\u300C\u6253\u5F00\u5FEB\u901F\u5217\u8868\u5F39\u7A97\u300D\u7ED1\u5B9A\u5FEB\u6377\u952E\uFF0C\u4EE5\u4FBF\u968F\u65F6\u8C03\u51FA\u60AC\u6D6EUI\u5207\u6362\u5217\u8868\u3002",
-  warn_bind_hotkey_notice: "\u26A0\uFE0F [Fluent Tasks] \u4F60\u5F00\u542F\u4E86\u300C\u9690\u85CF\u5DE6\u4FA7\u4FA7\u8FB9\u680F\u300D\u8BBE\u7F6E\uFF0C\u4F46\u5C1A\u672A\u4E3A\u60AC\u6D6EUI\u7ED1\u5B9A\u5FEB\u6377\u952E\uFF01\u8BF7\u524D\u5F80\u300C\u8BBE\u7F6E -> \u5FEB\u6377\u952E\u300D\u7ED1\u5B9A\u5FEB\u6377\u952E\u3002",
-  empty_state_hide_sidebar_desc: "\u4FA7\u8FB9\u680F\u5DF2\u9690\u85CF\u3002\u4F7F\u7528\u5FEB\u901F\u5217\u8868\uFF08\u60AC\u6D6EUI\uFF09\u9009\u62E9\u5217\u8868\u3002",
-  rename_list_tooltip: "\u70B9\u51FB\u91CD\u547D\u540D\u5217\u8868 (F2)",
-  rename_list_menu_item: "\u91CD\u547D\u540D\u5217\u8868 (F2)",
-  confirm_save_title: "\u662F\u5426\u4FDD\u5B58\uFF1F",
-  confirm_save_meta_desc: "\u4EFB\u52A1\u5143\u6570\u636E\uFF08SVG / Why / \u94FE\u63A5\u7B49\uFF09\u5DF2\u6709\u6539\u52A8\uFF0C\u9000\u51FA\u524D\u662F\u5426\u4FDD\u5B58\u66F4\u6539\uFF1F",
-  confirm_save_btn: "\u4FDD\u5B58 (Enter)",
-  confirm_dont_save_btn: "\u4E0D\u4FDD\u5B58 / \u653E\u5F03",
-  confirm_keep_editing_btn: "\u7EE7\u7EED\u7F16\u8F91 (Esc)",
-  move_to_menu_title: "\u79FB\u52A8\u5230",
-  search_list_to_move: "\u641C\u7D22\u76EE\u6807\u5217\u8868...",
-  add_side_step: "\u6DFB\u52A0\u5B50\u6B65\u9AA4",
-  // Image attachment & clipboard operations
-  image_copied: "\u56FE\u7247\u5DF2\u590D\u5236\u5230\u526A\u8D34\u677F",
-  image_cut: "\u56FE\u7247\u5DF2\u526A\u5207\u81F3\u526A\u8D34\u677F",
-  image_deleted: "\u56FE\u7247\u5DF2\u79FB\u9664",
-  image_pasted: "\u56FE\u7247\u5DF2\u9644\u52A0",
-  image_preview_title: "\u56FE\u7247\u9884\u89C8",
-  image_tooltip: "\u70B9\u51FB\u67E5\u770B\u5927\u56FE \u2022 \u60AC\u6D6E Ctrl+C \u590D\u5236 \u2022 \u60AC\u6D6E Ctrl+X \u526A\u5207",
-  image_copy_tooltip: "\u590D\u5236\u56FE\u7247 (Ctrl+C)",
-  image_cut_tooltip: "\u526A\u5207\u56FE\u7247 (Ctrl+X)",
-  image_delete_tooltip: "\u79FB\u9664\u56FE\u7247 (Ctrl+X)",
-  image_hint_copy: "\u590D\u5236",
-  image_hint_cut: "\u526A\u5207",
-  image_hint_close: "\u5173\u95ED",
-  image_zoom_in: "\u70B9\u51FB\u653E\u5927\u539F\u56FE",
-  image_zoom_out: "\u70B9\u51FB\u9002\u5E94\u5C4F\u5E55",
-  image_hint_zoom: "\u653E\u5927\u539F\u56FE",
-  image_hint_fit: "\u9002\u5E94\u5C4F\u5E55",
-  copy: "\u590D\u5236",
-  cut: "\u526A\u5207",
-  close: "\u5173\u95ED",
-  setting_fullscreen_detail_modal_title: "\u5168\u5C4F\u4EFB\u52A1\u8BE6\u60C5\u5F39\u7A97",
-  setting_fullscreen_detail_modal_desc: "\u60AC\u6D6E\u6253\u5F00\u4EFB\u52A1\u8BE6\u60C5\u65F6\u4EE5\u5168\u5C4F\u72B6\u6001\u5C55\u793A\uFF08\u7C7B\u4F3C\u4E8E\u5B50\u6B65\u9AA4\u5168\u5C4F\u6A21\u5F0F\uFF09\u3002\u5173\u95ED\u540E\u6062\u590D\u4E3A\u5C45\u4E2D\u5C0F\u7A97\u53E3\u5361\u7247\u3002",
-  restore_window: "\u8FD8\u539F\u7A97\u53E3",
-  fullscreen_window: "\u5168\u5C4F\u653E\u5927",
-  setting_focused_lists_title: "\u805A\u7126\u6E05\u5355 (Focused lists)",
-  setting_focused_lists_desc: "\u5728\u6807\u9898\u65C1\u663E\u793A\u805A\u7126\u6E05\u5355\u6309\u94AE\u53CA\u5FEB\u6377\u5207\u6362\u80F6\u56CA\u3002\u9ED8\u8BA4\u5173\u95ED\u3002",
-  focused_lists_btn_tooltip: "\u805A\u7126\u6E05\u5355",
-  focused_lists_save_btn: "\u4FDD\u5B58",
-  focused_lists_saved_notice: "\u805A\u7126\u6E05\u5355\u5DF2\u4FDD\u5B58",
-  focused_lists_selected_count: "\u5DF2\u9009 {0} \u4E2A",
-  focused_lists_select_all: "\u5168\u9009",
-  focused_lists_clear_all: "\u6E05\u7A7A",
-  focused_lists_search_placeholder: "\u641C\u7D22\u6E05\u5355...",
-  focused_lists_no_results: "\u672A\u627E\u5230\u5339\u914D\u7684\u6E05\u5355\u3002"
-};
-var zh_cn_default = zhCn;
-
-// src/lang/helpers.ts
-function detectLanguage() {
-  try {
-    const lang = (0, import_obsidian5.getLanguage)();
-    if (lang) {
-      return lang.toLowerCase();
-    }
-  } catch (e) {
-  }
-  return "en";
-}
-function isChinese() {
-  const lang = detectLanguage();
-  return lang === "zh" || lang.startsWith("zh-") || lang.startsWith("zh_");
-}
-function getLocaleDict() {
-  if (isChinese()) {
-    return zh_cn_default;
-  }
-  return en_default;
-}
-function t(key, ...params) {
-  const dict = getLocaleDict();
-  let text2 = dict[key] || en_default[key] || key;
-  if (params && params.length > 0) {
-    for (let i = 0; i < params.length; i++) {
-      text2 = text2.replace(new RegExp(`\\{${i}\\}`, "g"), String(params[i]));
-    }
-  }
-  return text2;
-}
-
-// src/TaskSearchModal.ts
-var TaskSearchModal = class extends import_obsidian6.SuggestModal {
+var TaskSearchModal = class extends import_obsidian7.SuggestModal {
   constructor(app, plugin, dataService, scopeFilepath) {
     super(app);
     this.toggleEl = null;
@@ -6864,7 +7389,7 @@ function instance($$self, $$props, $$invalidate) {
   }
   async function handleCategoryContextMenu(e, cat) {
     e.preventDefault();
-    const menu = new import_obsidian7.Menu();
+    const menu = new import_obsidian8.Menu();
     menu.addItem((item) => {
       item.setTitle("Rename List (F2)").setIcon("edit").onClick(() => {
         startRenaming({
@@ -6899,7 +7424,7 @@ function instance($$self, $$props, $$invalidate) {
     if (group.type !== "group")
       return;
     e.preventDefault();
-    const menu = new import_obsidian7.Menu();
+    const menu = new import_obsidian8.Menu();
     menu.addItem((item) => {
       item.setTitle("Rename Group (F2)").setIcon("edit").onClick(() => {
         startRenaming({
@@ -7439,7 +7964,7 @@ function instance($$self, $$props, $$invalidate) {
           try {
             await dataService.updateTask(sourceFilepath2, task2);
             EventBus.emit("task:updated" /* TASK_UPDATED */, { task: task2, categoryFilepath: sourceFilepath2 });
-            new import_obsidian7.Notice(`Starred task: "${task2.title}"`);
+            new import_obsidian8.Notice(`Starred task: "${task2.title}"`);
             await refreshStarredCount();
           } catch (err) {
             console.error("[TaskSidebarView] Star drop failed:", err);
@@ -7460,7 +7985,7 @@ function instance($$self, $$props, $$invalidate) {
         targetPath
       });
       const targetName = findCategoryName(targetPath);
-      new import_obsidian7.Notice(`Moved to "${targetName}"`);
+      new import_obsidian8.Notice(`Moved to "${targetName}"`);
     } catch (err) {
       console.error("[MStodo Sidebar] Move failed:", err);
     }
@@ -10116,392 +10641,6 @@ function calculatePopoverPosition(targetEl, type) {
   return { placement, x, y };
 }
 
-// src/utils/imageAttachmentUtils.ts
-var import_obsidian8 = require("obsidian");
-function getTimestampString() {
-  const d = /* @__PURE__ */ new Date();
-  const pad = (n) => n.toString().padStart(2, "0");
-  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
-}
-async function saveImageAttachment(file, app, sourceFilepath) {
-  try {
-    const arrayBuffer = await file.arrayBuffer();
-    let ext = "png";
-    if (file.type === "image/jpeg")
-      ext = "jpg";
-    else if (file.type === "image/webp")
-      ext = "webp";
-    else if (file.type === "image/gif")
-      ext = "gif";
-    else if (file.type === "image/svg+xml")
-      ext = "svg";
-    else if ("name" in file && typeof file.name === "string" && file.name.includes(".")) {
-      const parts = file.name.split(".");
-      ext = parts[parts.length - 1].toLowerCase();
-    }
-    const filename = `Pasted image ${getTimestampString()}.${ext}`;
-    let availablePath;
-    const fileManager = app.fileManager;
-    if (fileManager && typeof fileManager.getAvailablePathForAttachment === "function") {
-      try {
-        availablePath = await fileManager.getAvailablePathForAttachment(filename, sourceFilepath);
-      } catch (err) {
-        console.warn("[FluentTasks] getAvailablePathForAttachment fallback:", err);
-        availablePath = await fallbackAttachmentPath(app, filename);
-      }
-    } else {
-      availablePath = await fallbackAttachmentPath(app, filename);
-    }
-    const lastSlash = availablePath.lastIndexOf("/");
-    if (lastSlash > 0) {
-      const parentDir = availablePath.substring(0, lastSlash);
-      if (!await app.vault.adapter.exists(parentDir)) {
-        await app.vault.createFolder(parentDir).catch(() => {
-        });
-      }
-    }
-    const createdFile = await app.vault.createBinary(availablePath, arrayBuffer);
-    return createdFile.path;
-  } catch (error) {
-    console.error("[FluentTasks] Failed to save image attachment:", error);
-    new import_obsidian8.Notice("Failed to save image attachment / \u4FDD\u5B58\u56FE\u7247\u9644\u4EF6\u5931\u8D25");
-    return null;
-  }
-}
-async function fallbackAttachmentPath(app, filename) {
-  const defaultFolder = "TodoData/attachments";
-  if (!await app.vault.adapter.exists(defaultFolder)) {
-    try {
-      await app.vault.createFolder(defaultFolder);
-    } catch (e) {
-    }
-  }
-  let targetPath = `${defaultFolder}/${filename}`;
-  let counter = 1;
-  while (await app.vault.adapter.exists(targetPath)) {
-    const extIdx = filename.lastIndexOf(".");
-    const base = extIdx > 0 ? filename.slice(0, extIdx) : filename;
-    const ext = extIdx > 0 ? filename.slice(extIdx) : ".png";
-    targetPath = `${defaultFolder}/${base} ${counter}${ext}`;
-    counter++;
-  }
-  return targetPath;
-}
-function resolveImageResourceUrl(imageRef, app) {
-  var _a, _b;
-  if (!imageRef)
-    return "";
-  const trimmed = imageRef.trim();
-  if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("data:") || trimmed.startsWith("app://")) {
-    return trimmed;
-  }
-  let clean = trimmed.replace(/^!*\[\[(.*?)\]\]$/, "$1").trim();
-  if (clean.includes("|")) {
-    clean = clean.split("|")[0].trim();
-  }
-  const mdMatch = clean.match(/^!\[.*?\]\((.*?)\)$/);
-  if (mdMatch) {
-    clean = mdMatch[1].trim();
-  }
-  const directFile = app.vault.getAbstractFileByPath(clean);
-  if (directFile instanceof import_obsidian8.TFile) {
-    return app.vault.getResourcePath(directFile);
-  }
-  const linkFile = app.metadataCache.getFirstLinkpathDest(clean, "");
-  if (linkFile instanceof import_obsidian8.TFile) {
-    return app.vault.getResourcePath(linkFile);
-  }
-  if ((_b = (_a = app.vault) == null ? void 0 : _a.adapter) == null ? void 0 : _b.getResourcePath) {
-    try {
-      return app.vault.adapter.getResourcePath(clean);
-    } catch (e) {
-    }
-  }
-  return clean;
-}
-async function copyImageToClipboard(imageRef, app, noticeMsg) {
-  if (!imageRef)
-    return false;
-  let clean = imageRef.trim().replace(/^!*\[\[(.*?)\]\]$/, "$1").trim();
-  if (clean.includes("|")) {
-    clean = clean.split("|")[0].trim();
-  }
-  const mdMatch = clean.match(/^!\[.*?\]\((.*?)\)$/);
-  if (mdMatch) {
-    clean = mdMatch[1].trim();
-  }
-  let file = app.vault.getAbstractFileByPath(clean);
-  if (!(file instanceof import_obsidian8.TFile)) {
-    file = app.metadataCache.getFirstLinkpathDest(clean, "");
-  }
-  let copied = false;
-  const electron = window.require ? window.require("electron") : null;
-  if (file instanceof import_obsidian8.TFile && (electron == null ? void 0 : electron.clipboard) && (electron == null ? void 0 : electron.nativeImage)) {
-    try {
-      const ext = file.extension.toLowerCase();
-      if (ext !== "svg" && app.vault.adapter.getFullPath) {
-        const fullDiskPath = app.vault.adapter.getFullPath(file.path);
-        const nativeImg = electron.nativeImage.createFromPath(fullDiskPath);
-        if (nativeImg && !nativeImg.isEmpty()) {
-          electron.clipboard.writeImage(nativeImg);
-          copied = true;
-        }
-      }
-    } catch (e) {
-    }
-  }
-  const resourceUrl = resolveImageResourceUrl(imageRef, app);
-  if (resourceUrl) {
-    try {
-      await new Promise((resolve) => {
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.onload = () => {
-          try {
-            const canvas = createEl("canvas");
-            canvas.width = img.naturalWidth || img.width || 400;
-            canvas.height = img.naturalHeight || img.height || 300;
-            const ctx = canvas.getContext("2d");
-            if (ctx) {
-              ctx.imageSmoothingEnabled = true;
-              ctx.imageSmoothingQuality = "high";
-              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-              if (!copied && (electron == null ? void 0 : electron.clipboard) && (electron == null ? void 0 : electron.nativeImage)) {
-                try {
-                  const dataUrl = canvas.toDataURL("image/png");
-                  const nativeImg = electron.nativeImage.createFromDataURL(dataUrl);
-                  if (nativeImg && !nativeImg.isEmpty()) {
-                    electron.clipboard.writeImage(nativeImg);
-                    copied = true;
-                  }
-                } catch (e) {
-                  console.warn("[FluentTasks] Canvas to nativeImage failed:", e);
-                }
-              }
-              canvas.toBlob(async (blob) => {
-                if (blob && navigator.clipboard && navigator.clipboard.write) {
-                  try {
-                    await navigator.clipboard.write([
-                      new ClipboardItem({ "image/png": blob })
-                    ]);
-                    copied = true;
-                  } catch (err) {
-                    if (!copied)
-                      console.warn("[FluentTasks] Web Clipboard write failed:", err);
-                  }
-                }
-                resolve();
-              }, "image/png");
-              return;
-            }
-          } catch (e) {
-            console.warn("[FluentTasks] Canvas processing error:", e);
-          }
-          resolve();
-        };
-        img.onerror = () => resolve();
-        img.src = resourceUrl;
-      });
-    } catch (err) {
-      console.warn("[FluentTasks] Canvas copy error:", err);
-    }
-  }
-  if (!copied && file instanceof import_obsidian8.TFile && (electron == null ? void 0 : electron.clipboard) && (electron == null ? void 0 : electron.nativeImage)) {
-    try {
-      const arrayBuf = await app.vault.readBinary(file);
-      const winBuf = window.Buffer;
-      const nodeBuf = winBuf ? winBuf.from(arrayBuf) : null;
-      if (nodeBuf) {
-        const nativeImg = electron.nativeImage.createFromBuffer(nodeBuf);
-        if (nativeImg && !nativeImg.isEmpty()) {
-          electron.clipboard.writeImage(nativeImg);
-          copied = true;
-        }
-      }
-    } catch (err) {
-      console.warn("[FluentTasks] Buffer copy fallback error:", err);
-    }
-  }
-  if (copied) {
-    new import_obsidian8.Notice(noticeMsg || t("image_copied") || "Image copied to clipboard / \u56FE\u7247\u5DF2\u590D\u5236\u5230\u526A\u8D34\u677F");
-    return true;
-  } else {
-    new import_obsidian8.Notice("Failed to copy image / \u590D\u5236\u56FE\u7247\u5931\u8D25");
-    return false;
-  }
-}
-function extractImageRefs(text2) {
-  if (!text2)
-    return [];
-  const results = [];
-  const wikiRegex = /!\[\[([^\]\n]+)\]\]/g;
-  let match;
-  while ((match = wikiRegex.exec(text2)) !== null) {
-    let ref = match[1].trim();
-    if (ref.includes("|")) {
-      ref = ref.split("|")[0].trim();
-    }
-    if (isImageExtension(ref) && !results.includes(ref)) {
-      results.push(ref);
-    }
-  }
-  const mdRegex = /!\[.*?\]\(([^)\n]+)\)/g;
-  while ((match = mdRegex.exec(text2)) !== null) {
-    const ref = match[1].trim();
-    if (isImageExtension(ref) && !results.includes(ref)) {
-      results.push(ref);
-    }
-  }
-  return results;
-}
-function isImageExtension(path) {
-  const lower = path.toLowerCase().split("?")[0].split("#")[0];
-  return lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".webp") || lower.endsWith(".gif") || lower.endsWith(".svg") || lower.endsWith(".bmp");
-}
-function removeImageRefFromText(text2, imageRef) {
-  if (!text2 || !imageRef)
-    return text2;
-  let clean = imageRef.replace(/^!*\[\[(.*?)\]\]$/, "$1").trim();
-  if (clean.includes("|"))
-    clean = clean.split("|")[0].trim();
-  const escapedClean = clean.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const wikiPattern = new RegExp(`!\\s*\\[\\[${escapedClean}(?:\\|[^\\]]*)?\\]\\]`, "gi");
-  let updated = text2.replace(wikiPattern, "");
-  const mdPattern = new RegExp(`!\\s*\\[[^\\]]*\\]\\(${escapedClean}\\)`, "gi");
-  updated = updated.replace(mdPattern, "");
-  return updated.replace(/\n\s*\n\s*\n/g, "\n\n").trim();
-}
-function getImageBaseName(imageRef) {
-  if (!imageRef)
-    return "";
-  let clean = imageRef.replace(/^!*\[\[(.*?)\]\]$/, "$1").trim();
-  if (clean.includes("|"))
-    clean = clean.split("|")[0].trim();
-  const parts = clean.split("/");
-  return parts[parts.length - 1] || clean;
-}
-function getImagesFromClipboard(e) {
-  const result = [];
-  const clipboardData = e.clipboardData;
-  if (clipboardData) {
-    const items = clipboardData.items;
-    if (items && items.length > 0) {
-      for (let i = 0; i < items.length; i++) {
-        if (items[i].type.startsWith("image/")) {
-          const file = items[i].getAsFile();
-          if (file)
-            result.push(file);
-        }
-      }
-    }
-    if (result.length === 0 && clipboardData.files && clipboardData.files.length > 0) {
-      for (let i = 0; i < clipboardData.files.length; i++) {
-        if (clipboardData.files[i].type.startsWith("image/")) {
-          result.push(clipboardData.files[i]);
-        }
-      }
-    }
-  }
-  if (result.length === 0) {
-    try {
-      const electron = window.require ? window.require("electron") : null;
-      if (electron == null ? void 0 : electron.clipboard) {
-        const nativeImg = electron.clipboard.readImage();
-        if (nativeImg && !nativeImg.isEmpty()) {
-          const buf = nativeImg.toPNG();
-          const file = new File([buf], `Pasted image ${getTimestampString()}.png`, {
-            type: "image/png"
-          });
-          result.push(file);
-        }
-      }
-    } catch (e2) {
-    }
-  }
-  return result;
-}
-function isSameImageRef(a, b) {
-  if (!a || !b)
-    return false;
-  if (a === b)
-    return true;
-  const cleanA = a.replace(/^!*\[\[(.*?)\]\]$/, "$1").split("|")[0].trim().toLowerCase();
-  const cleanB = b.replace(/^!*\[\[(.*?)\]\]$/, "$1").split("|")[0].trim().toLowerCase();
-  if (cleanA === cleanB)
-    return true;
-  const baseA = cleanA.split("/").pop();
-  const baseB = cleanB.split("/").pop();
-  return !!baseA && baseA === baseB;
-}
-function getTitleImages(t2) {
-  if (!t2)
-    return [];
-  const fromArray = t2.titleImages || [];
-  const fromText = extractImageRefs(t2.title || "");
-  const combined = [...fromArray];
-  for (const ref of fromText) {
-    if (!combined.some((existing) => isSameImageRef(existing, ref))) {
-      combined.push(ref);
-    }
-  }
-  return combined;
-}
-function getNoteImages(t2) {
-  if (!t2)
-    return [];
-  const fromArray = t2.images || [];
-  const fromText = extractImageRefs(t2.note || "");
-  const combined = [...fromArray];
-  for (const ref of fromText) {
-    if (!combined.some((existing) => isSameImageRef(existing, ref))) {
-      combined.push(ref);
-    }
-  }
-  return combined;
-}
-function getStepImages(step) {
-  if (!step)
-    return [];
-  const fromArray = step.images || [];
-  const fromText = extractImageRefs(step.text || "");
-  const combined = [...fromArray];
-  for (const ref of fromText) {
-    if (!combined.some((existing) => isSameImageRef(existing, ref))) {
-      combined.push(ref);
-    }
-  }
-  return combined;
-}
-function cleanDisplayTitle(title) {
-  if (!title)
-    return "";
-  return title.replace(/!\[\[([^\]\n]+)\]\]/g, "").replace(/!\[.*?\]\(([^)\n]+)\)/g, "").replace(/\n\s*\n\s*\n/g, "\n\n").trim();
-}
-function removeImageFromTaskTitle(task, imageRef) {
-  if (!task || !imageRef)
-    return;
-  if (task.titleImages) {
-    task.titleImages = task.titleImages.filter((img) => !isSameImageRef(img, imageRef));
-  }
-  task.title = removeImageRefFromText(task.title || "", imageRef);
-}
-function removeImageFromTaskNote(task, imageRef) {
-  if (!task || !imageRef)
-    return;
-  if (task.images) {
-    task.images = task.images.filter((img) => !isSameImageRef(img, imageRef));
-  }
-  task.note = removeImageRefFromText(task.note || "", imageRef);
-}
-function removeImageFromStepItem(step, imageRef) {
-  if (!step || !imageRef)
-    return;
-  if (step.images) {
-    step.images = step.images.filter((img) => !isSameImageRef(img, imageRef));
-  }
-  step.text = removeImageRefFromText(step.text || "", imageRef);
-}
-
 // src/utils/taskUtils.ts
 function isStepEmpty(step) {
   const hasText = !!step.text && step.text.trim().length > 0;
@@ -10631,8 +10770,8 @@ async function promptDeleteTaskWithLinkedNote(app, task, categoryFilepath, dataS
   const effectiveCategoryPath = categoryFilepath === STARRED_CATEGORY_PATH && task.sourceFilepath ? task.sourceFilepath : categoryFilepath;
   const taskNoteFile = LinkedNoteService.resolveTaskNoteFile(app, task, effectiveCategoryPath);
   if (!taskNoteFile || LinkedNoteService.isCategoryListFile(taskNoteFile)) {
-    await dataService.deleteTask(categoryFilepath, task);
-    EventBus.emit("task:deleted" /* TASK_DELETED */, { task, categoryFilepath });
+    const trashedImages = await dataService.deleteTask(categoryFilepath, task);
+    EventBus.emit("task:deleted" /* TASK_DELETED */, { task, categoryFilepath, trashedImages });
     if (onDeleted)
       await onDeleted();
     return true;
@@ -10661,11 +10800,12 @@ async function promptDeleteTaskWithLinkedNote(app, task, categoryFilepath, dataS
           console.error("Failed to trash task note:", err);
         }
       }
-      await dataService.deleteTask(categoryFilepath, task);
+      const trashedImages = await dataService.deleteTask(categoryFilepath, task);
       EventBus.emit("task:deleted" /* TASK_DELETED */, {
         task,
         categoryFilepath,
-        trashedTaskNote
+        trashedTaskNote,
+        trashedImages
       });
       if (onDeleted)
         await onDeleted();
@@ -14239,6 +14379,7 @@ function instance5($$self, $$props, $$invalidate) {
     if (index === -1)
       return;
     const deletedStep = { ...steps[index] };
+    const stepImages = getStepImages2(deletedStep);
     $$invalidate(3, steps = steps.filter((s) => s.id !== stepId));
     if (showSearchBar && searchQuery.trim()) {
       updateSearchMatches();
@@ -14246,11 +14387,16 @@ function instance5($$self, $$props, $$invalidate) {
     void Logger.log(`[DND Modal] Deleted step: taskId=${task.id}, stepId=${stepId}, text="${deletedStep.text}", remaining=${steps.length}`);
     console.log(`[FluentTasks Modal] Deleted step: taskId=${task.id}, stepId=${stepId}, remaining=${steps.length}`);
     await persistTask();
+    let trashedImages = [];
+    if (stepImages.length > 0 && actualApp && dataService) {
+      trashedImages = await cleanupOrphanImages(stepImages, actualApp, dataService);
+    }
     EventBus.emit("step:deleted" /* STEP_DELETED */, {
       taskId: task.id,
       categoryFilepath,
       step: deletedStep,
-      index
+      index,
+      trashedImages
     });
   }
   function handleDndConsider(e) {
@@ -14316,9 +14462,15 @@ function instance5($$self, $$props, $$invalidate) {
     }
     $$invalidate(3, steps = [...steps]);
     scheduleSave();
+    if (actualApp && dataService) {
+      void cleanupOrphanImageAttachment(imageRef, actualApp, dataService);
+    }
   }
   function removeNewStepImage(imageRef) {
     $$invalidate(7, newStepImages = newStepImages.filter((img) => !isSameImageRef(img, imageRef)));
+    if (actualApp && dataService) {
+      void cleanupOrphanImageAttachment(imageRef, actualApp, dataService);
+    }
   }
   async function handleCutHoveredImage() {
     if (!hoveredImageRef || !actualApp)
@@ -14458,6 +14610,11 @@ function instance5($$self, $$props, $$invalidate) {
     }
   }
   function handleClose() {
+    if (newStepImages.length > 0 && actualApp && dataService) {
+      const draftImages = [...newStepImages];
+      $$invalidate(7, newStepImages = []);
+      void cleanupOrphanImages(draftImages, actualApp, dataService);
+    }
     $$invalidate(3, steps = steps.filter((s) => !isStepEmpty2(s)));
     flushSaveSync();
     closeModal();
@@ -14566,6 +14723,11 @@ function instance5($$self, $$props, $$invalidate) {
     };
   });
   onDestroy(() => {
+    if (newStepImages.length > 0 && actualApp && dataService) {
+      const draftImages = [...newStepImages];
+      $$invalidate(7, newStepImages = []);
+      void cleanupOrphanImages(draftImages, actualApp, dataService);
+    }
     flushSaveSync();
   });
   const click_handler = () => {
@@ -38049,15 +38211,28 @@ function instance8($$self, $$props, $$invalidate) {
     const toDelete = all.filter((t2) => selectedTaskIds.has(t2.id));
     if (toDelete.length === 0)
       return;
+    const imagesToInspect = [];
+    for (const t2 of toDelete) {
+      for (const img of getAllImagesInTask(t2)) {
+        if (!imagesToInspect.some((existing) => isSameImageRef(existing, img))) {
+          imagesToInspect.push(img);
+        }
+      }
+    }
     $$invalidate(5, incompleteTasks = incompleteTasks.filter((t2) => !selectedTaskIds.has(t2.id)));
     $$invalidate(6, completedTasks = completedTasks.filter((t2) => !selectedTaskIds.has(t2.id)));
     await dataService.saveTasks(currentCategory.filepath, [...incompleteTasks, ...completedTasks]);
+    let trashedImages = [];
+    if (imagesToInspect.length > 0 && (plugin == null ? void 0 : plugin.app)) {
+      trashedImages = await cleanupOrphanImages(imagesToInspect, plugin.app, dataService);
+    }
     selectedTaskIds.clear();
     $$invalidate(33, selectedTaskIds);
     $$invalidate(32, isMultiSelectMode = false);
     EventBus.emit("task:deleted" /* TASK_DELETED */, {
       categoryFilepath: currentCategory.filepath,
       tasks: toDelete,
+      trashedImages,
       isBatch: true
     });
   }
@@ -46161,6 +46336,11 @@ function instance9($$self, $$props, $$invalidate) {
     window.addEventListener("keydown", handleImageKeydown, true);
   });
   onDestroy(() => {
+    if (newStepImages.length > 0 && actualApp && dataService) {
+      const draftImages = [...newStepImages];
+      $$invalidate(8, newStepImages = []);
+      void cleanupOrphanImages(draftImages, actualApp, dataService);
+    }
     EventBus.off("task:selected" /* TASK_SELECTED */, handleTaskSelected);
     EventBus.off("task:deleted" /* TASK_DELETED */, handleTaskDeleted);
     EventBus.off("task:updated" /* TASK_UPDATED */, handleExternalTaskUpdate);
@@ -46222,8 +46402,12 @@ function instance9($$self, $$props, $$invalidate) {
     initialMetaSnapshot = "";
     EventBus.emit("detail:close" /* DETAIL_CLOSE */, {});
     try {
-      await dataService.deleteTask(path, toDelete);
-      EventBus.emit("task:deleted" /* TASK_DELETED */, { task: toDelete, categoryFilepath: path });
+      const trashedImages = await dataService.deleteTask(path, toDelete);
+      EventBus.emit("task:deleted" /* TASK_DELETED */, {
+        task: toDelete,
+        categoryFilepath: path,
+        trashedImages
+      });
     } catch (err) {
       console.error("Failed to delete empty task:", err);
     }
@@ -46233,6 +46417,11 @@ function instance9($$self, $$props, $$invalidate) {
     return true;
   }
   function handleClose() {
+    if (newStepImages.length > 0 && actualApp && dataService) {
+      const draftImages = [...newStepImages];
+      $$invalidate(8, newStepImages = []);
+      void cleanupOrphanImages(draftImages, actualApp, dataService);
+    }
     if (task && isTaskEmpty(task)) {
       void checkAndDeleteEmptyTask();
       return;
@@ -46539,6 +46728,9 @@ function instance9($$self, $$props, $$invalidate) {
       return;
     }
     immediateSave();
+    if (actualApp && dataService) {
+      void cleanupOrphanImageAttachment(imageRef, actualApp, dataService);
+    }
   }
   function removeImageFromStep(stepId, imageRef) {
     if (!task || !task.steps || !stepId)
@@ -46553,6 +46745,9 @@ function instance9($$self, $$props, $$invalidate) {
     }
     $$invalidate(4, task);
     immediateSave();
+    if (actualApp && dataService) {
+      void cleanupOrphanImageAttachment(imageRef, actualApp, dataService);
+    }
   }
   function handleStepBlur(stepId) {
     if (stepId && (task == null ? void 0 : task.steps)) {
@@ -46566,6 +46761,9 @@ function instance9($$self, $$props, $$invalidate) {
   }
   function removeNewStepImage(imageRef) {
     $$invalidate(8, newStepImages = newStepImages.filter((img) => !isSameImageRef(img, imageRef)));
+    if (actualApp && dataService) {
+      void cleanupOrphanImageAttachment(imageRef, actualApp, dataService);
+    }
   }
   function removeImageFromNote(imageRef) {
     if (!task)
@@ -46573,6 +46771,9 @@ function instance9($$self, $$props, $$invalidate) {
     removeImageFromTaskNote(task, imageRef);
     $$invalidate(4, task);
     immediateSave();
+    if (actualApp && dataService) {
+      void cleanupOrphanImageAttachment(imageRef, actualApp, dataService);
+    }
   }
   async function handleCutHoveredImage() {
     if (!hoveredImageRef || !actualApp)
@@ -46736,16 +46937,22 @@ function instance9($$self, $$props, $$invalidate) {
     if (index === -1)
       return;
     const deletedStep = { ...task.steps[index] };
+    const stepImages = getStepImages(deletedStep);
     $$invalidate(4, task.steps = task.steps.filter((s) => s.id !== stepId), task);
     $$invalidate(4, task);
     void Logger.log(`[DND Detail] Deleted step: taskId=${task.id}, stepId=${stepId}, text="${deletedStep.text}", remaining=${task.steps.length}`);
     console.log(`[FluentTasks] Deleted step: taskId=${task.id}, stepId=${stepId}, remaining=${task.steps.length}`);
     await immediateSave();
+    let trashedImages = [];
+    if (stepImages.length > 0 && actualApp && dataService) {
+      trashedImages = await cleanupOrphanImages(stepImages, actualApp, dataService);
+    }
     EventBus.emit("step:deleted" /* STEP_DELETED */, {
       taskId: task.id,
       categoryFilepath,
       step: deletedStep,
-      index
+      index,
+      trashedImages
     });
   }
   function handleDndConsider(e) {
@@ -47241,11 +47448,12 @@ function instance9($$self, $$props, $$invalidate) {
         }
       }
     }
-    await dataService.deleteTask(path, toDelete);
+    const trashedImages = await dataService.deleteTask(path, toDelete);
     EventBus.emit("task:deleted" /* TASK_DELETED */, {
       task: toDelete,
       categoryFilepath: path,
-      trashedTaskNote
+      trashedTaskNote,
+      trashedImages
     });
     $$invalidate(4, task = null);
     $$invalidate(6, categoryFilepath = "");
@@ -48114,7 +48322,7 @@ function instance10($$self, $$props, $$invalidate) {
     };
     $$invalidate(0, undoToasts = [...undoToasts, toast]);
   }
-  function pushTaskUndoToast(categoryFilepath, tasks2, isBatch = false, trashedTaskNotes) {
+  function pushTaskUndoToast(categoryFilepath, tasks2, isBatch = false, trashedTaskNotes, trashedImages) {
     if (!tasks2 || tasks2.length === 0)
       return;
     const count = tasks2.length;
@@ -48124,6 +48332,7 @@ function instance10($$self, $$props, $$invalidate) {
       categoryFilepath,
       tasks: tasks2,
       trashedTaskNotes,
+      trashedImages,
       message,
       isBatch: isBatch || count > 1
     });
@@ -48176,6 +48385,26 @@ function instance10($$self, $$props, $$invalidate) {
         existingSteps.splice(insertIndex, 0, step);
         targetTask.steps = existingSteps;
         await dataService.updateTask(categoryFilepath, targetTask);
+        if (toast.stepPayload.trashedImages && Array.isArray(toast.stepPayload.trashedImages)) {
+          for (const img of toast.stepPayload.trashedImages) {
+            try {
+              const exists = await plugin.app.vault.adapter.exists(img.path);
+              if (!exists && img.binary && img.binary.byteLength > 0) {
+                const lastSlash = img.path.lastIndexOf("/");
+                if (lastSlash > 0) {
+                  const parentDir = img.path.substring(0, lastSlash);
+                  if (!await plugin.app.vault.adapter.exists(parentDir)) {
+                    await plugin.app.vault.createFolder(parentDir).catch(() => {
+                    });
+                  }
+                }
+                await plugin.app.vault.createBinary(img.path, img.binary);
+              }
+            } catch (e) {
+              console.warn("[FluentTasks] Failed to restore step image on undo:", e);
+            }
+          }
+        }
         EventBus.emit("task:updated" /* TASK_UPDATED */, {
           task: targetTask,
           categoryFilepath,
@@ -48242,6 +48471,26 @@ function instance10($$self, $$props, $$invalidate) {
             }
           }
         }
+        if (toast.trashedImages && Array.isArray(toast.trashedImages)) {
+          for (const img of toast.trashedImages) {
+            try {
+              const exists = await plugin.app.vault.adapter.exists(img.path);
+              if (!exists && img.binary && img.binary.byteLength > 0) {
+                const lastSlash = img.path.lastIndexOf("/");
+                if (lastSlash > 0) {
+                  const parentDir = img.path.substring(0, lastSlash);
+                  if (!await plugin.app.vault.adapter.exists(parentDir)) {
+                    await plugin.app.vault.createFolder(parentDir).catch(() => {
+                    });
+                  }
+                }
+                await plugin.app.vault.createBinary(img.path, img.binary);
+              }
+            } catch (imgErr) {
+              console.error("Failed to restore trashed task image:", imgErr);
+            }
+          }
+        }
         new import_obsidian21.Notice(newRestores.length === 1 ? `Restored: "${formatToastTitle(newRestores[0].title)}"` : `Restored ${newRestores.length} tasks`);
       } catch (err) {
         console.error("Failed to restore task(s):", err);
@@ -48253,10 +48502,11 @@ function instance10($$self, $$props, $$invalidate) {
     if (!payload || !payload.categoryFilepath)
       return;
     const trashedTaskNotes = payload.trashedTaskNotes || (payload.trashedTaskNote ? [payload.trashedTaskNote] : void 0);
+    const trashedImages = payload.trashedImages;
     if (payload.tasks && Array.isArray(payload.tasks)) {
-      pushTaskUndoToast(payload.categoryFilepath, payload.tasks, true, trashedTaskNotes);
+      pushTaskUndoToast(payload.categoryFilepath, payload.tasks, true, trashedTaskNotes, trashedImages);
     } else if (payload.task && !payload.isBatch) {
-      pushTaskUndoToast(payload.categoryFilepath, [payload.task], false, trashedTaskNotes);
+      pushTaskUndoToast(payload.categoryFilepath, [payload.task], false, trashedTaskNotes, trashedImages);
     }
   }
   function handleStepDeleted(payload) {

@@ -4,7 +4,7 @@
     import { flip } from "svelte/animate";
     import { EventBus } from "./EventBus";
     import { DataService } from "./DataService";
-    import { EventName, STARRED_CATEGORY_PATH, type TaskItem, type TaskStep, type RecurrenceRule } from "./types";
+    import { EventName, STARRED_CATEGORY_PATH, type TaskItem, type TaskStep, type RecurrenceRule, type TrashedImageBackup } from "./types";
     import { SAVE_DEBOUNCE_MS } from "./constants";
     import { portal, autosize, longPress } from "./utils/domUtils";
     import { ensureStepIds, persistableSteps, reconcileDndSteps } from "./utils/stepIds";
@@ -27,9 +27,12 @@
         getTitleImages,
         getNoteImages,
         getStepImages,
+        getAllImagesInTask,
         removeImageFromTaskTitle,
         removeImageFromTaskNote,
         removeImageFromStepItem,
+        cleanupOrphanImageAttachment,
+        cleanupOrphanImages,
     } from "./utils/imageAttachmentUtils";
 
     const DND_FLIP_DURATION = 150;
@@ -332,6 +335,11 @@
     });
 
     onDestroy(() => {
+        if (newStepImages.length > 0 && actualApp && dataService) {
+            const draftImages = [...newStepImages];
+            newStepImages = [];
+            void cleanupOrphanImages(draftImages, actualApp, dataService);
+        }
         EventBus.off(EventName.TASK_SELECTED, handleTaskSelected);
         EventBus.off(EventName.TASK_DELETED, handleTaskDeleted);
         EventBus.off(EventName.TASK_UPDATED, handleExternalTaskUpdate);
@@ -401,8 +409,8 @@
         initialMetaSnapshot = "";
         EventBus.emit(EventName.DETAIL_CLOSE, {});
         try {
-            await dataService.deleteTask(path, toDelete);
-            EventBus.emit(EventName.TASK_DELETED, { task: toDelete, categoryFilepath: path });
+            const trashedImages = await dataService.deleteTask(path, toDelete);
+            EventBus.emit(EventName.TASK_DELETED, { task: toDelete, categoryFilepath: path, trashedImages });
         } catch (err) {
             console.error("Failed to delete empty task:", err);
         }
@@ -413,6 +421,11 @@
     }
 
     function handleClose() {
+        if (newStepImages.length > 0 && actualApp && dataService) {
+            const draftImages = [...newStepImages];
+            newStepImages = [];
+            void cleanupOrphanImages(draftImages, actualApp, dataService);
+        }
         if (task && isTaskEmpty(task)) {
             void checkAndDeleteEmptyTask();
             return;
@@ -738,6 +751,9 @@
             return;
         }
         immediateSave();
+        if (actualApp && dataService) {
+            void cleanupOrphanImageAttachment(imageRef, actualApp, dataService);
+        }
     }
 
     function removeImageFromStep(stepId: string | undefined, imageRef: string) {
@@ -751,6 +767,9 @@
         }
         task = task;
         immediateSave();
+        if (actualApp && dataService) {
+            void cleanupOrphanImageAttachment(imageRef, actualApp, dataService);
+        }
     }
 
     function handleStepBlur(stepId: string | undefined) {
@@ -766,6 +785,9 @@
 
     function removeNewStepImage(imageRef: string) {
         newStepImages = newStepImages.filter(img => !isSameImageRef(img, imageRef));
+        if (actualApp && dataService) {
+            void cleanupOrphanImageAttachment(imageRef, actualApp, dataService);
+        }
     }
 
     function removeImageFromNote(imageRef: string) {
@@ -773,6 +795,9 @@
         removeImageFromTaskNote(task, imageRef);
         task = task;
         immediateSave();
+        if (actualApp && dataService) {
+            void cleanupOrphanImageAttachment(imageRef, actualApp, dataService);
+        }
     }
 
     async function handleCutHoveredImage() {
@@ -940,16 +965,22 @@
         const index = task.steps.findIndex(s => s.id === stepId);
         if (index === -1) return;
         const deletedStep = { ...task.steps[index] };
+        const stepImages = getStepImages(deletedStep);
         task.steps = task.steps.filter(s => s.id !== stepId);
         task = task;
         void Logger.log(`[DND Detail] Deleted step: taskId=${task.id}, stepId=${stepId}, text="${deletedStep.text}", remaining=${task.steps.length}`);
         console.log(`[FluentTasks] Deleted step: taskId=${task.id}, stepId=${stepId}, remaining=${task.steps.length}`);
         await immediateSave();
+        let trashedImages: TrashedImageBackup[] = [];
+        if (stepImages.length > 0 && actualApp && dataService) {
+            trashedImages = await cleanupOrphanImages(stepImages, actualApp, dataService);
+        }
         EventBus.emit(EventName.STEP_DELETED, {
             taskId: task.id,
             categoryFilepath,
             step: deletedStep,
             index,
+            trashedImages,
         });
     }
 
@@ -1514,11 +1545,12 @@
                 }
             }
         }
-        await dataService.deleteTask(path, toDelete);
+        const trashedImages = await dataService.deleteTask(path, toDelete);
         EventBus.emit(EventName.TASK_DELETED, { 
             task: toDelete, 
             categoryFilepath: path,
-            trashedTaskNote 
+            trashedTaskNote,
+            trashedImages
         });
         task = null;
         categoryFilepath = "";

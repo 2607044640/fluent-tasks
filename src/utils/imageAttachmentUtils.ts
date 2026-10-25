@@ -1,6 +1,7 @@
 import { App, Notice, TFile } from "obsidian";
 import { t } from "../lang/helpers";
-import type { TaskItem, TaskStep } from "../types";
+import type { TaskItem, TaskStep, TrashedImageBackup } from "../types";
+import { Logger } from "../Logger";
 
 /**
  * Cleanly format current timestamp for attachment filenames: YYYYMMDDHHmmss
@@ -512,4 +513,181 @@ export function removeImageFromStepItem(step: TaskStep, imageRef: string): void 
         step.images = step.images.filter(img => !isSameImageRef(img, imageRef));
     }
     step.text = removeImageRefFromText(step.text || "", imageRef);
+}
+
+/**
+ * Extracts all unique image references across a task (title, note, and all steps).
+ */
+export function getAllImagesInTask(task: TaskItem | null | undefined): string[] {
+    if (!task) return [];
+    const images: string[] = [];
+    const addAll = (refs: string[]) => {
+        for (const r of refs) {
+            if (r && !images.some(existing => isSameImageRef(existing, r))) {
+                images.push(r);
+            }
+        }
+    };
+    addAll(getTitleImages(task));
+    addAll(getNoteImages(task));
+    if (task.steps && Array.isArray(task.steps)) {
+        for (const s of task.steps) {
+            addAll(getStepImages(s));
+        }
+    }
+    return images;
+}
+
+/**
+ * Resolves an image reference string to a physical TFile in the vault if it exists.
+ */
+export function resolveImageTFile(imageRef: string, app: App): TFile | null {
+    if (!imageRef || !app) return null;
+    let clean = imageRef.trim().replace(/^!*\[\[(.*?)\]\]$/, "$1").trim();
+    if (clean.includes("|")) clean = clean.split("|")[0].trim();
+    const mdMatch = clean.match(/^!\[.*?\]\((.*?)\)$/);
+    if (mdMatch) clean = mdMatch[1].trim();
+
+    const file = app.vault.getAbstractFileByPath(clean);
+    if (file instanceof TFile) return file;
+    const linkFile = app.metadataCache.getFirstLinkpathDest(clean, "");
+    return linkFile instanceof TFile ? linkFile : null;
+}
+
+/**
+ * Checks whether an image is referenced anywhere in any task in any category,
+ * or in any other markdown note across the entire Obsidian vault.
+ * If excludeTaskId or excludeStepId is provided, that task/step is ignored when checking.
+ */
+export async function isImageReferencedAcrossVault(
+    imageRef: string,
+    app: App,
+    dataService: any,
+    excludeTaskId?: string,
+    excludeStepId?: string
+): Promise<boolean> {
+    if (!imageRef || !app) return false;
+
+    // 1. Check all tasks across all categories in DataService
+    if (dataService && typeof dataService.getCategories === "function") {
+        try {
+            const categories = await dataService.getCategories();
+            for (const cat of categories) {
+                const tasks = await dataService.getTasks(cat.filepath);
+                for (const t of tasks) {
+                    if (excludeTaskId && t.id === excludeTaskId) continue;
+
+                    const titleImgs = getTitleImages(t);
+                    if (titleImgs.some(r => isSameImageRef(r, imageRef))) return true;
+
+                    const noteImgs = getNoteImages(t);
+                    if (noteImgs.some(r => isSameImageRef(r, imageRef))) return true;
+
+                    if (t.steps && Array.isArray(t.steps)) {
+                        for (const s of t.steps) {
+                            if (excludeStepId && s.id === excludeStepId) continue;
+                            const stepImgs = getStepImages(s);
+                            if (stepImgs.some(r => isSameImageRef(r, imageRef))) return true;
+                        }
+                    }
+                }
+            }
+        } catch (err) {
+            console.warn("[FluentTasks] Error checking tasks for image references:", err);
+        }
+    }
+
+    // 2. Check external vault notes in Obsidian's metadataCache.resolvedLinks
+    try {
+        const targetFile = resolveImageTFile(imageRef, app);
+        if (targetFile) {
+            const resolvedLinks = app.metadataCache?.resolvedLinks;
+            if (resolvedLinks) {
+                for (const [sourcePath, links] of Object.entries(resolvedLinks)) {
+                    // Ignore TodoData files as we checked tasks directly with fresh authoritative data above
+                    if (!sourcePath.startsWith("TodoData/")) {
+                        if (links && (links[targetFile.path] || links[targetFile.name])) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+    } catch (err) {
+        console.warn("[FluentTasks] Error checking metadataCache for image references:", err);
+    }
+
+    return false;
+}
+
+/**
+ * Checks if an image is an orphan (0 references anywhere in tasks or vault notes).
+ * If zero references remain, the physical image file is trashed via app.fileManager.trashFile.
+ * Returns the trashed image backup (path + binary) if it was trashed, so undo can restore it.
+ */
+export async function cleanupOrphanImageAttachment(
+    imageRef: string,
+    app: App,
+    dataService: any,
+    excludeTaskId?: string,
+    excludeStepId?: string
+): Promise<TrashedImageBackup | null> {
+    if (!imageRef || !app) return null;
+
+    const targetFile = resolveImageTFile(imageRef, app);
+    if (!targetFile) return null;
+
+    // Safety guard: only delete attachment files (TodoData/attachments, /attachments/, or Pasted image)
+    const isAttachment =
+        targetFile.path.startsWith("TodoData/attachments/") ||
+        targetFile.path.includes("/attachments/") ||
+        targetFile.name.startsWith("Pasted image ");
+
+    if (!isAttachment) {
+        return null;
+    }
+
+    const isReferenced = await isImageReferencedAcrossVault(imageRef, app, dataService, excludeTaskId, excludeStepId);
+    if (!isReferenced) {
+        try {
+            let binary: ArrayBuffer | undefined = undefined;
+            try {
+                binary = await app.vault.readBinary(targetFile);
+            } catch { /* ignore */ }
+
+            const originalPath = targetFile.path;
+            await app.fileManager.trashFile(targetFile);
+            Logger.log(`[FluentTasks] Trashed orphan image attachment (0 references): ${originalPath}`);
+
+            return {
+                path: originalPath,
+                binary: binary || new ArrayBuffer(0),
+            };
+        } catch (err) {
+            console.error(`[FluentTasks] Failed to trash orphan image ${targetFile.path}:`, err);
+        }
+    }
+    return null;
+}
+
+/**
+ * Cleans up all orphan images in a list.
+ * Returns array of backups for trashed images (for undo).
+ */
+export async function cleanupOrphanImages(
+    imageRefs: string[],
+    app: App,
+    dataService: any,
+    excludeTaskId?: string,
+    excludeStepId?: string
+): Promise<TrashedImageBackup[]> {
+    if (!imageRefs || imageRefs.length === 0 || !app) return [];
+    const trashed: TrashedImageBackup[] = [];
+    for (const ref of imageRefs) {
+        const backup = await cleanupOrphanImageAttachment(ref, app, dataService, excludeTaskId, excludeStepId);
+        if (backup) {
+            trashed.push(backup);
+        }
+    }
+    return trashed;
 }

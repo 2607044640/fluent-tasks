@@ -20,7 +20,10 @@
         isSameImageRef,
         getStepImages,
         removeImageFromStepItem,
+        cleanupOrphanImageAttachment,
+        cleanupOrphanImages,
     } from "../utils/imageAttachmentUtils";
+    import type { TrashedImageBackup } from "../types";
     import { t } from "../lang/helpers";
     import { Notice } from "obsidian";
 
@@ -323,6 +326,7 @@
         const index = steps.findIndex(s => s.id === stepId);
         if (index === -1) return;
         const deletedStep = { ...steps[index] };
+        const stepImages = getStepImages(deletedStep);
         steps = steps.filter(s => s.id !== stepId);
         if (showSearchBar && searchQuery.trim()) {
             updateSearchMatches();
@@ -330,11 +334,16 @@
         void Logger.log(`[DND Modal] Deleted step: taskId=${task.id}, stepId=${stepId}, text="${deletedStep.text}", remaining=${steps.length}`);
         console.log(`[FluentTasks Modal] Deleted step: taskId=${task.id}, stepId=${stepId}, remaining=${steps.length}`);
         await persistTask();
+        let trashedImages: TrashedImageBackup[] = [];
+        if (stepImages.length > 0 && actualApp && dataService) {
+            trashedImages = await cleanupOrphanImages(stepImages, actualApp, dataService);
+        }
         EventBus.emit(EventName.STEP_DELETED, {
             taskId: task.id,
             categoryFilepath,
             step: deletedStep,
             index,
+            trashedImages,
         });
     }
 
@@ -420,10 +429,16 @@
         }
         steps = [...steps];
         scheduleSave();
+        if (actualApp && dataService) {
+            void cleanupOrphanImageAttachment(imageRef, actualApp, dataService);
+        }
     }
 
     function removeNewStepImage(imageRef: string) {
         newStepImages = newStepImages.filter(img => !isSameImageRef(img, imageRef));
+        if (actualApp && dataService) {
+            void cleanupOrphanImageAttachment(imageRef, actualApp, dataService);
+        }
     }
 
     async function handleCutHoveredImage() {
@@ -569,6 +584,11 @@
     }
 
     function handleClose() {
+        if (newStepImages.length > 0 && actualApp && dataService) {
+            const draftImages = [...newStepImages];
+            newStepImages = [];
+            void cleanupOrphanImages(draftImages, actualApp, dataService);
+        }
         steps = steps.filter(s => !isStepEmpty(s));
         flushSaveSync();
         closeModal();
@@ -692,6 +712,11 @@
     });
 
     onDestroy(() => {
+        if (newStepImages.length > 0 && actualApp && dataService) {
+            const draftImages = [...newStepImages];
+            newStepImages = [];
+            void cleanupOrphanImages(draftImages, actualApp, dataService);
+        }
         flushSaveSync();
     });
 </script>
