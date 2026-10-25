@@ -1157,6 +1157,9 @@
         isCtrlPressed = false;
         hasComboModifierOrKey = false;
         hoveredTitleTarget = null;
+        isDndActive = false;
+        (window as any).__mstodo_drag_data = null;
+        stopAutoScroll();
         if (pendingWeightReSort && !editingWeightTaskId) {
             pendingWeightReSort = false;
             incompleteTasks = applyWeightSort(rawIncompleteTasks, !!plugin?.settings?.enableTaskWeightMode);
@@ -1499,6 +1502,8 @@
         EventBus.on(EventName.TASK_NAVIGATE, handleTaskNavigate);
         EventBus.on(EventName.SETTINGS_CHANGED, handleSettingsChanged);
         window.addEventListener('pointermove', handleDragPointerMove);
+        window.addEventListener('pointerup', handleGlobalPointerUp, true);
+        window.addEventListener('pointercancel', handleGlobalPointerUp, true);
         window.addEventListener('wheel', handleWheelDuringDnd, { passive: false, capture: true });
         window.addEventListener('keydown', handleGlobalKeyDown, true);
         window.addEventListener('keyup', handleGlobalKeyUp, true);
@@ -1523,6 +1528,8 @@
         stopAutoScroll();
         if (popoverTimeout) clearTimeout(popoverTimeout);
         window.removeEventListener('pointermove', handleDragPointerMove);
+        window.removeEventListener('pointerup', handleGlobalPointerUp, true);
+        window.removeEventListener('pointercancel', handleGlobalPointerUp, true);
         window.removeEventListener('wheel', handleWheelDuringDnd, { capture: true });
         window.removeEventListener('keydown', handleGlobalKeyDown, true);
         window.removeEventListener('keyup', handleGlobalKeyUp, true);
@@ -1557,6 +1564,11 @@
         e.preventDefault();
         e.stopPropagation();
         if (!currentCategory) return;
+
+        // Dismiss text editing if wheel is scrolled
+        if (editingWeightTaskId === task.id) {
+            editingWeightTaskId = null;
+        }
 
         const delta = e.deltaY < 0 ? 1 : -1;
         const currentWeight = getTaskWeight(task);
@@ -1598,7 +1610,7 @@
 
     async function startEditingWeight(task: TaskItem) {
         editingWeightTaskId = task.id;
-        editingWeightValue = String(getTaskWeight(task));
+        editingWeightValue = "";
         await tick();
         const inputEl = document.querySelector(`.task-weight-input[data-task-id="${task.id}"]`) as HTMLInputElement | null;
         if (inputEl) {
@@ -1607,12 +1619,17 @@
         }
     }
 
-    async function commitWeightEdit(task: TaskItem) {
+    async function commitWeightEdit(task: TaskItem, explicitWeight?: number) {
         if (editingWeightTaskId !== task.id) return;
         editingWeightTaskId = null;
 
-        const parsed = parseInt(editingWeightValue.trim(), 10);
-        const newWeight = isNaN(parsed) ? getTaskWeight(task) : clampTaskWeight(parsed);
+        let newWeight: number;
+        if (explicitWeight !== undefined) {
+            newWeight = clampTaskWeight(explicitWeight);
+        } else {
+            const parsed = parseInt(editingWeightValue.trim(), 10);
+            newWeight = isNaN(parsed) ? getTaskWeight(task) : clampTaskWeight(parsed);
+        }
 
         if (task.weight !== newWeight) {
             task.weight = newWeight;
@@ -1641,6 +1658,14 @@
     }
 
     function handleWeightInputKeydown(e: KeyboardEvent, task: TaskItem) {
+        // Direct single-digit press 1-9 immediately updates and saves
+        if (e.key >= "1" && e.key <= "9") {
+            e.preventDefault();
+            e.stopPropagation();
+            void commitWeightEdit(task, parseInt(e.key, 10));
+            return;
+        }
+
         if (e.key === "Enter") {
             e.preventDefault();
             e.stopPropagation();
@@ -1656,12 +1681,20 @@
             }
         } else if (e.key === "ArrowUp") {
             e.preventDefault();
-            const cur = parseInt(editingWeightValue, 10) || getTaskWeight(task);
-            editingWeightValue = String(clampTaskWeight(cur + 1));
+            const cur = getTaskWeight(task);
+            void commitWeightEdit(task, clampTaskWeight(cur + 1));
         } else if (e.key === "ArrowDown") {
             e.preventDefault();
-            const cur = parseInt(editingWeightValue, 10) || getTaskWeight(task);
-            editingWeightValue = String(clampTaskWeight(cur - 1));
+            const cur = getTaskWeight(task);
+            void commitWeightEdit(task, clampTaskWeight(cur - 1));
+        }
+    }
+
+    function handleWeightInput(e: Event, task: TaskItem) {
+        const val = (e.target as HTMLInputElement).value;
+        const digit = val.replace(/[^1-9]/g, "").slice(-1);
+        if (digit) {
+            void commitWeightEdit(task, parseInt(digit, 10));
         }
     }
 
@@ -2411,13 +2444,35 @@
         }
     }
 
+    function handleGlobalPointerUp(e?: PointerEvent) {
+        isDndActive = false;
+        stopAutoScroll();
+        if ((window as any).__mstodo_drag_data) {
+            (window as any).__mstodo_drag_data = null;
+        }
+    }
+
     function handleDragPointerMove(e: PointerEvent) {
         if (!isDndActive) return;
         updateAutoScroll(e.clientY);
     }
 
     function handleWheelDuringDnd(e: WheelEvent) {
-        if (!isDndActive && !(window as any).__mstodo_drag_data) return;
+        // If left mouse button is not actively pressed, no drag is possible
+        if (e.buttons !== 1) {
+            isDndActive = false;
+            if ((window as any).__mstodo_drag_data) {
+                (window as any).__mstodo_drag_data = null;
+            }
+            return;
+        }
+
+        // Never intercept or hijack wheel scrolling over weight controls
+        if ((e.target as HTMLElement)?.closest('.task-weight-control')) {
+            return;
+        }
+
+        if (!isDndActive) return;
         if (!scrollContainerEl) {
             scrollContainerEl = document.querySelector('.task-list') as HTMLElement;
         }
@@ -3649,7 +3704,7 @@
                                  class:is-editing={editingWeightTaskId === task.id}
                                  on:click|stopPropagation={() => startEditingWeight(task)}
                                  on:pointerdown|stopPropagation
-                                 on:wheel={(e) => handleWeightWheel(e, task)}
+                                 on:wheel|preventDefault|stopPropagation={(e) => handleWeightWheel(e, task)}
                                  on:mouseleave={handleWeightMouseLeave}
                                  title="Priority: {getTaskWeight(task)} (Scroll or click to edit 1-9)">
                                 {#if editingWeightTaskId === task.id}
@@ -3658,9 +3713,11 @@
                                         class="task-weight-input"
                                         data-task-id={task.id}
                                         maxlength="1"
+                                        placeholder={String(getTaskWeight(task))}
                                         bind:value={editingWeightValue}
                                         on:blur={() => commitWeightEdit(task)}
                                         on:keydown={(e) => handleWeightInputKeydown(e, task)}
+                                        on:input={(e) => handleWeightInput(e, task)}
                                         on:click|stopPropagation
                                         on:pointerdown|stopPropagation
                                     />
@@ -3909,7 +3966,7 @@
                                              class:is-editing={editingWeightTaskId === task.id}
                                              on:click|stopPropagation={() => startEditingWeight(task)}
                                              on:pointerdown|stopPropagation
-                                             on:wheel={(e) => handleWeightWheel(e, task)}
+                                             on:wheel|preventDefault|stopPropagation={(e) => handleWeightWheel(e, task)}
                                              on:mouseleave={handleWeightMouseLeave}
                                              title="Priority: {getTaskWeight(task)} (Scroll or click to edit 1-9)">
                                             {#if editingWeightTaskId === task.id}
@@ -3918,9 +3975,11 @@
                                                     class="task-weight-input"
                                                     data-task-id={task.id}
                                                     maxlength="1"
+                                                    placeholder={String(getTaskWeight(task))}
                                                     bind:value={editingWeightValue}
                                                     on:blur={() => commitWeightEdit(task)}
                                                     on:keydown={(e) => handleWeightInputKeydown(e, task)}
+                                                    on:input={(e) => handleWeightInput(e, task)}
                                                     on:click|stopPropagation
                                                     on:pointerdown|stopPropagation
                                                 />

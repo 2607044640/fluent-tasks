@@ -813,6 +813,12 @@
     }
 
     function handleGlobalWheel(e: WheelEvent) {
+        if (e.buttons !== 1) {
+            (window as any).__mstodo_drag_data = null;
+            (window as any).__mstodo_category_drag = null;
+            draggedItemId = "";
+            return;
+        }
         const isCategoryDragging = !!draggedItemId || !!(window as any).__mstodo_category_drag;
         const isTaskDragging = !!(window as any).__mstodo_drag_data;
         if (!isCategoryDragging && !isTaskDragging) return;

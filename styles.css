@@ -799,6 +799,11 @@
     -webkit-user-select: text;
 }
 
+.task-weight-input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.55;
+}
+
 .weight-score-badge {
     min-width: 12px;
     text-align: center;
