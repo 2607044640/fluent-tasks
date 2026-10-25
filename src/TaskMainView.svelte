@@ -2238,7 +2238,6 @@
             for (const file of files) {
                 const savedPath = await saveImageAttachment(file, actualApp, targetCatPath);
                 if (!savedPath) continue;
-                new Notice(t("image_pasted") || "Image attached / 图片已附加");
                 targetTask.titleImages = [...(targetTask.titleImages || []), savedPath];
                 incompleteTasks = [...incompleteTasks];
                 completedTasks = [...completedTasks];

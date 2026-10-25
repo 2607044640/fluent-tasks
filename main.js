@@ -32,7 +32,7 @@ __export(main_exports, {
   default: () => FluentTasksPlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian27 = require("obsidian");
+var import_obsidian26 = require("obsidian");
 
 // src/types.ts
 var VIEW_TYPE_SIDEBAR = "fluent-tasks-sidebar";
@@ -2798,7 +2798,11 @@ var en = {
   image_hint_fit: "Fit screen",
   copy: "Copy",
   cut: "Cut",
+  open: "Open",
   close: "Close",
+  image_open: "Open",
+  image_open_tooltip: "Open original file in Obsidian",
+  image_hint_open: "Open",
   setting_fullscreen_detail_modal_title: "Full-Screen Task Details Modal",
   setting_fullscreen_detail_modal_desc: "Open floating task details modal in full-screen mode (similar to Subtasks modal). When disabled, displays as a centered window card.",
   restore_window: "Restore window",
@@ -2982,7 +2986,11 @@ var zhCn = {
   image_hint_fit: "\u9002\u5E94\u5C4F\u5E55",
   copy: "\u590D\u5236",
   cut: "\u526A\u5207",
+  open: "\u6253\u5F00",
   close: "\u5173\u95ED",
+  image_open: "\u6253\u5F00",
+  image_open_tooltip: "\u5728 Obsidian \u4E2D\u6253\u5F00\u539F\u59CB\u6587\u4EF6",
+  image_hint_open: "\u6253\u5F00",
   setting_fullscreen_detail_modal_title: "\u5168\u5C4F\u4EFB\u52A1\u8BE6\u60C5\u5F39\u7A97",
   setting_fullscreen_detail_modal_desc: "\u60AC\u6D6E\u6253\u5F00\u4EFB\u52A1\u8BE6\u60C5\u65F6\u4EE5\u5168\u5C4F\u72B6\u6001\u5C55\u793A\uFF08\u7C7B\u4F3C\u4E8E\u5B50\u6B65\u9AA4\u5168\u5C4F\u6A21\u5F0F\uFF09\u3002\u5173\u95ED\u540E\u6062\u590D\u4E3A\u5C45\u4E2D\u5C0F\u7A97\u53E3\u5361\u7247\u3002",
   restore_window: "\u8FD8\u539F\u7A97\u53E3",
@@ -3445,11 +3453,24 @@ function resolveImageTFile(imageRef, app) {
   const mdMatch = clean.match(/^!\[.*?\]\((.*?)\)$/);
   if (mdMatch)
     clean = mdMatch[1].trim();
+  try {
+    clean = decodeURIComponent(clean);
+  } catch (e) {
+  }
+  clean = clean.replace(/^\/+/, "");
   const file = app.vault.getAbstractFileByPath(clean);
   if (file instanceof import_obsidian6.TFile)
     return file;
   const linkFile = app.metadataCache.getFirstLinkpathDest(clean, "");
-  return linkFile instanceof import_obsidian6.TFile ? linkFile : null;
+  if (linkFile instanceof import_obsidian6.TFile)
+    return linkFile;
+  const baseName = clean.includes("/") ? clean.substring(clean.lastIndexOf("/") + 1) : clean;
+  if (baseName && baseName !== clean) {
+    const linkFileBase = app.metadataCache.getFirstLinkpathDest(baseName, "");
+    if (linkFileBase instanceof import_obsidian6.TFile)
+      return linkFileBase;
+  }
+  return null;
 }
 async function isImageReferencedAcrossVault(imageRef, app, dataService, excludeTaskId, excludeStepId) {
   var _a;
@@ -10702,7 +10723,7 @@ function applyWeightSort(items, enableWeightMode = false) {
 }
 
 // src/TaskMainView.svelte
-var import_obsidian19 = require("obsidian");
+var import_obsidian18 = require("obsidian");
 
 // src/modals/ConfirmDeleteLinkedNoteModal.ts
 var import_obsidian9 = require("obsidian");
@@ -10816,7 +10837,7 @@ async function promptDeleteTaskWithLinkedNote(app, task, categoryFilepath, dataS
 }
 
 // src/modals/TaskStepsModal.ts
-var import_obsidian12 = require("obsidian");
+var import_obsidian11 = require("obsidian");
 
 // src/utils/stepIds.ts
 function ensureStepIds(taskId, steps) {
@@ -11029,7 +11050,7 @@ function create_fragment2(ctx) {
   let svg0;
   let rect0;
   let circle0;
-  let polyline;
+  let polyline0;
   let t0;
   let span0;
   let t1;
@@ -11037,55 +11058,70 @@ function create_fragment2(ctx) {
   let div1;
   let button0;
   let svg1;
-  let rect1;
-  let path;
+  let path0;
+  let polyline1;
+  let line0;
   let t3;
   let span1;
   let button0_title_value;
   let t5;
   let button1;
   let svg2;
-  let circle1;
-  let circle2;
-  let line0;
-  let line1;
-  let line2;
+  let rect1;
+  let path1;
   let t6;
   let span2;
   let button1_title_value;
   let t8;
   let button2;
-  let button2_title_value;
+  let svg3;
+  let circle1;
+  let circle2;
+  let line1;
+  let line2;
+  let line3;
   let t9;
-  let div3;
-  let t10;
-  let div4;
   let span3;
-  let kbd0;
+  let button2_title_value;
+  let t11;
+  let button3;
+  let button3_title_value;
   let t12;
-  let t13_value = (
+  let div3;
+  let t13;
+  let div4;
+  let span4;
+  let kbd0;
+  let t15;
+  let t16_value = (t("image_hint_open") || (isChinese() ? "\u6253\u5F00" : "Open")) + "";
+  let t16;
+  let t17;
+  let span5;
+  let kbd1;
+  let t19;
+  let t20_value = (
     /*isZoomed*/
     (ctx[1] ? t("image_hint_fit") || "Fit / \u9002\u5E94\u5C4F\u5E55" : t("image_hint_zoom") || "Zoom 1:1 / \u653E\u5927\u539F\u56FE") + ""
   );
-  let t13;
-  let t14;
-  let span4;
-  let kbd1;
-  let t16;
-  let t17_value = (t("image_hint_copy") || "Copy / \u590D\u5236") + "";
-  let t17;
-  let t18;
-  let span5;
-  let kbd2;
   let t20;
-  let t21_value = (t("image_hint_cut") || "Cut / \u526A\u5207") + "";
   let t21;
-  let t22;
   let span6;
-  let kbd3;
+  let kbd2;
+  let t23;
+  let t24_value = (t("image_hint_copy") || "Copy / \u590D\u5236") + "";
   let t24;
-  let t25_value = (t("image_hint_close") || "Close / \u5173\u95ED") + "";
   let t25;
+  let span7;
+  let kbd3;
+  let t27;
+  let t28_value = (t("image_hint_cut") || "Cut / \u526A\u5207") + "";
+  let t28;
+  let t29;
+  let span8;
+  let kbd4;
+  let t31;
+  let t32_value = (t("image_hint_close") || "Close / \u5173\u95ED") + "";
+  let t32;
   let mounted;
   let dispose;
   function select_block_type(ctx2, dirty) {
@@ -11107,7 +11143,7 @@ function create_fragment2(ctx) {
       svg0 = svg_element("svg");
       rect0 = svg_element("rect");
       circle0 = svg_element("circle");
-      polyline = svg_element("polyline");
+      polyline0 = svg_element("polyline");
       t0 = space();
       span0 = element("span");
       t1 = text(
@@ -11118,53 +11154,68 @@ function create_fragment2(ctx) {
       div1 = element("div");
       button0 = element("button");
       svg1 = svg_element("svg");
-      rect1 = svg_element("rect");
-      path = svg_element("path");
+      path0 = svg_element("path");
+      polyline1 = svg_element("polyline");
+      line0 = svg_element("line");
       t3 = space();
       span1 = element("span");
-      span1.textContent = `${t("copy") || "Copy"}`;
+      span1.textContent = `${t("image_open") || (isChinese() ? "\u6253\u5F00" : "Open")}`;
       t5 = space();
       button1 = element("button");
       svg2 = svg_element("svg");
-      circle1 = svg_element("circle");
-      circle2 = svg_element("circle");
-      line0 = svg_element("line");
-      line1 = svg_element("line");
-      line2 = svg_element("line");
+      rect1 = svg_element("rect");
+      path1 = svg_element("path");
       t6 = space();
       span2 = element("span");
-      span2.textContent = `${t("cut") || "Cut"}`;
+      span2.textContent = `${t("copy") || "Copy"}`;
       t8 = space();
       button2 = element("button");
-      button2.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+      svg3 = svg_element("svg");
+      circle1 = svg_element("circle");
+      circle2 = svg_element("circle");
+      line1 = svg_element("line");
+      line2 = svg_element("line");
+      line3 = svg_element("line");
       t9 = space();
+      span3 = element("span");
+      span3.textContent = `${t("cut") || "Cut"}`;
+      t11 = space();
+      button3 = element("button");
+      button3.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+      t12 = space();
       div3 = element("div");
       if_block.c();
-      t10 = space();
+      t13 = space();
       div4 = element("div");
-      span3 = element("span");
-      kbd0 = element("kbd");
-      kbd0.textContent = "Click";
-      t12 = space();
-      t13 = text(t13_value);
-      t14 = space();
       span4 = element("span");
-      kbd1 = element("kbd");
-      kbd1.textContent = "Ctrl+C";
-      t16 = space();
-      t17 = text(t17_value);
-      t18 = space();
+      kbd0 = element("kbd");
+      kbd0.textContent = "O";
+      t15 = space();
+      t16 = text(t16_value);
+      t17 = space();
       span5 = element("span");
-      kbd2 = element("kbd");
-      kbd2.textContent = "Ctrl+X";
-      t20 = space();
-      t21 = text(t21_value);
-      t22 = space();
+      kbd1 = element("kbd");
+      kbd1.textContent = "Click";
+      t19 = space();
+      t20 = text(t20_value);
+      t21 = space();
       span6 = element("span");
+      kbd2 = element("kbd");
+      kbd2.textContent = "Ctrl+C";
+      t23 = space();
+      t24 = text(t24_value);
+      t25 = space();
+      span7 = element("span");
       kbd3 = element("kbd");
-      kbd3.textContent = "Esc";
-      t24 = space();
-      t25 = text(t25_value);
+      kbd3.textContent = "Ctrl+X";
+      t27 = space();
+      t28 = text(t28_value);
+      t29 = space();
+      span8 = element("span");
+      kbd4 = element("kbd");
+      kbd4.textContent = "Esc";
+      t31 = space();
+      t32 = text(t32_value);
       attr(rect0, "x", "3");
       attr(rect0, "y", "3");
       attr(rect0, "width", "18");
@@ -11174,7 +11225,7 @@ function create_fragment2(ctx) {
       attr(circle0, "cx", "8.5");
       attr(circle0, "cy", "8.5");
       attr(circle0, "r", "1.5");
-      attr(polyline, "points", "21 15 16 10 5 21");
+      attr(polyline0, "points", "21 15 16 10 5 21");
       attr(svg0, "width", "16");
       attr(svg0, "height", "16");
       attr(svg0, "viewBox", "0 0 24 24");
@@ -11190,13 +11241,12 @@ function create_fragment2(ctx) {
         /*fileName*/
         ctx[2]
       );
-      attr(rect1, "x", "9");
-      attr(rect1, "y", "9");
-      attr(rect1, "width", "13");
-      attr(rect1, "height", "13");
-      attr(rect1, "rx", "2");
-      attr(rect1, "ry", "2");
-      attr(path, "d", "M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1");
+      attr(path0, "d", "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6");
+      attr(polyline1, "points", "15 3 21 3 21 9");
+      attr(line0, "x1", "10");
+      attr(line0, "y1", "14");
+      attr(line0, "x2", "21");
+      attr(line0, "y2", "3");
       attr(svg1, "width", "15");
       attr(svg1, "height", "15");
       attr(svg1, "viewBox", "0 0 24 24");
@@ -11206,26 +11256,15 @@ function create_fragment2(ctx) {
       attr(svg1, "stroke-linecap", "round");
       attr(svg1, "stroke-linejoin", "round");
       attr(button0, "type", "button");
-      attr(button0, "class", "task-img-preview-btn svelte-1weyku7");
-      attr(button0, "title", button0_title_value = t("image_copy_tooltip") || "Copy image (Ctrl+C) / \u590D\u5236\u56FE\u7247");
-      attr(circle1, "cx", "6");
-      attr(circle1, "cy", "6");
-      attr(circle1, "r", "3");
-      attr(circle2, "cx", "6");
-      attr(circle2, "cy", "18");
-      attr(circle2, "r", "3");
-      attr(line0, "x1", "20");
-      attr(line0, "y1", "4");
-      attr(line0, "x2", "8.12");
-      attr(line0, "y2", "15.88");
-      attr(line1, "x1", "14.47");
-      attr(line1, "y1", "14.48");
-      attr(line1, "x2", "20");
-      attr(line1, "y2", "20");
-      attr(line2, "x1", "8.12");
-      attr(line2, "y1", "8.12");
-      attr(line2, "x2", "12");
-      attr(line2, "y2", "12");
+      attr(button0, "class", "task-img-preview-btn is-open svelte-1weyku7");
+      attr(button0, "title", button0_title_value = t("image_open_tooltip") || "Open original file in Obsidian / \u5728 Obsidian \u4E2D\u6253\u5F00\u539F\u59CB\u6587\u4EF6");
+      attr(rect1, "x", "9");
+      attr(rect1, "y", "9");
+      attr(rect1, "width", "13");
+      attr(rect1, "height", "13");
+      attr(rect1, "rx", "2");
+      attr(rect1, "ry", "2");
+      attr(path1, "d", "M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1");
       attr(svg2, "width", "15");
       attr(svg2, "height", "15");
       attr(svg2, "viewBox", "0 0 24 24");
@@ -11235,22 +11274,53 @@ function create_fragment2(ctx) {
       attr(svg2, "stroke-linecap", "round");
       attr(svg2, "stroke-linejoin", "round");
       attr(button1, "type", "button");
-      attr(button1, "class", "task-img-preview-btn is-cut svelte-1weyku7");
-      attr(button1, "title", button1_title_value = t("image_cut_tooltip") || "Cut image (Ctrl+X) / \u526A\u5207\u56FE\u7247");
+      attr(button1, "class", "task-img-preview-btn svelte-1weyku7");
+      attr(button1, "title", button1_title_value = t("image_copy_tooltip") || "Copy image (Ctrl+C) / \u590D\u5236\u56FE\u7247");
+      attr(circle1, "cx", "6");
+      attr(circle1, "cy", "6");
+      attr(circle1, "r", "3");
+      attr(circle2, "cx", "6");
+      attr(circle2, "cy", "18");
+      attr(circle2, "r", "3");
+      attr(line1, "x1", "20");
+      attr(line1, "y1", "4");
+      attr(line1, "x2", "8.12");
+      attr(line1, "y2", "15.88");
+      attr(line2, "x1", "14.47");
+      attr(line2, "y1", "14.48");
+      attr(line2, "x2", "20");
+      attr(line2, "y2", "20");
+      attr(line3, "x1", "8.12");
+      attr(line3, "y1", "8.12");
+      attr(line3, "x2", "12");
+      attr(line3, "y2", "12");
+      attr(svg3, "width", "15");
+      attr(svg3, "height", "15");
+      attr(svg3, "viewBox", "0 0 24 24");
+      attr(svg3, "fill", "none");
+      attr(svg3, "stroke", "currentColor");
+      attr(svg3, "stroke-width", "2");
+      attr(svg3, "stroke-linecap", "round");
+      attr(svg3, "stroke-linejoin", "round");
       attr(button2, "type", "button");
-      attr(button2, "class", "task-img-preview-btn is-close svelte-1weyku7");
-      attr(button2, "title", button2_title_value = t("close") || "Close (Esc) / \u5173\u95ED");
+      attr(button2, "class", "task-img-preview-btn is-cut svelte-1weyku7");
+      attr(button2, "title", button2_title_value = t("image_cut_tooltip") || "Cut image (Ctrl+X) / \u526A\u5207\u56FE\u7247");
+      attr(button3, "type", "button");
+      attr(button3, "class", "task-img-preview-btn is-close svelte-1weyku7");
+      attr(button3, "title", button3_title_value = t("close") || "Close (Esc) / \u5173\u95ED");
       attr(div1, "class", "task-img-preview-actions svelte-1weyku7");
       attr(div2, "class", "task-img-preview-header svelte-1weyku7");
       attr(div3, "class", "task-img-preview-body svelte-1weyku7");
       attr(kbd0, "class", "svelte-1weyku7");
-      attr(span3, "class", "task-img-preview-badge svelte-1weyku7");
-      attr(kbd1, "class", "svelte-1weyku7");
       attr(span4, "class", "task-img-preview-badge svelte-1weyku7");
-      attr(kbd2, "class", "svelte-1weyku7");
+      attr(kbd1, "class", "svelte-1weyku7");
       attr(span5, "class", "task-img-preview-badge svelte-1weyku7");
-      attr(kbd3, "class", "svelte-1weyku7");
+      attr(kbd2, "class", "svelte-1weyku7");
       attr(span6, "class", "task-img-preview-badge svelte-1weyku7");
+      attr(kbd3, "class", "svelte-1weyku7");
+      attr(span7, "class", "task-img-preview-badge svelte-1weyku7");
+      attr(kbd4, "class", "svelte-1weyku7");
+      attr(span8, "class", "task-img-preview-badge svelte-1weyku7");
       attr(div4, "class", "task-img-preview-footer svelte-1weyku7");
       attr(div5, "class", "task-img-preview-card svelte-1weyku7");
       attr(div5, "data-no-toolkit", "true");
@@ -11264,7 +11334,7 @@ function create_fragment2(ctx) {
       append(div0, svg0);
       append(svg0, rect0);
       append(svg0, circle0);
-      append(svg0, polyline);
+      append(svg0, polyline0);
       append(div0, t0);
       append(div0, span0);
       append(span0, t1);
@@ -11272,61 +11342,80 @@ function create_fragment2(ctx) {
       append(div2, div1);
       append(div1, button0);
       append(button0, svg1);
-      append(svg1, rect1);
-      append(svg1, path);
+      append(svg1, path0);
+      append(svg1, polyline1);
+      append(svg1, line0);
       append(button0, t3);
       append(button0, span1);
       append(div1, t5);
       append(div1, button1);
       append(button1, svg2);
-      append(svg2, circle1);
-      append(svg2, circle2);
-      append(svg2, line0);
-      append(svg2, line1);
-      append(svg2, line2);
+      append(svg2, rect1);
+      append(svg2, path1);
       append(button1, t6);
       append(button1, span2);
       append(div1, t8);
       append(div1, button2);
-      append(div5, t9);
+      append(button2, svg3);
+      append(svg3, circle1);
+      append(svg3, circle2);
+      append(svg3, line1);
+      append(svg3, line2);
+      append(svg3, line3);
+      append(button2, t9);
+      append(button2, span3);
+      append(div1, t11);
+      append(div1, button3);
+      append(div5, t12);
       append(div5, div3);
       if_block.m(div3, null);
-      append(div5, t10);
+      append(div5, t13);
       append(div5, div4);
-      append(div4, span3);
-      append(span3, kbd0);
-      append(span3, t12);
-      append(span3, t13);
-      append(div4, t14);
       append(div4, span4);
-      append(span4, kbd1);
+      append(span4, kbd0);
+      append(span4, t15);
       append(span4, t16);
-      append(span4, t17);
-      append(div4, t18);
+      append(div4, t17);
       append(div4, span5);
-      append(span5, kbd2);
+      append(span5, kbd1);
+      append(span5, t19);
       append(span5, t20);
-      append(span5, t21);
-      append(div4, t22);
+      append(div4, t21);
       append(div4, span6);
-      append(span6, kbd3);
+      append(span6, kbd2);
+      append(span6, t23);
       append(span6, t24);
-      append(span6, t25);
+      append(div4, t25);
+      append(div4, span7);
+      append(span7, kbd3);
+      append(span7, t27);
+      append(span7, t28);
+      append(div4, t29);
+      append(div4, span8);
+      append(span8, kbd4);
+      append(span8, t31);
+      append(span8, t32);
       if (!mounted) {
         dispose = [
           listen(
             button0,
             "click",
-            /*handleCopy*/
+            /*handleOpen*/
             ctx[5]
           ),
           listen(
             button1,
             "click",
-            /*handleCut*/
+            /*handleCopy*/
             ctx[6]
           ),
-          listen(button2, "click", function() {
+          listen(
+            button2,
+            "click",
+            /*handleCut*/
+            ctx[7]
+          ),
+          listen(button3, "click", function() {
             if (is_function(
               /*closeModal*/
               ctx[0]
@@ -11335,7 +11424,7 @@ function create_fragment2(ctx) {
           }),
           listen(div5, "click", stop_propagation(
             /*click_handler*/
-            ctx[11]
+            ctx[12]
           )),
           listen(div6, "click", function() {
             if (is_function(
@@ -11377,9 +11466,9 @@ function create_fragment2(ctx) {
         }
       }
       if (dirty & /*isZoomed*/
-      2 && t13_value !== (t13_value = /*isZoomed*/
+      2 && t20_value !== (t20_value = /*isZoomed*/
       (ctx[1] ? t("image_hint_fit") || "Fit / \u9002\u5E94\u5C4F\u5E55" : t("image_hint_zoom") || "Zoom 1:1 / \u653E\u5927\u539F\u56FE") + ""))
-        set_data(t13, t13_value);
+        set_data(t20, t20_value);
     },
     i: noop,
     o: noop,
@@ -11405,6 +11494,38 @@ function instance2($$self, $$props, $$invalidate) {
   function toggleZoom() {
     $$invalidate(1, isZoomed = !isZoomed);
   }
+  async function handleOpen() {
+    const file = resolveImageTFile(imageRef, app);
+    if (file) {
+      let targetLeaf = null;
+      app.workspace.iterateAllLeaves((leaf) => {
+        var _a, _b;
+        if (((_b = (_a = leaf.view) == null ? void 0 : _a.file) == null ? void 0 : _b.path) === file.path) {
+          targetLeaf = leaf;
+        }
+      });
+      if (targetLeaf) {
+        app.workspace.setActiveLeaf(targetLeaf, { focus: true });
+      } else {
+        const leaf = app.workspace.getLeaf("tab");
+        await leaf.openFile(file);
+        app.workspace.setActiveLeaf(leaf, { focus: true });
+      }
+    } else {
+      let clean = imageRef.trim().replace(/^!*\[\[(.*?)\]\]$/, "$1").trim();
+      if (clean.includes("|"))
+        clean = clean.split("|")[0].trim();
+      const mdMatch = clean.match(/^!\[.*?\]\((.*?)\)$/);
+      if (mdMatch)
+        clean = mdMatch[1].trim();
+      if (clean.startsWith("http://") || clean.startsWith("https://")) {
+        window.open(clean, "_blank");
+      } else {
+        await app.workspace.openLinkText(clean, "", true);
+      }
+    }
+    closeModal();
+  }
   async function handleCopy() {
     await copyImageToClipboard(imageRef, app, t("image_copied") || "Image copied to clipboard / \u56FE\u7247\u5DF2\u590D\u5236\u5230\u526A\u8D34\u677F");
   }
@@ -11428,6 +11549,12 @@ function instance2($$self, $$props, $$invalidate) {
       e.preventDefault();
       e.stopPropagation();
       closeModal();
+      return;
+    }
+    if ((e.key === "o" || e.key === "O") && !e.altKey && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      e.stopPropagation();
+      void handleOpen();
       return;
     }
     if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey) {
@@ -11462,24 +11589,24 @@ function instance2($$self, $$props, $$invalidate) {
   }
   $$self.$$set = ($$props2) => {
     if ("app" in $$props2)
-      $$invalidate(7, app = $$props2.app);
+      $$invalidate(8, app = $$props2.app);
     if ("imageRef" in $$props2)
-      $$invalidate(8, imageRef = $$props2.imageRef);
+      $$invalidate(9, imageRef = $$props2.imageRef);
     if ("onCut" in $$props2)
-      $$invalidate(9, onCut = $$props2.onCut);
+      $$invalidate(10, onCut = $$props2.onCut);
     if ("onDelete" in $$props2)
-      $$invalidate(10, onDelete = $$props2.onDelete);
+      $$invalidate(11, onDelete = $$props2.onDelete);
     if ("closeModal" in $$props2)
       $$invalidate(0, closeModal = $$props2.closeModal);
   };
   $$self.$$.update = () => {
     if ($$self.$$.dirty & /*imageRef, app*/
-    384) {
+    768) {
       $:
         $$invalidate(3, resolvedSrc = resolveImageResourceUrl(imageRef, app));
     }
     if ($$self.$$.dirty & /*imageRef*/
-    256) {
+    512) {
       $:
         $$invalidate(2, fileName = getImageBaseName(imageRef));
     }
@@ -11490,6 +11617,7 @@ function instance2($$self, $$props, $$invalidate) {
     fileName,
     resolvedSrc,
     toggleZoom,
+    handleOpen,
     handleCopy,
     handleCut,
     app,
@@ -11509,10 +11637,10 @@ var ImagePreviewModalView = class extends SvelteComponent {
       create_fragment2,
       safe_not_equal,
       {
-        app: 7,
-        imageRef: 8,
-        onCut: 9,
-        onDelete: 10,
+        app: 8,
+        imageRef: 9,
+        onCut: 10,
+        onDelete: 11,
         closeModal: 0
       },
       add_css
@@ -12383,7 +12511,6 @@ var TaskImageStrip = class extends SvelteComponent {
 var TaskImageStrip_default = TaskImageStrip;
 
 // src/modals/TaskStepsModalView.svelte
-var import_obsidian11 = require("obsidian");
 function add_css4(target) {
   append_styles(target, "svelte-1cj0jw5", ".steps-modal-left-controls.svelte-1cj0jw5{display:flex;align-items:center;gap:8px;flex-shrink:0}.steps-modal-text-col.svelte-1cj0jw5{flex:1;display:flex;flex-direction:column;min-width:0;gap:6px}.steps-modal-add-card.svelte-1cj0jw5{display:flex;flex-direction:column;gap:6px;flex-shrink:0}");
 }
@@ -14502,7 +14629,6 @@ function instance5($$self, $$props, $$invalidate) {
         const savedPath = await saveImageAttachment(file, actualApp, categoryFilepath);
         if (!savedPath)
           continue;
-        new import_obsidian11.Notice(t("image_pasted") || "Image attached / \u56FE\u7247\u5DF2\u9644\u52A0");
         if (focusedStepId && focusedStepId !== "__new__") {
           const targetStep = steps.find((s) => s.id === focusedStepId);
           if (targetStep) {
@@ -14536,7 +14662,6 @@ function instance5($$self, $$props, $$invalidate) {
       const savedPath = await saveImageAttachment(file, actualApp, categoryFilepath);
       if (!savedPath)
         continue;
-      new import_obsidian11.Notice(t("image_pasted") || "Image attached / \u56FE\u7247\u5DF2\u9644\u52A0");
       if (focusedStepId && focusedStepId !== "__new__") {
         const targetStep = steps.find((s) => s.id === focusedStepId);
         if (targetStep) {
@@ -14933,7 +15058,7 @@ var TaskStepsModalView = class extends SvelteComponent {
 var TaskStepsModalView_default = TaskStepsModalView;
 
 // src/modals/TaskStepsModal.ts
-var TaskStepsModal = class extends import_obsidian12.Modal {
+var TaskStepsModal = class extends import_obsidian11.Modal {
   constructor(app, plugin, dataService, task, categoryFilepath) {
     super(app);
     this.component = null;
@@ -14982,10 +15107,10 @@ var TaskStepsModal = class extends import_obsidian12.Modal {
 };
 
 // src/modals/FocusedListsModal.ts
-var import_obsidian14 = require("obsidian");
+var import_obsidian13 = require("obsidian");
 
 // src/modals/QuickListModalView.svelte
-var import_obsidian13 = require("obsidian");
+var import_obsidian12 = require("obsidian");
 
 // src/utils/hotkeyUtils.ts
 var MAX_TIP_COUNT = 5;
@@ -22183,7 +22308,7 @@ function instance6($$self, $$props, $$invalidate) {
   function togglePickingDefaultFocus() {
     $$invalidate(20, isPickingDefaultFocus = !isPickingDefaultFocus);
     if (isPickingDefaultFocus) {
-      new import_obsidian13.Notice(t("focus_pick_mode_enabled"));
+      new import_obsidian12.Notice(t("focus_pick_mode_enabled"));
     }
   }
   function showFocusTooltip() {
@@ -22204,7 +22329,7 @@ function instance6($$self, $$props, $$invalidate) {
         $$invalidate(0, plugin.settings.defaultQuickListFocusFilepath = cat.filepath, plugin);
         await plugin.saveSettings();
       }
-      new import_obsidian13.Notice(t("focus_default_set", cat.name));
+      new import_obsidian12.Notice(t("focus_default_set", cat.name));
       const idx = flatCategories.findIndex((c) => c.filepath === cat.filepath);
       if (idx !== -1) {
         $$invalidate(7, focusedIndex = idx);
@@ -22528,7 +22653,7 @@ function instance6($$self, $$props, $$invalidate) {
     if (now2 - lastDragNoticeTime > 2500) {
       lastDragNoticeTime = now2;
       const message = isChinese() ? "\u5F53\u524D\u60AC\u6D6EUI\u4E0D\u652F\u6301\u62D6\u62FD\u5206\u7EC4\u3002\n\u539F\u56E0\uFF1A\u6392\u5217list\u4EE3\u7801\u672C\u8EAB\u8986\u76D6\u4E86\u62D6\u62FD\u64CD\u4F5C\uFF1B\u5982\u9700\u8C03\u6574\u5206\u7EC4\u987A\u5E8F\uFF0C\u8BF7\u5728\u5DE6\u4FA7\u8FB9\u680F\u64CD\u4F5C\u3002" : "Dragging groups is not supported in Quick View.\nReason: List arrangement code overrides drag operations; to adjust group order, please use the sidebar.";
-      new import_obsidian13.Notice(message, 5e3);
+      new import_obsidian12.Notice(message, 5e3);
     }
   }
   function getDraggedItem() {
@@ -23071,17 +23196,17 @@ function instance6($$self, $$props, $$invalidate) {
       return;
     e.preventDefault();
     e.stopPropagation();
-    const menu = new import_obsidian13.Menu();
+    const menu = new import_obsidian12.Menu();
     if (item.type === "category" && item.filepath) {
       const isCurrentlyDefault = ((_a2 = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _a2.defaultQuickListFocusFilepath) === item.filepath;
       menu.addItem((i) => {
         i.setTitle(isCurrentlyDefault ? t("focus_cancel_default") : t("focus_set_default")).setIcon("target").onClick(async () => {
           if (isCurrentlyDefault) {
             $$invalidate(0, plugin.settings.defaultQuickListFocusFilepath = "", plugin);
-            new import_obsidian13.Notice(t("focus_restored_default"));
+            new import_obsidian12.Notice(t("focus_restored_default"));
           } else {
             $$invalidate(0, plugin.settings.defaultQuickListFocusFilepath = item.filepath, plugin);
-            new import_obsidian13.Notice(t("focus_default_set", item.name));
+            new import_obsidian12.Notice(t("focus_default_set", item.name));
           }
           await plugin.saveSettings();
         });
@@ -23124,7 +23249,7 @@ function instance6($$self, $$props, $$invalidate) {
       await loadData();
       await openCategoryInCenterOnly(newCat);
     } catch (e) {
-      new import_obsidian13.Notice(`Failed to create list: ${e}`);
+      new import_obsidian12.Notice(`Failed to create list: ${e}`);
     } finally {
       isCommittingAddList = false;
     }
@@ -23150,7 +23275,7 @@ function instance6($$self, $$props, $$invalidate) {
       await dataService.createGroup(name);
       await loadData();
     } catch (e) {
-      new import_obsidian13.Notice(`Failed to create group: ${e}`);
+      new import_obsidian12.Notice(`Failed to create group: ${e}`);
     } finally {
       isCommittingAddGroup = false;
     }
@@ -23425,7 +23550,7 @@ function instance6($$self, $$props, $$invalidate) {
         e.preventDefault();
         e.stopPropagation();
         $$invalidate(20, isPickingDefaultFocus = false);
-        new import_obsidian13.Notice(t("focus_pick_cancelled"));
+        new import_obsidian12.Notice(t("focus_pick_cancelled"));
         return;
       }
       if (e.key === "Enter") {
@@ -23563,7 +23688,7 @@ function instance6($$self, $$props, $$invalidate) {
     if (plugin == null ? void 0 : plugin.settings) {
       $$invalidate(0, plugin.settings.defaultQuickListFocusFilepath = "", plugin);
       await plugin.saveSettings();
-      new import_obsidian13.Notice(t("focus_restored_default_notice"));
+      new import_obsidian12.Notice(t("focus_restored_default_notice"));
       applyInitialFocus();
     }
   };
@@ -24137,7 +24262,7 @@ var QuickListModalView = class extends SvelteComponent {
 var QuickListModalView_default = QuickListModalView;
 
 // src/modals/FocusedListsModal.ts
-var FocusedListsModal = class extends import_obsidian14.Modal {
+var FocusedListsModal = class extends import_obsidian13.Modal {
   constructor(app, plugin, dataService) {
     super(app);
     this.component = null;
@@ -24176,13 +24301,13 @@ var FocusedListsModal = class extends import_obsidian14.Modal {
 };
 
 // src/modals/BackupModal.ts
-var import_obsidian17 = require("obsidian");
-
-// src/modals/BackupModalView.svelte
 var import_obsidian16 = require("obsidian");
 
-// src/services/BackupService.ts
+// src/modals/BackupModalView.svelte
 var import_obsidian15 = require("obsidian");
+
+// src/services/BackupService.ts
+var import_obsidian14 = require("obsidian");
 var BackupService = class {
   static async ensureBackupFolder(app) {
     var _a, _b;
@@ -24204,9 +24329,9 @@ var BackupService = class {
     }
   }
   static getAbsoluteBackupFolderPath(app) {
-    if (app.vault.adapter instanceof import_obsidian15.FileSystemAdapter) {
+    if (app.vault.adapter instanceof import_obsidian14.FileSystemAdapter) {
       const base = app.vault.adapter.getBasePath();
-      const rel = (0, import_obsidian15.normalizePath)(this.BACKUP_FOLDER);
+      const rel = (0, import_obsidian14.normalizePath)(this.BACKUP_FOLDER);
       try {
         const path = window.require ? window.require("path") : null;
         if (path && path.resolve) {
@@ -24231,7 +24356,7 @@ var BackupService = class {
     } catch (e) {
       console.warn("[BackupService] Failed to open folder in OS:", e);
     }
-    new import_obsidian15.Notice(t("backup_dir", this.BACKUP_FOLDER));
+    new import_obsidian14.Notice(t("backup_dir", this.BACKUP_FOLDER));
   }
   static async collectFilesRecursively(app, folder) {
     const result = [];
@@ -24240,7 +24365,7 @@ var BackupService = class {
         return result;
       const listing = await app.vault.adapter.list(folder);
       for (const filePath of listing.files) {
-        const normPath = (0, import_obsidian15.normalizePath)(filePath);
+        const normPath = (0, import_obsidian14.normalizePath)(filePath);
         const fname = normPath.split("/").pop() || "";
         if (fname === "debug.log" || normPath.includes("/Backups/") || normPath.includes("/.backups/")) {
           continue;
@@ -24250,7 +24375,7 @@ var BackupService = class {
         }
       }
       for (const subFolder of listing.folders) {
-        const normFolder = (0, import_obsidian15.normalizePath)(subFolder);
+        const normFolder = (0, import_obsidian14.normalizePath)(subFolder);
         const folderName = normFolder.split("/").pop() || "";
         if (folderName === "Backups" || folderName === ".backups" || normFolder.includes("/Backups") || normFolder.includes("/.backups")) {
           continue;
@@ -24342,7 +24467,7 @@ var BackupService = class {
     const pad = (n) => n.toString().padStart(2, "0");
     for (const filePath of allFilePaths) {
       try {
-        const normPath = (0, import_obsidian15.normalizePath)(filePath);
+        const normPath = (0, import_obsidian14.normalizePath)(filePath);
         const content = await app.vault.adapter.read(normPath);
         const stat = await app.vault.adapter.stat(normPath);
         const parsed = JSON.parse(content);
@@ -24367,9 +24492,9 @@ var BackupService = class {
     return list;
   }
   static async restoreBackup(app, plugin, backupPath) {
-    const normPath = (0, import_obsidian15.normalizePath)(backupPath);
+    const normPath = (0, import_obsidian14.normalizePath)(backupPath);
     if (!await app.vault.adapter.exists(normPath)) {
-      new import_obsidian15.Notice(t("backup_file_not_found"));
+      new import_obsidian14.Notice(t("backup_file_not_found"));
       return false;
     }
     const raw = await app.vault.adapter.read(normPath);
@@ -24380,11 +24505,11 @@ var BackupService = class {
     try {
       const payload = JSON.parse(rawJson);
       if (!payload || typeof payload !== "object" || !payload.files) {
-        new import_obsidian15.Notice(t("backup_invalid_format"));
+        new import_obsidian14.Notice(t("backup_invalid_format"));
         return false;
       }
       for (const [relPath, content] of Object.entries(payload.files)) {
-        const normalized = (0, import_obsidian15.normalizePath)(relPath);
+        const normalized = (0, import_obsidian14.normalizePath)(relPath);
         const lastSlash = normalized.lastIndexOf("/");
         if (lastSlash > 0) {
           const folderPath = normalized.slice(0, lastSlash);
@@ -24394,27 +24519,27 @@ var BackupService = class {
         }
         await app.vault.adapter.write(normalized, content);
       }
-      new import_obsidian15.Notice(t("backup_restore_success", Object.keys(payload.files).length, (_a = payload.taskCount) != null ? _a : 0));
+      new import_obsidian14.Notice(t("backup_restore_success", Object.keys(payload.files).length, (_a = payload.taskCount) != null ? _a : 0));
       EventBus.emit("category:list-changed" /* CATEGORY_LIST_CHANGED */, {});
       return true;
     } catch (e) {
       console.error("[BackupService] Restore failed:", e);
-      new import_obsidian15.Notice(t("backup_restore_failed", String(e)));
+      new import_obsidian14.Notice(t("backup_restore_failed", String(e)));
       return false;
     }
   }
   static async deleteBackup(app, backupPath) {
-    const normPath = (0, import_obsidian15.normalizePath)(backupPath);
+    const normPath = (0, import_obsidian14.normalizePath)(backupPath);
     if (await app.vault.adapter.exists(normPath)) {
       await app.vault.adapter.remove(normPath);
-      new import_obsidian15.Notice(t("backup_deleted"));
+      new import_obsidian14.Notice(t("backup_deleted"));
     }
   }
   static async deleteAllBackups(app) {
     const backups = await this.getBackups(app);
     let deletedCount = 0;
     for (const b of backups) {
-      const normPath = (0, import_obsidian15.normalizePath)(b.filepath);
+      const normPath = (0, import_obsidian14.normalizePath)(b.filepath);
       try {
         if (await app.vault.adapter.exists(normPath)) {
           await app.vault.adapter.remove(normPath);
@@ -25277,7 +25402,7 @@ function instance7($$self, $$props, $$invalidate) {
     if (plugin == null ? void 0 : plugin.settings) {
       $$invalidate(15, plugin.settings.dailyBackupEnabled = dailyBackup, plugin);
       await plugin.saveSettings();
-      new import_obsidian16.Notice(dailyBackup ? t("daily_backup_enabled") : t("daily_backup_disabled"));
+      new import_obsidian15.Notice(dailyBackup ? t("daily_backup_enabled") : t("daily_backup_disabled"));
     }
   }
   async function handleBackupNow() {
@@ -25286,10 +25411,10 @@ function instance7($$self, $$props, $$invalidate) {
     $$invalidate(5, isBackingUp = true);
     try {
       const res = await BackupService.createBackup(app, plugin, false);
-      new import_obsidian16.Notice(t("data_saved_to", res.filepath));
+      new import_obsidian15.Notice(t("data_saved_to", res.filepath));
       await refreshBackups();
     } catch (e) {
-      new import_obsidian16.Notice(t("backup_failed", (e == null ? void 0 : e.message) || e));
+      new import_obsidian15.Notice(t("backup_failed", (e == null ? void 0 : e.message) || e));
     } finally {
       $$invalidate(5, isBackingUp = false);
     }
@@ -25348,7 +25473,7 @@ function instance7($$self, $$props, $$invalidate) {
       return;
     if (confirm(t("confirm_delete_all_backups", backups.length))) {
       const count = await BackupService.deleteAllBackups(app);
-      new import_obsidian16.Notice(t("all_backups_deleted", count));
+      new import_obsidian15.Notice(t("all_backups_deleted", count));
       await refreshBackups();
     }
   }
@@ -25401,7 +25526,7 @@ var BackupModalView = class extends SvelteComponent {
 var BackupModalView_default = BackupModalView;
 
 // src/modals/BackupModal.ts
-var BackupModal = class extends import_obsidian17.Modal {
+var BackupModal = class extends import_obsidian16.Modal {
   constructor(app, plugin, dataService) {
     super(app);
     this.component = null;
@@ -25431,8 +25556,8 @@ var BackupModal = class extends import_obsidian17.Modal {
 };
 
 // src/modals/MoveToSuggestModal.ts
-var import_obsidian18 = require("obsidian");
-var MoveToSuggestModal = class extends import_obsidian18.FuzzySuggestModal {
+var import_obsidian17 = require("obsidian");
+var MoveToSuggestModal = class extends import_obsidian17.FuzzySuggestModal {
   constructor(app, categories, onChoose) {
     super(app);
     this.categories = categories;
@@ -35867,7 +35992,7 @@ function instance8($$self, $$props, $$invalidate) {
       appAny.setting.openTabById("community-plugins");
     }
     copyPluginName();
-    const NoticeCtor = window.Notice || import_obsidian19.Notice;
+    const NoticeCtor = window.Notice || import_obsidian18.Notice;
     new NoticeCtor(isChinese() ? "\u5DF2\u6253\u5F00\u793E\u533A\u63D2\u4EF6\u8BBE\u7F6E\uFF0C\u5E76\u5DF2\u590D\u5236\u300CSVG Quick Editor\u300D\u5230\u526A\u8D34\u677F\uFF0C\u8BF7\u70B9\u51FB\u201C\u6D4F\u89C8\u201D\u76F4\u63A5\u7C98\u8D34\u641C\u7D22\uFF01" : "Opened Community Plugins settings and copied 'SVG Quick Editor' to clipboard. Click 'Browse' and paste to search!");
     $$invalidate(48, showPluginDownloadModal = false);
   }
@@ -36120,7 +36245,7 @@ function instance8($$self, $$props, $$invalidate) {
     await cleanupSvgEmbedsInNotes(cleanPath);
     $$invalidate(45, showSvgDeleteConfirmModal = false);
     closeSvgLightbox();
-    const NoticeCtor = window.Notice || import_obsidian19.Notice;
+    const NoticeCtor = window.Notice || import_obsidian18.Notice;
     if (svgLinkedTaskCount > 0) {
       new NoticeCtor(isChinese() ? `SVG \u5DF2\u5220\u9664\u5E76\u89E3\u7ED1\u4EFB\u52A1: ${filename}` : `Deleted SVG and unlinked: ${filename}`);
     } else {
@@ -36459,13 +36584,13 @@ function instance8($$self, $$props, $$invalidate) {
   let hasComboModifierOrKey = false;
   let hoveredTitleTarget = null;
   function isControlKey(e) {
-    return import_obsidian19.Platform.isMacOS ? e.key === "Meta" || e.key === "Control" : e.key === "Control";
+    return import_obsidian18.Platform.isMacOS ? e.key === "Meta" || e.key === "Control" : e.key === "Control";
   }
   function isQuickPeekModifierPressed(e) {
     if (hasComboModifierOrKey || e.shiftKey || e.altKey) {
       return false;
     }
-    if (import_obsidian19.Platform.isMacOS) {
+    if (import_obsidian18.Platform.isMacOS) {
       return e.metaKey || e.ctrlKey;
     }
     return e.ctrlKey && !e.metaKey;
@@ -36491,7 +36616,7 @@ function instance8($$self, $$props, $$invalidate) {
       if (e.repeat)
         return;
       if (e.key === "ArrowLeft") {
-        const activeType = (_c2 = (_b2 = (_a2 = plugin == null ? void 0 : plugin.app) == null ? void 0 : _a2.workspace) == null ? void 0 : _b2.getActiveViewOfType(import_obsidian19.ItemView)) == null ? void 0 : _c2.getViewType();
+        const activeType = (_c2 = (_b2 = (_a2 = plugin == null ? void 0 : plugin.app) == null ? void 0 : _a2.workspace) == null ? void 0 : _b2.getActiveViewOfType(import_obsidian18.ItemView)) == null ? void 0 : _c2.getViewType();
         const isInsideMain = mainContainerEl && (mainContainerEl.contains(document.activeElement) || activeType === VIEW_TYPE_MAIN);
         if (isInsideMain) {
           e.preventDefault();
@@ -36500,7 +36625,7 @@ function instance8($$self, $$props, $$invalidate) {
           return;
         }
       } else if (e.key === "ArrowRight") {
-        const activeType = (_f2 = (_e2 = (_d2 = plugin == null ? void 0 : plugin.app) == null ? void 0 : _d2.workspace) == null ? void 0 : _e2.getActiveViewOfType(import_obsidian19.ItemView)) == null ? void 0 : _f2.getViewType();
+        const activeType = (_f2 = (_e2 = (_d2 = plugin == null ? void 0 : plugin.app) == null ? void 0 : _d2.workspace) == null ? void 0 : _e2.getActiveViewOfType(import_obsidian18.ItemView)) == null ? void 0 : _f2.getViewType();
         const isInsideMain = mainContainerEl && (mainContainerEl.contains(document.activeElement) || activeType === VIEW_TYPE_MAIN);
         if (isInsideMain) {
           e.preventDefault();
@@ -36511,9 +36636,9 @@ function instance8($$self, $$props, $$invalidate) {
       }
     }
     const isF = e.key === "f" || e.key === "F" || e.code === "KeyF";
-    const isMod = import_obsidian19.Platform.isMacOS ? e.metaKey || e.ctrlKey : e.ctrlKey && !e.metaKey;
+    const isMod = import_obsidian18.Platform.isMacOS ? e.metaKey || e.ctrlKey : e.ctrlKey && !e.metaKey;
     if (isMod && !e.shiftKey && !e.altKey && isF) {
-      const activeType = (_i2 = (_h2 = (_g2 = plugin == null ? void 0 : plugin.app) == null ? void 0 : _g2.workspace) == null ? void 0 : _h2.getActiveViewOfType(import_obsidian19.ItemView)) == null ? void 0 : _i2.getViewType();
+      const activeType = (_i2 = (_h2 = (_g2 = plugin == null ? void 0 : plugin.app) == null ? void 0 : _g2.workspace) == null ? void 0 : _h2.getActiveViewOfType(import_obsidian18.ItemView)) == null ? void 0 : _i2.getViewType();
       const isInsideMain = mainContainerEl && (mainContainerEl.contains(document.activeElement) || activeType === VIEW_TYPE_MAIN);
       if (isInsideMain) {
         e.preventDefault();
@@ -36656,7 +36781,7 @@ function instance8($$self, $$props, $$invalidate) {
           void Logger.log("[TaskMainView] openLinkText failed:", err);
         }
       } else {
-        new import_obsidian19.Notice(`Cannot find note in vault matching "${noteLink}"`);
+        new import_obsidian18.Notice(`Cannot find note in vault matching "${noteLink}"`);
       }
     }
   }
@@ -36755,7 +36880,7 @@ function instance8($$self, $$props, $$invalidate) {
     e.stopPropagation();
     e.preventDefault();
     const triggerEl = e.currentTarget;
-    const menu = new import_obsidian19.Menu();
+    const menu = new import_obsidian18.Menu();
     for (const badge of overflowBadges) {
       if (badge.type === "why") {
         const whyIdx = (_a2 = badge.index) != null ? _a2 : 0;
@@ -37121,7 +37246,7 @@ function instance8($$self, $$props, $$invalidate) {
       EventBus.emit("category:selected" /* CATEGORY_SELECTED */, { category: newCat });
     } catch (err) {
       console.error("[Fluent Tasks] Failed to rename list:", err);
-      new import_obsidian19.Notice(`Failed to rename list: ${(err == null ? void 0 : err.message) || err}`);
+      new import_obsidian18.Notice(`Failed to rename list: ${(err == null ? void 0 : err.message) || err}`);
     } finally {
       isCommittingCategoryRename = false;
       $$invalidate(18, isEditingCategoryName = false);
@@ -37410,7 +37535,7 @@ function instance8($$self, $$props, $$invalidate) {
       source: "main-view"
     });
     if (showNotice) {
-      new import_obsidian19.Notice(task.starred ? `Starred task: "${task.title}"` : `Removed star from: "${task.title}"`);
+      new import_obsidian18.Notice(task.starred ? `Starred task: "${task.title}"` : `Removed star from: "${task.title}"`);
     }
   }
   async function toggleStarByTaskId(taskId) {
@@ -37480,7 +37605,7 @@ function instance8($$self, $$props, $$invalidate) {
     if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || activeEl.isContentEditable)) {
       return;
     }
-    const activeType = (_c2 = (_b2 = (_a2 = plugin == null ? void 0 : plugin.app) == null ? void 0 : _a2.workspace) == null ? void 0 : _b2.getActiveViewOfType(import_obsidian19.ItemView)) == null ? void 0 : _c2.getViewType();
+    const activeType = (_c2 = (_b2 = (_a2 = plugin == null ? void 0 : plugin.app) == null ? void 0 : _a2.workspace) == null ? void 0 : _b2.getActiveViewOfType(import_obsidian18.ItemView)) == null ? void 0 : _c2.getViewType();
     const isInsideMain = mainContainerEl && (mainContainerEl.contains(activeEl) || activeType === VIEW_TYPE_MAIN);
     if (!isInsideMain)
       return;
@@ -37498,7 +37623,6 @@ function instance8($$self, $$props, $$invalidate) {
         const savedPath = await saveImageAttachment(file, actualApp, targetCatPath);
         if (!savedPath)
           continue;
-        new import_obsidian19.Notice(t("image_pasted") || "Image attached / \u56FE\u7247\u5DF2\u9644\u52A0");
         targetTask.titleImages = [...targetTask.titleImages || [], savedPath];
         $$invalidate(5, incompleteTasks = [...incompleteTasks]);
         $$invalidate(6, completedTasks = [...completedTasks]);
@@ -37579,7 +37703,7 @@ function instance8($$self, $$props, $$invalidate) {
       e.preventDefault();
       e.stopPropagation();
     }
-    new import_obsidian19.Notice(t("main_view_search_all_tasks_hint") || "\u5982\u679C\u60F3\u8981\u641C\u7D22\u5168\u90E8\u4EFB\u52A1 (All tasks)\uFF0C\u8BF7\u5728 Obsidian\u3010\u8BBE\u7F6E -> \u5FEB\u6377\u952E\u3011\u4E2D\u4E3A\u672C\u63D2\u4EF6\u547D\u4EE4\u3010Search all tasks\u3011\u7ED1\u5B9A\u5FEB\u6377\u952E\u3002");
+    new import_obsidian18.Notice(t("main_view_search_all_tasks_hint") || "\u5982\u679C\u60F3\u8981\u641C\u7D22\u5168\u90E8\u4EFB\u52A1 (All tasks)\uFF0C\u8BF7\u5728 Obsidian\u3010\u8BBE\u7F6E -> \u5FEB\u6377\u952E\u3011\u4E2D\u4E3A\u672C\u63D2\u4EF6\u547D\u4EE4\u3010Search all tasks\u3011\u7ED1\u5B9A\u5FEB\u6377\u952E\u3002");
     searchInputEl == null ? void 0 : searchInputEl.focus();
   }
   async function openSearch() {
@@ -37931,7 +38055,7 @@ function instance8($$self, $$props, $$invalidate) {
         preDragIncompleteTasks = [];
         preDragCompletedTasks = [];
         killDndGhostElement();
-        const NoticeCtor = window.Notice || import_obsidian19.Notice;
+        const NoticeCtor = window.Notice || import_obsidian18.Notice;
         new NoticeCtor(
           isChinese() ? "\u26A0\uFE0F \u6743\u91CD\u6A21\u5F0F\u9650\u5236\uFF1A\u6570\u5B57\u8F83\u5C0F\u7684\u4EFB\u52A1\u4E0D\u80FD\u6392\u5728\u8F83\u5927\u4EFB\u52A1\u4E0A\u65B9\uFF01" : "\u26A0\uFE0F Weight mode: Smaller weight task cannot be placed above a larger weight task!",
           4e3
@@ -37984,7 +38108,7 @@ function instance8($$self, $$props, $$invalidate) {
         $$invalidate(6, completedTasks = [...completedTasks]);
         await dataService.updateTask(actualSource, task);
         EventBus.emit("task:updated" /* TASK_UPDATED */, { task, categoryFilepath: actualSource });
-        new import_obsidian19.Notice(isChinese() ? `\u5DF2\u661F\u6807\u4EFB\u52A1: "${task.title}"` : `Starred task: "${task.title}"`);
+        new import_obsidian18.Notice(isChinese() ? `\u5DF2\u661F\u6807\u4EFB\u52A1: "${task.title}"` : `Starred task: "${task.title}"`);
       }
       setTimeout(() => removeDndGhostShield(), ANTI_FLICKER_DURATION_MS);
       return;
@@ -38000,14 +38124,14 @@ function instance8($$self, $$props, $$invalidate) {
       sourcePath: actualSource,
       targetPath: targetCat.filepath
     });
-    new import_obsidian19.Notice(isChinese() ? `\u5DF2\u5C06\u4EFB\u52A1\u79FB\u52A8\u81F3 "${targetCat.name}"` : `Moved task to "${targetCat.name}"`);
+    new import_obsidian18.Notice(isChinese() ? `\u5DF2\u5C06\u4EFB\u52A1\u79FB\u52A8\u81F3 "${targetCat.name}"` : `Moved task to "${targetCat.name}"`);
     setTimeout(() => removeDndGhostShield(), ANTI_FLICKER_DURATION_MS);
   }
   async function handleContextMenu(e, task) {
     e.preventDefault();
     if (!currentCategory)
       return;
-    const menu = new import_obsidian19.Menu();
+    const menu = new import_obsidian18.Menu();
     menu.addItem((item) => {
       item.setTitle(t("add_side_step") || "Add side step").setIcon("list-plus").onClick(() => {
         openStepsModal(task);
@@ -38133,7 +38257,7 @@ function instance8($$self, $$props, $$invalidate) {
       selectedTaskIds.clear();
       $$invalidate(33, selectedTaskIds);
     } else {
-      new import_obsidian19.Notice(t("multi_select_mode_enabled"));
+      new import_obsidian18.Notice(t("multi_select_mode_enabled"));
     }
   }
   function openBackupModal() {
@@ -38202,7 +38326,7 @@ function instance8($$self, $$props, $$invalidate) {
     $$invalidate(5, incompleteTasks = [...incompleteTasks]);
     $$invalidate(6, completedTasks = [...completedTasks]);
     await dataService.saveTasks(currentCategory.filepath, [...incompleteTasks, ...completedTasks]);
-    new import_obsidian19.Notice(shouldStar ? t("batch_starred_tasks", selected.length) : t("batch_unstarred_tasks", selected.length));
+    new import_obsidian18.Notice(shouldStar ? t("batch_starred_tasks", selected.length) : t("batch_unstarred_tasks", selected.length));
   }
   async function handleBatchDelete() {
     if (!currentCategory || selectedTaskIds.size === 0)
@@ -38246,7 +38370,7 @@ function instance8($$self, $$props, $$invalidate) {
   function openHeaderMoreMenu(e) {
     e.preventDefault();
     e.stopPropagation();
-    const menu = new import_obsidian19.Menu();
+    const menu = new import_obsidian18.Menu();
     menu.addItem((item) => {
       item.setTitle(t("rename_list_menu_item") || "Rename list (F2)").setIcon("edit-3").onClick(() => {
         startRenameCategory();
@@ -38924,7 +39048,7 @@ var TaskMainView = class extends SvelteComponent {
 var TaskMainView_default = TaskMainView;
 
 // src/TaskDetailView.svelte
-var import_obsidian20 = require("obsidian");
+var import_obsidian19 = require("obsidian");
 var { Map: Map_13 } = globals;
 function add_css5(target) {
   append_styles(target, "svelte-399gjs", ".step-content-col.svelte-399gjs{flex:1;display:flex;flex-direction:column;min-width:0;gap:4px}.add-step-card.svelte-399gjs{display:flex;flex-direction:column;gap:6px}.title-right-actions.svelte-399gjs{display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:auto}.step-left-controls.svelte-399gjs{display:flex;align-items:center;gap:6px;flex-shrink:0}");
@@ -46675,7 +46799,7 @@ function instance9($$self, $$props, $$invalidate) {
         $$invalidate(4, task);
         await immediateSave();
         await LinkedNoteService.openLinkedNoteFile(plugin.app, res.file);
-        new import_obsidian20.Notice(t("task_note_recreated", res.file.basename));
+        new import_obsidian19.Notice(t("task_note_recreated", res.file.basename));
         if (isModal) {
           closePanel();
         }
@@ -46686,7 +46810,7 @@ function instance9($$self, $$props, $$invalidate) {
       $$invalidate(4, task);
       await immediateSave();
       await LinkedNoteService.openLinkedNoteFile(plugin.app, res.file);
-      new import_obsidian20.Notice(t("task_note_created", res.file.basename));
+      new import_obsidian19.Notice(t("task_note_created", res.file.basename));
       if (isModal) {
         closePanel();
       }
@@ -46697,7 +46821,7 @@ function instance9($$self, $$props, $$invalidate) {
       return;
     e.preventDefault();
     e.stopPropagation();
-    const menu = new import_obsidian20.Menu();
+    const menu = new import_obsidian19.Menu();
     menu.addItem((item) => {
       item.setTitle(t("open_task_note")).setIcon("file-text").onClick(() => {
         void handleTaskNoteClick(e);
@@ -46713,7 +46837,7 @@ function instance9($$self, $$props, $$invalidate) {
         }
         $$invalidate(4, task);
         await immediateSave();
-        new import_obsidian20.Notice(t("unlink_task_note_success"));
+        new import_obsidian19.Notice(t("unlink_task_note_success"));
       });
     });
     menu.showAtMouseEvent(e);
@@ -46811,7 +46935,6 @@ function instance9($$self, $$props, $$invalidate) {
         const savedPath = await saveImageAttachment(file, actualApp, categoryFilepath);
         if (!savedPath)
           continue;
-        new import_obsidian20.Notice(t("image_pasted") || "Image attached / \u56FE\u7247\u5DF2\u9644\u52A0");
         if (ft && ft.type === "title") {
           if (task) {
             $$invalidate(4, task.titleImages = [...task.titleImages || [], savedPath], task);
@@ -46861,7 +46984,6 @@ function instance9($$self, $$props, $$invalidate) {
       const savedPath = await saveImageAttachment(file, actualApp, categoryFilepath);
       if (!savedPath)
         continue;
-      new import_obsidian20.Notice(t("image_pasted") || "Image attached / \u56FE\u7247\u5DF2\u9644\u52A0");
       if (ft && ft.type === "title") {
         $$invalidate(4, task.titleImages = [...task.titleImages || [], savedPath], task);
         $$invalidate(4, task);
@@ -47186,7 +47308,7 @@ function instance9($$self, $$props, $$invalidate) {
     const file = LinkedNoteService.resolveLinkedNoteFile(plugin.app, val, categoryFilepath);
     if (file) {
       await LinkedNoteService.openLinkedNoteFile(plugin.app, file);
-      new import_obsidian20.Notice(`Opened note: ${file.basename}`);
+      new import_obsidian19.Notice(`Opened note: ${file.basename}`);
     } else {
       const clean = LinkedNoteService.sanitizeLinkpath(val);
       if (clean && !clean.includes(":")) {
@@ -47197,7 +47319,7 @@ function instance9($$self, $$props, $$invalidate) {
           void Logger.log("[TaskDetail] openLinkText failed:", e);
         }
       }
-      new import_obsidian20.Notice(`Cannot find note in vault matching "${val.trim()}"`);
+      new import_obsidian19.Notice(`Cannot find note in vault matching "${val.trim()}"`);
     }
   }
   async function saveMetadata() {
@@ -47385,22 +47507,22 @@ function instance9($$self, $$props, $$invalidate) {
     if (!file && plugin.app.vault) {
       file = plugin.app.vault.getAbstractFileByPath(cleanPath);
     }
-    return file instanceof import_obsidian20.TFile ? file : null;
+    return file instanceof import_obsidian19.TFile ? file : null;
   }
   async function trashSourceFile(file) {
     var _a2;
     if (!file) {
-      new import_obsidian20.Notice("\u5185\u8054 SVG \u65E0\u7269\u7406\u6E90\u6587\u4EF6\uFF0C\u4EC5\u4ECE\u4EFB\u52A1\u5143\u6570\u636E\u4E2D\u79FB\u9664");
+      new import_obsidian19.Notice("\u5185\u8054 SVG \u65E0\u7269\u7406\u6E90\u6587\u4EF6\uFF0C\u4EC5\u4ECE\u4EFB\u52A1\u5143\u6570\u636E\u4E2D\u79FB\u9664");
       return;
     }
     if (!((_a2 = plugin == null ? void 0 : plugin.app) == null ? void 0 : _a2.fileManager))
       return;
     try {
       await plugin.app.fileManager.trashFile(file);
-      new import_obsidian20.Notice(`\u5DF2\u5C06\u6E90\u6587\u4EF6\u79FB\u81F3\u5E9F\u7EB8\u7BD3: ${file.name}`);
+      new import_obsidian19.Notice(`\u5DF2\u5C06\u6E90\u6587\u4EF6\u79FB\u81F3\u5E9F\u7EB8\u7BD3: ${file.name}`);
     } catch (err) {
       console.error("Failed to trash file:", err);
-      new import_obsidian20.Notice(`\u79FB\u81F3\u5E9F\u7EB8\u7BD3\u5931\u8D25: ${(err == null ? void 0 : err.message) || err}`);
+      new import_obsidian19.Notice(`\u79FB\u81F3\u5E9F\u7EB8\u7BD3\u5931\u8D25: ${(err == null ? void 0 : err.message) || err}`);
     }
   }
   async function deleteSvgWithSourceFile(idx) {
@@ -47457,7 +47579,7 @@ function instance9($$self, $$props, $$invalidate) {
     });
     $$invalidate(4, task = null);
     $$invalidate(6, categoryFilepath = "");
-    new import_obsidian20.Notice("\u5DF2\u76F4\u63A5\u5220\u9664\u4EFB\u52A1\u53CA\u6E90\u6587\u4EF6\u81F3\u5E9F\u7EB8\u7BD3");
+    new import_obsidian19.Notice("\u5DF2\u76F4\u63A5\u5220\u9664\u4EFB\u52A1\u53CA\u6E90\u6587\u4EF6\u81F3\u5E9F\u7EB8\u7BD3");
   }
   function handleOpenSvgFile(resolved) {
     if (!resolved.isInline && resolved.cleanPath && (plugin == null ? void 0 : plugin.app)) {
@@ -47984,7 +48106,7 @@ var TaskDetailView = class extends SvelteComponent {
 var TaskDetailView_default = TaskDetailView;
 
 // src/UndoToastContainer.svelte
-var import_obsidian21 = require("obsidian");
+var import_obsidian20 = require("obsidian");
 function get_each_context8(ctx, list, i) {
   const child_ctx = ctx.slice();
   child_ctx[18] = list[i];
@@ -48364,10 +48486,10 @@ function instance10($$self, $$props, $$invalidate) {
       const { categoryName, categoryFilepath, fileContent, groupName, index } = toast.categoryPayload;
       try {
         await dataService.restoreCategory(categoryName, categoryFilepath, fileContent, groupName, index);
-        new import_obsidian21.Notice(`Restored list: "${formatToastTitle(categoryName)}"`);
+        new import_obsidian20.Notice(`Restored list: "${formatToastTitle(categoryName)}"`);
       } catch (err) {
         console.error("Failed to restore list:", err);
-        new import_obsidian21.Notice("Failed to undo list deletion.");
+        new import_obsidian20.Notice("Failed to undo list deletion.");
       }
       return;
     }
@@ -48410,10 +48532,10 @@ function instance10($$self, $$props, $$invalidate) {
           categoryFilepath,
           isExternal: true
         });
-        new import_obsidian21.Notice(`Restored step: "${formatToastTitle(step.text)}"`);
+        new import_obsidian20.Notice(`Restored step: "${formatToastTitle(step.text)}"`);
       } catch (err) {
         console.error("Failed to restore step:", err);
-        new import_obsidian21.Notice("Failed to undo step deletion.");
+        new import_obsidian20.Notice("Failed to undo step deletion.");
       }
       return;
     }
@@ -48491,10 +48613,10 @@ function instance10($$self, $$props, $$invalidate) {
             }
           }
         }
-        new import_obsidian21.Notice(newRestores.length === 1 ? `Restored: "${formatToastTitle(newRestores[0].title)}"` : `Restored ${newRestores.length} tasks`);
+        new import_obsidian20.Notice(newRestores.length === 1 ? `Restored: "${formatToastTitle(newRestores[0].title)}"` : `Restored ${newRestores.length} tasks`);
       } catch (err) {
         console.error("Failed to restore task(s):", err);
-        new import_obsidian21.Notice("Failed to undo task deletion.");
+        new import_obsidian20.Notice("Failed to undo task deletion.");
       }
     }
   }
@@ -48566,7 +48688,7 @@ var UndoToastContainer = class extends SvelteComponent {
 var UndoToastContainer_default = UndoToastContainer;
 
 // src/settings.ts
-var import_obsidian22 = require("obsidian");
+var import_obsidian21 = require("obsidian");
 var DEFAULT_SETTINGS = {
   accentColor: "#8b5cf6",
   openDetailInModal: false,
@@ -48599,7 +48721,7 @@ var DEFAULT_SETTINGS = {
   enableFocusedLists: false,
   focusedLists: []
 };
-var FluentTasksSettingTab = class extends import_obsidian22.PluginSettingTab {
+var FluentTasksSettingTab = class extends import_obsidian21.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
     this.plugin = plugin;
@@ -48607,7 +48729,7 @@ var FluentTasksSettingTab = class extends import_obsidian22.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    const colorSetting = new import_obsidian22.Setting(containerEl).setName("Accent Color").setDesc("Choose the primary accent color for the plugin (e.g., active borders, stars).").addColorPicker((color) => color.setValue(this.plugin.settings.accentColor).onChange(async (value) => {
+    const colorSetting = new import_obsidian21.Setting(containerEl).setName("Accent Color").setDesc("Choose the primary accent color for the plugin (e.g., active borders, stars).").addColorPicker((color) => color.setValue(this.plugin.settings.accentColor).onChange(async (value) => {
       this.plugin.settings.accentColor = value;
       await this.plugin.saveSettings();
       this.plugin.applySettings();
@@ -48621,7 +48743,7 @@ var FluentTasksSettingTab = class extends import_obsidian22.PluginSettingTab {
         this.plugin.applySettings();
       });
     }
-    new import_obsidian22.Setting(containerEl).setName("Open Task Details in Floating Modal").setDesc("Open task details in a centered floating modal instead of expanding the right sidebar panel.").addToggle((toggle) => {
+    new import_obsidian21.Setting(containerEl).setName("Open Task Details in Floating Modal").setDesc("Open task details in a centered floating modal instead of expanding the right sidebar panel.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.openDetailInModal) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.openDetailInModal = value;
@@ -48635,7 +48757,7 @@ var FluentTasksSettingTab = class extends import_obsidian22.PluginSettingTab {
         }
       });
     });
-    new import_obsidian22.Setting(containerEl).setName(t("setting_fullscreen_detail_modal_title") || "Full-Screen Task Details Modal").setDesc(t("setting_fullscreen_detail_modal_desc") || "Open floating task details modal in full-screen mode (similar to Subtasks modal). When disabled, displays as a centered window card.").addToggle((toggle) => {
+    new import_obsidian21.Setting(containerEl).setName(t("setting_fullscreen_detail_modal_title") || "Full-Screen Task Details Modal").setDesc(t("setting_fullscreen_detail_modal_desc") || "Open floating task details modal in full-screen mode (similar to Subtasks modal). When disabled, displays as a centered window card.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.fullscreenDetailModal) != null ? _a : true).onChange(async (value) => {
         this.plugin.settings.fullscreenDetailModal = value;
@@ -48645,7 +48767,7 @@ var FluentTasksSettingTab = class extends import_obsidian22.PluginSettingTab {
         }
       });
     });
-    new import_obsidian22.Setting(containerEl).setName(t("setting_hide_left_sidebar_title") || "Hide Left Sidebar (Floating UI Mode)").setDesc(t("setting_hide_left_sidebar_desc") || "Hide the left sidebar list view completely. Navigate lists using the Quick List Floating UI (modal). Recommended to bind a hotkey for quick access.").addToggle((toggle) => {
+    new import_obsidian21.Setting(containerEl).setName(t("setting_hide_left_sidebar_title") || "Hide Left Sidebar (Floating UI Mode)").setDesc(t("setting_hide_left_sidebar_desc") || "Hide the left sidebar list view completely. Navigate lists using the Quick List Floating UI (modal). Recommended to bind a hotkey for quick access.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.hideLeftSidebar) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.hideLeftSidebar = value;
@@ -48654,28 +48776,28 @@ var FluentTasksSettingTab = class extends import_obsidian22.PluginSettingTab {
         await this.plugin.handleHideLeftSidebarChanged(value);
       });
     });
-    new import_obsidian22.Setting(containerEl).setName(t("setting_auto_expand_sidebar_on_drag_title") || "Auto-Expand Left Sidebar on Task Drag").setDesc(t("setting_auto_expand_sidebar_on_drag_desc") || "Temporarily expand the left sidebar when dragging a task to easily move it to other lists, and auto-collapse on release (if it was collapsed). If the sidebar is already open with Fluent Tasks, it only reveals the list.").addToggle((toggle) => {
+    new import_obsidian21.Setting(containerEl).setName(t("setting_auto_expand_sidebar_on_drag_title") || "Auto-Expand Left Sidebar on Task Drag").setDesc(t("setting_auto_expand_sidebar_on_drag_desc") || "Temporarily expand the left sidebar when dragging a task to easily move it to other lists, and auto-collapse on release (if it was collapsed). If the sidebar is already open with Fluent Tasks, it only reveals the list.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.autoExpandSidebarOnDrag) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.autoExpandSidebarOnDrag = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName("Wrap Task Titles").setDesc("Wrap long task titles across multiple lines in the task list instead of truncating with ellipsis.").addToggle((toggle) => {
+    new import_obsidian21.Setting(containerEl).setName("Wrap Task Titles").setDesc("Wrap long task titles across multiple lines in the task list instead of truncating with ellipsis.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.wrapTaskTitles) != null ? _a : true).onChange(async (value) => {
         this.plugin.settings.wrapTaskTitles = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName("Center-Align Tasks").setDesc("Display task titles, steps, and metadata centered in the task list and modals. Enabled by default.").addToggle((toggle) => {
+    new import_obsidian21.Setting(containerEl).setName("Center-Align Tasks").setDesc("Display task titles, steps, and metadata centered in the task list and modals. Enabled by default.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.centerAlignTasks) != null ? _a : true).onChange(async (value) => {
         this.plugin.settings.centerAlignTasks = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName("Hidden star mode").setDesc("Hide the star (favorite) icon on tasks in the task list and modals, while still allowing starring via task context menu (first item) or hover hotkey. Disabled by default.").addToggle((toggle) => {
+    new import_obsidian21.Setting(containerEl).setName("Hidden star mode").setDesc("Hide the star (favorite) icon on tasks in the task list and modals, while still allowing starring via task context menu (first item) or hover hotkey. Disabled by default.").addToggle((toggle) => {
       var _a, _b;
       return toggle.setValue((_b = (_a = this.plugin.settings.hiddenStarMode) != null ? _a : this.plugin.settings.disableStars) != null ? _b : false).onChange(async (value) => {
         this.plugin.settings.hiddenStarMode = value;
@@ -48683,106 +48805,106 @@ var FluentTasksSettingTab = class extends import_obsidian22.PluginSettingTab {
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName("Show Subtasks Progress Badge").setDesc("Display step completion progress badge (e.g. 0/3 steps completed) at the bottom of the subtasks floating modal. Disabled by default.").addToggle((toggle) => {
+    new import_obsidian21.Setting(containerEl).setName("Show Subtasks Progress Badge").setDesc("Display step completion progress badge (e.g. 0/3 steps completed) at the bottom of the subtasks floating modal. Disabled by default.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.showStepsProgressPill) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.showStepsProgressPill = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName(t("setting_focused_lists_title") || "Focused lists").setDesc(t("setting_focused_lists_desc") || "Display focused list shortcuts and a quick selector next to the list title in the header. Disabled by default.").addToggle((toggle) => {
+    new import_obsidian21.Setting(containerEl).setName(t("setting_focused_lists_title") || "Focused lists").setDesc(t("setting_focused_lists_desc") || "Display focused list shortcuts and a quick selector next to the list title in the header. Disabled by default.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.enableFocusedLists) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.enableFocusedLists = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName("Quick Task Modal Action").setDesc("Choose whether selecting a task/list in the Quick Task Modal manages it directly in the popup or navigates and reveals it in the main workspace.").addDropdown((dropdown) => {
+    new import_obsidian21.Setting(containerEl).setName("Quick Task Modal Action").setDesc("Choose whether selecting a task/list in the Quick Task Modal manages it directly in the popup or navigates and reveals it in the main workspace.").addDropdown((dropdown) => {
       var _a;
       return dropdown.addOption("direct", "Direct In-Modal Management (Toggle & Add in popup)").addOption("navigate", "Navigate Workspace (Open list & details in workspace)").setValue((_a = this.plugin.settings.quickModalAction) != null ? _a : "direct").onChange(async (value) => {
         this.plugin.settings.quickModalAction = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName("Quick List Modal: Grid Board Layout").setDesc("Tile lists and groups across multi-column cards like a dashboard chart to fully display lists in the available screen space without scrolling. Turn off to revert to the classic single-column list.").addToggle((toggle) => {
+    new import_obsidian21.Setting(containerEl).setName("Quick List Modal: Grid Board Layout").setDesc("Tile lists and groups across multi-column cards like a dashboard chart to fully display lists in the available screen space without scrolling. Turn off to revert to the classic single-column list.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.quickListGridLayout) != null ? _a : true).onChange(async (value) => {
         this.plugin.settings.quickListGridLayout = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName("Quick List Modal: Min Column Gap").setDesc("Minimum horizontal gap (in px) between columns in the Quick List grid board layout (default: 16px).").addSlider((slider) => {
+    new import_obsidian21.Setting(containerEl).setName("Quick List Modal: Min Column Gap").setDesc("Minimum horizontal gap (in px) between columns in the Quick List grid board layout (default: 16px).").addSlider((slider) => {
       var _a;
       return slider.setLimits(10, 64, 2).setValue((_a = this.plugin.settings.quickListMinColGap) != null ? _a : 16).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.quickListMinColGap = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName("Quick List Modal: Min Row Gap").setDesc("Minimum vertical gap (in px) between stacked cards within the same column (default: 12px).").addSlider((slider) => {
+    new import_obsidian21.Setting(containerEl).setName("Quick List Modal: Min Row Gap").setDesc("Minimum vertical gap (in px) between stacked cards within the same column (default: 12px).").addSlider((slider) => {
       var _a;
       return slider.setLimits(8, 48, 2).setValue((_a = this.plugin.settings.quickListMinRowGap) != null ? _a : 12).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.quickListMinRowGap = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName("Quick List Modal: Max Card Width").setDesc("Maximum width (in px) for cards in the Quick List grid board layout. Prevents excessive horizontal empty space on large displays (default: 320px).").addSlider((slider) => {
+    new import_obsidian21.Setting(containerEl).setName("Quick List Modal: Max Card Width").setDesc("Maximum width (in px) for cards in the Quick List grid board layout. Prevents excessive horizontal empty space on large displays (default: 320px).").addSlider((slider) => {
       var _a;
       return slider.setLimits(220, 520, 10).setValue((_a = this.plugin.settings.quickListMaxCardWidth) != null ? _a : 320).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.quickListMaxCardWidth = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName("Quick List Modal: Focus Center List on Open").setDesc("Automatically focus the visually centered list when opening the Quick List board instead of the top-left list, enabling immediate multi-directional arrow navigation.").addToggle((toggle) => {
+    new import_obsidian21.Setting(containerEl).setName("Quick List Modal: Focus Center List on Open").setDesc("Automatically focus the visually centered list when opening the Quick List board instead of the top-left list, enabling immediate multi-directional arrow navigation.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.quickListFocusCenter) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.quickListFocusCenter = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName("Quick List Modal: Search Mode").setDesc("Choose whether the search bar in the Quick List modal searches lists or tasks by default.").addDropdown((dropdown) => {
+    new import_obsidian21.Setting(containerEl).setName("Quick List Modal: Search Mode").setDesc("Choose whether the search bar in the Quick List modal searches lists or tasks by default.").addDropdown((dropdown) => {
       var _a;
       return dropdown.addOption("list", "Search Lists").addOption("task", "Search Tasks").setValue((_a = this.plugin.settings.quickListSearchMode) != null ? _a : "list").onChange(async (value) => {
         this.plugin.settings.quickListSearchMode = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName("Quick List Modal: Title Alignment").setDesc("Choose whether list and group titles in the Quick List modal are centered or aligned to the left.").addDropdown((dropdown) => {
+    new import_obsidian21.Setting(containerEl).setName("Quick List Modal: Title Alignment").setDesc("Choose whether list and group titles in the Quick List modal are centered or aligned to the left.").addDropdown((dropdown) => {
       var _a;
       return dropdown.addOption("center", "Center (Default)").addOption("left", "Left").setValue((_a = this.plugin.settings.quickListTitleAlignment) != null ? _a : "center").onChange(async (value) => {
         this.plugin.settings.quickListTitleAlignment = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName("Auto-Expand Sidebar on Focus").setDesc("Automatically expand the left sidebar list panel when switching to Fluent Tasks tab (via Ctrl+Tab, Ctrl+Shift+Tab, or clicking the tab).").addToggle((toggle) => toggle.setValue(this.plugin.settings.autoExpandSidebar).onChange(async (value) => {
+    new import_obsidian21.Setting(containerEl).setName("Auto-Expand Sidebar on Focus").setDesc("Automatically expand the left sidebar list panel when switching to Fluent Tasks tab (via Ctrl+Tab, Ctrl+Shift+Tab, or clicking the tab).").addToggle((toggle) => toggle.setValue(this.plugin.settings.autoExpandSidebar).onChange(async (value) => {
       this.plugin.settings.autoExpandSidebar = value;
       await this.plugin.saveSettings();
     }));
-    new import_obsidian22.Setting(containerEl).setName("Auto-Collapse Sidebar on Tab Switch").setDesc("Automatically collapse the sidebar when switching away to other tabs (notes, settings) if the sidebar is currently displaying Fluent Tasks.").addToggle((toggle) => {
+    new import_obsidian21.Setting(containerEl).setName("Auto-Collapse Sidebar on Tab Switch").setDesc("Automatically collapse the sidebar when switching away to other tabs (notes, settings) if the sidebar is currently displaying Fluent Tasks.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.autoCollapseSidebarOnSwitch) != null ? _a : true).onChange(async (value) => {
         this.plugin.settings.autoCollapseSidebarOnSwitch = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName("Search: Hide Completed Tasks").setDesc("When searching, hide completed tasks by default. Can also be toggled directly in the search modal.").addToggle((toggle) => toggle.setValue(this.plugin.settings.searchHideCompleted).onChange(async (value) => {
+    new import_obsidian21.Setting(containerEl).setName("Search: Hide Completed Tasks").setDesc("When searching, hide completed tasks by default. Can also be toggled directly in the search modal.").addToggle((toggle) => toggle.setValue(this.plugin.settings.searchHideCompleted).onChange(async (value) => {
       this.plugin.settings.searchHideCompleted = value;
       await this.plugin.saveSettings();
     }));
-    new import_obsidian22.Setting(containerEl).setName("Deletion undo duration").setDesc("Duration in seconds that the floating undo toast remains visible after deleting a task, step, or list (default: 2.5s).").addSlider((slider) => {
+    new import_obsidian21.Setting(containerEl).setName("Deletion undo duration").setDesc("Duration in seconds that the floating undo toast remains visible after deleting a task, step, or list (default: 2.5s).").addSlider((slider) => {
       var _a;
       return slider.setLimits(1, 10, 0.5).setValue((_a = this.plugin.settings.undoDurationSeconds) != null ? _a : 2.5).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.undoDurationSeconds = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName("Task weight mode").setDesc("Enable 1-9 priority score ranking for tasks (9 is highest, default is 5). When enabled, tasks are dynamically prioritized by weight. Use mouse wheel or click the badge to edit the weight directly.").addToggle((toggle) => {
+    new import_obsidian21.Setting(containerEl).setName("Task weight mode").setDesc("Enable 1-9 priority score ranking for tasks (9 is highest, default is 5). When enabled, tasks are dynamically prioritized by weight. Use mouse wheel or click the badge to edit the weight directly.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.enableTaskWeightMode) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.enableTaskWeightMode = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName("Hide Ribbon Icon").setDesc("Hide the Fluent Tasks icon in the left ribbon.").addToggle((toggle) => {
+    new import_obsidian21.Setting(containerEl).setName("Hide Ribbon Icon").setDesc("Hide the Fluent Tasks icon in the left ribbon.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.hideRibbonIcon) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.hideRibbonIcon = value;
@@ -48794,10 +48916,10 @@ var FluentTasksSettingTab = class extends import_obsidian22.PluginSettingTab {
 };
 
 // src/modals/QuickTaskModal.ts
-var import_obsidian24 = require("obsidian");
+var import_obsidian23 = require("obsidian");
 
 // src/modals/QuickTaskModalView.svelte
-var import_obsidian23 = require("obsidian");
+var import_obsidian22 = require("obsidian");
 function get_each_context9(ctx, list, i) {
   const child_ctx = ctx.slice();
   child_ctx[175] = list[i];
@@ -54224,7 +54346,7 @@ function instance11($$self, $$props, $$invalidate) {
             categoryFilepath: dragData.sourceFilepath
           });
           await refreshStarredCount();
-          new import_obsidian23.Notice(`Starred task: "${dragData.task.title}"`);
+          new import_obsidian22.Notice(`Starred task: "${dragData.task.title}"`);
           if ((selectedCategory == null ? void 0 : selectedCategory.filepath) === STARRED_CATEGORY_PATH) {
             await loadTasksForCategory(selectedCategory);
           }
@@ -54239,7 +54361,7 @@ function instance11($$self, $$props, $$invalidate) {
       });
       EventBus.emit("task:updated" /* TASK_UPDATED */, { categoryFilepath: targetCat.filepath });
       await loadData();
-      new import_obsidian23.Notice(`Moved task to "${targetCat.name}"`);
+      new import_obsidian22.Notice(`Moved task to "${targetCat.name}"`);
     } catch (e) {
       console.error("[QuickTaskModal] Failed to move task:", e);
     }
@@ -54250,7 +54372,7 @@ function instance11($$self, $$props, $$invalidate) {
     if (now2 - lastDragNoticeTime > 2500) {
       lastDragNoticeTime = now2;
       const message = isChinese() ? "\u5F53\u524D\u60AC\u6D6EUI\u4E0D\u652F\u6301\u62D6\u62FD\u5206\u7EC4\u3002\n\u539F\u56E0\uFF1A\u6392\u5217list\u4EE3\u7801\u672C\u8EAB\u8986\u76D6\u4E86\u62D6\u62FD\u64CD\u4F5C\uFF1B\u5982\u9700\u8C03\u6574\u5206\u7EC4\u987A\u5E8F\uFF0C\u8BF7\u5728\u5DE6\u4FA7\u8FB9\u680F\u64CD\u4F5C\u3002" : "Dragging groups is not supported in Quick View.\nReason: List arrangement code overrides drag operations; to adjust group order, please use the sidebar.";
-      new import_obsidian23.Notice(message, 5e3);
+      new import_obsidian22.Notice(message, 5e3);
     }
   }
   function handleListDragStart(e, item) {
@@ -54375,7 +54497,7 @@ function instance11($$self, $$props, $$invalidate) {
       return;
     e.preventDefault();
     e.stopPropagation();
-    const menu = new import_obsidian23.Menu();
+    const menu = new import_obsidian22.Menu();
     menu.addItem((i) => {
       i.setTitle("Rename (F2)").setIcon("edit").onClick(() => startRenameItem(item));
     });
@@ -54413,7 +54535,7 @@ function instance11($$self, $$props, $$invalidate) {
       await loadData();
       await selectCategory(newCat);
     } catch (e) {
-      new import_obsidian23.Notice(`Failed to create list: ${e}`);
+      new import_obsidian22.Notice(`Failed to create list: ${e}`);
     }
     $$invalidate(17, isAddingList = false);
     $$invalidate(18, newListName = "");
@@ -54439,7 +54561,7 @@ function instance11($$self, $$props, $$invalidate) {
       await dataService.createGroup(name);
       await loadData();
     } catch (e) {
-      new import_obsidian23.Notice(`Failed to create group: ${e}`);
+      new import_obsidian22.Notice(`Failed to create group: ${e}`);
     }
     $$invalidate(19, isAddingGroup = false);
     $$invalidate(20, newGroupName = "");
@@ -54487,7 +54609,7 @@ function instance11($$self, $$props, $$invalidate) {
       $$invalidate(5, completedTasks = [...completedTasks]);
     }
     await refreshStarredCount();
-    new import_obsidian23.Notice(taskItem.starred ? `Starred task: "${taskItem.title}"` : `Removed star from: "${taskItem.title}"`);
+    new import_obsidian22.Notice(taskItem.starred ? `Starred task: "${taskItem.title}"` : `Removed star from: "${taskItem.title}"`);
   }
   async function moveTaskToCategory(task, targetCat) {
     var _a2;
@@ -54510,13 +54632,13 @@ function instance11($$self, $$props, $$invalidate) {
     });
     await refreshTaskCounts();
     await refreshStarredCount();
-    new import_obsidian23.Notice(isChinese() ? `\u5DF2\u5C06\u4EFB\u52A1\u79FB\u52A8\u81F3 "${targetCat.name}"` : `Moved task to "${targetCat.name}"`);
+    new import_obsidian22.Notice(isChinese() ? `\u5DF2\u5C06\u4EFB\u52A1\u79FB\u52A8\u81F3 "${targetCat.name}"` : `Moved task to "${targetCat.name}"`);
   }
   function handleTaskContextMenu(e, task) {
     var _a2;
     e.preventDefault();
     e.stopPropagation();
-    const menu = new import_obsidian23.Menu();
+    const menu = new import_obsidian22.Menu();
     menu.addItem((item) => {
       item.setTitle(t("add_side_step") || "Add side step").setIcon("list-plus").onClick(() => {
         openStepsModal(task);
@@ -55298,7 +55420,7 @@ var QuickTaskModalView = class extends SvelteComponent {
 var QuickTaskModalView_default = QuickTaskModalView;
 
 // src/modals/QuickTaskModal.ts
-var QuickTaskModal = class extends import_obsidian24.Modal {
+var QuickTaskModal = class extends import_obsidian23.Modal {
   constructor(app, plugin, dataService) {
     super(app);
     this.component = null;
@@ -55337,8 +55459,8 @@ var QuickTaskModal = class extends import_obsidian24.Modal {
 };
 
 // src/modals/QuickListModal.ts
-var import_obsidian25 = require("obsidian");
-var QuickListModal = class extends import_obsidian25.Modal {
+var import_obsidian24 = require("obsidian");
+var QuickListModal = class extends import_obsidian24.Modal {
   constructor(app, plugin, dataService) {
     super(app);
     this.component = null;
@@ -55383,8 +55505,8 @@ var QuickListModal = class extends import_obsidian25.Modal {
 };
 
 // src/modals/TaskDetailModal.ts
-var import_obsidian26 = require("obsidian");
-var TaskDetailModal = class extends import_obsidian26.Modal {
+var import_obsidian25 = require("obsidian");
+var TaskDetailModal = class extends import_obsidian25.Modal {
   constructor(app, plugin, dataService, task, categoryFilepath) {
     super(app);
     this.component = null;
@@ -55478,13 +55600,13 @@ var TaskDetailModal = class extends import_obsidian26.Modal {
 };
 
 // src/main.ts
-var TaskSidebarViewWrapper = class extends import_obsidian27.ItemView {
+var TaskSidebarViewWrapper = class extends import_obsidian26.ItemView {
   constructor(leaf, dataService, plugin) {
     super(leaf);
     this.component = null;
     this.dataService = dataService;
     this.plugin = plugin;
-    this.scope = new import_obsidian27.Scope(this.app.scope);
+    this.scope = new import_obsidian26.Scope(this.app.scope);
     this.scope.register([], "F2", (evt) => {
       var _a;
       if ((_a = this.component) == null ? void 0 : _a.triggerRenameHoveredOrActive()) {
@@ -55529,7 +55651,7 @@ var TaskSidebarViewWrapper = class extends import_obsidian27.ItemView {
     return this.component;
   }
 };
-var TaskMainViewWrapper = class extends import_obsidian27.ItemView {
+var TaskMainViewWrapper = class extends import_obsidian26.ItemView {
   // Enables Obsidian Leaf Navigation & History tracking
   constructor(leaf, dataService, plugin) {
     super(leaf);
@@ -55538,7 +55660,7 @@ var TaskMainViewWrapper = class extends import_obsidian27.ItemView {
     this.navigation = true;
     this.dataService = dataService;
     this.plugin = plugin;
-    this.scope = new import_obsidian27.Scope(this.app.scope);
+    this.scope = new import_obsidian26.Scope(this.app.scope);
     this.scope.register(["Mod"], "f", (evt) => {
       var _a;
       if ((_a = this.component) == null ? void 0 : _a.openSearch) {
@@ -55600,7 +55722,7 @@ var TaskMainViewWrapper = class extends import_obsidian27.ItemView {
     await super.setState(state, result);
     if (state && state.categoryFilepath) {
       const file = this.app.vault.getAbstractFileByPath(state.categoryFilepath);
-      if (file && file instanceof import_obsidian27.TFile) {
+      if (file && file instanceof import_obsidian26.TFile) {
         const cat = {
           id: state.categoryFilepath,
           type: "category",
@@ -55635,7 +55757,7 @@ var TaskMainViewWrapper = class extends import_obsidian27.ItemView {
     const state = this.getState();
     if (state == null ? void 0 : state.categoryFilepath) {
       const file = this.app.vault.getAbstractFileByPath(state.categoryFilepath);
-      if (file && file instanceof import_obsidian27.TFile) {
+      if (file && file instanceof import_obsidian26.TFile) {
         const cat = {
           id: state.categoryFilepath,
           type: "category",
@@ -55661,13 +55783,13 @@ var TaskMainViewWrapper = class extends import_obsidian27.ItemView {
     const cat = (_a = this.component) == null ? void 0 : _a.getCurrentCategory();
     if (cat && cat.filepath) {
       const f = this.app.vault.getAbstractFileByPath(cat.filepath);
-      if (f instanceof import_obsidian27.TFile)
+      if (f instanceof import_obsidian26.TFile)
         return f;
     }
     return null;
   }
 };
-var TaskDetailViewWrapper = class extends import_obsidian27.ItemView {
+var TaskDetailViewWrapper = class extends import_obsidian26.ItemView {
   constructor(leaf, dataService, plugin) {
     super(leaf);
     this.component = null;
@@ -55701,7 +55823,7 @@ var TaskDetailViewWrapper = class extends import_obsidian27.ItemView {
     return this.component;
   }
 };
-var FluentTasksPlugin = class extends import_obsidian27.Plugin {
+var FluentTasksPlugin = class extends import_obsidian26.Plugin {
   constructor() {
     super(...arguments);
     this.ribbonIconEl = null;
@@ -55781,7 +55903,7 @@ var FluentTasksPlugin = class extends import_obsidian27.Plugin {
         leftSplit.collapse();
       }
       if (!isQuickListHotkeyAssigned(this.app)) {
-        new import_obsidian27.Notice(t("warn_bind_hotkey_notice") || "\u26A0\uFE0F [Fluent Tasks] 'Hide Left Sidebar' is enabled, but no hotkey is bound for the Floating UI! Please assign a hotkey in Settings -> Hotkeys.", 8e3);
+        new import_obsidian26.Notice(t("warn_bind_hotkey_notice") || "\u26A0\uFE0F [Fluent Tasks] 'Hide Left Sidebar' is enabled, but no hotkey is bound for the Floating UI! Please assign a hotkey in Settings -> Hotkeys.", 8e3);
       }
     } else {
       await this.activateView(VIEW_TYPE_SIDEBAR, "left");
@@ -55973,7 +56095,7 @@ var FluentTasksPlugin = class extends import_obsidian27.Plugin {
             void Logger.log(`[LinkedNote] Auto-migrated ${res.migratedCount} legacy linked note(s):`, res.details);
           }
         });
-        let lastActiveViewType = ((_a = this.app.workspace.getActiveViewOfType(import_obsidian27.ItemView)) == null ? void 0 : _a.getViewType()) || "";
+        let lastActiveViewType = ((_a = this.app.workspace.getActiveViewOfType(import_obsidian26.ItemView)) == null ? void 0 : _a.getViewType()) || "";
         this.registerEvent(
           this.app.workspace.on("active-leaf-change", (leaf) => {
             var _a2;
@@ -56034,7 +56156,7 @@ var FluentTasksPlugin = class extends import_obsidian27.Plugin {
         };
         this.registerEvent(
           this.app.vault.on("modify", (file) => {
-            if (!file || !(file instanceof import_obsidian27.TFile))
+            if (!file || !(file instanceof import_obsidian26.TFile))
               return;
             if (isCategoryFile(file.path)) {
               if (this.dataService.isInternalWrite(file.path)) {
@@ -56053,7 +56175,7 @@ var FluentTasksPlugin = class extends import_obsidian27.Plugin {
         );
         this.registerEvent(
           this.app.metadataCache.on("changed", (file) => {
-            if (file instanceof import_obsidian27.TFile && file.path.startsWith(DATA_FOLDER + "/") && file.extension === "md" && !isCategoryFile(file.path)) {
+            if (file instanceof import_obsidian26.TFile && file.path.startsWith(DATA_FOLDER + "/") && file.extension === "md" && !isCategoryFile(file.path)) {
               if (!this.dataService.isInternalWrite(file.path)) {
                 void LinkedNoteService.syncNotePropertyToTask(this.app, this.dataService, file);
               }
@@ -56078,7 +56200,7 @@ var FluentTasksPlugin = class extends import_obsidian27.Plugin {
                 file.path
               );
             }
-            if (file instanceof import_obsidian27.TFile && file.extension === "md") {
+            if (file instanceof import_obsidian26.TFile && file.extension === "md") {
               if (!LinkedNoteService.isInternalRename(oldPath, file.path)) {
                 void LinkedNoteService.syncNoteRenameToTasks(
                   this.app,
@@ -56493,7 +56615,7 @@ var FluentTasksPlugin = class extends import_obsidian27.Plugin {
    */
   isPluginPageActive() {
     var _a;
-    const activeType = (_a = this.app.workspace.getActiveViewOfType(import_obsidian27.ItemView)) == null ? void 0 : _a.getViewType();
+    const activeType = (_a = this.app.workspace.getActiveViewOfType(import_obsidian26.ItemView)) == null ? void 0 : _a.getViewType();
     if (activeType === VIEW_TYPE_MAIN || activeType === VIEW_TYPE_SIDEBAR || activeType === VIEW_TYPE_DETAIL) {
       return true;
     }

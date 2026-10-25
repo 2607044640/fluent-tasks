@@ -835,8 +835,6 @@
                 const savedPath = await saveImageAttachment(file, actualApp, categoryFilepath);
                 if (!savedPath) continue;
 
-                new Notice(t("image_pasted") || "Image attached / 图片已附加");
-
                 if (ft && ft.type === "title") {
                     if (task) {
                         task.titleImages = [...(task.titleImages || []), savedPath];
@@ -885,7 +883,6 @@
         for (const file of imgFiles) {
             const savedPath = await saveImageAttachment(file, actualApp, categoryFilepath);
             if (!savedPath) continue;
-            new Notice(t("image_pasted") || "Image attached / 图片已附加");
 
             if (ft && ft.type === "title") {
                 task.titleImages = [...(task.titleImages || []), savedPath];

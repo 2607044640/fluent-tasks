@@ -3,10 +3,11 @@
     import type { App } from "obsidian";
     import {
         resolveImageResourceUrl,
+        resolveImageTFile,
         copyImageToClipboard,
         getImageBaseName,
     } from "../utils/imageAttachmentUtils";
-    import { t } from "../lang/helpers";
+    import { t, isChinese } from "../lang/helpers";
 
     export let app: App;
     export let imageRef: string;
@@ -21,6 +22,37 @@
 
     function toggleZoom() {
         isZoomed = !isZoomed;
+    }
+
+    async function handleOpen() {
+        const file = resolveImageTFile(imageRef, app);
+        if (file) {
+            let targetLeaf: any = null;
+            app.workspace.iterateAllLeaves((leaf: any) => {
+                if (leaf.view?.file?.path === file.path) {
+                    targetLeaf = leaf;
+                }
+            });
+            if (targetLeaf) {
+                app.workspace.setActiveLeaf(targetLeaf, { focus: true });
+            } else {
+                const leaf = app.workspace.getLeaf("tab");
+                await leaf.openFile(file);
+                app.workspace.setActiveLeaf(leaf, { focus: true });
+            }
+        } else {
+            let clean = imageRef.trim().replace(/^!*\[\[(.*?)\]\]$/, "$1").trim();
+            if (clean.includes("|")) clean = clean.split("|")[0].trim();
+            const mdMatch = clean.match(/^!\[.*?\]\((.*?)\)$/);
+            if (mdMatch) clean = mdMatch[1].trim();
+
+            if (clean.startsWith("http://") || clean.startsWith("https://")) {
+                window.open(clean, "_blank");
+            } else {
+                await app.workspace.openLinkText(clean, "", true);
+            }
+        }
+        closeModal();
     }
 
     async function handleCopy() {
@@ -49,6 +81,13 @@
             e.preventDefault();
             e.stopPropagation();
             closeModal();
+            return;
+        }
+
+        if ((e.key === "o" || e.key === "O") && !e.altKey && !e.ctrlKey && !e.metaKey) {
+            e.preventDefault();
+            e.stopPropagation();
+            void handleOpen();
             return;
         }
 
@@ -98,6 +137,19 @@
                 <span>{fileName}</span>
             </div>
             <div class="task-img-preview-actions">
+                <button
+                    type="button"
+                    class="task-img-preview-btn is-open"
+                    title={t("image_open_tooltip") || "Open original file in Obsidian / 在 Obsidian 中打开原始文件"}
+                    on:click={handleOpen}
+                >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                        <polyline points="15 3 21 3 21 9"/>
+                        <line x1="10" y1="14" x2="21" y2="3"/>
+                    </svg>
+                    <span>{t("image_open") || (isChinese() ? "打开" : "Open")}</span>
+                </button>
                 <button
                     type="button"
                     class="task-img-preview-btn"
@@ -160,6 +212,9 @@
 
         <!-- Footer keyboard helper badges -->
         <div class="task-img-preview-footer">
+            <span class="task-img-preview-badge">
+                <kbd>O</kbd> {t("image_hint_open") || (isChinese() ? "打开" : "Open")}
+            </span>
             <span class="task-img-preview-badge">
                 <kbd>Click</kbd> {isZoomed ? (t("image_hint_fit") || "Fit / 适应屏幕") : (t("image_hint_zoom") || "Zoom 1:1 / 放大原图")}
             </span>

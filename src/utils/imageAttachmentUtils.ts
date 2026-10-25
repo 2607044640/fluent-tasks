@@ -548,10 +548,25 @@ export function resolveImageTFile(imageRef: string, app: App): TFile | null {
     const mdMatch = clean.match(/^!\[.*?\]\((.*?)\)$/);
     if (mdMatch) clean = mdMatch[1].trim();
 
+    try {
+        clean = decodeURIComponent(clean);
+    } catch {
+        // ignore
+    }
+    clean = clean.replace(/^\/+/, "");
+
     const file = app.vault.getAbstractFileByPath(clean);
     if (file instanceof TFile) return file;
     const linkFile = app.metadataCache.getFirstLinkpathDest(clean, "");
-    return linkFile instanceof TFile ? linkFile : null;
+    if (linkFile instanceof TFile) return linkFile;
+
+    const baseName = clean.includes("/") ? clean.substring(clean.lastIndexOf("/") + 1) : clean;
+    if (baseName && baseName !== clean) {
+        const linkFileBase = app.metadataCache.getFirstLinkpathDest(baseName, "");
+        if (linkFileBase instanceof TFile) return linkFileBase;
+    }
+
+    return null;
 }
 
 /**

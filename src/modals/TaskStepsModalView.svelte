@@ -471,8 +471,6 @@
                 const savedPath = await saveImageAttachment(file, actualApp, categoryFilepath);
                 if (!savedPath) continue;
 
-                new Notice(t("image_pasted") || "Image attached / 图片已附加");
-
                 if (focusedStepId && focusedStepId !== "__new__") {
                     const targetStep = steps.find(s => s.id === focusedStepId);
                     if (targetStep) {
@@ -511,7 +509,6 @@
         for (const file of imgFiles) {
             const savedPath = await saveImageAttachment(file, actualApp, categoryFilepath);
             if (!savedPath) continue;
-            new Notice(t("image_pasted") || "Image attached / 图片已附加");
             if (focusedStepId && focusedStepId !== "__new__") {
                 const targetStep = steps.find(s => s.id === focusedStepId);
                 if (targetStep) {
