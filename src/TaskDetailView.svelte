@@ -742,33 +742,33 @@
     // =============================================
     // Image Attachment Helpers
     // =============================================
-    function removeImageFromTitle(imageRef: string) {
+    async function removeImageFromTitle(imageRef: string) {
         if (!task) return;
         removeImageFromTaskTitle(task, imageRef);
         task = task;
         if (isTaskEmpty(task)) {
-            void checkAndDeleteEmptyTask();
+            await checkAndDeleteEmptyTask();
             return;
         }
-        immediateSave();
+        await immediateSave();
         if (actualApp && dataService) {
-            void cleanupOrphanImageAttachment(imageRef, actualApp, dataService);
+            await cleanupOrphanImageAttachment(imageRef, actualApp, dataService, task.id);
         }
     }
 
-    function removeImageFromStep(stepId: string | undefined, imageRef: string) {
+    async function removeImageFromStep(stepId: string | undefined, imageRef: string) {
         if (!task || !task.steps || !stepId) return;
         const step = task.steps.find(s => s.id === stepId);
         if (!step) return;
         removeImageFromStepItem(step, imageRef);
         if (isStepEmpty(step)) {
-            void deleteStep(stepId);
+            await deleteStep(stepId);
             return;
         }
         task = task;
-        immediateSave();
+        await immediateSave();
         if (actualApp && dataService) {
-            void cleanupOrphanImageAttachment(imageRef, actualApp, dataService);
+            await cleanupOrphanImageAttachment(imageRef, actualApp, dataService, undefined, stepId);
         }
     }
 
@@ -783,20 +783,20 @@
         scheduleSave();
     }
 
-    function removeNewStepImage(imageRef: string) {
+    async function removeNewStepImage(imageRef: string) {
         newStepImages = newStepImages.filter(img => !isSameImageRef(img, imageRef));
         if (actualApp && dataService) {
-            void cleanupOrphanImageAttachment(imageRef, actualApp, dataService);
+            await cleanupOrphanImageAttachment(imageRef, actualApp, dataService);
         }
     }
 
-    function removeImageFromNote(imageRef: string) {
+    async function removeImageFromNote(imageRef: string) {
         if (!task) return;
         removeImageFromTaskNote(task, imageRef);
         task = task;
-        immediateSave();
+        await immediateSave();
         if (actualApp && dataService) {
-            void cleanupOrphanImageAttachment(imageRef, actualApp, dataService);
+            await cleanupOrphanImageAttachment(imageRef, actualApp, dataService, task.id);
         }
     }
 
@@ -805,13 +805,13 @@
         const { imageRef, stepId, isNewDraft, isNote, isTitle } = hoveredImageRef;
         await copyImageToClipboard(imageRef, actualApp, t("image_cut") || "Image cut to clipboard / 图片已剪切至剪贴板");
         if (isNewDraft) {
-            removeNewStepImage(imageRef);
+            await removeNewStepImage(imageRef);
         } else if (stepId) {
-            removeImageFromStep(stepId, imageRef);
+            await removeImageFromStep(stepId, imageRef);
         } else if (isTitle) {
-            removeImageFromTitle(imageRef);
+            await removeImageFromTitle(imageRef);
         } else if (isNote) {
-            removeImageFromNote(imageRef);
+            await removeImageFromNote(imageRef);
         }
         hoveredImageRef = null;
     }
@@ -970,7 +970,7 @@
         await immediateSave();
         let trashedImages: TrashedImageBackup[] = [];
         if (stepImages.length > 0 && actualApp && dataService) {
-            trashedImages = await cleanupOrphanImages(stepImages, actualApp, dataService);
+            trashedImages = await cleanupOrphanImages(stepImages, actualApp, dataService, undefined, stepId);
         }
         EventBus.emit(EventName.STEP_DELETED, {
             taskId: task.id,

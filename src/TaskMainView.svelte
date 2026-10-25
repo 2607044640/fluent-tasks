@@ -33,6 +33,7 @@
         saveImageAttachment,
         getAllImagesInTask,
         cleanupOrphanImages,
+        cleanupOrphanImageAttachment,
         isSameImageRef,
     } from "./utils/imageAttachmentUtils";
     import type { TrashedImageBackup } from "./types";
@@ -2205,6 +2206,9 @@
                 categoryFilepath: targetCatPath,
                 source: 'main-view',
             });
+        }
+        if (actualApp && dataService) {
+            await cleanupOrphanImageAttachment(imageRef, actualApp, dataService, task.id);
         }
     }
 

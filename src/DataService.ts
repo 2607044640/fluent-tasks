@@ -5,7 +5,7 @@ import { CategoryService } from "./services/CategoryService";
 import { TaskService } from "./services/TaskService";
 import { LinkedNoteService } from "./services/LinkedNoteService";
 import { getFlatCategories } from "./utils/sidebarTreeUtils";
-import { getAllImagesInTask, cleanupOrphanImages } from "./utils/imageAttachmentUtils";
+import { getAllImagesInTask, cleanupOrphanImages, isSameImageRef } from "./utils/imageAttachmentUtils";
 
 /**
  * DataService.ts
@@ -161,12 +161,44 @@ export class DataService {
             for (const task of tasks) {
                 const targetFile = task.sourceFilepath || await this.findCategoryForTaskId(task.id);
                 if (targetFile) {
-                    await this.taskSvc.updateTask(targetFile, task);
+                    await this.updateTask(targetFile, task);
                 }
             }
             return;
         }
-        return this.taskSvc.saveTasks(categoryFilepath, tasks);
+
+        // Detect any removed images across the file before saving
+        let removedImages: string[] = [];
+        try {
+            const oldTasks = await this.taskSvc.getTasks(categoryFilepath);
+            const newImgs: string[] = [];
+            for (const t of tasks) {
+                for (const img of getAllImagesInTask(t)) {
+                    newImgs.push(img);
+                }
+            }
+            for (const oldT of oldTasks) {
+                for (const oldImg of getAllImagesInTask(oldT)) {
+                    if (!newImgs.some(newImg => isSameImageRef(newImg, oldImg))) {
+                        if (!removedImages.some(r => isSameImageRef(r, oldImg))) {
+                            removedImages.push(oldImg);
+                        }
+                    }
+                }
+            }
+        } catch (err) {
+            console.warn("[FluentTasks] Error checking removed images in saveTasks:", err);
+        }
+
+        await this.taskSvc.saveTasks(categoryFilepath, tasks);
+
+        if (removedImages.length > 0) {
+            try {
+                await cleanupOrphanImages(removedImages, this.app, this);
+            } catch (err) {
+                console.warn("[FluentTasks] Error cleaning orphan images in saveTasks:", err);
+            }
+        }
     }
 
     async addTask(categoryFilepath: string, title: string): Promise<TaskItem> {
@@ -187,14 +219,37 @@ export class DataService {
     }
 
     async updateTask(categoryFilepath: string, updatedTask: TaskItem): Promise<void> {
-        if (categoryFilepath === STARRED_CATEGORY_PATH) {
-            const targetFile = updatedTask.sourceFilepath || await this.findCategoryForTaskId(updatedTask.id);
-            if (targetFile) {
-                return this.taskSvc.updateTask(targetFile, updatedTask);
-            }
+        const effectiveFilepath = categoryFilepath === STARRED_CATEGORY_PATH
+            ? (updatedTask.sourceFilepath || await this.findCategoryForTaskId(updatedTask.id) || categoryFilepath)
+            : categoryFilepath;
+
+        if (categoryFilepath === STARRED_CATEGORY_PATH && !effectiveFilepath) {
             throw new Error(`Failed to locate source category for task ${updatedTask.id}`);
         }
-        return this.taskSvc.updateTask(categoryFilepath, updatedTask);
+
+        // Detect any removed images from this specific task before update
+        let removedImages: string[] = [];
+        try {
+            const existingTasks = await this.taskSvc.getTasks(effectiveFilepath);
+            const oldTask = existingTasks.find(t => t.id === updatedTask.id);
+            if (oldTask) {
+                const oldImgs = getAllImagesInTask(oldTask);
+                const newImgs = getAllImagesInTask(updatedTask);
+                removedImages = oldImgs.filter(oldImg => !newImgs.some(newImg => isSameImageRef(newImg, oldImg)));
+            }
+        } catch (err) {
+            console.warn("[FluentTasks] Error checking existing task images before update:", err);
+        }
+
+        await this.taskSvc.updateTask(effectiveFilepath, updatedTask);
+
+        if (removedImages.length > 0) {
+            try {
+                await cleanupOrphanImages(removedImages, this.app, this, updatedTask.id);
+            } catch (err) {
+                console.warn("[FluentTasks] Error cleaning up removed images after task update:", err);
+            }
+        }
     }
 
     async deleteTask(categoryFilepath: string, task: TaskItem): Promise<TrashedImageBackup[]> {
@@ -204,7 +259,7 @@ export class DataService {
             if (targetFile) {
                 await this.taskSvc.deleteTask(targetFile, task);
                 if (imagesToInspect.length > 0) {
-                    return cleanupOrphanImages(imagesToInspect, this.app, this);
+                    return cleanupOrphanImages(imagesToInspect, this.app, this, task.id);
                 }
                 return [];
             }
@@ -212,7 +267,7 @@ export class DataService {
         }
         await this.taskSvc.deleteTask(categoryFilepath, task);
         if (imagesToInspect.length > 0) {
-            return cleanupOrphanImages(imagesToInspect, this.app, this);
+            return cleanupOrphanImages(imagesToInspect, this.app, this, task.id);
         }
         return [];
     }

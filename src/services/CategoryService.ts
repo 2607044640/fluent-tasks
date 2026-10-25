@@ -4,6 +4,8 @@ import { CategoryInfo, DATA_FOLDER, SidebarItem, SidebarItemState, GroupInfo, Ev
 import { EventBus } from "../EventBus";
 import { AtomicIOPipeline } from "./AtomicIOPipeline";
 import { resolveUniqueName } from "../utils/sidebarTreeUtils";
+import { MarkdownParser } from "../MarkdownParser";
+import { getAllImagesInTask, cleanupOrphanImages, isSameImageRef } from "../utils/imageAttachmentUtils";
 
 export class CategoryService {
     private app: App;
@@ -343,9 +345,18 @@ export class CategoryService {
         const basename = filepath.split("/").pop()?.replace(/\.md$/, "") || "";
 
         let fileContent = "";
+        const removedImages: string[] = [];
         if (file && file instanceof TFile) {
             try {
                 fileContent = await this.app.vault.read(file);
+                const tasks = MarkdownParser.parseTasksFromMarkdown(fileContent);
+                for (const t of tasks) {
+                    for (const img of getAllImagesInTask(t)) {
+                        if (!removedImages.some(r => isSameImageRef(r, img))) {
+                            removedImages.push(img);
+                        }
+                    }
+                }
             } catch (e) {
                 console.error("Failed to read category file before deletion:", e);
             }
@@ -380,6 +391,14 @@ export class CategoryService {
             this.io.markInternalWrite(filepath);
             await this.app.fileManager.trashFile(file);
             Logger.log("Moved category to trash:", filepath);
+
+            if (removedImages.length > 0) {
+                try {
+                    await cleanupOrphanImages(removedImages, this.app, (this as any).dataService || null);
+                } catch (err) {
+                    console.warn("[FluentTasks] Error cleaning orphan images after category deletion:", err);
+                }
+            }
         }
 
         // Always clean up from sidebar state, even if file on disk was already missing/trashed

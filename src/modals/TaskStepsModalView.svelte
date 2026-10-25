@@ -336,7 +336,7 @@
         await persistTask();
         let trashedImages: TrashedImageBackup[] = [];
         if (stepImages.length > 0 && actualApp && dataService) {
-            trashedImages = await cleanupOrphanImages(stepImages, actualApp, dataService);
+            trashedImages = await cleanupOrphanImages(stepImages, actualApp, dataService, undefined, stepId);
         }
         EventBus.emit(EventName.STEP_DELETED, {
             taskId: task.id,
@@ -418,26 +418,26 @@
         return !hasText && !hasImages;
     }
 
-    function removeImageFromStep(stepId: string | undefined, imageRef: string) {
+    async function removeImageFromStep(stepId: string | undefined, imageRef: string) {
         if (!stepId) return;
         const step = steps.find(s => s.id === stepId);
         if (!step) return;
         removeImageFromStepItem(step, imageRef);
         if (isStepEmpty(step)) {
-            void deleteStep(stepId);
+            await deleteStep(stepId);
             return;
         }
         steps = [...steps];
-        scheduleSave();
+        await persistTask();
         if (actualApp && dataService) {
-            void cleanupOrphanImageAttachment(imageRef, actualApp, dataService);
+            await cleanupOrphanImageAttachment(imageRef, actualApp, dataService, undefined, stepId);
         }
     }
 
-    function removeNewStepImage(imageRef: string) {
+    async function removeNewStepImage(imageRef: string) {
         newStepImages = newStepImages.filter(img => !isSameImageRef(img, imageRef));
         if (actualApp && dataService) {
-            void cleanupOrphanImageAttachment(imageRef, actualApp, dataService);
+            await cleanupOrphanImageAttachment(imageRef, actualApp, dataService);
         }
     }
 
@@ -446,9 +446,9 @@
         const { imageRef, stepId, isNewDraft } = hoveredImageRef;
         await copyImageToClipboard(imageRef, actualApp, t("image_cut") || "Image cut to clipboard / 图片已剪切至剪贴板");
         if (isNewDraft) {
-            removeNewStepImage(imageRef);
+            await removeNewStepImage(imageRef);
         } else if (stepId) {
-            removeImageFromStep(stepId, imageRef);
+            await removeImageFromStep(stepId, imageRef);
         }
         hoveredImageRef = null;
     }

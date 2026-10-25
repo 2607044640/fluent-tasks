@@ -411,8 +411,24 @@ export function getImagesFromClipboard(e: ClipboardEvent): File[] {
 export function isSameImageRef(a: string, b: string): boolean {
     if (!a || !b) return false;
     if (a === b) return true;
-    const cleanA = a.replace(/^!*\[\[(.*?)\]\]$/, "$1").split("|")[0].trim().toLowerCase();
-    const cleanB = b.replace(/^!*\[\[(.*?)\]\]$/, "$1").split("|")[0].trim().toLowerCase();
+
+    const normalize = (ref: string) => {
+        let s = ref.trim();
+        // Strip markdown image syntax ![alt](url)
+        const mdMatch = s.match(/^!\[.*?\]\((.*?)\)$/);
+        if (mdMatch) s = mdMatch[1].trim();
+        // Strip wikilink syntax ![[url|...]] or [[url|...]]
+        s = s.replace(/^!*\[\[(.*?)\]\]$/, "$1").trim();
+        if (s.includes("|")) s = s.split("|")[0].trim();
+        try {
+            s = decodeURIComponent(s);
+        } catch { /* ignore */ }
+        s = s.replace(/\\/g, "/").toLowerCase();
+        return s;
+    };
+
+    const cleanA = normalize(a);
+    const cleanB = normalize(b);
     if (cleanA === cleanB) return true;
     const baseA = cleanA.split("/").pop();
     const baseB = cleanB.split("/").pop();
@@ -584,9 +600,10 @@ export async function isImageReferencedAcrossVault(
     if (!imageRef || !app) return false;
 
     // 1. Check all tasks across all categories in DataService
+    let categories: any[] = [];
     if (dataService && typeof dataService.getCategories === "function") {
         try {
-            const categories = await dataService.getCategories();
+            categories = await dataService.getCategories();
             for (const cat of categories) {
                 const tasks = await dataService.getTasks(cat.filepath);
                 for (const t of tasks) {
@@ -618,9 +635,10 @@ export async function isImageReferencedAcrossVault(
         if (targetFile) {
             const resolvedLinks = app.metadataCache?.resolvedLinks;
             if (resolvedLinks) {
+                const categoryPaths = new Set(categories.map(c => c.filepath));
                 for (const [sourcePath, links] of Object.entries(resolvedLinks)) {
-                    // Ignore TodoData files as we checked tasks directly with fresh authoritative data above
-                    if (!sourcePath.startsWith("TodoData/")) {
+                    // Ignore category list files as we checked tasks directly with fresh authoritative data above
+                    if (!categoryPaths.has(sourcePath) && !sourcePath.endsWith("/.metadata.json")) {
                         if (links && (links[targetFile.path] || links[targetFile.name])) {
                             return true;
                         }
