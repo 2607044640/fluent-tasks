@@ -26,5 +26,7 @@
   "undoDurationSeconds": 2.5,
   "enableTaskWeightMode": true,
   "quickListSearchMode": "task",
-  "quickListTitleAlignment": "center"
+  "quickListTitleAlignment": "center",
+  "enableFocusedLists": true,
+  "focusedLists": []
 }

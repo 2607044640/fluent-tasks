@@ -19,6 +19,7 @@
     export let dataService: DataService;
     export let showTip: boolean = false;
     export let remainingTips: number = 0;
+    export let isFocusedListMode: boolean = false;
     export let closeModal: () => void = () => {};
 
     // =============================================
@@ -31,7 +32,7 @@
     let searchQuery: string = "";
     let focusedIndex: number = -1;
     let isGridLayout: boolean = plugin?.settings?.quickListGridLayout ?? true;
-    let searchMode: 'list' | 'task' = plugin?.settings?.quickListSearchMode ?? 'list';
+    let searchMode: 'list' | 'task' = isFocusedListMode ? 'list' : (plugin?.settings?.quickListSearchMode ?? 'list');
     let hideCompleted: boolean = plugin?.settings?.searchHideCompleted ?? true;
     let taskSearchResults: Array<{ task: TaskItem; category: CategoryInfo; matchField: string }> = [];
     let taskFocusedIndex: number = 0;
@@ -48,6 +49,32 @@
     let hideLeftSidebar: boolean = plugin?.settings?.hideLeftSidebar ?? false;
     let hasFloatingModalHotkey: boolean = true;
     $: showNoHotkeyWarning = hideLeftSidebar && !hasFloatingModalHotkey;
+
+    // Focused Lists state (auto-save on click, clear all)
+    let focusedListSet: Set<string> = new Set(plugin?.settings?.focusedLists || []);
+
+    async function toggleFocusedList(filepath: string) {
+        if (focusedListSet.has(filepath)) {
+            focusedListSet.delete(filepath);
+        } else {
+            focusedListSet.add(filepath);
+        }
+        focusedListSet = new Set(focusedListSet);
+        if (plugin?.settings) {
+            plugin.settings.focusedLists = Array.from(focusedListSet);
+            await plugin.saveSettings();
+        }
+    }
+
+    async function handleClearAllFocused() {
+        if (focusedListSet.size === 0) return;
+        focusedListSet.clear();
+        focusedListSet = new Set();
+        if (plugin?.settings) {
+            plugin.settings.focusedLists = [];
+            await plugin.saveSettings();
+        }
+    }
 
     function checkHotkeyStatus() {
         hideLeftSidebar = plugin?.settings?.hideLeftSidebar ?? false;
@@ -476,6 +503,10 @@
     }
 
     async function handleCategoryClick(cat: CategoryInfo) {
+        if (isFocusedListMode) {
+            await toggleFocusedList(cat.filepath);
+            return;
+        }
         if (isPickingDefaultFocus) {
             isPickingDefaultFocus = false;
             showFocusPopover = false;
@@ -522,6 +553,14 @@
         EventBus.on(EventName.SETTINGS_CHANGED, handleSettingsChanged);
 
         searchInputEl?.focus();
+        if (isFocusedListMode) {
+            searchMode = 'list';
+            isGridLayout = true;
+            setTimeout(() => {
+                searchInputEl?.focus();
+                searchInputEl?.select();
+            }, 50);
+        }
         if (isGridLayout) {
             scheduleAdjustSpacing();
         }
@@ -608,6 +647,14 @@
 
     async function loadData() {
         sidebarItems = await dataService.getSidebarItems();
+        if (isFocusedListMode) {
+            sidebarItems = sidebarItems.map(item => {
+                if (item.type === "group") {
+                    return { ...item, isExpanded: true };
+                }
+                return item;
+            });
+        }
         categories = await dataService.getCategories();
         await refreshStarredCount();
         await refreshTaskCounts();
@@ -1656,6 +1703,18 @@
             }
         }
 
+        if (isFocusedListMode && (e.key === "Delete" || e.code === "Delete")) {
+            if (!editingItemId && !isAddingList && !isAddingGroup) {
+                if (document.activeElement === searchInputEl && searchQuery.length > 0) {
+                    return;
+                }
+                e.preventDefault();
+                e.stopPropagation();
+                void handleClearAllFocused();
+                return;
+            }
+        }
+
         if (e.key === "Enter") {
             e.preventDefault();
             e.stopPropagation();
@@ -1666,6 +1725,12 @@
         }
 
         if (e.key === "Escape") {
+            if (isFocusedListMode) {
+                e.preventDefault();
+                e.stopPropagation();
+                closeModal();
+                return;
+            }
             if (searchQuery) {
                 e.preventDefault();
                 e.stopPropagation();
