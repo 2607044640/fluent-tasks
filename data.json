@@ -28,5 +28,8 @@
   "quickListSearchMode": "task",
   "quickListTitleAlignment": "center",
   "enableFocusedLists": true,
-  "focusedLists": []
+  "focusedLists": [
+    "TodoData/工作心流.md",
+    "TodoData/底层.md"
+  ]
 }
