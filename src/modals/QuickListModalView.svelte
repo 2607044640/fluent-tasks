@@ -1880,13 +1880,6 @@
                     {t("focused_lists_selected_count", focusedListSet.size)}
                 </span>
             {/if}
-            <button 
-                class="quick-modal-header-btn quick-modal-close-icon-btn" 
-                title="Close (Esc)" 
-                on:click={closeModal}
-            >
-                ✕
-            </button>
         {:else}
             {#if searchMode === 'task'}
                 <button 
@@ -2121,16 +2114,16 @@
                                                 on:click={() => handleCategoryClick(cat)}
                                                 on:contextmenu={(e) => showItemContextMenu(e, { id: cat.id || "", name: cat.name, type: "category", filepath: cat.filepath })}
                                             >
-                                                {#if isFocusedListMode}
-                                                    <input 
-                                                        type="checkbox" 
-                                                        class="focused-list-item-checkbox" 
-                                                        checked={focusedListSet.has(cat.filepath)}
-                                                        tabindex="-1"
-                                                        on:click|stopPropagation={() => toggleFocusedList(cat.filepath)}
-                                                    />
-                                                {/if}
                                                 <span class="quick-modal-list-icon">
+                                                    {#if isFocusedListMode}
+                                                        <input 
+                                                            type="checkbox" 
+                                                            class="focused-list-item-checkbox" 
+                                                            checked={focusedListSet.has(cat.filepath)}
+                                                            tabindex="-1"
+                                                            on:click|stopPropagation={() => toggleFocusedList(cat.filepath)}
+                                                        />
+                                                    {/if}
                                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                         <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
                                                     </svg>
@@ -2153,7 +2146,7 @@
                                                     {#if (taskCounts[cat.filepath] ?? 0) > 0}
                                                         <span class="quick-modal-badge">{taskCounts[cat.filepath]}</span>
                                                     {/if}
-                                                    {#if plugin?.settings?.defaultQuickListFocusFilepath === cat.filepath}
+                                                    {#if !isFocusedListMode && plugin?.settings?.defaultQuickListFocusFilepath === cat.filepath}
                                                         <span class="quick-modal-focus-tag" title={t("focus_tag_tooltip")}>
                                                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                                                 <circle cx="12" cy="12" r="10"></circle>
@@ -2258,16 +2251,16 @@
                                                         on:click={() => handleCategoryClick(child)}
                                                         on:contextmenu={(e) => showItemContextMenu(e, { id: child.id || "", name: child.name, type: "category", filepath: child.filepath })}
                                                     >
-                                                        {#if isFocusedListMode}
-                                                            <input 
-                                                                type="checkbox" 
-                                                                class="focused-list-item-checkbox" 
-                                                                checked={focusedListSet.has(child.filepath)}
-                                                                tabindex="-1"
-                                                                on:click|stopPropagation={() => toggleFocusedList(child.filepath)}
-                                                            />
-                                                        {/if}
                                                         <span class="quick-modal-list-icon">
+                                                            {#if isFocusedListMode}
+                                                                <input 
+                                                                    type="checkbox" 
+                                                                    class="focused-list-item-checkbox" 
+                                                                    checked={focusedListSet.has(child.filepath)}
+                                                                    tabindex="-1"
+                                                                    on:click|stopPropagation={() => toggleFocusedList(child.filepath)}
+                                                                />
+                                                            {/if}
                                                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                                 <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
                                                             </svg>
@@ -2290,7 +2283,7 @@
                                                             {#if (taskCounts[child.filepath] ?? 0) > 0}
                                                                 <span class="quick-modal-badge">{taskCounts[child.filepath]}</span>
                                                             {/if}
-                                                            {#if plugin?.settings?.defaultQuickListFocusFilepath === child.filepath}
+                                                            {#if !isFocusedListMode && plugin?.settings?.defaultQuickListFocusFilepath === child.filepath}
                                                                 <span class="quick-modal-focus-tag" title={t("focus_tag_tooltip")}>
                                                                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                                                         <circle cx="12" cy="12" r="10"></circle>
@@ -2337,16 +2330,18 @@
                     on:click={() => handleCategoryClick(starredCategory)}
                     title={isFocusedListMode ? "Starred tasks: click to toggle focused list" : "Open Starred tasks list in center view"}
                 >
-                    {#if isFocusedListMode}
-                        <input 
-                            type="checkbox" 
-                            class="focused-list-item-checkbox" 
-                            checked={focusedListSet.has(STARRED_CATEGORY_PATH)}
-                            tabindex="-1"
-                            on:click|stopPropagation={() => toggleFocusedList(STARRED_CATEGORY_PATH)}
-                        />
-                    {/if}
-                    <span class="quick-modal-smart-star-icon">★</span>
+                    <span class="quick-modal-smart-star-icon">
+                        {#if isFocusedListMode}
+                            <input 
+                                type="checkbox" 
+                                class="focused-list-item-checkbox" 
+                                checked={focusedListSet.has(STARRED_CATEGORY_PATH)}
+                                tabindex="-1"
+                                on:click|stopPropagation={() => toggleFocusedList(STARRED_CATEGORY_PATH)}
+                            />
+                        {/if}
+                        ★
+                    </span>
                     <span class="quick-modal-list-name">{STARRED_CATEGORY_NAME}</span>
                     <div class="quick-modal-item-meta-right">
                         <span class="quick-modal-badge smart-count-badge">{starredCount}</span>
@@ -2433,16 +2428,16 @@
                                             on:click={() => handleCategoryClick(child)}
                                             on:contextmenu={(e) => showItemContextMenu(e, { id: child.id || "", name: child.name, type: "category", filepath: child.filepath })}
                                         >
-                                            {#if isFocusedListMode}
-                                                <input 
-                                                    type="checkbox" 
-                                                    class="focused-list-item-checkbox" 
-                                                    checked={focusedListSet.has(child.filepath)}
-                                                    tabindex="-1"
-                                                    on:click|stopPropagation={() => toggleFocusedList(child.filepath)}
-                                                />
-                                            {/if}
                                             <span class="quick-modal-list-icon">
+                                                {#if isFocusedListMode}
+                                                    <input 
+                                                        type="checkbox" 
+                                                        class="focused-list-item-checkbox" 
+                                                        checked={focusedListSet.has(child.filepath)}
+                                                        tabindex="-1"
+                                                        on:click|stopPropagation={() => toggleFocusedList(child.filepath)}
+                                                    />
+                                                {/if}
                                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                     <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
                                                 </svg>
@@ -2465,7 +2460,7 @@
                                                 {#if (taskCounts[child.filepath] ?? 0) > 0}
                                                     <span class="quick-modal-badge">{taskCounts[child.filepath]}</span>
                                                 {/if}
-                                                {#if plugin?.settings?.defaultQuickListFocusFilepath === child.filepath}
+                                                {#if !isFocusedListMode && plugin?.settings?.defaultQuickListFocusFilepath === child.filepath}
                                                     <span class="quick-modal-focus-tag" title={t("focus_tag_tooltip")}>
                                                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                                             <circle cx="12" cy="12" r="10"></circle>
@@ -2508,16 +2503,16 @@
                             on:click={() => handleCategoryClick(item)}
                             on:contextmenu={(e) => showItemContextMenu(e, { id: item.id || "", name: item.name, type: "category", filepath: item.filepath })}
                         >
-                            {#if isFocusedListMode}
-                                <input 
-                                    type="checkbox" 
-                                    class="focused-list-item-checkbox" 
-                                    checked={focusedListSet.has(item.filepath)}
-                                    tabindex="-1"
-                                    on:click|stopPropagation={() => toggleFocusedList(item.filepath)}
-                                />
-                            {/if}
                             <span class="quick-modal-list-icon">
+                                {#if isFocusedListMode}
+                                    <input 
+                                        type="checkbox" 
+                                        class="focused-list-item-checkbox" 
+                                        checked={focusedListSet.has(item.filepath)}
+                                        tabindex="-1"
+                                        on:click|stopPropagation={() => toggleFocusedList(item.filepath)}
+                                    />
+                                {/if}
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
                                 </svg>
@@ -2540,7 +2535,7 @@
                                 {#if (taskCounts[item.filepath] ?? 0) > 0}
                                     <span class="quick-modal-badge">{taskCounts[item.filepath]}</span>
                                 {/if}
-                                {#if plugin?.settings?.defaultQuickListFocusFilepath === item.filepath}
+                                {#if !isFocusedListMode && plugin?.settings?.defaultQuickListFocusFilepath === item.filepath}
                                     <span class="quick-modal-focus-tag" title={t("focus_tag_tooltip")}>
                                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                             <circle cx="12" cy="12" r="10"></circle>
@@ -2560,74 +2555,68 @@
         </div>
     {/if}
 
-    <!-- Bottom Action Bar & Status Bar Footer -->
-    <div class="quick-modal-list-pane-footer">
-        {#if isAddingList}
-            <div class="quick-modal-footer-add-wrap">
-                <input 
-                    type="text" 
-                    class="quick-modal-inline-add-input"
-                    placeholder="New list name (Enter to save, Esc to cancel)..."
-                    bind:value={newListName}
-                    bind:this={addListInputEl}
-                    on:keydown={(e) => {
-                        if (e.key === "Enter") {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            void commitAddList();
-                        } else if (e.key === "Escape") {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            isAddingList = false;
-                            newListName = "";
-                        }
-                    }}
-                    on:blur={commitAddList}
-                />
-            </div>
-        {:else if isAddingGroup}
-            <div class="quick-modal-footer-add-wrap">
-                <input 
-                    type="text" 
-                    class="quick-modal-inline-add-input"
-                    placeholder="New group name (Enter to save, Esc to cancel)..."
-                    bind:value={newGroupName}
-                    bind:this={addGroupInputEl}
-                    on:keydown={(e) => {
-                        if (e.key === "Enter") {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            void commitAddGroup();
-                        } else if (e.key === "Escape") {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            isAddingGroup = false;
-                            newGroupName = "";
-                        }
-                    }}
-                    on:blur={commitAddGroup}
-                />
-            </div>
-        {:else}
-            <button class="quick-modal-bottom-btn" on:click={startAddList}>+ New list</button>
-            <button class="quick-modal-bottom-btn" on:click={startAddGroup}>+ New group</button>
-        {/if}
-    </div>
+    {#if !isFocusedListMode}
+        <!-- Bottom Action Bar & Status Bar Footer -->
+        <div class="quick-modal-list-pane-footer">
+            {#if isAddingList}
+                <div class="quick-modal-footer-add-wrap">
+                    <input 
+                        type="text" 
+                        class="quick-modal-inline-add-input"
+                        placeholder="New list name (Enter to save, Esc to cancel)..."
+                        bind:value={newListName}
+                        bind:this={addListInputEl}
+                        on:keydown={(e) => {
+                            if (e.key === "Enter") {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                void commitAddList();
+                            } else if (e.key === "Escape") {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                isAddingList = false;
+                                newListName = "";
+                            }
+                        }}
+                        on:blur={commitAddList}
+                    />
+                </div>
+            {:else if isAddingGroup}
+                <div class="quick-modal-footer-add-wrap">
+                    <input 
+                        type="text" 
+                        class="quick-modal-inline-add-input"
+                        placeholder="New group name (Enter to save, Esc to cancel)..."
+                        bind:value={newGroupName}
+                        bind:this={addGroupInputEl}
+                        on:keydown={(e) => {
+                            if (e.key === "Enter") {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                void commitAddGroup();
+                            } else if (e.key === "Escape") {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                isAddingGroup = false;
+                                newGroupName = "";
+                            }
+                        }}
+                        on:blur={commitAddGroup}
+                    />
+                </div>
+            {:else}
+                <button class="quick-modal-bottom-btn" on:click={startAddList}>+ New list</button>
+                <button class="quick-modal-bottom-btn" on:click={startAddGroup}>+ New group</button>
+            {/if}
+        </div>
 
-    <div class="quick-modal-status-bar">
-        {#if isFocusedListMode}
-            <span><b>↑↓←→</b> Navigate</span>
-            <span><b>Click / Space / Enter</b> Toggle List</span>
-            <span><b>Delete</b> Clear all</span>
-            <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <span class="quick-status-close-btn" on:click={closeModal} role="button" tabindex="0" title="Close (Esc)"><b>Esc</b> Close</span>
-        {:else}
+        <div class="quick-modal-status-bar">
             <span><b>↑↓←→</b> Navigate</span>
             <span><b>F2</b> Rename</span>
             <span><b>Enter</b> Open in Center View</span>
             <span><b>Tab</b> Switch to {searchMode === 'task' ? 'Lists' : 'Tasks'}</span>
             <!-- svelte-ignore a11y-click-events-have-key-events -->
             <span class="quick-status-close-btn" on:click={closeModal} role="button" tabindex="0" title="Close (Esc)"><b>Esc</b> Close</span>
-        {/if}
-    </div>
+        </div>
+    {/if}
 </div>

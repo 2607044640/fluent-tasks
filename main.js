@@ -15069,7 +15069,7 @@ function create_if_block_47(ctx) {
     }
   };
 }
-function create_else_block_14(ctx) {
+function create_else_block_13(ctx) {
   let t0;
   let button0;
   let button0_title_value;
@@ -15091,7 +15091,7 @@ function create_else_block_14(ctx) {
       ctx2[9] === "task"
     )
       return create_if_block_44;
-    return create_else_block_17;
+    return create_else_block_16;
   }
   let current_block_type = select_block_type_1(ctx, [-1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block1 = current_block_type(ctx);
@@ -15105,7 +15105,7 @@ function create_else_block_14(ctx) {
       ctx2[8]
     )
       return create_if_block_40;
-    return create_else_block_15;
+    return create_else_block_14;
   }
   let current_block_type_1 = select_block_type_3(ctx, [-1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block3 = current_block_type_1(ctx);
@@ -15283,7 +15283,7 @@ function create_else_block_14(ctx) {
   };
 }
 function create_if_block_37(ctx) {
-  let button0;
+  let button;
   let svg;
   let line0;
   let line1;
@@ -15291,10 +15291,9 @@ function create_if_block_37(ctx) {
   let span;
   let t2;
   let kbd;
-  let button0_disabled_value;
+  let button_disabled_value;
   let t4;
-  let t5;
-  let button1;
+  let if_block_anchor;
   let mounted;
   let dispose;
   let if_block = (
@@ -15303,7 +15302,7 @@ function create_if_block_37(ctx) {
   );
   return {
     c() {
-      button0 = element("button");
+      button = element("button");
       svg = svg_element("svg");
       line0 = svg_element("line");
       line1 = svg_element("line");
@@ -15316,9 +15315,7 @@ function create_if_block_37(ctx) {
       t4 = space();
       if (if_block)
         if_block.c();
-      t5 = space();
-      button1 = element("button");
-      button1.textContent = "\u2715";
+      if_block_anchor = empty();
       attr(line0, "x1", "18");
       attr(line0, "y1", "6");
       attr(line0, "x2", "6");
@@ -15334,63 +15331,50 @@ function create_if_block_37(ctx) {
       attr(svg, "stroke", "currentColor");
       attr(svg, "stroke-width", "2");
       attr(kbd, "class", "focused-clear-shortcut-badge");
-      attr(button0, "class", "quick-modal-header-btn focused-clear-all-btn");
-      attr(button0, "title", "Clear all focused lists (Delete)");
-      button0.disabled = button0_disabled_value = /*focusedListSet*/
+      attr(button, "class", "quick-modal-header-btn focused-clear-all-btn");
+      attr(button, "title", "Clear all focused lists (Delete)");
+      button.disabled = button_disabled_value = /*focusedListSet*/
       ctx[23].size === 0;
-      attr(button1, "class", "quick-modal-header-btn quick-modal-close-icon-btn");
-      attr(button1, "title", "Close (Esc)");
     },
     m(target, anchor) {
-      insert(target, button0, anchor);
-      append(button0, svg);
+      insert(target, button, anchor);
+      append(button, svg);
       append(svg, line0);
       append(svg, line1);
-      append(button0, t0);
-      append(button0, span);
-      append(button0, t2);
-      append(button0, kbd);
+      append(button, t0);
+      append(button, span);
+      append(button, t2);
+      append(button, kbd);
       insert(target, t4, anchor);
       if (if_block)
         if_block.m(target, anchor);
-      insert(target, t5, anchor);
-      insert(target, button1, anchor);
+      insert(target, if_block_anchor, anchor);
       if (!mounted) {
-        dispose = [
-          listen(
-            button0,
-            "click",
-            /*handleClearAllFocused*/
-            ctx[45]
-          ),
-          listen(button1, "click", function() {
-            if (is_function(
-              /*closeModal*/
-              ctx[4]
-            ))
-              ctx[4].apply(this, arguments);
-          })
-        ];
+        dispose = listen(
+          button,
+          "click",
+          /*handleClearAllFocused*/
+          ctx[45]
+        );
         mounted = true;
       }
     },
-    p(new_ctx, dirty) {
-      ctx = new_ctx;
+    p(ctx2, dirty) {
       if (dirty[0] & /*focusedListSet*/
-      8388608 && button0_disabled_value !== (button0_disabled_value = /*focusedListSet*/
-      ctx[23].size === 0)) {
-        button0.disabled = button0_disabled_value;
+      8388608 && button_disabled_value !== (button_disabled_value = /*focusedListSet*/
+      ctx2[23].size === 0)) {
+        button.disabled = button_disabled_value;
       }
       if (
         /*focusedListSet*/
-        ctx[23].size > 0
+        ctx2[23].size > 0
       ) {
         if (if_block) {
-          if_block.p(ctx, dirty);
+          if_block.p(ctx2, dirty);
         } else {
-          if_block = create_if_block_38(ctx);
+          if_block = create_if_block_38(ctx2);
           if_block.c();
-          if_block.m(t5.parentNode, t5);
+          if_block.m(if_block_anchor.parentNode, if_block_anchor);
         }
       } else if (if_block) {
         if_block.d(1);
@@ -15399,15 +15383,14 @@ function create_if_block_37(ctx) {
     },
     d(detaching) {
       if (detaching) {
-        detach(button0);
+        detach(button);
         detach(t4);
-        detach(t5);
-        detach(button1);
+        detach(if_block_anchor);
       }
       if (if_block)
         if_block.d(detaching);
       mounted = false;
-      run_all(dispose);
+      dispose();
     }
   };
 }
@@ -15474,7 +15457,7 @@ function create_if_block_45(ctx) {
     }
   };
 }
-function create_else_block_17(ctx) {
+function create_else_block_16(ctx) {
   let svg;
   let line0;
   let line1;
@@ -15778,7 +15761,7 @@ function create_if_block_422(ctx) {
       ctx2[42]
     )
       return create_if_block_43;
-    return create_else_block_16;
+    return create_else_block_15;
   }
   let current_block_type = select_block_type_2(ctx, [-1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block = current_block_type(ctx);
@@ -15827,7 +15810,7 @@ function create_if_block_422(ctx) {
     }
   };
 }
-function create_else_block_16(ctx) {
+function create_else_block_15(ctx) {
   let t0_value = t("focus_unset_prefix") + "";
   let t0;
   let b;
@@ -15886,7 +15869,7 @@ function create_if_block_43(ctx) {
     }
   };
 }
-function create_else_block_15(ctx) {
+function create_else_block_14(ctx) {
   let svg;
   let line0;
   let line1;
@@ -16132,7 +16115,7 @@ function create_if_block_322(ctx) {
       ctx2[16].length === 0
     )
       return create_if_block_34;
-    return create_else_block_13;
+    return create_else_block_122;
   }
   let current_block_type = select_block_type_4(ctx, [-1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block = current_block_type(ctx);
@@ -16168,7 +16151,7 @@ function create_if_block_322(ctx) {
     }
   };
 }
-function create_else_block_13(ctx) {
+function create_else_block_122(ctx) {
   let div;
   let each_blocks = [];
   let each_1_lookup = new Map_1();
@@ -16547,7 +16530,7 @@ function create_each_block_6(key_1, ctx) {
     }
   };
 }
-function create_else_block_7(ctx) {
+function create_else_block_6(ctx) {
   let div;
   let t_1;
   let if_block0 = (
@@ -16561,7 +16544,7 @@ function create_else_block_7(ctx) {
       ctx2[13]
     )
       return create_if_block_18;
-    return create_else_block_8;
+    return create_else_block_7;
   }
   let current_block_type = select_block_type_12(ctx, [-1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block1 = current_block_type(ctx);
@@ -16629,7 +16612,7 @@ function create_if_block_310(ctx) {
       ctx2[13]
     )
       return create_if_block_410;
-    return create_else_block_22;
+    return create_else_block_17;
   }
   let current_block_type = select_block_type_6(ctx, [-1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block = current_block_type(ctx);
@@ -16673,14 +16656,14 @@ function create_if_block_310(ctx) {
 }
 function create_if_block_30(ctx) {
   let div1;
-  let t0;
   let span0;
-  let t2;
+  let t0;
+  let t1;
   let span1;
-  let t4;
+  let t3;
   let div0;
   let span2;
-  let t5;
+  let t4;
   let div1_title_value;
   let mounted;
   let dispose;
@@ -16692,18 +16675,17 @@ function create_if_block_30(ctx) {
     c() {
       var _a;
       div1 = element("div");
+      span0 = element("span");
       if (if_block)
         if_block.c();
-      t0 = space();
-      span0 = element("span");
-      span0.textContent = "\u2605";
-      t2 = space();
+      t0 = text("\n                        \u2605");
+      t1 = space();
       span1 = element("span");
       span1.textContent = `${STARRED_CATEGORY_NAME}`;
-      t4 = space();
+      t3 = space();
       div0 = element("div");
       span2 = element("span");
-      t5 = text(
+      t4 = text(
         /*starredCount*/
         ctx[5]
       );
@@ -16737,16 +16719,16 @@ function create_if_block_30(ctx) {
     },
     m(target, anchor) {
       insert(target, div1, anchor);
-      if (if_block)
-        if_block.m(div1, null);
-      append(div1, t0);
       append(div1, span0);
-      append(div1, t2);
+      if (if_block)
+        if_block.m(span0, null);
+      append(span0, t0);
+      append(div1, t1);
       append(div1, span1);
-      append(div1, t4);
+      append(div1, t3);
       append(div1, div0);
       append(div0, span2);
-      append(span2, t5);
+      append(span2, t4);
       if (!mounted) {
         dispose = listen(
           div1,
@@ -16768,7 +16750,7 @@ function create_if_block_30(ctx) {
         } else {
           if_block = create_if_block_31(ctx2);
           if_block.c();
-          if_block.m(div1, t0);
+          if_block.m(span0, t0);
         }
       } else if (if_block) {
         if_block.d(1);
@@ -16777,7 +16759,7 @@ function create_if_block_30(ctx) {
       if (dirty[0] & /*starredCount*/
       32)
         set_data(
-          t5,
+          t4,
           /*starredCount*/
           ctx2[5]
         );
@@ -16860,7 +16842,7 @@ function create_if_block_31(ctx) {
     }
   };
 }
-function create_else_block_8(ctx) {
+function create_else_block_7(ctx) {
   let each_blocks = [];
   let each_1_lookup = new Map_1();
   let each_1_anchor;
@@ -16933,11 +16915,13 @@ function create_if_block_18(ctx) {
     }
   };
 }
-function create_else_block_11(ctx) {
+function create_else_block_10(ctx) {
   var _a, _b, _c;
   let div1;
-  let t0;
   let span;
+  let t0;
+  let svg;
+  let path;
   let t1;
   let t2;
   let div0;
@@ -16961,7 +16945,7 @@ function create_else_block_11(ctx) {
       ctx2[239].filepath
     )
       return create_if_block_28;
-    return create_else_block_122;
+    return create_else_block_11;
   }
   let current_block_type = select_block_type_16(ctx, [-1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block1 = current_block_type(ctx);
@@ -16972,11 +16956,10 @@ function create_else_block_11(ctx) {
       ctx[239].filepath
     ]) != null ? _a : 0) > 0 && create_if_block_27(ctx)
   );
-  let if_block3 = (
-    /*plugin*/
-    ((_c = (_b = ctx[0]) == null ? void 0 : _b.settings) == null ? void 0 : _c.defaultQuickListFocusFilepath) === /*item*/
-    ctx[239].filepath && create_if_block_26(ctx)
-  );
+  let if_block3 = !/*isFocusedListMode*/
+  ctx[3] && /*plugin*/
+  ((_c = (_b = ctx[0]) == null ? void 0 : _b.settings) == null ? void 0 : _c.defaultQuickListFocusFilepath) === /*item*/
+  ctx[239].filepath && create_if_block_26(ctx);
   function mouseenter_handler_6() {
     return (
       /*mouseenter_handler_6*/
@@ -17057,11 +17040,12 @@ function create_else_block_11(ctx) {
     c() {
       var _a2, _b2, _c2;
       div1 = element("div");
+      span = element("span");
       if (if_block0)
         if_block0.c();
       t0 = space();
-      span = element("span");
-      span.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path></svg>`;
+      svg = svg_element("svg");
+      path = svg_element("path");
       t1 = space();
       if_block1.c();
       t2 = space();
@@ -17072,6 +17056,15 @@ function create_else_block_11(ctx) {
       if (if_block3)
         if_block3.c();
       t4 = space();
+      attr(path, "d", "M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z");
+      attr(svg, "width", "13");
+      attr(svg, "height", "13");
+      attr(svg, "viewBox", "0 0 24 24");
+      attr(svg, "fill", "none");
+      attr(svg, "stroke", "currentColor");
+      attr(svg, "stroke-width", "2");
+      attr(svg, "stroke-linecap", "round");
+      attr(svg, "stroke-linejoin", "round");
       attr(span, "class", "quick-modal-list-icon");
       attr(div0, "class", "quick-modal-item-meta-right");
       attr(div1, "class", "quick-modal-list-item");
@@ -17132,10 +17125,12 @@ function create_else_block_11(ctx) {
     },
     m(target, anchor) {
       insert(target, div1, anchor);
-      if (if_block0)
-        if_block0.m(div1, null);
-      append(div1, t0);
       append(div1, span);
+      if (if_block0)
+        if_block0.m(span, null);
+      append(span, t0);
+      append(span, svg);
+      append(svg, path);
       append(div1, t1);
       if_block1.m(div1, null);
       append(div1, t2);
@@ -17178,7 +17173,7 @@ function create_else_block_11(ctx) {
         } else {
           if_block0 = create_if_block_29(ctx);
           if_block0.c();
-          if_block0.m(div1, t0);
+          if_block0.m(span, t0);
         }
       } else if (if_block0) {
         if_block0.d(1);
@@ -17212,11 +17207,10 @@ function create_else_block_11(ctx) {
         if_block2.d(1);
         if_block2 = null;
       }
-      if (
-        /*plugin*/
-        ((_c2 = (_b2 = ctx[0]) == null ? void 0 : _b2.settings) == null ? void 0 : _c2.defaultQuickListFocusFilepath) === /*item*/
-        ctx[239].filepath
-      ) {
+      if (!/*isFocusedListMode*/
+      ctx[3] && /*plugin*/
+      ((_c2 = (_b2 = ctx[0]) == null ? void 0 : _b2.settings) == null ? void 0 : _c2.defaultQuickListFocusFilepath) === /*item*/
+      ctx[239].filepath) {
         if (if_block3) {
         } else {
           if_block3 = create_if_block_26(ctx);
@@ -17354,7 +17348,7 @@ function create_if_block_19(ctx) {
       ctx2[239].id
     )
       return create_if_block_25;
-    return create_else_block_10;
+    return create_else_block_9;
   }
   let current_block_type = select_block_type_14(ctx, [-1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block0 = current_block_type(ctx);
@@ -17668,7 +17662,7 @@ function create_if_block_29(ctx) {
     }
   };
 }
-function create_else_block_122(ctx) {
+function create_else_block_11(ctx) {
   let span;
   let t_1_value = (
     /*item*/
@@ -17815,7 +17809,7 @@ function create_if_block_26(ctx) {
     }
   };
 }
-function create_else_block_10(ctx) {
+function create_else_block_9(ctx) {
   let span;
   let t_1_value = (
     /*item*/
@@ -18075,7 +18069,7 @@ function create_if_block_24(ctx) {
     }
   };
 }
-function create_else_block_9(ctx) {
+function create_else_block_8(ctx) {
   let span;
   let t_1_value = (
     /*child*/
@@ -18225,8 +18219,10 @@ function create_if_block_21(ctx) {
 function create_each_block_5(key_1, ctx) {
   var _a, _b, _c;
   let div1;
-  let t0;
   let span;
+  let t0;
+  let svg;
+  let path;
   let t1;
   let t2;
   let div0;
@@ -18250,7 +18246,7 @@ function create_each_block_5(key_1, ctx) {
       ctx2[236].filepath
     )
       return create_if_block_23;
-    return create_else_block_9;
+    return create_else_block_8;
   }
   let current_block_type = select_block_type_15(ctx, [-1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block1 = current_block_type(ctx);
@@ -18261,11 +18257,10 @@ function create_each_block_5(key_1, ctx) {
       ctx[236].filepath
     ]) != null ? _a : 0) > 0 && create_if_block_222(ctx)
   );
-  let if_block3 = (
-    /*plugin*/
-    ((_c = (_b = ctx[0]) == null ? void 0 : _b.settings) == null ? void 0 : _c.defaultQuickListFocusFilepath) === /*child*/
-    ctx[236].filepath && create_if_block_21(ctx)
-  );
+  let if_block3 = !/*isFocusedListMode*/
+  ctx[3] && /*plugin*/
+  ((_c = (_b = ctx[0]) == null ? void 0 : _b.settings) == null ? void 0 : _c.defaultQuickListFocusFilepath) === /*child*/
+  ctx[236].filepath && create_if_block_21(ctx);
   function mouseenter_handler_5() {
     return (
       /*mouseenter_handler_5*/
@@ -18350,11 +18345,12 @@ function create_each_block_5(key_1, ctx) {
     c() {
       var _a2, _b2, _c2;
       div1 = element("div");
+      span = element("span");
       if (if_block0)
         if_block0.c();
       t0 = space();
-      span = element("span");
-      span.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path></svg>`;
+      svg = svg_element("svg");
+      path = svg_element("path");
       t1 = space();
       if_block1.c();
       t2 = space();
@@ -18365,6 +18361,15 @@ function create_each_block_5(key_1, ctx) {
       if (if_block3)
         if_block3.c();
       t4 = space();
+      attr(path, "d", "M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z");
+      attr(svg, "width", "13");
+      attr(svg, "height", "13");
+      attr(svg, "viewBox", "0 0 24 24");
+      attr(svg, "fill", "none");
+      attr(svg, "stroke", "currentColor");
+      attr(svg, "stroke-width", "2");
+      attr(svg, "stroke-linecap", "round");
+      attr(svg, "stroke-linejoin", "round");
       attr(span, "class", "quick-modal-list-icon");
       attr(div0, "class", "quick-modal-item-meta-right");
       attr(div1, "class", "quick-modal-list-item is-nested");
@@ -18426,10 +18431,12 @@ function create_each_block_5(key_1, ctx) {
     },
     m(target, anchor) {
       insert(target, div1, anchor);
-      if (if_block0)
-        if_block0.m(div1, null);
-      append(div1, t0);
       append(div1, span);
+      if (if_block0)
+        if_block0.m(span, null);
+      append(span, t0);
+      append(span, svg);
+      append(svg, path);
       append(div1, t1);
       if_block1.m(div1, null);
       append(div1, t2);
@@ -18472,7 +18479,7 @@ function create_each_block_5(key_1, ctx) {
         } else {
           if_block0 = create_if_block_24(ctx);
           if_block0.c();
-          if_block0.m(div1, t0);
+          if_block0.m(span, t0);
         }
       } else if (if_block0) {
         if_block0.d(1);
@@ -18506,11 +18513,10 @@ function create_each_block_5(key_1, ctx) {
         if_block2.d(1);
         if_block2 = null;
       }
-      if (
-        /*plugin*/
-        ((_c2 = (_b2 = ctx[0]) == null ? void 0 : _b2.settings) == null ? void 0 : _c2.defaultQuickListFocusFilepath) === /*child*/
-        ctx[236].filepath
-      ) {
+      if (!/*isFocusedListMode*/
+      ctx[3] && /*plugin*/
+      ((_c2 = (_b2 = ctx[0]) == null ? void 0 : _b2.settings) == null ? void 0 : _c2.defaultQuickListFocusFilepath) === /*child*/
+      ctx[236].filepath) {
         if (if_block3) {
         } else {
           if_block3 = create_if_block_21(ctx);
@@ -18625,7 +18631,7 @@ function create_each_block_4(key_1, ctx) {
       ctx2[239].type === "group"
     )
       return create_if_block_19;
-    return create_else_block_11;
+    return create_else_block_10;
   }
   let current_block_type = select_block_type_13(ctx, [-1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block = current_block_type(ctx);
@@ -18665,7 +18671,7 @@ function create_each_block_4(key_1, ctx) {
     }
   };
 }
-function create_else_block_22(ctx) {
+function create_else_block_17(ctx) {
   let each_blocks = [];
   let each_1_lookup = new Map_1();
   let each_1_anchor;
@@ -18781,7 +18787,7 @@ function create_if_block_10(ctx) {
       ctx2[235].id
     )
       return create_if_block_17;
-    return create_else_block_6;
+    return create_else_block_5;
   }
   let current_block_type = select_block_type_9(ctx, [-1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block0 = current_block_type(ctx);
@@ -19252,7 +19258,7 @@ function create_if_block_53(ctx) {
     }
   };
 }
-function create_else_block_6(ctx) {
+function create_else_block_5(ctx) {
   let span;
   let t_1_value = (
     /*group*/
@@ -19372,7 +19378,7 @@ function create_if_block_11(ctx) {
       ctx2[235].items.length > 0
     )
       return create_if_block_122;
-    return create_else_block_5;
+    return create_else_block_4;
   }
   let current_block_type = select_block_type_10(ctx, [-1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block = current_block_type(ctx);
@@ -19475,7 +19481,7 @@ function create_if_block_11(ctx) {
     }
   };
 }
-function create_else_block_5(ctx) {
+function create_else_block_4(ctx) {
   let div;
   return {
     c() {
@@ -19602,7 +19608,7 @@ function create_if_block_16(ctx) {
     }
   };
 }
-function create_else_block_4(ctx) {
+function create_else_block_32(ctx) {
   let span;
   let t_1_value = (
     /*child*/
@@ -19761,8 +19767,10 @@ function create_if_block_132(ctx) {
 function create_each_block_3(key_1, ctx) {
   var _a, _b, _c;
   let div1;
-  let t0;
   let span;
+  let t0;
+  let svg;
+  let path;
   let t1;
   let t2;
   let div0;
@@ -19785,7 +19793,7 @@ function create_each_block_3(key_1, ctx) {
       ctx2[236].filepath
     )
       return create_if_block_15;
-    return create_else_block_4;
+    return create_else_block_32;
   }
   let current_block_type = select_block_type_11(ctx, [-1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block1 = current_block_type(ctx);
@@ -19796,11 +19804,10 @@ function create_each_block_3(key_1, ctx) {
       ctx[236].filepath
     ]) != null ? _a : 0) > 0 && create_if_block_142(ctx)
   );
-  let if_block3 = (
-    /*plugin*/
-    ((_c = (_b = ctx[0]) == null ? void 0 : _b.settings) == null ? void 0 : _c.defaultQuickListFocusFilepath) === /*child*/
-    ctx[236].filepath && create_if_block_132(ctx)
-  );
+  let if_block3 = !/*isFocusedListMode*/
+  ctx[3] && /*plugin*/
+  ((_c = (_b = ctx[0]) == null ? void 0 : _b.settings) == null ? void 0 : _c.defaultQuickListFocusFilepath) === /*child*/
+  ctx[236].filepath && create_if_block_132(ctx);
   function mouseenter_handler_3() {
     return (
       /*mouseenter_handler_3*/
@@ -19885,11 +19892,12 @@ function create_each_block_3(key_1, ctx) {
     c() {
       var _a2, _b2, _c2;
       div1 = element("div");
+      span = element("span");
       if (if_block0)
         if_block0.c();
       t0 = space();
-      span = element("span");
-      span.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path></svg>`;
+      svg = svg_element("svg");
+      path = svg_element("path");
       t1 = space();
       if_block1.c();
       t2 = space();
@@ -19899,6 +19907,15 @@ function create_each_block_3(key_1, ctx) {
       t3 = space();
       if (if_block3)
         if_block3.c();
+      attr(path, "d", "M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z");
+      attr(svg, "width", "13");
+      attr(svg, "height", "13");
+      attr(svg, "viewBox", "0 0 24 24");
+      attr(svg, "fill", "none");
+      attr(svg, "stroke", "currentColor");
+      attr(svg, "stroke-width", "2");
+      attr(svg, "stroke-linecap", "round");
+      attr(svg, "stroke-linejoin", "round");
       attr(span, "class", "quick-modal-list-icon");
       attr(div0, "class", "quick-modal-item-meta-right");
       attr(div1, "class", "quick-modal-list-item is-grid-item");
@@ -19960,10 +19977,12 @@ function create_each_block_3(key_1, ctx) {
     },
     m(target, anchor) {
       insert(target, div1, anchor);
-      if (if_block0)
-        if_block0.m(div1, null);
-      append(div1, t0);
       append(div1, span);
+      if (if_block0)
+        if_block0.m(span, null);
+      append(span, t0);
+      append(span, svg);
+      append(svg, path);
       append(div1, t1);
       if_block1.m(div1, null);
       append(div1, t2);
@@ -20005,7 +20024,7 @@ function create_each_block_3(key_1, ctx) {
         } else {
           if_block0 = create_if_block_16(ctx);
           if_block0.c();
-          if_block0.m(div1, t0);
+          if_block0.m(span, t0);
         }
       } else if (if_block0) {
         if_block0.d(1);
@@ -20039,11 +20058,10 @@ function create_each_block_3(key_1, ctx) {
         if_block2.d(1);
         if_block2 = null;
       }
-      if (
-        /*plugin*/
-        ((_c2 = (_b2 = ctx[0]) == null ? void 0 : _b2.settings) == null ? void 0 : _c2.defaultQuickListFocusFilepath) === /*child*/
-        ctx[236].filepath
-      ) {
+      if (!/*isFocusedListMode*/
+      ctx[3] && /*plugin*/
+      ((_c2 = (_b2 = ctx[0]) == null ? void 0 : _b2.settings) == null ? void 0 : _c2.defaultQuickListFocusFilepath) === /*child*/
+      ctx[236].filepath) {
         if (if_block3) {
         } else {
           if_block3 = create_if_block_132(ctx);
@@ -20203,7 +20221,7 @@ function create_if_block_9(ctx) {
     }
   };
 }
-function create_else_block_32(ctx) {
+function create_else_block_22(ctx) {
   let span;
   let t_1_value = (
     /*cat*/
@@ -20362,8 +20380,10 @@ function create_if_block_63(ctx) {
 function create_each_block_2(key_1, ctx) {
   var _a, _b, _c;
   let div1;
-  let t0;
   let span;
+  let t0;
+  let svg;
+  let path;
   let t1;
   let t2;
   let div0;
@@ -20386,7 +20406,7 @@ function create_each_block_2(key_1, ctx) {
       ctx2[232].filepath
     )
       return create_if_block_83;
-    return create_else_block_32;
+    return create_else_block_22;
   }
   let current_block_type = select_block_type_8(ctx, [-1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block1 = current_block_type(ctx);
@@ -20397,11 +20417,10 @@ function create_each_block_2(key_1, ctx) {
       ctx[232].filepath
     ]) != null ? _a : 0) > 0 && create_if_block_73(ctx)
   );
-  let if_block3 = (
-    /*plugin*/
-    ((_c = (_b = ctx[0]) == null ? void 0 : _b.settings) == null ? void 0 : _c.defaultQuickListFocusFilepath) === /*cat*/
-    ctx[232].filepath && create_if_block_63(ctx)
-  );
+  let if_block3 = !/*isFocusedListMode*/
+  ctx[3] && /*plugin*/
+  ((_c = (_b = ctx[0]) == null ? void 0 : _b.settings) == null ? void 0 : _c.defaultQuickListFocusFilepath) === /*cat*/
+  ctx[232].filepath && create_if_block_63(ctx);
   function mouseenter_handler_1() {
     return (
       /*mouseenter_handler_1*/
@@ -20484,11 +20503,12 @@ function create_each_block_2(key_1, ctx) {
     c() {
       var _a2, _b2, _c2;
       div1 = element("div");
+      span = element("span");
       if (if_block0)
         if_block0.c();
       t0 = space();
-      span = element("span");
-      span.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path></svg>`;
+      svg = svg_element("svg");
+      path = svg_element("path");
       t1 = space();
       if_block1.c();
       t2 = space();
@@ -20498,6 +20518,15 @@ function create_each_block_2(key_1, ctx) {
       t3 = space();
       if (if_block3)
         if_block3.c();
+      attr(path, "d", "M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z");
+      attr(svg, "width", "13");
+      attr(svg, "height", "13");
+      attr(svg, "viewBox", "0 0 24 24");
+      attr(svg, "fill", "none");
+      attr(svg, "stroke", "currentColor");
+      attr(svg, "stroke-width", "2");
+      attr(svg, "stroke-linecap", "round");
+      attr(svg, "stroke-linejoin", "round");
       attr(span, "class", "quick-modal-list-icon");
       attr(div0, "class", "quick-modal-item-meta-right");
       attr(div1, "class", "quick-modal-list-item is-grid-item");
@@ -20559,10 +20588,12 @@ function create_each_block_2(key_1, ctx) {
     },
     m(target, anchor) {
       insert(target, div1, anchor);
-      if (if_block0)
-        if_block0.m(div1, null);
-      append(div1, t0);
       append(div1, span);
+      if (if_block0)
+        if_block0.m(span, null);
+      append(span, t0);
+      append(span, svg);
+      append(svg, path);
       append(div1, t1);
       if_block1.m(div1, null);
       append(div1, t2);
@@ -20604,7 +20635,7 @@ function create_each_block_2(key_1, ctx) {
         } else {
           if_block0 = create_if_block_9(ctx);
           if_block0.c();
-          if_block0.m(div1, t0);
+          if_block0.m(span, t0);
         }
       } else if (if_block0) {
         if_block0.d(1);
@@ -20638,11 +20669,10 @@ function create_each_block_2(key_1, ctx) {
         if_block2.d(1);
         if_block2 = null;
       }
-      if (
-        /*plugin*/
-        ((_c2 = (_b2 = ctx[0]) == null ? void 0 : _b2.settings) == null ? void 0 : _c2.defaultQuickListFocusFilepath) === /*cat*/
-        ctx[232].filepath
-      ) {
+      if (!/*isFocusedListMode*/
+      ctx[3] && /*plugin*/
+      ((_c2 = (_b2 = ctx[0]) == null ? void 0 : _b2.settings) == null ? void 0 : _c2.defaultQuickListFocusFilepath) === /*cat*/
+      ctx[232].filepath) {
         if (if_block3) {
         } else {
           if_block3 = create_if_block_63(ctx);
@@ -20878,7 +20908,131 @@ function create_each_block4(key_1, ctx) {
     }
   };
 }
-function create_else_block_18(ctx) {
+function create_if_block6(ctx) {
+  let div0;
+  let t0;
+  let div1;
+  let span0;
+  let t3;
+  let span1;
+  let t6;
+  let span2;
+  let t9;
+  let span3;
+  let b3;
+  let t11;
+  let t12_value = (
+    /*searchMode*/
+    ctx[9] === "task" ? "Lists" : "Tasks"
+  );
+  let t12;
+  let t13;
+  let span4;
+  let mounted;
+  let dispose;
+  function select_block_type_17(ctx2, dirty) {
+    if (
+      /*isAddingList*/
+      ctx2[24]
+    )
+      return create_if_block_110;
+    if (
+      /*isAddingGroup*/
+      ctx2[26]
+    )
+      return create_if_block_210;
+    return create_else_block5;
+  }
+  let current_block_type = select_block_type_17(ctx, [-1, -1, -1, -1, -1, -1, -1, -1]);
+  let if_block = current_block_type(ctx);
+  return {
+    c() {
+      div0 = element("div");
+      if_block.c();
+      t0 = space();
+      div1 = element("div");
+      span0 = element("span");
+      span0.innerHTML = `<b>\u2191\u2193\u2190\u2192</b> Navigate`;
+      t3 = space();
+      span1 = element("span");
+      span1.innerHTML = `<b>F2</b> Rename`;
+      t6 = space();
+      span2 = element("span");
+      span2.innerHTML = `<b>Enter</b> Open in Center View`;
+      t9 = space();
+      span3 = element("span");
+      b3 = element("b");
+      b3.textContent = "Tab";
+      t11 = text(" Switch to ");
+      t12 = text(t12_value);
+      t13 = space();
+      span4 = element("span");
+      span4.innerHTML = `<b>Esc</b> Close`;
+      attr(div0, "class", "quick-modal-list-pane-footer");
+      attr(span4, "class", "quick-status-close-btn");
+      attr(span4, "role", "button");
+      attr(span4, "tabindex", "0");
+      attr(span4, "title", "Close (Esc)");
+      attr(div1, "class", "quick-modal-status-bar");
+    },
+    m(target, anchor) {
+      insert(target, div0, anchor);
+      if_block.m(div0, null);
+      insert(target, t0, anchor);
+      insert(target, div1, anchor);
+      append(div1, span0);
+      append(div1, t3);
+      append(div1, span1);
+      append(div1, t6);
+      append(div1, span2);
+      append(div1, t9);
+      append(div1, span3);
+      append(span3, b3);
+      append(span3, t11);
+      append(span3, t12);
+      append(div1, t13);
+      append(div1, span4);
+      if (!mounted) {
+        dispose = listen(span4, "click", function() {
+          if (is_function(
+            /*closeModal*/
+            ctx[4]
+          ))
+            ctx[4].apply(this, arguments);
+        });
+        mounted = true;
+      }
+    },
+    p(new_ctx, dirty) {
+      ctx = new_ctx;
+      if (current_block_type === (current_block_type = select_block_type_17(ctx, dirty)) && if_block) {
+        if_block.p(ctx, dirty);
+      } else {
+        if_block.d(1);
+        if_block = current_block_type(ctx);
+        if (if_block) {
+          if_block.c();
+          if_block.m(div0, null);
+        }
+      }
+      if (dirty[0] & /*searchMode*/
+      512 && t12_value !== (t12_value = /*searchMode*/
+      ctx[9] === "task" ? "Lists" : "Tasks"))
+        set_data(t12, t12_value);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div0);
+        detach(t0);
+        detach(div1);
+      }
+      if_block.d();
+      mounted = false;
+      dispose();
+    }
+  };
+}
+function create_else_block5(ctx) {
   let button0;
   let t1;
   let button1;
@@ -21064,164 +21218,8 @@ function create_if_block_110(ctx) {
     }
   };
 }
-function create_else_block5(ctx) {
-  let span0;
-  let t2;
-  let span1;
-  let t5;
-  let span2;
-  let t8;
-  let span3;
-  let b3;
-  let t10;
-  let t11_value = (
-    /*searchMode*/
-    ctx[9] === "task" ? "Lists" : "Tasks"
-  );
-  let t11;
-  let t12;
-  let span4;
-  let mounted;
-  let dispose;
-  return {
-    c() {
-      span0 = element("span");
-      span0.innerHTML = `<b>\u2191\u2193\u2190\u2192</b> Navigate`;
-      t2 = space();
-      span1 = element("span");
-      span1.innerHTML = `<b>F2</b> Rename`;
-      t5 = space();
-      span2 = element("span");
-      span2.innerHTML = `<b>Enter</b> Open in Center View`;
-      t8 = space();
-      span3 = element("span");
-      b3 = element("b");
-      b3.textContent = "Tab";
-      t10 = text(" Switch to ");
-      t11 = text(t11_value);
-      t12 = space();
-      span4 = element("span");
-      span4.innerHTML = `<b>Esc</b> Close`;
-      attr(span4, "class", "quick-status-close-btn");
-      attr(span4, "role", "button");
-      attr(span4, "tabindex", "0");
-      attr(span4, "title", "Close (Esc)");
-    },
-    m(target, anchor) {
-      insert(target, span0, anchor);
-      insert(target, t2, anchor);
-      insert(target, span1, anchor);
-      insert(target, t5, anchor);
-      insert(target, span2, anchor);
-      insert(target, t8, anchor);
-      insert(target, span3, anchor);
-      append(span3, b3);
-      append(span3, t10);
-      append(span3, t11);
-      insert(target, t12, anchor);
-      insert(target, span4, anchor);
-      if (!mounted) {
-        dispose = listen(span4, "click", function() {
-          if (is_function(
-            /*closeModal*/
-            ctx[4]
-          ))
-            ctx[4].apply(this, arguments);
-        });
-        mounted = true;
-      }
-    },
-    p(new_ctx, dirty) {
-      ctx = new_ctx;
-      if (dirty[0] & /*searchMode*/
-      512 && t11_value !== (t11_value = /*searchMode*/
-      ctx[9] === "task" ? "Lists" : "Tasks"))
-        set_data(t11, t11_value);
-    },
-    d(detaching) {
-      if (detaching) {
-        detach(span0);
-        detach(t2);
-        detach(span1);
-        detach(t5);
-        detach(span2);
-        detach(t8);
-        detach(span3);
-        detach(t12);
-        detach(span4);
-      }
-      mounted = false;
-      dispose();
-    }
-  };
-}
-function create_if_block6(ctx) {
-  let span0;
-  let t2;
-  let span1;
-  let t5;
-  let span2;
-  let t8;
-  let span3;
-  let mounted;
-  let dispose;
-  return {
-    c() {
-      span0 = element("span");
-      span0.innerHTML = `<b>\u2191\u2193\u2190\u2192</b> Navigate`;
-      t2 = space();
-      span1 = element("span");
-      span1.innerHTML = `<b>Click / Space / Enter</b> Toggle List`;
-      t5 = space();
-      span2 = element("span");
-      span2.innerHTML = `<b>Delete</b> Clear all`;
-      t8 = space();
-      span3 = element("span");
-      span3.innerHTML = `<b>Esc</b> Close`;
-      attr(span3, "class", "quick-status-close-btn");
-      attr(span3, "role", "button");
-      attr(span3, "tabindex", "0");
-      attr(span3, "title", "Close (Esc)");
-    },
-    m(target, anchor) {
-      insert(target, span0, anchor);
-      insert(target, t2, anchor);
-      insert(target, span1, anchor);
-      insert(target, t5, anchor);
-      insert(target, span2, anchor);
-      insert(target, t8, anchor);
-      insert(target, span3, anchor);
-      if (!mounted) {
-        dispose = listen(span3, "click", function() {
-          if (is_function(
-            /*closeModal*/
-            ctx[4]
-          ))
-            ctx[4].apply(this, arguments);
-        });
-        mounted = true;
-      }
-    },
-    p(new_ctx, dirty) {
-      ctx = new_ctx;
-    },
-    d(detaching) {
-      if (detaching) {
-        detach(span0);
-        detach(t2);
-        detach(span1);
-        detach(t5);
-        detach(span2);
-        detach(t8);
-        detach(span3);
-      }
-      mounted = false;
-      dispose();
-    }
-  };
-}
 function create_fragment6(ctx) {
-  let div3;
+  let div1;
   let t0;
   let div0;
   let span;
@@ -21239,9 +21237,6 @@ function create_fragment6(ctx) {
   );
   let t6;
   let t7;
-  let div1;
-  let t8;
-  let div2;
   let mounted;
   let dispose;
   let if_block0 = (
@@ -21262,7 +21257,7 @@ function create_fragment6(ctx) {
       ctx2[3]
     )
       return create_if_block_37;
-    return create_else_block_14;
+    return create_else_block_13;
   }
   let current_block_type = select_block_type(ctx, [-1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block3 = current_block_type(ctx);
@@ -21273,38 +21268,15 @@ function create_fragment6(ctx) {
       ctx2[8]
     )
       return create_if_block_310;
-    return create_else_block_7;
+    return create_else_block_6;
   }
   let current_block_type_1 = select_block_type_5(ctx, [-1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block5 = current_block_type_1(ctx);
-  function select_block_type_17(ctx2, dirty) {
-    if (
-      /*isAddingList*/
-      ctx2[24]
-    )
-      return create_if_block_110;
-    if (
-      /*isAddingGroup*/
-      ctx2[26]
-    )
-      return create_if_block_210;
-    return create_else_block_18;
-  }
-  let current_block_type_2 = select_block_type_17(ctx, [-1, -1, -1, -1, -1, -1, -1, -1]);
-  let if_block6 = current_block_type_2(ctx);
-  function select_block_type_18(ctx2, dirty) {
-    if (
-      /*isFocusedListMode*/
-      ctx2[3]
-    )
-      return create_if_block6;
-    return create_else_block5;
-  }
-  let current_block_type_3 = select_block_type_18(ctx, [-1, -1, -1, -1, -1, -1, -1, -1]);
-  let if_block7 = current_block_type_3(ctx);
+  let if_block6 = !/*isFocusedListMode*/
+  ctx[3] && create_if_block6(ctx);
   return {
     c() {
-      div3 = element("div");
+      div1 = element("div");
       if (if_block0)
         if_block0.c();
       t0 = space();
@@ -21327,11 +21299,8 @@ function create_fragment6(ctx) {
       t6 = space();
       if_block5.c();
       t7 = space();
-      div1 = element("div");
-      if_block6.c();
-      t8 = space();
-      div2 = element("div");
-      if_block7.c();
+      if (if_block6)
+        if_block6.c();
       attr(span, "class", "quick-modal-filter-icon");
       attr(input, "type", "text");
       attr(input, "class", "quick-modal-filter-input");
@@ -21341,36 +21310,34 @@ function create_fragment6(ctx) {
         ctx[9] === "task" ? t("quick_list_task_search_placeholder") || "Search all tasks (title, steps, notes)..." : "Type to filter lists (\u2191\u2193\u2190\u2192 navigate, F2 rename, Enter to open in center)..."
       ));
       attr(div0, "class", "quick-modal-filter-bar");
-      attr(div1, "class", "quick-modal-list-pane-footer");
-      attr(div2, "class", "quick-modal-status-bar");
-      attr(div3, "class", "quick-modal-container quick-list-only-container");
-      attr(div3, "tabindex", "0");
-      attr(div3, "role", "region");
+      attr(div1, "class", "quick-modal-container quick-list-only-container");
+      attr(div1, "tabindex", "0");
+      attr(div1, "role", "region");
       toggle_class(
-        div3,
+        div1,
         "is-centered-titles",
         /*titleAlignment*/
         ctx[22] === "center"
       );
       toggle_class(
-        div3,
+        div1,
         "is-picking-focus",
         /*isPickingDefaultFocus*/
         ctx[20]
       );
       toggle_class(
-        div3,
+        div1,
         "is-dragging-group",
         /*isDraggingGroup*/
         ctx[40]
       );
     },
     m(target, anchor) {
-      insert(target, div3, anchor);
+      insert(target, div1, anchor);
       if (if_block0)
-        if_block0.m(div3, null);
-      append(div3, t0);
-      append(div3, div0);
+        if_block0.m(div1, null);
+      append(div1, t0);
+      append(div1, div0);
       append(div0, span);
       append(div0, t1);
       append(div0, input);
@@ -21391,15 +21358,12 @@ function create_fragment6(ctx) {
       append(div0, t5);
       if (if_block4)
         if_block4.m(div0, null);
-      append(div3, t6);
-      if_block5.m(div3, null);
-      append(div3, t7);
-      append(div3, div1);
-      if_block6.m(div1, null);
-      append(div3, t8);
-      append(div3, div2);
-      if_block7.m(div2, null);
-      ctx[189](div3);
+      append(div1, t6);
+      if_block5.m(div1, null);
+      append(div1, t7);
+      if (if_block6)
+        if_block6.m(div1, null);
+      ctx[189](div1);
       if (!mounted) {
         dispose = [
           listen(
@@ -21433,7 +21397,7 @@ function create_fragment6(ctx) {
             ctx[48]
           ),
           listen(
-            div3,
+            div1,
             "pointerleave",
             /*handlePointerLeave*/
             ctx[69]
@@ -21452,7 +21416,7 @@ function create_fragment6(ctx) {
         } else {
           if_block0 = create_if_block_49(ctx2);
           if_block0.c();
-          if_block0.m(div3, t0);
+          if_block0.m(div1, t0);
         }
       } else if (if_block0) {
         if_block0.d(1);
@@ -21539,33 +21503,26 @@ function create_fragment6(ctx) {
         if_block5 = current_block_type_1(ctx2);
         if (if_block5) {
           if_block5.c();
-          if_block5.m(div3, t7);
+          if_block5.m(div1, t7);
         }
       }
-      if (current_block_type_2 === (current_block_type_2 = select_block_type_17(ctx2, dirty)) && if_block6) {
-        if_block6.p(ctx2, dirty);
-      } else {
-        if_block6.d(1);
-        if_block6 = current_block_type_2(ctx2);
+      if (!/*isFocusedListMode*/
+      ctx2[3]) {
         if (if_block6) {
+          if_block6.p(ctx2, dirty);
+        } else {
+          if_block6 = create_if_block6(ctx2);
           if_block6.c();
           if_block6.m(div1, null);
         }
-      }
-      if (current_block_type_3 === (current_block_type_3 = select_block_type_18(ctx2, dirty)) && if_block7) {
-        if_block7.p(ctx2, dirty);
-      } else {
-        if_block7.d(1);
-        if_block7 = current_block_type_3(ctx2);
-        if (if_block7) {
-          if_block7.c();
-          if_block7.m(div2, null);
-        }
+      } else if (if_block6) {
+        if_block6.d(1);
+        if_block6 = null;
       }
       if (dirty[0] & /*titleAlignment*/
       4194304) {
         toggle_class(
-          div3,
+          div1,
           "is-centered-titles",
           /*titleAlignment*/
           ctx2[22] === "center"
@@ -21574,7 +21531,7 @@ function create_fragment6(ctx) {
       if (dirty[0] & /*isPickingDefaultFocus*/
       1048576) {
         toggle_class(
-          div3,
+          div1,
           "is-picking-focus",
           /*isPickingDefaultFocus*/
           ctx2[20]
@@ -21583,7 +21540,7 @@ function create_fragment6(ctx) {
       if (dirty[1] & /*isDraggingGroup*/
       512) {
         toggle_class(
-          div3,
+          div1,
           "is-dragging-group",
           /*isDraggingGroup*/
           ctx2[40]
@@ -21594,7 +21551,7 @@ function create_fragment6(ctx) {
     o: noop,
     d(detaching) {
       if (detaching) {
-        detach(div3);
+        detach(div1);
       }
       if (if_block0)
         if_block0.d();
@@ -21607,8 +21564,8 @@ function create_fragment6(ctx) {
       if (if_block4)
         if_block4.d();
       if_block5.d();
-      if_block6.d();
-      if_block7.d();
+      if (if_block6)
+        if_block6.d();
       ctx[189](null);
       mounted = false;
       run_all(dispose);
@@ -23480,7 +23437,7 @@ function instance6($$self, $$props, $$invalidate) {
       $$invalidate(27, newGroupName = "");
     }
   };
-  function div3_binding($$value) {
+  function div1_binding($$value) {
     binding_callbacks[$$value ? "unshift" : "push"](() => {
       modalContainerEl = $$value;
       $$invalidate(35, modalContainerEl);
@@ -23786,7 +23743,7 @@ function instance6($$self, $$props, $$invalidate) {
     input_input_handler_8,
     input_binding_8,
     keydown_handler_1,
-    div3_binding
+    div1_binding
   ];
 }
 var QuickListModalView = class extends SvelteComponent {
@@ -33924,7 +33881,7 @@ function create_if_block_411(ctx) {
       ctx2[45] > 0
     )
       return create_if_block_510;
-    return create_else_block_19;
+    return create_else_block_18;
   }
   let current_block_type = select_block_type_15(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block1 = current_block_type(ctx);
@@ -34081,7 +34038,7 @@ function create_if_block_710(ctx) {
     }
   };
 }
-function create_else_block_19(ctx) {
+function create_else_block_18(ctx) {
   let span;
   return {
     c() {
@@ -44511,7 +44468,7 @@ function create_if_block_711(ctx) {
       ctx2[227].trim());
     if (show_if)
       return create_if_block_103;
-    return create_else_block_110;
+    return create_else_block_19;
   }
   let current_block_type = select_block_type_9(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block0 = current_block_type(ctx);
@@ -44655,7 +44612,7 @@ function create_if_block_711(ctx) {
     }
   };
 }
-function create_else_block_110(ctx) {
+function create_else_block_19(ctx) {
   let t_1;
   return {
     c() {
@@ -51605,7 +51562,7 @@ function create_if_block_415(ctx) {
     }
   };
 }
-function create_else_block_111(ctx) {
+function create_else_block_110(ctx) {
   let svg;
   let path0;
   let path1;
@@ -51698,7 +51655,7 @@ function create_each_block_24(ctx) {
       ctx2[181].isDedicated
     )
       return create_if_block_612;
-    return create_else_block_111;
+    return create_else_block_110;
   }
   let current_block_type = select_block_type_8(ctx, [-1, -1, -1, -1, -1, -1, -1]);
   let if_block = current_block_type(ctx);

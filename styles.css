@@ -6228,9 +6228,32 @@ body .task-focused-lists-modal .modal-content {
     width: 14px;
     height: 14px;
     cursor: pointer;
-    margin: 0 4px 0 0;
+    margin: 0;
     flex-shrink: 0;
     accent-color: var(--todo-accent, #8b5cf6);
+}
+
+.quick-modal-list-icon:has(.focused-list-item-checkbox),
+.quick-modal-smart-star-icon:has(.focused-list-item-checkbox) {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    opacity: 1;
+}
+
+.quick-modal-list-icon:has(.focused-list-item-checkbox) svg {
+    opacity: 0.7;
+    transition: opacity 0.15s ease;
+}
+
+.quick-modal-list-item:hover .quick-modal-list-icon:has(.focused-list-item-checkbox) svg,
+.quick-modal-list-item.is-focused .quick-modal-list-icon:has(.focused-list-item-checkbox) svg,
+.quick-modal-list-item.is-focused-selected .quick-modal-list-icon:has(.focused-list-item-checkbox) svg {
+    opacity: 1;
+}
+
+.quick-modal-starred-btn .focused-list-item-checkbox {
+    margin-right: 2px;
 }
 
 .quick-modal-list-item.is-focused-selected {
