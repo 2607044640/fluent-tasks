@@ -433,6 +433,17 @@
     font-weight: 600;
 }
 
+.focused-list-pill.drag-over {
+    color: var(--todo-text-main, var(--text-normal)) !important;
+    border-color: var(--todo-accent, #8b5cf6) !important;
+    background: var(--todo-accent-light, rgba(139, 92, 246, 0.25)) !important;
+    outline: 1.5px dashed var(--todo-accent, #8b5cf6) !important;
+    outline-offset: -1px !important;
+    box-shadow: 0 0 10px var(--todo-accent-glow, rgba(139, 92, 246, 0.6)), inset 0 0 8px var(--todo-accent-glow, rgba(139, 92, 246, 0.35)) !important;
+    transform: translateY(-1px) scale(1.04);
+    font-weight: 600;
+}
+
 .category-title {
     color: var(--todo-accent);
     font-size: 28px;

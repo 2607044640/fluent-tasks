@@ -1173,7 +1173,10 @@
         const targetPath = dragOverPath;
         dragOverPath = "";
 
-        if (!targetPath || targetPath === dragData.sourceFilepath) {
+        if (!targetPath) {
+            return;
+        }
+        if (targetPath === dragData.sourceFilepath) {
             (window as any).__mstodo_drag_data = null;
             killDndGhostElement();
             return;

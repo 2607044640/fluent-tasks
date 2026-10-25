@@ -67,6 +67,8 @@
     // Focused Lists State
     let enableFocusedLists: boolean = plugin?.settings?.enableFocusedLists ?? false;
     let focusedCategories: CategoryInfo[] = [];
+    let dragOverFocusedPath: string = "";
+    let lastFocusedDropTime: number = 0;
 
     async function updateFocusedCategories() {
         enableFocusedLists = plugin?.settings?.enableFocusedLists ?? false;
@@ -108,6 +110,7 @@
     }
 
     function handleSelectFocusedCategory(cat: CategoryInfo) {
+        if (Date.now() - lastFocusedDropTime < 300) return;
         if (!cat || currentCategory?.filepath === cat.filepath) return;
         EventBus.emit(EventName.CATEGORY_SELECTED, { category: cat });
     }
@@ -2445,16 +2448,96 @@
     }
 
     function handleGlobalPointerUp(e?: PointerEvent) {
+        const wasDndActive = isDndActive;
         isDndActive = false;
         stopAutoScroll();
-        if ((window as any).__mstodo_drag_data) {
-            (window as any).__mstodo_drag_data = null;
+
+        const dragData = (window as any).__mstodo_drag_data;
+        let targetFocusedPath = dragOverFocusedPath;
+        dragOverFocusedPath = "";
+
+        if (!targetFocusedPath && e && mainContainerEl && dragData && wasDndActive) {
+            const pills = mainContainerEl.querySelectorAll('.focused-list-pill[data-filepath]');
+            for (let i = 0; i < pills.length; i++) {
+                const pill = pills[i] as HTMLElement;
+                const rect = pill.getBoundingClientRect();
+                if (
+                    e.clientX >= rect.left &&
+                    e.clientX <= rect.right &&
+                    e.clientY >= rect.top &&
+                    e.clientY <= rect.bottom
+                ) {
+                    const path = pill.getAttribute('data-filepath') || "";
+                    if (path && path !== dragData.sourceFilepath && path !== currentCategory?.filepath) {
+                        targetFocusedPath = path;
+                    }
+                    break;
+                }
+            }
+        }
+
+        if (dragData && targetFocusedPath && targetFocusedPath !== dragData.sourceFilepath && targetFocusedPath !== currentCategory?.filepath) {
+            const targetCat = focusedCategories.find(c => c.filepath === targetFocusedPath);
+            if (targetCat && dragData.task) {
+                lastFocusedDropTime = Date.now();
+                if (targetCat.filepath !== STARRED_CATEGORY_PATH) {
+                    dragData.movedToTarget = targetCat.filepath;
+                    const domNode = document.getElementById('task-' + dragData.taskId);
+                    if (domNode) domNode.style.display = 'none';
+                }
+                killDndGhostElement();
+                void moveTaskToCategory(dragData.task, targetCat);
+                return;
+            }
+        }
+
+        if (dragData) {
+            setTimeout(() => {
+                if ((window as any).__mstodo_drag_data === dragData) {
+                    (window as any).__mstodo_drag_data = null;
+                }
+            }, 50);
         }
     }
 
     function handleDragPointerMove(e: PointerEvent) {
-        if (!isDndActive) return;
-        updateAutoScroll(e.clientY);
+        if (e.buttons !== 1) {
+            if (dragOverFocusedPath) dragOverFocusedPath = "";
+            return;
+        }
+        const dragData = (window as any).__mstodo_drag_data;
+        if (!isDndActive && !dragData) {
+            if (dragOverFocusedPath) dragOverFocusedPath = "";
+            return;
+        }
+        if (isDndActive) {
+            updateAutoScroll(e.clientY);
+        }
+        if (mainContainerEl && dragData) {
+            const pills = mainContainerEl.querySelectorAll('.focused-list-pill[data-filepath]');
+            let foundPath = "";
+            for (let i = 0; i < pills.length; i++) {
+                const pill = pills[i] as HTMLElement;
+                const rect = pill.getBoundingClientRect();
+                if (
+                    e.clientX >= rect.left &&
+                    e.clientX <= rect.right &&
+                    e.clientY >= rect.top &&
+                    e.clientY <= rect.bottom
+                ) {
+                    const path = pill.getAttribute('data-filepath') || "";
+                    if (path && path !== dragData.sourceFilepath && path !== currentCategory?.filepath) {
+                        foundPath = path;
+                    }
+                    break;
+                }
+            }
+            if (dragOverFocusedPath !== foundPath) {
+                dragOverFocusedPath = foundPath;
+            }
+        } else if (dragOverFocusedPath) {
+            dragOverFocusedPath = "";
+        }
     }
 
     function handleWheelDuringDnd(e: WheelEvent) {
@@ -2664,6 +2747,21 @@
             : currentCatPath;
 
         if (targetCat.filepath === actualSource) return;
+
+        if (targetCat.filepath === STARRED_CATEGORY_PATH) {
+            if (currentCatPath === STARRED_CATEGORY_PATH) return;
+            injectDndGhostShield();
+            if (!task.starred) {
+                task.starred = true;
+                incompleteTasks = [...incompleteTasks];
+                completedTasks = [...completedTasks];
+                await dataService.updateTask(actualSource, task);
+                EventBus.emit(EventName.TASK_UPDATED, { task, categoryFilepath: actualSource });
+                new Notice(isChinese() ? `已星标任务: "${task.title}"` : `Starred task: "${task.title}"`);
+            }
+            setTimeout(() => removeDndGhostShield(), ANTI_FLICKER_DURATION_MS);
+            return;
+        }
 
         // Anti-flicker: kill all transitions for the duration of the move
         injectDndGhostShield();
@@ -3243,6 +3341,8 @@
                                     <button 
                                         class="focused-list-pill"
                                         class:is-active={currentCategory?.filepath === cat.filepath}
+                                        class:drag-over={dragOverFocusedPath === cat.filepath}
+                                        data-filepath={cat.filepath}
                                         type="button"
                                         title={cat.name}
                                         on:click={() => handleSelectFocusedCategory(cat)}
