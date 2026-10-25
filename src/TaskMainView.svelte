@@ -221,17 +221,7 @@
 
         const trimmed = svgStr.trim();
         if (trimmed.startsWith("<svg") || trimmed.startsWith("<?xml") || trimmed.includes("</svg>")) {
-            let processed = trimmed;
-            // Auto-inject viewBox if missing so inline SVGs automatically scale to maximum viewport size
-            if (!processed.includes("viewBox") && !processed.includes("viewbox")) {
-                const widthMatch = processed.match(/width=["']?(\d+(?:\.\d+)?)px?["']?/i);
-                const heightMatch = processed.match(/height=["']?(\d+(?:\.\d+)?)px?["']?/i);
-                if (widthMatch && heightMatch) {
-                    const w = widthMatch[1];
-                    const h = heightMatch[1];
-                    processed = processed.replace(/<svg\b/i, `<svg viewBox="0 0 ${w} ${h}"`);
-                }
-            }
+            const processed = stampLightboxSvgMarkup(trimmed);
             const res = { isInline: true, content: processed, srcUrl: "", cleanPath: "" };
             svgResolveCache.set(svgStr, res);
             return res;
@@ -257,6 +247,24 @@
         return res;
     }
 
+    function stampLightboxSvgMarkup(rawSvg: string, cleanPath?: string): string {
+        let processed = (rawSvg || "").trim();
+        processed = processed.replace(/(<svg\b[^>]*?)\s+data-a1-svg-path="[^"]*"/gi, "$1");
+        const svgTagMatch = processed.match(/<svg\b[^>]*>/i);
+        if (svgTagMatch && !/\bviewBox\s*=/i.test(svgTagMatch[0])) {
+            const widthMatch = svgTagMatch[0].match(/\bwidth=["']?(\d+(?:\.\d+)?)(?:px)?["']?/i);
+            const heightMatch = svgTagMatch[0].match(/\bheight=["']?(\d+(?:\.\d+)?)(?:px)?["']?/i);
+            if (widthMatch && heightMatch) {
+                processed = processed.replace(/<svg\b/i, `<svg viewBox="0 0 ${widthMatch[1]} ${heightMatch[1]}"`);
+            }
+        }
+        if (cleanPath) {
+            const safePath = cleanPath.replace(/"/g, "&quot;");
+            processed = processed.replace(/<svg\b/i, `<svg data-a1-svg-path="${safePath}"`);
+        }
+        return processed;
+    }
+
     async function refreshActiveLightboxFromDisk(targetPath?: string) {
         if (!lightboxData || !lightboxData.cleanPath || !plugin?.app) return;
         const targetClean = targetPath ? targetPath.replace(/\\/g, "/") : "";
@@ -267,6 +275,9 @@
         }
 
         const quickEditor = (window as any).svgQuickEditor || (window as any).a1SvgQuickEditor;
+        if (quickEditor?.isRecentSelfSave && quickEditor.isRecentSelfSave(targetClean || currentClean)) {
+            return;
+        }
         if (quickEditor?.isSvgDirty && quickEditor.isSvgDirty()) {
             return;
         }
@@ -291,26 +302,23 @@
                 } else {
                     rawXml = await plugin.app.vault.read(file);
                 }
-                let processed = rawXml.trim();
-                if (!processed.includes("viewBox") && !processed.includes("viewbox")) {
-                    const widthMatch = processed.match(/width=["']?(\d+(?:\.\d+)?)px?["']?/i);
-                    const heightMatch = processed.match(/height=["']?(\d+(?:\.\d+)?)px?["']?/i);
-                    if (widthMatch && heightMatch) {
-                        processed = processed.replace(/<svg\b/i, `<svg viewBox="0 0 ${widthMatch[1]} ${heightMatch[1]}"`);
-                    }
+                if (quickEditor?.isRecentSelfSave && quickEditor.isRecentSelfSave(file.path, rawXml)) {
+                    return;
                 }
-                processed = processed.replace(/<svg\b/i, `<svg data-a1-svg-path="${file.path}"`);
+                const processed = stampLightboxSvgMarkup(rawXml, file.path);
 
                 if (lightboxData && lightboxData.content !== processed) {
                     lightboxData = {
                         ...lightboxData,
                         isInline: true,
+                        cleanPath: file.path,
                         content: processed,
                     };
                     svgResolveCache.clear();
                     await tick();
                     const svgEl = document.querySelector('.svg-lightbox-content svg') as SVGSVGElement | null;
                     if (svgEl) {
+                        svgEl.setAttribute('data-a1-svg-path', file.path);
                         quickEditor?.registerActiveSvg?.(svgEl);
                     }
                 }
@@ -329,8 +337,8 @@
         svgResolveCache.delete(svgStr);
         const res = resolveSvgItem(svgStr);
         let content = res.content;
-        if (res.cleanPath && content.includes("<svg") && !content.includes("data-a1-svg-path")) {
-            content = content.replace(/<svg\b/i, `<svg data-a1-svg-path="${res.cleanPath}"`);
+        if (res.cleanPath && content.includes("<svg")) {
+            content = stampLightboxSvgMarkup(content, res.cleanPath);
         }
         const quickEditor = (window as any).svgQuickEditor || (window as any).a1SvgQuickEditor;
         if (quickEditor?.getAutoAlign) {
@@ -354,6 +362,9 @@
             modalEl?.focus();
             const svgEl = document.querySelector('.svg-lightbox-content svg') as SVGSVGElement | null;
             if (svgEl) {
+                if (res.cleanPath) {
+                    svgEl.setAttribute('data-a1-svg-path', res.cleanPath);
+                }
                 const editor = (window as any).svgQuickEditor || (window as any).a1SvgQuickEditor;
                 editor?.registerActiveSvg?.(svgEl);
             }
@@ -377,19 +388,12 @@
                     ? plugin.app.vault.adapter.read(file.path)
                     : plugin.app.vault.read(file);
                 readPromise.then((rawXml: string) => {
-                    let processed = rawXml.trim();
-                    if (!processed.includes("viewBox") && !processed.includes("viewbox")) {
-                        const widthMatch = processed.match(/width=["']?(\d+(?:\.\d+)?)px?["']?/i);
-                        const heightMatch = processed.match(/height=["']?(\d+(?:\.\d+)?)px?["']?/i);
-                        if (widthMatch && heightMatch) {
-                            processed = processed.replace(/<svg\b/i, `<svg viewBox="0 0 ${widthMatch[1]} ${heightMatch[1]}"`);
-                        }
-                    }
-                    processed = processed.replace(/<svg\b/i, `<svg data-a1-svg-path="${file.path}"`);
+                    const processed = stampLightboxSvgMarkup(rawXml, file.path);
                     if (lightboxData && (lightboxData.cleanPath === res.cleanPath || lightboxData.cleanPath === file.path)) {
                         lightboxData = {
                             ...lightboxData,
                             isInline: true,
+                            cleanPath: file.path,
                             content: processed,
                         };
                         svgResolveCache.set(svgStr, {
@@ -401,6 +405,7 @@
                         void tick().then(() => {
                             const svgEl = document.querySelector('.svg-lightbox-content svg') as SVGSVGElement | null;
                             if (svgEl) {
+                                svgEl.setAttribute('data-a1-svg-path', file.path);
                                 const editor = (window as any).svgQuickEditor || (window as any).a1SvgQuickEditor;
                                 editor?.registerActiveSvg?.(svgEl);
                             }
@@ -489,6 +494,8 @@
             return;
         }
         const quickEditor = (window as any).svgQuickEditor || (window as any).a1SvgQuickEditor;
+        quickEditor?.commitActiveOverlay?.();
+        quickEditor?.clearHover?.();
         const svgEl = document.querySelector('.svg-lightbox-content svg') as SVGSVGElement | null;
         const isDirty = quickEditor?.isSvgDirty ? quickEditor.isSvgDirty(svgEl) : false;
         if (isDirty) {
@@ -496,18 +503,22 @@
             return;
         }
         showSvgSaveConfirmModal = false;
-        quickEditor?.clearHover?.();
         closeSvgLightbox();
     }
 
     async function saveAndCloseSvgLightbox() {
         const quickEditor = (window as any).svgQuickEditor || (window as any).a1SvgQuickEditor;
+        quickEditor?.commitActiveOverlay?.();
+        quickEditor?.clearHover?.();
         const svgEl = document.querySelector('.svg-lightbox-content svg') as SVGSVGElement | null;
-        if (svgEl && lightboxData?.cleanPath && !svgEl.getAttribute('data-a1-svg-path')) {
+        if (svgEl && lightboxData?.cleanPath) {
             svgEl.setAttribute('data-a1-svg-path', lightboxData.cleanPath);
         }
         if (quickEditor?.saveCurrentSvg) {
-            await quickEditor.saveCurrentSvg(svgEl, false);
+            const ok = await quickEditor.saveCurrentSvg(svgEl, false);
+            if (ok === false) {
+                return;
+            }
         } else if (lightboxData?.cleanPath && plugin?.app?.vault) {
             const contentToSave = svgEl ? svgEl.outerHTML : lightboxData.content;
             try {
@@ -527,6 +538,7 @@
 
     function discardAndCloseSvgLightbox() {
         const quickEditor = (window as any).svgQuickEditor || (window as any).a1SvgQuickEditor;
+        quickEditor?.cancelActiveOverlay?.();
         const svgEl = document.querySelector('.svg-lightbox-content svg') as SVGSVGElement | null;
         if (quickEditor?.discardCurrentSvg) {
             quickEditor.discardCurrentSvg(svgEl);
@@ -547,14 +559,15 @@
         const msg = isChinese() ? `SVG 已保存: ${name}` : `SVG saved: ${name}`;
 
         const quickEditor = (window as any).svgQuickEditor || (window as any).a1SvgQuickEditor;
+        quickEditor?.commitActiveOverlay?.();
+        quickEditor?.clearHover?.();
         const svgEl = document.querySelector('.svg-lightbox-content svg') as SVGSVGElement | null;
-        if (svgEl && lightboxData.cleanPath && !svgEl.getAttribute('data-a1-svg-path')) {
+        if (svgEl && lightboxData.cleanPath) {
             svgEl.setAttribute('data-a1-svg-path', lightboxData.cleanPath);
         }
 
         if (quickEditor?.saveCurrentSvg) {
             await quickEditor.saveCurrentSvg(svgEl, true);
-            triggerSaveToast(msg);
         } else if (lightboxData.cleanPath && plugin?.app?.vault) {
             const contentToSave = svgEl ? svgEl.outerHTML : lightboxData.content;
             try {
@@ -1444,7 +1457,7 @@
     }
 
     function handleSvgUpdated(e: any) {
-        const { path, content, deleted } = e?.detail || {};
+        const { path, content, deleted, source } = e?.detail || {};
         svgResolveCache.clear();
         if (deleted && path) {
             const filename = path.split("/").pop() || "";
@@ -1454,13 +1467,30 @@
             }
             return;
         }
+        // Do NOT replace lightboxData.content on in-place self-saves, because replacing {@html lightboxData.content}
+        // destroys the live <svg> DOM element and its WeakMap undo/redo history!
+        if (source === "self-save") {
+            return;
+        }
+        const quickEditor = (window as any).svgQuickEditor || (window as any).a1SvgQuickEditor;
+        if (path && quickEditor?.isRecentSelfSave && quickEditor.isRecentSelfSave(path, content)) {
+            return;
+        }
         if (path) {
             if (content) {
                 if (lightboxData && (lightboxData.cleanPath === path || lightboxData.cleanPath.endsWith(path))) {
+                    const stamped = stampLightboxSvgMarkup(content, lightboxData.cleanPath || path);
                     lightboxData = {
                         ...lightboxData,
-                        content,
+                        content: stamped,
                     };
+                    void tick().then(() => {
+                        const svgEl = document.querySelector('.svg-lightbox-content svg') as SVGSVGElement | null;
+                        if (svgEl) {
+                            svgEl.setAttribute('data-a1-svg-path', lightboxData?.cleanPath || path);
+                            quickEditor?.registerActiveSvg?.(svgEl);
+                        }
+                    });
                 }
             } else {
                 void refreshActiveLightboxFromDisk(path);
@@ -4362,8 +4392,7 @@
              on:click={handleLightboxClick}
              on:contextmenu|preventDefault={requestCloseSvgLightbox}
              role="presentation">
-            <div class="svg-lightbox-modal" role="dialog" aria-modal="true" tabindex="-1"
-                 on:keydown={handleLightboxKeydown}>
+            <div class="svg-lightbox-modal" role="dialog" aria-modal="true" tabindex="-1">
                 {#if showSaveToast}
                     <div class="svg-lightbox-toast">
                         <svg class="svg-lightbox-toast-icon" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -4454,6 +4483,7 @@
                 <div class="svg-lightbox-body">
                     {#if lightboxData.isInline}
                         <div class="svg-lightbox-content"
+                             data-a1-svg-path={lightboxData.cleanPath || undefined}
                              on:dblclick|stopPropagation={handleLightboxDblClick}>
                             {@html lightboxData.content}
                         </div>

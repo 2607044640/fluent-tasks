@@ -33259,12 +33259,6 @@ function create_if_block_92(ctx) {
             /*requestCloseSvgLightbox*/
             ctx[66]
           ),
-          listen(
-            div5,
-            "keydown",
-            /*handleLightboxKeydown*/
-            ctx[72]
-          ),
           action_destroyer(portal_action = portal.call(null, div6)),
           listen(
             div6,
@@ -33828,12 +33822,15 @@ function create_if_block_102(ctx) {
     /*lightboxData*/
     ctx[43].content + ""
   );
+  let div_data_a__svg_path_value;
   let mounted;
   let dispose;
   return {
     c() {
       div = element("div");
       attr(div, "class", "svg-lightbox-content");
+      attr(div, "data-a1-svg-path", div_data_a__svg_path_value = /*lightboxData*/
+      ctx[43].cleanPath || void 0);
     },
     m(target, anchor) {
       insert(target, div, anchor);
@@ -33852,6 +33849,11 @@ function create_if_block_102(ctx) {
       ctx2[43].content + ""))
         div.innerHTML = raw_value;
       ;
+      if (dirty[1] & /*lightboxData*/
+      4096 && div_data_a__svg_path_value !== (div_data_a__svg_path_value = /*lightboxData*/
+      ctx2[43].cleanPath || void 0)) {
+        attr(div, "data-a1-svg-path", div_data_a__svg_path_value);
+      }
     },
     d(detaching) {
       if (detaching) {
@@ -35185,6 +35187,23 @@ function applySmartLayout() {
     quickEditor.smartLayout(svgEl);
   }
 }
+function stampLightboxSvgMarkup(rawSvg, cleanPath) {
+  let processed = (rawSvg || "").trim();
+  processed = processed.replace(/(<svg\b[^>]*?)\s+data-a1-svg-path="[^"]*"/gi, "$1");
+  const svgTagMatch = processed.match(/<svg\b[^>]*>/i);
+  if (svgTagMatch && !/\bviewBox\s*=/i.test(svgTagMatch[0])) {
+    const widthMatch = svgTagMatch[0].match(/\bwidth=["']?(\d+(?:\.\d+)?)(?:px)?["']?/i);
+    const heightMatch = svgTagMatch[0].match(/\bheight=["']?(\d+(?:\.\d+)?)(?:px)?["']?/i);
+    if (widthMatch && heightMatch) {
+      processed = processed.replace(/<svg\b/i, `<svg viewBox="0 0 ${widthMatch[1]} ${heightMatch[1]}"`);
+    }
+  }
+  if (cleanPath) {
+    const safePath = cleanPath.replace(/"/g, "&quot;");
+    processed = processed.replace(/<svg\b/i, `<svg data-a1-svg-path="${safePath}"`);
+  }
+  return processed;
+}
 function handleMainPointerDown(e) {
   if (e.button === 3 || e.button === 4) {
     e.preventDefault();
@@ -35372,16 +35391,7 @@ function instance8($$self, $$props, $$invalidate) {
       return cached;
     const trimmed = svgStr.trim();
     if (trimmed.startsWith("<svg") || trimmed.startsWith("<?xml") || trimmed.includes("</svg>")) {
-      let processed = trimmed;
-      if (!processed.includes("viewBox") && !processed.includes("viewbox")) {
-        const widthMatch = processed.match(/width=["']?(\d+(?:\.\d+)?)px?["']?/i);
-        const heightMatch = processed.match(/height=["']?(\d+(?:\.\d+)?)px?["']?/i);
-        if (widthMatch && heightMatch) {
-          const w = widthMatch[1];
-          const h = heightMatch[1];
-          processed = processed.replace(/<svg\b/i, `<svg viewBox="0 0 ${w} ${h}"`);
-        }
-      }
+      const processed = stampLightboxSvgMarkup(trimmed);
       const res2 = {
         isInline: true,
         content: processed,
@@ -35420,6 +35430,9 @@ function instance8($$self, $$props, $$invalidate) {
       return;
     }
     const quickEditor = window.svgQuickEditor || window.a1SvgQuickEditor;
+    if ((quickEditor == null ? void 0 : quickEditor.isRecentSelfSave) && quickEditor.isRecentSelfSave(targetClean || currentClean)) {
+      return;
+    }
     if ((quickEditor == null ? void 0 : quickEditor.isSvgDirty) && quickEditor.isSvgDirty()) {
       return;
     }
@@ -35442,25 +35455,22 @@ function instance8($$self, $$props, $$invalidate) {
         } else {
           rawXml = await plugin.app.vault.read(file);
         }
-        let processed = rawXml.trim();
-        if (!processed.includes("viewBox") && !processed.includes("viewbox")) {
-          const widthMatch = processed.match(/width=["']?(\d+(?:\.\d+)?)px?["']?/i);
-          const heightMatch = processed.match(/height=["']?(\d+(?:\.\d+)?)px?["']?/i);
-          if (widthMatch && heightMatch) {
-            processed = processed.replace(/<svg\b/i, `<svg viewBox="0 0 ${widthMatch[1]} ${heightMatch[1]}"`);
-          }
+        if ((quickEditor == null ? void 0 : quickEditor.isRecentSelfSave) && quickEditor.isRecentSelfSave(file.path, rawXml)) {
+          return;
         }
-        processed = processed.replace(/<svg\b/i, `<svg data-a1-svg-path="${file.path}"`);
+        const processed = stampLightboxSvgMarkup(rawXml, file.path);
         if (lightboxData && lightboxData.content !== processed) {
           $$invalidate(43, lightboxData = {
             ...lightboxData,
             isInline: true,
+            cleanPath: file.path,
             content: processed
           });
           svgResolveCache.clear();
           await tick();
           const svgEl = document.querySelector(".svg-lightbox-content svg");
           if (svgEl) {
+            svgEl.setAttribute("data-a1-svg-path", file.path);
             (_a2 = quickEditor == null ? void 0 : quickEditor.registerActiveSvg) == null ? void 0 : _a2.call(quickEditor, svgEl);
           }
         }
@@ -35478,8 +35488,8 @@ function instance8($$self, $$props, $$invalidate) {
     svgResolveCache.delete(svgStr);
     const res = resolveSvgItem(svgStr);
     let content = res.content;
-    if (res.cleanPath && content.includes("<svg") && !content.includes("data-a1-svg-path")) {
-      content = content.replace(/<svg\b/i, `<svg data-a1-svg-path="${res.cleanPath}"`);
+    if (res.cleanPath && content.includes("<svg")) {
+      content = stampLightboxSvgMarkup(content, res.cleanPath);
     }
     const quickEditor = window.svgQuickEditor || window.a1SvgQuickEditor;
     if (quickEditor == null ? void 0 : quickEditor.getAutoAlign) {
@@ -35502,6 +35512,9 @@ function instance8($$self, $$props, $$invalidate) {
       modalEl == null ? void 0 : modalEl.focus();
       const svgEl = document.querySelector(".svg-lightbox-content svg");
       if (svgEl) {
+        if (res.cleanPath) {
+          svgEl.setAttribute("data-a1-svg-path", res.cleanPath);
+        }
         const editor = window.svgQuickEditor || window.a1SvgQuickEditor;
         (_a2 = editor == null ? void 0 : editor.registerActiveSvg) == null ? void 0 : _a2.call(editor, svgEl);
       }
@@ -35521,19 +35534,12 @@ function instance8($$self, $$props, $$invalidate) {
       if (file) {
         const readPromise = plugin.app.vault.adapter.exists(file.path) ? plugin.app.vault.adapter.read(file.path) : plugin.app.vault.read(file);
         readPromise.then((rawXml) => {
-          let processed = rawXml.trim();
-          if (!processed.includes("viewBox") && !processed.includes("viewbox")) {
-            const widthMatch = processed.match(/width=["']?(\d+(?:\.\d+)?)px?["']?/i);
-            const heightMatch = processed.match(/height=["']?(\d+(?:\.\d+)?)px?["']?/i);
-            if (widthMatch && heightMatch) {
-              processed = processed.replace(/<svg\b/i, `<svg viewBox="0 0 ${widthMatch[1]} ${heightMatch[1]}"`);
-            }
-          }
-          processed = processed.replace(/<svg\b/i, `<svg data-a1-svg-path="${file.path}"`);
+          const processed = stampLightboxSvgMarkup(rawXml, file.path);
           if (lightboxData && (lightboxData.cleanPath === res.cleanPath || lightboxData.cleanPath === file.path)) {
             $$invalidate(43, lightboxData = {
               ...lightboxData,
               isInline: true,
+              cleanPath: file.path,
               content: processed
             });
             svgResolveCache.set(svgStr, {
@@ -35546,6 +35552,7 @@ function instance8($$self, $$props, $$invalidate) {
               var _a2;
               const svgEl = document.querySelector(".svg-lightbox-content svg");
               if (svgEl) {
+                svgEl.setAttribute("data-a1-svg-path", file.path);
                 const editor = window.svgQuickEditor || window.a1SvgQuickEditor;
                 (_a2 = editor == null ? void 0 : editor.registerActiveSvg) == null ? void 0 : _a2.call(editor, svgEl);
               }
@@ -35627,12 +35634,14 @@ function instance8($$self, $$props, $$invalidate) {
     );
   }
   function requestCloseSvgLightbox() {
-    var _a2;
+    var _a2, _b2;
     if (showPluginDownloadModal) {
       $$invalidate(48, showPluginDownloadModal = false);
       return;
     }
     const quickEditor = window.svgQuickEditor || window.a1SvgQuickEditor;
+    (_a2 = quickEditor == null ? void 0 : quickEditor.commitActiveOverlay) == null ? void 0 : _a2.call(quickEditor);
+    (_b2 = quickEditor == null ? void 0 : quickEditor.clearHover) == null ? void 0 : _b2.call(quickEditor);
     const svgEl = document.querySelector(".svg-lightbox-content svg");
     const isDirty = (quickEditor == null ? void 0 : quickEditor.isSvgDirty) ? quickEditor.isSvgDirty(svgEl) : false;
     if (isDirty) {
@@ -35640,19 +35649,23 @@ function instance8($$self, $$props, $$invalidate) {
       return;
     }
     $$invalidate(44, showSvgSaveConfirmModal = false);
-    (_a2 = quickEditor == null ? void 0 : quickEditor.clearHover) == null ? void 0 : _a2.call(quickEditor);
     closeSvgLightbox();
   }
   async function saveAndCloseSvgLightbox() {
-    var _a2;
+    var _a2, _b2, _c2;
     const quickEditor = window.svgQuickEditor || window.a1SvgQuickEditor;
+    (_a2 = quickEditor == null ? void 0 : quickEditor.commitActiveOverlay) == null ? void 0 : _a2.call(quickEditor);
+    (_b2 = quickEditor == null ? void 0 : quickEditor.clearHover) == null ? void 0 : _b2.call(quickEditor);
     const svgEl = document.querySelector(".svg-lightbox-content svg");
-    if (svgEl && (lightboxData == null ? void 0 : lightboxData.cleanPath) && !svgEl.getAttribute("data-a1-svg-path")) {
+    if (svgEl && (lightboxData == null ? void 0 : lightboxData.cleanPath)) {
       svgEl.setAttribute("data-a1-svg-path", lightboxData.cleanPath);
     }
     if (quickEditor == null ? void 0 : quickEditor.saveCurrentSvg) {
-      await quickEditor.saveCurrentSvg(svgEl, false);
-    } else if ((lightboxData == null ? void 0 : lightboxData.cleanPath) && ((_a2 = plugin == null ? void 0 : plugin.app) == null ? void 0 : _a2.vault)) {
+      const ok = await quickEditor.saveCurrentSvg(svgEl, false);
+      if (ok === false) {
+        return;
+      }
+    } else if ((lightboxData == null ? void 0 : lightboxData.cleanPath) && ((_c2 = plugin == null ? void 0 : plugin.app) == null ? void 0 : _c2.vault)) {
       const contentToSave = svgEl ? svgEl.outerHTML : lightboxData.content;
       try {
         if (await plugin.app.vault.adapter.exists(lightboxData.cleanPath)) {
@@ -35670,7 +35683,9 @@ function instance8($$self, $$props, $$invalidate) {
     closeSvgLightbox();
   }
   function discardAndCloseSvgLightbox() {
+    var _a2;
     const quickEditor = window.svgQuickEditor || window.a1SvgQuickEditor;
+    (_a2 = quickEditor == null ? void 0 : quickEditor.cancelActiveOverlay) == null ? void 0 : _a2.call(quickEditor);
     const svgEl = document.querySelector(".svg-lightbox-content svg");
     if (quickEditor == null ? void 0 : quickEditor.discardCurrentSvg) {
       quickEditor.discardCurrentSvg(svgEl);
@@ -35684,20 +35699,21 @@ function instance8($$self, $$props, $$invalidate) {
     modalEl == null ? void 0 : modalEl.focus();
   }
   async function saveSvgLightboxInPlace() {
-    var _a2;
+    var _a2, _b2, _c2;
     if (!lightboxData)
       return;
     const name = lightboxData.cleanPath ? lightboxData.cleanPath.split("/").pop() || "SVG" : "SVG";
     const msg = isChinese() ? `SVG \u5DF2\u4FDD\u5B58: ${name}` : `SVG saved: ${name}`;
     const quickEditor = window.svgQuickEditor || window.a1SvgQuickEditor;
+    (_a2 = quickEditor == null ? void 0 : quickEditor.commitActiveOverlay) == null ? void 0 : _a2.call(quickEditor);
+    (_b2 = quickEditor == null ? void 0 : quickEditor.clearHover) == null ? void 0 : _b2.call(quickEditor);
     const svgEl = document.querySelector(".svg-lightbox-content svg");
-    if (svgEl && lightboxData.cleanPath && !svgEl.getAttribute("data-a1-svg-path")) {
+    if (svgEl && lightboxData.cleanPath) {
       svgEl.setAttribute("data-a1-svg-path", lightboxData.cleanPath);
     }
     if (quickEditor == null ? void 0 : quickEditor.saveCurrentSvg) {
       await quickEditor.saveCurrentSvg(svgEl, true);
-      triggerSaveToast(msg);
-    } else if (lightboxData.cleanPath && ((_a2 = plugin == null ? void 0 : plugin.app) == null ? void 0 : _a2.vault)) {
+    } else if (lightboxData.cleanPath && ((_c2 = plugin == null ? void 0 : plugin.app) == null ? void 0 : _c2.vault)) {
       const contentToSave = svgEl ? svgEl.outerHTML : lightboxData.content;
       try {
         if (await plugin.app.vault.adapter.exists(lightboxData.cleanPath)) {
@@ -36493,7 +36509,7 @@ function instance8($$self, $$props, $$invalidate) {
     }
   }
   function handleSvgUpdated(e) {
-    const { path, content, deleted } = (e == null ? void 0 : e.detail) || {};
+    const { path, content, deleted, source } = (e == null ? void 0 : e.detail) || {};
     svgResolveCache.clear();
     if (deleted && path) {
       const filename = path.split("/").pop() || "";
@@ -36503,10 +36519,26 @@ function instance8($$self, $$props, $$invalidate) {
       }
       return;
     }
+    if (source === "self-save") {
+      return;
+    }
+    const quickEditor = window.svgQuickEditor || window.a1SvgQuickEditor;
+    if (path && (quickEditor == null ? void 0 : quickEditor.isRecentSelfSave) && quickEditor.isRecentSelfSave(path, content)) {
+      return;
+    }
     if (path) {
       if (content) {
         if (lightboxData && (lightboxData.cleanPath === path || lightboxData.cleanPath.endsWith(path))) {
-          $$invalidate(43, lightboxData = { ...lightboxData, content });
+          const stamped = stampLightboxSvgMarkup(content, lightboxData.cleanPath || path);
+          $$invalidate(43, lightboxData = { ...lightboxData, content: stamped });
+          void tick().then(() => {
+            var _a2;
+            const svgEl = document.querySelector(".svg-lightbox-content svg");
+            if (svgEl) {
+              svgEl.setAttribute("data-a1-svg-path", (lightboxData == null ? void 0 : lightboxData.cleanPath) || path);
+              (_a2 = quickEditor == null ? void 0 : quickEditor.registerActiveSvg) == null ? void 0 : _a2.call(quickEditor, svgEl);
+            }
+          });
         }
       } else {
         void refreshActiveLightboxFromDisk(path);
