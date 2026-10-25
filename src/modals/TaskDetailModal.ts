@@ -43,6 +43,12 @@ export class TaskDetailModal extends Modal {
             this.containerEl.addClass("has-fullscreen-detail-modal");
         }
 
+        const isCenterAligned = this.plugin?.settings?.centerAlignTasks ?? true;
+        if (isCenterAligned) {
+            modalEl.addClass("is-center-aligned");
+            this.containerEl.addClass("is-center-aligned");
+        }
+
         EventBus.on(EventName.DETAIL_CLOSE, this.detailCloseHandler);
 
         this.component = new TaskDetailView({
@@ -52,6 +58,7 @@ export class TaskDetailModal extends Modal {
                 plugin: this.plugin,
                 isModal: true,
                 isFullscreen: isFullscreen,
+                centerAlignTasks: isCenterAligned,
                 onCloseModal: () => this.forceClose(),
                 onToggleFullscreen: (fullscreen: boolean) => {
                     modalEl.toggleClass("is-fullscreen", fullscreen);
@@ -70,6 +77,14 @@ export class TaskDetailModal extends Modal {
         this.containerEl.toggleClass("has-fullscreen-detail-modal", fullscreen);
         if (this.component) {
             this.component.$set({ isFullscreen: fullscreen });
+        }
+    }
+
+    public setCenterAligned(centerAligned: boolean) {
+        this.modalEl.toggleClass("is-center-aligned", centerAligned);
+        this.containerEl.toggleClass("is-center-aligned", centerAligned);
+        if (this.component) {
+            this.component.$set({ centerAlignTasks: centerAligned });
         }
     }
 

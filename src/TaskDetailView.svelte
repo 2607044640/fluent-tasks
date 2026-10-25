@@ -41,6 +41,7 @@
     export let plugin: any = undefined;
     export let isModal: boolean = false;
     export let isFullscreen: boolean = plugin?.settings?.fullscreenDetailModal ?? true;
+    export let centerAlignTasks: boolean = plugin?.settings?.centerAlignTasks ?? true;
     export let onCloseModal: (() => void) | undefined = undefined;
     export let onToggleFullscreen: ((fullscreen: boolean) => void) | undefined = undefined;
 
@@ -316,10 +317,16 @@
         }
     };
 
+    function handleSettingsChanged(payload?: any) {
+        centerAlignTasks = payload?.settings?.centerAlignTasks ?? plugin?.settings?.centerAlignTasks ?? true;
+        isFullscreen = payload?.settings?.fullscreenDetailModal ?? plugin?.settings?.fullscreenDetailModal ?? true;
+    }
+
     onMount(() => {
         EventBus.on(EventName.TASK_SELECTED, handleTaskSelected);
         EventBus.on(EventName.TASK_DELETED, handleTaskDeleted);
         EventBus.on(EventName.TASK_UPDATED, handleExternalTaskUpdate);
+        EventBus.on(EventName.SETTINGS_CHANGED, handleSettingsChanged);
         window.addEventListener("keydown", handleMetaModalKeydown, true);
         window.addEventListener("keydown", handleImageKeydown, true);
     });
@@ -328,6 +335,7 @@
         EventBus.off(EventName.TASK_SELECTED, handleTaskSelected);
         EventBus.off(EventName.TASK_DELETED, handleTaskDeleted);
         EventBus.off(EventName.TASK_UPDATED, handleExternalTaskUpdate);
+        EventBus.off(EventName.SETTINGS_CHANGED, handleSettingsChanged);
         window.removeEventListener("keydown", handleMetaModalKeydown, true);
         window.removeEventListener("keydown", handleImageKeydown, true);
         if (saveTimeout) {
@@ -1527,13 +1535,13 @@
     }
 </script>
 
-<div class="detail-container" on:wheel={handleContainerWheel} on:paste={handlePaste} on:dragover|preventDefault on:drop={handleDrop}>
+<div class="detail-container" class:is-center-aligned={centerAlignTasks} on:wheel={handleContainerWheel} on:paste={handlePaste} on:dragover|preventDefault on:drop={handleDrop}>
     {#if task}
         <!-- Scrollable Content Body -->
         <div class="detail-body" bind:this={detailBodyEl}>
             <!-- Header: Checkbox + Title + Star -->
-            <div class="detail-header">
-            <div class="title-row">
+            <div class="detail-header" class:is-center-aligned={centerAlignTasks}>
+            <div class="title-row" class:is-center-aligned={centerAlignTasks}>
                 <!-- Completion circle -->
                 <span class="checkbox" on:click={toggleComplete}
                       role="checkbox" aria-checked={task.completed} tabindex="0"
@@ -1553,12 +1561,13 @@
                 </span>
 
                 <!-- Title content column (Thumbnails + Divider + Title textarea) -->
-                <div class="title-content-col">
+                <div class="title-content-col" class:is-center-aligned={centerAlignTasks}>
                     {#if getTitleImages(task).length > 0}
                         <TaskImageStrip
                             images={getTitleImages(task)}
                             app={actualApp}
                             size={44}
+                            isCenterAligned={centerAlignTasks}
                             onDelete={(imgRef) => removeImageFromTitle(imgRef)}
                             onCut={(imgRef) => removeImageFromTitle(imgRef)}
                             onHover={(imgRef, isHovered) => {
@@ -1573,6 +1582,7 @@
                     <textarea
                         use:autosize={task.title}
                         class="detail-title-input"
+                        class:is-center-aligned={centerAlignTasks}
                         rows="1"
                         bind:value={task.title}
                         on:focus={() => { focusedTarget = { type: 'title' }; }}
@@ -1585,84 +1595,87 @@
                     />
                 </div>
 
-                <!-- Task Note Button (dedicated note for this task) -->
-                <!-- svelte-ignore a11y-click-events-have-key-events -->
-                <span class="detail-link-note-btn" class:active={hasTaskNote}
-                      on:click={handleTaskNoteClick}
-                      on:mouseenter={handleTaskNoteHover}
-                      on:contextmenu={handleTaskNoteContextMenu}
-                      role="button" tabindex="0"
-                      title={taskNoteTooltip}
-                      on:keydown={(e) => e.key === "Enter" && handleTaskNoteClick(e)}>
-                    {#if hasTaskNote}
-                        <!-- Dedicated task note active icon (File Text / Document with lines) -->
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                            <line x1="16" y1="13" x2="8" y2="13"/>
-                            <line x1="16" y1="17" x2="8" y2="17"/>
-                            <line x1="10" y1="9" x2="8" y2="9"/>
-                        </svg>
-                    {:else}
-                        <!-- Create dedicated task note icon (Document with plus) -->
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                            <line x1="12" y1="18" x2="12" y2="12"/>
-                            <line x1="9" y1="15" x2="15" y2="15"/>
-                        </svg>
-                    {/if}
-                </span>
-
-                {#if isModal}
-                    <div class="detail-modal-actions">
-                        <!-- Fullscreen / Restore Toggle Button -->
-                        <!-- svelte-ignore a11y-click-events-have-key-events -->
-                        <span class="detail-modal-fullscreen-btn"
-                              on:click={toggleFullscreen}
-                              role="button" tabindex="0"
-                              title={isFullscreen ? (t("restore_window") || "Restore window / 还原窗口") : (t("fullscreen_window") || "Full screen / 全屏放大")}
-                              on:keydown={(e) => e.key === "Enter" && toggleFullscreen()}>
-                            {#if isFullscreen}
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <polyline points="4 14 10 14 10 20"/>
-                                    <polyline points="20 10 14 10 14 4"/>
-                                    <line x1="14" y1="10" x2="21" y2="3"/>
-                                    <line x1="3" y1="21" x2="10" y2="14"/>
-                                </svg>
-                            {:else}
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <polyline points="15 3 21 3 21 9"/>
-                                    <polyline points="9 21 3 21 3 15"/>
-                                    <line x1="21" y1="3" x2="14" y2="10"/>
-                                    <line x1="3" y1="21" x2="10" y2="14"/>
-                                </svg>
-                            {/if}
-                        </span>
-
-                        <!-- Close button in modal mode -->
-                        <!-- svelte-ignore a11y-click-events-have-key-events -->
-                        <span class="detail-modal-close-btn"
-                              on:click={closePanel}
-                              role="button" tabindex="0"
-                              title="Close details (Esc)"
-                              on:keydown={(e) => e.key === "Enter" && closePanel()}>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                <!-- Right Actions (Task Note Button + Modal Actions) -->
+                <div class="title-right-actions">
+                    <!-- Task Note Button (dedicated note for this task) -->
+                    <!-- svelte-ignore a11y-click-events-have-key-events -->
+                    <span class="detail-link-note-btn" class:active={hasTaskNote}
+                          on:click={handleTaskNoteClick}
+                          on:mouseenter={handleTaskNoteHover}
+                          on:contextmenu={handleTaskNoteContextMenu}
+                          role="button" tabindex="0"
+                          title={taskNoteTooltip}
+                          on:keydown={(e) => e.key === "Enter" && handleTaskNoteClick(e)}>
+                        {#if hasTaskNote}
+                            <!-- Dedicated task note active icon (File Text / Document with lines) -->
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
                                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="18" y1="6" x2="6" y2="18"/>
-                                <line x1="6" y1="6" x2="18" y2="18"/>
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                                <line x1="10" y1="9" x2="8" y2="9"/>
                             </svg>
-                        </span>
-                    </div>
-                {/if}
+                        {:else}
+                            <!-- Create dedicated task note icon (Document with plus) -->
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="12" y1="18" x2="12" y2="12"/>
+                                <line x1="9" y1="15" x2="15" y2="15"/>
+                            </svg>
+                        {/if}
+                    </span>
+
+                    {#if isModal}
+                        <div class="detail-modal-actions">
+                            <!-- Fullscreen / Restore Toggle Button -->
+                            <!-- svelte-ignore a11y-click-events-have-key-events -->
+                            <span class="detail-modal-fullscreen-btn"
+                                  on:click={toggleFullscreen}
+                                  role="button" tabindex="0"
+                                  title={isFullscreen ? (t("restore_window") || "Restore window / 还原窗口") : (t("fullscreen_window") || "Full screen / 全屏放大")}
+                                  on:keydown={(e) => e.key === "Enter" && toggleFullscreen()}>
+                                {#if isFullscreen}
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="4 14 10 14 10 20"/>
+                                        <polyline points="20 10 14 10 14 4"/>
+                                        <line x1="14" y1="10" x2="21" y2="3"/>
+                                        <line x1="3" y1="21" x2="10" y2="14"/>
+                                    </svg>
+                                {:else}
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="15 3 21 3 21 9"/>
+                                        <polyline points="9 21 3 21 3 15"/>
+                                        <line x1="21" y1="3" x2="14" y2="10"/>
+                                        <line x1="3" y1="21" x2="10" y2="14"/>
+                                    </svg>
+                                {/if}
+                            </span>
+
+                            <!-- Close button in modal mode -->
+                            <!-- svelte-ignore a11y-click-events-have-key-events -->
+                            <span class="detail-modal-close-btn"
+                                  on:click={closePanel}
+                                  role="button" tabindex="0"
+                                  title="Close details (Esc)"
+                                  on:keydown={(e) => e.key === "Enter" && closePanel()}>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"/>
+                                    <line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                            </span>
+                        </div>
+                    {/if}
+                </div>
             </div>
 
             <!-- Steps -->
-            <div class="steps-container">
+            <div class="steps-container" class:is-center-aligned={centerAlignTasks}>
                 {#if task.steps && task.steps.length > 0}
                     <div
                         class="steps-dnd-zone"
@@ -1677,39 +1690,42 @@
                         on:finalize={handleDndFinalize}
                     >
                         {#each task.steps as step (step.id)}
-                            <div class="step-item" animate:flip={{ duration: DND_FLIP_DURATION }}>
-                                <span class="step-drag-handle" title="Drag to reorder">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                                        <circle cx="9" cy="5" r="1.8"/>
-                                        <circle cx="15" cy="5" r="1.8"/>
-                                        <circle cx="9" cy="12" r="1.8"/>
-                                        <circle cx="15" cy="12" r="1.8"/>
-                                        <circle cx="9" cy="19" r="1.8"/>
-                                        <circle cx="15" cy="19" r="1.8"/>
-                                    </svg>
-                                </span>
-                                <span class="checkbox" on:click|stopPropagation={() => toggleStepDone(step.id)}
-                                      role="checkbox" aria-checked={step.done} tabindex="0"
-                                      on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleStepDone(step.id)}>
-                                    {#if step.done}
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                             stroke="var(--todo-accent)" stroke-width="2">
-                                            <circle cx="12" cy="12" r="10"/>
-                                            <polyline points="8 12 11 15 16 9"/>
+                            <div class="step-item" class:is-center-aligned={centerAlignTasks} animate:flip={{ duration: DND_FLIP_DURATION }}>
+                                <div class="step-left-controls">
+                                    <span class="step-drag-handle" title="Drag to reorder">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                                            <circle cx="9" cy="5" r="1.8"/>
+                                            <circle cx="15" cy="5" r="1.8"/>
+                                            <circle cx="9" cy="12" r="1.8"/>
+                                            <circle cx="15" cy="12" r="1.8"/>
+                                            <circle cx="9" cy="19" r="1.8"/>
+                                            <circle cx="15" cy="19" r="1.8"/>
                                         </svg>
-                                    {:else}
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                             stroke="currentColor" stroke-width="2">
-                                            <circle cx="12" cy="12" r="10"/>
-                                        </svg>
-                                    {/if}
-                                </span>
-                                <div class="step-content-col">
+                                    </span>
+                                    <span class="checkbox" on:click|stopPropagation={() => toggleStepDone(step.id)}
+                                          role="checkbox" aria-checked={step.done} tabindex="0"
+                                          on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleStepDone(step.id)}>
+                                        {#if step.done}
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                                 stroke="var(--todo-accent)" stroke-width="2">
+                                                <circle cx="12" cy="12" r="10"/>
+                                                <polyline points="8 12 11 15 16 9"/>
+                                            </svg>
+                                        {:else}
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                                 stroke="currentColor" stroke-width="2">
+                                                <circle cx="12" cy="12" r="10"/>
+                                            </svg>
+                                        {/if}
+                                    </span>
+                                </div>
+                                <div class="step-content-col" class:is-center-aligned={centerAlignTasks}>
                                     {#if getStepImages(step).length > 0}
                                         <TaskImageStrip
                                             images={getStepImages(step)}
                                             app={actualApp}
                                             size={38}
+                                            isCenterAligned={centerAlignTasks}
                                             onDelete={(imgRef) => removeImageFromStep(step.id, imgRef)}
                                             onCut={(imgRef) => removeImageFromStep(step.id, imgRef)}
                                             onHover={(imgRef, isHovered) => {
@@ -1726,6 +1742,7 @@
                                         rows="1"
                                         value={step.text}
                                         class:completed={step.done}
+                                        class:is-center-aligned={centerAlignTasks}
                                         on:focus={() => { if (step.id) focusedTarget = { type: 'step', stepId: step.id }; }}
                                         on:input={(e) => updateStepText(step.id, e.currentTarget.value)}
                                         on:blur={() => handleStepBlur(step.id)}
@@ -1762,12 +1779,13 @@
                 {/if}
 
                 <!-- Add step row (kept outside dndzone so dndzone children strictly equal items) -->
-                <div class="add-step-card">
+                <div class="add-step-card" class:is-center-aligned={centerAlignTasks}>
                     {#if newStepImages.length > 0}
                         <TaskImageStrip
                             images={newStepImages}
                             app={actualApp}
                             size={38}
+                            isCenterAligned={centerAlignTasks}
                             onDelete={(imgRef) => removeNewStepImage(imgRef)}
                             onCut={(imgRef) => removeNewStepImage(imgRef)}
                             onHover={(imgRef, isHovered) => {
@@ -1779,7 +1797,7 @@
                             }}
                         />
                     {/if}
-                    <div class="add-step-row">
+                    <div class="add-step-row" class:is-center-aligned={centerAlignTasks}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="12" y1="5" x2="12" y2="19"/>
@@ -1787,6 +1805,7 @@
                         </svg>
                         <input
                             class="add-step-input"
+                            class:is-center-aligned={centerAlignTasks}
                             type="text"
                             placeholder="Add step (Ctrl+V to paste image)"
                             bind:value={newStepText}
@@ -1800,12 +1819,13 @@
 
         <!-- Note -->
         <!-- svelte-ignore a11y-no-static-element-interactions -->
-        <div class="note-section" on:focusin={() => { focusedTarget = { type: 'note' }; }}>
+        <div class="note-section" class:is-center-aligned={centerAlignTasks} on:focusin={() => { focusedTarget = { type: 'note' }; }}>
             {#if getNoteImages(task).length > 0}
                 <TaskImageStrip
                     images={getNoteImages(task)}
                     app={actualApp}
                     size={44}
+                    isCenterAligned={centerAlignTasks}
                     onDelete={(imgRef) => removeImageFromNote(imgRef)}
                     onCut={(imgRef) => removeImageFromNote(imgRef)}
                     onHover={(imgRef, isHovered) => {
@@ -1819,6 +1839,7 @@
             {/if}
             <textarea
                 class="note-textarea"
+                class:is-center-aligned={centerAlignTasks}
                 placeholder="Add note (Ctrl+V to paste image)"
                 bind:value={task.note}
                 on:focus={() => { focusedTarget = { type: 'note' }; }}
@@ -1828,7 +1849,7 @@
 
         <!-- Active Metadata Chips (Why, Note Link, SVG, Custom) -->
         {#if getTaskWhys(task).length > 0 || getTaskNoteLinks(task).length > 0 || (task.svgs && task.svgs.length > 0) || (task.customMeta && Object.keys(task.customMeta).length > 0)}
-            <div class="detail-meta-chips-section">
+            <div class="detail-meta-chips-section" class:is-center-aligned={centerAlignTasks}>
                 {#if getTaskWhys(task).length > 0}
                     {#each getTaskWhys(task) as whyItem, idx}
                         <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -2419,5 +2440,20 @@
         display: flex;
         flex-direction: column;
         gap: 6px;
+    }
+
+    .title-right-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+        margin-left: auto;
+    }
+
+    .step-left-controls {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
     }
 </style>

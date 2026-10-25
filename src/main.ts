@@ -995,6 +995,10 @@ export default class FluentTasksPlugin extends Plugin {
                 comp?.applySettingsUpdate?.(this.settings);
             }
         }
+
+        if (this.activeDetailModal) {
+            this.activeDetailModal.setCenterAligned(this.settings.centerAlignTasks ?? true);
+        }
     }
 
     applySettings() {

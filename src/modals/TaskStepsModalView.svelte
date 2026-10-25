@@ -829,51 +829,55 @@
                     <div
                         class="steps-modal-item"
                         class:is-done={step.done}
+                        class:is-center-aligned={centerAlignTasks}
                         animate:flip={{ duration: DND_FLIP_DURATION }}
                     >
-                        <!-- Drag handle -->
-                        <span class="steps-modal-drag-handle" title="Drag to reorder">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                                <circle cx="9" cy="5" r="1.8" />
-                                <circle cx="15" cy="5" r="1.8" />
-                                <circle cx="9" cy="12" r="1.8" />
-                                <circle cx="15" cy="12" r="1.8" />
-                                <circle cx="9" cy="19" r="1.8" />
-                                <circle cx="15" cy="19" r="1.8" />
-                            </svg>
-                        </span>
+                        <div class="steps-modal-left-controls">
+                            <!-- Drag handle -->
+                            <span class="steps-modal-drag-handle" title="Drag to reorder">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                    <circle cx="9" cy="5" r="1.8" />
+                                    <circle cx="15" cy="5" r="1.8" />
+                                    <circle cx="9" cy="12" r="1.8" />
+                                    <circle cx="15" cy="12" r="1.8" />
+                                    <circle cx="9" cy="19" r="1.8" />
+                                    <circle cx="15" cy="19" r="1.8" />
+                                </svg>
+                            </span>
 
-                        <!-- Checkbox -->
-                        <!-- svelte-ignore a11y-click-events-have-key-events -->
-                        <span
-                            class="steps-modal-checkbox"
-                            class:checked={step.done}
-                            role="checkbox"
-                            aria-checked={step.done}
-                            tabindex="0"
-                            on:click|stopPropagation={() => toggleStep(step.id)}
-                            on:keydown|stopPropagation={(e) => (e.key === "Enter" || e.key === " ") && toggleStep(step.id)}
-                            aria-label={step.done ? "Mark step incomplete" : "Mark step complete"}
-                        >
-                            {#if step.done}
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--todo-accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="12" cy="12" r="10" />
-                                    <polyline points="8 12 11 15 16 9" />
-                                </svg>
-                            {:else}
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                    <circle cx="12" cy="12" r="10" />
-                                </svg>
-                            {/if}
-                        </span>
+                            <!-- Checkbox -->
+                            <!-- svelte-ignore a11y-click-events-have-key-events -->
+                            <span
+                                class="steps-modal-checkbox"
+                                class:checked={step.done}
+                                role="checkbox"
+                                aria-checked={step.done}
+                                tabindex="0"
+                                on:click|stopPropagation={() => toggleStep(step.id)}
+                                on:keydown|stopPropagation={(e) => (e.key === "Enter" || e.key === " ") && toggleStep(step.id)}
+                                aria-label={step.done ? "Mark step incomplete" : "Mark step complete"}
+                            >
+                                {#if step.done}
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--todo-accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10" />
+                                        <polyline points="8 12 11 15 16 9" />
+                                    </svg>
+                                {:else}
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                        <circle cx="12" cy="12" r="10" />
+                                    </svg>
+                                {/if}
+                            </span>
+                        </div>
 
                         <!-- Multi-line auto-resizing textarea with thumbnail row placed ABOVE the text -->
-                        <div class="steps-modal-text-col">
+                        <div class="steps-modal-text-col" class:is-center-aligned={centerAlignTasks}>
                             {#if getStepImages(step).length > 0}
                                 <TaskImageStrip
                                     images={getStepImages(step)}
                                     app={actualApp}
                                     size={44}
+                                    isCenterAligned={centerAlignTasks}
                                     onDelete={(imgRef) => removeImageFromStep(step.id, imgRef)}
                                     onCut={(imgRef) => removeImageFromStep(step.id, imgRef)}
                                     onHover={(imgRef, isHovered) => {
@@ -928,12 +932,13 @@
         {/if}
 
         <!-- Add Step Container -->
-        <div class="steps-modal-add-card">
+        <div class="steps-modal-add-card" class:is-center-aligned={centerAlignTasks}>
             {#if newStepImages.length > 0}
                 <TaskImageStrip
                     images={newStepImages}
                     app={actualApp}
                     size={44}
+                    isCenterAligned={centerAlignTasks}
                     onDelete={(imgRef) => removeNewStepImage(imgRef)}
                     onCut={(imgRef) => removeNewStepImage(imgRef)}
                     onHover={(imgRef, isHovered) => {
@@ -945,7 +950,7 @@
                     }}
                 />
             {/if}
-            <div class="steps-modal-add-row">
+            <div class="steps-modal-add-row" class:is-center-aligned={centerAlignTasks}>
                 <span class="steps-modal-add-icon">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--todo-accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="12" y1="5" x2="12" y2="19"/>
@@ -984,6 +989,13 @@
 </div>
 
 <style>
+    .steps-modal-left-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+
     .steps-modal-text-col {
         flex: 1;
         display: flex;

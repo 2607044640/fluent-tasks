@@ -5703,6 +5703,13 @@ body .task-steps-floating-modal .steps-modal-delete-btn:hover {
 }
 
 /* Sidestep / Task Steps Floating Modal Centering */
+.steps-modal-left-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
 .task-steps-floating-modal.is-center-aligned .task-steps-modal-title,
 .task-steps-modal-container.is-center-aligned .task-steps-modal-title {
     text-align: center;
@@ -5716,7 +5723,33 @@ body .task-steps-floating-modal .steps-modal-delete-btn:hover {
 
 .task-steps-floating-modal.is-center-aligned .steps-modal-item,
 .task-steps-modal-container.is-center-aligned .steps-modal-item {
-    justify-content: center;
+    display: grid;
+    grid-template-columns: minmax(min-content, 1fr) auto minmax(min-content, 1fr);
+    align-items: center;
+    column-gap: 12px;
+}
+
+.task-steps-floating-modal.is-center-aligned .steps-modal-left-controls,
+.task-steps-modal-container.is-center-aligned .steps-modal-left-controls {
+    grid-column: 1;
+    justify-self: start;
+}
+
+.task-steps-floating-modal.is-center-aligned .steps-modal-text-col,
+.task-steps-modal-container.is-center-aligned .steps-modal-text-col {
+    grid-column: 2;
+    align-items: center;
+    text-align: center;
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.task-steps-floating-modal.is-center-aligned .steps-modal-delete-btn,
+.task-steps-modal-container.is-center-aligned .steps-modal-delete-btn {
+    grid-column: 3;
+    justify-self: end;
 }
 
 .task-steps-floating-modal.is-center-aligned .autosize-field-sizing {
@@ -5733,9 +5766,18 @@ body .task-steps-floating-modal .steps-modal-delete-btn:hover {
     text-align: center;
 }
 
+.task-steps-floating-modal.is-center-aligned .steps-modal-add-card,
+.task-steps-modal-container.is-center-aligned .steps-modal-add-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
 .task-steps-floating-modal.is-center-aligned .steps-modal-add-row,
 .task-steps-modal-container.is-center-aligned .steps-modal-add-row {
     justify-content: center;
+    width: 100%;
 }
 
 .task-steps-floating-modal.is-center-aligned .steps-modal-add-input,
@@ -5752,6 +5794,195 @@ body .task-steps-floating-modal .steps-modal-delete-btn:hover {
 .task-steps-modal-container.is-center-aligned .task-steps-empty-state {
     align-items: center;
     text-align: center;
+}
+
+/* =============================================
+   Task Detail Centering (Floating Modal & Side Panel)
+   ============================================= */
+.title-right-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.step-left-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.detail-container.is-center-aligned .detail-header,
+body .task-detail-floating-modal.is-center-aligned .detail-header {
+    width: 100%;
+}
+
+.detail-container.is-center-aligned .title-row,
+body .task-detail-floating-modal.is-center-aligned .title-row {
+    display: grid;
+    grid-template-columns: minmax(min-content, 1fr) auto minmax(min-content, 1fr);
+    align-items: center;
+    column-gap: 12px;
+    width: 100%;
+}
+
+.detail-container.is-center-aligned .title-row .checkbox,
+body .task-detail-floating-modal.is-center-aligned .title-row .checkbox {
+    grid-column: 1;
+    justify-self: start;
+    align-self: start;
+    margin-top: 3px;
+    margin-right: 0;
+}
+
+.detail-container.is-center-aligned .title-content-col,
+body .task-detail-floating-modal.is-center-aligned .title-content-col {
+    grid-column: 2;
+    align-items: center;
+    text-align: center;
+    width: 100%;
+    min-width: 0;
+}
+
+.detail-container.is-center-aligned .detail-title-input,
+body .task-detail-floating-modal.is-center-aligned .detail-title-input {
+    text-align: center !important;
+    width: 100%;
+}
+
+.detail-container.is-center-aligned .detail-title-input::placeholder,
+body .task-detail-floating-modal.is-center-aligned .detail-title-input::placeholder {
+    text-align: center;
+}
+
+.detail-container.is-center-aligned .title-right-actions,
+body .task-detail-floating-modal.is-center-aligned .title-right-actions {
+    grid-column: 3;
+    justify-self: end;
+    align-self: start;
+    margin-top: 2px;
+    margin-left: 0;
+}
+
+.detail-container.is-center-aligned .step-item,
+body .task-detail-floating-modal.is-center-aligned .step-item {
+    display: grid;
+    grid-template-columns: minmax(min-content, 1fr) auto minmax(min-content, 1fr);
+    align-items: center;
+    column-gap: 12px;
+    width: 100%;
+}
+
+.detail-container.is-center-aligned .step-left-controls,
+body .task-detail-floating-modal.is-center-aligned .step-left-controls {
+    grid-column: 1;
+    justify-self: start;
+}
+
+.detail-container.is-center-aligned .step-content-col,
+body .task-detail-floating-modal.is-center-aligned .step-content-col {
+    grid-column: 2;
+    align-items: center;
+    text-align: center;
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.detail-container.is-center-aligned .step-item textarea,
+.detail-container.is-center-aligned .step-item input[type="text"],
+body .task-detail-floating-modal.is-center-aligned .step-item textarea,
+body .task-detail-floating-modal.is-center-aligned .step-item input[type="text"] {
+    text-align: center !important;
+    width: 100%;
+}
+
+.detail-container.is-center-aligned .step-item textarea::placeholder,
+.detail-container.is-center-aligned .step-item input[type="text"]::placeholder,
+body .task-detail-floating-modal.is-center-aligned .step-item textarea::placeholder,
+body .task-detail-floating-modal.is-center-aligned .step-item input[type="text"]::placeholder {
+    text-align: center;
+}
+
+.detail-container.is-center-aligned .delete-step,
+body .task-detail-floating-modal.is-center-aligned .delete-step {
+    grid-column: 3;
+    justify-self: end;
+}
+
+.detail-container.is-center-aligned .add-step-card,
+body .task-detail-floating-modal.is-center-aligned .add-step-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.detail-container.is-center-aligned .add-step-row,
+body .task-detail-floating-modal.is-center-aligned .add-step-row {
+    justify-content: center;
+    width: 100%;
+}
+
+.detail-container.is-center-aligned .add-step-input,
+body .task-detail-floating-modal.is-center-aligned .add-step-input {
+    text-align: center !important;
+}
+
+.detail-container.is-center-aligned .add-step-input::placeholder,
+body .task-detail-floating-modal.is-center-aligned .add-step-input::placeholder {
+    text-align: center;
+}
+
+.detail-container.is-center-aligned .note-section,
+body .task-detail-floating-modal.is-center-aligned .note-section {
+    align-items: center;
+    text-align: center;
+}
+
+.detail-container.is-center-aligned .note-textarea,
+body .task-detail-floating-modal.is-center-aligned .note-textarea {
+    text-align: center !important;
+}
+
+.detail-container.is-center-aligned .note-textarea::placeholder,
+body .task-detail-floating-modal.is-center-aligned .note-textarea::placeholder {
+    text-align: center;
+}
+
+.detail-container.is-center-aligned .detail-meta-chips-section,
+body .task-detail-floating-modal.is-center-aligned .detail-meta-chips-section {
+    justify-content: center;
+}
+
+/* Image Strip Centering in All Centered Contexts */
+.is-center-aligned .task-image-strip-wrapper,
+.center-tasks .task-image-strip-wrapper,
+.task-item.is-center-aligned .task-image-strip-wrapper,
+.task-steps-floating-modal.is-center-aligned .task-image-strip-wrapper,
+.task-steps-modal-container.is-center-aligned .task-image-strip-wrapper,
+.task-detail-floating-modal.is-center-aligned .task-image-strip-wrapper,
+.detail-container.is-center-aligned .task-image-strip-wrapper,
+.steps-modal-text-col.is-center-aligned .task-image-strip-wrapper,
+.step-content-col.is-center-aligned .task-image-strip-wrapper,
+.title-content-col.is-center-aligned .task-image-strip-wrapper {
+    align-items: center !important;
+}
+
+.is-center-aligned .task-image-strip-row,
+.center-tasks .task-image-strip-row,
+.task-item.is-center-aligned .task-image-strip-row,
+.task-steps-floating-modal.is-center-aligned .task-image-strip-row,
+.task-steps-modal-container.is-center-aligned .task-image-strip-row,
+.task-detail-floating-modal.is-center-aligned .task-image-strip-row,
+.detail-container.is-center-aligned .task-image-strip-row,
+.steps-modal-text-col.is-center-aligned .task-image-strip-row,
+.step-content-col.is-center-aligned .task-image-strip-row,
+.title-content-col.is-center-aligned .task-image-strip-row {
+    justify-content: center !important;
 }
 
 /* =============================================

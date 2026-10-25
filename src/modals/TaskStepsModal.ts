@@ -31,6 +31,7 @@ export class TaskStepsModal extends Modal {
         modalEl.addClass("task-steps-floating-modal");
         if (this.plugin?.settings?.centerAlignTasks ?? true) {
             modalEl.addClass("is-center-aligned");
+            this.containerEl.addClass("is-center-aligned");
         }
         contentEl.addClass("task-steps-modal-content");
 

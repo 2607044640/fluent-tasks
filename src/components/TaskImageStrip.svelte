@@ -7,6 +7,7 @@
     export let size: number = 38;
     export let canDelete: boolean = true;
     export let showDivider: boolean = true;
+    export let isCenterAligned: boolean = false;
     export let onDelete: ((imgRef: string) => void) | undefined = undefined;
     export let onCut: ((imgRef: string) => void) | undefined = undefined;
     export let onHover: ((imgRef: string, isHovered: boolean) => void) | undefined = undefined;
@@ -14,8 +15,8 @@
 </script>
 
 {#if images && images.length > 0}
-    <div class="task-image-strip-wrapper">
-        <div class="task-image-strip-row">
+    <div class="task-image-strip-wrapper" class:is-center-aligned={isCenterAligned}>
+        <div class="task-image-strip-row" class:is-center-aligned={isCenterAligned}>
             {#each images as imgRef (imgRef)}
                 <TaskImageThumbnail
                     imageRef={imgRef}
@@ -43,11 +44,19 @@
         margin-bottom: 6px;
     }
 
+    .task-image-strip-wrapper.is-center-aligned {
+        align-items: center;
+    }
+
     .task-image-strip-row {
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
         align-items: center;
+    }
+
+    .task-image-strip-row.is-center-aligned {
+        justify-content: center;
     }
 
     .task-image-strip-divider {

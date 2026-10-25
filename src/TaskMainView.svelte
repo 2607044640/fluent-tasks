@@ -3671,6 +3671,7 @@
                                 images={getTitleImages(task)}
                                 app={actualApp}
                                 size={38}
+                                isCenterAligned={centerAlignTasks}
                                 onDelete={(imgRef) => removeImageFromMainTaskTitle(task, imgRef)}
                                 onCut={(imgRef) => cutImageFromMainTaskTitle(task, imgRef)}
                                 onHover={(imgRef, isHovered) => handleThumbnailHover(task, imgRef, isHovered)}
@@ -3935,6 +3936,7 @@
                                             images={getTitleImages(task)}
                                             app={actualApp}
                                             size={38}
+                                            isCenterAligned={centerAlignTasks}
                                             onDelete={(imgRef) => removeImageFromMainTaskTitle(task, imgRef)}
                                             onCut={(imgRef) => cutImageFromMainTaskTitle(task, imgRef)}
                                             onHover={(imgRef, isHovered) => handleThumbnailHover(task, imgRef, isHovered)}
