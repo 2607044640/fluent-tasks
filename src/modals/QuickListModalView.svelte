@@ -844,6 +844,7 @@
             EventBus.emit(EventName.TASK_SELECTED, {
                 task: item.task,
                 categoryFilepath: item.category.filepath,
+                skipModal: true,
             });
         }, 200);
 

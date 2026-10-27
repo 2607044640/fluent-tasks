@@ -99,10 +99,11 @@ export class TaskSearchModal extends SuggestModal<TaskSearchResult> {
                 taskId: item.task.id,
                 isCompleted: item.task.completed,
             });
-            // Also open the detail panel
+            // Also update the detail panel without popping floating modal
             EventBus.emit(EventName.TASK_SELECTED, {
                 task: item.task,
                 categoryFilepath: item.category.filepath,
+                skipModal: true,
             });
         }, 200);
     }

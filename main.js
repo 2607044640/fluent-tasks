@@ -5081,7 +5081,8 @@ var TaskSearchModal = class extends import_obsidian7.SuggestModal {
       });
       EventBus.emit("task:selected" /* TASK_SELECTED */, {
         task: item.task,
-        categoryFilepath: item.category.filepath
+        categoryFilepath: item.category.filepath,
+        skipModal: true
       });
     }, 200);
   }
@@ -22751,7 +22752,8 @@ function instance6($$self, $$props, $$invalidate) {
         });
         EventBus.emit("task:selected" /* TASK_SELECTED */, {
           task: item.task,
-          categoryFilepath: item.category.filepath
+          categoryFilepath: item.category.filepath,
+          skipModal: true
         });
       },
       200
@@ -37535,7 +37537,8 @@ function instance8($$self, $$props, $$invalidate) {
           if (freshTask) {
             EventBus.emit("task:selected" /* TASK_SELECTED */, {
               task: freshTask,
-              categoryFilepath: currentCategory.filepath
+              categoryFilepath: currentCategory.filepath,
+              skipModal: true
             });
           }
         }
@@ -37764,12 +37767,13 @@ function instance8($$self, $$props, $$invalidate) {
       EventBus.emit("category:selected" /* CATEGORY_SELECTED */, { category: cat });
     }
   }
-  function selectTask(task) {
+  function selectTask(task, options) {
     $$invalidate(9, selectedTaskId = task.id);
     const effectiveCategory = (currentCategory == null ? void 0 : currentCategory.filepath) === STARRED_CATEGORY_PATH && task.sourceFilepath ? task.sourceFilepath : (currentCategory == null ? void 0 : currentCategory.filepath) || "";
     EventBus.emit("task:selected" /* TASK_SELECTED */, {
       task,
-      categoryFilepath: effectiveCategory
+      categoryFilepath: effectiveCategory,
+      skipModal: options == null ? void 0 : options.skipModal
     });
   }
   function toggleCompletedSection() {
@@ -37859,12 +37863,20 @@ function instance8($$self, $$props, $$invalidate) {
   async function selectSearchResult(item) {
     if (!item || !item.task)
       return;
+    closeSearch();
+    if (item.category && currentCategory && item.category.filepath !== currentCategory.filepath && currentCategory.filepath !== STARRED_CATEGORY_PATH) {
+      await handleCategorySelected({ category: item.category });
+    }
     if (item.task.completed && !showCompleted) {
       $$invalidate(8, showCompleted = true);
     }
-    selectTask(item.task);
+    selectTask(item.task, { skipModal: true });
     await tick();
-    const el = document.getElementById("task-" + item.task.id);
+    let el = document.getElementById("task-" + item.task.id);
+    if (!el) {
+      await tick();
+      el = document.getElementById("task-" + item.task.id);
+    }
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "center" });
       el.classList.add("navigate-highlight");
@@ -37873,7 +37885,6 @@ function instance8($$self, $$props, $$invalidate) {
         return (_a2 = el.classList) == null ? void 0 : _a2.remove("navigate-highlight");
       }, 1500);
     }
-    closeSearch();
   }
   function handleSearchKeydown(e) {
     if (e.isComposing || isSearchComposing || e.keyCode === 229)
@@ -54961,7 +54972,8 @@ function instance11($$self, $$props, $$invalidate) {
           EventBus.emit("category:selected" /* CATEGORY_SELECTED */, { category: cat });
           EventBus.emit("task:selected" /* TASK_SELECTED */, {
             task: currentTask,
-            categoryFilepath: cat.filepath
+            categoryFilepath: cat.filepath,
+            skipModal: true
           });
           EventBus.emit("task:navigate" /* TASK_NAVIGATE */, {
             taskId: currentTask.id,
@@ -56430,6 +56442,12 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
           void (async () => {
             var _a2;
             if (this.settings.openDetailInModal) {
+              if (p.skipModal) {
+                if (this.activeDetailModal) {
+                  this.activeDetailModal.loadTask(p.task, p.categoryFilepath);
+                }
+                return;
+              }
               const wasRightActive = this.isPluginRightSidebarActive();
               const rightSplit = this.app.workspace.rightSplit;
               if (rightSplit && !rightSplit.collapsed && wasRightActive) {

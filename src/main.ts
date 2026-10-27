@@ -832,13 +832,19 @@ export default class FluentTasksPlugin extends Plugin {
             });
 
             EventBus.on(EventName.TASK_SELECTED, (payload: unknown) => {
-                const p = payload as { task: TaskItem; categoryFilepath: string } | null;
+                const p = payload as { task: TaskItem; categoryFilepath: string; skipModal?: boolean } | null;
                 if (!p) return;
                 this.lastSelectedTask = p.task;
                 this.lastSelectedCategoryFilepath = p.categoryFilepath;
 
                 void (async () => {
                     if (this.settings.openDetailInModal) {
+                        if (p.skipModal) {
+                            if (this.activeDetailModal) {
+                                this.activeDetailModal.loadTask(p.task, p.categoryFilepath);
+                            }
+                            return;
+                        }
                         const wasRightActive = this.isPluginRightSidebarActive();
                         const rightSplit = this.app.workspace.rightSplit as { collapsed?: boolean; collapse: () => void } | null;
                         if (rightSplit && !rightSplit.collapsed && wasRightActive) {

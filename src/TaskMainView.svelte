@@ -2014,6 +2014,7 @@
                         EventBus.emit(EventName.TASK_SELECTED, {
                             task: freshTask,
                             categoryFilepath: currentCategory.filepath,
+                            skipModal: true,
                         });
                     }
                 }
@@ -2271,7 +2272,7 @@
         }
     }
 
-    function selectTask(task: TaskItem) {
+    function selectTask(task: TaskItem, options?: { skipModal?: boolean }) {
         selectedTaskId = task.id;
         const effectiveCategory = (currentCategory?.filepath === STARRED_CATEGORY_PATH && task.sourceFilepath)
             ? task.sourceFilepath
@@ -2279,6 +2280,7 @@
         EventBus.emit(EventName.TASK_SELECTED, {
             task,
             categoryFilepath: effectiveCategory,
+            skipModal: options?.skipModal,
         });
     }
 
@@ -2382,25 +2384,34 @@
     async function selectSearchResult(item: { task: TaskItem; category: CategoryInfo; matchField: string }) {
         if (!item || !item.task) return;
 
-        // 1. Expand completed section if completed
+        // 1. Close search overlay first so the task list view is fully visible and layout is settled
+        closeSearch();
+
+        // 2. Switch category if needed
+        if (item.category && currentCategory && item.category.filepath !== currentCategory.filepath && currentCategory.filepath !== STARRED_CATEGORY_PATH) {
+            await handleCategorySelected({ category: item.category });
+        }
+
+        // 3. Expand completed section if completed
         if (item.task.completed && !showCompleted) {
             showCompleted = true;
         }
 
-        // 2. Select the task (triggers TASK_SELECTED)
-        selectTask(item.task);
+        // 4. Select the task without opening floating detail modal (jump to position only)
+        selectTask(item.task, { skipModal: true });
 
-        // 3. Scroll into view and highlight
+        // 5. Scroll into view and highlight
         await tick();
-        const el = document.getElementById('task-' + item.task.id);
+        let el = document.getElementById('task-' + item.task.id);
+        if (!el) {
+            await tick();
+            el = document.getElementById('task-' + item.task.id);
+        }
         if (el) {
             el.scrollIntoView({ behavior: 'smooth', block: 'center' });
             el.classList.add('navigate-highlight');
             setTimeout(() => el.classList?.remove('navigate-highlight'), 1500);
         }
-
-        // 4. Close search overlay so task is clearly visible
-        closeSearch();
     }
 
     function handleSearchKeydown(e: KeyboardEvent) {

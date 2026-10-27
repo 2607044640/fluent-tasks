@@ -970,7 +970,7 @@
 
                 if (cat && currentTask) {
                     EventBus.emit(EventName.CATEGORY_SELECTED, { category: cat });
-                    EventBus.emit(EventName.TASK_SELECTED, { task: currentTask, categoryFilepath: cat.filepath });
+                    EventBus.emit(EventName.TASK_SELECTED, { task: currentTask, categoryFilepath: cat.filepath, skipModal: true });
                     EventBus.emit(EventName.TASK_NAVIGATE, { taskId: currentTask.id, isCompleted: currentTask.completed });
                     closeModal();
                 }
