@@ -36,6 +36,7 @@
         cleanupOrphanImageAttachment,
         isSameImageRef,
     } from "./utils/imageAttachmentUtils";
+    import { ImagePreviewModal } from "./modals/ImagePreviewModal";
     import type { TrashedImageBackup } from "./types";
 
     let hoveredThumbnail: { task: TaskItem; imageRef: string } | null = null;
@@ -1083,6 +1084,10 @@
     }
 
     function handleGlobalKeyDown(e: KeyboardEvent) {
+        if (ImagePreviewModal.isImagePreviewActive()) {
+            return;
+        }
+
         if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && hoveredThumbnail) {
             const { task, imageRef } = hoveredThumbnail;
             if (e.key === "c" || e.key === "C") {
@@ -3307,6 +3312,9 @@
     on:contextmenu={() => { if (popoverVisible) dismissPopover(); }} 
     on:wheel|capture={handleLightboxWheel}
     on:keydown|capture={(e) => {
+        if (ImagePreviewModal.isImagePreviewActive()) {
+            return;
+        }
         if (lightboxData) {
             handleLightboxKeydown(e);
             return;

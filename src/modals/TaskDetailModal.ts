@@ -1,5 +1,6 @@
 import { Modal, App } from "obsidian";
 import TaskDetailView from "../TaskDetailView.svelte";
+import { ImagePreviewModal } from "./ImagePreviewModal";
 import type { DataService } from "../DataService";
 import type FluentTasksPlugin from "../main";
 import type { TaskItem } from "../types";
@@ -96,6 +97,7 @@ export class TaskDetailModal extends Modal {
 
     hasActiveChildDialog(): boolean {
         return !!(
+            ImagePreviewModal.isImagePreviewActive() ||
             this.contentEl?.querySelector(".meta-modal-backdrop") ||
             this.modalEl?.querySelector(".meta-modal-backdrop") ||
             this.containerEl?.querySelector(".meta-modal-backdrop") ||

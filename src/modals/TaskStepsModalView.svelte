@@ -26,6 +26,7 @@
     import type { TrashedImageBackup } from "../types";
     import { t } from "../lang/helpers";
     import { Notice } from "obsidian";
+    import { ImagePreviewModal } from "./ImagePreviewModal";
 
     // =============================================
     // Props
@@ -618,7 +619,7 @@
 
         // Esc guard in capture phase to prevent conflicts with parent modal listeners
         const handleCaptureKeydown = (e: KeyboardEvent) => {
-            if (document.querySelector(".task-img-preview-modal-shell")) {
+            if (ImagePreviewModal.isImagePreviewActive()) {
                 return;
             }
 

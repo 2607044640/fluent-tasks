@@ -34,6 +34,7 @@
         cleanupOrphanImageAttachment,
         cleanupOrphanImages,
     } from "./utils/imageAttachmentUtils";
+    import { ImagePreviewModal } from "./modals/ImagePreviewModal";
 
     const DND_FLIP_DURATION = 150;
 
@@ -248,6 +249,10 @@
     // Lifecycle
     // =============================================
     function handleMetaModalKeydown(e: KeyboardEvent) {
+        if (ImagePreviewModal.isImagePreviewActive()) {
+            return;
+        }
+
         if (showMetaSaveConfirmModal) {
             if (e.key === "Enter") {
                 e.preventDefault();
@@ -299,7 +304,7 @@
     }
 
     const handleImageKeydown = (e: KeyboardEvent) => {
-        if (document.querySelector(".task-img-preview-modal-shell")) {
+        if (ImagePreviewModal.isImagePreviewActive()) {
             return;
         }
         if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey) {

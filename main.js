@@ -11625,6 +11625,7 @@ function instance2($$self, $$props, $$invalidate) {
     if (e.key === "Escape") {
       e.preventDefault();
       e.stopPropagation();
+      e.stopImmediatePropagation();
       closeModal();
       return;
     }
@@ -11727,36 +11728,70 @@ var ImagePreviewModalView = class extends SvelteComponent {
 var ImagePreviewModalView_default = ImagePreviewModalView;
 
 // src/modals/ImagePreviewModal.ts
-var ImagePreviewModal = class extends import_obsidian10.Modal {
+var _ImagePreviewModal = class _ImagePreviewModal extends import_obsidian10.Modal {
   constructor(app, imageRef, options) {
     super(app);
     this.component = null;
     this.imageRef = imageRef;
     this.options = options;
   }
-  onOpen() {
+  static isImagePreviewActive() {
     var _a, _b;
+    if (this.isOpen)
+      return true;
+    if (Date.now() - this.lastClosedAt < 300)
+      return true;
+    return !!(document.querySelector(".task-img-preview-modal-shell") || document.querySelector(".task-img-preview-backdrop") || ((_b = (_a = document.body) == null ? void 0 : _a.classList) == null ? void 0 : _b.contains("has-active-image-preview")));
+  }
+  onOpen() {
+    var _a, _b, _c, _d;
+    _ImagePreviewModal.isOpen = true;
+    (_b = (_a = document.body) == null ? void 0 : _a.classList) == null ? void 0 : _b.add("has-active-image-preview");
     const { contentEl, modalEl } = this;
     contentEl.empty();
     modalEl.addClass("task-img-preview-modal-shell");
+    this.scope.register([], "Escape", (evt) => {
+      evt.preventDefault();
+      evt.stopPropagation();
+      this.close();
+      return false;
+    });
     this.component = new ImagePreviewModalView_default({
       target: contentEl,
       props: {
         app: this.app,
         imageRef: this.imageRef,
-        onCut: (_a = this.options) == null ? void 0 : _a.onCut,
-        onDelete: (_b = this.options) == null ? void 0 : _b.onDelete,
+        onCut: (_c = this.options) == null ? void 0 : _c.onCut,
+        onDelete: (_d = this.options) == null ? void 0 : _d.onDelete,
         closeModal: () => this.close()
       }
     });
   }
+  close() {
+    _ImagePreviewModal.isOpen = false;
+    _ImagePreviewModal.lastClosedAt = Date.now();
+    setTimeout(() => {
+      var _a, _b;
+      (_b = (_a = document.body) == null ? void 0 : _a.classList) == null ? void 0 : _b.remove("has-active-image-preview");
+    }, 300);
+    super.close();
+  }
   onClose() {
+    _ImagePreviewModal.isOpen = false;
+    _ImagePreviewModal.lastClosedAt = Date.now();
+    setTimeout(() => {
+      var _a, _b;
+      (_b = (_a = document.body) == null ? void 0 : _a.classList) == null ? void 0 : _b.remove("has-active-image-preview");
+    }, 300);
     if (this.component) {
       this.component.$destroy();
       this.component = null;
     }
   }
 };
+_ImagePreviewModal.isOpen = false;
+_ImagePreviewModal.lastClosedAt = 0;
+var ImagePreviewModal = _ImagePreviewModal;
 
 // src/components/TaskImageThumbnail.svelte
 function add_css2(target) {
@@ -14844,7 +14879,7 @@ function instance5($$self, $$props, $$invalidate) {
       scheduleSave();
     }
     const handleCaptureKeydown = (e) => {
-      if (document.querySelector(".task-img-preview-modal-shell")) {
+      if (ImagePreviewModal.isImagePreviewActive()) {
         return;
       }
       if (e.key === "Escape") {
@@ -15169,7 +15204,7 @@ var TaskStepsModal = class extends import_obsidian11.Modal {
     });
   }
   close() {
-    if (document.querySelector(".task-img-preview-modal-shell")) {
+    if (ImagePreviewModal.isImagePreviewActive()) {
       return;
     }
     super.close();
@@ -36674,6 +36709,9 @@ function instance8($$self, $$props, $$invalidate) {
   }
   function handleGlobalKeyDown(e) {
     var _a2, _b2, _c2, _d2, _e2, _f2, _g2, _h2, _i2, _j2;
+    if (ImagePreviewModal.isImagePreviewActive()) {
+      return;
+    }
     if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && hoveredThumbnail) {
       const { task, imageRef } = hoveredThumbnail;
       if (e.key === "c" || e.key === "C") {
@@ -38541,6 +38579,9 @@ function instance8($$self, $$props, $$invalidate) {
       dismissPopover();
   };
   const keydown_handler = (e) => {
+    if (ImagePreviewModal.isImagePreviewActive()) {
+      return;
+    }
     if (lightboxData) {
       handleLightboxKeydown(e);
       return;
@@ -46471,6 +46512,9 @@ function instance9($$self, $$props, $$invalidate) {
   }
   let saveTimeout = null;
   function handleMetaModalKeydown(e) {
+    if (ImagePreviewModal.isImagePreviewActive()) {
+      return;
+    }
     if (showMetaSaveConfirmModal) {
       if (e.key === "Enter") {
         e.preventDefault();
@@ -46506,7 +46550,7 @@ function instance9($$self, $$props, $$invalidate) {
     }
   }
   const handleImageKeydown = (e) => {
-    if (document.querySelector(".task-img-preview-modal-shell")) {
+    if (ImagePreviewModal.isImagePreviewActive()) {
       return;
     }
     if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey) {
@@ -55530,6 +55574,12 @@ var QuickTaskModal = class extends import_obsidian23.Modal {
       recordHotkeyTipShown(this.plugin);
     }
   }
+  close() {
+    if (ImagePreviewModal.isImagePreviewActive()) {
+      return;
+    }
+    super.close();
+  }
   onClose() {
     if (this.component) {
       this.component.$destroy();
@@ -55655,7 +55705,7 @@ var TaskDetailModal = class extends import_obsidian25.Modal {
   }
   hasActiveChildDialog() {
     var _a, _b, _c, _d, _e, _f;
-    return !!(((_a = this.contentEl) == null ? void 0 : _a.querySelector(".meta-modal-backdrop")) || ((_b = this.modalEl) == null ? void 0 : _b.querySelector(".meta-modal-backdrop")) || ((_c = this.containerEl) == null ? void 0 : _c.querySelector(".meta-modal-backdrop")) || ((_d = this.contentEl) == null ? void 0 : _d.querySelector(".svg-confirm-backdrop")) || ((_e = this.modalEl) == null ? void 0 : _e.querySelector(".svg-confirm-backdrop")) || ((_f = this.contentEl) == null ? void 0 : _f.querySelector(".repeat-picker-panel")) || document.querySelector(".meta-modal-backdrop") || document.querySelector(".svg-confirm-backdrop") || document.querySelector(".task-img-preview-modal-shell"));
+    return !!(ImagePreviewModal.isImagePreviewActive() || ((_a = this.contentEl) == null ? void 0 : _a.querySelector(".meta-modal-backdrop")) || ((_b = this.modalEl) == null ? void 0 : _b.querySelector(".meta-modal-backdrop")) || ((_c = this.containerEl) == null ? void 0 : _c.querySelector(".meta-modal-backdrop")) || ((_d = this.contentEl) == null ? void 0 : _d.querySelector(".svg-confirm-backdrop")) || ((_e = this.modalEl) == null ? void 0 : _e.querySelector(".svg-confirm-backdrop")) || ((_f = this.contentEl) == null ? void 0 : _f.querySelector(".repeat-picker-panel")) || document.querySelector(".meta-modal-backdrop") || document.querySelector(".svg-confirm-backdrop") || document.querySelector(".task-img-preview-modal-shell"));
   }
   close() {
     if (this.hasActiveChildDialog()) {

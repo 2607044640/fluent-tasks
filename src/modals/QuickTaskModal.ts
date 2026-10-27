@@ -1,5 +1,6 @@
 import { Modal, App } from "obsidian";
 import QuickTaskModalView from "./QuickTaskModalView.svelte";
+import { ImagePreviewModal } from "./ImagePreviewModal";
 import { DataService } from "../DataService";
 import { getModalHotkeyTipInfo, recordHotkeyTipShown } from "../utils/hotkeyUtils";
 import type FluentTasksPlugin from "../main";
@@ -40,6 +41,13 @@ export class QuickTaskModal extends Modal {
         if (showTip) {
             recordHotkeyTipShown(this.plugin);
         }
+    }
+
+    close() {
+        if (ImagePreviewModal.isImagePreviewActive()) {
+            return;
+        }
+        super.close();
     }
 
     onClose() {

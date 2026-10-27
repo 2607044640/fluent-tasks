@@ -1,5 +1,6 @@
 import { Modal, App } from "obsidian";
 import TaskStepsModalView from "./TaskStepsModalView.svelte";
+import { ImagePreviewModal } from "./ImagePreviewModal";
 import type { DataService } from "../DataService";
 import type FluentTasksPlugin from "../main";
 import type { TaskItem } from "../types";
@@ -51,7 +52,7 @@ export class TaskStepsModal extends Modal {
     }
 
     close() {
-        if (document.querySelector(".task-img-preview-modal-shell")) {
+        if (ImagePreviewModal.isImagePreviewActive()) {
             return;
         }
         super.close();
