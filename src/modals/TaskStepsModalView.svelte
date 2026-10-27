@@ -592,6 +592,33 @@
         closeModal();
     }
 
+    function handleStepItemClick(e: MouseEvent, stepId?: string) {
+        const target = e.target as HTMLElement | null;
+        if (!target) return;
+        const textarea = (e.currentTarget as HTMLElement).querySelector('textarea') as HTMLTextAreaElement | null;
+        if (!textarea || target === textarea) return;
+        if (target.closest('.steps-modal-left-controls, .steps-modal-delete-btn, .task-image-thumbnail, .task-img-strip-actions, button, [role="button"]')) {
+            return;
+        }
+        textarea.focus();
+        const rect = textarea.getBoundingClientRect();
+        if (e.clientX < rect.left) {
+            textarea.setSelectionRange(0, 0);
+        } else {
+            const len = textarea.value.length;
+            textarea.setSelectionRange(len, len);
+        }
+    }
+
+    function handleAddStepCardClick(e: MouseEvent) {
+        const target = e.target as HTMLElement | null;
+        if (!target || target === addInputEl) return;
+        if (target.closest('.task-image-thumbnail, .task-img-strip-actions, button, [role="button"]')) {
+            return;
+        }
+        addInputEl?.focus();
+    }
+
     // External disk/AI sync listener
     async function handleExternalTaskUpdate(payload: any) {
         if (!task || !categoryFilepath || isDraggingSteps) return;
@@ -849,11 +876,14 @@
                 on:finalize={handleDndFinalize}
             >
                 {#each steps as step (step.id)}
+                    <!-- svelte-ignore a11y-click-events-have-key-events -->
+                    <!-- svelte-ignore a11y-no-static-element-interactions -->
                     <div
                         class="steps-modal-item"
                         class:is-done={step.done}
                         class:is-center-aligned={centerAlignTasks}
                         animate:flip={{ duration: DND_FLIP_DURATION }}
+                        on:click={(e) => handleStepItemClick(e, step.id)}
                     >
                         <div class="steps-modal-left-controls">
                             <!-- Drag handle -->
@@ -955,7 +985,9 @@
         {/if}
 
         <!-- Add Step Container -->
-        <div class="steps-modal-add-card" class:is-center-aligned={centerAlignTasks}>
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <!-- svelte-ignore a11y-no-static-element-interactions -->
+        <div class="steps-modal-add-card" class:is-center-aligned={centerAlignTasks} on:click={handleAddStepCardClick}>
             {#if newStepImages.length > 0}
                 <TaskImageStrip
                     images={newStepImages}

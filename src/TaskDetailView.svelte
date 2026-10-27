@@ -542,6 +542,68 @@
         void immediateSave();
     }
 
+    let titleTextareaEl: HTMLTextAreaElement | null = null;
+    let noteTextareaEl: HTMLTextAreaElement | null = null;
+    let addStepInputEl: HTMLInputElement | null = null;
+
+    function handleDetailHeaderClick(e: MouseEvent) {
+        const target = e.target as HTMLElement | null;
+        if (!target || target === titleTextareaEl) return;
+        if (target.closest('.checkbox, .title-right-actions, .task-image-thumbnail, .task-img-strip-actions, button, [role="button"]')) {
+            return;
+        }
+        if (titleTextareaEl) {
+            titleTextareaEl.focus();
+            const rect = titleTextareaEl.getBoundingClientRect();
+            if (e.clientX < rect.left) {
+                titleTextareaEl.setSelectionRange(0, 0);
+            } else {
+                const len = titleTextareaEl.value.length;
+                titleTextareaEl.setSelectionRange(len, len);
+            }
+        }
+    }
+
+    function handleStepItemClick(e: MouseEvent, stepId?: string) {
+        const target = e.target as HTMLElement | null;
+        if (!target) return;
+        const textarea = (e.currentTarget as HTMLElement).querySelector('textarea') as HTMLTextAreaElement | null;
+        if (!textarea || target === textarea) return;
+        if (target.closest('.step-left-controls, .delete-step, .task-image-thumbnail, .task-img-strip-actions, button, [role="button"]')) {
+            return;
+        }
+        textarea.focus();
+        const rect = textarea.getBoundingClientRect();
+        if (e.clientX < rect.left) {
+            textarea.setSelectionRange(0, 0);
+        } else {
+            const len = textarea.value.length;
+            textarea.setSelectionRange(len, len);
+        }
+    }
+
+    function handleAddStepCardClick(e: MouseEvent) {
+        const target = e.target as HTMLElement | null;
+        if (!target || target === addStepInputEl) return;
+        if (target.closest('.task-image-thumbnail, .task-img-strip-actions, button, [role="button"]')) {
+            return;
+        }
+        addStepInputEl?.focus();
+    }
+
+    function handleNoteSectionClick(e: MouseEvent) {
+        const target = e.target as HTMLElement | null;
+        if (!target || target === noteTextareaEl) return;
+        if (target.closest('.task-image-thumbnail, .task-img-strip-actions, button, [role="button"]')) {
+            return;
+        }
+        if (noteTextareaEl) {
+            noteTextareaEl.focus();
+            const len = noteTextareaEl.value.length;
+            noteTextareaEl.setSelectionRange(len, len);
+        }
+    }
+
     function handleTitleKeydown(e: KeyboardEvent) {
         if (e.isComposing || isComposingTitle || e.keyCode === 229) return;
         if (e.key === "Enter" && !e.shiftKey) {
@@ -1574,10 +1636,12 @@
         <!-- Scrollable Content Body -->
         <div class="detail-body" bind:this={detailBodyEl}>
             <!-- Header: Checkbox + Title + Star -->
-            <div class="detail-header" class:is-center-aligned={centerAlignTasks}>
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <div class="detail-header" class:is-center-aligned={centerAlignTasks} on:click={handleDetailHeaderClick}>
             <div class="title-row" class:is-center-aligned={centerAlignTasks}>
                 <!-- Completion circle -->
-                <span class="checkbox" on:click={toggleComplete}
+                <span class="checkbox" on:click|stopPropagation={toggleComplete}
                       role="checkbox" aria-checked={task.completed} tabindex="0"
                       on:keydown={(e) => e.key === "Enter" && toggleComplete()}>
                     {#if task.completed}
@@ -1614,6 +1678,7 @@
                         />
                     {/if}
                     <textarea
+                        bind:this={titleTextareaEl}
                         use:autosize={task.title}
                         class="detail-title-input"
                         class:is-center-aligned={centerAlignTasks}
@@ -1724,7 +1789,10 @@
                         on:finalize={handleDndFinalize}
                     >
                         {#each task.steps as step (step.id)}
-                            <div class="step-item" class:is-center-aligned={centerAlignTasks} animate:flip={{ duration: DND_FLIP_DURATION }}>
+                            <!-- svelte-ignore a11y-click-events-have-key-events -->
+                            <!-- svelte-ignore a11y-no-static-element-interactions -->
+                            <div class="step-item" class:is-center-aligned={centerAlignTasks} animate:flip={{ duration: DND_FLIP_DURATION }}
+                                 on:click={(e) => handleStepItemClick(e, step.id)}>
                                 <div class="step-left-controls">
                                     <span class="step-drag-handle" title="Drag to reorder">
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
@@ -1813,7 +1881,9 @@
                 {/if}
 
                 <!-- Add step row (kept outside dndzone so dndzone children strictly equal items) -->
-                <div class="add-step-card" class:is-center-aligned={centerAlignTasks}>
+                <!-- svelte-ignore a11y-click-events-have-key-events -->
+                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                <div class="add-step-card" class:is-center-aligned={centerAlignTasks} on:click={handleAddStepCardClick}>
                     {#if newStepImages.length > 0}
                         <TaskImageStrip
                             images={newStepImages}
@@ -1838,6 +1908,7 @@
                             <line x1="5" y1="12" x2="19" y2="12"/>
                         </svg>
                         <input
+                            bind:this={addStepInputEl}
                             class="add-step-input"
                             class:is-center-aligned={centerAlignTasks}
                             type="text"
@@ -1852,8 +1923,11 @@
         </div>
 
         <!-- Note -->
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
         <!-- svelte-ignore a11y-no-static-element-interactions -->
-        <div class="note-section" class:is-center-aligned={centerAlignTasks} on:focusin={() => { focusedTarget = { type: 'note' }; }}>
+        <div class="note-section" class:is-center-aligned={centerAlignTasks}
+             on:focusin={() => { focusedTarget = { type: 'note' }; }}
+             on:click={handleNoteSectionClick}>
             {#if getNoteImages(task).length > 0}
                 <TaskImageStrip
                     images={getNoteImages(task)}
@@ -1872,6 +1946,7 @@
                 />
             {/if}
             <textarea
+                bind:this={noteTextareaEl}
                 class="note-textarea"
                 class:is-center-aligned={centerAlignTasks}
                 placeholder="Add note (Ctrl+V to paste image)"
