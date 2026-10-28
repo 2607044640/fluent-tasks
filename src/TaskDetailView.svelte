@@ -585,7 +585,7 @@
 
     let titleTextareaEl: HTMLTextAreaElement | null = null;
     let noteTextareaEl: HTMLTextAreaElement | null = null;
-    let addStepInputEl: HTMLInputElement | null = null;
+    let addStepInputEl: HTMLTextAreaElement | null = null;
 
     function handleTitleRowClick(e: MouseEvent) {
         const target = e.target as HTMLElement | null;
@@ -1042,7 +1042,9 @@
     }
 
     function handleStepKeydown(e: KeyboardEvent) {
-        if (e.key === "Enter") {
+        if (e.isComposing || e.keyCode === 229) return;
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
             addStep();
         }
     }
@@ -1952,12 +1954,13 @@
                             <line x1="12" y1="5" x2="12" y2="19"/>
                             <line x1="5" y1="12" x2="19" y2="12"/>
                         </svg>
-                        <input
+                        <textarea
                             bind:this={addStepInputEl}
+                            use:autosize={newStepText}
+                            rows="1"
                             class="add-step-input"
                             class:is-center-aligned={centerAlignTasks}
-                            type="text"
-                            placeholder="Add step (Ctrl+V to paste image)"
+                            placeholder="Add step (Press Enter to add, Shift+Enter for newline, Ctrl+V to paste image)"
                             bind:value={newStepText}
                             on:focus={() => { focusedTarget = { type: 'newStep' }; }}
                             on:keydown={handleStepKeydown}

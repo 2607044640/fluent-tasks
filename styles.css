@@ -537,7 +537,7 @@
 /* Add Task Input */
 .add-task-container {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     background-color: var(--todo-item-bg);
     border-radius: var(--todo-radius);
     padding: 12px 15px;
@@ -555,15 +555,28 @@
     margin-right: 12px;
     display: flex;
     align-items: center;
+    margin-top: 2px;
+    flex-shrink: 0;
 }
 
 .add-task-input {
+    field-sizing: content;
     background: transparent;
     border: none;
     color: var(--todo-text-main);
     flex-grow: 1;
     font-size: 14px;
+    line-height: 1.45;
     outline: none;
+    resize: none;
+    overflow: hidden;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    font-family: inherit;
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
 }
 
 .add-task-input::placeholder {
@@ -1179,7 +1192,7 @@
 
 .add-step-row {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 10px;
     color: var(--todo-accent);
     cursor: text;
@@ -1187,18 +1200,34 @@
     padding: 4px 0;
 }
 
+.add-step-row svg {
+    margin-top: 3px;
+    flex-shrink: 0;
+}
+
 .add-step-row:hover {
     opacity: 0.8;
 }
 
 .add-step-input {
+    field-sizing: content;
     background: transparent;
     border: none;
     color: var(--todo-text-main);
     outline: none;
     flex-grow: 1;
     font-size: 13px;
+    line-height: 1.4;
     cursor: text;
+    resize: none;
+    overflow: hidden;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    font-family: inherit;
+    padding: 2px 0;
+    margin: 0;
+    box-sizing: border-box;
 }
 
 .add-step-input::placeholder {
@@ -3657,11 +3686,20 @@ body .quick-modal-task-item.is-focused {
     width: 100%;
     padding: 6px 10px;
     font-size: 12.5px;
+    line-height: 1.4;
     border-radius: 6px;
     border: 1px solid var(--todo-accent, #8b5cf6) !important;
     background: var(--background-primary) !important;
     color: var(--text-normal) !important;
     outline: none !important;
+    field-sizing: content;
+    resize: none;
+    overflow: hidden;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    font-family: inherit;
+    box-sizing: border-box;
 }
 
 .quick-modal-empty {

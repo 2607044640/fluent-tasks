@@ -6,7 +6,7 @@
     import { DataService } from "./DataService";
     import { EventName, VIEW_TYPE_MAIN, type CategoryInfo, type TaskItem, STARRED_CATEGORY_PATH, STARRED_CATEGORY_NAME } from "./types";
     import { killDndGhostElement, removeDndGhostShield, injectDndGhostShield } from "./utils/dndUtils";
-    import { portal } from "./utils/domUtils";
+    import { portal, autosize } from "./utils/domUtils";
     import { calculatePopoverPosition, type PopoverContentType } from "./utils/popoverUtils";
     import { getRelativeTime, getRecurrenceLabel } from "./utils/timeUtils";
     import { getTaskWeight, clampTaskWeight, applyWeightSort, isTaskEmpty } from "./utils/taskUtils";
@@ -60,7 +60,7 @@
     let newTaskTitle: string = "";
     let showCompleted: boolean = false;
     let selectedTaskId: string = "";
-    let addTaskInputEl: HTMLInputElement;
+    let addTaskInputEl: HTMLTextAreaElement;
     let wrapTaskTitles: boolean = plugin?.settings?.wrapTaskTitles ?? true;
     let enableTaskWeightMode: boolean = plugin?.settings?.enableTaskWeightMode ?? false;
     let centerAlignTasks: boolean = plugin?.settings?.centerAlignTasks ?? true;
@@ -2137,7 +2137,9 @@
     }
 
     function handleAddTaskKeydown(e: KeyboardEvent) {
-        if (e.key === "Enter") {
+        if (e.isComposing || e.keyCode === 229) return;
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
             addTask();
         }
     }
@@ -3716,10 +3718,11 @@
                     <line x1="5" y1="12" x2="19" y2="12"/>
                 </svg>
             </span>
-            <input
+            <textarea
                 class="add-task-input"
-                type="text"
-                placeholder="Add a task"
+                use:autosize={newTaskTitle}
+                rows="1"
+                placeholder="Add a task (Press Enter to add, Shift+Enter for newline)"
                 bind:value={newTaskTitle}
                 bind:this={addTaskInputEl}
                 on:keydown={handleAddTaskKeydown}

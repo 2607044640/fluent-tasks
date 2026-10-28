@@ -14,6 +14,7 @@
     import { MoveToSuggestModal } from "./MoveToSuggestModal";
     import { t, isChinese } from "../lang/helpers";
     import { cleanDisplayTitle } from "../utils/imageAttachmentUtils";
+    import { autosize } from "../utils/domUtils";
 
     // =============================================
     // Props
@@ -70,7 +71,7 @@
     // DOM Element Bindings
     let searchInputEl: HTMLInputElement;
     let modalContainerEl: HTMLElement;
-    let addTaskInputEl: HTMLInputElement;
+    let addTaskInputEl: HTMLTextAreaElement;
     let addListInputEl: HTMLInputElement;
     let addGroupInputEl: HTMLInputElement;
 
@@ -918,11 +919,16 @@
         }, INPUT_FOCUS_DELAY_MS);
     }
 
+    let isCommittingTask = false;
     async function commitAddTask() {
+        if (isCommittingTask || !isAddingTask) return;
+        isCommittingTask = true;
         const title = newTaskTitle.trim();
+        isAddingTask = false;
+        newTaskTitle = "";
+
         if (!title || !selectedCategory) {
-            isAddingTask = false;
-            newTaskTitle = "";
+            isCommittingTask = false;
             return;
         }
 
@@ -938,14 +944,26 @@
             focusPane = "tasks";
         } catch (e) {
             console.error("[QuickTaskModal] Failed to add task:", e);
+        } finally {
+            isCommittingTask = false;
         }
+    }
+
+    function cancelAddTask() {
+        if (!isAddingTask) return;
         isAddingTask = false;
         newTaskTitle = "";
     }
 
-    function cancelAddTask() {
-        isAddingTask = false;
-        newTaskTitle = "";
+    function handleQuickAddTaskKeydown(e: KeyboardEvent) {
+        if (e.isComposing || e.keyCode === 229) return;
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            void commitAddTask();
+        } else if (e.key === "Escape") {
+            e.preventDefault();
+            cancelAddTask();
+        }
     }
 
     // =============================================
@@ -1410,12 +1428,14 @@
             <div class="quick-modal-scrollable">
                 {#if isAddingTask}
                     <div class="quick-modal-add-row">
-                        <input 
-                            type="text" 
+                        <textarea 
+                            rows="1" 
+                            use:autosize={newTaskTitle}
                             class="quick-modal-add-input" 
-                            placeholder="What needs to be done? (Enter to add, Esc to cancel)"
+                            placeholder="What needs to be done? (Enter to add, Shift+Enter for newline, Esc to cancel)"
                             bind:value={newTaskTitle}
                             bind:this={addTaskInputEl}
+                            on:keydown={handleQuickAddTaskKeydown}
                             on:blur={commitAddTask}
                         />
                     </div>
