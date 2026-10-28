@@ -40113,6 +40113,12 @@ function create_if_block9(ctx) {
             ctx[126]
           ),
           listen(
+            div2,
+            "click",
+            /*handleTitleRowClick*/
+            ctx[45]
+          ),
+          listen(
             input,
             "input",
             /*input_input_handler*/
@@ -40135,12 +40141,6 @@ function create_if_block9(ctx) {
             "click",
             /*handleAddStepCardClick*/
             ctx[46]
-          ),
-          listen(
-            div6,
-            "click",
-            /*handleDetailHeaderClick*/
-            ctx[45]
           ),
           listen(
             textarea1,
@@ -47048,7 +47048,7 @@ function instance9($$self, $$props, $$invalidate) {
   let titleTextareaEl = null;
   let noteTextareaEl = null;
   let addStepInputEl = null;
-  function handleDetailHeaderClick(e) {
+  function handleTitleRowClick(e) {
     const target = e.target;
     if (!target || target === titleTextareaEl)
       return;
@@ -48377,7 +48377,7 @@ function instance9($$self, $$props, $$invalidate) {
     handleTitleCompositionEnd,
     handleTitleInput,
     handleTitleBlur,
-    handleDetailHeaderClick,
+    handleTitleRowClick,
     handleAddStepCardClick,
     handleNoteSectionClick,
     handleTitleKeydown,

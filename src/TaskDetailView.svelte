@@ -546,7 +546,7 @@
     let noteTextareaEl: HTMLTextAreaElement | null = null;
     let addStepInputEl: HTMLInputElement | null = null;
 
-    function handleDetailHeaderClick(e: MouseEvent) {
+    function handleTitleRowClick(e: MouseEvent) {
         const target = e.target as HTMLElement | null;
         if (!target || target === titleTextareaEl) return;
         if (target.closest('.checkbox, .title-right-actions, .task-image-thumbnail, .task-img-strip-actions, button, [role="button"]')) {
@@ -1636,10 +1636,10 @@
         <!-- Scrollable Content Body -->
         <div class="detail-body" bind:this={detailBodyEl}>
             <!-- Header: Checkbox + Title + Star -->
-            <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <!-- svelte-ignore a11y-no-static-element-interactions -->
-            <div class="detail-header" class:is-center-aligned={centerAlignTasks} on:click={handleDetailHeaderClick}>
-            <div class="title-row" class:is-center-aligned={centerAlignTasks}>
+            <div class="detail-header" class:is-center-aligned={centerAlignTasks}>
+                <!-- svelte-ignore a11y-click-events-have-key-events -->
+                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                <div class="title-row" class:is-center-aligned={centerAlignTasks} on:click={handleTitleRowClick}>
                 <!-- Completion circle -->
                 <span class="checkbox" on:click|stopPropagation={toggleComplete}
                       role="checkbox" aria-checked={task.completed} tabindex="0"
