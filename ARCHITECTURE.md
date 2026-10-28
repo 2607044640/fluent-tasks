@@ -13,6 +13,7 @@ Fluent Tasks (`manifest.json` id `fluent-tasks`, v1.0.40) is an Obsidian plugin.
 | Subsystem | Doc | Owns | Do not put here |
 |---|---|---|---|
 | Plugin lifecycle | [plugin-lifecycle](./docs/modules/plugin-lifecycle.md) | `src/main.ts` `FluentTasksPlugin`, wrappers, `EventBus` | Markdown parse, task CRUD |
+| Sidebar coordinator | [sidebar-coordinator](./docs/modules/sidebar-coordinator.md) | `src/services/SidebarCoordinator.ts` (sidebar split checks, drag-expand, auto-collapse/expand lifecycle) | Task CRUD, Markdown parse |
 | Markdown parser | [markdown-parser](./docs/modules/markdown-parser.md) | `src/MarkdownParser.ts` codec | Vault I/O, EventBus |
 | Data facade + atomic I/O | [data-service](./docs/modules/data-service.md) | `DataService`, `AtomicIOPipeline` | Recurrence math, Svelte |
 | Task CRUD | [task-service](./docs/modules/task-service.md) | `src/services/TaskService.ts` | Sidebar metadata, linked-note create |

@@ -32,7 +32,7 @@ __export(main_exports, {
   default: () => FluentTasksPlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian26 = require("obsidian");
+var import_obsidian27 = require("obsidian");
 
 // src/types.ts
 var VIEW_TYPE_SIDEBAR = "fluent-tasks-sidebar";
@@ -56071,14 +56071,385 @@ var TaskDetailModal = class extends import_obsidian25.Modal {
   }
 };
 
+// src/services/SidebarCoordinator.ts
+var import_obsidian26 = require("obsidian");
+var SidebarCoordinator = class {
+  constructor(host) {
+    this.isUserClosingSidebar = false;
+    this.suppressAutoExpandSidebarUntil = 0;
+    this._isSidebarTemporarilyExpandedForDrag = false;
+    this.dragEndCollapseTimeout = null;
+    this.lastSidebarLocateTime = 0;
+    this.activeSafetyCleanup = null;
+    this.host = host;
+  }
+  get isSidebarTemporarilyExpandedForDrag() {
+    return this._isSidebarTemporarilyExpandedForDrag;
+  }
+  /**
+   * Register workspace active-leaf-change and Ctrl+B listeners.
+   * Uses plugin.registerEvent and plugin.registerDomEvent so Obsidian
+   * automatically cleans them up on plugin unload.
+   */
+  registerEventListeners(plugin) {
+    var _a;
+    let lastActiveViewType = ((_a = this.host.app.workspace.getActiveViewOfType(import_obsidian26.ItemView)) == null ? void 0 : _a.getViewType()) || "";
+    plugin.registerEvent(
+      this.host.app.workspace.on("active-leaf-change", (leaf) => {
+        var _a2, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m;
+        if (!leaf || !leaf.view)
+          return;
+        const currentType = leaf.view.getViewType();
+        const isPluginView = currentType === VIEW_TYPE_MAIN || currentType === VIEW_TYPE_SIDEBAR || currentType === VIEW_TYPE_DETAIL;
+        const wasPluginView = lastActiveViewType === VIEW_TYPE_MAIN || lastActiveViewType === VIEW_TYPE_SIDEBAR || lastActiveViewType === VIEW_TYPE_DETAIL;
+        if (isPluginView && !wasPluginView) {
+          if (this.host.settings.hideLeftSidebar && !this._isSidebarTemporarilyExpandedForDrag) {
+            const wasLeftActive = this.isPluginLeftSidebarActive();
+            this.host.app.workspace.detachLeavesOfType(VIEW_TYPE_SIDEBAR);
+            const leftSplit = this.host.app.workspace.leftSplit;
+            if (leftSplit && !leftSplit.collapsed && wasLeftActive) {
+              leftSplit.collapse();
+            }
+          } else if (this.host.settings.autoExpandSidebar) {
+            if (!this.isUserClosingSidebar && Date.now() > this.suppressAutoExpandSidebarUntil) {
+              this.expandSidebarToList();
+            }
+          }
+        }
+        if (!isPluginView && wasPluginView && ((_a2 = this.host.settings.autoCollapseSidebarOnSwitch) != null ? _a2 : true)) {
+          const isInsideLeftSidebar = ((_b = leaf.getRoot) == null ? void 0 : _b.call(leaf)) === this.host.app.workspace.leftSplit || !!(((_d = (_c = leaf.containerEl) == null ? void 0 : _c.closest) == null ? void 0 : _d.call(_c, ".mod-left-split")) || ((_g = (_f = (_e = leaf.view) == null ? void 0 : _e.containerEl) == null ? void 0 : _f.closest) == null ? void 0 : _g.call(_f, ".mod-left-split")));
+          const isInsideRightSidebar = ((_h = leaf.getRoot) == null ? void 0 : _h.call(leaf)) === this.host.app.workspace.rightSplit || !!(((_j = (_i = leaf.containerEl) == null ? void 0 : _i.closest) == null ? void 0 : _j.call(_i, ".mod-right-split")) || ((_m = (_l = (_k = leaf.view) == null ? void 0 : _k.containerEl) == null ? void 0 : _l.closest) == null ? void 0 : _m.call(_l, ".mod-right-split")));
+          this.collapseSidebars(0, false, !isInsideLeftSidebar, !isInsideRightSidebar);
+        }
+        lastActiveViewType = currentType;
+      })
+    );
+    plugin.registerDomEvent(window, "keydown", (evt) => {
+      const isMod = (evt.ctrlKey || evt.metaKey) && !evt.shiftKey && !evt.altKey;
+      const isB = evt.key === "b" || evt.key === "B" || evt.code === "KeyB";
+      if (isMod && isB) {
+        const leftSplit = this.host.app.workspace.leftSplit;
+        const isCurrentlyCollapsed = !leftSplit || !!leftSplit.collapsed;
+        if (!isCurrentlyCollapsed) {
+          this.suppressAutoSidebarExpansion(3e3);
+          this.isUserClosingSidebar = true;
+          window.setTimeout(() => {
+            this.isUserClosingSidebar = false;
+          }, 600);
+          return;
+        }
+        if (!this.isPluginPageActive()) {
+          return;
+        }
+        window.setTimeout(() => {
+          const currentLeftSplit = this.host.app.workspace.leftSplit;
+          if (currentLeftSplit && !currentLeftSplit.collapsed) {
+            this.locateActiveCategoryInSidebar();
+          }
+        }, 150);
+      }
+    }, true);
+  }
+  /**
+   * Suppress automatic sidebar expansion for a period of time (e.g. after jumping from quick modals).
+   */
+  suppressAutoSidebarExpansion(durationMs = 1200) {
+    this.suppressAutoExpandSidebarUntil = Date.now() + durationMs;
+  }
+  /**
+   * Check if a specific viewType is currently the active/visible tab in the specified sidebar (left or right).
+   * Returns false if the sidebar is collapsed or if another tool (e.g. Search, File Explorer, Outline) is active.
+   */
+  isSidebarLeafActive(viewType, position) {
+    const split = position === "left" ? this.host.app.workspace.leftSplit : this.host.app.workspace.rightSplit;
+    if (!split || split.collapsed) {
+      return false;
+    }
+    const leaves = this.host.app.workspace.getLeavesOfType(viewType);
+    if (leaves.length === 0)
+      return false;
+    for (const leaf of leaves) {
+      const parent = leaf.parent;
+      if (parent && Array.isArray(parent.children)) {
+        if (parent.children.length === 1 && parent.children[0] === leaf) {
+          return true;
+        }
+        const currentTabIdx = typeof parent.currentTab === "number" ? parent.currentTab : -1;
+        if (currentTabIdx >= 0 && parent.children[currentTabIdx] === leaf) {
+          return true;
+        }
+      }
+      const tabHeader = leaf.tabHeaderEl;
+      if (tabHeader) {
+        if (tabHeader.classList.contains("is-active") || tabHeader.getAttribute("aria-selected") === "true") {
+          return true;
+        }
+      }
+      const containerEl = leaf.containerEl;
+      if (containerEl && containerEl.offsetWidth > 0 && containerEl.offsetHeight > 0) {
+        const style = window.getComputedStyle(containerEl);
+        if (style.display !== "none" && style.visibility !== "hidden") {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+  /**
+   * Check if Fluent Tasks left sidebar view (VIEW_TYPE_SIDEBAR) is active and visible.
+   */
+  isPluginLeftSidebarActive() {
+    return this.isSidebarLeafActive(VIEW_TYPE_SIDEBAR, "left");
+  }
+  /**
+   * Check if Fluent Tasks right detail view (VIEW_TYPE_DETAIL) is active and visible.
+   */
+  isPluginRightSidebarActive() {
+    return this.isSidebarLeafActive(VIEW_TYPE_DETAIL, "right");
+  }
+  /**
+   * Collapse left and right sidebars IF they are currently displaying Fluent Tasks views,
+   * while preserving other tools (like search, file explorer, outline, etc.).
+   */
+  collapseSidebars(suppressAutoExpandDurationMs = 0, force = false, targetLeft = true, targetRight = true) {
+    if (suppressAutoExpandDurationMs > 0) {
+      this.suppressAutoSidebarExpansion(suppressAutoExpandDurationMs);
+    }
+    if (targetLeft) {
+      const leftSplit = this.host.app.workspace.leftSplit;
+      if (leftSplit && !leftSplit.collapsed && !this._isSidebarTemporarilyExpandedForDrag) {
+        if (force || this.isPluginLeftSidebarActive()) {
+          leftSplit.collapse();
+        }
+      }
+    }
+    if (targetRight) {
+      const rightSplit = this.host.app.workspace.rightSplit;
+      if (rightSplit && !rightSplit.collapsed) {
+        if (force || this.isPluginRightSidebarActive()) {
+          rightSplit.collapse();
+        }
+      }
+    }
+  }
+  /**
+   * Expand the left sidebar and reveal the Fluent Tasks sidebar list tab.
+   */
+  expandSidebarToList() {
+    if (this.host.settings.hideLeftSidebar)
+      return;
+    const leftSplit = this.host.app.workspace.leftSplit;
+    if (leftSplit == null ? void 0 : leftSplit.collapsed) {
+      leftSplit.expand();
+    }
+    const sidebarLeaves = this.host.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR);
+    if (sidebarLeaves.length > 0) {
+      void this.host.app.workspace.revealLeaf(sidebarLeaves[0]);
+    } else {
+      void this.host.activateView(VIEW_TYPE_SIDEBAR, "left");
+    }
+    window.setTimeout(() => {
+      const currentLeftSplit = this.host.app.workspace.leftSplit;
+      if (currentLeftSplit && !currentLeftSplit.collapsed) {
+        this.locateActiveCategoryInSidebar();
+      }
+    }, 120);
+  }
+  /**
+   * When hideLeftSidebar (Floating UI mode) or autoExpandSidebarOnDrag is enabled,
+   * temporarily open the left sidebar when a task starts being dragged,
+   * and locate/reveal the current category in the tree.
+   * If the sidebar is already open and displaying Fluent Tasks sidebar,
+   * do not open again, only locate the list.
+   */
+  async handleTaskDragStart(targetCategoryPath) {
+    var _a;
+    const isEnabled = this.host.settings.hideLeftSidebar || this.host.settings.autoExpandSidebarOnDrag;
+    if (!isEnabled)
+      return;
+    if (this.dragEndCollapseTimeout !== null) {
+      window.clearTimeout(this.dragEndCollapseTimeout);
+      this.dragEndCollapseTimeout = null;
+    }
+    const leftSplit = this.host.app.workspace.leftSplit;
+    const isAlreadyExpandedWithPlugin = !!(leftSplit && !leftSplit.collapsed && this.isPluginLeftSidebarActive());
+    if (isAlreadyExpandedWithPlugin) {
+      this._isSidebarTemporarilyExpandedForDrag = false;
+    } else {
+      this._isSidebarTemporarilyExpandedForDrag = true;
+      let sidebarLeaves = this.host.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR);
+      let sidebarLeaf = sidebarLeaves.length > 0 ? sidebarLeaves[0] : null;
+      if (!sidebarLeaf) {
+        sidebarLeaf = await this.host.activateView(VIEW_TYPE_SIDEBAR, "left");
+      }
+      if (leftSplit == null ? void 0 : leftSplit.collapsed) {
+        leftSplit.expand();
+      }
+      if (sidebarLeaf) {
+        void this.host.app.workspace.revealLeaf(sidebarLeaf);
+      }
+    }
+    const catPath = targetCategoryPath || ((_a = this.host.getActiveCenterCategory()) == null ? void 0 : _a.filepath);
+    if (catPath) {
+      window.setTimeout(() => {
+        var _a2;
+        const currentLeaves = this.host.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR);
+        if (currentLeaves.length > 0) {
+          const sidebarView = currentLeaves[0].view;
+          if (typeof (sidebarView == null ? void 0 : sidebarView.getComponent) === "function") {
+            void ((_a2 = sidebarView.getComponent()) == null ? void 0 : _a2.locateAndRevealCategory(catPath));
+          }
+        }
+      }, 60);
+    }
+    if (this.activeSafetyCleanup) {
+      this.activeSafetyCleanup();
+    }
+    const safetyCleanup = () => {
+      window.removeEventListener("pointerup", safetyCleanup, true);
+      window.removeEventListener("pointercancel", safetyCleanup, true);
+      this.activeSafetyCleanup = null;
+      this.handleTaskDragEnd();
+    };
+    this.activeSafetyCleanup = safetyCleanup;
+    window.addEventListener("pointerup", safetyCleanup, { once: true, capture: true });
+    window.addEventListener("pointercancel", safetyCleanup, { once: true, capture: true });
+  }
+  /**
+   * When task dragging finishes, hide the temporarily opened left sidebar.
+   */
+  handleTaskDragEnd() {
+    if (!this._isSidebarTemporarilyExpandedForDrag)
+      return;
+    this._isSidebarTemporarilyExpandedForDrag = false;
+    if (this.dragEndCollapseTimeout !== null) {
+      window.clearTimeout(this.dragEndCollapseTimeout);
+    }
+    this.dragEndCollapseTimeout = window.setTimeout(() => {
+      this.dragEndCollapseTimeout = null;
+      if (this._isSidebarTemporarilyExpandedForDrag)
+        return;
+      const leftSplit = this.host.app.workspace.leftSplit;
+      if (leftSplit && !leftSplit.collapsed) {
+        leftSplit.collapse();
+      }
+      if (this.host.settings.hideLeftSidebar) {
+        this.host.app.workspace.detachLeavesOfType(VIEW_TYPE_SIDEBAR);
+      }
+    }, 150);
+  }
+  /**
+   * Check whether the active workspace focus or visible center leaf belongs to Fluent Tasks.
+   */
+  isPluginPageActive() {
+    var _a, _b;
+    const activeType = (_a = this.host.app.workspace.getActiveViewOfType(import_obsidian26.ItemView)) == null ? void 0 : _a.getViewType();
+    if (activeType === VIEW_TYPE_MAIN || activeType === VIEW_TYPE_SIDEBAR || activeType === VIEW_TYPE_DETAIL) {
+      return true;
+    }
+    const mainLeaves = this.host.app.workspace.getLeavesOfType(VIEW_TYPE_MAIN);
+    for (const leaf of mainLeaves) {
+      const el = (_b = leaf.view) == null ? void 0 : _b.containerEl;
+      if (el && el.offsetParent !== null) {
+        return true;
+      }
+    }
+    return false;
+  }
+  /**
+   * Locate the active center category in the left sidebar tree.
+   * MUST ONLY operate when the left sidebar is confirmed to be expanded.
+   * NEVER forces sidebar expansion if the user collapsed it.
+   */
+  locateActiveCategoryInSidebar() {
+    var _a;
+    if (this.host.settings.hideLeftSidebar)
+      return;
+    const leftSplit = this.host.app.workspace.leftSplit;
+    if (!leftSplit || leftSplit.collapsed) {
+      return;
+    }
+    const now2 = Date.now();
+    if (now2 - this.lastSidebarLocateTime < 300) {
+      return;
+    }
+    this.lastSidebarLocateTime = now2;
+    if (!this.isPluginPageActive()) {
+      return;
+    }
+    const centerCat = this.host.getActiveCenterCategory();
+    if (!centerCat) {
+      return;
+    }
+    const sidebarLeaves = this.host.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR);
+    if (sidebarLeaves.length > 0) {
+      const sidebarLeaf = sidebarLeaves[0];
+      if (!this.isSidebarLeafActive(VIEW_TYPE_SIDEBAR, "left")) {
+        void this.host.app.workspace.revealLeaf(sidebarLeaf);
+      }
+      const sidebarView = sidebarLeaf.view;
+      if (typeof (sidebarView == null ? void 0 : sidebarView.getComponent) === "function") {
+        void ((_a = sidebarView.getComponent()) == null ? void 0 : _a.locateAndRevealCategory(centerCat.filepath));
+      }
+    }
+  }
+  /**
+   * Handle Detail Modal Mode toggle: detaches right leaf and collapses right split if it was showing detail.
+   */
+  handleDetailModalModeEnabled() {
+    const wasRightActive = this.isPluginRightSidebarActive();
+    this.host.app.workspace.detachLeavesOfType(VIEW_TYPE_DETAIL);
+    const rightSplit = this.host.app.workspace.rightSplit;
+    if (rightSplit && !rightSplit.collapsed && wasRightActive) {
+      rightSplit.collapse();
+    }
+  }
+  /**
+   * Handle Hide Left Sidebar setting toggle.
+   */
+  async handleHideLeftSidebarChanged(value) {
+    if (value) {
+      const wasLeftActive = this.isPluginLeftSidebarActive();
+      this.host.app.workspace.detachLeavesOfType(VIEW_TYPE_SIDEBAR);
+      const leftSplit = this.host.app.workspace.leftSplit;
+      if (leftSplit && !leftSplit.collapsed && wasLeftActive) {
+        leftSplit.collapse();
+      }
+      if (!isQuickListHotkeyAssigned(this.host.app)) {
+        new import_obsidian26.Notice(t("warn_bind_hotkey_notice") || "\u26A0\uFE0F [Fluent Tasks] 'Hide Left Sidebar' is enabled, but no hotkey is bound for the Floating UI! Please assign a hotkey in Settings -> Hotkeys.", 8e3);
+      }
+    } else {
+      await this.host.activateView(VIEW_TYPE_SIDEBAR, "left");
+      const leftSplit = this.host.app.workspace.leftSplit;
+      if (leftSplit == null ? void 0 : leftSplit.collapsed) {
+        leftSplit.expand();
+      }
+    }
+    EventBus.emit("settings:changed" /* SETTINGS_CHANGED */, { settings: this.host.settings });
+  }
+  /**
+   * Cleanup resources and pending timeouts on unload.
+   */
+  destroy() {
+    if (this.dragEndCollapseTimeout !== null) {
+      window.clearTimeout(this.dragEndCollapseTimeout);
+      this.dragEndCollapseTimeout = null;
+    }
+    if (this.activeSafetyCleanup) {
+      this.activeSafetyCleanup();
+      this.activeSafetyCleanup = null;
+    }
+  }
+};
+
 // src/main.ts
-var TaskSidebarViewWrapper = class extends import_obsidian26.ItemView {
+var TaskSidebarViewWrapper = class extends import_obsidian27.ItemView {
   constructor(leaf, dataService, plugin) {
     super(leaf);
     this.component = null;
     this.dataService = dataService;
     this.plugin = plugin;
-    this.scope = new import_obsidian26.Scope(this.app.scope);
+    this.scope = new import_obsidian27.Scope(this.app.scope);
     this.scope.register([], "F2", (evt) => {
       var _a;
       if ((_a = this.component) == null ? void 0 : _a.triggerRenameHoveredOrActive()) {
@@ -56123,7 +56494,7 @@ var TaskSidebarViewWrapper = class extends import_obsidian26.ItemView {
     return this.component;
   }
 };
-var TaskMainViewWrapper = class extends import_obsidian26.ItemView {
+var TaskMainViewWrapper = class extends import_obsidian27.ItemView {
   // Enables Obsidian Leaf Navigation & History tracking
   constructor(leaf, dataService, plugin) {
     super(leaf);
@@ -56132,7 +56503,7 @@ var TaskMainViewWrapper = class extends import_obsidian26.ItemView {
     this.navigation = true;
     this.dataService = dataService;
     this.plugin = plugin;
-    this.scope = new import_obsidian26.Scope(this.app.scope);
+    this.scope = new import_obsidian27.Scope(this.app.scope);
     this.scope.register(["Mod"], "f", (evt) => {
       var _a;
       if ((_a = this.component) == null ? void 0 : _a.openSearch) {
@@ -56194,7 +56565,7 @@ var TaskMainViewWrapper = class extends import_obsidian26.ItemView {
     await super.setState(state, result);
     if (state && state.categoryFilepath) {
       const file = this.app.vault.getAbstractFileByPath(state.categoryFilepath);
-      if (file && file instanceof import_obsidian26.TFile) {
+      if (file && file instanceof import_obsidian27.TFile) {
         const cat = {
           id: state.categoryFilepath,
           type: "category",
@@ -56229,7 +56600,7 @@ var TaskMainViewWrapper = class extends import_obsidian26.ItemView {
     const state = this.getState();
     if (state == null ? void 0 : state.categoryFilepath) {
       const file = this.app.vault.getAbstractFileByPath(state.categoryFilepath);
-      if (file && file instanceof import_obsidian26.TFile) {
+      if (file && file instanceof import_obsidian27.TFile) {
         const cat = {
           id: state.categoryFilepath,
           type: "category",
@@ -56255,13 +56626,13 @@ var TaskMainViewWrapper = class extends import_obsidian26.ItemView {
     const cat = (_a = this.component) == null ? void 0 : _a.getCurrentCategory();
     if (cat && cat.filepath) {
       const f = this.app.vault.getAbstractFileByPath(cat.filepath);
-      if (f instanceof import_obsidian26.TFile)
+      if (f instanceof import_obsidian27.TFile)
         return f;
     }
     return null;
   }
 };
-var TaskDetailViewWrapper = class extends import_obsidian26.ItemView {
+var TaskDetailViewWrapper = class extends import_obsidian27.ItemView {
   constructor(leaf, dataService, plugin) {
     super(leaf);
     this.component = null;
@@ -56295,25 +56666,21 @@ var TaskDetailViewWrapper = class extends import_obsidian26.ItemView {
     return this.component;
   }
 };
-var FluentTasksPlugin = class extends import_obsidian26.Plugin {
+var FluentTasksPlugin = class extends import_obsidian27.Plugin {
   constructor() {
     super(...arguments);
     this.ribbonIconEl = null;
     this.settings = Object.assign({}, DEFAULT_SETTINGS);
     this.activeDetailModal = null;
-    this.isUserClosingSidebar = false;
-    this.isSidebarTemporarilyExpandedForDrag = false;
-    this.dragEndCollapseTimeout = null;
     this.undoContainerEl = null;
     this.undoToastComponent = null;
     this.isRollingOver = false;
     this.lastRolloverDate = "";
-    // =============================================
-    // Sidebar Auto-Expand & Collapse Management
-    // =============================================
-    this.suppressAutoExpandSidebarUntil = 0;
-    this.lastSidebarLocateTime = 0;
     this.registeredCategoryCommandIds = /* @__PURE__ */ new Set();
+  }
+  get isSidebarTemporarilyExpandedForDrag() {
+    var _a, _b;
+    return (_b = (_a = this.sidebarCoordinator) == null ? void 0 : _a.isSidebarTemporarilyExpandedForDrag) != null ? _b : false;
   }
   openTaskDetailModal(task, categoryFilepath) {
     if (task && categoryFilepath) {
@@ -56360,35 +56727,14 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
     }
   }
   handleDetailModalModeEnabled() {
-    const wasRightActive = this.isPluginRightSidebarActive();
-    this.app.workspace.detachLeavesOfType(VIEW_TYPE_DETAIL);
-    const rightSplit = this.app.workspace.rightSplit;
-    if (rightSplit && !rightSplit.collapsed && wasRightActive) {
-      rightSplit.collapse();
-    }
+    this.sidebarCoordinator.handleDetailModalModeEnabled();
   }
   async handleHideLeftSidebarChanged(value) {
-    if (value) {
-      const wasLeftActive = this.isPluginLeftSidebarActive();
-      this.app.workspace.detachLeavesOfType(VIEW_TYPE_SIDEBAR);
-      const leftSplit = this.app.workspace.leftSplit;
-      if (leftSplit && !leftSplit.collapsed && wasLeftActive) {
-        leftSplit.collapse();
-      }
-      if (!isQuickListHotkeyAssigned(this.app)) {
-        new import_obsidian26.Notice(t("warn_bind_hotkey_notice") || "\u26A0\uFE0F [Fluent Tasks] 'Hide Left Sidebar' is enabled, but no hotkey is bound for the Floating UI! Please assign a hotkey in Settings -> Hotkeys.", 8e3);
-      }
-    } else {
-      await this.activateView(VIEW_TYPE_SIDEBAR, "left");
-      const leftSplit = this.app.workspace.leftSplit;
-      if (leftSplit == null ? void 0 : leftSplit.collapsed) {
-        leftSplit.expand();
-      }
-    }
-    EventBus.emit("settings:changed" /* SETTINGS_CHANGED */, { settings: this.settings });
+    await this.sidebarCoordinator.handleHideLeftSidebarChanged(value);
   }
   async onload() {
     this.dataService = new DataService(this.app);
+    this.sidebarCoordinator = new SidebarCoordinator(this);
     this.addSettingTab(new FluentTasksSettingTab(this.app, this));
     Logger.init(this.app);
     void Logger.log("Fluent Tasks plugin loading...");
@@ -56551,7 +56897,6 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
     });
     this.app.workspace.onLayoutReady(() => {
       void (async () => {
-        var _a;
         await this.dataService.ensureDataFolder();
         await this.loadSettings();
         this.applySettings();
@@ -56569,62 +56914,7 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
             void Logger.log(`[LinkedNote] Auto-migrated ${res.migratedCount} legacy linked note(s):`, res.details);
           }
         });
-        let lastActiveViewType = ((_a = this.app.workspace.getActiveViewOfType(import_obsidian26.ItemView)) == null ? void 0 : _a.getViewType()) || "";
-        this.registerEvent(
-          this.app.workspace.on("active-leaf-change", (leaf) => {
-            var _a2, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m;
-            if (!leaf || !leaf.view)
-              return;
-            const currentType = leaf.view.getViewType();
-            const isPluginView = currentType === VIEW_TYPE_MAIN || currentType === VIEW_TYPE_SIDEBAR || currentType === VIEW_TYPE_DETAIL;
-            const wasPluginView = lastActiveViewType === VIEW_TYPE_MAIN || lastActiveViewType === VIEW_TYPE_SIDEBAR || lastActiveViewType === VIEW_TYPE_DETAIL;
-            if (isPluginView && !wasPluginView) {
-              if (this.settings.hideLeftSidebar && !this.isSidebarTemporarilyExpandedForDrag) {
-                const wasLeftActive = this.isPluginLeftSidebarActive();
-                this.app.workspace.detachLeavesOfType(VIEW_TYPE_SIDEBAR);
-                const leftSplit = this.app.workspace.leftSplit;
-                if (leftSplit && !leftSplit.collapsed && wasLeftActive) {
-                  leftSplit.collapse();
-                }
-              } else if (this.settings.autoExpandSidebar) {
-                if (!this.isUserClosingSidebar && Date.now() > this.suppressAutoExpandSidebarUntil) {
-                  this.expandSidebarToList();
-                }
-              }
-            }
-            if (!isPluginView && wasPluginView && ((_a2 = this.settings.autoCollapseSidebarOnSwitch) != null ? _a2 : true)) {
-              const isInsideLeftSidebar = ((_b = leaf.getRoot) == null ? void 0 : _b.call(leaf)) === this.app.workspace.leftSplit || !!(((_d = (_c = leaf.containerEl) == null ? void 0 : _c.closest) == null ? void 0 : _d.call(_c, ".mod-left-split")) || ((_g = (_f = (_e = leaf.view) == null ? void 0 : _e.containerEl) == null ? void 0 : _f.closest) == null ? void 0 : _g.call(_f, ".mod-left-split")));
-              const isInsideRightSidebar = ((_h = leaf.getRoot) == null ? void 0 : _h.call(leaf)) === this.app.workspace.rightSplit || !!(((_j = (_i = leaf.containerEl) == null ? void 0 : _i.closest) == null ? void 0 : _j.call(_i, ".mod-right-split")) || ((_m = (_l = (_k = leaf.view) == null ? void 0 : _k.containerEl) == null ? void 0 : _l.closest) == null ? void 0 : _m.call(_l, ".mod-right-split")));
-              this.collapseSidebars(0, false, !isInsideLeftSidebar, !isInsideRightSidebar);
-            }
-            lastActiveViewType = currentType;
-          })
-        );
-        this.registerDomEvent(window, "keydown", (evt) => {
-          const isMod = (evt.ctrlKey || evt.metaKey) && !evt.shiftKey && !evt.altKey;
-          const isB = evt.key === "b" || evt.key === "B" || evt.code === "KeyB";
-          if (isMod && isB) {
-            const leftSplit = this.app.workspace.leftSplit;
-            const isCurrentlyCollapsed = !leftSplit || !!leftSplit.collapsed;
-            if (!isCurrentlyCollapsed) {
-              this.suppressAutoSidebarExpansion(3e3);
-              this.isUserClosingSidebar = true;
-              window.setTimeout(() => {
-                this.isUserClosingSidebar = false;
-              }, 600);
-              return;
-            }
-            if (!this.isPluginPageActive()) {
-              return;
-            }
-            window.setTimeout(() => {
-              const currentLeftSplit = this.app.workspace.leftSplit;
-              if (currentLeftSplit && !currentLeftSplit.collapsed) {
-                this.locateActiveCategoryInSidebar();
-              }
-            }, 150);
-          }
-        }, true);
+        this.sidebarCoordinator.registerEventListeners(this);
         const isCategoryFile = (path) => {
           if (!path || !path.startsWith(DATA_FOLDER + "/") || !path.endsWith(".md"))
             return false;
@@ -56633,7 +56923,7 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
         };
         this.registerEvent(
           this.app.vault.on("modify", (file) => {
-            if (!file || !(file instanceof import_obsidian26.TFile))
+            if (!file || !(file instanceof import_obsidian27.TFile))
               return;
             if (isCategoryFile(file.path)) {
               if (this.dataService.isInternalWrite(file.path)) {
@@ -56652,7 +56942,7 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
         );
         this.registerEvent(
           this.app.metadataCache.on("changed", (file) => {
-            if (file instanceof import_obsidian26.TFile && file.path.startsWith(DATA_FOLDER + "/") && file.extension === "md" && !isCategoryFile(file.path)) {
+            if (file instanceof import_obsidian27.TFile && file.path.startsWith(DATA_FOLDER + "/") && file.extension === "md" && !isCategoryFile(file.path)) {
               if (!this.dataService.isInternalWrite(file.path)) {
                 void LinkedNoteService.syncNotePropertyToTask(this.app, this.dataService, file);
               }
@@ -56677,7 +56967,7 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
                 file.path
               );
             }
-            if (file instanceof import_obsidian26.TFile && file.extension === "md") {
+            if (file instanceof import_obsidian27.TFile && file.extension === "md") {
               if (!LinkedNoteService.isInternalRename(oldPath, file.path)) {
                 void LinkedNoteService.syncNoteRenameToTasks(
                   this.app,
@@ -56697,7 +56987,7 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
           const category = p == null ? void 0 : p.category;
           if (category) {
             void (async () => {
-              var _a2, _b, _c;
+              var _a, _b, _c;
               if (this.settings.openDetailInModal) {
                 if (this.activeDetailModal) {
                   this.activeDetailModal.close();
@@ -56709,7 +56999,7 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
                 }
               }
               const mainLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MAIN);
-              let mainLeaf = (_a2 = mainLeaves[0]) != null ? _a2 : null;
+              let mainLeaf = (_a = mainLeaves[0]) != null ? _a : null;
               if (!mainLeaf) {
                 mainLeaf = await this.activateView(VIEW_TYPE_MAIN, "center");
               }
@@ -56741,7 +57031,7 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
           }
         });
         EventBus.on("category:renamed" /* CATEGORY_RENAMED */, (payload) => {
-          var _a2;
+          var _a;
           const p = payload;
           if (!(p == null ? void 0 : p.category) || !(p == null ? void 0 : p.oldFilepath))
             return;
@@ -56763,7 +57053,7 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
                   },
                   active: true
                 });
-                (_a2 = leaf.updateHeader) == null ? void 0 : _a2.call(leaf);
+                (_a = leaf.updateHeader) == null ? void 0 : _a.call(leaf);
               }
             }
           }
@@ -56775,7 +57065,7 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
           this.lastSelectedTask = p.task;
           this.lastSelectedCategoryFilepath = p.categoryFilepath;
           void (async () => {
-            var _a2;
+            var _a;
             if (this.settings.openDetailInModal) {
               if (p.skipModal) {
                 if (this.activeDetailModal) {
@@ -56794,7 +57084,7 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
             if (!this.isPluginPageActive()) {
               const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_DETAIL);
               if (leaves.length > 0 && leaves[0].view instanceof TaskDetailViewWrapper) {
-                (_a2 = leaves[0].view.getComponent()) == null ? void 0 : _a2.loadTask(p.task, p.categoryFilepath);
+                (_a = leaves[0].view.getComponent()) == null ? void 0 : _a.loadTask(p.task, p.categoryFilepath);
               }
               return;
             }
@@ -56855,6 +57145,7 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
     }
   }
   onunload() {
+    var _a;
     if (this.undoToastComponent) {
       this.undoToastComponent.$destroy();
       this.undoToastComponent = null;
@@ -56867,6 +57158,7 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
       this.ribbonIconEl.remove();
       this.ribbonIconEl = null;
     }
+    (_a = this.sidebarCoordinator) == null ? void 0 : _a.destroy();
     EventBus.destroy();
     window.__mstodo_drag_data = null;
     void Logger.log("Fluent Tasks plugin unloaded.");
@@ -56920,205 +57212,38 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
       "--todo-star-border": `${this.settings.accentColor}4d`
     });
   }
-  /**
-   * Suppress automatic sidebar expansion for a period of time (e.g. after jumping from quick modals).
-   */
+  // =============================================
+  // Sidebar Delegation (Delegates to SidebarCoordinator)
+  // =============================================
   suppressAutoSidebarExpansion(durationMs = 1200) {
-    this.suppressAutoExpandSidebarUntil = Date.now() + durationMs;
+    this.sidebarCoordinator.suppressAutoSidebarExpansion(durationMs);
   }
-  /**
-   * Check if a specific viewType is currently the active/visible tab in the specified sidebar (left or right).
-   * Returns false if the sidebar is collapsed or if another tool (e.g. Search, File Explorer, Outline) is active.
-   */
   isSidebarLeafActive(viewType, position) {
-    const split = position === "left" ? this.app.workspace.leftSplit : this.app.workspace.rightSplit;
-    if (!split || split.collapsed) {
-      return false;
-    }
-    const leaves = this.app.workspace.getLeavesOfType(viewType);
-    if (leaves.length === 0)
-      return false;
-    for (const leaf of leaves) {
-      const parent = leaf.parent;
-      if (parent && Array.isArray(parent.children)) {
-        if (parent.children.length === 1 && parent.children[0] === leaf) {
-          return true;
-        }
-        const currentTabIdx = typeof parent.currentTab === "number" ? parent.currentTab : -1;
-        if (currentTabIdx >= 0 && parent.children[currentTabIdx] === leaf) {
-          return true;
-        }
-      }
-      const tabHeader = leaf.tabHeaderEl;
-      if (tabHeader) {
-        if (tabHeader.classList.contains("is-active") || tabHeader.getAttribute("aria-selected") === "true") {
-          return true;
-        }
-      }
-      const containerEl = leaf.containerEl;
-      if (containerEl && containerEl.offsetWidth > 0 && containerEl.offsetHeight > 0) {
-        const style = window.getComputedStyle(containerEl);
-        if (style.display !== "none" && style.visibility !== "hidden") {
-          return true;
-        }
-      }
-    }
-    return false;
+    return this.sidebarCoordinator.isSidebarLeafActive(viewType, position);
   }
-  /**
-   * Check if Fluent Tasks left sidebar view (VIEW_TYPE_SIDEBAR) is active and visible.
-   */
   isPluginLeftSidebarActive() {
-    return this.isSidebarLeafActive(VIEW_TYPE_SIDEBAR, "left");
+    return this.sidebarCoordinator.isPluginLeftSidebarActive();
   }
-  /**
-   * Check if Fluent Tasks right detail view (VIEW_TYPE_DETAIL) is active and visible.
-   */
   isPluginRightSidebarActive() {
-    return this.isSidebarLeafActive(VIEW_TYPE_DETAIL, "right");
+    return this.sidebarCoordinator.isPluginRightSidebarActive();
   }
-  /**
-   * Collapse left and right sidebars IF they are currently displaying Fluent Tasks views,
-   * while preserving other tools (like search, file explorer, outline, etc.).
-   */
   collapseSidebars(suppressAutoExpandDurationMs = 0, force = false, targetLeft = true, targetRight = true) {
-    if (suppressAutoExpandDurationMs > 0) {
-      this.suppressAutoSidebarExpansion(suppressAutoExpandDurationMs);
-    }
-    if (targetLeft) {
-      const leftSplit = this.app.workspace.leftSplit;
-      if (leftSplit && !leftSplit.collapsed && !this.isSidebarTemporarilyExpandedForDrag) {
-        if (force || this.isPluginLeftSidebarActive()) {
-          leftSplit.collapse();
-        }
-      }
-    }
-    if (targetRight) {
-      const rightSplit = this.app.workspace.rightSplit;
-      if (rightSplit && !rightSplit.collapsed) {
-        if (force || this.isPluginRightSidebarActive()) {
-          rightSplit.collapse();
-        }
-      }
-    }
+    this.sidebarCoordinator.collapseSidebars(suppressAutoExpandDurationMs, force, targetLeft, targetRight);
   }
-  /**
-   * Expand the left sidebar and reveal the Fluent Tasks sidebar list tab.
-   */
   expandSidebarToList() {
-    if (this.settings.hideLeftSidebar)
-      return;
-    const leftSplit = this.app.workspace.leftSplit;
-    if (leftSplit == null ? void 0 : leftSplit.collapsed) {
-      leftSplit.expand();
-    }
-    const sidebarLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR);
-    if (sidebarLeaves.length > 0) {
-      void this.app.workspace.revealLeaf(sidebarLeaves[0]);
-    } else {
-      void this.activateView(VIEW_TYPE_SIDEBAR, "left");
-    }
-    window.setTimeout(() => {
-      const currentLeftSplit = this.app.workspace.leftSplit;
-      if (currentLeftSplit && !currentLeftSplit.collapsed) {
-        this.locateActiveCategoryInSidebar();
-      }
-    }, 120);
+    this.sidebarCoordinator.expandSidebarToList();
   }
-  /**
-   * When hideLeftSidebar (Floating UI mode) or autoExpandSidebarOnDrag is enabled,
-   * temporarily open the left sidebar when a task starts being dragged,
-   * and locate/reveal the current category in the tree.
-   * If the sidebar is already open and displaying Fluent Tasks sidebar,
-   * do not open again, only locate the list.
-   */
   async handleTaskDragStart(targetCategoryPath) {
-    var _a;
-    const isEnabled = this.settings.hideLeftSidebar || this.settings.autoExpandSidebarOnDrag;
-    if (!isEnabled)
-      return;
-    if (this.dragEndCollapseTimeout !== null) {
-      window.clearTimeout(this.dragEndCollapseTimeout);
-      this.dragEndCollapseTimeout = null;
-    }
-    const leftSplit = this.app.workspace.leftSplit;
-    const isAlreadyExpandedWithPlugin = !!(leftSplit && !leftSplit.collapsed && this.isPluginLeftSidebarActive());
-    if (isAlreadyExpandedWithPlugin) {
-      this.isSidebarTemporarilyExpandedForDrag = false;
-    } else {
-      this.isSidebarTemporarilyExpandedForDrag = true;
-      let sidebarLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR);
-      let sidebarLeaf = sidebarLeaves.length > 0 ? sidebarLeaves[0] : null;
-      if (!sidebarLeaf) {
-        sidebarLeaf = await this.activateView(VIEW_TYPE_SIDEBAR, "left");
-      }
-      if (leftSplit == null ? void 0 : leftSplit.collapsed) {
-        leftSplit.expand();
-      }
-      if (sidebarLeaf) {
-        void this.app.workspace.revealLeaf(sidebarLeaf);
-      }
-    }
-    const catPath = targetCategoryPath || ((_a = this.getActiveCenterCategory()) == null ? void 0 : _a.filepath);
-    if (catPath) {
-      window.setTimeout(() => {
-        var _a2;
-        const currentLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR);
-        if (currentLeaves.length > 0 && currentLeaves[0].view instanceof TaskSidebarViewWrapper) {
-          void ((_a2 = currentLeaves[0].view.getComponent()) == null ? void 0 : _a2.locateAndRevealCategory(catPath));
-        }
-      }, 60);
-    }
-    const safetyCleanup = () => {
-      window.removeEventListener("pointerup", safetyCleanup, true);
-      window.removeEventListener("pointercancel", safetyCleanup, true);
-      this.handleTaskDragEnd();
-    };
-    window.addEventListener("pointerup", safetyCleanup, { once: true, capture: true });
-    window.addEventListener("pointercancel", safetyCleanup, { once: true, capture: true });
+    await this.sidebarCoordinator.handleTaskDragStart(targetCategoryPath);
   }
-  /**
-   * When task dragging finishes, hide the temporarily opened left sidebar.
-   */
   handleTaskDragEnd() {
-    if (!this.isSidebarTemporarilyExpandedForDrag)
-      return;
-    this.isSidebarTemporarilyExpandedForDrag = false;
-    if (this.dragEndCollapseTimeout !== null) {
-      window.clearTimeout(this.dragEndCollapseTimeout);
-    }
-    this.dragEndCollapseTimeout = window.setTimeout(() => {
-      this.dragEndCollapseTimeout = null;
-      if (this.isSidebarTemporarilyExpandedForDrag)
-        return;
-      const leftSplit = this.app.workspace.leftSplit;
-      if (leftSplit && !leftSplit.collapsed) {
-        leftSplit.collapse();
-      }
-      if (this.settings.hideLeftSidebar) {
-        this.app.workspace.detachLeavesOfType(VIEW_TYPE_SIDEBAR);
-      }
-    }, 150);
+    this.sidebarCoordinator.handleTaskDragEnd();
   }
-  /**
-   * Check whether the active workspace focus or visible center leaf belongs to Fluent Tasks.
-   */
   isPluginPageActive() {
-    var _a;
-    const activeType = (_a = this.app.workspace.getActiveViewOfType(import_obsidian26.ItemView)) == null ? void 0 : _a.getViewType();
-    if (activeType === VIEW_TYPE_MAIN || activeType === VIEW_TYPE_SIDEBAR || activeType === VIEW_TYPE_DETAIL) {
-      return true;
-    }
-    const mainLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MAIN);
-    for (const leaf of mainLeaves) {
-      if (leaf.view instanceof TaskMainViewWrapper) {
-        const el = leaf.view.containerEl;
-        if (el && el.offsetParent !== null) {
-          return true;
-        }
-      }
-    }
-    return false;
+    return this.sidebarCoordinator.isPluginPageActive();
+  }
+  locateActiveCategoryInSidebar() {
+    this.sidebarCoordinator.locateActiveCategoryInSidebar();
   }
   /**
    * Get the CategoryInfo currently displayed in the center main view.
@@ -57144,43 +57269,6 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
       }
     }
     return null;
-  }
-  /**
-   * Locate the active center category in the left sidebar tree.
-   * MUST ONLY operate when the left sidebar is confirmed to be expanded.
-   * NEVER forces sidebar expansion if the user collapsed it.
-   */
-  locateActiveCategoryInSidebar() {
-    var _a;
-    if (this.settings.hideLeftSidebar)
-      return;
-    const leftSplit = this.app.workspace.leftSplit;
-    if (!leftSplit || leftSplit.collapsed) {
-      return;
-    }
-    const now2 = Date.now();
-    if (now2 - this.lastSidebarLocateTime < 300) {
-      return;
-    }
-    this.lastSidebarLocateTime = now2;
-    if (!this.isPluginPageActive()) {
-      return;
-    }
-    const centerCat = this.getActiveCenterCategory();
-    if (!centerCat) {
-      return;
-    }
-    const sidebarLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR);
-    if (sidebarLeaves.length > 0) {
-      const sidebarLeaf = sidebarLeaves[0];
-      if (!this.isSidebarLeafActive(VIEW_TYPE_SIDEBAR, "left")) {
-        void this.app.workspace.revealLeaf(sidebarLeaf);
-      }
-      const sidebarView = sidebarLeaf.view;
-      if (sidebarView instanceof TaskSidebarViewWrapper) {
-        void ((_a = sidebarView.getComponent()) == null ? void 0 : _a.locateAndRevealCategory(centerCat.filepath));
-      }
-    }
   }
   getCategoryCommandId(cat) {
     let hash2 = 0;
