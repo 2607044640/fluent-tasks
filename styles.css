@@ -542,32 +542,50 @@
     border-radius: var(--todo-radius);
     padding: 12px 15px;
     margin-bottom: 20px;
-    border: 1px solid transparent;
-    transition: border-color var(--todo-transition);
+    border: 1px solid var(--todo-border, var(--background-modifier-border, rgba(255, 255, 255, 0.06)));
+    transition: border-color var(--todo-transition), background-color var(--todo-transition);
+}
+
+.add-task-container:hover {
+    background-color: var(--todo-hover-bg);
+    border-color: var(--background-modifier-border-hover, rgba(255, 255, 255, 0.12));
 }
 
 .add-task-container:focus-within {
-    border-color: var(--todo-accent);
+    background-color: var(--todo-hover-bg);
+    border-color: var(--background-modifier-border-hover, rgba(255, 255, 255, 0.18));
 }
 
 .plus-icon {
-    color: var(--todo-accent);
+    color: var(--todo-text-muted, var(--text-muted));
     margin-right: 12px;
     display: flex;
     align-items: center;
     margin-top: 2px;
     flex-shrink: 0;
+    transition: color var(--todo-transition);
 }
 
-.add-task-input {
+.add-task-container:hover .plus-icon {
+    color: var(--todo-text-main, var(--text-normal));
+}
+
+.add-task-container:focus-within .plus-icon {
+    color: var(--interactive-accent, var(--todo-accent));
+}
+
+.add-task-input,
+.add-task-input:focus,
+.add-task-input:focus-visible {
     field-sizing: content;
-    background: transparent;
-    border: none;
-    color: var(--todo-text-main);
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    color: var(--todo-text-main, var(--text-normal)) !important;
     flex-grow: 1;
     font-size: 14px;
     line-height: 1.45;
-    outline: none;
     resize: none;
     overflow: hidden;
     white-space: pre-wrap;
@@ -580,8 +598,21 @@
 }
 
 .add-task-input::placeholder {
-    color: var(--todo-accent);
-    opacity: 0.7;
+    color: var(--todo-text-muted, var(--text-muted)) !important;
+    opacity: 0.6;
+    transition: color var(--todo-transition), opacity var(--todo-transition);
+}
+
+.add-task-container:hover .add-task-input::placeholder,
+.add-task-input:hover::placeholder {
+    color: var(--todo-text-main, var(--text-normal)) !important;
+    opacity: 0.85;
+}
+
+.add-task-container:focus-within .add-task-input::placeholder,
+.add-task-input:focus::placeholder {
+    color: var(--interactive-accent, var(--todo-accent)) !important;
+    opacity: 0.9;
 }
 
 /* Task List */
@@ -1136,17 +1167,21 @@
 }
 
 .step-item textarea,
-.step-item input[type="text"] {
+.step-item textarea:focus,
+.step-item textarea:focus-visible,
+.step-item input[type="text"],
+.step-item input[type="text"]:focus,
+.step-item input[type="text"]:focus-visible {
     field-sizing: content;
     flex-grow: 1;
     width: 100%;
     min-width: 0;
     max-width: 100%;
-    background: transparent;
-    border: none;
-    border-bottom: 1px solid transparent;
-    color: var(--todo-text-main);
-    outline: none;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    color: var(--todo-text-main, var(--text-normal)) !important;
     font-size: 13px;
     line-height: 1.4;
     resize: none;
@@ -1157,12 +1192,25 @@
     font-family: inherit;
     padding: 2px 0;
     box-sizing: border-box;
-    transition: border-color var(--todo-transition);
 }
 
-.step-item textarea:focus,
-.step-item input[type="text"]:focus {
-    border-bottom-color: var(--todo-accent);
+.step-item textarea::placeholder,
+.step-item input[type="text"]::placeholder {
+    color: var(--todo-text-muted, var(--text-muted)) !important;
+    opacity: 0.6;
+    transition: color var(--todo-transition), opacity var(--todo-transition);
+}
+
+.step-item:hover textarea::placeholder,
+.step-item textarea:hover::placeholder {
+    color: var(--todo-text-main, var(--text-normal)) !important;
+    opacity: 0.85;
+}
+
+.step-item:focus-within textarea::placeholder,
+.step-item textarea:focus::placeholder {
+    color: var(--interactive-accent, var(--todo-accent)) !important;
+    opacity: 0.9;
 }
 
 .step-item textarea.completed,
@@ -1194,27 +1242,37 @@
     display: flex;
     align-items: flex-start;
     gap: 10px;
-    color: var(--todo-accent);
+    color: var(--todo-text-muted, var(--text-muted));
     cursor: text;
     font-size: 13px;
     padding: 4px 0;
+    transition: color var(--todo-transition);
 }
 
 .add-step-row svg {
+    color: var(--todo-text-muted, var(--text-muted));
     margin-top: 3px;
     flex-shrink: 0;
+    transition: color var(--todo-transition);
 }
 
-.add-step-row:hover {
-    opacity: 0.8;
+.add-step-row:hover svg {
+    color: var(--todo-text-main, var(--text-normal));
 }
 
-.add-step-input {
+.add-step-row:focus-within svg {
+    color: var(--interactive-accent, var(--todo-accent));
+}
+
+.add-step-input,
+.add-step-input:focus,
+.add-step-input:focus-visible {
     field-sizing: content;
-    background: transparent;
-    border: none;
-    color: var(--todo-text-main);
-    outline: none;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    color: var(--todo-text-main, var(--text-normal)) !important;
     flex-grow: 1;
     font-size: 13px;
     line-height: 1.4;
@@ -1231,8 +1289,21 @@
 }
 
 .add-step-input::placeholder {
-    color: var(--todo-accent);
+    color: var(--todo-text-muted, var(--text-muted)) !important;
     opacity: 0.6;
+    transition: color var(--todo-transition), opacity var(--todo-transition);
+}
+
+.add-step-row:hover .add-step-input::placeholder,
+.add-step-input:hover::placeholder {
+    color: var(--todo-text-main, var(--text-normal)) !important;
+    opacity: 0.85;
+}
+
+.add-step-row:focus-within .add-step-input::placeholder,
+.add-step-input:focus::placeholder {
+    color: var(--interactive-accent, var(--todo-accent)) !important;
+    opacity: 0.9;
 }
 
 /* Note Section */
@@ -3688,7 +3759,8 @@ body .quick-modal-task-item.is-focused {
     font-size: 12.5px;
     line-height: 1.4;
     border-radius: 6px;
-    border: 1px solid var(--todo-accent, #8b5cf6) !important;
+    border: 1px solid var(--background-modifier-border) !important;
+    box-shadow: none !important;
     background: var(--background-primary) !important;
     color: var(--text-normal) !important;
     outline: none !important;
@@ -3700,6 +3772,34 @@ body .quick-modal-task-item.is-focused {
     overflow-wrap: anywhere;
     font-family: inherit;
     box-sizing: border-box;
+    transition: border-color var(--todo-transition);
+}
+
+.quick-modal-add-input:hover {
+    border-color: var(--background-modifier-border-hover) !important;
+}
+
+.quick-modal-add-input:focus,
+.quick-modal-add-input:focus-visible {
+    border-color: var(--interactive-accent, var(--todo-accent, #8b5cf6)) !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+.quick-modal-add-input::placeholder {
+    color: var(--text-muted) !important;
+    opacity: 0.6;
+    transition: color var(--todo-transition), opacity var(--todo-transition);
+}
+
+.quick-modal-add-input:hover::placeholder {
+    color: var(--text-normal) !important;
+    opacity: 0.85;
+}
+
+.quick-modal-add-input:focus::placeholder {
+    color: var(--interactive-accent, var(--todo-accent, #8b5cf6)) !important;
+    opacity: 0.9;
 }
 
 .quick-modal-empty {
@@ -4439,10 +4539,21 @@ body .task-detail-floating-modal.is-fullscreen .add-step-card {
 }
 
 body .task-detail-floating-modal.is-fullscreen .add-step-row {
-    padding: 10px 14px;
+    padding: 8px 14px;
     border-radius: 8px;
     background-color: var(--todo-item-bg, rgba(255, 255, 255, 0.02));
-    border: 1px dashed var(--todo-border, var(--background-modifier-border, rgba(255, 255, 255, 0.12)));
+    border: 1px solid var(--todo-border, var(--background-modifier-border, rgba(255, 255, 255, 0.06)));
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+body .task-detail-floating-modal.is-fullscreen .add-step-row:hover {
+    background-color: var(--background-modifier-hover, rgba(255, 255, 255, 0.05));
+    border-color: var(--background-modifier-border-hover, rgba(255, 255, 255, 0.12));
+}
+
+body .task-detail-floating-modal.is-fullscreen .add-step-row:focus-within {
+    background-color: var(--background-modifier-hover, rgba(255, 255, 255, 0.05));
+    border-color: var(--background-modifier-border-hover, rgba(255, 255, 255, 0.18));
 }
 
 body .task-detail-floating-modal.is-fullscreen .note-section {
@@ -4873,14 +4984,19 @@ body .task-steps-floating-modal .steps-modal-delete-btn:hover {
     gap: 12px;
     padding: 10px 14px;
     border-radius: 8px;
-    border: 1px dashed var(--todo-border, var(--background-modifier-border, #444));
+    border: 1px solid var(--todo-border, var(--background-modifier-border, rgba(255, 255, 255, 0.06)));
     background-color: var(--background-primary-alt, rgba(255, 255, 255, 0.02));
     transition: border-color 0.15s ease, background-color 0.15s ease;
     flex-shrink: 0;
 }
 
+.steps-modal-add-row:hover {
+    background-color: var(--background-modifier-hover, rgba(255, 255, 255, 0.04));
+    border-color: var(--background-modifier-border-hover, rgba(255, 255, 255, 0.12));
+}
+
 .steps-modal-add-row:focus-within {
-    border-color: var(--todo-accent, #0078d4);
+    border-color: var(--background-modifier-border-hover, rgba(255, 255, 255, 0.18));
     background-color: var(--background-modifier-hover, rgba(255, 255, 255, 0.04));
 }
 
@@ -4889,19 +5005,32 @@ body .task-steps-floating-modal .steps-modal-delete-btn:hover {
     align-items: center;
     margin-top: 3px;
     flex-shrink: 0;
+    color: var(--text-muted);
+    transition: color var(--todo-transition);
 }
 
-.steps-modal-add-input {
+.steps-modal-add-row:hover .steps-modal-add-icon {
+    color: var(--text-normal);
+}
+
+.steps-modal-add-row:focus-within .steps-modal-add-icon {
+    color: var(--interactive-accent, var(--todo-accent, #0078d4));
+}
+
+.steps-modal-add-input,
+.steps-modal-add-input:focus,
+.steps-modal-add-input:focus-visible {
     field-sizing: content;
     flex-grow: 1;
     width: 100%;
     min-width: 0;
-    background: transparent;
-    border: none;
-    outline: none;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
     font-size: 15px;
     line-height: 1.5;
-    color: var(--todo-text-main, var(--text-normal, #fff));
+    color: var(--todo-text-main, var(--text-normal, #fff)) !important;
     font-family: inherit;
     resize: none;
     overflow: hidden;
@@ -4911,6 +5040,24 @@ body .task-steps-floating-modal .steps-modal-delete-btn:hover {
     padding: 2px 0;
     margin: 0;
     box-sizing: border-box;
+}
+
+.steps-modal-add-input::placeholder {
+    color: var(--text-muted) !important;
+    opacity: 0.6;
+    transition: color var(--todo-transition), opacity var(--todo-transition);
+}
+
+.steps-modal-add-row:hover .steps-modal-add-input::placeholder,
+.steps-modal-add-input:hover::placeholder {
+    color: var(--text-normal) !important;
+    opacity: 0.85;
+}
+
+.steps-modal-add-row:focus-within .steps-modal-add-input::placeholder,
+.steps-modal-add-input:focus::placeholder {
+    color: var(--interactive-accent, var(--todo-accent, #0078d4)) !important;
+    opacity: 0.9;
 }
 
 .steps-modal-add-btn {
