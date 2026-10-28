@@ -325,6 +325,37 @@
         }
     };
 
+    let isMouseDownOnInput = false;
+    let mouseDownPos: { x: number; y: number } | null = null;
+    let globalMouseUpTimeout: any = null;
+
+    function handleGlobalMouseDown(e: MouseEvent) {
+        const target = e.target as HTMLElement | null;
+        isMouseDownOnInput = !!(target && (target.tagName === "TEXTAREA" || target.tagName === "INPUT"));
+        mouseDownPos = { x: e.clientX, y: e.clientY };
+    }
+
+    function handleGlobalMouseUp() {
+        if (globalMouseUpTimeout) clearTimeout(globalMouseUpTimeout);
+        globalMouseUpTimeout = setTimeout(() => {
+            isMouseDownOnInput = false;
+            mouseDownPos = null;
+        }, 0);
+    }
+
+    function handleWindowBlur() {
+        isMouseDownOnInput = false;
+        mouseDownPos = null;
+    }
+
+    function shouldIgnoreContainerClick(e: MouseEvent): boolean {
+        if (isMouseDownOnInput) return true;
+        if (mouseDownPos && Math.hypot(e.clientX - mouseDownPos.x, e.clientY - mouseDownPos.y) > 5) return true;
+        const sel = window.getSelection();
+        if (sel && !sel.isCollapsed && sel.toString().trim().length > 0) return true;
+        return false;
+    }
+
     function handleSettingsChanged(payload?: any) {
         centerAlignTasks = payload?.settings?.centerAlignTasks ?? plugin?.settings?.centerAlignTasks ?? true;
         isFullscreen = payload?.settings?.fullscreenDetailModal ?? plugin?.settings?.fullscreenDetailModal ?? true;
@@ -337,6 +368,9 @@
         EventBus.on(EventName.SETTINGS_CHANGED, handleSettingsChanged);
         window.addEventListener("keydown", handleMetaModalKeydown, true);
         window.addEventListener("keydown", handleImageKeydown, true);
+        window.addEventListener("mousedown", handleGlobalMouseDown, true);
+        window.addEventListener("mouseup", handleGlobalMouseUp, true);
+        window.addEventListener("blur", handleWindowBlur);
     });
 
     onDestroy(() => {
@@ -351,6 +385,13 @@
         EventBus.off(EventName.SETTINGS_CHANGED, handleSettingsChanged);
         window.removeEventListener("keydown", handleMetaModalKeydown, true);
         window.removeEventListener("keydown", handleImageKeydown, true);
+        window.removeEventListener("mousedown", handleGlobalMouseDown, true);
+        window.removeEventListener("mouseup", handleGlobalMouseUp, true);
+        window.removeEventListener("blur", handleWindowBlur);
+        if (globalMouseUpTimeout) {
+            clearTimeout(globalMouseUpTimeout);
+            globalMouseUpTimeout = null;
+        }
         if (saveTimeout) {
             clearTimeout(saveTimeout);
             saveTimeout = null;
@@ -549,6 +590,7 @@
     function handleTitleRowClick(e: MouseEvent) {
         const target = e.target as HTMLElement | null;
         if (!target || target === titleTextareaEl) return;
+        if (shouldIgnoreContainerClick(e)) return;
         if (target.closest('.checkbox, .title-right-actions, .task-image-thumbnail, .task-img-strip-actions, button, [role="button"]')) {
             return;
         }
@@ -569,6 +611,7 @@
         if (!target) return;
         const textarea = (e.currentTarget as HTMLElement).querySelector('textarea') as HTMLTextAreaElement | null;
         if (!textarea || target === textarea) return;
+        if (shouldIgnoreContainerClick(e)) return;
         if (target.closest('.step-left-controls, .delete-step, .task-image-thumbnail, .task-img-strip-actions, button, [role="button"]')) {
             return;
         }
@@ -585,6 +628,7 @@
     function handleAddStepCardClick(e: MouseEvent) {
         const target = e.target as HTMLElement | null;
         if (!target || target === addStepInputEl) return;
+        if (shouldIgnoreContainerClick(e)) return;
         if (target.closest('.task-image-thumbnail, .task-img-strip-actions, button, [role="button"]')) {
             return;
         }
@@ -594,6 +638,7 @@
     function handleNoteSectionClick(e: MouseEvent) {
         const target = e.target as HTMLElement | null;
         if (!target || target === noteTextareaEl) return;
+        if (shouldIgnoreContainerClick(e)) return;
         if (target.closest('.task-image-thumbnail, .task-img-strip-actions, button, [role="button"]')) {
             return;
         }

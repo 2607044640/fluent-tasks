@@ -12633,7 +12633,7 @@ function add_css4(target) {
 }
 function get_each_context3(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[82] = list[i];
+  child_ctx[90] = list[i];
   return child_ctx;
 }
 function create_if_block_72(ctx) {
@@ -12757,7 +12757,7 @@ function create_if_block_72(ctx) {
       append(svg0, line0);
       append(div0, t0);
       append(div0, input);
-      ctx[46](input);
+      ctx[47](input);
       set_input_value(
         input,
         /*searchQuery*/
@@ -12783,7 +12783,7 @@ function create_if_block_72(ctx) {
             input,
             "input",
             /*input_input_handler*/
-            ctx[47]
+            ctx[48]
           ),
           listen(
             input,
@@ -12860,7 +12860,7 @@ function create_if_block_72(ctx) {
       if (detaching) {
         detach(div2);
       }
-      ctx[46](null);
+      ctx[47](null);
       if (if_block)
         if_block.d();
       mounted = false;
@@ -12969,7 +12969,7 @@ function create_else_block4(ctx) {
   );
   const get_key = (ctx2) => (
     /*step*/
-    ctx2[82].id
+    ctx2[90].id
   );
   for (let i = 0; i < each_value.length; i += 1) {
     let child_ctx = get_each_context3(ctx, each_value, i);
@@ -13023,8 +13023,8 @@ function create_else_block4(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*steps, centerAlignTasks, deleteStep, focusedStepId, handleStepInput, renderHighlightedText, searchQuery, activeMatchIndex, showSearchBar, actualApp, hoveredImageRef, toggleStep*/
-      503526154 | dirty[1] & /*handleStepBlur, handleStepKeydown, getStepImages, removeImageFromStep*/
-      51) {
+      503526154 | dirty[1] & /*handleStepItemClick, handleStepBlur, handleStepKeydown, getStepImages, removeImageFromStep*/
+      179) {
         each_value = ensure_array_like(
           /*steps*/
           ctx2[3]
@@ -13166,9 +13166,9 @@ function create_if_block_42(ctx) {
   function func2(...args) {
     return (
       /*func*/
-      ctx[50](
+      ctx[51](
         /*step*/
-        ctx[82],
+        ctx[90],
         ...args
       )
     );
@@ -13176,9 +13176,9 @@ function create_if_block_42(ctx) {
   function func_12(...args) {
     return (
       /*func_1*/
-      ctx[51](
+      ctx[52](
         /*step*/
-        ctx[82],
+        ctx[90],
         ...args
       )
     );
@@ -13186,9 +13186,9 @@ function create_if_block_42(ctx) {
   function func_22(...args) {
     return (
       /*func_2*/
-      ctx[52](
+      ctx[53](
         /*step*/
-        ctx[82],
+        ctx[90],
         ...args
       )
     );
@@ -13199,7 +13199,7 @@ function create_if_block_42(ctx) {
         /*getStepImages*/
         ctx[31](
           /*step*/
-          ctx[82]
+          ctx[90]
         )
       ),
       app: (
@@ -13232,7 +13232,7 @@ function create_if_block_42(ctx) {
         taskimagestrip_changes.images = /*getStepImages*/
         ctx[31](
           /*step*/
-          ctx[82]
+          ctx[90]
         );
       if (dirty[0] & /*actualApp*/
       131072)
@@ -13274,9 +13274,9 @@ function create_if_block_32(ctx) {
     /*renderHighlightedText*/
     ctx[25](
       /*step*/
-      ctx[82].text,
+      ctx[90].text,
       /*step*/
-      ctx[82].id,
+      ctx[90].id,
       /*searchQuery*/
       ctx[13],
       /*activeMatchIndex*/
@@ -13298,9 +13298,9 @@ function create_if_block_32(ctx) {
       73736 && raw_value !== (raw_value = /*renderHighlightedText*/
       ctx2[25](
         /*step*/
-        ctx2[82].text,
+        ctx2[90].text,
         /*step*/
-        ctx2[82].id,
+        ctx2[90].id,
         /*searchQuery*/
         ctx2[13],
         /*activeMatchIndex*/
@@ -13330,7 +13330,7 @@ function create_each_block3(key_1, ctx) {
     /*getStepImages*/
     ctx[31](
       /*step*/
-      ctx[82]
+      ctx[90]
     ).length > 0
   );
   let t2;
@@ -13355,7 +13355,7 @@ function create_each_block3(key_1, ctx) {
   function select_block_type_1(ctx2, dirty) {
     if (
       /*step*/
-      ctx2[82].done
+      ctx2[90].done
     )
       return create_if_block_52;
     return create_else_block_12;
@@ -13365,18 +13365,18 @@ function create_each_block3(key_1, ctx) {
   function click_handler_12() {
     return (
       /*click_handler_1*/
-      ctx[48](
+      ctx[49](
         /*step*/
-        ctx[82]
+        ctx[90]
       )
     );
   }
   function keydown_handler(...args) {
     return (
       /*keydown_handler*/
-      ctx[49](
+      ctx[50](
         /*step*/
-        ctx[82],
+        ctx[90],
         ...args
       )
     );
@@ -13386,18 +13386,18 @@ function create_each_block3(key_1, ctx) {
   function focus_handler() {
     return (
       /*focus_handler*/
-      ctx[53](
+      ctx[54](
         /*step*/
-        ctx[82]
+        ctx[90]
       )
     );
   }
   function input_handler(...args) {
     return (
       /*input_handler*/
-      ctx[54](
+      ctx[55](
         /*step*/
-        ctx[82],
+        ctx[90],
         ...args
       )
     );
@@ -13405,18 +13405,18 @@ function create_each_block3(key_1, ctx) {
   function blur_handler() {
     return (
       /*blur_handler*/
-      ctx[55](
+      ctx[56](
         /*step*/
-        ctx[82]
+        ctx[90]
       )
     );
   }
   function keydown_handler_1(...args) {
     return (
       /*keydown_handler_1*/
-      ctx[56](
+      ctx[57](
         /*step*/
-        ctx[82],
+        ctx[90],
         ...args
       )
     );
@@ -13424,18 +13424,18 @@ function create_each_block3(key_1, ctx) {
   function click_handler_2() {
     return (
       /*click_handler_2*/
-      ctx[57](
+      ctx[58](
         /*step*/
-        ctx[82]
+        ctx[90]
       )
     );
   }
   function keydown_handler_2(...args) {
     return (
       /*keydown_handler_2*/
-      ctx[58](
+      ctx[59](
         /*step*/
-        ctx[82],
+        ctx[90],
         ...args
       )
     );
@@ -13443,9 +13443,9 @@ function create_each_block3(key_1, ctx) {
   function click_handler_32(...args) {
     return (
       /*click_handler_3*/
-      ctx[59](
+      ctx[60](
         /*step*/
-        ctx[82],
+        ctx[90],
         ...args
       )
     );
@@ -13480,27 +13480,27 @@ function create_each_block3(key_1, ctx) {
       attr(span1, "class", "steps-modal-checkbox");
       attr(span1, "role", "checkbox");
       attr(span1, "aria-checked", span1_aria_checked_value = /*step*/
-      ctx[82].done);
+      ctx[90].done);
       attr(span1, "tabindex", "0");
       attr(span1, "aria-label", span1_aria_label_value = /*step*/
-      ctx[82].done ? "Mark step incomplete" : "Mark step complete");
+      ctx[90].done ? "Mark step incomplete" : "Mark step complete");
       toggle_class(
         span1,
         "checked",
         /*step*/
-        ctx[82].done
+        ctx[90].done
       );
       attr(div0, "class", "steps-modal-left-controls svelte-1cj0jw5");
       attr(textarea, "rows", "1");
       attr(textarea, "class", "steps-modal-textarea");
       textarea.value = textarea_value_value = /*step*/
-      ctx[82].text;
+      ctx[90].text;
       attr(textarea, "placeholder", "Step description...");
       toggle_class(
         textarea,
         "completed",
         /*step*/
-        ctx[82].done
+        ctx[90].done
       );
       attr(div1, "class", "steps-modal-text-wrapper");
       attr(div2, "class", "steps-modal-text-col svelte-1cj0jw5");
@@ -13520,7 +13520,7 @@ function create_each_block3(key_1, ctx) {
         div3,
         "is-done",
         /*step*/
-        ctx[82].done
+        ctx[90].done
       );
       toggle_class(
         div3,
@@ -13559,7 +13559,7 @@ function create_each_block3(key_1, ctx) {
             null,
             textarea,
             /*step*/
-            ctx[82].text
+            ctx[90].text
           )),
           listen(textarea, "focus", focus_handler),
           listen(textarea, "input", input_handler),
@@ -13584,12 +13584,12 @@ function create_each_block3(key_1, ctx) {
       }
       if (!current || dirty[0] & /*steps*/
       8 && span1_aria_checked_value !== (span1_aria_checked_value = /*step*/
-      ctx[82].done)) {
+      ctx[90].done)) {
         attr(span1, "aria-checked", span1_aria_checked_value);
       }
       if (!current || dirty[0] & /*steps*/
       8 && span1_aria_label_value !== (span1_aria_label_value = /*step*/
-      ctx[82].done ? "Mark step incomplete" : "Mark step complete")) {
+      ctx[90].done ? "Mark step incomplete" : "Mark step complete")) {
         attr(span1, "aria-label", span1_aria_label_value);
       }
       if (!current || dirty[0] & /*steps*/
@@ -13598,7 +13598,7 @@ function create_each_block3(key_1, ctx) {
           span1,
           "checked",
           /*step*/
-          ctx[82].done
+          ctx[90].done
         );
       }
       if (dirty[0] & /*steps*/
@@ -13606,7 +13606,7 @@ function create_each_block3(key_1, ctx) {
         show_if_1 = /*getStepImages*/
         ctx[31](
           /*step*/
-          ctx[82]
+          ctx[90]
         ).length > 0;
       if (show_if_1) {
         if (if_block1) {
@@ -13647,7 +13647,7 @@ function create_each_block3(key_1, ctx) {
       }
       if (!current || dirty[0] & /*steps*/
       8 && textarea_value_value !== (textarea_value_value = /*step*/
-      ctx[82].text)) {
+      ctx[90].text)) {
         textarea.value = textarea_value_value;
       }
       if (autosize_action && is_function(autosize_action.update) && dirty[0] & /*steps*/
@@ -13655,7 +13655,7 @@ function create_each_block3(key_1, ctx) {
         autosize_action.update.call(
           null,
           /*step*/
-          ctx[82].text
+          ctx[90].text
         );
       if (!current || dirty[0] & /*steps*/
       8) {
@@ -13663,7 +13663,7 @@ function create_each_block3(key_1, ctx) {
           textarea,
           "completed",
           /*step*/
-          ctx[82].done
+          ctx[90].done
         );
       }
       if (!current || dirty[0] & /*centerAlignTasks*/
@@ -13681,7 +13681,7 @@ function create_each_block3(key_1, ctx) {
           div3,
           "is-done",
           /*step*/
-          ctx[82].done
+          ctx[90].done
         );
       }
       if (!current || dirty[0] & /*centerAlignTasks*/
@@ -13749,15 +13749,15 @@ function create_if_block_14(ctx) {
       ),
       onDelete: (
         /*func_3*/
-        ctx[60]
+        ctx[61]
       ),
       onCut: (
         /*func_4*/
-        ctx[61]
+        ctx[62]
       ),
       onHover: (
         /*func_5*/
-        ctx[62]
+        ctx[63]
       )
     }
   });
@@ -13786,7 +13786,7 @@ function create_if_block_14(ctx) {
       if (dirty[0] & /*hoveredImageRef*/
       512)
         taskimagestrip_changes.onHover = /*func_5*/
-        ctx2[62];
+        ctx2[63];
       taskimagestrip.$set(taskimagestrip_changes);
     },
     i(local) {
@@ -14102,11 +14102,11 @@ function create_fragment5(ctx) {
         /*newStepText*/
         ctx[6]
       );
-      ctx[64](textarea);
+      ctx[65](textarea);
       append(div4, t9);
       append(div4, button1);
       append(button1, t10);
-      ctx[66](div6);
+      ctx[67](div6);
       append(div7, t11);
       if (if_block4)
         if_block4.m(div7, null);
@@ -14117,7 +14117,7 @@ function create_fragment5(ctx) {
             button0,
             "click",
             /*click_handler*/
-            ctx[45]
+            ctx[46]
           ),
           action_destroyer(autosize_action = autosize.call(
             null,
@@ -14129,13 +14129,13 @@ function create_fragment5(ctx) {
             textarea,
             "input",
             /*textarea_input_handler*/
-            ctx[63]
+            ctx[64]
           ),
           listen(
             textarea,
             "focus",
             /*focus_handler_1*/
-            ctx[65]
+            ctx[66]
           ),
           listen(
             textarea,
@@ -14153,7 +14153,7 @@ function create_fragment5(ctx) {
             div5,
             "click",
             /*handleAddStepCardClick*/
-            ctx[38]
+            ctx[39]
           )
         ];
         mounted = true;
@@ -14344,8 +14344,8 @@ function create_fragment5(ctx) {
       if_blocks[current_block_type_index].d();
       if (if_block3)
         if_block3.d();
-      ctx[64](null);
-      ctx[66](null);
+      ctx[65](null);
+      ctx[67](null);
       if (if_block4)
         if_block4.d();
       mounted = false;
@@ -14376,25 +14376,6 @@ function handleDragOver(e) {
   var _a, _b;
   if ((_b = (_a = e.dataTransfer) == null ? void 0 : _a.types) == null ? void 0 : _b.includes("Files")) {
     e.preventDefault();
-  }
-}
-function handleStepItemClick(e, stepId) {
-  const target = e.target;
-  if (!target)
-    return;
-  const textarea = e.currentTarget.querySelector("textarea");
-  if (!textarea || target === textarea)
-    return;
-  if (target.closest('.steps-modal-left-controls, .steps-modal-delete-btn, .task-image-thumbnail, .task-img-strip-actions, button, [role="button"]')) {
-    return;
-  }
-  textarea.focus();
-  const rect = textarea.getBoundingClientRect();
-  if (e.clientX < rect.left) {
-    textarea.setSelectionRange(0, 0);
-  } else {
-    const len = textarea.value.length;
-    textarea.setSelectionRange(len, len);
   }
 }
 function instance5($$self, $$props, $$invalidate) {
@@ -14897,9 +14878,65 @@ function instance5($$self, $$props, $$invalidate) {
     flushSaveSync();
     closeModal();
   }
+  let isMouseDownOnInput = false;
+  let mouseDownPos = null;
+  let globalMouseUpTimeout = null;
+  function handleGlobalMouseDown(e) {
+    const target = e.target;
+    isMouseDownOnInput = !!(target && (target.tagName === "TEXTAREA" || target.tagName === "INPUT"));
+    mouseDownPos = { x: e.clientX, y: e.clientY };
+  }
+  function handleGlobalMouseUp() {
+    if (globalMouseUpTimeout)
+      clearTimeout(globalMouseUpTimeout);
+    globalMouseUpTimeout = setTimeout(
+      () => {
+        isMouseDownOnInput = false;
+        mouseDownPos = null;
+      },
+      0
+    );
+  }
+  function handleWindowBlur() {
+    isMouseDownOnInput = false;
+    mouseDownPos = null;
+  }
+  function shouldIgnoreContainerClick(e) {
+    if (isMouseDownOnInput)
+      return true;
+    if (mouseDownPos && Math.hypot(e.clientX - mouseDownPos.x, e.clientY - mouseDownPos.y) > 5)
+      return true;
+    const sel = window.getSelection();
+    if (sel && !sel.isCollapsed && sel.toString().trim().length > 0)
+      return true;
+    return false;
+  }
+  function handleStepItemClick(e, stepId) {
+    const target = e.target;
+    if (!target)
+      return;
+    const textarea = e.currentTarget.querySelector("textarea");
+    if (!textarea || target === textarea)
+      return;
+    if (shouldIgnoreContainerClick(e))
+      return;
+    if (target.closest('.steps-modal-left-controls, .steps-modal-delete-btn, .task-image-thumbnail, .task-img-strip-actions, button, [role="button"]')) {
+      return;
+    }
+    textarea.focus();
+    const rect = textarea.getBoundingClientRect();
+    if (e.clientX < rect.left) {
+      textarea.setSelectionRange(0, 0);
+    } else {
+      const len = textarea.value.length;
+      textarea.setSelectionRange(len, len);
+    }
+  }
   function handleAddStepCardClick(e) {
     const target = e.target;
     if (!target || target === addInputEl)
+      return;
+    if (shouldIgnoreContainerClick(e))
       return;
     if (target.closest('.task-image-thumbnail, .task-img-strip-actions, button, [role="button"]')) {
       return;
@@ -14998,6 +15035,9 @@ function instance5($$self, $$props, $$invalidate) {
     window.addEventListener("paste", handlePaste);
     window.addEventListener("dragover", handleDragOver);
     window.addEventListener("drop", handleDrop2);
+    window.addEventListener("mousedown", handleGlobalMouseDown, true);
+    window.addEventListener("mouseup", handleGlobalMouseUp, true);
+    window.addEventListener("blur", handleWindowBlur);
     EventBus.on("task:updated" /* TASK_UPDATED */, handleExternalTaskUpdate);
     return () => {
       window.removeEventListener("wheel", handleWheelDuringDnd, { capture: true });
@@ -15005,6 +15045,13 @@ function instance5($$self, $$props, $$invalidate) {
       window.removeEventListener("paste", handlePaste);
       window.removeEventListener("dragover", handleDragOver);
       window.removeEventListener("drop", handleDrop2);
+      window.removeEventListener("mousedown", handleGlobalMouseDown, true);
+      window.removeEventListener("mouseup", handleGlobalMouseUp, true);
+      window.removeEventListener("blur", handleWindowBlur);
+      if (globalMouseUpTimeout) {
+        clearTimeout(globalMouseUpTimeout);
+        globalMouseUpTimeout = null;
+      }
       EventBus.off("task:updated" /* TASK_UPDATED */, handleExternalTaskUpdate);
       flushSaveSync();
     };
@@ -15014,6 +15061,13 @@ function instance5($$self, $$props, $$invalidate) {
       const draftImages = [...newStepImages];
       $$invalidate(7, newStepImages = []);
       void cleanupOrphanImages(draftImages, actualApp, dataService);
+    }
+    window.removeEventListener("mousedown", handleGlobalMouseDown, true);
+    window.removeEventListener("mouseup", handleGlobalMouseUp, true);
+    window.removeEventListener("blur", handleWindowBlur);
+    if (globalMouseUpTimeout) {
+      clearTimeout(globalMouseUpTimeout);
+      globalMouseUpTimeout = null;
     }
     flushSaveSync();
   });
@@ -15084,17 +15138,17 @@ function instance5($$self, $$props, $$invalidate) {
   }
   $$self.$$set = ($$props2) => {
     if ("app" in $$props2)
-      $$invalidate(39, app = $$props2.app);
+      $$invalidate(40, app = $$props2.app);
     if ("plugin" in $$props2)
-      $$invalidate(40, plugin = $$props2.plugin);
+      $$invalidate(41, plugin = $$props2.plugin);
     if ("task" in $$props2)
       $$invalidate(0, task = $$props2.task);
     if ("categoryFilepath" in $$props2)
-      $$invalidate(41, categoryFilepath = $$props2.categoryFilepath);
+      $$invalidate(42, categoryFilepath = $$props2.categoryFilepath);
     if ("dataService" in $$props2)
-      $$invalidate(42, dataService = $$props2.dataService);
+      $$invalidate(43, dataService = $$props2.dataService);
     if ("closeModal" in $$props2)
-      $$invalidate(43, closeModal = $$props2.closeModal);
+      $$invalidate(44, closeModal = $$props2.closeModal);
     if ("centerAlignTasks" in $$props2)
       $$invalidate(1, centerAlignTasks = $$props2.centerAlignTasks);
     if ("showStepsProgressPill" in $$props2)
@@ -15102,7 +15156,7 @@ function instance5($$self, $$props, $$invalidate) {
   };
   $$self.$$.update = () => {
     if ($$self.$$.dirty[1] & /*app, dataService, plugin*/
-    2816) {
+    5632) {
       $:
         $$invalidate(17, actualApp = app || (dataService == null ? void 0 : dataService.app) || (plugin == null ? void 0 : plugin.app) || window.app);
     }
@@ -15161,6 +15215,7 @@ function instance5($$self, $$props, $$invalidate) {
     handleStepBlur,
     handleStepKeydown,
     handleAddInputKeydown,
+    handleStepItemClick,
     handleAddStepCardClick,
     app,
     plugin,
@@ -15202,22 +15257,22 @@ var TaskStepsModalView = class extends SvelteComponent {
       create_fragment5,
       safe_not_equal,
       {
-        app: 39,
-        plugin: 40,
+        app: 40,
+        plugin: 41,
         task: 0,
-        categoryFilepath: 41,
-        dataService: 42,
-        closeModal: 43,
+        categoryFilepath: 42,
+        dataService: 43,
+        closeModal: 44,
         centerAlignTasks: 1,
         showStepsProgressPill: 2,
-        flushSaveSync: 44
+        flushSaveSync: 45
       },
       add_css4,
       [-1, -1, -1]
     );
   }
   get flushSaveSync() {
-    return this.$$.ctx[44];
+    return this.$$.ctx[45];
   }
 };
 var TaskStepsModalView_default = TaskStepsModalView;
@@ -39391,15 +39446,15 @@ function add_css5(target) {
 }
 function get_each_context_33(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[247] = list[i];
-  child_ctx[238] = i;
+  child_ctx[255] = list[i];
+  child_ctx[246] = i;
   return child_ctx;
 }
 function get_if_ctx_12(ctx) {
   const child_ctx = ctx.slice();
   const constants_0 = (
     /*resolveSvgItem*/
-    child_ctx[91](
+    child_ctx[92](
       /*metaSvgList*/
       child_ctx[22][
         /*selectedSvgIndex*/
@@ -39407,21 +39462,21 @@ function get_if_ctx_12(ctx) {
       ]
     )
   );
-  child_ctx[243] = constants_0;
+  child_ctx[251] = constants_0;
   return child_ctx;
 }
 function get_each_context_23(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[244] = list[i];
-  child_ctx[238] = i;
+  child_ctx[252] = list[i];
+  child_ctx[246] = i;
   const constants_0 = (
     /*resolveSvgItem*/
-    child_ctx[91](
+    child_ctx[92](
       /*svgItem*/
-      child_ctx[244]
+      child_ctx[252]
     )
   );
-  child_ctx[245] = constants_0;
+  child_ctx[253] = constants_0;
   return child_ctx;
 }
 function get_if_ctx3(ctx) {
@@ -39434,66 +39489,66 @@ function get_if_ctx3(ctx) {
       child_ctx[25]
     ]
   );
-  child_ctx[239] = constants_0;
+  child_ctx[247] = constants_0;
   const constants_1 = (
     /*activeNoteLink*/
-    child_ctx[239] && /*plugin*/
+    child_ctx[247] && /*plugin*/
     ((_a = child_ctx[0]) == null ? void 0 : _a.app) ? LinkedNoteService.resolveLinkedNoteFile(
       /*plugin*/
       child_ctx[0].app,
       /*activeNoteLink*/
-      child_ctx[239],
+      child_ctx[247],
       /*categoryFilepath*/
       child_ctx[6]
     ) : null
   );
-  child_ctx[240] = constants_1;
+  child_ctx[248] = constants_1;
   return child_ctx;
 }
 function get_each_context_14(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[241] = list[i];
-  child_ctx[238] = i;
+  child_ctx[249] = list[i];
+  child_ctx[246] = i;
   return child_ctx;
 }
 function get_each_context7(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[236] = list[i];
-  child_ctx[238] = i;
+  child_ctx[244] = list[i];
+  child_ctx[246] = i;
   return child_ctx;
 }
 function get_each_context_43(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[249] = list[i];
+  child_ctx[257] = list[i];
   return child_ctx;
 }
 function get_each_context_53(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[252] = list[i][0];
-  child_ctx[253] = list[i][1];
+  child_ctx[260] = list[i][0];
+  child_ctx[261] = list[i][1];
   return child_ctx;
 }
 function get_each_context_63(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[244] = list[i];
-  child_ctx[257] = i;
+  child_ctx[252] = list[i];
+  child_ctx[265] = i;
   return child_ctx;
 }
 function get_each_context_72(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[258] = list[i];
-  child_ctx[257] = i;
+  child_ctx[266] = list[i];
+  child_ctx[265] = i;
   return child_ctx;
 }
 function get_each_context_82(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[236] = list[i];
-  child_ctx[257] = i;
+  child_ctx[244] = list[i];
+  child_ctx[265] = i;
   return child_ctx;
 }
 function get_each_context_9(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[261] = list[i];
+  child_ctx[269] = list[i];
   return child_ctx;
 }
 function create_else_block_124(ctx) {
@@ -39592,7 +39647,7 @@ function create_if_block9(ctx) {
     /*task*/
     ctx[4]
   ).length > 0 || /*getTaskNoteLinks*/
-  ctx[50](
+  ctx[51](
     /*task*/
     ctx[4]
   ).length > 0 || /*task*/
@@ -39950,7 +40005,7 @@ function create_if_block9(ctx) {
         if_block1.m(div0, null);
       append(div0, t1);
       append(div0, textarea0);
-      ctx[123](textarea0);
+      ctx[124](textarea0);
       set_input_value(
         textarea0,
         /*task*/
@@ -39978,7 +40033,7 @@ function create_if_block9(ctx) {
       append(svg0, line1);
       append(div3, t7);
       append(div3, input);
-      ctx[144](input);
+      ctx[145](input);
       set_input_value(
         input,
         /*newStepText*/
@@ -39990,7 +40045,7 @@ function create_if_block9(ctx) {
         if_block6.m(div7, null);
       append(div7, t9);
       append(div7, textarea1);
-      ctx[150](textarea1);
+      ctx[151](textarea1);
       set_input_value(
         textarea1,
         /*task*/
@@ -39999,7 +40054,7 @@ function create_if_block9(ctx) {
       append(div8, t10);
       if (if_block7)
         if_block7.m(div8, null);
-      ctx[165](div8);
+      ctx[166](div8);
       insert(target, t11, anchor);
       if (if_block8)
         if_block8.m(target, anchor);
@@ -40032,13 +40087,13 @@ function create_if_block9(ctx) {
         dispose = [
           listen(span0, "click", stop_propagation(
             /*toggleComplete*/
-            ctx[49]
+            ctx[50]
           )),
           listen(
             span0,
             "keydown",
             /*keydown_handler*/
-            ctx[119]
+            ctx[120]
           ),
           action_destroyer(autosize_action = autosize.call(
             null,
@@ -40050,13 +40105,13 @@ function create_if_block9(ctx) {
             textarea0,
             "input",
             /*textarea0_input_handler*/
-            ctx[124]
+            ctx[125]
           ),
           listen(
             textarea0,
             "focus",
             /*focus_handler*/
-            ctx[125]
+            ctx[126]
           ),
           listen(
             textarea0,
@@ -40086,31 +40141,31 @@ function create_if_block9(ctx) {
             textarea0,
             "keydown",
             /*handleTitleKeydown*/
-            ctx[48]
+            ctx[49]
           ),
           listen(
             span1,
             "click",
             /*handleTaskNoteClick*/
-            ctx[53]
+            ctx[54]
           ),
           listen(
             span1,
             "mouseenter",
             /*handleTaskNoteHover*/
-            ctx[51]
+            ctx[52]
           ),
           listen(
             span1,
             "contextmenu",
             /*handleTaskNoteContextMenu*/
-            ctx[54]
+            ctx[55]
           ),
           listen(
             span1,
             "keydown",
             /*keydown_handler_1*/
-            ctx[126]
+            ctx[127]
           ),
           listen(
             div2,
@@ -40122,55 +40177,55 @@ function create_if_block9(ctx) {
             input,
             "input",
             /*input_input_handler*/
-            ctx[145]
+            ctx[146]
           ),
           listen(
             input,
             "focus",
             /*focus_handler_2*/
-            ctx[146]
+            ctx[147]
           ),
           listen(
             input,
             "keydown",
             /*handleStepKeydown*/
-            ctx[62]
+            ctx[63]
           ),
           listen(
             div4,
             "click",
             /*handleAddStepCardClick*/
-            ctx[46]
+            ctx[47]
           ),
           listen(
             textarea1,
             "input",
             /*textarea1_input_handler*/
-            ctx[151]
+            ctx[152]
           ),
           listen(
             textarea1,
             "focus",
             /*focus_handler_3*/
-            ctx[152]
+            ctx[153]
           ),
           listen(
             textarea1,
             "input",
             /*handleNoteInput*/
-            ctx[68]
+            ctx[69]
           ),
           listen(
             div7,
             "focusin",
             /*focusin_handler*/
-            ctx[153]
+            ctx[154]
           ),
           listen(
             div7,
             "click",
             /*handleNoteSectionClick*/
-            ctx[47]
+            ctx[48]
           ),
           listen(
             span2,
@@ -40182,36 +40237,36 @@ function create_if_block9(ctx) {
             span2,
             "keydown",
             /*keydown_handler_11*/
-            ctx[176]
+            ctx[177]
           ),
           listen(
             span5,
             "click",
             /*click_handler_21*/
-            ctx[177]
+            ctx[178]
           ),
           listen(
             span5,
             "keydown",
             /*keydown_handler_12*/
-            ctx[178]
+            ctx[179]
           ),
           action_destroyer(longPress_action = longPress.call(null, span6, {
             duration: 1500,
             onLongPress: (
               /*longPress_function_2*/
-              ctx[179]
+              ctx[180]
             ),
             onClick: (
               /*longPress_function_3*/
-              ctx[180]
+              ctx[181]
             )
           })),
           listen(
             span6,
             "keydown",
             /*keydown_handler_13*/
-            ctx[181]
+            ctx[182]
           )
         ];
         mounted = true;
@@ -40499,7 +40554,7 @@ function create_if_block9(ctx) {
           /*task*/
           ctx2[4]
         ).length > 0 || /*getTaskNoteLinks*/
-        ctx2[50](
+        ctx2[51](
           /*task*/
           ctx2[4]
         ).length > 0 || /*task*/
@@ -40654,7 +40709,7 @@ function create_if_block9(ctx) {
       if_block0.d();
       if (if_block1)
         if_block1.d();
-      ctx[123](null);
+      ctx[124](null);
       if_block2.d();
       if (if_block3)
         if_block3.d();
@@ -40662,13 +40717,13 @@ function create_if_block9(ctx) {
         if_block4.d();
       if (if_block5)
         if_block5.d();
-      ctx[144](null);
+      ctx[145](null);
       if (if_block6)
         if_block6.d();
-      ctx[150](null);
+      ctx[151](null);
       if (if_block7)
         if_block7.d();
-      ctx[165](null);
+      ctx[166](null);
       if (if_block8)
         if_block8.d(detaching);
       if_block9.d();
@@ -40736,19 +40791,19 @@ function create_if_block_433(ctx) {
             span0,
             "keydown",
             /*keydown_handler_16*/
-            ctx[205]
+            ctx[206]
           ),
           listen(
             span1,
             "click",
             /*closePanel*/
-            ctx[69]
+            ctx[70]
           ),
           listen(
             span1,
             "keydown",
             /*keydown_handler_17*/
-            ctx[206]
+            ctx[207]
           )
         ];
         mounted = true;
@@ -40951,15 +41006,15 @@ function create_if_block_413(ctx) {
       ),
       onDelete: (
         /*func*/
-        ctx[120]
+        ctx[121]
       ),
       onCut: (
         /*func_1*/
-        ctx[121]
+        ctx[122]
       ),
       onHover: (
         /*func_2*/
-        ctx[122]
+        ctx[123]
       )
     }
   });
@@ -40990,7 +41045,7 @@ function create_if_block_413(ctx) {
       if (dirty[0] & /*hoveredImageRef*/
       1024)
         taskimagestrip_changes.onHover = /*func_2*/
-        ctx2[122];
+        ctx2[123];
       taskimagestrip.$set(taskimagestrip_changes);
     },
     i(local) {
@@ -41162,19 +41217,19 @@ function create_if_block_383(ctx) {
             span0,
             "keydown",
             /*keydown_handler_2*/
-            ctx[127]
+            ctx[128]
           ),
           listen(
             span1,
             "click",
             /*closePanel*/
-            ctx[69]
+            ctx[70]
           ),
           listen(
             span1,
             "keydown",
             /*keydown_handler_3*/
-            ctx[128]
+            ctx[129]
           )
         ];
         mounted = true;
@@ -41311,7 +41366,7 @@ function create_if_block_353(ctx) {
   );
   const get_key = (ctx2) => (
     /*step*/
-    ctx2[261].id
+    ctx2[269].id
   );
   for (let i = 0; i < each_value_9.length; i += 1) {
     let child_ctx = get_each_context_9(ctx, each_value_9, i);
@@ -41351,13 +41406,13 @@ function create_if_block_353(ctx) {
             div,
             "consider",
             /*handleDndConsider*/
-            ctx[66]
+            ctx[67]
           ),
           listen(
             div,
             "finalize",
             /*handleDndFinalize*/
-            ctx[67]
+            ctx[68]
           )
         ];
         mounted = true;
@@ -41365,9 +41420,9 @@ function create_if_block_353(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*centerAlignTasks, task, focusedTarget, actualApp, hoveredImageRef*/
-      268437012 | dirty[1] & /*handleStepBlur, removeImageFromStep*/
-      100663296 | dirty[2] & /*deleteStep, updateStepText, toggleStepDone*/
-      14) {
+      268437012 | dirty[1] & /*handleStepItemClick, handleStepBlur, removeImageFromStep*/
+      201359360 | dirty[2] & /*deleteStep, updateStepText, toggleStepDone*/
+      28) {
         each_value_9 = ensure_array_like(
           /*task*/
           ctx2[4].steps
@@ -41486,9 +41541,9 @@ function create_if_block_363(ctx) {
   function func_3(...args) {
     return (
       /*func_3*/
-      ctx[131](
+      ctx[132](
         /*step*/
-        ctx[261],
+        ctx[269],
         ...args
       )
     );
@@ -41496,9 +41551,9 @@ function create_if_block_363(ctx) {
   function func_4(...args) {
     return (
       /*func_4*/
-      ctx[132](
+      ctx[133](
         /*step*/
-        ctx[261],
+        ctx[269],
         ...args
       )
     );
@@ -41506,9 +41561,9 @@ function create_if_block_363(ctx) {
   function func_52(...args) {
     return (
       /*func_5*/
-      ctx[133](
+      ctx[134](
         /*step*/
-        ctx[261],
+        ctx[269],
         ...args
       )
     );
@@ -41517,7 +41572,7 @@ function create_if_block_363(ctx) {
     props: {
       images: getStepImages(
         /*step*/
-        ctx[261]
+        ctx[269]
       ),
       app: (
         /*actualApp*/
@@ -41548,7 +41603,7 @@ function create_if_block_363(ctx) {
       16)
         taskimagestrip_changes.images = getStepImages(
           /*step*/
-          ctx[261]
+          ctx[269]
         );
       if (dirty[0] & /*actualApp*/
       268435456)
@@ -41595,7 +41650,7 @@ function create_each_block_9(key_1, ctx) {
   let div1;
   let show_if = getStepImages(
     /*step*/
-    ctx[261]
+    ctx[269]
   ).length > 0;
   let t2;
   let textarea;
@@ -41612,7 +41667,7 @@ function create_each_block_9(key_1, ctx) {
   function select_block_type_4(ctx2, dirty) {
     if (
       /*step*/
-      ctx2[261].done
+      ctx2[269].done
     )
       return create_if_block_373;
     return create_else_block_83;
@@ -41622,18 +41677,18 @@ function create_each_block_9(key_1, ctx) {
   function click_handler_6() {
     return (
       /*click_handler_6*/
-      ctx[129](
+      ctx[130](
         /*step*/
-        ctx[261]
+        ctx[269]
       )
     );
   }
   function keydown_handler_4(...args) {
     return (
       /*keydown_handler_4*/
-      ctx[130](
+      ctx[131](
         /*step*/
-        ctx[261],
+        ctx[269],
         ...args
       )
     );
@@ -41642,18 +41697,18 @@ function create_each_block_9(key_1, ctx) {
   function focus_handler_1() {
     return (
       /*focus_handler_1*/
-      ctx[134](
+      ctx[135](
         /*step*/
-        ctx[261]
+        ctx[269]
       )
     );
   }
   function input_handler(...args) {
     return (
       /*input_handler*/
-      ctx[135](
+      ctx[136](
         /*step*/
-        ctx[261],
+        ctx[269],
         ...args
       )
     );
@@ -41661,18 +41716,18 @@ function create_each_block_9(key_1, ctx) {
   function blur_handler() {
     return (
       /*blur_handler*/
-      ctx[136](
+      ctx[137](
         /*step*/
-        ctx[261]
+        ctx[269]
       )
     );
   }
   function keydown_handler_5(...args) {
     return (
       /*keydown_handler_5*/
-      ctx[137](
+      ctx[138](
         /*step*/
-        ctx[261],
+        ctx[269],
         ...args
       )
     );
@@ -41680,18 +41735,18 @@ function create_each_block_9(key_1, ctx) {
   function click_handler_7() {
     return (
       /*click_handler_7*/
-      ctx[138](
+      ctx[139](
         /*step*/
-        ctx[261]
+        ctx[269]
       )
     );
   }
   function keydown_handler_6(...args) {
     return (
       /*keydown_handler_6*/
-      ctx[139](
+      ctx[140](
         /*step*/
-        ctx[261],
+        ctx[269],
         ...args
       )
     );
@@ -41699,9 +41754,9 @@ function create_each_block_9(key_1, ctx) {
   function click_handler_8(...args) {
     return (
       /*click_handler_8*/
-      ctx[140](
+      ctx[141](
         /*step*/
-        ctx[261],
+        ctx[269],
         ...args
       )
     );
@@ -41732,18 +41787,18 @@ function create_each_block_9(key_1, ctx) {
       attr(span1, "class", "checkbox");
       attr(span1, "role", "checkbox");
       attr(span1, "aria-checked", span1_aria_checked_value = /*step*/
-      ctx[261].done);
+      ctx[269].done);
       attr(span1, "tabindex", "0");
       attr(div0, "class", "step-left-controls svelte-399gjs");
       attr(textarea, "rows", "1");
       textarea.value = textarea_value_value = /*step*/
-      ctx[261].text;
+      ctx[269].text;
       attr(textarea, "placeholder", "Step text");
       toggle_class(
         textarea,
         "completed",
         /*step*/
-        ctx[261].done
+        ctx[269].done
       );
       toggle_class(
         textarea,
@@ -41795,7 +41850,7 @@ function create_each_block_9(key_1, ctx) {
             null,
             textarea,
             /*step*/
-            ctx[261].text
+            ctx[269].text
           )),
           listen(textarea, "focus", focus_handler_1),
           listen(textarea, "input", input_handler),
@@ -41820,14 +41875,14 @@ function create_each_block_9(key_1, ctx) {
       }
       if (!current || dirty[0] & /*task*/
       16 && span1_aria_checked_value !== (span1_aria_checked_value = /*step*/
-      ctx[261].done)) {
+      ctx[269].done)) {
         attr(span1, "aria-checked", span1_aria_checked_value);
       }
       if (dirty[0] & /*task*/
       16)
         show_if = getStepImages(
           /*step*/
-          ctx[261]
+          ctx[269]
         ).length > 0;
       if (show_if) {
         if (if_block1) {
@@ -41851,7 +41906,7 @@ function create_each_block_9(key_1, ctx) {
       }
       if (!current || dirty[0] & /*task*/
       16 && textarea_value_value !== (textarea_value_value = /*step*/
-      ctx[261].text)) {
+      ctx[269].text)) {
         textarea.value = textarea_value_value;
       }
       if (autosize_action && is_function(autosize_action.update) && dirty[0] & /*task*/
@@ -41859,7 +41914,7 @@ function create_each_block_9(key_1, ctx) {
         autosize_action.update.call(
           null,
           /*step*/
-          ctx[261].text
+          ctx[269].text
         );
       if (!current || dirty[0] & /*task*/
       16) {
@@ -41867,7 +41922,7 @@ function create_each_block_9(key_1, ctx) {
           textarea,
           "completed",
           /*step*/
-          ctx[261].done
+          ctx[269].done
         );
       }
       if (!current || dirty[0] & /*centerAlignTasks*/
@@ -41951,15 +42006,15 @@ function create_if_block_343(ctx) {
       ),
       onDelete: (
         /*func_6*/
-        ctx[141]
+        ctx[142]
       ),
       onCut: (
         /*func_7*/
-        ctx[142]
+        ctx[143]
       ),
       onHover: (
         /*func_8*/
-        ctx[143]
+        ctx[144]
       )
     }
   });
@@ -41988,7 +42043,7 @@ function create_if_block_343(ctx) {
       if (dirty[0] & /*hoveredImageRef*/
       1024)
         taskimagestrip_changes.onHover = /*func_8*/
-        ctx2[143];
+        ctx2[144];
       taskimagestrip.$set(taskimagestrip_changes);
     },
     i(local) {
@@ -42026,15 +42081,15 @@ function create_if_block_333(ctx) {
       ),
       onDelete: (
         /*func_9*/
-        ctx[147]
+        ctx[148]
       ),
       onCut: (
         /*func_10*/
-        ctx[148]
+        ctx[149]
       ),
       onHover: (
         /*func_11*/
-        ctx[149]
+        ctx[150]
       )
     }
   });
@@ -42065,7 +42120,7 @@ function create_if_block_333(ctx) {
       if (dirty[0] & /*hoveredImageRef*/
       1024)
         taskimagestrip_changes.onHover = /*func_11*/
-        ctx2[149];
+        ctx2[150];
       taskimagestrip.$set(taskimagestrip_changes);
     },
     i(local) {
@@ -42092,7 +42147,7 @@ function create_if_block_283(ctx) {
   let t0;
   let show_if = (
     /*getTaskNoteLinks*/
-    ctx[50](
+    ctx[51](
       /*task*/
       ctx[4]
     ).length > 0
@@ -42168,7 +42223,7 @@ function create_if_block_283(ctx) {
       if (dirty[0] & /*task*/
       16)
         show_if = /*getTaskNoteLinks*/
-        ctx2[50](
+        ctx2[51](
           /*task*/
           ctx2[4]
         ).length > 0;
@@ -42268,7 +42323,7 @@ function create_if_block_324(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*task*/
       16 | dirty[2] & /*openAddMetaModal, deleteWhyEntry*/
-      134234112) {
+      268468224) {
         each_value_8 = ensure_array_like(getTaskWhys(
           /*task*/
           ctx2[4]
@@ -42305,13 +42360,13 @@ function create_each_block_82(ctx) {
     /*task*/
     ctx[4]
   ).length > 1 ? `Why #${/*idx*/
-  ctx[257] + 1}` : "Why";
+  ctx[265] + 1}` : "Why";
   let t0;
   let t1;
   let span1;
   let t2_value = (
     /*whyItem*/
-    ctx[236] + ""
+    ctx[244] + ""
   );
   let t2;
   let t3;
@@ -42324,18 +42379,18 @@ function create_each_block_82(ctx) {
   function click_handler_9() {
     return (
       /*click_handler_9*/
-      ctx[154](
+      ctx[155](
         /*idx*/
-        ctx[257]
+        ctx[265]
       )
     );
   }
   function click_handler_10() {
     return (
       /*click_handler_10*/
-      ctx[155](
+      ctx[156](
         /*idx*/
-        ctx[257]
+        ctx[265]
       )
     );
   }
@@ -42357,10 +42412,10 @@ function create_each_block_82(ctx) {
       attr(span2, "role", "button");
       attr(span2, "tabindex", "0");
       attr(span2, "title", span2_title_value = `Remove Why #${/*idx*/
-      ctx[257] + 1}`);
+      ctx[265] + 1}`);
       attr(div, "class", "meta-chip why-chip");
       attr(div, "title", div_title_value = /*whyItem*/
-      ctx[236]);
+      ctx[244]);
       attr(div, "role", "button");
       attr(div, "tabindex", "0");
     },
@@ -42389,15 +42444,15 @@ function create_each_block_82(ctx) {
         /*task*/
         ctx[4]
       ).length > 1 ? `Why #${/*idx*/
-      ctx[257] + 1}` : "Why"))
+      ctx[265] + 1}` : "Why"))
         set_data(t0, t0_value);
       if (dirty[0] & /*task*/
       16 && t2_value !== (t2_value = /*whyItem*/
-      ctx[236] + ""))
+      ctx[244] + ""))
         set_data(t2, t2_value);
       if (dirty[0] & /*task*/
       16 && div_title_value !== (div_title_value = /*whyItem*/
-      ctx[236])) {
+      ctx[244])) {
         attr(div, "title", div_title_value);
       }
     },
@@ -42414,7 +42469,7 @@ function create_if_block_313(ctx) {
   let each_1_anchor;
   let each_value_7 = ensure_array_like(
     /*getTaskNoteLinks*/
-    ctx[50](
+    ctx[51](
       /*task*/
       ctx[4]
     )
@@ -42441,11 +42496,11 @@ function create_if_block_313(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*task*/
       16 | dirty[1] & /*getTaskNoteLinks, handleNoteChipHover*/
-      2621440 | dirty[2] & /*openAddMetaModal, deleteNoteLinkEntry*/
-      2113536) {
+      5242880 | dirty[2] & /*openAddMetaModal, deleteNoteLinkEntry*/
+      4227072) {
         each_value_7 = ensure_array_like(
           /*getTaskNoteLinks*/
-          ctx2[50](
+          ctx2[51](
             /*task*/
             ctx2[4]
           )
@@ -42480,18 +42535,18 @@ function create_each_block_72(ctx) {
   let span0;
   let t0_value = (
     /*getTaskNoteLinks*/
-    ctx[50](
+    ctx[51](
       /*task*/
       ctx[4]
     ).length > 1 ? `Note #${/*idx*/
-    ctx[257] + 1}` : "Note"
+    ctx[265] + 1}` : "Note"
   );
   let t0;
   let t1;
   let span1;
   let t2_value = (
     /*noteItem*/
-    ctx[258] + ""
+    ctx[266] + ""
   );
   let t2;
   let t3;
@@ -42504,18 +42559,18 @@ function create_each_block_72(ctx) {
   function click_handler_11() {
     return (
       /*click_handler_11*/
-      ctx[156](
+      ctx[157](
         /*idx*/
-        ctx[257]
+        ctx[265]
       )
     );
   }
   function mouseenter_handler(...args) {
     return (
       /*mouseenter_handler*/
-      ctx[157](
+      ctx[158](
         /*noteItem*/
-        ctx[258],
+        ctx[266],
         ...args
       )
     );
@@ -42523,9 +42578,9 @@ function create_each_block_72(ctx) {
   function click_handler_12() {
     return (
       /*click_handler_12*/
-      ctx[158](
+      ctx[159](
         /*idx*/
-        ctx[257]
+        ctx[265]
       )
     );
   }
@@ -42547,10 +42602,10 @@ function create_each_block_72(ctx) {
       attr(span2, "role", "button");
       attr(span2, "tabindex", "0");
       attr(span2, "title", span2_title_value = `Remove Note #${/*idx*/
-      ctx[257] + 1}`);
+      ctx[265] + 1}`);
       attr(div, "class", "meta-chip note-chip");
       attr(div, "title", div_title_value = /*noteItem*/
-      ctx[258]);
+      ctx[266]);
       attr(div, "role", "button");
       attr(div, "tabindex", "0");
     },
@@ -42577,19 +42632,19 @@ function create_each_block_72(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*task*/
       16 && t0_value !== (t0_value = /*getTaskNoteLinks*/
-      ctx[50](
+      ctx[51](
         /*task*/
         ctx[4]
       ).length > 1 ? `Note #${/*idx*/
-      ctx[257] + 1}` : "Note"))
+      ctx[265] + 1}` : "Note"))
         set_data(t0, t0_value);
       if (dirty[0] & /*task*/
       16 && t2_value !== (t2_value = /*noteItem*/
-      ctx[258] + ""))
+      ctx[266] + ""))
         set_data(t2, t2_value);
       if (dirty[0] & /*task*/
       16 && div_title_value !== (div_title_value = /*noteItem*/
-      ctx[258])) {
+      ctx[266])) {
         attr(div, "title", div_title_value);
       }
     },
@@ -42630,8 +42685,8 @@ function create_if_block_303(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*task*/
       16 | dirty[2] & /*openAddMetaModal, deleteSvgEntry*/
-      268451840 | dirty[3] & /*deleteSvgChipWithSourceFile*/
-      1) {
+      536903680 | dirty[3] & /*deleteSvgChipWithSourceFile*/
+      2) {
         each_value_6 = ensure_array_like(
           /*task*/
           ctx2[4].svgs
@@ -42667,19 +42722,19 @@ function create_each_block_63(ctx) {
   let t0_value = (
     /*task*/
     ctx[4].svgs.length > 1 ? `SVG #${/*idx*/
-    ctx[257] + 1}` : "SVG"
+    ctx[265] + 1}` : "SVG"
   );
   let t0;
   let t1;
   let span1;
   let t2_value = (
     /*svgItem*/
-    (ctx[244].length > 30 ? (
+    (ctx[252].length > 30 ? (
       /*svgItem*/
-      ctx[244].slice(0, 30) + "..."
+      ctx[252].slice(0, 30) + "..."
     ) : (
       /*svgItem*/
-      ctx[244]
+      ctx[252]
     )) + ""
   );
   let t2;
@@ -42694,27 +42749,27 @@ function create_each_block_63(ctx) {
   function longPress_function() {
     return (
       /*longPress_function*/
-      ctx[159](
+      ctx[160](
         /*idx*/
-        ctx[257]
+        ctx[265]
       )
     );
   }
   function longPress_function_1() {
     return (
       /*longPress_function_1*/
-      ctx[160](
+      ctx[161](
         /*idx*/
-        ctx[257]
+        ctx[265]
       )
     );
   }
   function keydown_handler_7(...args) {
     return (
       /*keydown_handler_7*/
-      ctx[161](
+      ctx[162](
         /*idx*/
-        ctx[257],
+        ctx[265],
         ...args
       )
     );
@@ -42722,9 +42777,9 @@ function create_each_block_63(ctx) {
   function click_handler_13() {
     return (
       /*click_handler_13*/
-      ctx[162](
+      ctx[163](
         /*idx*/
-        ctx[257]
+        ctx[265]
       )
     );
   }
@@ -42748,7 +42803,7 @@ function create_each_block_63(ctx) {
       attr(span2, "title", span2_title_value = `Click to remove, hold 1.5s to trash source file / \u957F\u63091.5\u79D2\u76F4\u63A5\u5220\u9664\u6E90\u6587\u4EF6\u81F3\u5783\u573E\u6876`);
       attr(div, "class", "meta-chip svg-chip");
       attr(div, "title", div_title_value = /*svgItem*/
-      ctx[244]);
+      ctx[252]);
       attr(div, "role", "button");
       attr(div, "tabindex", "0");
     },
@@ -42780,21 +42835,21 @@ function create_each_block_63(ctx) {
       if (dirty[0] & /*task*/
       16 && t0_value !== (t0_value = /*task*/
       ctx[4].svgs.length > 1 ? `SVG #${/*idx*/
-      ctx[257] + 1}` : "SVG"))
+      ctx[265] + 1}` : "SVG"))
         set_data(t0, t0_value);
       if (dirty[0] & /*task*/
       16 && t2_value !== (t2_value = /*svgItem*/
-      (ctx[244].length > 30 ? (
+      (ctx[252].length > 30 ? (
         /*svgItem*/
-        ctx[244].slice(0, 30) + "..."
+        ctx[252].slice(0, 30) + "..."
       ) : (
         /*svgItem*/
-        ctx[244]
+        ctx[252]
       )) + ""))
         set_data(t2, t2_value);
       if (dirty[0] & /*task*/
       16 && div_title_value !== (div_title_value = /*svgItem*/
-      ctx[244])) {
+      ctx[252])) {
         attr(div, "title", div_title_value);
       }
     },
@@ -42835,7 +42890,7 @@ function create_if_block_293(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*task*/
       16 | dirty[2] & /*openAddMetaModal, deleteCustomKey*/
-      67125248) {
+      134250496) {
         each_value_5 = ensure_array_like(Object.entries(
           /*task*/
           ctx2[4].customMeta
@@ -42870,14 +42925,14 @@ function create_each_block_53(ctx) {
   let span0;
   let t0_value = (
     /*k*/
-    ctx[252] + ""
+    ctx[260] + ""
   );
   let t0;
   let t1;
   let span1;
   let t2_value = (
     /*v*/
-    ctx[253] + ""
+    ctx[261] + ""
   );
   let t2;
   let t3;
@@ -42891,18 +42946,18 @@ function create_each_block_53(ctx) {
   function click_handler_14() {
     return (
       /*click_handler_14*/
-      ctx[163](
+      ctx[164](
         /*k*/
-        ctx[252]
+        ctx[260]
       )
     );
   }
   function click_handler_15() {
     return (
       /*click_handler_15*/
-      ctx[164](
+      ctx[165](
         /*k*/
-        ctx[252]
+        ctx[260]
       )
     );
   }
@@ -42924,11 +42979,11 @@ function create_each_block_53(ctx) {
       attr(span2, "role", "button");
       attr(span2, "tabindex", "0");
       attr(span2, "title", span2_title_value = `Remove ${/*k*/
-      ctx[252]}`);
+      ctx[260]}`);
       attr(div, "class", "meta-chip custom-chip");
       attr(div, "title", div_title_value = `${/*k*/
-      ctx[252]}: ${/*v*/
-      ctx[253]}`);
+      ctx[260]}: ${/*v*/
+      ctx[261]}`);
       attr(div, "role", "button");
       attr(div, "tabindex", "0");
     },
@@ -42955,21 +43010,21 @@ function create_each_block_53(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*task*/
       16 && t0_value !== (t0_value = /*k*/
-      ctx[252] + ""))
+      ctx[260] + ""))
         set_data(t0, t0_value);
       if (dirty[0] & /*task*/
       16 && t2_value !== (t2_value = /*v*/
-      ctx[253] + ""))
+      ctx[261] + ""))
         set_data(t2, t2_value);
       if (dirty[0] & /*task*/
       16 && span2_title_value !== (span2_title_value = `Remove ${/*k*/
-      ctx[252]}`)) {
+      ctx[260]}`)) {
         attr(span2, "title", span2_title_value);
       }
       if (dirty[0] & /*task*/
       16 && div_title_value !== (div_title_value = `${/*k*/
-      ctx[252]}: ${/*v*/
-      ctx[253]}`)) {
+      ctx[260]}: ${/*v*/
+      ctx[261]}`)) {
         attr(div, "title", div_title_value);
       }
     },
@@ -43109,19 +43164,19 @@ function create_if_block_243(ctx) {
             input,
             "change",
             /*change_handler*/
-            ctx[166]
+            ctx[167]
           ),
           listen(
             div5,
             "click",
             /*click_handler_16*/
-            ctx[169]
+            ctx[170]
           ),
           listen(
             div5,
             "keydown",
             /*keydown_handler_10*/
-            ctx[170]
+            ctx[171]
           )
         ];
         mounted = true;
@@ -43233,7 +43288,7 @@ function create_if_block_273(ctx) {
             span,
             "keydown",
             /*keydown_handler_8*/
-            ctx[167]
+            ctx[168]
           )
         ];
         mounted = true;
@@ -43272,7 +43327,7 @@ function create_if_block_263(ctx) {
           )),
           listen(span, "keydown", stop_propagation(
             /*keydown_handler_9*/
-            ctx[168]
+            ctx[169]
           ))
         ];
         mounted = true;
@@ -43409,25 +43464,25 @@ function create_if_block_253(ctx) {
             button0,
             "click",
             /*click_handler_17*/
-            ctx[171]
+            ctx[172]
           ),
           listen(
             button1,
             "click",
             /*click_handler_18*/
-            ctx[172]
+            ctx[173]
           ),
           listen(
             button2,
             "click",
             /*click_handler_19*/
-            ctx[173]
+            ctx[174]
           ),
           listen(
             input,
             "change",
             /*change_handler_1*/
-            ctx[175]
+            ctx[176]
           )
         ];
         mounted = true;
@@ -43506,9 +43561,9 @@ function create_each_block_43(ctx) {
   function click_handler_20() {
     return (
       /*click_handler_20*/
-      ctx[174](
+      ctx[175](
         /*day*/
-        ctx[249]
+        ctx[257]
       )
     );
   }
@@ -43518,7 +43573,7 @@ function create_each_block_43(ctx) {
       button = element("button");
       button.textContent = `${DAY_LABELS[
         /*day*/
-        ctx[249]
+        ctx[257]
       ]} `;
       attr(button, "type", "button");
       attr(button, "class", "weekday-chip");
@@ -43528,7 +43583,7 @@ function create_each_block_43(ctx) {
         /*task*/
         (_b = (_a = ctx[4].recurrence) == null ? void 0 : _a.daysOfWeek) == null ? void 0 : _b.includes(
           /*day*/
-          ctx[249]
+          ctx[257]
         )
       );
     },
@@ -43550,7 +43605,7 @@ function create_each_block_43(ctx) {
           /*task*/
           (_b = (_a = ctx[4].recurrence) == null ? void 0 : _a.daysOfWeek) == null ? void 0 : _b.includes(
             /*day*/
-            ctx[249]
+            ctx[257]
           )
         );
       }
@@ -43904,66 +43959,66 @@ function create_if_block_213(ctx) {
             span1,
             "click",
             /*requestCloseAddMetaModal*/
-            ctx[71]
+            ctx[72]
           ),
           listen(
             span1,
             "keydown",
             /*keydown_handler_14*/
-            ctx[182]
+            ctx[183]
           ),
           listen(
             button0,
             "click",
             /*click_handler_22*/
-            ctx[183]
+            ctx[184]
           ),
           listen(
             button1,
             "click",
             /*click_handler_23*/
-            ctx[184]
+            ctx[185]
           ),
           listen(
             button2,
             "click",
             /*click_handler_24*/
-            ctx[185]
+            ctx[186]
           ),
           listen(
             button3,
             "click",
             /*click_handler_25*/
-            ctx[186]
+            ctx[187]
           ),
           listen(
             button4,
             "click",
             /*requestCloseAddMetaModal*/
-            ctx[71]
+            ctx[72]
           ),
           listen(
             button5,
             "click",
             /*saveMetadata*/
-            ctx[87]
+            ctx[88]
           ),
           listen(div5, "pointerdown", stop_propagation(
             /*pointerdown_handler*/
-            ctx[101]
+            ctx[102]
           )),
           listen(div5, "mousedown", stop_propagation(
             /*mousedown_handler*/
-            ctx[102]
+            ctx[103]
           )),
           listen(div5, "click", stop_propagation(
             /*click_handler*/
-            ctx[103]
+            ctx[104]
           )),
           action_destroyer(portal_action = portal.call(null, div6)),
           listen(div6, "click", stop_propagation(
             /*click_handler_35*/
-            ctx[204]
+            ctx[205]
           ))
         ];
         mounted = true;
@@ -44119,7 +44174,7 @@ function create_if_block_193(ctx) {
           button,
           "click",
           /*addNewCustomEntry*/
-          ctx[84]
+          ctx[85]
         );
         mounted = true;
       }
@@ -44245,7 +44300,7 @@ function create_if_block_124(ctx) {
           button,
           "click",
           /*addNewSvgItem*/
-          ctx[77]
+          ctx[78]
         );
         mounted = true;
       }
@@ -44371,7 +44426,7 @@ function create_if_block_611(ctx) {
           button,
           "click",
           /*addNewNoteLinkItem*/
-          ctx[81]
+          ctx[82]
         );
         mounted = true;
       }
@@ -44497,7 +44552,7 @@ function create_if_block_314(ctx) {
           button,
           "click",
           /*addNewWhyItem*/
-          ctx[79]
+          ctx[80]
         );
         mounted = true;
       }
@@ -44579,7 +44634,7 @@ function create_else_block_63(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*selectedCustomIndex, metaCustomEntries*/
       201326592 | dirty[2] & /*focusMetaEditorInput, removeCustomEntry*/
-      8396800) {
+      16793600) {
         each_value_3 = ensure_array_like(
           /*metaCustomEntries*/
           ctx2[26]
@@ -44633,14 +44688,14 @@ function create_each_block_33(ctx) {
   let span0;
   let t0_value = (
     /*entry*/
-    (ctx[247].key.trim() || "Key") + ""
+    (ctx[255].key.trim() || "Key") + ""
   );
   let t0;
   let t1;
   let span1;
   let t2_value = (
     /*entry*/
-    (ctx[247].value.trim() || "(Empty value)") + ""
+    (ctx[255].value.trim() || "(Empty value)") + ""
   );
   let t2;
   let t3;
@@ -44651,18 +44706,18 @@ function create_each_block_33(ctx) {
   function click_handler_33() {
     return (
       /*click_handler_33*/
-      ctx[200](
+      ctx[201](
         /*i*/
-        ctx[238]
+        ctx[246]
       )
     );
   }
   function click_handler_34() {
     return (
       /*click_handler_34*/
-      ctx[201](
+      ctx[202](
         /*i*/
-        ctx[238]
+        ctx[246]
       )
     );
   }
@@ -44688,7 +44743,7 @@ function create_each_block_33(ctx) {
         "active",
         /*selectedCustomIndex*/
         ctx[27] === /*i*/
-        ctx[238]
+        ctx[246]
       );
     },
     m(target, anchor) {
@@ -44713,11 +44768,11 @@ function create_each_block_33(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*metaCustomEntries*/
       67108864 && t0_value !== (t0_value = /*entry*/
-      (ctx[247].key.trim() || "Key") + ""))
+      (ctx[255].key.trim() || "Key") + ""))
         set_data(t0, t0_value);
       if (dirty[0] & /*metaCustomEntries*/
       67108864 && t2_value !== (t2_value = /*entry*/
-      (ctx[247].value.trim() || "(Empty value)") + ""))
+      (ctx[255].value.trim() || "(Empty value)") + ""))
         set_data(t2, t2_value);
       if (dirty[0] & /*selectedCustomIndex*/
       134217728) {
@@ -44726,7 +44781,7 @@ function create_each_block_33(ctx) {
           "active",
           /*selectedCustomIndex*/
           ctx[27] === /*i*/
-          ctx[238]
+          ctx[246]
         );
       }
     },
@@ -44832,37 +44887,37 @@ function create_if_block_203(ctx) {
             input0,
             "input",
             /*input0_input_handler*/
-            ctx[202]
+            ctx[203]
           ),
           listen(input0, "pointerdown", stop_propagation(
             /*pointerdown_handler_4*/
-            ctx[116]
+            ctx[117]
           )),
           listen(input0, "mousedown", stop_propagation(
             /*mousedown_handler_4*/
-            ctx[117]
+            ctx[118]
           )),
           listen(input0, "click", stop_propagation(
             /*click_handler_4*/
-            ctx[118]
+            ctx[119]
           )),
           listen(
             input1,
             "input",
             /*input1_input_handler*/
-            ctx[203]
+            ctx[204]
           ),
           listen(input1, "pointerdown", stop_propagation(
             /*pointerdown_handler_5*/
-            ctx[113]
+            ctx[114]
           )),
           listen(input1, "mousedown", stop_propagation(
             /*mousedown_handler_5*/
-            ctx[114]
+            ctx[115]
           )),
           listen(input1, "click", stop_propagation(
             /*click_handler_5*/
-            ctx[115]
+            ctx[116]
           ))
         ];
         mounted = true;
@@ -44941,8 +44996,9 @@ function create_else_block_43(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*selectedSvgIndex, metaSvgList*/
-      12582912 | dirty[2] & /*focusMetaEditorInput, deleteSvgWithSourceFile, removeSvgItem, resolveSvgItem*/
-      1610686464) {
+      12582912 | dirty[2] & /*focusMetaEditorInput, removeSvgItem, resolveSvgItem*/
+      1073889280 | dirty[3] & /*deleteSvgWithSourceFile*/
+      1) {
         each_value_2 = ensure_array_like(
           /*metaSvgList*/
           ctx2[22]
@@ -45036,7 +45092,7 @@ function create_if_block_183(ctx) {
     c() {
       img = element("img");
       if (!src_url_equal(img.src, img_src_value = /*resolvedThumb*/
-      ctx[245].srcUrl))
+      ctx[253].srcUrl))
         attr(img, "src", img_src_value);
       attr(img, "alt", "");
       attr(img, "class", "item-svg-mini-thumb-img");
@@ -45047,7 +45103,7 @@ function create_if_block_183(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*metaSvgList*/
       4194304 && !src_url_equal(img.src, img_src_value = /*resolvedThumb*/
-      ctx2[245].srcUrl)) {
+      ctx2[253].srcUrl)) {
         attr(img, "src", img_src_value);
       }
     },
@@ -45062,7 +45118,7 @@ function create_if_block_173(ctx) {
   let div;
   let raw_value = (
     /*resolvedThumb*/
-    ctx[245].content + ""
+    ctx[253].content + ""
   );
   return {
     c() {
@@ -45076,7 +45132,7 @@ function create_if_block_173(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*metaSvgList*/
       4194304 && raw_value !== (raw_value = /*resolvedThumb*/
-      ctx2[245].content + ""))
+      ctx2[253].content + ""))
         div.innerHTML = raw_value;
       ;
     },
@@ -45096,14 +45152,14 @@ function create_each_block_23(ctx) {
   let span1;
   let t4_value = (
     /*svgItem*/
-    (ctx[244].trim() ? (
+    (ctx[252].trim() ? (
       /*svgItem*/
-      ctx[244].length > 32 ? (
+      ctx[252].length > 32 ? (
         /*svgItem*/
-        ctx[244].slice(0, 32) + "..."
+        ctx[252].slice(0, 32) + "..."
       ) : (
         /*svgItem*/
-        ctx[244]
+        ctx[252]
       )
     ) : "(Empty SVG)") + ""
   );
@@ -45117,12 +45173,12 @@ function create_each_block_23(ctx) {
   function select_block_type_11(ctx2, dirty) {
     if (
       /*resolvedThumb*/
-      ctx2[245].isInline
+      ctx2[253].isInline
     )
       return create_if_block_173;
     if (
       /*resolvedThumb*/
-      ctx2[245].srcUrl
+      ctx2[253].srcUrl
     )
       return create_if_block_183;
     return create_else_block_53;
@@ -45132,27 +45188,27 @@ function create_each_block_23(ctx) {
   function longPress_function_4() {
     return (
       /*longPress_function_4*/
-      ctx[194](
+      ctx[195](
         /*i*/
-        ctx[238]
+        ctx[246]
       )
     );
   }
   function longPress_function_5() {
     return (
       /*longPress_function_5*/
-      ctx[195](
+      ctx[196](
         /*i*/
-        ctx[238]
+        ctx[246]
       )
     );
   }
   function keydown_handler_15(...args) {
     return (
       /*keydown_handler_15*/
-      ctx[196](
+      ctx[197](
         /*i*/
-        ctx[238],
+        ctx[246],
         ...args
       )
     );
@@ -45160,9 +45216,9 @@ function create_each_block_23(ctx) {
   function click_handler_31() {
     return (
       /*click_handler_31*/
-      ctx[197](
+      ctx[198](
         /*i*/
-        ctx[238]
+        ctx[246]
       )
     );
   }
@@ -45171,7 +45227,7 @@ function create_each_block_23(ctx) {
       div1 = element("div");
       span0 = element("span");
       span0.textContent = `#${/*i*/
-      ctx[238] + 1}`;
+      ctx[246] + 1}`;
       t2 = space();
       div0 = element("div");
       if_block.c();
@@ -45195,7 +45251,7 @@ function create_each_block_23(ctx) {
         "active",
         /*selectedSvgIndex*/
         ctx[23] === /*i*/
-        ctx[238]
+        ctx[246]
       );
     },
     m(target, anchor) {
@@ -45237,14 +45293,14 @@ function create_each_block_23(ctx) {
       }
       if (dirty[0] & /*metaSvgList*/
       4194304 && t4_value !== (t4_value = /*svgItem*/
-      (ctx[244].trim() ? (
+      (ctx[252].trim() ? (
         /*svgItem*/
-        ctx[244].length > 32 ? (
+        ctx[252].length > 32 ? (
           /*svgItem*/
-          ctx[244].slice(0, 32) + "..."
+          ctx[252].slice(0, 32) + "..."
         ) : (
           /*svgItem*/
-          ctx[244]
+          ctx[252]
         )
       ) : "(Empty SVG)") + ""))
         set_data(t4, t4_value);
@@ -45255,7 +45311,7 @@ function create_each_block_23(ctx) {
           "active",
           /*selectedSvgIndex*/
           ctx[23] === /*i*/
-          ctx[238]
+          ctx[246]
         );
       }
     },
@@ -45292,12 +45348,12 @@ function create_if_block_134(ctx) {
   function select_block_type_12(ctx2, dirty) {
     if (
       /*activeResolved*/
-      ctx2[243].isInline
+      ctx2[251].isInline
     )
       return create_if_block_144;
     if (
       /*activeResolved*/
-      ctx2[243].srcUrl
+      ctx2[251].srcUrl
     )
       return create_if_block_153;
     return create_else_block_34;
@@ -45307,9 +45363,9 @@ function create_if_block_134(ctx) {
   function click_handler_32() {
     return (
       /*click_handler_32*/
-      ctx[198](
+      ctx[199](
         /*activeResolved*/
-        ctx[243]
+        ctx[251]
       )
     );
   }
@@ -45332,12 +45388,12 @@ function create_if_block_134(ctx) {
       attr(div0, "class", "meta-editor-title");
       attr(div1, "class", "meta-svg-preview-box");
       attr(div1, "title", div1_title_value = !/*activeResolved*/
-      ctx[243].isInline && /*activeResolved*/
-      ctx[243].cleanPath ? `Click to open: ${/*activeResolved*/
-      ctx[243].cleanPath}` : "SVG \u5B9E\u65F6\u9884\u89C8");
+      ctx[251].isInline && /*activeResolved*/
+      ctx[251].cleanPath ? `Click to open: ${/*activeResolved*/
+      ctx[251].cleanPath}` : "SVG \u5B9E\u65F6\u9884\u89C8");
       toggle_class(div1, "clickable", !/*activeResolved*/
-      ctx[243].isInline && !!/*activeResolved*/
-      ctx[243].cleanPath);
+      ctx[251].isInline && !!/*activeResolved*/
+      ctx[251].cleanPath);
       attr(textarea, "class", "meta-form-textarea monospace");
       attr(textarea, "placeholder", "OneNote/Original Game/AI Draw/assets/name.svg or <svg...>...</svg>");
       attr(textarea, "rows", "3");
@@ -45375,19 +45431,19 @@ function create_if_block_134(ctx) {
             textarea,
             "input",
             /*textarea_input_handler_1*/
-            ctx[199]
+            ctx[200]
           ),
           listen(textarea, "pointerdown", stop_propagation(
             /*pointerdown_handler_3*/
-            ctx[110]
+            ctx[111]
           )),
           listen(textarea, "mousedown", stop_propagation(
             /*mousedown_handler_3*/
-            ctx[111]
+            ctx[112]
           )),
           listen(textarea, "click", stop_propagation(
             /*click_handler_3*/
-            ctx[112]
+            ctx[113]
           ))
         ];
         mounted = true;
@@ -45411,17 +45467,17 @@ function create_if_block_134(ctx) {
       }
       if (dirty[0] & /*metaSvgList, selectedSvgIndex*/
       12582912 && div1_title_value !== (div1_title_value = !/*activeResolved*/
-      ctx[243].isInline && /*activeResolved*/
-      ctx[243].cleanPath ? `Click to open: ${/*activeResolved*/
-      ctx[243].cleanPath}` : "SVG \u5B9E\u65F6\u9884\u89C8")) {
+      ctx[251].isInline && /*activeResolved*/
+      ctx[251].cleanPath ? `Click to open: ${/*activeResolved*/
+      ctx[251].cleanPath}` : "SVG \u5B9E\u65F6\u9884\u89C8")) {
         attr(div1, "title", div1_title_value);
       }
       if (dirty[0] & /*metaSvgList, selectedSvgIndex*/
       12582912 | dirty[2] & /*resolveSvgItem*/
-      536870912) {
+      1073741824) {
         toggle_class(div1, "clickable", !/*activeResolved*/
-        ctx[243].isInline && !!/*activeResolved*/
-        ctx[243].cleanPath);
+        ctx[251].isInline && !!/*activeResolved*/
+        ctx[251].cleanPath);
       }
       if (dirty[0] & /*metaSvgList, selectedSvgIndex*/
       12582912) {
@@ -45471,7 +45527,7 @@ function create_if_block_153(ctx) {
     c() {
       img = element("img");
       if (!src_url_equal(img.src, img_src_value = /*activeResolved*/
-      ctx[243].srcUrl))
+      ctx[251].srcUrl))
         attr(img, "src", img_src_value);
       attr(img, "alt", "SVG Preview");
       attr(img, "class", "meta-svg-preview-img");
@@ -45482,7 +45538,7 @@ function create_if_block_153(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*metaSvgList, selectedSvgIndex*/
       12582912 && !src_url_equal(img.src, img_src_value = /*activeResolved*/
-      ctx2[243].srcUrl)) {
+      ctx2[251].srcUrl)) {
         attr(img, "src", img_src_value);
       }
     },
@@ -45497,7 +45553,7 @@ function create_if_block_144(ctx) {
   let div;
   let raw_value = (
     /*activeResolved*/
-    ctx[243].content + ""
+    ctx[251].content + ""
   );
   return {
     c() {
@@ -45511,7 +45567,7 @@ function create_if_block_144(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*metaSvgList, selectedSvgIndex*/
       12582912 && raw_value !== (raw_value = /*activeResolved*/
-      ctx2[243].content + ""))
+      ctx2[251].content + ""))
         div.innerHTML = raw_value;
       ;
     },
@@ -45551,7 +45607,7 @@ function create_else_block_24(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*selectedNoteLinkIndex, metaNoteLinks*/
       50331648 | dirty[2] & /*focusMetaEditorInput, removeNoteLinkItem*/
-      1056768) {
+      2113536) {
         each_value_1 = ensure_array_like(
           /*metaNoteLinks*/
           ctx2[24]
@@ -45607,14 +45663,14 @@ function create_each_block_14(ctx) {
   let span1;
   let t3_value = (
     /*noteLinkItem*/
-    (ctx[241].trim() ? (
+    (ctx[249].trim() ? (
       /*noteLinkItem*/
-      ctx[241].length > 32 ? (
+      ctx[249].length > 32 ? (
         /*noteLinkItem*/
-        ctx[241].slice(0, 32) + "..."
+        ctx[249].slice(0, 32) + "..."
       ) : (
         /*noteLinkItem*/
-        ctx[241]
+        ctx[249]
       )
     ) : "(Empty Note Link)") + ""
   );
@@ -45627,18 +45683,18 @@ function create_each_block_14(ctx) {
   function click_handler_28() {
     return (
       /*click_handler_28*/
-      ctx[190](
+      ctx[191](
         /*i*/
-        ctx[238]
+        ctx[246]
       )
     );
   }
   function click_handler_29() {
     return (
       /*click_handler_29*/
-      ctx[191](
+      ctx[192](
         /*i*/
-        ctx[238]
+        ctx[246]
       )
     );
   }
@@ -45647,7 +45703,7 @@ function create_each_block_14(ctx) {
       div = element("div");
       span0 = element("span");
       span0.textContent = `#${/*i*/
-      ctx[238] + 1}`;
+      ctx[246] + 1}`;
       t2 = space();
       span1 = element("span");
       t3 = text(t3_value);
@@ -45665,7 +45721,7 @@ function create_each_block_14(ctx) {
         "active",
         /*selectedNoteLinkIndex*/
         ctx[25] === /*i*/
-        ctx[238]
+        ctx[246]
       );
     },
     m(target, anchor) {
@@ -45689,14 +45745,14 @@ function create_each_block_14(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*metaNoteLinks*/
       16777216 && t3_value !== (t3_value = /*noteLinkItem*/
-      (ctx[241].trim() ? (
+      (ctx[249].trim() ? (
         /*noteLinkItem*/
-        ctx[241].length > 32 ? (
+        ctx[249].length > 32 ? (
           /*noteLinkItem*/
-          ctx[241].slice(0, 32) + "..."
+          ctx[249].slice(0, 32) + "..."
         ) : (
           /*noteLinkItem*/
-          ctx[241]
+          ctx[249]
         )
       ) : "(Empty Note Link)") + ""))
         set_data(t3, t3_value);
@@ -45707,7 +45763,7 @@ function create_each_block_14(ctx) {
           "active",
           /*selectedNoteLinkIndex*/
           ctx[25] === /*i*/
-          ctx[238]
+          ctx[246]
         );
       }
     },
@@ -45747,13 +45803,13 @@ function create_if_block_711(ctx) {
       show_if = null;
     if (
       /*activeHintFile*/
-      ctx2[240]
+      ctx2[248]
     )
       return create_if_block_93;
     if (show_if == null)
       show_if = !!/*activeNoteLink*/
-      (ctx2[239] && /*activeNoteLink*/
-      ctx2[239].trim());
+      (ctx2[247] && /*activeNoteLink*/
+      ctx2[247].trim());
     if (show_if)
       return create_if_block_103;
     return create_else_block_19;
@@ -45762,7 +45818,7 @@ function create_if_block_711(ctx) {
   let if_block0 = current_block_type(ctx);
   let if_block1 = (
     /*activeNoteLink*/
-    ctx[239] && /*plugin*/
+    ctx[247] && /*plugin*/
     ((_a = ctx[0]) == null ? void 0 : _a.app) && create_if_block_85(ctx)
   );
   return {
@@ -45822,19 +45878,19 @@ function create_if_block_711(ctx) {
             input,
             "input",
             /*input_input_handler_1*/
-            ctx[192]
+            ctx[193]
           ),
           listen(input, "pointerdown", stop_propagation(
             /*pointerdown_handler_2*/
-            ctx[107]
+            ctx[108]
           )),
           listen(input, "mousedown", stop_propagation(
             /*mousedown_handler_2*/
-            ctx[108]
+            ctx[109]
           )),
           listen(input, "click", stop_propagation(
             /*click_handler_2*/
-            ctx[109]
+            ctx[110]
           ))
         ];
         mounted = true;
@@ -45873,7 +45929,7 @@ function create_if_block_711(ctx) {
       }
       if (
         /*activeNoteLink*/
-        ctx2[239] && /*plugin*/
+        ctx2[247] && /*plugin*/
         ((_a2 = ctx2[0]) == null ? void 0 : _a2.app)
       ) {
         if (if_block1) {
@@ -45941,7 +45997,7 @@ function create_if_block_93(ctx) {
   let t0;
   let t1_value = (
     /*activeHintFile*/
-    ctx[240].path + ""
+    ctx[248].path + ""
   );
   let t1;
   return {
@@ -45960,7 +46016,7 @@ function create_if_block_93(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*metaNoteLinks, selectedNoteLinkIndex, plugin, categoryFilepath*/
       50331713 && t1_value !== (t1_value = /*activeHintFile*/
-      ctx2[240].path + ""))
+      ctx2[248].path + ""))
         set_data(t1, t1_value);
     },
     d(detaching) {
@@ -45977,9 +46033,9 @@ function create_if_block_85(ctx) {
   function click_handler_30() {
     return (
       /*click_handler_30*/
-      ctx[193](
+      ctx[194](
         /*activeNoteLink*/
-        ctx[239]
+        ctx[247]
       )
     );
   }
@@ -46042,7 +46098,7 @@ function create_else_block8(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*selectedWhyIndex, metaWhyList*/
       3145728 | dirty[2] & /*focusMetaEditorInput, removeWhyItem*/
-      270336) {
+      540672) {
         each_value = ensure_array_like(
           /*metaWhyList*/
           ctx2[20]
@@ -46098,14 +46154,14 @@ function create_each_block7(ctx) {
   let span1;
   let t3_value = (
     /*whyItem*/
-    (ctx[236].trim() ? (
+    (ctx[244].trim() ? (
       /*whyItem*/
-      ctx[236].length > 32 ? (
+      ctx[244].length > 32 ? (
         /*whyItem*/
-        ctx[236].slice(0, 32) + "..."
+        ctx[244].slice(0, 32) + "..."
       ) : (
         /*whyItem*/
-        ctx[236]
+        ctx[244]
       )
     ) : "(Empty Rationale)") + ""
   );
@@ -46118,18 +46174,18 @@ function create_each_block7(ctx) {
   function click_handler_26() {
     return (
       /*click_handler_26*/
-      ctx[187](
+      ctx[188](
         /*i*/
-        ctx[238]
+        ctx[246]
       )
     );
   }
   function click_handler_27() {
     return (
       /*click_handler_27*/
-      ctx[188](
+      ctx[189](
         /*i*/
-        ctx[238]
+        ctx[246]
       )
     );
   }
@@ -46138,7 +46194,7 @@ function create_each_block7(ctx) {
       div = element("div");
       span0 = element("span");
       span0.textContent = `#${/*i*/
-      ctx[238] + 1}`;
+      ctx[246] + 1}`;
       t2 = space();
       span1 = element("span");
       t3 = text(t3_value);
@@ -46156,7 +46212,7 @@ function create_each_block7(ctx) {
         "active",
         /*selectedWhyIndex*/
         ctx[21] === /*i*/
-        ctx[238]
+        ctx[246]
       );
     },
     m(target, anchor) {
@@ -46180,14 +46236,14 @@ function create_each_block7(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*metaWhyList*/
       1048576 && t3_value !== (t3_value = /*whyItem*/
-      (ctx[236].trim() ? (
+      (ctx[244].trim() ? (
         /*whyItem*/
-        ctx[236].length > 32 ? (
+        ctx[244].length > 32 ? (
           /*whyItem*/
-          ctx[236].slice(0, 32) + "..."
+          ctx[244].slice(0, 32) + "..."
         ) : (
           /*whyItem*/
-          ctx[236]
+          ctx[244]
         )
       ) : "(Empty Rationale)") + ""))
         set_data(t3, t3_value);
@@ -46198,7 +46254,7 @@ function create_each_block7(ctx) {
           "active",
           /*selectedWhyIndex*/
           ctx[21] === /*i*/
-          ctx[238]
+          ctx[246]
         );
       }
     },
@@ -46259,19 +46315,19 @@ function create_if_block_414(ctx) {
             textarea,
             "input",
             /*textarea_input_handler*/
-            ctx[189]
+            ctx[190]
           ),
           listen(textarea, "pointerdown", stop_propagation(
             /*pointerdown_handler_1*/
-            ctx[104]
+            ctx[105]
           )),
           listen(textarea, "mousedown", stop_propagation(
             /*mousedown_handler_1*/
-            ctx[105]
+            ctx[106]
           )),
           listen(textarea, "click", stop_propagation(
             /*click_handler_1*/
-            ctx[106]
+            ctx[107]
           ))
         ];
         mounted = true;
@@ -46373,24 +46429,24 @@ function create_if_block_115(ctx) {
             button0,
             "click",
             /*saveAndCloseMetaModal*/
-            ctx[72]
+            ctx[73]
           ),
           listen(
             button1,
             "click",
             /*discardAndCloseMetaModal*/
-            ctx[73]
+            ctx[74]
           ),
           listen(
             button2,
             "click",
             /*cancelMetaSavePrompt*/
-            ctx[74]
+            ctx[75]
           ),
           action_destroyer(portal_action = portal.call(null, div4)),
           listen(div4, "click", self(
             /*cancelMetaSavePrompt*/
-            ctx[74]
+            ctx[75]
           ))
         ];
         mounted = true;
@@ -46453,17 +46509,17 @@ function create_fragment9(ctx) {
             div,
             "paste",
             /*handlePaste*/
-            ctx[60]
+            ctx[61]
           ),
           listen(div, "dragover", prevent_default(
             /*dragover_handler*/
-            ctx[100]
+            ctx[101]
           )),
           listen(
             div,
             "drop",
             /*handleDrop*/
-            ctx[61]
+            ctx[62]
           )
         ];
         mounted = true;
@@ -46534,25 +46590,6 @@ function hasActiveTextSelection2() {
     return true;
   }
   return false;
-}
-function handleStepItemClick2(e, stepId) {
-  const target = e.target;
-  if (!target)
-    return;
-  const textarea = e.currentTarget.querySelector("textarea");
-  if (!textarea || target === textarea)
-    return;
-  if (target.closest('.step-left-controls, .delete-step, .task-image-thumbnail, .task-img-strip-actions, button, [role="button"]')) {
-    return;
-  }
-  textarea.focus();
-  const rect = textarea.getBoundingClientRect();
-  if (e.clientX < rect.left) {
-    textarea.setSelectionRange(0, 0);
-  } else {
-    const len = textarea.value.length;
-    textarea.setSelectionRange(len, len);
-  }
 }
 function getTaskWhys(t2) {
   if (t2.whys && Array.isArray(t2.whys) && t2.whys.length > 0) {
@@ -46839,6 +46876,39 @@ function instance9($$self, $$props, $$invalidate) {
       }
     }
   };
+  let isMouseDownOnInput = false;
+  let mouseDownPos = null;
+  let globalMouseUpTimeout = null;
+  function handleGlobalMouseDown(e) {
+    const target = e.target;
+    isMouseDownOnInput = !!(target && (target.tagName === "TEXTAREA" || target.tagName === "INPUT"));
+    mouseDownPos = { x: e.clientX, y: e.clientY };
+  }
+  function handleGlobalMouseUp() {
+    if (globalMouseUpTimeout)
+      clearTimeout(globalMouseUpTimeout);
+    globalMouseUpTimeout = setTimeout(
+      () => {
+        isMouseDownOnInput = false;
+        mouseDownPos = null;
+      },
+      0
+    );
+  }
+  function handleWindowBlur() {
+    isMouseDownOnInput = false;
+    mouseDownPos = null;
+  }
+  function shouldIgnoreContainerClick(e) {
+    if (isMouseDownOnInput)
+      return true;
+    if (mouseDownPos && Math.hypot(e.clientX - mouseDownPos.x, e.clientY - mouseDownPos.y) > 5)
+      return true;
+    const sel = window.getSelection();
+    if (sel && !sel.isCollapsed && sel.toString().trim().length > 0)
+      return true;
+    return false;
+  }
   function handleSettingsChanged(payload) {
     var _a2, _b2, _c2, _d2, _e, _f, _g, _h;
     $$invalidate(2, centerAlignTasks = (_d2 = (_c2 = (_a2 = payload == null ? void 0 : payload.settings) == null ? void 0 : _a2.centerAlignTasks) != null ? _c2 : (_b2 = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _b2.centerAlignTasks) != null ? _d2 : true);
@@ -46851,6 +46921,9 @@ function instance9($$self, $$props, $$invalidate) {
     EventBus.on("settings:changed" /* SETTINGS_CHANGED */, handleSettingsChanged);
     window.addEventListener("keydown", handleMetaModalKeydown, true);
     window.addEventListener("keydown", handleImageKeydown, true);
+    window.addEventListener("mousedown", handleGlobalMouseDown, true);
+    window.addEventListener("mouseup", handleGlobalMouseUp, true);
+    window.addEventListener("blur", handleWindowBlur);
   });
   onDestroy(() => {
     if (newStepImages.length > 0 && actualApp && dataService) {
@@ -46864,6 +46937,13 @@ function instance9($$self, $$props, $$invalidate) {
     EventBus.off("settings:changed" /* SETTINGS_CHANGED */, handleSettingsChanged);
     window.removeEventListener("keydown", handleMetaModalKeydown, true);
     window.removeEventListener("keydown", handleImageKeydown, true);
+    window.removeEventListener("mousedown", handleGlobalMouseDown, true);
+    window.removeEventListener("mouseup", handleGlobalMouseUp, true);
+    window.removeEventListener("blur", handleWindowBlur);
+    if (globalMouseUpTimeout) {
+      clearTimeout(globalMouseUpTimeout);
+      globalMouseUpTimeout = null;
+    }
     if (saveTimeout) {
       clearTimeout(saveTimeout);
       saveTimeout = null;
@@ -47052,6 +47132,8 @@ function instance9($$self, $$props, $$invalidate) {
     const target = e.target;
     if (!target || target === titleTextareaEl)
       return;
+    if (shouldIgnoreContainerClick(e))
+      return;
     if (target.closest('.checkbox, .title-right-actions, .task-image-thumbnail, .task-img-strip-actions, button, [role="button"]')) {
       return;
     }
@@ -47066,9 +47148,32 @@ function instance9($$self, $$props, $$invalidate) {
       }
     }
   }
+  function handleStepItemClick(e, stepId) {
+    const target = e.target;
+    if (!target)
+      return;
+    const textarea = e.currentTarget.querySelector("textarea");
+    if (!textarea || target === textarea)
+      return;
+    if (shouldIgnoreContainerClick(e))
+      return;
+    if (target.closest('.step-left-controls, .delete-step, .task-image-thumbnail, .task-img-strip-actions, button, [role="button"]')) {
+      return;
+    }
+    textarea.focus();
+    const rect = textarea.getBoundingClientRect();
+    if (e.clientX < rect.left) {
+      textarea.setSelectionRange(0, 0);
+    } else {
+      const len = textarea.value.length;
+      textarea.setSelectionRange(len, len);
+    }
+  }
   function handleAddStepCardClick(e) {
     const target = e.target;
     if (!target || target === addStepInputEl)
+      return;
+    if (shouldIgnoreContainerClick(e))
       return;
     if (target.closest('.task-image-thumbnail, .task-img-strip-actions, button, [role="button"]')) {
       return;
@@ -47078,6 +47183,8 @@ function instance9($$self, $$props, $$invalidate) {
   function handleNoteSectionClick(e) {
     const target = e.target;
     if (!target || target === noteTextareaEl)
+      return;
+    if (shouldIgnoreContainerClick(e))
       return;
     if (target.closest('.task-image-thumbnail, .task-img-strip-actions, button, [role="button"]')) {
       return;
@@ -48142,7 +48249,7 @@ function instance9($$self, $$props, $$invalidate) {
   };
   const click_handler_7 = (step) => deleteStep(step.id);
   const keydown_handler_6 = (step, e) => e.key === "Enter" && deleteStep(step.id);
-  const click_handler_8 = (step, e) => handleStepItemClick2(e, step.id);
+  const click_handler_8 = (step, e) => handleStepItemClick(e, step.id);
   const func_6 = (imgRef) => removeNewStepImage(imgRef);
   const func_7 = (imgRef) => removeNewStepImage(imgRef);
   const func_8 = (imgRef, isHovered) => {
@@ -48294,7 +48401,7 @@ function instance9($$self, $$props, $$invalidate) {
   const keydown_handler_17 = (e) => e.key === "Enter" && closePanel();
   $$self.$$set = ($$props2) => {
     if ("dataService" in $$props2)
-      $$invalidate(96, dataService = $$props2.dataService);
+      $$invalidate(97, dataService = $$props2.dataService);
     if ("plugin" in $$props2)
       $$invalidate(0, plugin = $$props2.plugin);
     if ("isModal" in $$props2)
@@ -48304,14 +48411,14 @@ function instance9($$self, $$props, $$invalidate) {
     if ("centerAlignTasks" in $$props2)
       $$invalidate(2, centerAlignTasks = $$props2.centerAlignTasks);
     if ("onCloseModal" in $$props2)
-      $$invalidate(97, onCloseModal = $$props2.onCloseModal);
+      $$invalidate(98, onCloseModal = $$props2.onCloseModal);
     if ("onToggleFullscreen" in $$props2)
-      $$invalidate(98, onToggleFullscreen = $$props2.onToggleFullscreen);
+      $$invalidate(99, onToggleFullscreen = $$props2.onToggleFullscreen);
   };
   $$self.$$.update = () => {
     if ($$self.$$.dirty[0] & /*plugin*/
     1 | $$self.$$.dirty[3] & /*dataService*/
-    8) {
+    16) {
       $:
         $$invalidate(28, actualApp = (dataService == null ? void 0 : dataService.app) || (plugin == null ? void 0 : plugin.app) || window.app);
     }
@@ -48378,6 +48485,7 @@ function instance9($$self, $$props, $$invalidate) {
     handleTitleInput,
     handleTitleBlur,
     handleTitleRowClick,
+    handleStepItemClick,
     handleAddStepCardClick,
     handleNoteSectionClick,
     handleTitleKeydown,
@@ -48551,21 +48659,21 @@ var TaskDetailView = class extends SvelteComponent {
       create_fragment9,
       safe_not_equal,
       {
-        dataService: 96,
+        dataService: 97,
         plugin: 0,
         isModal: 3,
         isFullscreen: 1,
         centerAlignTasks: 2,
-        onCloseModal: 97,
-        onToggleFullscreen: 98,
-        loadTask: 99
+        onCloseModal: 98,
+        onToggleFullscreen: 99,
+        loadTask: 100
       },
       add_css5,
       [-1, -1, -1, -1, -1, -1, -1, -1, -1]
     );
   }
   get loadTask() {
-    return this.$$.ctx[99];
+    return this.$$.ctx[100];
   }
 };
 var TaskDetailView_default = TaskDetailView;

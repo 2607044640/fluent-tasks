@@ -592,11 +592,43 @@
         closeModal();
     }
 
+    let isMouseDownOnInput = false;
+    let mouseDownPos: { x: number; y: number } | null = null;
+    let globalMouseUpTimeout: any = null;
+
+    function handleGlobalMouseDown(e: MouseEvent) {
+        const target = e.target as HTMLElement | null;
+        isMouseDownOnInput = !!(target && (target.tagName === "TEXTAREA" || target.tagName === "INPUT"));
+        mouseDownPos = { x: e.clientX, y: e.clientY };
+    }
+
+    function handleGlobalMouseUp() {
+        if (globalMouseUpTimeout) clearTimeout(globalMouseUpTimeout);
+        globalMouseUpTimeout = setTimeout(() => {
+            isMouseDownOnInput = false;
+            mouseDownPos = null;
+        }, 0);
+    }
+
+    function handleWindowBlur() {
+        isMouseDownOnInput = false;
+        mouseDownPos = null;
+    }
+
+    function shouldIgnoreContainerClick(e: MouseEvent): boolean {
+        if (isMouseDownOnInput) return true;
+        if (mouseDownPos && Math.hypot(e.clientX - mouseDownPos.x, e.clientY - mouseDownPos.y) > 5) return true;
+        const sel = window.getSelection();
+        if (sel && !sel.isCollapsed && sel.toString().trim().length > 0) return true;
+        return false;
+    }
+
     function handleStepItemClick(e: MouseEvent, stepId?: string) {
         const target = e.target as HTMLElement | null;
         if (!target) return;
         const textarea = (e.currentTarget as HTMLElement).querySelector('textarea') as HTMLTextAreaElement | null;
         if (!textarea || target === textarea) return;
+        if (shouldIgnoreContainerClick(e)) return;
         if (target.closest('.steps-modal-left-controls, .steps-modal-delete-btn, .task-image-thumbnail, .task-img-strip-actions, button, [role="button"]')) {
             return;
         }
@@ -613,6 +645,7 @@
     function handleAddStepCardClick(e: MouseEvent) {
         const target = e.target as HTMLElement | null;
         if (!target || target === addInputEl) return;
+        if (shouldIgnoreContainerClick(e)) return;
         if (target.closest('.task-image-thumbnail, .task-img-strip-actions, button, [role="button"]')) {
             return;
         }
@@ -723,6 +756,9 @@
         window.addEventListener("paste", handlePaste);
         window.addEventListener("dragover", handleDragOver);
         window.addEventListener("drop", handleDrop);
+        window.addEventListener("mousedown", handleGlobalMouseDown, true);
+        window.addEventListener("mouseup", handleGlobalMouseUp, true);
+        window.addEventListener("blur", handleWindowBlur);
         EventBus.on(EventName.TASK_UPDATED, handleExternalTaskUpdate);
 
         return () => {
@@ -731,6 +767,13 @@
             window.removeEventListener("paste", handlePaste);
             window.removeEventListener("dragover", handleDragOver);
             window.removeEventListener("drop", handleDrop);
+            window.removeEventListener("mousedown", handleGlobalMouseDown, true);
+            window.removeEventListener("mouseup", handleGlobalMouseUp, true);
+            window.removeEventListener("blur", handleWindowBlur);
+            if (globalMouseUpTimeout) {
+                clearTimeout(globalMouseUpTimeout);
+                globalMouseUpTimeout = null;
+            }
             EventBus.off(EventName.TASK_UPDATED, handleExternalTaskUpdate);
             flushSaveSync();
         };
@@ -741,6 +784,13 @@
             const draftImages = [...newStepImages];
             newStepImages = [];
             void cleanupOrphanImages(draftImages, actualApp, dataService);
+        }
+        window.removeEventListener("mousedown", handleGlobalMouseDown, true);
+        window.removeEventListener("mouseup", handleGlobalMouseUp, true);
+        window.removeEventListener("blur", handleWindowBlur);
+        if (globalMouseUpTimeout) {
+            clearTimeout(globalMouseUpTimeout);
+            globalMouseUpTimeout = null;
         }
         flushSaveSync();
     });
