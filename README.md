@@ -1,6 +1,6 @@
 # Fluent Tasks
 
-Obsidian plugin: a three-pane, drag-and-drop task manager inspired by Microsoft To Do, Todoist, and TickTick. Version **1.0.52** (`manifest.json`). Desktop and mobile (`isDesktopOnly: false`). Minimum Obsidian **1.8.7**.
+Obsidian plugin: a three-pane, drag-and-drop task manager inspired by Microsoft To Do, Todoist, and TickTick. Version **1.0.53** (`manifest.json`). Desktop and mobile (`isDesktopOnly: false`). Minimum Obsidian **1.8.7**.
 
 Architecture documentation: [ARCHITECTURE.md](./ARCHITECTURE.md).
 
@@ -37,7 +37,7 @@ There is no cloud lock-in or external server dependency. All data remains 100% l
 - **Subtasks & Full-Screen Detail Modal**: Dedicated detail panel and floating modal for step checklists with full-screen maximization toggle (configurable default in settings), automatic prune of empty steps on Enter, blur, or image removal, and full vertical drag-and-drop step reordering with zero-loss safety reconciliation. Right-click any task to instantly access **Add side step** as the top context menu action, followed by **Star task** and hierarchical **Move to**.
 - **Image Attachments, Lightbox & Automatic Cleanup**: Paste screenshots directly via `Ctrl+V` or drag-and-drop into task titles, notes, and subtasks. Features a unified top thumbnail strip with a subtle divider line across title, detail, and sidesteps, with hover shortcuts (`Ctrl+C` to copy to clipboard, `Ctrl+X` to cut), single-click full-screen lightbox preview with an **Open original in Obsidian** action, multi-layer Escape key isolation, and automatic garbage collection of orphan image attachments when references drop to zero.
 - **Focused Lists Quick Board & Drag Reordering**: Configure top priority lists as header selector buttons and quick pills with interactive horizontal drag-and-drop reordering, drag-hover highlighting, drop-to-move, and persistent configuration auto-saving.
-- **Card Blank-Space Click to Edit**: Clicking empty margin or card space around centered titles, checklist steps, notes, or add-step inputs immediately focuses the text field with smart start/end caret positioning.
+- **Card Blank-Space Click to Edit & Selection Preservation**: Clicking empty margin or card space around centered titles, checklist steps, notes, or add-step inputs immediately focuses the text field with smart start/end caret positioning, while seamlessly preserving active text selections and drag-selection interactions without caret jumping.
 - **Non-Intrusive Sidebar Coexistence**: Preserves Obsidian core tools (Search, File Explorer, Bookmarks, and third-party panels) by preventing unintended sidebar collapse when activating sidebar tools.
 - **In-List Search Non-Intrusive Navigation**: When searching tasks in floating UI mode, selecting a search result smoothly centers and highlights the task in the list without prematurely popping open the detail modal.
 - **Multi-Tier Deletion Undo**: Instant floating toast undo mechanism for deleted tasks (single or batch), subtasks, and lists, with configurable undo timer in settings.
