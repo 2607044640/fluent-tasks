@@ -580,9 +580,10 @@ export default class FluentTasksPlugin extends Plugin {
                 this.applySettings();
 
                 if (this.settings.hideLeftSidebar) {
+                    const wasLeftActive = this.isPluginLeftSidebarActive();
                     this.app.workspace.detachLeavesOfType(VIEW_TYPE_SIDEBAR);
                     const leftSplit = this.app.workspace.leftSplit as { collapsed?: boolean; collapse: () => void } | null;
-                    if (leftSplit && !leftSplit.collapsed && this.isPluginLeftSidebarActive()) {
+                    if (leftSplit && !leftSplit.collapsed && wasLeftActive) {
                         leftSplit.collapse();
                     }
                 }
@@ -616,9 +617,10 @@ export default class FluentTasksPlugin extends Plugin {
                         // When switching focus from an external tab (e.g. Markdown note via Ctrl+Tab / Ctrl+Shift+Tab) to Fluent Tasks
                         if (isPluginView && !wasPluginView) {
                             if (this.settings.hideLeftSidebar && !this.isSidebarTemporarilyExpandedForDrag) {
+                                const wasLeftActive = this.isPluginLeftSidebarActive();
                                 this.app.workspace.detachLeavesOfType(VIEW_TYPE_SIDEBAR);
                                 const leftSplit = this.app.workspace.leftSplit as { collapsed?: boolean; collapse: () => void } | null;
-                                if (leftSplit && !leftSplit.collapsed && this.isPluginLeftSidebarActive()) {
+                                if (leftSplit && !leftSplit.collapsed && wasLeftActive) {
                                     leftSplit.collapse();
                                 }
                             } else if (this.settings.autoExpandSidebar) {
@@ -1120,7 +1122,7 @@ export default class FluentTasksPlugin extends Plugin {
         if (targetRight) {
             const rightSplit = this.app.workspace.rightSplit as { collapsed?: boolean; collapse: () => void } | null;
             if (rightSplit && !rightSplit.collapsed) {
-                if (force || this.isPluginRightSidebarActive() || this.settings.openDetailInModal) {
+                if (force || this.isPluginRightSidebarActive()) {
                     rightSplit.collapse();
                 }
             }
@@ -1226,6 +1228,9 @@ export default class FluentTasksPlugin extends Plugin {
             const leftSplit = this.app.workspace.leftSplit as { collapsed?: boolean; collapse: () => void } | null;
             if (leftSplit && !leftSplit.collapsed) {
                 leftSplit.collapse();
+            }
+            if (this.settings.hideLeftSidebar) {
+                this.app.workspace.detachLeavesOfType(VIEW_TYPE_SIDEBAR);
             }
         }, 150);
     }
@@ -1410,9 +1415,10 @@ export default class FluentTasksPlugin extends Plugin {
         if (!this.settings.hideLeftSidebar) {
             await this.activateView(VIEW_TYPE_SIDEBAR, "left");
         } else {
+            const wasLeftActive = this.isPluginLeftSidebarActive();
             this.app.workspace.detachLeavesOfType(VIEW_TYPE_SIDEBAR);
             const leftSplit = this.app.workspace.leftSplit as { collapsed?: boolean; collapse: () => void } | null;
-            if (leftSplit && !leftSplit.collapsed && this.isPluginLeftSidebarActive()) {
+            if (leftSplit && !leftSplit.collapsed && wasLeftActive) {
                 leftSplit.collapse();
             }
         }

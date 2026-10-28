@@ -56556,9 +56556,10 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
         await this.loadSettings();
         this.applySettings();
         if (this.settings.hideLeftSidebar) {
+          const wasLeftActive = this.isPluginLeftSidebarActive();
           this.app.workspace.detachLeavesOfType(VIEW_TYPE_SIDEBAR);
           const leftSplit = this.app.workspace.leftSplit;
-          if (leftSplit && !leftSplit.collapsed && this.isPluginLeftSidebarActive()) {
+          if (leftSplit && !leftSplit.collapsed && wasLeftActive) {
             leftSplit.collapse();
           }
         }
@@ -56579,9 +56580,10 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
             const wasPluginView = lastActiveViewType === VIEW_TYPE_MAIN || lastActiveViewType === VIEW_TYPE_SIDEBAR || lastActiveViewType === VIEW_TYPE_DETAIL;
             if (isPluginView && !wasPluginView) {
               if (this.settings.hideLeftSidebar && !this.isSidebarTemporarilyExpandedForDrag) {
+                const wasLeftActive = this.isPluginLeftSidebarActive();
                 this.app.workspace.detachLeavesOfType(VIEW_TYPE_SIDEBAR);
                 const leftSplit = this.app.workspace.leftSplit;
-                if (leftSplit && !leftSplit.collapsed && this.isPluginLeftSidebarActive()) {
+                if (leftSplit && !leftSplit.collapsed && wasLeftActive) {
                   leftSplit.collapse();
                 }
               } else if (this.settings.autoExpandSidebar) {
@@ -56994,7 +56996,7 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
     if (targetRight) {
       const rightSplit = this.app.workspace.rightSplit;
       if (rightSplit && !rightSplit.collapsed) {
-        if (force || this.isPluginRightSidebarActive() || this.settings.openDetailInModal) {
+        if (force || this.isPluginRightSidebarActive()) {
           rightSplit.collapse();
         }
       }
@@ -57092,6 +57094,9 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
       const leftSplit = this.app.workspace.leftSplit;
       if (leftSplit && !leftSplit.collapsed) {
         leftSplit.collapse();
+      }
+      if (this.settings.hideLeftSidebar) {
+        this.app.workspace.detachLeavesOfType(VIEW_TYPE_SIDEBAR);
       }
     }, 150);
   }
@@ -57248,9 +57253,10 @@ var FluentTasksPlugin = class extends import_obsidian26.Plugin {
     if (!this.settings.hideLeftSidebar) {
       await this.activateView(VIEW_TYPE_SIDEBAR, "left");
     } else {
+      const wasLeftActive = this.isPluginLeftSidebarActive();
       this.app.workspace.detachLeavesOfType(VIEW_TYPE_SIDEBAR);
       const leftSplit = this.app.workspace.leftSplit;
-      if (leftSplit && !leftSplit.collapsed && this.isPluginLeftSidebarActive()) {
+      if (leftSplit && !leftSplit.collapsed && wasLeftActive) {
         leftSplit.collapse();
       }
     }
