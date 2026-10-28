@@ -397,6 +397,7 @@
     align-items: center;
     gap: 5px;
     flex-wrap: wrap;
+    min-height: 22px;
 }
 
 .focused-list-pill {
@@ -411,12 +412,12 @@
     border: 1px solid var(--background-modifier-border);
     background: var(--background-secondary, rgba(255, 255, 255, 0.04));
     color: var(--text-muted);
-    cursor: pointer;
+    cursor: grab;
     max-width: 140px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    transition: all 0.15s ease;
+    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
     user-select: none;
 }
 
@@ -426,11 +427,27 @@
     border-color: var(--todo-accent, #8b5cf6);
 }
 
+.focused-list-pill:active {
+    cursor: grabbing;
+}
+
+.focused-list-pill:focus-visible {
+    outline: 2px solid var(--todo-accent, #8b5cf6);
+    outline-offset: 1px;
+}
+
 .focused-list-pill.is-active {
     color: var(--todo-accent, #8b5cf6);
     border-color: var(--todo-accent, #8b5cf6);
     background: var(--todo-accent-light, rgba(139, 92, 246, 0.12));
     font-weight: 600;
+}
+
+.focused-list-pill.is-shadow {
+    opacity: 0.3 !important;
+    border-style: dashed !important;
+    border-color: var(--todo-accent, #8b5cf6) !important;
+    background: var(--todo-accent-light, rgba(139, 92, 246, 0.12)) !important;
 }
 
 .focused-list-pill.drag-over {

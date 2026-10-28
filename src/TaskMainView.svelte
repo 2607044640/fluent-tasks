@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount, onDestroy, tick } from "svelte";
-    import { dndzone, TRIGGERS } from "svelte-dnd-action";
+    import { dndzone, TRIGGERS, SHADOW_ITEM_MARKER_PROPERTY_NAME } from "svelte-dnd-action";
     import { flip } from "svelte/animate";
     import { EventBus } from "./EventBus";
     import { DataService } from "./DataService";
@@ -75,6 +75,13 @@
     let focusedCategories: CategoryInfo[] = [];
     let dragOverFocusedPath: string = "";
     let lastFocusedDropTime: number = 0;
+    let isDraggingFocusedPills: boolean = false;
+    let lastFocusedPillDragTime: number = 0;
+    let preDragFocusedCategories: CategoryInfo[] = [];
+
+    function isShadowPill(cat: CategoryInfo): boolean {
+        return Boolean((cat as any)[SHADOW_ITEM_MARKER_PROPERTY_NAME]);
+    }
 
     async function updateFocusedCategories() {
         enableFocusedLists = plugin?.settings?.enableFocusedLists ?? false;
@@ -103,7 +110,9 @@
             const list: CategoryInfo[] = [];
             for (const p of paths) {
                 const found = map.get(p);
-                if (found) list.push(found);
+                if (found) {
+                    list.push({ ...found, id: found.id || found.filepath });
+                }
             }
             focusedCategories = list;
         } catch (err) {
@@ -115,7 +124,50 @@
         new FocusedListsModal(actualApp, plugin, dataService).open();
     }
 
+    function handleFocusedPillsConsider(e: CustomEvent<{ items: CategoryInfo[]; info: any }>) {
+        if (!isDraggingFocusedPills) {
+            isDraggingFocusedPills = true;
+            preDragFocusedCategories = [...focusedCategories];
+        }
+        focusedCategories = e.detail.items;
+    }
+
+    async function handleFocusedPillsFinalize(e: CustomEvent<{ items: CategoryInfo[]; info: any }>) {
+        isDraggingFocusedPills = false;
+        lastFocusedPillDragTime = Date.now();
+        lastFocusedDropTime = Date.now();
+
+        if (e.detail.info?.trigger === TRIGGERS.DROPPED_OUTSIDE_OF_ANY) {
+            if (preDragFocusedCategories.length > 0) {
+                focusedCategories = [...preDragFocusedCategories];
+            }
+            preDragFocusedCategories = [];
+            return;
+        }
+
+        const cleanItems = (e.detail.items || []).filter(cat => !isShadowPill(cat));
+        focusedCategories = cleanItems;
+        preDragFocusedCategories = [];
+
+        if (plugin?.settings) {
+            const reorderedPaths: string[] = cleanItems.map(c => c.filepath).filter(Boolean);
+            const originalPaths: string[] = plugin.settings.focusedLists || [];
+            const missingPaths: string[] = originalPaths.filter((p: string) => !reorderedPaths.includes(p));
+            const newFocusedLists: string[] = [...reorderedPaths, ...missingPaths];
+
+            const hasChanged = originalPaths.length !== newFocusedLists.length ||
+                originalPaths.some((p: string, i: number) => p !== newFocusedLists[i]);
+
+            if (hasChanged) {
+                plugin.settings.focusedLists = newFocusedLists;
+                await plugin.saveSettings();
+            }
+        }
+    }
+
     function handleSelectFocusedCategory(cat: CategoryInfo) {
+        if (isDraggingFocusedPills) return;
+        if (Date.now() - lastFocusedPillDragTime < 300) return;
         if (Date.now() - lastFocusedDropTime < 300) return;
         if (!cat || currentCategory?.filepath === cat.filepath) return;
         EventBus.emit(EventName.CATEGORY_SELECTED, { category: cat });
@@ -3407,19 +3459,35 @@
                         </button>
 
                         {#if focusedCategories.length > 0}
-                            <div class="focused-lists-pills">
-                                {#each focusedCategories as cat (cat.filepath)}
-                                    <button 
+                            <div 
+                                class="focused-lists-pills"
+                                use:dndzone={{
+                                    items: focusedCategories,
+                                    flipDurationMs: DND_FLIP_DURATION,
+                                    dropAnimationDisabled: true,
+                                    dropTargetStyle: {},
+                                    type: 'focused-lists-pills'
+                                }}
+                                on:consider={handleFocusedPillsConsider}
+                                on:finalize={handleFocusedPillsFinalize}
+                            >
+                                {#each focusedCategories as cat (cat.id)}
+                                    <!-- svelte-ignore a11y-click-events-have-key-events -->
+                                    <div 
                                         class="focused-list-pill"
                                         class:is-active={currentCategory?.filepath === cat.filepath}
                                         class:drag-over={dragOverFocusedPath === cat.filepath}
+                                        class:is-shadow={isShadowPill(cat)}
                                         data-filepath={cat.filepath}
-                                        type="button"
+                                        role="button"
+                                        tabindex="0"
                                         title={cat.name}
+                                        animate:flip={{ duration: DND_FLIP_DURATION }}
                                         on:click={() => handleSelectFocusedCategory(cat)}
+                                        on:keydown={(e) => e.key === "Enter" && handleSelectFocusedCategory(cat)}
                                     >
                                         {cat.name}
-                                    </button>
+                                    </div>
                                 {/each}
                             </div>
                         {/if}
