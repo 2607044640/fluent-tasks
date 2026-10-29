@@ -1238,6 +1238,9 @@
         isDndActive = false;
         (window as any).__mstodo_drag_data = null;
         stopAutoScroll();
+        if (newTaskTitle.trim() && currentCategory) {
+            void addTask();
+        }
         if (pendingWeightReSort && !editingWeightTaskId) {
             pendingWeightReSort = false;
             incompleteTasks = applyWeightSort(rawIncompleteTasks, !!plugin?.settings?.enableTaskWeightMode);
@@ -1617,9 +1620,19 @@
         }
         window.addEventListener('focus', handleWindowFocusOrVisibility);
         document.addEventListener('visibilitychange', handleWindowFocusOrVisibility);
+        window.addEventListener('beforeunload', handleBeforeUnload);
     });
 
+    function handleBeforeUnload() {
+        if (newTaskTitle.trim() && currentCategory) {
+            void addTask();
+        }
+    }
+
     onDestroy(() => {
+        if (newTaskTitle.trim() && currentCategory) {
+            void addTask();
+        }
         stopAutoScroll();
         if (popoverTimeout) clearTimeout(popoverTimeout);
         window.removeEventListener('pointermove', handleDragPointerMove);
@@ -1629,6 +1642,7 @@
         window.removeEventListener('keydown', handleGlobalKeyDown, true);
         window.removeEventListener('keyup', handleGlobalKeyUp, true);
         window.removeEventListener('blur', handleWindowBlur);
+        window.removeEventListener('beforeunload', handleBeforeUnload);
         window.removeEventListener('paste', handleGlobalPaste);
         window.removeEventListener('a1-svg-updated', handleSvgUpdated);
         window.removeEventListener('fluent-tasks-svg-deleted', handleExternalSvgDeleted);
@@ -2136,11 +2150,23 @@
         incompleteTasks = applyWeightSort(rawIncompleteTasks, !!plugin?.settings?.enableTaskWeightMode);
     }
 
+    function handleAddTaskBlur() {
+        if (newTaskTitle.trim() && currentCategory) {
+            void addTask();
+        }
+    }
+
     function handleAddTaskKeydown(e: KeyboardEvent) {
         if (e.isComposing || e.keyCode === 229) return;
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
-            addTask();
+            void addTask();
+        } else if (e.key === "Escape") {
+            if (newTaskTitle.trim() && currentCategory) {
+                e.preventDefault();
+                void addTask();
+            }
+            addTaskInputEl?.blur();
         }
     }
 
@@ -3726,6 +3752,7 @@
                 bind:value={newTaskTitle}
                 bind:this={addTaskInputEl}
                 on:keydown={handleAddTaskKeydown}
+                on:blur={handleAddTaskBlur}
             />
         </div>
 

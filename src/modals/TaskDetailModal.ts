@@ -14,6 +14,7 @@ export class TaskDetailModal extends Modal {
     private initialTask?: TaskItem;
     private initialCategoryFilepath?: string;
     private detailCloseHandler: () => void;
+    private beforeUnloadHandler: () => void;
 
     constructor(
         app: App,
@@ -30,6 +31,11 @@ export class TaskDetailModal extends Modal {
         this.detailCloseHandler = () => {
             this.forceClose();
         };
+        this.beforeUnloadHandler = () => {
+            if (this.component) {
+                void this.component.flushSaveSync();
+            }
+        };
     }
 
     onOpen() {
@@ -37,6 +43,8 @@ export class TaskDetailModal extends Modal {
         contentEl.empty();
         modalEl.addClass("task-detail-floating-modal");
         contentEl.addClass("task-detail-modal-content");
+
+        window.addEventListener("beforeunload", this.beforeUnloadHandler);
 
         const isFullscreen = this.plugin?.settings?.fullscreenDetailModal ?? true;
         if (isFullscreen) {
@@ -116,17 +124,25 @@ export class TaskDetailModal extends Modal {
         if (this.hasActiveChildDialog()) {
             return;
         }
+        if (this.component) {
+            void this.component.flushSaveSync();
+        }
         super.close();
     }
 
     forceClose() {
+        if (this.component) {
+            void this.component.flushSaveSync();
+        }
         super.close();
     }
 
     onClose() {
+        window.removeEventListener("beforeunload", this.beforeUnloadHandler);
         EventBus.off(EventName.DETAIL_CLOSE, this.detailCloseHandler);
         this.containerEl.removeClass("has-fullscreen-detail-modal");
         if (this.component) {
+            void this.component.flushSaveSync();
             this.component.$destroy();
             this.component = null;
         }

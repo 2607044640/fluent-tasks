@@ -11,6 +11,7 @@ export class TaskStepsModal extends Modal {
     private dataService: DataService;
     private task: TaskItem;
     private categoryFilepath: string;
+    private beforeUnloadHandler: () => void;
 
     constructor(
         app: App,
@@ -24,6 +25,11 @@ export class TaskStepsModal extends Modal {
         this.dataService = dataService;
         this.task = task;
         this.categoryFilepath = categoryFilepath;
+        this.beforeUnloadHandler = () => {
+            if (this.component) {
+                this.component.flushSaveSync();
+            }
+        };
     }
 
     onOpen() {
@@ -35,6 +41,8 @@ export class TaskStepsModal extends Modal {
             this.containerEl.addClass("is-center-aligned");
         }
         contentEl.addClass("task-steps-modal-content");
+
+        window.addEventListener("beforeunload", this.beforeUnloadHandler);
 
         this.component = new TaskStepsModalView({
             target: contentEl,
@@ -55,10 +63,14 @@ export class TaskStepsModal extends Modal {
         if (ImagePreviewModal.isImagePreviewActive()) {
             return;
         }
+        if (this.component) {
+            this.component.flushSaveSync();
+        }
         super.close();
     }
 
     onClose() {
+        window.removeEventListener("beforeunload", this.beforeUnloadHandler);
         if (this.component) {
             this.component.flushSaveSync();
             this.component.$destroy();

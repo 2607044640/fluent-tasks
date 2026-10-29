@@ -9,17 +9,26 @@ export class QuickTaskModal extends Modal {
     private component: QuickTaskModalView | null = null;
     private plugin: FluentTasksPlugin;
     private dataService: DataService;
+    private beforeUnloadHandler: () => void;
 
     constructor(app: App, plugin: FluentTasksPlugin, dataService: DataService) {
         super(app);
         this.plugin = plugin;
         this.dataService = dataService;
+        this.beforeUnloadHandler = () => {
+            if (this.component) {
+                this.component.$destroy();
+                this.component = null;
+            }
+        };
     }
 
     onOpen() {
         const { contentEl, modalEl } = this;
         contentEl.empty();
         modalEl.addClass("task-quick-modal");
+
+        window.addEventListener("beforeunload", this.beforeUnloadHandler);
 
         const { showTip, remainingTips } = getModalHotkeyTipInfo(
             this.app,
@@ -51,6 +60,7 @@ export class QuickTaskModal extends Modal {
     }
 
     onClose() {
+        window.removeEventListener("beforeunload", this.beforeUnloadHandler);
         if (this.component) {
             this.component.$destroy();
             this.component = null;

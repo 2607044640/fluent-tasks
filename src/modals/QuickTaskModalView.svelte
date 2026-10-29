@@ -106,9 +106,20 @@
         setTimeout(() => {
             if (searchInputEl) searchInputEl.focus();
         }, 50);
+        window.addEventListener("beforeunload", handleBeforeUnload);
     });
 
+    function handleBeforeUnload() {
+        if (isAddingTask && newTaskTitle.trim()) {
+            void commitAddTask();
+        }
+    }
+
     onDestroy(() => {
+        window.removeEventListener("beforeunload", handleBeforeUnload);
+        if (isAddingTask && newTaskTitle.trim()) {
+            void commitAddTask();
+        }
         EventBus.off(EventName.CATEGORY_LIST_CHANGED, handleExternalListChanged);
         EventBus.off(EventName.TASK_UPDATED, handleExternalTaskUpdated);
         EventBus.off(EventName.SETTINGS_CHANGED, handleSettingsChanged);
@@ -962,7 +973,11 @@
             void commitAddTask();
         } else if (e.key === "Escape") {
             e.preventDefault();
-            cancelAddTask();
+            if (newTaskTitle.trim()) {
+                void commitAddTask();
+            } else {
+                cancelAddTask();
+            }
         }
     }
 

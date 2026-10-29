@@ -286,14 +286,31 @@
         }, SAVE_DEBOUNCE_MS);
     }
 
+    function commitDraftStep(): boolean {
+        const trimmed = newStepText.trim();
+        if (!trimmed && newStepImages.length === 0 || !task) return false;
+        const newStep: TaskStep = {
+            id: `${task.id}-step-${Date.now()}-${steps.length}`,
+            text: trimmed,
+            done: false,
+            ...(newStepImages.length > 0 ? { images: [...newStepImages] } : {})
+        };
+        steps = [...steps, newStep];
+        newStepText = "";
+        newStepImages = [];
+        return true;
+    }
+
     export function flushSaveSync() {
+        commitDraftStep();
         if (saveTimeout) {
             window.clearTimeout(saveTimeout);
             saveTimeout = null;
-            task.steps = persistableSteps(steps);
-            void dataService.updateTask(categoryFilepath, task);
-            EventBus.emit(EventName.TASK_UPDATED, { task, categoryFilepath });
         }
+        if (!task || !categoryFilepath || isDraggingSteps) return;
+        task.steps = persistableSteps(steps);
+        void dataService.updateTask(categoryFilepath, task);
+        EventBus.emit(EventName.TASK_UPDATED, { task, categoryFilepath });
     }
 
     // =============================================
@@ -524,22 +541,12 @@
     }
 
     async function addStep() {
-        const trimmed = newStepText.trim();
-        if (!trimmed && newStepImages.length === 0) return;
-        const newStep: TaskStep = {
-            id: `${task.id}-step-${Date.now()}-${steps.length}`,
-            text: trimmed,
-            done: false,
-            ...(newStepImages.length > 0 ? { images: [...newStepImages] } : {})
-        };
-        steps = [...steps, newStep];
-        newStepText = "";
-        newStepImages = [];
+        if (!commitDraftStep()) return;
         if (showSearchBar && searchQuery.trim()) {
             updateSearchMatches();
         }
-        void Logger.log(`[DND Modal] Added step: taskId=${task.id}, stepId=${newStep.id}, text="${newStep.text}", images=${newStep.images?.length || 0}, totalSteps=${steps.length}`);
-        console.log(`[FluentTasks Modal] Added step: taskId=${task.id}, stepId=${newStep.id}, total=${steps.length}`);
+        void Logger.log(`[DND Modal] Added step: taskId=${task.id}, stepsCount=${steps.length}`);
+        console.log(`[FluentTasks Modal] Added step: taskId=${task.id}, total=${steps.length}`);
         await persistTask();
         await tick();
         addInputEl?.focus();
@@ -570,6 +577,15 @@
 
             e.preventDefault();
             (e.currentTarget as HTMLElement).blur();
+        } else if (e.key === "Escape") {
+            flushSaveSync();
+        }
+    }
+
+    function handleStepInputBlur() {
+        if (newStepText.trim() || newStepImages.length > 0) {
+            commitDraftStep();
+            flushSaveSync();
         }
     }
 
@@ -578,11 +594,16 @@
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
             void addStep();
+        } else if (e.key === "Escape") {
+            if (newStepText.trim() || newStepImages.length > 0) {
+                commitDraftStep();
+                flushSaveSync();
+            }
         }
     }
 
     function handleClose() {
-        if (newStepImages.length > 0 && actualApp && dataService) {
+        if (!commitDraftStep() && newStepImages.length > 0 && actualApp && dataService) {
             const draftImages = [...newStepImages];
             newStepImages = [];
             void cleanupOrphanImages(draftImages, actualApp, dataService);
@@ -613,6 +634,10 @@
     function handleWindowBlur() {
         isMouseDownOnInput = false;
         mouseDownPos = null;
+        if (newStepText.trim() || newStepImages.length > 0) {
+            commitDraftStep();
+        }
+        flushSaveSync();
     }
 
     function shouldIgnoreContainerClick(e: MouseEvent): boolean {
@@ -759,6 +784,7 @@
         window.addEventListener("mousedown", handleGlobalMouseDown, true);
         window.addEventListener("mouseup", handleGlobalMouseUp, true);
         window.addEventListener("blur", handleWindowBlur);
+        window.addEventListener("beforeunload", handleBeforeUnload);
         EventBus.on(EventName.TASK_UPDATED, handleExternalTaskUpdate);
 
         return () => {
@@ -770,6 +796,7 @@
             window.removeEventListener("mousedown", handleGlobalMouseDown, true);
             window.removeEventListener("mouseup", handleGlobalMouseUp, true);
             window.removeEventListener("blur", handleWindowBlur);
+            window.removeEventListener("beforeunload", handleBeforeUnload);
             if (globalMouseUpTimeout) {
                 clearTimeout(globalMouseUpTimeout);
                 globalMouseUpTimeout = null;
@@ -779,7 +806,14 @@
         };
     });
 
+    function handleBeforeUnload() {
+        commitDraftStep();
+        flushSaveSync();
+    }
+
     onDestroy(() => {
+        commitDraftStep();
+        flushSaveSync();
         if (newStepImages.length > 0 && actualApp && dataService) {
             const draftImages = [...newStepImages];
             newStepImages = [];
@@ -788,11 +822,11 @@
         window.removeEventListener("mousedown", handleGlobalMouseDown, true);
         window.removeEventListener("mouseup", handleGlobalMouseUp, true);
         window.removeEventListener("blur", handleWindowBlur);
+        window.removeEventListener("beforeunload", handleBeforeUnload);
         if (globalMouseUpTimeout) {
             clearTimeout(globalMouseUpTimeout);
             globalMouseUpTimeout = null;
         }
-        flushSaveSync();
     });
 </script>
 
@@ -1071,6 +1105,7 @@
                     bind:this={addInputEl}
                     on:focus={() => { focusedStepId = "__new__"; }}
                     on:keydown={handleAddInputKeydown}
+                    on:blur={handleStepInputBlur}
                 />
                 <button
                     type="button"

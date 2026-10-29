@@ -343,9 +343,16 @@
         }, 0);
     }
 
+    function handleBeforeUnload() {
+        commitDraftStep();
+        void flushSaveSync();
+    }
+
     function handleWindowBlur() {
         isMouseDownOnInput = false;
         mouseDownPos = null;
+        commitDraftStep();
+        void flushSaveSync();
     }
 
     function shouldIgnoreContainerClick(e: MouseEvent): boolean {
@@ -371,9 +378,12 @@
         window.addEventListener("mousedown", handleGlobalMouseDown, true);
         window.addEventListener("mouseup", handleGlobalMouseUp, true);
         window.addEventListener("blur", handleWindowBlur);
+        window.addEventListener("beforeunload", handleBeforeUnload);
     });
 
     onDestroy(() => {
+        commitDraftStep();
+        void flushSaveSync();
         if (newStepImages.length > 0 && actualApp && dataService) {
             const draftImages = [...newStepImages];
             newStepImages = [];
@@ -388,19 +398,19 @@
         window.removeEventListener("mousedown", handleGlobalMouseDown, true);
         window.removeEventListener("mouseup", handleGlobalMouseUp, true);
         window.removeEventListener("blur", handleWindowBlur);
+        window.removeEventListener("beforeunload", handleBeforeUnload);
         if (globalMouseUpTimeout) {
             clearTimeout(globalMouseUpTimeout);
             globalMouseUpTimeout = null;
-        }
-        if (saveTimeout) {
-            clearTimeout(saveTimeout);
-            saveTimeout = null;
-            void immediateSave();
         }
     });
 
     // Called from main.ts when the view is opened directly
     export function loadTask(t: TaskItem, filepath: string) {
+        if (task && (newStepText.trim() || saveTimeout)) {
+            commitDraftStep();
+            void flushSaveSync();
+        }
         task = { ...t, steps: ensureStepIds(t.id, t.steps ? t.steps.map(s => ({ ...s })) : []) };
         categoryFilepath = filepath;
         showScheduleSection = false;
@@ -466,8 +476,8 @@
         return true;
     }
 
-    function handleClose() {
-        if (newStepImages.length > 0 && actualApp && dataService) {
+    async function handleClose() {
+        if (!commitDraftStep() && newStepImages.length > 0 && actualApp && dataService) {
             const draftImages = [...newStepImages];
             newStepImages = [];
             void cleanupOrphanImages(draftImages, actualApp, dataService);
@@ -476,11 +486,7 @@
             void checkAndDeleteEmptyTask();
             return;
         }
-        if (saveTimeout) {
-            clearTimeout(saveTimeout);
-            saveTimeout = null;
-            void immediateSave();
-        }
+        await flushSaveSync();
         task = null;
         categoryFilepath = "";
         showScheduleSection = false;
@@ -680,22 +686,40 @@
         await immediateSave();
     }
 
-    async function immediateSave() {
-        if (saveTimeout) clearTimeout(saveTimeout);
-        if (!task || !categoryFilepath || isDraggingSteps) return;
+    export async function flushSaveSync(): Promise<void> {
+        if (isDraggingSteps) return;
+        commitDraftStep();
+        if (showAddMetaModal && isMetaDirty()) {
+            await saveMetadata();
+        }
+        if (saveTimeout) {
+            clearTimeout(saveTimeout);
+            saveTimeout = null;
+        }
+        if (!task || !categoryFilepath) return;
         if (isTaskEmpty(task)) {
             await checkAndDeleteEmptyTask();
             return;
         }
         task.steps = persistableSteps(task.steps);
-        if (task.task_note && plugin?.app) {
-            const syncRes = await LinkedNoteService.syncTaskTitleToNote(plugin.app, task, categoryFilepath, dataService);
-            if (syncRes.noteRenamed && syncRes.newTaskNote) {
-                task.task_note = syncRes.newTaskNote;
+        const taskToSave = task;
+        const pathToSave = categoryFilepath;
+        if (taskToSave.task_note && plugin?.app) {
+            try {
+                const syncRes = await LinkedNoteService.syncTaskTitleToNote(plugin.app, taskToSave, pathToSave, dataService);
+                if (syncRes.noteRenamed && syncRes.newTaskNote) {
+                    taskToSave.task_note = syncRes.newTaskNote;
+                }
+            } catch (err) {
+                console.warn("[FluentTasks] Note sync failed during flushSaveSync:", err);
             }
         }
-        await dataService.updateTask(categoryFilepath, task);
-        EventBus.emit(EventName.TASK_UPDATED, { task, categoryFilepath });
+        await dataService.updateTask(pathToSave, taskToSave);
+        EventBus.emit(EventName.TASK_UPDATED, { task: taskToSave, categoryFilepath: pathToSave });
+    }
+
+    async function immediateSave() {
+        await flushSaveSync();
     }
 
     // =============================================
@@ -892,7 +916,7 @@
                 return;
             }
         }
-        scheduleSave();
+        void flushSaveSync();
     }
 
     async function removeNewStepImage(imageRef: string) {
@@ -1023,9 +1047,9 @@
     // =============================================
     // Step Actions
     // =============================================
-    function addStep() {
+    function commitDraftStep(): boolean {
         const text = newStepText.trim();
-        if ((!text && newStepImages.length === 0) || !task) return;
+        if ((!text && newStepImages.length === 0) || !task) return false;
         const newStep: TaskStep = {
             id: `${task.id}-step-${Date.now()}-${task.steps.length}`,
             text,
@@ -1036,9 +1060,34 @@
         newStepText = "";
         newStepImages = [];
         task = task;
-        void Logger.log(`[DND Detail] Added step: taskId=${task.id}, stepId=${newStep.id}, text="${newStep.text}", images=${newStep.images?.length || 0}, totalSteps=${task.steps.length}`);
-        console.log(`[FluentTasks] Added step: taskId=${task.id}, stepId=${newStep.id}, total=${task.steps.length}`);
-        scheduleSave();
+        void Logger.log(`[DND Detail] Committed draft step: taskId=${task.id}, stepId=${newStep.id}, text="${newStep.text}", totalSteps=${task.steps.length}`);
+        return true;
+    }
+
+    function addStep() {
+        if (commitDraftStep()) {
+            scheduleSave();
+        }
+    }
+
+    function handleStepInput() {
+        if (newStepText.trim()) {
+            scheduleSave();
+        }
+    }
+
+    function handleStepPaste() {
+        setTimeout(() => {
+            if (newStepText.trim()) {
+                scheduleSave();
+            }
+        }, 0);
+    }
+
+    function handleStepInputBlur() {
+        if (commitDraftStep()) {
+            void flushSaveSync();
+        }
     }
 
     function handleStepKeydown(e: KeyboardEvent) {
@@ -1046,6 +1095,10 @@
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
             addStep();
+        } else if (e.key === "Escape") {
+            if (commitDraftStep()) {
+                void flushSaveSync();
+            }
         }
     }
 
@@ -1146,16 +1199,13 @@
     // =============================================
     // Footer Actions
     // =============================================
-    function closePanel() {
+    async function closePanel() {
+        commitDraftStep();
         if (task && isTaskEmpty(task)) {
             void checkAndDeleteEmptyTask();
             return;
         }
-        if (saveTimeout) {
-            clearTimeout(saveTimeout);
-            saveTimeout = null;
-            void immediateSave();
-        }
+        await flushSaveSync();
         task = null;
         categoryFilepath = "";
         showScheduleSection = false;
@@ -1908,6 +1958,8 @@
                                                 }
                                                 e.preventDefault();
                                                 e.currentTarget.blur();
+                                            } else if (e.key === "Escape") {
+                                                void flushSaveSync();
                                             }
                                         }}
                                         placeholder="Step text"
@@ -1963,6 +2015,9 @@
                             placeholder="Add step (Press Enter to add, Shift+Enter for newline, Ctrl+V to paste image)"
                             bind:value={newStepText}
                             on:focus={() => { focusedTarget = { type: 'newStep' }; }}
+                            on:input={handleStepInput}
+                            on:paste={handleStepPaste}
+                            on:blur={handleStepInputBlur}
                             on:keydown={handleStepKeydown}
                         />
                     </div>
@@ -2001,6 +2056,7 @@
                 bind:value={task.note}
                 on:focus={() => { focusedTarget = { type: 'note' }; }}
                 on:input={handleNoteInput}
+                on:blur={() => void flushSaveSync()}
             ></textarea>
         </div>
 

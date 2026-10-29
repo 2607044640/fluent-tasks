@@ -6,7 +6,7 @@
   "autoExpandSidebarOnDrag": true,
   "autoExpandSidebar": true,
   "autoCollapseSidebarOnSwitch": true,
-  "searchHideCompleted": false,
+  "searchHideCompleted": true,
   "hideRibbonIcon": true,
   "wrapTaskTitles": true,
   "centerAlignTasks": true,
@@ -22,7 +22,7 @@
   "quickListFocusCenter": false,
   "defaultQuickListFocusFilepath": "TodoData/Loopferno.md",
   "dailyBackupEnabled": true,
-  "lastDailyBackupDate": "2026-10-29",
+  "lastDailyBackupDate": "2026-10-30",
   "undoDurationSeconds": 2.5,
   "enableTaskWeightMode": true,
   "quickListSearchMode": "task",
@@ -30,6 +30,9 @@
   "enableFocusedLists": true,
   "focusedLists": [
     "TodoData/工作心流.md",
-    "TodoData/底层.md"
+    "TodoData/底层.md",
+    "TodoData/Loopferno_已验证规则.md",
+    "TodoData/Loopferno_待验证机制.md",
+    "TodoData/Loopferno_待拍板决策.md"
   ]
 }
