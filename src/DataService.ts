@@ -6,6 +6,7 @@ import { TaskService } from "./services/TaskService";
 import { LinkedNoteService } from "./services/LinkedNoteService";
 import { getFlatCategories } from "./utils/sidebarTreeUtils";
 import { getAllImagesInTask, cleanupOrphanImages, isSameImageRef } from "./utils/imageAttachmentUtils";
+import type { HistoryService } from "./services/HistoryService";
 
 /**
  * DataService.ts
@@ -16,12 +17,17 @@ export class DataService {
     private io: AtomicIOPipeline;
     private categorySvc: CategoryService;
     private taskSvc: TaskService;
+    private historySvc?: HistoryService;
 
     constructor(app: App) {
         this.app = app;
         this.io = new AtomicIOPipeline(app);
         this.categorySvc = new CategoryService(app, this.io);
         this.taskSvc = new TaskService(this.io);
+    }
+
+    public setHistoryService(historySvc: HistoryService): void {
+        this.historySvc = historySvc;
     }
 
     public getApp(): App {
@@ -202,20 +208,29 @@ export class DataService {
     }
 
     async addTask(categoryFilepath: string, title: string): Promise<TaskItem> {
+        let createdTask: TaskItem;
+        let targetPath = categoryFilepath;
         if (categoryFilepath === STARRED_CATEGORY_PATH) {
             const categories = await this.getCategories();
             if (categories.length === 0) {
                 throw new Error("No category available to add task");
             }
             const targetCat = categories[0];
+            targetPath = targetCat.filepath;
             const newTask = await this.taskSvc.addTask(targetCat.filepath, title);
             newTask.starred = true;
             newTask.sourceFilepath = targetCat.filepath;
             newTask.sourceCategoryName = targetCat.name;
             await this.taskSvc.updateTask(targetCat.filepath, newTask);
-            return newTask;
+            createdTask = newTask;
+        } else {
+            createdTask = await this.taskSvc.addTask(categoryFilepath, title);
         }
-        return this.taskSvc.addTask(categoryFilepath, title);
+
+        if (this.historySvc && !this.historySvc.isUndoingOrRedoing) {
+            this.historySvc.recordTaskCreated(targetPath, createdTask);
+        }
+        return createdTask;
     }
 
     async updateTask(categoryFilepath: string, updatedTask: TaskItem): Promise<void> {
@@ -227,12 +242,15 @@ export class DataService {
             throw new Error(`Failed to locate source category for task ${updatedTask.id}`);
         }
 
-        // Detect any removed images from this specific task before update
+        // Detect any removed images from this specific task before update and record history
         let removedImages: string[] = [];
         try {
             const existingTasks = await this.taskSvc.getTasks(effectiveFilepath);
             const oldTask = existingTasks.find(t => t.id === updatedTask.id);
             if (oldTask) {
+                if (this.historySvc && !this.historySvc.isUndoingOrRedoing) {
+                    this.historySvc.recordTaskUpdate(effectiveFilepath, oldTask, updatedTask);
+                }
                 const oldImgs = getAllImagesInTask(oldTask);
                 const newImgs = getAllImagesInTask(updatedTask);
                 removedImages = oldImgs.filter(oldImg => !newImgs.some(newImg => isSameImageRef(newImg, oldImg)));
@@ -254,22 +272,34 @@ export class DataService {
 
     async deleteTask(categoryFilepath: string, task: TaskItem): Promise<TrashedImageBackup[]> {
         const imagesToInspect = getAllImagesInTask(task);
-        if (categoryFilepath === STARRED_CATEGORY_PATH) {
-            const targetFile = task.sourceFilepath || await this.findCategoryForTaskId(task.id);
-            if (targetFile) {
-                await this.taskSvc.deleteTask(targetFile, task);
-                if (imagesToInspect.length > 0) {
-                    return cleanupOrphanImages(imagesToInspect, this.app, this, task.id);
-                }
-                return [];
-            }
+        const targetFile = categoryFilepath === STARRED_CATEGORY_PATH
+            ? (task.sourceFilepath || await this.findCategoryForTaskId(task.id) || categoryFilepath)
+            : categoryFilepath;
+
+        if (categoryFilepath === STARRED_CATEGORY_PATH && !targetFile) {
             throw new Error(`Failed to locate source category for task ${task.id}`);
         }
-        await this.taskSvc.deleteTask(categoryFilepath, task);
-        if (imagesToInspect.length > 0) {
-            return cleanupOrphanImages(imagesToInspect, this.app, this, task.id);
+
+        let taskIndex: number | undefined = undefined;
+        try {
+            const existingTasks = await this.taskSvc.getTasks(targetFile);
+            const foundIdx = existingTasks.findIndex(t => t.id === task.id);
+            if (foundIdx !== -1) taskIndex = foundIdx;
+        } catch (err) {
+            console.warn("[FluentTasks] Error checking task index before delete:", err);
         }
-        return [];
+
+        await this.taskSvc.deleteTask(targetFile, task);
+        let trashedImages: TrashedImageBackup[] = [];
+        if (imagesToInspect.length > 0) {
+            trashedImages = await cleanupOrphanImages(imagesToInspect, this.app, this, task.id);
+        }
+
+        if (this.historySvc && !this.historySvc.isUndoingOrRedoing) {
+            this.historySvc.recordTaskDeleted(targetFile, task, taskIndex, trashedImages);
+        }
+
+        return trashedImages;
     }
 
     async moveTask(task: TaskItem, sourceFilepath: string, targetFilepath: string): Promise<void> {
@@ -277,7 +307,11 @@ export class DataService {
             ? (task.sourceFilepath || await this.findCategoryForTaskId(task.id) || sourceFilepath)
             : sourceFilepath;
         await LinkedNoteService.handleTaskMove(this.app, this, task, actualSource, targetFilepath);
-        return this.taskSvc.moveTask(task, actualSource, targetFilepath);
+        await this.taskSvc.moveTask(task, actualSource, targetFilepath);
+
+        if (this.historySvc && !this.historySvc.isUndoingOrRedoing) {
+            this.historySvc.recordTaskMoved(actualSource, targetFilepath, task);
+        }
     }
 
     /** Deep search across tasks — matches title, steps text, and note content */

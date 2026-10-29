@@ -21,6 +21,8 @@ import TaskSidebarView from "./TaskSidebarView.svelte";
 import TaskMainView from "./TaskMainView.svelte";
 import TaskDetailView from "./TaskDetailView.svelte";
 import UndoToastContainer from "./UndoToastContainer.svelte";
+import HistoryToastContainer from "./components/HistoryToastContainer.svelte";
+import { HistoryService } from "./services/HistoryService";
 import { FluentTasksSettings, DEFAULT_SETTINGS, FluentTasksSettingTab } from "./settings";
 import { TaskSearchModal } from "./TaskSearchModal";
 import { QuickTaskModal } from "./modals/QuickTaskModal";
@@ -364,6 +366,9 @@ export default class FluentTasksPlugin extends Plugin implements ISidebarPluginH
     public sidebarCoordinator!: SidebarCoordinator;
     private undoContainerEl: HTMLElement | null = null;
     private undoToastComponent: UndoToastContainer | null = null;
+    public historyService!: HistoryService;
+    private historyToastContainerEl: HTMLElement | null = null;
+    private historyToastComponent: HistoryToastContainer | null = null;
 
     get isSidebarTemporarilyExpandedForDrag(): boolean {
         return this.sidebarCoordinator?.isSidebarTemporarilyExpandedForDrag ?? false;
@@ -453,6 +458,44 @@ export default class FluentTasksPlugin extends Plugin implements ISidebarPluginH
                 dataService: this.dataService,
             },
         });
+
+        // Initialize Action History Service (Undo / Redo) and top-right Toast container
+        this.historyService = new HistoryService(this.app, this.dataService, this);
+        this.dataService.setHistoryService(this.historyService);
+
+        this.historyToastContainerEl = document.body.createDiv({ cls: "fluent-tasks-history-root" });
+        this.historyToastComponent = new HistoryToastContainer({
+            target: this.historyToastContainerEl,
+        });
+        this.historyService.setToastComponent(this.historyToastComponent);
+
+        // Global capture-phase shortcut listener for Ctrl+Z and Ctrl+Y when focused on fluent-tasks
+        this.registerDomEvent(window, "keydown", (e: KeyboardEvent) => {
+            const isCtrlOrMeta = e.ctrlKey || e.metaKey;
+            if (!isCtrlOrMeta || e.altKey) return;
+
+            const isUndo = (e.key === "z" || e.key === "Z") && !e.shiftKey;
+            const isRedo = (e.key === "y" || e.key === "Y") || ((e.key === "z" || e.key === "Z") && e.shiftKey);
+
+            if (!isUndo && !isRedo) return;
+
+            if (!this.isFluentTasksFocused()) {
+                return;
+            }
+
+            if (this.isUserActivelyTyping()) {
+                return;
+            }
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (isUndo) {
+                void this.historyService.undo();
+            } else {
+                void this.historyService.redo();
+            }
+        }, true);
 
         // Ribbon icon (controlled by hideRibbonIcon setting)
         this.refreshRibbonIcon();
@@ -603,6 +646,26 @@ export default class FluentTasksPlugin extends Plugin implements ISidebarPluginH
                 }
                 return false;
             }
+        });
+
+        this.addCommand({
+            id: "undo-action",
+            name: "Undo last task action",
+            checkCallback: (checking: boolean) => {
+                if (checking) return this.isFluentTasksFocused();
+                void this.historyService?.undo();
+                return true;
+            },
+        });
+
+        this.addCommand({
+            id: "redo-action",
+            name: "Redo last task action",
+            checkCallback: (checking: boolean) => {
+                if (checking) return this.isFluentTasksFocused();
+                void this.historyService?.redo();
+                return true;
+            },
         });
 
         // FIX: All workspace/vault operations MUST wait until layout is ready.
@@ -912,6 +975,18 @@ export default class FluentTasksPlugin extends Plugin implements ISidebarPluginH
             this.undoContainerEl = null;
         }
 
+        if (this.historyToastComponent) {
+            this.historyToastComponent.$destroy();
+            this.historyToastComponent = null;
+        }
+        if (this.historyToastContainerEl) {
+            this.historyToastContainerEl.remove();
+            this.historyToastContainerEl = null;
+        }
+        if (this.historyService) {
+            this.historyService.destroy();
+        }
+
         if (this.ribbonIconEl) {
             this.ribbonIconEl.remove();
             this.ribbonIconEl = null;
@@ -1202,5 +1277,79 @@ export default class FluentTasksPlugin extends Plugin implements ISidebarPluginH
         }
 
         return leaf;
+    }
+
+    isFluentTasksFocused(): boolean {
+        const activeEl = document.activeElement;
+
+        // 1. If Obsidian core prompt, command palette, or settings is open and has focus, NOT fluent-tasks
+        if (activeEl?.closest(".prompt, .mod-settings")) {
+            return false;
+        }
+
+        // 2. Check if a fluent-tasks modal is currently active
+        const fluentModal = activeEl?.closest(
+            ".task-detail-floating-modal, .task-steps-floating-modal, .quick-list-modal, .quick-task-modal, .task-focused-lists-modal, .task-backup-modal, .fluent-tasks-lightbox"
+        );
+        if (fluentModal) {
+            return true;
+        }
+
+        // 3. If any standard modal is open, NOT fluent-tasks
+        if (activeEl?.closest(".modal")) {
+            return false;
+        }
+
+        // 4. Check if activeElement is explicitly in a Markdown editor or other note leaf
+        if (activeEl?.closest(".cm-editor, .markdown-source-view, .markdown-rendered")) {
+            return false;
+        }
+
+        // 5. Check if activeElement is explicitly inside a fluent-tasks view DOM container
+        if (activeEl?.closest(".sidebar-container, .main-container, .detail-container, .fluent-tasks-view, .has-fluent-tasks-header-title")) {
+            return true;
+        }
+
+        // 6. Check active leaf view type
+        const activeLeaf = this.app.workspace.activeLeaf;
+        if (!activeLeaf || !activeLeaf.view) {
+            return false;
+        }
+
+        const viewType = activeLeaf.view.getViewType();
+        const isOurLeaf = viewType === VIEW_TYPE_MAIN || viewType === VIEW_TYPE_SIDEBAR || viewType === VIEW_TYPE_DETAIL;
+        if (!isOurLeaf) {
+            return false;
+        }
+
+        // If activeLeaf is our leaf, make sure activeElement is not inside another leaf (e.g. split pane note)
+        if (activeEl && activeEl !== document.body) {
+            const otherLeaf = activeEl.closest(".workspace-leaf");
+            const ourLeafEl = (activeLeaf as any).containerEl as HTMLElement | undefined;
+            if (otherLeaf && ourLeafEl && otherLeaf !== ourLeafEl) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    isUserActivelyTyping(): boolean {
+        const el = document.activeElement;
+        if (!el) return false;
+        if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
+            if (el.type === "checkbox" || el.type === "radio" || el.type === "button" || el.type === "submit") {
+                return false;
+            }
+            // Allow native undo inside the input if there is text being edited
+            if (el.value.length > 0) {
+                return true;
+            }
+            return false;
+        }
+        if ((el as HTMLElement).isContentEditable) {
+            return true;
+        }
+        return false;
     }
 }

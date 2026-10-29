@@ -32,7 +32,7 @@ __export(main_exports, {
   default: () => FluentTasksPlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian27 = require("obsidian");
+var import_obsidian28 = require("obsidian");
 
 // src/types.ts
 var VIEW_TYPE_SIDEBAR = "fluent-tasks-sidebar";
@@ -3609,6 +3609,9 @@ var DataService = class {
     this.categorySvc = new CategoryService(app, this.io);
     this.taskSvc = new TaskService(this.io);
   }
+  setHistoryService(historySvc) {
+    this.historySvc = historySvc;
+  }
   getApp() {
     return this.app;
   }
@@ -3764,20 +3767,28 @@ var DataService = class {
     }
   }
   async addTask(categoryFilepath, title) {
+    let createdTask;
+    let targetPath = categoryFilepath;
     if (categoryFilepath === STARRED_CATEGORY_PATH) {
       const categories = await this.getCategories();
       if (categories.length === 0) {
         throw new Error("No category available to add task");
       }
       const targetCat = categories[0];
+      targetPath = targetCat.filepath;
       const newTask = await this.taskSvc.addTask(targetCat.filepath, title);
       newTask.starred = true;
       newTask.sourceFilepath = targetCat.filepath;
       newTask.sourceCategoryName = targetCat.name;
       await this.taskSvc.updateTask(targetCat.filepath, newTask);
-      return newTask;
+      createdTask = newTask;
+    } else {
+      createdTask = await this.taskSvc.addTask(categoryFilepath, title);
     }
-    return this.taskSvc.addTask(categoryFilepath, title);
+    if (this.historySvc && !this.historySvc.isUndoingOrRedoing) {
+      this.historySvc.recordTaskCreated(targetPath, createdTask);
+    }
+    return createdTask;
   }
   async updateTask(categoryFilepath, updatedTask) {
     const effectiveFilepath = categoryFilepath === STARRED_CATEGORY_PATH ? updatedTask.sourceFilepath || await this.findCategoryForTaskId(updatedTask.id) || categoryFilepath : categoryFilepath;
@@ -3789,6 +3800,9 @@ var DataService = class {
       const existingTasks = await this.taskSvc.getTasks(effectiveFilepath);
       const oldTask = existingTasks.find((t2) => t2.id === updatedTask.id);
       if (oldTask) {
+        if (this.historySvc && !this.historySvc.isUndoingOrRedoing) {
+          this.historySvc.recordTaskUpdate(effectiveFilepath, oldTask, updatedTask);
+        }
         const oldImgs = getAllImagesInTask(oldTask);
         const newImgs = getAllImagesInTask(updatedTask);
         removedImages = oldImgs.filter((oldImg) => !newImgs.some((newImg) => isSameImageRef(newImg, oldImg)));
@@ -3807,27 +3821,36 @@ var DataService = class {
   }
   async deleteTask(categoryFilepath, task) {
     const imagesToInspect = getAllImagesInTask(task);
-    if (categoryFilepath === STARRED_CATEGORY_PATH) {
-      const targetFile = task.sourceFilepath || await this.findCategoryForTaskId(task.id);
-      if (targetFile) {
-        await this.taskSvc.deleteTask(targetFile, task);
-        if (imagesToInspect.length > 0) {
-          return cleanupOrphanImages(imagesToInspect, this.app, this, task.id);
-        }
-        return [];
-      }
+    const targetFile = categoryFilepath === STARRED_CATEGORY_PATH ? task.sourceFilepath || await this.findCategoryForTaskId(task.id) || categoryFilepath : categoryFilepath;
+    if (categoryFilepath === STARRED_CATEGORY_PATH && !targetFile) {
       throw new Error(`Failed to locate source category for task ${task.id}`);
     }
-    await this.taskSvc.deleteTask(categoryFilepath, task);
-    if (imagesToInspect.length > 0) {
-      return cleanupOrphanImages(imagesToInspect, this.app, this, task.id);
+    let taskIndex = void 0;
+    try {
+      const existingTasks = await this.taskSvc.getTasks(targetFile);
+      const foundIdx = existingTasks.findIndex((t2) => t2.id === task.id);
+      if (foundIdx !== -1)
+        taskIndex = foundIdx;
+    } catch (err) {
+      console.warn("[FluentTasks] Error checking task index before delete:", err);
     }
-    return [];
+    await this.taskSvc.deleteTask(targetFile, task);
+    let trashedImages = [];
+    if (imagesToInspect.length > 0) {
+      trashedImages = await cleanupOrphanImages(imagesToInspect, this.app, this, task.id);
+    }
+    if (this.historySvc && !this.historySvc.isUndoingOrRedoing) {
+      this.historySvc.recordTaskDeleted(targetFile, task, taskIndex, trashedImages);
+    }
+    return trashedImages;
   }
   async moveTask(task, sourceFilepath, targetFilepath) {
     const actualSource = sourceFilepath === STARRED_CATEGORY_PATH ? task.sourceFilepath || await this.findCategoryForTaskId(task.id) || sourceFilepath : sourceFilepath;
     await LinkedNoteService.handleTaskMove(this.app, this, task, actualSource, targetFilepath);
-    return this.taskSvc.moveTask(task, actualSource, targetFilepath);
+    await this.taskSvc.moveTask(task, actualSource, targetFilepath);
+    if (this.historySvc && !this.historySvc.isUndoingOrRedoing) {
+      this.historySvc.recordTaskMoved(actualSource, targetFilepath, task);
+    }
   }
   /** Deep search across tasks — matches title, steps text, and note content */
   async searchTasks(query, scopeFilepath) {
@@ -4514,7 +4537,7 @@ function fix_and_outro_and_destroy_block(block, lookup) {
   block.f();
   outro_and_destroy_block(block, lookup);
 }
-function update_keyed_each(old_blocks, dirty, get_key, dynamic, ctx, list, lookup, node, destroy, create_each_block10, next2, get_context) {
+function update_keyed_each(old_blocks, dirty, get_key, dynamic, ctx, list, lookup, node, destroy, create_each_block11, next2, get_context) {
   let o = old_blocks.length;
   let n = list.length;
   let i = o;
@@ -4531,7 +4554,7 @@ function update_keyed_each(old_blocks, dirty, get_key, dynamic, ctx, list, looku
     const key = get_key(child_ctx);
     let block = lookup.get(key);
     if (!block) {
-      block = create_each_block10(key, child_ctx);
+      block = create_each_block11(key, child_ctx);
       block.c();
     } else if (dynamic) {
       updates.push(() => block.p(child_ctx, dirty));
@@ -4653,7 +4676,7 @@ function make_dirty(component, i) {
   }
   component.$$.dirty[i / 31 | 0] |= 1 << i % 31;
 }
-function init(component, options, instance12, create_fragment12, not_equal, props, append_styles2 = null, dirty = [-1]) {
+function init(component, options, instance13, create_fragment13, not_equal, props, append_styles2 = null, dirty = [-1]) {
   const parent_component = current_component;
   set_current_component(component);
   const $$ = component.$$ = {
@@ -4679,7 +4702,7 @@ function init(component, options, instance12, create_fragment12, not_equal, prop
   };
   append_styles2 && append_styles2($$.root);
   let ready = false;
-  $$.ctx = instance12 ? instance12(component, options.props || {}, (i, ret, ...rest) => {
+  $$.ctx = instance13 ? instance13(component, options.props || {}, (i, ret, ...rest) => {
     const value = rest.length ? rest[0] : ret;
     if ($$.ctx && not_equal($$.ctx[i], $$.ctx[i] = value)) {
       if (!$$.skip_bound && $$.bound[i])
@@ -4692,7 +4715,7 @@ function init(component, options, instance12, create_fragment12, not_equal, prop
   $$.update();
   ready = true;
   run_all($$.before_update);
-  $$.fragment = create_fragment12 ? create_fragment12($$.ctx) : false;
+  $$.fragment = create_fragment13 ? create_fragment13($$.ctx) : false;
   if (options.target) {
     if (options.hydrate) {
       start_hydrating();
@@ -49612,8 +49635,745 @@ var UndoToastContainer = class extends SvelteComponent {
 };
 var UndoToastContainer_default = UndoToastContainer;
 
-// src/settings.ts
+// src/components/HistoryToastContainer.svelte
+function get_each_context9(ctx, list, i) {
+  const child_ctx = ctx.slice();
+  child_ctx[2] = list[i];
+  return child_ctx;
+}
+function create_if_block11(ctx) {
+  let div;
+  let each_blocks = [];
+  let each_1_lookup = /* @__PURE__ */ new Map();
+  let each_value = ensure_array_like(
+    /*toasts*/
+    ctx[0]
+  );
+  const get_key = (ctx2) => (
+    /*toast*/
+    ctx2[2].id
+  );
+  for (let i = 0; i < each_value.length; i += 1) {
+    let child_ctx = get_each_context9(ctx, each_value, i);
+    let key = get_key(child_ctx);
+    each_1_lookup.set(key, each_blocks[i] = create_each_block9(key, child_ctx));
+  }
+  return {
+    c() {
+      div = element("div");
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        each_blocks[i].c();
+      }
+      attr(div, "class", "fluent-tasks-history-container");
+      attr(div, "role", "status");
+      attr(div, "aria-live", "polite");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        if (each_blocks[i]) {
+          each_blocks[i].m(div, null);
+        }
+      }
+    },
+    p(ctx2, dirty) {
+      if (dirty & /*toasts*/
+      1) {
+        each_value = ensure_array_like(
+          /*toasts*/
+          ctx2[0]
+        );
+        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value, each_1_lookup, div, destroy_block, create_each_block9, null, get_each_context9);
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        each_blocks[i].d();
+      }
+    }
+  };
+}
+function create_else_block9(ctx) {
+  let svg;
+  let path0;
+  let path1;
+  return {
+    c() {
+      svg = svg_element("svg");
+      path0 = svg_element("path");
+      path1 = svg_element("path");
+      attr(path0, "d", "M21 7v6h-6");
+      attr(path1, "d", "M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13");
+      attr(svg, "width", "15");
+      attr(svg, "height", "15");
+      attr(svg, "viewBox", "0 0 24 24");
+      attr(svg, "fill", "none");
+      attr(svg, "stroke", "currentColor");
+      attr(svg, "stroke-width", "2.5");
+      attr(svg, "stroke-linecap", "round");
+      attr(svg, "stroke-linejoin", "round");
+    },
+    m(target, anchor) {
+      insert(target, svg, anchor);
+      append(svg, path0);
+      append(svg, path1);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(svg);
+      }
+    }
+  };
+}
+function create_if_block_116(ctx) {
+  let svg;
+  let path0;
+  let path1;
+  return {
+    c() {
+      svg = svg_element("svg");
+      path0 = svg_element("path");
+      path1 = svg_element("path");
+      attr(path0, "d", "M3 7v6h6");
+      attr(path1, "d", "M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13");
+      attr(svg, "width", "15");
+      attr(svg, "height", "15");
+      attr(svg, "viewBox", "0 0 24 24");
+      attr(svg, "fill", "none");
+      attr(svg, "stroke", "currentColor");
+      attr(svg, "stroke-width", "2.5");
+      attr(svg, "stroke-linecap", "round");
+      attr(svg, "stroke-linejoin", "round");
+    },
+    m(target, anchor) {
+      insert(target, svg, anchor);
+      append(svg, path0);
+      append(svg, path1);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(svg);
+      }
+    }
+  };
+}
+function create_each_block9(key_1, ctx) {
+  let div4;
+  let div0;
+  let t0;
+  let div3;
+  let div1;
+  let span;
+  let t1_value = (
+    /*toast*/
+    ctx[2].title + ""
+  );
+  let t1;
+  let t2;
+  let div2;
+  let t3_value = (
+    /*toast*/
+    ctx[2].message + ""
+  );
+  let t3;
+  let div2_title_value;
+  let t4;
+  function select_block_type(ctx2, dirty) {
+    if (
+      /*toast*/
+      ctx2[2].type === "undo"
+    )
+      return create_if_block_116;
+    return create_else_block9;
+  }
+  let current_block_type = select_block_type(ctx, -1);
+  let if_block = current_block_type(ctx);
+  return {
+    key: key_1,
+    first: null,
+    c() {
+      div4 = element("div");
+      div0 = element("div");
+      if_block.c();
+      t0 = space();
+      div3 = element("div");
+      div1 = element("div");
+      span = element("span");
+      t1 = text(t1_value);
+      t2 = space();
+      div2 = element("div");
+      t3 = text(t3_value);
+      t4 = space();
+      attr(div0, "class", "history-toast-icon-wrap");
+      attr(span, "class", "history-toast-type");
+      attr(div1, "class", "history-toast-header");
+      attr(div2, "class", "history-toast-message");
+      attr(div2, "title", div2_title_value = /*toast*/
+      ctx[2].message);
+      attr(div3, "class", "history-toast-content");
+      attr(div4, "class", "fluent-tasks-history-toast");
+      toggle_class(
+        div4,
+        "is-empty",
+        /*toast*/
+        ctx[2].isEmpty
+      );
+      toggle_class(
+        div4,
+        "is-redo",
+        /*toast*/
+        ctx[2].type === "redo"
+      );
+      this.first = div4;
+    },
+    m(target, anchor) {
+      insert(target, div4, anchor);
+      append(div4, div0);
+      if_block.m(div0, null);
+      append(div4, t0);
+      append(div4, div3);
+      append(div3, div1);
+      append(div1, span);
+      append(span, t1);
+      append(div3, t2);
+      append(div3, div2);
+      append(div2, t3);
+      append(div4, t4);
+    },
+    p(new_ctx, dirty) {
+      ctx = new_ctx;
+      if (current_block_type !== (current_block_type = select_block_type(ctx, dirty))) {
+        if_block.d(1);
+        if_block = current_block_type(ctx);
+        if (if_block) {
+          if_block.c();
+          if_block.m(div0, null);
+        }
+      }
+      if (dirty & /*toasts*/
+      1 && t1_value !== (t1_value = /*toast*/
+      ctx[2].title + ""))
+        set_data(t1, t1_value);
+      if (dirty & /*toasts*/
+      1 && t3_value !== (t3_value = /*toast*/
+      ctx[2].message + ""))
+        set_data(t3, t3_value);
+      if (dirty & /*toasts*/
+      1 && div2_title_value !== (div2_title_value = /*toast*/
+      ctx[2].message)) {
+        attr(div2, "title", div2_title_value);
+      }
+      if (dirty & /*toasts*/
+      1) {
+        toggle_class(
+          div4,
+          "is-empty",
+          /*toast*/
+          ctx[2].isEmpty
+        );
+      }
+      if (dirty & /*toasts*/
+      1) {
+        toggle_class(
+          div4,
+          "is-redo",
+          /*toast*/
+          ctx[2].type === "redo"
+        );
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div4);
+      }
+      if_block.d();
+    }
+  };
+}
+function create_fragment11(ctx) {
+  let if_block_anchor;
+  let if_block = (
+    /*toasts*/
+    ctx[0].length > 0 && create_if_block11(ctx)
+  );
+  return {
+    c() {
+      if (if_block)
+        if_block.c();
+      if_block_anchor = empty();
+    },
+    m(target, anchor) {
+      if (if_block)
+        if_block.m(target, anchor);
+      insert(target, if_block_anchor, anchor);
+    },
+    p(ctx2, [dirty]) {
+      if (
+        /*toasts*/
+        ctx2[0].length > 0
+      ) {
+        if (if_block) {
+          if_block.p(ctx2, dirty);
+        } else {
+          if_block = create_if_block11(ctx2);
+          if_block.c();
+          if_block.m(if_block_anchor.parentNode, if_block_anchor);
+        }
+      } else if (if_block) {
+        if_block.d(1);
+        if_block = null;
+      }
+    },
+    i: noop,
+    o: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(if_block_anchor);
+      }
+      if (if_block)
+        if_block.d(detaching);
+    }
+  };
+}
+function instance11($$self, $$props, $$invalidate) {
+  let toasts = [];
+  function showToast(params) {
+    const id = `ht-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const toast = {
+      id,
+      type: params.type,
+      title: params.title,
+      message: params.message,
+      isEmpty: params.isEmpty
+    };
+    $$invalidate(0, toasts = [...toasts.slice(-1), toast]);
+    setTimeout(
+      () => {
+        $$invalidate(0, toasts = toasts.filter((t2) => t2.id !== id));
+      },
+      2800
+    );
+  }
+  return [toasts, showToast];
+}
+var HistoryToastContainer = class extends SvelteComponent {
+  constructor(options) {
+    super();
+    init(this, options, instance11, create_fragment11, safe_not_equal, { showToast: 1 });
+  }
+  get showToast() {
+    return this.$$.ctx[1];
+  }
+};
+var HistoryToastContainer_default = HistoryToastContainer;
+
+// src/services/HistoryService.ts
 var import_obsidian21 = require("obsidian");
+function deepCloneTask(task) {
+  return JSON.parse(JSON.stringify(task));
+}
+function truncateText(str, maxLen) {
+  const clean = str.replace(/\s+/g, " ").trim();
+  return clean.length > maxLen ? clean.slice(0, maxLen) + "..." : clean;
+}
+var _HistoryService = class _HistoryService {
+  constructor(app, dataService, plugin) {
+    this.undoStack = [];
+    this.redoStack = [];
+    this.toastComponent = null;
+    this.isUndoingOrRedoing = false;
+    this.app = app;
+    this.dataService = dataService;
+    this.plugin = plugin;
+  }
+  setToastComponent(toastComp) {
+    this.toastComponent = toastComp;
+  }
+  detectField(before, after) {
+    var _a, _b, _c, _d, _e, _f, _g, _h;
+    if (((_a = before.weight) != null ? _a : 0) !== ((_b = after.weight) != null ? _b : 0)) {
+      return "weight";
+    }
+    const beforeWhys = before.whys && before.whys.length > 0 ? before.whys : before.why ? [before.why] : [];
+    const afterWhys = after.whys && after.whys.length > 0 ? after.whys : after.why ? [after.why] : [];
+    if (JSON.stringify(beforeWhys) !== JSON.stringify(afterWhys)) {
+      return "why";
+    }
+    if (before.title !== after.title) {
+      return "title";
+    }
+    if (((_c = before.completed) != null ? _c : false) !== ((_d = after.completed) != null ? _d : false)) {
+      return "completed";
+    }
+    if (((_e = before.starred) != null ? _e : false) !== ((_f = after.starred) != null ? _f : false)) {
+      return "starred";
+    }
+    if (((_g = before.note) != null ? _g : "") !== ((_h = after.note) != null ? _h : "")) {
+      return "note";
+    }
+    if (JSON.stringify(before.steps || []) !== JSON.stringify(after.steps || [])) {
+      return "steps";
+    }
+    if (before.dueDate !== after.dueDate || JSON.stringify(before.recurrence) !== JSON.stringify(after.recurrence)) {
+      return "schedule";
+    }
+    return "general";
+  }
+  generateDescriptions(before, after, field) {
+    var _a, _b;
+    const titleSnippet = truncateText(after.title || before.title || "Untitled", 26);
+    const oldTitleSnippet = truncateText(before.title || "Untitled", 26);
+    switch (field) {
+      case "weight": {
+        const oldW = getTaskWeight(before);
+        const newW = getTaskWeight(after);
+        return {
+          undo: `Reverted weight: ${newW} \u2192 ${oldW} on "${titleSnippet}"`,
+          redo: `Restored weight: ${oldW} \u2192 ${newW} on "${titleSnippet}"`
+        };
+      }
+      case "why": {
+        const afterWhys = after.whys && after.whys.length > 0 ? after.whys : after.why ? [after.why] : [];
+        const beforeWhys = before.whys && before.whys.length > 0 ? before.whys : before.why ? [before.why] : [];
+        if (afterWhys.length > beforeWhys.length) {
+          const addedWhy = truncateText(afterWhys[afterWhys.length - 1], 24);
+          return {
+            undo: `Removed why "${addedWhy}" on "${titleSnippet}"`,
+            redo: `Restored why "${addedWhy}" on "${titleSnippet}"`
+          };
+        } else if (afterWhys.length < beforeWhys.length) {
+          return {
+            undo: `Restored removed why rationale on "${titleSnippet}"`,
+            redo: `Removed why rationale on "${titleSnippet}"`
+          };
+        }
+        return {
+          undo: `Reverted why rationale on "${titleSnippet}"`,
+          redo: `Restored why rationale on "${titleSnippet}"`
+        };
+      }
+      case "title": {
+        return {
+          undo: `Reverted title to "${oldTitleSnippet}"`,
+          redo: `Restored title to "${titleSnippet}"`
+        };
+      }
+      case "completed": {
+        const isNowComp = (_a = after.completed) != null ? _a : false;
+        return {
+          undo: isNowComp ? `Marked "${titleSnippet}" as incomplete` : `Marked "${titleSnippet}" as completed`,
+          redo: isNowComp ? `Marked "${titleSnippet}" as completed` : `Marked "${titleSnippet}" as incomplete`
+        };
+      }
+      case "starred": {
+        const isNowStar = (_b = after.starred) != null ? _b : false;
+        return {
+          undo: isNowStar ? `Unstarred "${titleSnippet}"` : `Starred "${titleSnippet}"`,
+          redo: isNowStar ? `Starred "${titleSnippet}"` : `Unstarred "${titleSnippet}"`
+        };
+      }
+      case "note": {
+        return {
+          undo: `Reverted note on "${titleSnippet}"`,
+          redo: `Restored note on "${titleSnippet}"`
+        };
+      }
+      case "steps": {
+        const beforeSteps = before.steps || [];
+        const afterSteps = after.steps || [];
+        if (afterSteps.length > beforeSteps.length) {
+          const added = afterSteps[afterSteps.length - 1];
+          const stepText = (added == null ? void 0 : added.text) ? truncateText(added.text, 20) : "subtask";
+          return {
+            undo: `Deleted step "${stepText}" on "${titleSnippet}"`,
+            redo: `Restored step "${stepText}" on "${titleSnippet}"`
+          };
+        } else if (afterSteps.length < beforeSteps.length) {
+          const removed = beforeSteps.find((b) => !afterSteps.some((a) => a.id === b.id)) || beforeSteps[0];
+          const stepText = (removed == null ? void 0 : removed.text) ? truncateText(removed.text, 20) : "subtask";
+          return {
+            undo: `Restored deleted step "${stepText}" on "${titleSnippet}"`,
+            redo: `Deleted step "${stepText}" on "${titleSnippet}"`
+          };
+        }
+        return {
+          undo: `Reverted subtasks change on "${titleSnippet}"`,
+          redo: `Restored subtasks change on "${titleSnippet}"`
+        };
+      }
+      case "schedule": {
+        return {
+          undo: `Reverted schedule on "${titleSnippet}"`,
+          redo: `Restored schedule on "${titleSnippet}"`
+        };
+      }
+      default: {
+        return {
+          undo: `Reverted changes on "${titleSnippet}"`,
+          redo: `Restored changes on "${titleSnippet}"`
+        };
+      }
+    }
+  }
+  recordTaskUpdate(categoryFilepath, beforeTask, afterTask) {
+    if (this.isUndoingOrRedoing)
+      return;
+    const field = this.detectField(beforeTask, afterTask);
+    if (field === "general" && JSON.stringify(beforeTask) === JSON.stringify(afterTask)) {
+      return;
+    }
+    const now2 = Date.now();
+    const lastAction = this.undoStack[this.undoStack.length - 1];
+    if (lastAction && lastAction.type === "task_update" && lastAction.taskId === afterTask.id && lastAction.categoryFilepath === categoryFilepath && lastAction.field === field && now2 - lastAction.timestamp < _HistoryService.MERGE_WINDOW_MS) {
+      lastAction.afterTask = deepCloneTask(afterTask);
+      lastAction.timestamp = now2;
+      const descs2 = this.generateDescriptions(lastAction.beforeTask, lastAction.afterTask, field);
+      lastAction.descriptionUndo = descs2.undo;
+      lastAction.descriptionRedo = descs2.redo;
+      this.redoStack = [];
+      return;
+    }
+    const descs = this.generateDescriptions(beforeTask, afterTask, field);
+    const action = {
+      type: "task_update",
+      taskId: afterTask.id,
+      categoryFilepath,
+      beforeTask: deepCloneTask(beforeTask),
+      afterTask: deepCloneTask(afterTask),
+      field,
+      descriptionUndo: descs.undo,
+      descriptionRedo: descs.redo,
+      timestamp: now2
+    };
+    this.undoStack.push(action);
+    if (this.undoStack.length > _HistoryService.MAX_STACK_SIZE) {
+      this.undoStack.shift();
+    }
+    this.redoStack = [];
+  }
+  recordTaskCreated(categoryFilepath, task) {
+    if (this.isUndoingOrRedoing)
+      return;
+    const titleSnippet = truncateText(task.title || "Untitled", 26);
+    const action = {
+      type: "task_create",
+      taskId: task.id,
+      categoryFilepath,
+      task: deepCloneTask(task),
+      descriptionUndo: `Deleted created task "${titleSnippet}"`,
+      descriptionRedo: `Restored created task "${titleSnippet}"`,
+      timestamp: Date.now()
+    };
+    this.undoStack.push(action);
+    if (this.undoStack.length > _HistoryService.MAX_STACK_SIZE) {
+      this.undoStack.shift();
+    }
+    this.redoStack = [];
+  }
+  recordTaskDeleted(categoryFilepath, task, index, trashedImages) {
+    if (this.isUndoingOrRedoing)
+      return;
+    const titleSnippet = truncateText(task.title || "Untitled", 26);
+    const action = {
+      type: "task_delete",
+      taskId: task.id,
+      categoryFilepath,
+      task: deepCloneTask(task),
+      index,
+      trashedImages,
+      descriptionUndo: `Restored deleted task "${titleSnippet}"`,
+      descriptionRedo: `Deleted task "${titleSnippet}"`,
+      timestamp: Date.now()
+    };
+    this.undoStack.push(action);
+    if (this.undoStack.length > _HistoryService.MAX_STACK_SIZE) {
+      this.undoStack.shift();
+    }
+    this.redoStack = [];
+  }
+  recordTaskMoved(sourceFilepath, targetFilepath, task) {
+    var _a, _b;
+    if (this.isUndoingOrRedoing)
+      return;
+    const titleSnippet = truncateText(task.title || "Untitled", 26);
+    const sourceName = ((_a = sourceFilepath.split("/").pop()) == null ? void 0 : _a.replace(/\.md$/, "")) || "source";
+    const targetName = ((_b = targetFilepath.split("/").pop()) == null ? void 0 : _b.replace(/\.md$/, "")) || "target";
+    const action = {
+      type: "task_move",
+      taskId: task.id,
+      sourceFilepath,
+      targetFilepath,
+      task: deepCloneTask(task),
+      descriptionUndo: `Moved "${titleSnippet}" back to "${sourceName}"`,
+      descriptionRedo: `Moved "${titleSnippet}" to "${targetName}"`,
+      timestamp: Date.now()
+    };
+    this.undoStack.push(action);
+    if (this.undoStack.length > _HistoryService.MAX_STACK_SIZE) {
+      this.undoStack.shift();
+    }
+    this.redoStack = [];
+  }
+  async undo() {
+    var _a, _b;
+    if (this.undoStack.length === 0) {
+      (_a = this.toastComponent) == null ? void 0 : _a.showToast({
+        type: "undo",
+        title: "Undo",
+        message: "Nothing to undo",
+        isEmpty: true
+      });
+      return false;
+    }
+    const action = this.undoStack.pop();
+    this.isUndoingOrRedoing = true;
+    try {
+      if (action.type === "task_update") {
+        await this.dataService.updateTask(action.categoryFilepath, action.beforeTask);
+        EventBus.emit("task:updated" /* TASK_UPDATED */, {
+          task: action.beforeTask,
+          categoryFilepath: action.categoryFilepath,
+          isExternal: true
+        });
+      } else if (action.type === "task_create") {
+        await this.dataService.deleteTask(action.categoryFilepath, action.task);
+        EventBus.emit("task:deleted" /* TASK_DELETED */, {
+          task: action.task,
+          categoryFilepath: action.categoryFilepath
+        });
+      } else if (action.type === "task_delete") {
+        const currentTasks = await this.dataService.getTasks(action.categoryFilepath);
+        const existingIds = new Set(currentTasks.map((t2) => t2.id));
+        if (!existingIds.has(action.task.id)) {
+          const insertIdx = typeof action.index === "number" && action.index >= 0 ? action.index : 0;
+          currentTasks.splice(insertIdx, 0, action.task);
+          await this.dataService.saveTasks(action.categoryFilepath, currentTasks);
+          if (action.trashedImages && Array.isArray(action.trashedImages)) {
+            for (const img of action.trashedImages) {
+              try {
+                const exists = await this.app.vault.adapter.exists(img.path);
+                if (!exists && img.binary && img.binary.byteLength > 0) {
+                  const lastSlash = img.path.lastIndexOf("/");
+                  if (lastSlash > 0) {
+                    const parentDir = img.path.substring(0, lastSlash);
+                    if (!await this.app.vault.adapter.exists(parentDir)) {
+                      await this.app.vault.createFolder(parentDir).catch(() => {
+                      });
+                    }
+                  }
+                  await this.app.vault.createBinary(img.path, img.binary);
+                }
+              } catch (e) {
+                console.warn("[FluentTasks] Failed to restore image on undo:", e);
+              }
+            }
+          }
+          EventBus.emit("task:updated" /* TASK_UPDATED */, {
+            task: action.task,
+            categoryFilepath: action.categoryFilepath,
+            isExternal: true
+          });
+        }
+      } else if (action.type === "task_move") {
+        await this.dataService.moveTask(action.task, action.targetFilepath, action.sourceFilepath);
+        EventBus.emit("task:moved" /* TASK_MOVED */, {
+          task: action.task,
+          sourcePath: action.targetFilepath,
+          targetPath: action.sourceFilepath
+        });
+      }
+      this.redoStack.push(action);
+      (_b = this.toastComponent) == null ? void 0 : _b.showToast({
+        type: "undo",
+        title: "Undo",
+        message: action.descriptionUndo
+      });
+      return true;
+    } catch (err) {
+      console.error("[FluentTasks] Error executing undo:", err);
+      new import_obsidian21.Notice("Failed to undo action.");
+      return false;
+    } finally {
+      this.isUndoingOrRedoing = false;
+    }
+  }
+  async redo() {
+    var _a, _b;
+    if (this.redoStack.length === 0) {
+      (_a = this.toastComponent) == null ? void 0 : _a.showToast({
+        type: "redo",
+        title: "Redo",
+        message: "Nothing to redo",
+        isEmpty: true
+      });
+      return false;
+    }
+    const action = this.redoStack.pop();
+    this.isUndoingOrRedoing = true;
+    try {
+      if (action.type === "task_update") {
+        await this.dataService.updateTask(action.categoryFilepath, action.afterTask);
+        EventBus.emit("task:updated" /* TASK_UPDATED */, {
+          task: action.afterTask,
+          categoryFilepath: action.categoryFilepath,
+          isExternal: true
+        });
+      } else if (action.type === "task_create") {
+        const currentTasks = await this.dataService.getTasks(action.categoryFilepath);
+        const existingIds = new Set(currentTasks.map((t2) => t2.id));
+        if (!existingIds.has(action.task.id)) {
+          currentTasks.unshift(action.task);
+          await this.dataService.saveTasks(action.categoryFilepath, currentTasks);
+          EventBus.emit("task:updated" /* TASK_UPDATED */, {
+            task: action.task,
+            categoryFilepath: action.categoryFilepath,
+            isExternal: true
+          });
+        }
+      } else if (action.type === "task_delete") {
+        await this.dataService.deleteTask(action.categoryFilepath, action.task);
+        EventBus.emit("task:deleted" /* TASK_DELETED */, {
+          task: action.task,
+          categoryFilepath: action.categoryFilepath
+        });
+      } else if (action.type === "task_move") {
+        await this.dataService.moveTask(action.task, action.sourceFilepath, action.targetFilepath);
+        EventBus.emit("task:moved" /* TASK_MOVED */, {
+          task: action.task,
+          sourcePath: action.sourceFilepath,
+          targetPath: action.targetFilepath
+        });
+      }
+      this.undoStack.push(action);
+      (_b = this.toastComponent) == null ? void 0 : _b.showToast({
+        type: "redo",
+        title: "Redo",
+        message: action.descriptionRedo
+      });
+      return true;
+    } catch (err) {
+      console.error("[FluentTasks] Error executing redo:", err);
+      new import_obsidian21.Notice("Failed to redo action.");
+      return false;
+    } finally {
+      this.isUndoingOrRedoing = false;
+    }
+  }
+  destroy() {
+    this.undoStack = [];
+    this.redoStack = [];
+    this.toastComponent = null;
+  }
+};
+_HistoryService.MAX_STACK_SIZE = 60;
+_HistoryService.MERGE_WINDOW_MS = 2500;
+var HistoryService = _HistoryService;
+
+// src/settings.ts
+var import_obsidian22 = require("obsidian");
 var DEFAULT_SETTINGS = {
   accentColor: "#8b5cf6",
   openDetailInModal: false,
@@ -49648,7 +50408,7 @@ var DEFAULT_SETTINGS = {
   enableFocusedLists: false,
   focusedLists: []
 };
-var FluentTasksSettingTab = class extends import_obsidian21.PluginSettingTab {
+var FluentTasksSettingTab = class extends import_obsidian22.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
     this.plugin = plugin;
@@ -49656,7 +50416,7 @@ var FluentTasksSettingTab = class extends import_obsidian21.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    const colorSetting = new import_obsidian21.Setting(containerEl).setName("Accent Color").setDesc("Choose the primary accent color for the plugin (e.g., active borders, stars).").addColorPicker((color) => color.setValue(this.plugin.settings.accentColor).onChange(async (value) => {
+    const colorSetting = new import_obsidian22.Setting(containerEl).setName("Accent Color").setDesc("Choose the primary accent color for the plugin (e.g., active borders, stars).").addColorPicker((color) => color.setValue(this.plugin.settings.accentColor).onChange(async (value) => {
       this.plugin.settings.accentColor = value;
       await this.plugin.saveSettings();
       this.plugin.applySettings();
@@ -49670,7 +50430,7 @@ var FluentTasksSettingTab = class extends import_obsidian21.PluginSettingTab {
         this.plugin.applySettings();
       });
     }
-    new import_obsidian21.Setting(containerEl).setName("Open Task Details in Floating Modal").setDesc("Open task details in a centered floating modal instead of expanding the right sidebar panel.").addToggle((toggle) => {
+    new import_obsidian22.Setting(containerEl).setName("Open Task Details in Floating Modal").setDesc("Open task details in a centered floating modal instead of expanding the right sidebar panel.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.openDetailInModal) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.openDetailInModal = value;
@@ -49684,7 +50444,7 @@ var FluentTasksSettingTab = class extends import_obsidian21.PluginSettingTab {
         }
       });
     });
-    new import_obsidian21.Setting(containerEl).setName(t("setting_fullscreen_detail_modal_title") || "Full-Screen Task Details Modal").setDesc(t("setting_fullscreen_detail_modal_desc") || "Open floating task details modal in full-screen mode (similar to Subtasks modal). When disabled, displays as a centered window card.").addToggle((toggle) => {
+    new import_obsidian22.Setting(containerEl).setName(t("setting_fullscreen_detail_modal_title") || "Full-Screen Task Details Modal").setDesc(t("setting_fullscreen_detail_modal_desc") || "Open floating task details modal in full-screen mode (similar to Subtasks modal). When disabled, displays as a centered window card.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.fullscreenDetailModal) != null ? _a : true).onChange(async (value) => {
         this.plugin.settings.fullscreenDetailModal = value;
@@ -49694,7 +50454,7 @@ var FluentTasksSettingTab = class extends import_obsidian21.PluginSettingTab {
         }
       });
     });
-    new import_obsidian21.Setting(containerEl).setName(t("setting_hide_left_sidebar_title") || "Hide Left Sidebar (Floating UI Mode)").setDesc(t("setting_hide_left_sidebar_desc") || "Hide the left sidebar list view completely. Navigate lists using the Quick List Floating UI (modal). Recommended to bind a hotkey for quick access.").addToggle((toggle) => {
+    new import_obsidian22.Setting(containerEl).setName(t("setting_hide_left_sidebar_title") || "Hide Left Sidebar (Floating UI Mode)").setDesc(t("setting_hide_left_sidebar_desc") || "Hide the left sidebar list view completely. Navigate lists using the Quick List Floating UI (modal). Recommended to bind a hotkey for quick access.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.hideLeftSidebar) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.hideLeftSidebar = value;
@@ -49703,28 +50463,28 @@ var FluentTasksSettingTab = class extends import_obsidian21.PluginSettingTab {
         await this.plugin.handleHideLeftSidebarChanged(value);
       });
     });
-    new import_obsidian21.Setting(containerEl).setName(t("setting_auto_expand_sidebar_on_drag_title") || "Auto-Expand Left Sidebar on Task Drag").setDesc(t("setting_auto_expand_sidebar_on_drag_desc") || "Temporarily expand the left sidebar when dragging a task to easily move it to other lists, and auto-collapse on release (if it was collapsed). If the sidebar is already open with Fluent Tasks, it only reveals the list.").addToggle((toggle) => {
+    new import_obsidian22.Setting(containerEl).setName(t("setting_auto_expand_sidebar_on_drag_title") || "Auto-Expand Left Sidebar on Task Drag").setDesc(t("setting_auto_expand_sidebar_on_drag_desc") || "Temporarily expand the left sidebar when dragging a task to easily move it to other lists, and auto-collapse on release (if it was collapsed). If the sidebar is already open with Fluent Tasks, it only reveals the list.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.autoExpandSidebarOnDrag) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.autoExpandSidebarOnDrag = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian21.Setting(containerEl).setName("Wrap Task Titles").setDesc("Wrap long task titles across multiple lines in the task list instead of truncating with ellipsis.").addToggle((toggle) => {
+    new import_obsidian22.Setting(containerEl).setName("Wrap Task Titles").setDesc("Wrap long task titles across multiple lines in the task list instead of truncating with ellipsis.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.wrapTaskTitles) != null ? _a : true).onChange(async (value) => {
         this.plugin.settings.wrapTaskTitles = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian21.Setting(containerEl).setName("Center-Align Tasks").setDesc("Display task titles, steps, and metadata centered in the task list and modals. Enabled by default.").addToggle((toggle) => {
+    new import_obsidian22.Setting(containerEl).setName("Center-Align Tasks").setDesc("Display task titles, steps, and metadata centered in the task list and modals. Enabled by default.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.centerAlignTasks) != null ? _a : true).onChange(async (value) => {
         this.plugin.settings.centerAlignTasks = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian21.Setting(containerEl).setName("Hidden star mode").setDesc("Hide the star (favorite) icon on tasks in the task list and modals, while still allowing starring via task context menu (first item) or hover hotkey. Disabled by default.").addToggle((toggle) => {
+    new import_obsidian22.Setting(containerEl).setName("Hidden star mode").setDesc("Hide the star (favorite) icon on tasks in the task list and modals, while still allowing starring via task context menu (first item) or hover hotkey. Disabled by default.").addToggle((toggle) => {
       var _a, _b;
       return toggle.setValue((_b = (_a = this.plugin.settings.hiddenStarMode) != null ? _a : this.plugin.settings.disableStars) != null ? _b : false).onChange(async (value) => {
         this.plugin.settings.hiddenStarMode = value;
@@ -49732,120 +50492,120 @@ var FluentTasksSettingTab = class extends import_obsidian21.PluginSettingTab {
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian21.Setting(containerEl).setName("Show Subtasks Progress Badge").setDesc("Display step completion progress badge (e.g. 0/3 steps completed) at the bottom of the subtasks floating modal. Disabled by default.").addToggle((toggle) => {
+    new import_obsidian22.Setting(containerEl).setName("Show Subtasks Progress Badge").setDesc("Display step completion progress badge (e.g. 0/3 steps completed) at the bottom of the subtasks floating modal. Disabled by default.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.showStepsProgressPill) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.showStepsProgressPill = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian21.Setting(containerEl).setName("List Title Font Size").setDesc("Choose the font size of the active list title in the main view (default: Medium 22px).").addDropdown((dropdown) => {
+    new import_obsidian22.Setting(containerEl).setName("List Title Font Size").setDesc("Choose the font size of the active list title in the main view (default: Medium 22px).").addDropdown((dropdown) => {
       var _a;
       return dropdown.addOption("small", "Small (18px)").addOption("medium", "Medium (22px)").addOption("large", "Large (28px - Classic)").setValue((_a = this.plugin.settings.mainListTitleSize) != null ? _a : "medium").onChange(async (value) => {
         this.plugin.settings.mainListTitleSize = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian21.Setting(containerEl).setName("Show List Title in Top Header").setDesc("Display the active list title in the pane's top navigation bar (replacing 'Tasks') with accent color, hiding the large in-body title to maximize vertical reading space.").addToggle((toggle) => {
+    new import_obsidian22.Setting(containerEl).setName("Show List Title in Top Header").setDesc("Display the active list title in the pane's top navigation bar (replacing 'Tasks') with accent color, hiding the large in-body title to maximize vertical reading space.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.showListTitleInHeader) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.showListTitleInHeader = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian21.Setting(containerEl).setName(t("setting_focused_lists_title") || "Focused lists").setDesc(t("setting_focused_lists_desc") || "Display focused list shortcuts and a quick selector next to the list title in the header. Disabled by default.").addToggle((toggle) => {
+    new import_obsidian22.Setting(containerEl).setName(t("setting_focused_lists_title") || "Focused lists").setDesc(t("setting_focused_lists_desc") || "Display focused list shortcuts and a quick selector next to the list title in the header. Disabled by default.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.enableFocusedLists) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.enableFocusedLists = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian21.Setting(containerEl).setName("Quick Task Modal Action").setDesc("Choose whether selecting a task/list in the Quick Task Modal manages it directly in the popup or navigates and reveals it in the main workspace.").addDropdown((dropdown) => {
+    new import_obsidian22.Setting(containerEl).setName("Quick Task Modal Action").setDesc("Choose whether selecting a task/list in the Quick Task Modal manages it directly in the popup or navigates and reveals it in the main workspace.").addDropdown((dropdown) => {
       var _a;
       return dropdown.addOption("direct", "Direct In-Modal Management (Toggle & Add in popup)").addOption("navigate", "Navigate Workspace (Open list & details in workspace)").setValue((_a = this.plugin.settings.quickModalAction) != null ? _a : "direct").onChange(async (value) => {
         this.plugin.settings.quickModalAction = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian21.Setting(containerEl).setName("Quick List Modal: Grid Board Layout").setDesc("Tile lists and groups across multi-column cards like a dashboard chart to fully display lists in the available screen space without scrolling. Turn off to revert to the classic single-column list.").addToggle((toggle) => {
+    new import_obsidian22.Setting(containerEl).setName("Quick List Modal: Grid Board Layout").setDesc("Tile lists and groups across multi-column cards like a dashboard chart to fully display lists in the available screen space without scrolling. Turn off to revert to the classic single-column list.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.quickListGridLayout) != null ? _a : true).onChange(async (value) => {
         this.plugin.settings.quickListGridLayout = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian21.Setting(containerEl).setName("Quick List Modal: Min Column Gap").setDesc("Minimum horizontal gap (in px) between columns in the Quick List grid board layout (default: 16px).").addSlider((slider) => {
+    new import_obsidian22.Setting(containerEl).setName("Quick List Modal: Min Column Gap").setDesc("Minimum horizontal gap (in px) between columns in the Quick List grid board layout (default: 16px).").addSlider((slider) => {
       var _a;
       return slider.setLimits(10, 64, 2).setValue((_a = this.plugin.settings.quickListMinColGap) != null ? _a : 16).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.quickListMinColGap = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian21.Setting(containerEl).setName("Quick List Modal: Min Row Gap").setDesc("Minimum vertical gap (in px) between stacked cards within the same column (default: 12px).").addSlider((slider) => {
+    new import_obsidian22.Setting(containerEl).setName("Quick List Modal: Min Row Gap").setDesc("Minimum vertical gap (in px) between stacked cards within the same column (default: 12px).").addSlider((slider) => {
       var _a;
       return slider.setLimits(8, 48, 2).setValue((_a = this.plugin.settings.quickListMinRowGap) != null ? _a : 12).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.quickListMinRowGap = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian21.Setting(containerEl).setName("Quick List Modal: Max Card Width").setDesc("Maximum width (in px) for cards in the Quick List grid board layout. Prevents excessive horizontal empty space on large displays (default: 320px).").addSlider((slider) => {
+    new import_obsidian22.Setting(containerEl).setName("Quick List Modal: Max Card Width").setDesc("Maximum width (in px) for cards in the Quick List grid board layout. Prevents excessive horizontal empty space on large displays (default: 320px).").addSlider((slider) => {
       var _a;
       return slider.setLimits(220, 520, 10).setValue((_a = this.plugin.settings.quickListMaxCardWidth) != null ? _a : 320).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.quickListMaxCardWidth = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian21.Setting(containerEl).setName("Quick List Modal: Focus Center List on Open").setDesc("Automatically focus the visually centered list when opening the Quick List board instead of the top-left list, enabling immediate multi-directional arrow navigation.").addToggle((toggle) => {
+    new import_obsidian22.Setting(containerEl).setName("Quick List Modal: Focus Center List on Open").setDesc("Automatically focus the visually centered list when opening the Quick List board instead of the top-left list, enabling immediate multi-directional arrow navigation.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.quickListFocusCenter) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.quickListFocusCenter = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian21.Setting(containerEl).setName("Quick List Modal: Search Mode").setDesc("Choose whether the search bar in the Quick List modal searches lists or tasks by default.").addDropdown((dropdown) => {
+    new import_obsidian22.Setting(containerEl).setName("Quick List Modal: Search Mode").setDesc("Choose whether the search bar in the Quick List modal searches lists or tasks by default.").addDropdown((dropdown) => {
       var _a;
       return dropdown.addOption("list", "Search Lists").addOption("task", "Search Tasks").setValue((_a = this.plugin.settings.quickListSearchMode) != null ? _a : "list").onChange(async (value) => {
         this.plugin.settings.quickListSearchMode = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian21.Setting(containerEl).setName("Quick List Modal: Title Alignment").setDesc("Choose whether list and group titles in the Quick List modal are centered or aligned to the left.").addDropdown((dropdown) => {
+    new import_obsidian22.Setting(containerEl).setName("Quick List Modal: Title Alignment").setDesc("Choose whether list and group titles in the Quick List modal are centered or aligned to the left.").addDropdown((dropdown) => {
       var _a;
       return dropdown.addOption("center", "Center (Default)").addOption("left", "Left").setValue((_a = this.plugin.settings.quickListTitleAlignment) != null ? _a : "center").onChange(async (value) => {
         this.plugin.settings.quickListTitleAlignment = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian21.Setting(containerEl).setName("Auto-Expand Sidebar on Focus").setDesc("Automatically expand the left sidebar list panel when switching to Fluent Tasks tab (via Ctrl+Tab, Ctrl+Shift+Tab, or clicking the tab).").addToggle((toggle) => toggle.setValue(this.plugin.settings.autoExpandSidebar).onChange(async (value) => {
+    new import_obsidian22.Setting(containerEl).setName("Auto-Expand Sidebar on Focus").setDesc("Automatically expand the left sidebar list panel when switching to Fluent Tasks tab (via Ctrl+Tab, Ctrl+Shift+Tab, or clicking the tab).").addToggle((toggle) => toggle.setValue(this.plugin.settings.autoExpandSidebar).onChange(async (value) => {
       this.plugin.settings.autoExpandSidebar = value;
       await this.plugin.saveSettings();
     }));
-    new import_obsidian21.Setting(containerEl).setName("Auto-Collapse Sidebar on Tab Switch").setDesc("Automatically collapse the sidebar when switching away to other tabs (notes, settings) if the sidebar is currently displaying Fluent Tasks.").addToggle((toggle) => {
+    new import_obsidian22.Setting(containerEl).setName("Auto-Collapse Sidebar on Tab Switch").setDesc("Automatically collapse the sidebar when switching away to other tabs (notes, settings) if the sidebar is currently displaying Fluent Tasks.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.autoCollapseSidebarOnSwitch) != null ? _a : true).onChange(async (value) => {
         this.plugin.settings.autoCollapseSidebarOnSwitch = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian21.Setting(containerEl).setName("Search: Hide Completed Tasks").setDesc("When searching, hide completed tasks by default. Can also be toggled directly in the search modal.").addToggle((toggle) => toggle.setValue(this.plugin.settings.searchHideCompleted).onChange(async (value) => {
+    new import_obsidian22.Setting(containerEl).setName("Search: Hide Completed Tasks").setDesc("When searching, hide completed tasks by default. Can also be toggled directly in the search modal.").addToggle((toggle) => toggle.setValue(this.plugin.settings.searchHideCompleted).onChange(async (value) => {
       this.plugin.settings.searchHideCompleted = value;
       await this.plugin.saveSettings();
     }));
-    new import_obsidian21.Setting(containerEl).setName("Deletion undo duration").setDesc("Duration in seconds that the floating undo toast remains visible after deleting a task, step, or list (default: 2.5s).").addSlider((slider) => {
+    new import_obsidian22.Setting(containerEl).setName("Deletion undo duration").setDesc("Duration in seconds that the floating undo toast remains visible after deleting a task, step, or list (default: 2.5s).").addSlider((slider) => {
       var _a;
       return slider.setLimits(1, 10, 0.5).setValue((_a = this.plugin.settings.undoDurationSeconds) != null ? _a : 2.5).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.undoDurationSeconds = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian21.Setting(containerEl).setName("Task weight mode").setDesc("Enable 1-9 priority score ranking for tasks (9 is highest, default is 5). When enabled, tasks are dynamically prioritized by weight. Use mouse wheel or click the badge to edit the weight directly.").addToggle((toggle) => {
+    new import_obsidian22.Setting(containerEl).setName("Task weight mode").setDesc("Enable 1-9 priority score ranking for tasks (9 is highest, default is 5). When enabled, tasks are dynamically prioritized by weight. Use mouse wheel or click the badge to edit the weight directly.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.enableTaskWeightMode) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.enableTaskWeightMode = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian21.Setting(containerEl).setName("Hide Ribbon Icon").setDesc("Hide the Fluent Tasks icon in the left ribbon.").addToggle((toggle) => {
+    new import_obsidian22.Setting(containerEl).setName("Hide Ribbon Icon").setDesc("Hide the Fluent Tasks icon in the left ribbon.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.hideRibbonIcon) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.hideRibbonIcon = value;
@@ -49857,11 +50617,11 @@ var FluentTasksSettingTab = class extends import_obsidian21.PluginSettingTab {
 };
 
 // src/modals/QuickTaskModal.ts
-var import_obsidian23 = require("obsidian");
+var import_obsidian24 = require("obsidian");
 
 // src/modals/QuickTaskModalView.svelte
-var import_obsidian22 = require("obsidian");
-function get_each_context9(ctx, list, i) {
+var import_obsidian23 = require("obsidian");
+function get_each_context10(ctx, list, i) {
   const child_ctx = ctx.slice();
   child_ctx[178] = list[i];
   return child_ctx;
@@ -51807,7 +52567,7 @@ function create_if_block_316(ctx) {
       ctx2[7].length === 0
     )
       return create_if_block_415;
-    return create_else_block9;
+    return create_else_block10;
   }
   let current_block_type = select_block_type_7(ctx, [-1, -1, -1, -1, -1, -1, -1]);
   let if_block = current_block_type(ctx);
@@ -52818,7 +53578,7 @@ function create_if_block_125(ctx) {
     }
   };
 }
-function create_if_block_116(ctx) {
+function create_if_block_117(ctx) {
   let span;
   let mounted;
   let dispose;
@@ -53186,7 +53946,7 @@ function create_each_block_34(key_1, ctx) {
   );
   let if_block2 = (
     /*task*/
-    ctx[187].why && create_if_block_116(ctx)
+    ctx[187].why && create_if_block_117(ctx)
   );
   let each_value_4 = ensure_array_like(
     /*getQuickTaskNoteBadges*/
@@ -53383,7 +54143,7 @@ function create_each_block_34(key_1, ctx) {
         if (if_block2) {
           if_block2.p(ctx, dirty);
         } else {
-          if_block2 = create_if_block_116(ctx);
+          if_block2 = create_if_block_117(ctx);
           if_block2.c();
           if_block2.m(div, t5);
         }
@@ -53465,7 +54225,7 @@ function create_each_block_34(key_1, ctx) {
     }
   };
 }
-function create_else_block9(ctx) {
+function create_else_block10(ctx) {
   let div;
   let each_blocks = [];
   let each_1_lookup = /* @__PURE__ */ new Map();
@@ -54075,7 +54835,7 @@ function create_each_block_15(key_1, ctx) {
     }
   };
 }
-function create_if_block11(ctx) {
+function create_if_block12(ctx) {
   let div;
   let div_class_value;
   let mounted;
@@ -54086,7 +54846,7 @@ function create_if_block11(ctx) {
       ctx2[34] === "why" && /*popoverTask*/
       ctx2[33].why
     )
-      return create_if_block_117;
+      return create_if_block_118;
     if (
       /*popoverType*/
       ctx2[34] === "steps" && /*popoverTask*/
@@ -54240,7 +55000,7 @@ function create_if_block_216(ctx) {
   );
   let each_blocks = [];
   for (let i = 0; i < each_value.length; i += 1) {
-    each_blocks[i] = create_each_block9(get_each_context9(ctx, each_value, i));
+    each_blocks[i] = create_each_block10(get_each_context10(ctx, each_value, i));
   }
   return {
     c() {
@@ -54325,11 +55085,11 @@ function create_if_block_216(ctx) {
         );
         let i;
         for (i = 0; i < each_value.length; i += 1) {
-          const child_ctx = get_each_context9(ctx2, each_value, i);
+          const child_ctx = get_each_context10(ctx2, each_value, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block9(child_ctx);
+            each_blocks[i] = create_each_block10(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(div2, null);
           }
@@ -54350,7 +55110,7 @@ function create_if_block_216(ctx) {
     }
   };
 }
-function create_if_block_117(ctx) {
+function create_if_block_118(ctx) {
   let div1;
   let t2;
   let div2;
@@ -54390,7 +55150,7 @@ function create_if_block_117(ctx) {
     }
   };
 }
-function create_each_block9(ctx) {
+function create_each_block10(ctx) {
   let div;
   let span0;
   let t0_value = (
@@ -54464,7 +55224,7 @@ function create_each_block9(ctx) {
     }
   };
 }
-function create_fragment11(ctx) {
+function create_fragment12(ctx) {
   let div10;
   let t0;
   let div0;
@@ -54598,7 +55358,7 @@ function create_fragment11(ctx) {
   let if_block7 = (
     /*popoverVisible*/
     ctx[32] && /*popoverTask*/
-    ctx[33] && create_if_block11(ctx)
+    ctx[33] && create_if_block12(ctx)
   );
   return {
     c() {
@@ -54929,7 +55689,7 @@ function create_fragment11(ctx) {
         if (if_block7) {
           if_block7.p(ctx2, dirty);
         } else {
-          if_block7 = create_if_block11(ctx2);
+          if_block7 = create_if_block12(ctx2);
           if_block7.c();
           if_block7.m(if_block7_anchor.parentNode, if_block7_anchor);
         }
@@ -54981,7 +55741,7 @@ function handleTaskMouseLeave(task) {
 var func = (s) => s.done;
 var func_1 = (s) => s.done;
 var func_2 = (s) => s.done;
-function instance11($$self, $$props, $$invalidate) {
+function instance12($$self, $$props, $$invalidate) {
   var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j;
   let flatCategories;
   let allDisplayedTasks;
@@ -55316,7 +56076,7 @@ function instance11($$self, $$props, $$invalidate) {
             categoryFilepath: dragData.sourceFilepath
           });
           await refreshStarredCount();
-          new import_obsidian22.Notice(`Starred task: "${dragData.task.title}"`);
+          new import_obsidian23.Notice(`Starred task: "${dragData.task.title}"`);
           if ((selectedCategory == null ? void 0 : selectedCategory.filepath) === STARRED_CATEGORY_PATH) {
             await loadTasksForCategory(selectedCategory);
           }
@@ -55331,7 +56091,7 @@ function instance11($$self, $$props, $$invalidate) {
       });
       EventBus.emit("task:updated" /* TASK_UPDATED */, { categoryFilepath: targetCat.filepath });
       await loadData();
-      new import_obsidian22.Notice(`Moved task to "${targetCat.name}"`);
+      new import_obsidian23.Notice(`Moved task to "${targetCat.name}"`);
     } catch (e) {
       console.error("[QuickTaskModal] Failed to move task:", e);
     }
@@ -55342,7 +56102,7 @@ function instance11($$self, $$props, $$invalidate) {
     if (now2 - lastDragNoticeTime > 2500) {
       lastDragNoticeTime = now2;
       const message = isChinese() ? "\u5F53\u524D\u60AC\u6D6EUI\u4E0D\u652F\u6301\u62D6\u62FD\u5206\u7EC4\u3002\n\u539F\u56E0\uFF1A\u6392\u5217list\u4EE3\u7801\u672C\u8EAB\u8986\u76D6\u4E86\u62D6\u62FD\u64CD\u4F5C\uFF1B\u5982\u9700\u8C03\u6574\u5206\u7EC4\u987A\u5E8F\uFF0C\u8BF7\u5728\u5DE6\u4FA7\u8FB9\u680F\u64CD\u4F5C\u3002" : "Dragging groups is not supported in Quick View.\nReason: List arrangement code overrides drag operations; to adjust group order, please use the sidebar.";
-      new import_obsidian22.Notice(message, 5e3);
+      new import_obsidian23.Notice(message, 5e3);
     }
   }
   function handleListDragStart(e, item) {
@@ -55467,7 +56227,7 @@ function instance11($$self, $$props, $$invalidate) {
       return;
     e.preventDefault();
     e.stopPropagation();
-    const menu = new import_obsidian22.Menu();
+    const menu = new import_obsidian23.Menu();
     menu.addItem((i) => {
       i.setTitle("Rename (F2)").setIcon("edit").onClick(() => startRenameItem(item));
     });
@@ -55505,7 +56265,7 @@ function instance11($$self, $$props, $$invalidate) {
       await loadData();
       await selectCategory(newCat);
     } catch (e) {
-      new import_obsidian22.Notice(`Failed to create list: ${e}`);
+      new import_obsidian23.Notice(`Failed to create list: ${e}`);
     }
     $$invalidate(17, isAddingList = false);
     $$invalidate(18, newListName = "");
@@ -55531,7 +56291,7 @@ function instance11($$self, $$props, $$invalidate) {
       await dataService.createGroup(name);
       await loadData();
     } catch (e) {
-      new import_obsidian22.Notice(`Failed to create group: ${e}`);
+      new import_obsidian23.Notice(`Failed to create group: ${e}`);
     }
     $$invalidate(19, isAddingGroup = false);
     $$invalidate(20, newGroupName = "");
@@ -55579,7 +56339,7 @@ function instance11($$self, $$props, $$invalidate) {
       $$invalidate(5, completedTasks = [...completedTasks]);
     }
     await refreshStarredCount();
-    new import_obsidian22.Notice(taskItem.starred ? `Starred task: "${taskItem.title}"` : `Removed star from: "${taskItem.title}"`);
+    new import_obsidian23.Notice(taskItem.starred ? `Starred task: "${taskItem.title}"` : `Removed star from: "${taskItem.title}"`);
   }
   async function moveTaskToCategory(task, targetCat) {
     var _a2;
@@ -55602,13 +56362,13 @@ function instance11($$self, $$props, $$invalidate) {
     });
     await refreshTaskCounts();
     await refreshStarredCount();
-    new import_obsidian22.Notice(isChinese() ? `\u5DF2\u5C06\u4EFB\u52A1\u79FB\u52A8\u81F3 "${targetCat.name}"` : `Moved task to "${targetCat.name}"`);
+    new import_obsidian23.Notice(isChinese() ? `\u5DF2\u5C06\u4EFB\u52A1\u79FB\u52A8\u81F3 "${targetCat.name}"` : `Moved task to "${targetCat.name}"`);
   }
   function handleTaskContextMenu(e, task) {
     var _a2;
     e.preventDefault();
     e.stopPropagation();
-    const menu = new import_obsidian22.Menu();
+    const menu = new import_obsidian23.Menu();
     menu.addItem((item) => {
       item.setTitle(t("add_side_step") || "Add side step").setIcon("list-plus").onClick(() => {
         openStepsModal(task);
@@ -56396,8 +57156,8 @@ var QuickTaskModalView = class extends SvelteComponent {
     init(
       this,
       options,
-      instance11,
-      create_fragment11,
+      instance12,
+      create_fragment12,
       safe_not_equal,
       {
         plugin: 0,
@@ -56414,7 +57174,7 @@ var QuickTaskModalView = class extends SvelteComponent {
 var QuickTaskModalView_default = QuickTaskModalView;
 
 // src/modals/QuickTaskModal.ts
-var QuickTaskModal = class extends import_obsidian23.Modal {
+var QuickTaskModal = class extends import_obsidian24.Modal {
   constructor(app, plugin, dataService) {
     super(app);
     this.component = null;
@@ -56467,8 +57227,8 @@ var QuickTaskModal = class extends import_obsidian23.Modal {
 };
 
 // src/modals/QuickListModal.ts
-var import_obsidian24 = require("obsidian");
-var QuickListModal = class extends import_obsidian24.Modal {
+var import_obsidian25 = require("obsidian");
+var QuickListModal = class extends import_obsidian25.Modal {
   constructor(app, plugin, dataService) {
     super(app);
     this.component = null;
@@ -56513,8 +57273,8 @@ var QuickListModal = class extends import_obsidian24.Modal {
 };
 
 // src/modals/TaskDetailModal.ts
-var import_obsidian25 = require("obsidian");
-var TaskDetailModal = class extends import_obsidian25.Modal {
+var import_obsidian26 = require("obsidian");
+var TaskDetailModal = class extends import_obsidian26.Modal {
   constructor(app, plugin, dataService, task, categoryFilepath) {
     super(app);
     this.component = null;
@@ -56622,7 +57382,7 @@ var TaskDetailModal = class extends import_obsidian25.Modal {
 };
 
 // src/services/SidebarCoordinator.ts
-var import_obsidian26 = require("obsidian");
+var import_obsidian27 = require("obsidian");
 var SidebarCoordinator = class {
   constructor(host) {
     this.isUserClosingSidebar = false;
@@ -56643,7 +57403,7 @@ var SidebarCoordinator = class {
    */
   registerEventListeners(plugin) {
     var _a;
-    let lastActiveViewType = ((_a = this.host.app.workspace.getActiveViewOfType(import_obsidian26.ItemView)) == null ? void 0 : _a.getViewType()) || "";
+    let lastActiveViewType = ((_a = this.host.app.workspace.getActiveViewOfType(import_obsidian27.ItemView)) == null ? void 0 : _a.getViewType()) || "";
     plugin.registerEvent(
       this.host.app.workspace.on("active-leaf-change", (leaf) => {
         var _a2, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m;
@@ -56893,7 +57653,7 @@ var SidebarCoordinator = class {
    */
   isPluginPageActive() {
     var _a, _b;
-    const activeType = (_a = this.host.app.workspace.getActiveViewOfType(import_obsidian26.ItemView)) == null ? void 0 : _a.getViewType();
+    const activeType = (_a = this.host.app.workspace.getActiveViewOfType(import_obsidian27.ItemView)) == null ? void 0 : _a.getViewType();
     if (activeType === VIEW_TYPE_MAIN || activeType === VIEW_TYPE_SIDEBAR || activeType === VIEW_TYPE_DETAIL) {
       return true;
     }
@@ -56966,7 +57726,7 @@ var SidebarCoordinator = class {
         leftSplit.collapse();
       }
       if (!isQuickListHotkeyAssigned(this.host.app)) {
-        new import_obsidian26.Notice(t("warn_bind_hotkey_notice") || "\u26A0\uFE0F [Fluent Tasks] 'Hide Left Sidebar' is enabled, but no hotkey is bound for the Floating UI! Please assign a hotkey in Settings -> Hotkeys.", 8e3);
+        new import_obsidian27.Notice(t("warn_bind_hotkey_notice") || "\u26A0\uFE0F [Fluent Tasks] 'Hide Left Sidebar' is enabled, but no hotkey is bound for the Floating UI! Please assign a hotkey in Settings -> Hotkeys.", 8e3);
       }
     } else {
       await this.host.activateView(VIEW_TYPE_SIDEBAR, "left");
@@ -56993,13 +57753,13 @@ var SidebarCoordinator = class {
 };
 
 // src/main.ts
-var TaskSidebarViewWrapper = class extends import_obsidian27.ItemView {
+var TaskSidebarViewWrapper = class extends import_obsidian28.ItemView {
   constructor(leaf, dataService, plugin) {
     super(leaf);
     this.component = null;
     this.dataService = dataService;
     this.plugin = plugin;
-    this.scope = new import_obsidian27.Scope(this.app.scope);
+    this.scope = new import_obsidian28.Scope(this.app.scope);
     this.scope.register([], "F2", (evt) => {
       var _a;
       if ((_a = this.component) == null ? void 0 : _a.triggerRenameHoveredOrActive()) {
@@ -57044,7 +57804,7 @@ var TaskSidebarViewWrapper = class extends import_obsidian27.ItemView {
     return this.component;
   }
 };
-var TaskMainViewWrapper = class extends import_obsidian27.ItemView {
+var TaskMainViewWrapper = class extends import_obsidian28.ItemView {
   // Enables Obsidian Leaf Navigation & History tracking
   constructor(leaf, dataService, plugin) {
     super(leaf);
@@ -57053,7 +57813,7 @@ var TaskMainViewWrapper = class extends import_obsidian27.ItemView {
     this.navigation = true;
     this.dataService = dataService;
     this.plugin = plugin;
-    this.scope = new import_obsidian27.Scope(this.app.scope);
+    this.scope = new import_obsidian28.Scope(this.app.scope);
     this.scope.register(["Mod"], "f", (evt) => {
       var _a;
       if ((_a = this.component) == null ? void 0 : _a.openSearch) {
@@ -57147,7 +57907,7 @@ var TaskMainViewWrapper = class extends import_obsidian27.ItemView {
     await super.setState(state, result);
     if (state && state.categoryFilepath) {
       const file = this.app.vault.getAbstractFileByPath(state.categoryFilepath);
-      if (file && file instanceof import_obsidian27.TFile) {
+      if (file && file instanceof import_obsidian28.TFile) {
         const cat = {
           id: state.categoryFilepath,
           type: "category",
@@ -57182,7 +57942,7 @@ var TaskMainViewWrapper = class extends import_obsidian27.ItemView {
     const state = this.getState();
     if (state == null ? void 0 : state.categoryFilepath) {
       const file = this.app.vault.getAbstractFileByPath(state.categoryFilepath);
-      if (file && file instanceof import_obsidian27.TFile) {
+      if (file && file instanceof import_obsidian28.TFile) {
         const cat = {
           id: state.categoryFilepath,
           type: "category",
@@ -57222,13 +57982,13 @@ var TaskMainViewWrapper = class extends import_obsidian27.ItemView {
     const cat = (_a = this.component) == null ? void 0 : _a.getCurrentCategory();
     if (cat && cat.filepath) {
       const f = this.app.vault.getAbstractFileByPath(cat.filepath);
-      if (f instanceof import_obsidian27.TFile)
+      if (f instanceof import_obsidian28.TFile)
         return f;
     }
     return null;
   }
 };
-var TaskDetailViewWrapper = class extends import_obsidian27.ItemView {
+var TaskDetailViewWrapper = class extends import_obsidian28.ItemView {
   constructor(leaf, dataService, plugin) {
     super(leaf);
     this.component = null;
@@ -57262,7 +58022,7 @@ var TaskDetailViewWrapper = class extends import_obsidian27.ItemView {
     return this.component;
   }
 };
-var FluentTasksPlugin = class extends import_obsidian27.Plugin {
+var FluentTasksPlugin = class extends import_obsidian28.Plugin {
   constructor() {
     super(...arguments);
     this.ribbonIconEl = null;
@@ -57270,6 +58030,8 @@ var FluentTasksPlugin = class extends import_obsidian27.Plugin {
     this.activeDetailModal = null;
     this.undoContainerEl = null;
     this.undoToastComponent = null;
+    this.historyToastContainerEl = null;
+    this.historyToastComponent = null;
     this.isRollingOver = false;
     this.lastRolloverDate = "";
     this.registeredCategoryCommandIds = /* @__PURE__ */ new Set();
@@ -57346,6 +58108,35 @@ var FluentTasksPlugin = class extends import_obsidian27.Plugin {
         dataService: this.dataService
       }
     });
+    this.historyService = new HistoryService(this.app, this.dataService, this);
+    this.dataService.setHistoryService(this.historyService);
+    this.historyToastContainerEl = document.body.createDiv({ cls: "fluent-tasks-history-root" });
+    this.historyToastComponent = new HistoryToastContainer_default({
+      target: this.historyToastContainerEl
+    });
+    this.historyService.setToastComponent(this.historyToastComponent);
+    this.registerDomEvent(window, "keydown", (e) => {
+      const isCtrlOrMeta = e.ctrlKey || e.metaKey;
+      if (!isCtrlOrMeta || e.altKey)
+        return;
+      const isUndo = (e.key === "z" || e.key === "Z") && !e.shiftKey;
+      const isRedo = e.key === "y" || e.key === "Y" || (e.key === "z" || e.key === "Z") && e.shiftKey;
+      if (!isUndo && !isRedo)
+        return;
+      if (!this.isFluentTasksFocused()) {
+        return;
+      }
+      if (this.isUserActivelyTyping()) {
+        return;
+      }
+      e.preventDefault();
+      e.stopPropagation();
+      if (isUndo) {
+        void this.historyService.undo();
+      } else {
+        void this.historyService.redo();
+      }
+    }, true);
     this.refreshRibbonIcon();
     this.addCommand({
       id: "open-all-views",
@@ -57491,6 +58282,28 @@ var FluentTasksPlugin = class extends import_obsidian27.Plugin {
         return false;
       }
     });
+    this.addCommand({
+      id: "undo-action",
+      name: "Undo last task action",
+      checkCallback: (checking) => {
+        var _a;
+        if (checking)
+          return this.isFluentTasksFocused();
+        void ((_a = this.historyService) == null ? void 0 : _a.undo());
+        return true;
+      }
+    });
+    this.addCommand({
+      id: "redo-action",
+      name: "Redo last task action",
+      checkCallback: (checking) => {
+        var _a;
+        if (checking)
+          return this.isFluentTasksFocused();
+        void ((_a = this.historyService) == null ? void 0 : _a.redo());
+        return true;
+      }
+    });
     this.app.workspace.onLayoutReady(() => {
       void (async () => {
         await this.dataService.ensureDataFolder();
@@ -57519,7 +58332,7 @@ var FluentTasksPlugin = class extends import_obsidian27.Plugin {
         };
         this.registerEvent(
           this.app.vault.on("modify", (file) => {
-            if (!file || !(file instanceof import_obsidian27.TFile))
+            if (!file || !(file instanceof import_obsidian28.TFile))
               return;
             if (isCategoryFile(file.path)) {
               if (this.dataService.isInternalWrite(file.path)) {
@@ -57538,7 +58351,7 @@ var FluentTasksPlugin = class extends import_obsidian27.Plugin {
         );
         this.registerEvent(
           this.app.metadataCache.on("changed", (file) => {
-            if (file instanceof import_obsidian27.TFile && file.path.startsWith(DATA_FOLDER + "/") && file.extension === "md" && !isCategoryFile(file.path)) {
+            if (file instanceof import_obsidian28.TFile && file.path.startsWith(DATA_FOLDER + "/") && file.extension === "md" && !isCategoryFile(file.path)) {
               if (!this.dataService.isInternalWrite(file.path)) {
                 void LinkedNoteService.syncNotePropertyToTask(this.app, this.dataService, file);
               }
@@ -57563,7 +58376,7 @@ var FluentTasksPlugin = class extends import_obsidian27.Plugin {
                 file.path
               );
             }
-            if (file instanceof import_obsidian27.TFile && file.extension === "md") {
+            if (file instanceof import_obsidian28.TFile && file.extension === "md") {
               if (!LinkedNoteService.isInternalRename(oldPath, file.path)) {
                 void LinkedNoteService.syncNoteRenameToTasks(
                   this.app,
@@ -57749,6 +58562,17 @@ var FluentTasksPlugin = class extends import_obsidian27.Plugin {
     if (this.undoContainerEl) {
       this.undoContainerEl.remove();
       this.undoContainerEl = null;
+    }
+    if (this.historyToastComponent) {
+      this.historyToastComponent.$destroy();
+      this.historyToastComponent = null;
+    }
+    if (this.historyToastContainerEl) {
+      this.historyToastContainerEl.remove();
+      this.historyToastContainerEl = null;
+    }
+    if (this.historyService) {
+      this.historyService.destroy();
     }
     if (this.ribbonIconEl) {
       this.ribbonIconEl.remove();
@@ -57986,5 +58810,61 @@ var FluentTasksPlugin = class extends import_obsidian27.Plugin {
       void workspace.revealLeaf(leaf);
     }
     return leaf;
+  }
+  isFluentTasksFocused() {
+    const activeEl = document.activeElement;
+    if (activeEl == null ? void 0 : activeEl.closest(".prompt, .mod-settings")) {
+      return false;
+    }
+    const fluentModal = activeEl == null ? void 0 : activeEl.closest(
+      ".task-detail-floating-modal, .task-steps-floating-modal, .quick-list-modal, .quick-task-modal, .task-focused-lists-modal, .task-backup-modal, .fluent-tasks-lightbox"
+    );
+    if (fluentModal) {
+      return true;
+    }
+    if (activeEl == null ? void 0 : activeEl.closest(".modal")) {
+      return false;
+    }
+    if (activeEl == null ? void 0 : activeEl.closest(".cm-editor, .markdown-source-view, .markdown-rendered")) {
+      return false;
+    }
+    if (activeEl == null ? void 0 : activeEl.closest(".sidebar-container, .main-container, .detail-container, .fluent-tasks-view, .has-fluent-tasks-header-title")) {
+      return true;
+    }
+    const activeLeaf = this.app.workspace.activeLeaf;
+    if (!activeLeaf || !activeLeaf.view) {
+      return false;
+    }
+    const viewType = activeLeaf.view.getViewType();
+    const isOurLeaf = viewType === VIEW_TYPE_MAIN || viewType === VIEW_TYPE_SIDEBAR || viewType === VIEW_TYPE_DETAIL;
+    if (!isOurLeaf) {
+      return false;
+    }
+    if (activeEl && activeEl !== document.body) {
+      const otherLeaf = activeEl.closest(".workspace-leaf");
+      const ourLeafEl = activeLeaf.containerEl;
+      if (otherLeaf && ourLeafEl && otherLeaf !== ourLeafEl) {
+        return false;
+      }
+    }
+    return true;
+  }
+  isUserActivelyTyping() {
+    const el = document.activeElement;
+    if (!el)
+      return false;
+    if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
+      if (el.type === "checkbox" || el.type === "radio" || el.type === "button" || el.type === "submit") {
+        return false;
+      }
+      if (el.value.length > 0) {
+        return true;
+      }
+      return false;
+    }
+    if (el.isContentEditable) {
+      return true;
+    }
+    return false;
   }
 };

@@ -6896,6 +6896,102 @@ body .task-focused-lists-modal .modal-content {
     margin-bottom: 12px;
 }
 
+/* =============================================
+   Top-Right History Toast (Undo / Redo)
+   ============================================= */
+.fluent-tasks-history-container {
+    position: fixed;
+    top: 40px;
+    right: 26px;
+    z-index: 10000;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.fluent-tasks-history-toast {
+    pointer-events: auto;
+    background-color: var(--background-secondary, #202020);
+    border: 1px solid var(--todo-accent, var(--interactive-accent, #7057ff));
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 9px 14px;
+    min-width: 220px;
+    max-width: 380px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    animation: history-toast-slide-down 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.fluent-tasks-history-toast.is-empty {
+    border-color: var(--background-modifier-border, rgba(255, 255, 255, 0.15));
+    opacity: 0.85;
+}
+
+.history-toast-icon-wrap {
+    color: var(--todo-accent, var(--interactive-accent, #7057ff));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.fluent-tasks-history-toast.is-empty .history-toast-icon-wrap {
+    color: var(--text-muted);
+}
+
+.history-toast-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.history-toast-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.history-toast-type {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    color: var(--todo-accent, var(--interactive-accent, #7057ff));
+}
+
+.fluent-tasks-history-toast.is-empty .history-toast-type {
+    color: var(--text-muted);
+}
+
+.history-toast-message {
+    font-size: 13px;
+    line-height: 1.35;
+    color: var(--text-normal);
+    word-break: break-word;
+}
+
+@keyframes history-toast-slide-down {
+    from {
+        opacity: 0;
+        transform: translateY(-10px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+
 
 
 
