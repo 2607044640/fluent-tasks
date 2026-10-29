@@ -33,6 +33,8 @@ export interface FluentTasksSettings {
     showStepsProgressPill: boolean;
     enableFocusedLists: boolean;
     focusedLists: string[];
+    mainListTitleSize: 'small' | 'medium' | 'large';
+    showListTitleInHeader: boolean;
 }
 
 export const DEFAULT_SETTINGS: FluentTasksSettings = {
@@ -50,6 +52,8 @@ export const DEFAULT_SETTINGS: FluentTasksSettings = {
     disableStars: false,
     hiddenStarMode: false,
     showStepsProgressPill: false,
+    mainListTitleSize: 'medium',
+    showListTitleInHeader: false,
     quickModalAction: 'direct',
     quickModalTipCount: 0,
     quickListGridLayout: true,
@@ -195,6 +199,29 @@ export class FluentTasksSettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.showStepsProgressPill ?? false)
                 .onChange(async (value) => {
                     this.plugin.settings.showStepsProgressPill = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName("List Title Font Size")
+            .setDesc("Choose the font size of the active list title in the main view (default: Medium 22px).")
+            .addDropdown(dropdown => dropdown
+                .addOption("small", "Small (18px)")
+                .addOption("medium", "Medium (22px)")
+                .addOption("large", "Large (28px - Classic)")
+                .setValue(this.plugin.settings.mainListTitleSize ?? "medium")
+                .onChange(async (value: string) => {
+                    this.plugin.settings.mainListTitleSize = value as "small" | "medium" | "large";
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName("Show List Title in Top Header")
+            .setDesc("Display the active list title in the pane's top navigation bar (replacing 'Tasks') with accent color, hiding the large in-body title to maximize vertical reading space.")
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.showListTitleInHeader ?? false)
+                .onChange(async (value) => {
+                    this.plugin.settings.showListTitleInHeader = value;
                     await this.plugin.saveSettings();
                 }));
 

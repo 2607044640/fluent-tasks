@@ -13,6 +13,8 @@
   "disableStars": true,
   "hiddenStarMode": true,
   "showStepsProgressPill": false,
+  "mainListTitleSize": "medium",
+  "showListTitleInHeader": true,
   "quickModalAction": "direct",
   "quickModalTipCount": 0,
   "quickListGridLayout": true,

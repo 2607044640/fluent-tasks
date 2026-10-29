@@ -463,7 +463,7 @@
 
 .category-title {
     color: var(--todo-accent);
-    font-size: 28px;
+    font-size: 22px;
     font-weight: 600;
     margin: 0;
     cursor: pointer;
@@ -471,7 +471,7 @@
     padding: 2px 8px;
     margin-left: -8px;
     border: 1px solid transparent;
-    transition: background-color var(--todo-transition), border-color var(--todo-transition);
+    transition: background-color var(--todo-transition), border-color var(--todo-transition), font-size 0.15s ease;
     user-select: none;
     -webkit-user-select: none;
     display: inline-flex;
@@ -480,6 +480,16 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.category-title.size-small {
+    font-size: 18px;
+}
+.category-title.size-medium {
+    font-size: 22px;
+}
+.category-title.size-large {
+    font-size: 28px;
 }
 
 .category-title:hover {
@@ -496,7 +506,7 @@
 
 .category-title-input {
     color: var(--todo-accent);
-    font-size: 28px;
+    font-size: 22px;
     font-weight: 600;
     font-family: inherit;
     line-height: 1.2;
@@ -509,6 +519,17 @@
     width: 100%;
     min-width: 200px;
     box-shadow: 0 0 0 1px var(--interactive-accent, #0078d4);
+    transition: font-size 0.15s ease;
+}
+
+.category-title-input.size-small {
+    font-size: 18px;
+}
+.category-title-input.size-medium {
+    font-size: 22px;
+}
+.category-title-input.size-large {
+    font-size: 28px;
 }
 
 .header-actions {
@@ -537,13 +558,14 @@
 /* Add Task Input */
 .add-task-container {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     background-color: var(--todo-item-bg);
     border-radius: var(--todo-radius);
-    padding: 12px 15px;
-    margin-bottom: 20px;
+    padding: 5px 12px;
+    margin-bottom: 12px;
+    min-height: 28px;
     border: 1px solid var(--todo-border, var(--background-modifier-border, rgba(255, 255, 255, 0.06)));
-    transition: border-color var(--todo-transition), background-color var(--todo-transition);
+    transition: border-color var(--todo-transition), background-color var(--todo-transition), padding 0.15s ease, margin-bottom 0.15s ease, min-height 0.15s ease;
 }
 
 .add-task-container:hover {
@@ -551,27 +573,47 @@
     border-color: var(--background-modifier-border-hover, rgba(255, 255, 255, 0.12));
 }
 
-.add-task-container:focus-within {
+.add-task-container:focus-within,
+.add-task-container.is-editing {
+    align-items: flex-start;
+    padding: 12px 15px;
+    margin-bottom: 20px;
+    min-height: auto;
     background-color: var(--todo-hover-bg);
     border-color: var(--background-modifier-border-hover, rgba(255, 255, 255, 0.18));
 }
 
 .plus-icon {
     color: var(--todo-text-muted, var(--text-muted));
-    margin-right: 12px;
+    margin-right: 8px;
     display: flex;
     align-items: center;
-    margin-top: 2px;
+    margin-top: 0;
     flex-shrink: 0;
-    transition: color var(--todo-transition);
+    transition: color var(--todo-transition), margin 0.15s ease;
+}
+
+.plus-icon svg {
+    width: 13px;
+    height: 13px;
+    transition: width 0.15s ease, height 0.15s ease;
+}
+
+.add-task-container:focus-within .plus-icon,
+.add-task-container.is-editing .plus-icon {
+    margin-right: 12px;
+    margin-top: 2px;
+    color: var(--interactive-accent, var(--todo-accent));
+}
+
+.add-task-container:focus-within .plus-icon svg,
+.add-task-container.is-editing .plus-icon svg {
+    width: 16px;
+    height: 16px;
 }
 
 .add-task-container:hover .plus-icon {
     color: var(--todo-text-main, var(--text-normal));
-}
-
-.add-task-container:focus-within .plus-icon {
-    color: var(--interactive-accent, var(--todo-accent));
 }
 
 .add-task-input,
@@ -584,8 +626,9 @@
     outline: none !important;
     color: var(--todo-text-main, var(--text-normal)) !important;
     flex-grow: 1;
-    font-size: 14px;
-    line-height: 1.45;
+    font-size: 12px;
+    line-height: 1.3;
+    min-height: 18px;
     resize: none;
     overflow: hidden;
     white-space: pre-wrap;
@@ -595,24 +638,33 @@
     padding: 0;
     margin: 0;
     box-sizing: border-box;
+    transition: font-size 0.15s ease, line-height 0.15s ease;
+}
+
+.add-task-container:focus-within .add-task-input,
+.add-task-container.is-editing .add-task-input {
+    font-size: 14px;
+    line-height: 1.45;
 }
 
 .add-task-input::placeholder {
+    font-size: 12px;
     color: var(--todo-text-muted, var(--text-muted)) !important;
     opacity: 0.6;
-    transition: color var(--todo-transition), opacity var(--todo-transition);
+    transition: color var(--todo-transition), opacity var(--todo-transition), font-size 0.15s ease;
+}
+
+.add-task-container:focus-within .add-task-input::placeholder,
+.add-task-container.is-editing .add-task-input::placeholder {
+    font-size: 14px;
+    color: var(--interactive-accent, var(--todo-accent)) !important;
+    opacity: 0.9;
 }
 
 .add-task-container:hover .add-task-input::placeholder,
 .add-task-input:hover::placeholder {
     color: var(--todo-text-main, var(--text-normal)) !important;
     opacity: 0.85;
-}
-
-.add-task-container:focus-within .add-task-input::placeholder,
-.add-task-input:focus::placeholder {
-    color: var(--interactive-accent, var(--todo-accent)) !important;
-    opacity: 0.9;
 }
 
 /* Task List */
@@ -6819,6 +6871,27 @@ body .task-focused-lists-modal .modal-content {
     background: var(--background-modifier-hover);
     border-color: var(--text-muted);
 }
+
+/* Header List Title Mode */
+.has-fluent-tasks-header-title .view-header-title,
+.workspace-leaf:has(.main-container.has-header-title) .view-header-title {
+    color: var(--todo-accent, var(--interactive-accent, #7057ff)) !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.2px;
+    cursor: pointer;
+    transition: color var(--todo-transition), opacity var(--todo-transition);
+}
+
+.has-fluent-tasks-header-title .view-header-title:hover,
+.workspace-leaf:has(.main-container.has-header-title) .view-header-title:hover {
+    opacity: 0.85;
+}
+
+.main-container.has-header-title .main-header {
+    margin-bottom: 12px;
+}
+
 
 
 

@@ -13,7 +13,7 @@
  */
 
 import { Plugin, ItemView, WorkspaceLeaf, TFile, Scope, App, ViewStateResult, Notice } from "obsidian";
-import { VIEW_TYPE_SIDEBAR, VIEW_TYPE_MAIN, VIEW_TYPE_DETAIL, DATA_FOLDER, EventName, type CategoryInfo, type TaskItem } from "./types";
+import { VIEW_TYPE_SIDEBAR, VIEW_TYPE_MAIN, VIEW_TYPE_DETAIL, DATA_FOLDER, EventName, type CategoryInfo, type TaskItem, STARRED_CATEGORY_PATH } from "./types";
 import { EventBus } from "./EventBus";
 import { Logger } from "./Logger";
 import { DataService } from "./DataService";
@@ -169,7 +169,16 @@ class TaskMainViewWrapper extends ItemView {
     
     getDisplayText(): string {
         const cat = this.component?.getCurrentCategory();
-        return cat?.name ? cat.name : "Tasks";
+        if (this.plugin?.settings?.showListTitleInHeader && cat?.name) {
+            return cat.filepath === STARRED_CATEGORY_PATH ? `★ ${cat.name}` : cat.name;
+        }
+        return "Tasks";
+    }
+
+    updateHeaderStyle(): void {
+        const enabled = Boolean(this.plugin?.settings?.showListTitleInHeader);
+        const leafEl = (this.leaf as any).containerEl as HTMLElement | undefined;
+        leafEl?.toggleClass("has-fluent-tasks-header-title", enabled);
     }
 
     getIcon(): string { return "check-square"; }
@@ -206,6 +215,17 @@ class TaskMainViewWrapper extends ItemView {
     async onOpen(): Promise<void> {
         const container = this.containerEl.children[1] as HTMLElement;
         container.empty();
+
+        this.updateHeaderStyle();
+        const leafEl = (this.leaf as any).containerEl as HTMLElement | undefined;
+        const headerTitleEl = leafEl?.querySelector(".view-header-title");
+        if (headerTitleEl) {
+            this.registerDomEvent(headerTitleEl as HTMLElement, "click", () => {
+                if (this.plugin?.settings?.showListTitleInHeader) {
+                    this.component?.startRenameCategory?.();
+                }
+            });
+        }
 
         // Native capture-phase keydown listener on the main view container element
         this.containerEl.addEventListener("keydown", (evt: KeyboardEvent) => {
@@ -909,7 +929,9 @@ export default class FluentTasksPlugin extends Plugin implements ISidebarPluginH
         // Direct notification to all active main view leaves for instant reactivity
         const mainLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MAIN);
         for (const leaf of mainLeaves) {
+            (leaf as any).updateHeader?.();
             if (leaf.view instanceof TaskMainViewWrapper) {
+                leaf.view.updateHeaderStyle();
                 const comp = leaf.view.getComponent();
                 comp?.applySettingsUpdate?.(this.settings);
             }

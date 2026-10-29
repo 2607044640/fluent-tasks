@@ -62,6 +62,9 @@
     let selectedTaskId: string = "";
     let addTaskInputEl: HTMLTextAreaElement;
     let wrapTaskTitles: boolean = plugin?.settings?.wrapTaskTitles ?? true;
+    let mainListTitleSize: "small" | "medium" | "large" = plugin?.settings?.mainListTitleSize ?? "medium";
+    let showListTitleInHeader: boolean = plugin?.settings?.showListTitleInHeader ?? false;
+    let isAddTaskFocused: boolean = false;
     let enableTaskWeightMode: boolean = plugin?.settings?.enableTaskWeightMode ?? false;
     let centerAlignTasks: boolean = plugin?.settings?.centerAlignTasks ?? true;
     let hiddenStarMode: boolean = plugin?.settings?.hiddenStarMode ?? plugin?.settings?.disableStars ?? false;
@@ -1344,6 +1347,8 @@
         const s = settings || plugin?.settings;
         if (!s) return;
         wrapTaskTitles = s.wrapTaskTitles ?? true;
+        mainListTitleSize = s.mainListTitleSize ?? "medium";
+        showListTitleInHeader = s.showListTitleInHeader ?? false;
         enableTaskWeightMode = s.enableTaskWeightMode ?? false;
         centerAlignTasks = s.centerAlignTasks ?? true;
         hiddenStarMode = s.hiddenStarMode !== undefined ? s.hiddenStarMode : (s.disableStars ?? false);
@@ -1838,6 +1843,13 @@
         await loadTasks();
         if (plugin?.app && cat?.filepath) {
             void LinkedNoteService.autoSyncCategoryLinkedNotes(plugin.app, dataService, cat.filepath);
+        }
+        const mainLeaves = plugin?.app?.workspace?.getLeavesOfType(VIEW_TYPE_MAIN) || [];
+        for (const leaf of mainLeaves) {
+            (leaf as any).updateHeader?.();
+            if ((leaf.view as any)?.updateHeaderStyle) {
+                (leaf.view as any).updateHeaderStyle();
+            }
         }
     }
 
@@ -3425,6 +3437,7 @@
     bind:this={mainContainerEl} 
     class:wrap-titles={wrapTaskTitles} 
     class:center-tasks={centerAlignTasks} 
+    class:has-header-title={showListTitleInHeader}
     role="application"
     on:pointerdown|capture={handleMainPointerDown}
     on:pointerup|capture={handleMainPointerUp}
@@ -3433,13 +3446,13 @@
 >
     {#if currentCategory}
         <!-- Header -->
-        <div class="main-header">
+        <div class="main-header" class:has-header-title={showListTitleInHeader}>
             <div class="main-header-left">
                 {#if isEditingCategoryName}
                     <div class="category-title-edit-wrap">
                         <input 
                             type="text"
-                            class="category-title-input"
+                            class="category-title-input size-{mainListTitleSize}"
                             bind:this={categoryRenameInputEl}
                             bind:value={editingCategoryName}
                             on:compositionstart={() => { isComposingCategoryTitle = true; }}
@@ -3448,25 +3461,27 @@
                             on:blur={commitRenameCategory}
                         />
                     </div>
-                {:else if currentCategory.filepath === STARRED_CATEGORY_PATH}
-                    <h1 class="category-title is-smart-title" style="cursor: default; display: flex; align-items: center; gap: 8px;">
-                        <span style="color: var(--todo-star, var(--todo-accent, #8b5cf6)); font-size: 1.1em;">★</span>
-                        <span>{currentCategory.name}</span>
-                    </h1>
-                {:else}
-                    <!-- svelte-ignore a11y-click-events-have-key-events -->
-                    <h1 
-                        class="category-title" 
-                        role="button"
-                        tabindex="0"
-                        title={t("rename_list_tooltip")}
-                        on:click={startRenameCategory}
-                        on:keydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); startRenameCategory(); } }}
-                        on:mouseenter={() => { isCategoryTitleHovered = true; }}
-                        on:mouseleave={() => { isCategoryTitleHovered = false; }}
-                    >
-                        {currentCategory.name}
-                    </h1>
+                {:else if !showListTitleInHeader}
+                    {#if currentCategory.filepath === STARRED_CATEGORY_PATH}
+                        <h1 class="category-title is-smart-title size-{mainListTitleSize}" style="cursor: default; display: flex; align-items: center; gap: 8px;">
+                            <span style="color: var(--todo-star, var(--todo-accent, #8b5cf6)); font-size: 1.1em;">★</span>
+                            <span>{currentCategory.name}</span>
+                        </h1>
+                    {:else}
+                        <!-- svelte-ignore a11y-click-events-have-key-events -->
+                        <h1 
+                            class="category-title size-{mainListTitleSize}" 
+                            role="button"
+                            tabindex="0"
+                            title={t("rename_list_tooltip")}
+                            on:click={startRenameCategory}
+                            on:keydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); startRenameCategory(); } }}
+                            on:mouseenter={() => { isCategoryTitleHovered = true; }}
+                            on:mouseleave={() => { isCategoryTitleHovered = false; }}
+                        >
+                            {currentCategory.name}
+                        </h1>
+                    {/if}
                 {/if}
 
                 {#if enableFocusedLists}
@@ -3736,7 +3751,9 @@
         <!-- Add Task Input -->
         <!-- svelte-ignore a11y-click-events-have-key-events -->
         <!-- svelte-ignore a11y-no-static-element-interactions -->
-        <div class="add-task-container" on:click={() => addTaskInputEl?.focus()}>
+        <div class="add-task-container" 
+             class:is-editing={isAddTaskFocused || newTaskTitle.trim().length > 0}
+             on:click={() => addTaskInputEl?.focus()}>
             <span class="plus-icon">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -3751,8 +3768,9 @@
                 placeholder="Add a task (Press Enter to add, Shift+Enter for newline)"
                 bind:value={newTaskTitle}
                 bind:this={addTaskInputEl}
+                on:focus={() => { isAddTaskFocused = true; }}
+                on:blur={() => { isAddTaskFocused = false; handleAddTaskBlur(); }}
                 on:keydown={handleAddTaskKeydown}
-                on:blur={handleAddTaskBlur}
             />
         </div>
 
