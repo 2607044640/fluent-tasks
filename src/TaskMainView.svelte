@@ -1355,6 +1355,7 @@
         disableStars = hiddenStarMode;
         checkHotkeyStatus();
         void updateFocusedCategories();
+        refreshHeaderTitle();
         incompleteTasks = applyWeightSort(rawIncompleteTasks, enableTaskWeightMode);
         completedTasks = applyWeightSort(rawCompletedTasks, enableTaskWeightMode);
         if (enableTaskWeightMode) {
@@ -1596,6 +1597,7 @@
     onMount(() => {
         checkHotkeyStatus();
         void updateFocusedCategories();
+        refreshHeaderTitle();
         EventBus.on(EventName.CATEGORY_SELECTED, handleCategorySelected);
         EventBus.on(EventName.CATEGORY_RENAMED, handleCategoryRenamed);
         EventBus.on(EventName.CATEGORY_LIST_CHANGED, updateFocusedCategories);
@@ -1626,6 +1628,9 @@
         window.addEventListener('focus', handleWindowFocusOrVisibility);
         document.addEventListener('visibilitychange', handleWindowFocusOrVisibility);
         window.addEventListener('beforeunload', handleBeforeUnload);
+        void tick().then(() => {
+            refreshHeaderTitle();
+        });
     });
 
     function handleBeforeUnload() {
@@ -1829,9 +1834,21 @@
         completedTasks = [...rawCompletedTasks];
     }
 
+    function refreshHeaderTitle() {
+        const mainLeaves = plugin?.app?.workspace?.getLeavesOfType(VIEW_TYPE_MAIN) || [];
+        for (const leaf of mainLeaves) {
+            if ((leaf.view as any)?.updateHeaderTitle) {
+                (leaf.view as any).updateHeaderTitle();
+            } else {
+                (leaf as any).updateHeader?.();
+            }
+        }
+    }
+
     // Called from main.ts when the view is activated directly
     export async function loadCategory(cat: CategoryInfo) {
         currentCategory = cat;
+        refreshHeaderTitle();
         selectedTaskId = "";
         showCompleted = false;
         enableTaskWeightMode = plugin?.settings?.enableTaskWeightMode ?? false;
@@ -1841,15 +1858,9 @@
             pushListHistory(cat);
         }
         await loadTasks();
+        refreshHeaderTitle();
         if (plugin?.app && cat?.filepath) {
             void LinkedNoteService.autoSyncCategoryLinkedNotes(plugin.app, dataService, cat.filepath);
-        }
-        const mainLeaves = plugin?.app?.workspace?.getLeavesOfType(VIEW_TYPE_MAIN) || [];
-        for (const leaf of mainLeaves) {
-            (leaf as any).updateHeader?.();
-            if ((leaf.view as any)?.updateHeaderStyle) {
-                (leaf.view as any).updateHeaderStyle();
-            }
         }
     }
 
@@ -1893,6 +1904,7 @@
         try {
             const newCat = await dataService.renameCategory(oldPath, newName);
             currentCategory = newCat;
+            refreshHeaderTitle();
             EventBus.emit(EventName.CATEGORY_SELECTED, { category: newCat });
         } catch (err: any) {
             console.error("[Fluent Tasks] Failed to rename list:", err);
@@ -2020,6 +2032,7 @@
     async function handleCategorySelected(payload: any) {
         if (!payload.category) return;
         currentCategory = payload.category;
+        refreshHeaderTitle();
         selectedTaskId = "";
         showCompleted = false;
 
@@ -2029,6 +2042,7 @@
         }
 
         await loadTasks();
+        refreshHeaderTitle();
         if (plugin?.app && payload.category.filepath) {
             void LinkedNoteService.autoSyncCategoryLinkedNotes(plugin.app, dataService, payload.category.filepath);
         }
@@ -2059,11 +2073,9 @@
 
         if (currentCategory && (currentCategory.filepath === oldPath || currentCategory.id === oldPath)) {
             currentCategory = payload.category;
+            refreshHeaderTitle();
             await loadTasks();
-            const mainLeaves = plugin?.app?.workspace?.getLeavesOfType(VIEW_TYPE_MAIN) || [];
-            for (const leaf of mainLeaves) {
-                (leaf as any).updateHeader?.();
-            }
+            refreshHeaderTitle();
         }
         void updateFocusedCategories();
         if (taskSearchResults.length > 0) {

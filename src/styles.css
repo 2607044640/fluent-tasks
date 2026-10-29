@@ -6880,6 +6880,10 @@ body .task-focused-lists-modal .modal-content {
     font-weight: 600 !important;
     letter-spacing: 0.2px;
     cursor: pointer;
+    max-width: 380px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     transition: color var(--todo-transition), opacity var(--todo-transition);
 }
 

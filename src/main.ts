@@ -175,10 +175,40 @@ class TaskMainViewWrapper extends ItemView {
         return "Tasks";
     }
 
-    updateHeaderStyle(): void {
+    getHeaderTitleEl(): HTMLElement | null {
+        const leafEl = (this.leaf as any).containerEl as HTMLElement | undefined;
+        return (this as any).titleEl as HTMLElement | null
+            || this.containerEl?.querySelector(".view-header-title") as HTMLElement | null
+            || (this.leaf as any).viewHeaderEl?.querySelector(".view-header-title") as HTMLElement | null
+            || leafEl?.querySelector(".view-header-title") as HTMLElement | null
+            || (this.containerEl?.parentElement?.querySelector(".view-header-title") as HTMLElement | null);
+    }
+
+    updateHeaderTitle(): void {
         const enabled = Boolean(this.plugin?.settings?.showListTitleInHeader);
         const leafEl = (this.leaf as any).containerEl as HTMLElement | undefined;
         leafEl?.toggleClass("has-fluent-tasks-header-title", enabled);
+
+        const headerTitleEl = this.getHeaderTitleEl();
+        const cat = this.component?.getCurrentCategory();
+        if (headerTitleEl) {
+            if (enabled && cat?.name) {
+                const titleText = cat.filepath === STARRED_CATEGORY_PATH ? `★ ${cat.name}` : cat.name;
+                headerTitleEl.textContent = titleText;
+                headerTitleEl.setAttribute("title", t("rename_list_tooltip") || "Click to rename list");
+                headerTitleEl.style.cursor = "pointer";
+            } else {
+                headerTitleEl.textContent = "Tasks";
+                headerTitleEl.removeAttribute("title");
+                headerTitleEl.style.cursor = "";
+            }
+        }
+
+        (this.leaf as any).updateHeader?.();
+    }
+
+    updateHeaderStyle(): void {
+        this.updateHeaderTitle();
     }
 
     getIcon(): string { return "check-square"; }
@@ -216,17 +246,6 @@ class TaskMainViewWrapper extends ItemView {
         const container = this.containerEl.children[1] as HTMLElement;
         container.empty();
 
-        this.updateHeaderStyle();
-        const leafEl = (this.leaf as any).containerEl as HTMLElement | undefined;
-        const headerTitleEl = leafEl?.querySelector(".view-header-title");
-        if (headerTitleEl) {
-            this.registerDomEvent(headerTitleEl as HTMLElement, "click", () => {
-                if (this.plugin?.settings?.showListTitleInHeader) {
-                    this.component?.startRenameCategory?.();
-                }
-            });
-        }
-
         // Native capture-phase keydown listener on the main view container element
         this.containerEl.addEventListener("keydown", (evt: KeyboardEvent) => {
             if (evt.key === "F2") {
@@ -257,6 +276,20 @@ class TaskMainViewWrapper extends ItemView {
                 await this.component.loadCategory(cat);
             }
         }
+
+        this.updateHeaderTitle();
+        setTimeout(() => {
+            this.updateHeaderTitle();
+            const headerTitleEl = this.getHeaderTitleEl();
+            if (headerTitleEl && !(headerTitleEl as any).__fluent_click_registered) {
+                (headerTitleEl as any).__fluent_click_registered = true;
+                this.registerDomEvent(headerTitleEl, "click", () => {
+                    if (this.plugin?.settings?.showListTitleInHeader) {
+                        this.component?.startRenameCategory?.();
+                    }
+                });
+            }
+        }, 50);
     }
 
     async onClose(): Promise<void> {
