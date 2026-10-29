@@ -19,7 +19,7 @@ export function portal(node: HTMLElement, target?: HTMLElement | string) {
     if (!dest) {
         // If node originates inside an Obsidian Modal, portal to that modal's modal element (modalEl)
         // so it remains within Obsidian's modal DOM tree and focus trap scope.
-        const modalEl = (node.closest(".modal") || document.querySelector(".modal.task-detail-floating-modal")) as HTMLElement | null;
+        const modalEl = node.closest<HTMLElement>(".modal") || document.querySelector<HTMLElement>(".modal.task-detail-floating-modal");
         if (modalEl) {
             dest = modalEl;
         } else {

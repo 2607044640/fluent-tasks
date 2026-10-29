@@ -57103,9 +57103,9 @@ var TaskMainViewWrapper = class extends import_obsidian27.ItemView {
     return "Tasks";
   }
   getHeaderTitleEl() {
-    var _a, _b, _c, _d;
+    var _a, _b, _c, _d, _e;
     const leafEl = this.leaf.containerEl;
-    return this.titleEl || ((_a = this.containerEl) == null ? void 0 : _a.querySelector(".view-header-title")) || ((_b = this.leaf.viewHeaderEl) == null ? void 0 : _b.querySelector(".view-header-title")) || (leafEl == null ? void 0 : leafEl.querySelector(".view-header-title")) || ((_d = (_c = this.containerEl) == null ? void 0 : _c.parentElement) == null ? void 0 : _d.querySelector(".view-header-title"));
+    return this.titleEl || ((_a = this.containerEl) == null ? void 0 : _a.querySelector(".view-header-title")) || ((_b = this.leaf.viewHeaderEl) == null ? void 0 : _b.querySelector(".view-header-title")) || (leafEl == null ? void 0 : leafEl.querySelector(".view-header-title")) || ((_e = (_d = (_c = this.containerEl) == null ? void 0 : _c.parentElement) == null ? void 0 : _d.querySelector(".view-header-title")) != null ? _e : null);
   }
   updateHeaderTitle() {
     var _a, _b, _c, _d, _e;
@@ -57119,11 +57119,11 @@ var TaskMainViewWrapper = class extends import_obsidian27.ItemView {
         const titleText = cat.filepath === STARRED_CATEGORY_PATH ? `\u2605 ${cat.name}` : cat.name;
         headerTitleEl.textContent = titleText;
         headerTitleEl.setAttribute("title", t("rename_list_tooltip") || "Click to rename list");
-        headerTitleEl.style.cursor = "pointer";
+        headerTitleEl.setCssStyles({ cursor: "pointer" });
       } else {
         headerTitleEl.textContent = "Tasks";
         headerTitleEl.removeAttribute("title");
-        headerTitleEl.style.cursor = "";
+        headerTitleEl.setCssStyles({ cursor: "" });
       }
     }
     (_e = (_d = this.leaf).updateHeader) == null ? void 0 : _e.call(_d);

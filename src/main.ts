@@ -177,11 +177,11 @@ class TaskMainViewWrapper extends ItemView {
 
     getHeaderTitleEl(): HTMLElement | null {
         const leafEl = (this.leaf as any).containerEl as HTMLElement | undefined;
-        return (this as any).titleEl as HTMLElement | null
-            || this.containerEl?.querySelector(".view-header-title") as HTMLElement | null
-            || (this.leaf as any).viewHeaderEl?.querySelector(".view-header-title") as HTMLElement | null
-            || leafEl?.querySelector(".view-header-title") as HTMLElement | null
-            || (this.containerEl?.parentElement?.querySelector(".view-header-title") as HTMLElement | null);
+        return ((this as any).titleEl as HTMLElement | null)
+            || this.containerEl?.querySelector<HTMLElement>(".view-header-title")
+            || ((this.leaf as any).viewHeaderEl?.querySelector(".view-header-title") as HTMLElement | null)
+            || leafEl?.querySelector<HTMLElement>(".view-header-title")
+            || (this.containerEl?.parentElement?.querySelector<HTMLElement>(".view-header-title") ?? null);
     }
 
     updateHeaderTitle(): void {
@@ -196,11 +196,11 @@ class TaskMainViewWrapper extends ItemView {
                 const titleText = cat.filepath === STARRED_CATEGORY_PATH ? `★ ${cat.name}` : cat.name;
                 headerTitleEl.textContent = titleText;
                 headerTitleEl.setAttribute("title", t("rename_list_tooltip") || "Click to rename list");
-                headerTitleEl.style.cursor = "pointer";
+                headerTitleEl.setCssStyles({ cursor: "pointer" });
             } else {
                 headerTitleEl.textContent = "Tasks";
                 headerTitleEl.removeAttribute("title");
-                headerTitleEl.style.cursor = "";
+                headerTitleEl.setCssStyles({ cursor: "" });
             }
         }
 

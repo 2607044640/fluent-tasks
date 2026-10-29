@@ -226,8 +226,8 @@ export class FluentTasksSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(containerEl)
-            .setName(t("setting_focused_lists_title" as any) || "Focused lists")
-            .setDesc(t("setting_focused_lists_desc" as any) || "Display focused list shortcuts and a quick selector next to the list title in the header. Disabled by default.")
+            .setName(t("setting_focused_lists_title") || "Focused lists")
+            .setDesc(t("setting_focused_lists_desc") || "Display focused list shortcuts and a quick selector next to the list title in the header. Disabled by default.")
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.enableFocusedLists ?? false)
                 .onChange(async (value) => {
