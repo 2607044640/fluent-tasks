@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount, onDestroy } from "svelte";
+    import { onMount, onDestroy, tick } from "svelte";
     import { DataService } from "../DataService";
     import { EventBus } from "../EventBus";
     import { EventName, STARRED_CATEGORY_PATH, STARRED_CATEGORY_NAME } from "../types";
@@ -83,6 +83,8 @@
     let popoverY: number = 0;
     let popoverPlacement: string = "top";
     let popoverTimeout: any = null;
+    let justCreatedTaskId: string | null = null;
+    let justCreatedTimeout: any = null;
 
     // Drag-to-list & reorder state
     let draggedListId: string = "";
@@ -116,6 +118,10 @@
     }
 
     onDestroy(() => {
+        if (justCreatedTimeout) {
+            clearTimeout(justCreatedTimeout);
+            justCreatedTimeout = null;
+        }
         window.removeEventListener("beforeunload", handleBeforeUnload);
         if (isAddingTask && newTaskTitle.trim()) {
             void commitAddTask();
@@ -953,6 +959,19 @@
             await loadTasksForCategory(selectedCategory);
             focusedTaskIndex = 0;
             focusPane = "tasks";
+
+            justCreatedTaskId = newTask.id;
+            await tick();
+            const el = document.getElementById('task-' + newTask.id);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            if (justCreatedTimeout) clearTimeout(justCreatedTimeout);
+            justCreatedTimeout = setTimeout(() => {
+                if (justCreatedTaskId === newTask.id) {
+                    justCreatedTaskId = null;
+                }
+            }, 1000);
         } catch (e) {
             console.error("[QuickTaskModal] Failed to add task:", e);
         } finally {
@@ -1539,6 +1558,7 @@
                                     on:dragstart={(e) => handleTaskDragStart(e, task)}
                                     class="quick-modal-task-item"
                                     class:is-focused={focusPane === 'tasks' && focusedTaskId === task.id}
+                                    class:just-created={justCreatedTaskId === task.id}
                                     role="button"
                                     tabindex="0"
                                     on:click={() => toggleTaskCompletion(task)}
@@ -1633,6 +1653,7 @@
                                         on:dragstart={(e) => handleTaskDragStart(e, task)}
                                         class="quick-modal-task-item is-completed"
                                         class:is-focused={focusPane === 'tasks' && focusedTaskId === task.id}
+                                        class:just-created={justCreatedTaskId === task.id}
                                         role="button"
                                         tabindex="0"
                                         on:click={() => toggleTaskCompletion(task)}

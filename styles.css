@@ -1575,6 +1575,29 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     100% { background-color: transparent; }
 }
 
+/* =============================================
+   New Task Created Glow Animation
+   ============================================= */
+.task-item.just-created,
+.quick-modal-task-item.just-created {
+    animation: task-just-created-glow 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    position: relative;
+    z-index: 2;
+}
+
+@keyframes task-just-created-glow {
+    0% {
+        box-shadow: 0 0 0 0 transparent, 0 0 0 0 transparent;
+    }
+    25% {
+        box-shadow: 0 0 0 1.5px var(--todo-accent, var(--interactive-accent, #7057ff)),
+                    0 0 16px 3px var(--todo-accent-glow, rgba(139, 92, 246, 0.5));
+    }
+    100% {
+        box-shadow: 0 0 0 0 transparent, 0 0 0 0 transparent;
+    }
+}
+
 .fluent-tasks-search-modal .search-input-clear-button,
 .fluent-tasks-search-modal .prompt-input-clear-button {
     display: none !important;

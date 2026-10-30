@@ -65,6 +65,8 @@
     let mainListTitleSize: "small" | "medium" | "large" = plugin?.settings?.mainListTitleSize ?? "medium";
     let showListTitleInHeader: boolean = plugin?.settings?.showListTitleInHeader ?? false;
     let isAddTaskFocused: boolean = false;
+    let justCreatedTaskId: string | null = null;
+    let justCreatedTimeout: any = null;
     let enableTaskWeightMode: boolean = plugin?.settings?.enableTaskWeightMode ?? false;
     let centerAlignTasks: boolean = plugin?.settings?.centerAlignTasks ?? true;
     let hiddenStarMode: boolean = plugin?.settings?.hiddenStarMode ?? plugin?.settings?.disableStars ?? false;
@@ -1643,6 +1645,10 @@
         if (newTaskTitle.trim() && currentCategory) {
             void addTask();
         }
+        if (justCreatedTimeout) {
+            clearTimeout(justCreatedTimeout);
+            justCreatedTimeout = null;
+        }
         stopAutoScroll();
         if (popoverTimeout) clearTimeout(popoverTimeout);
         window.removeEventListener('pointermove', handleDragPointerMove);
@@ -2172,6 +2178,21 @@
         // We do NOT call loadTasks() here because Obsidian's async I/O might cause a race condition.
         rawIncompleteTasks = [newTask, ...rawIncompleteTasks];
         incompleteTasks = applyWeightSort(rawIncompleteTasks, !!plugin?.settings?.enableTaskWeightMode);
+
+        justCreatedTaskId = newTask.id;
+        await tick();
+
+        const el = document.getElementById('task-' + newTask.id);
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        if (justCreatedTimeout) clearTimeout(justCreatedTimeout);
+        justCreatedTimeout = setTimeout(() => {
+            if (justCreatedTaskId === newTask.id) {
+                justCreatedTaskId = null;
+            }
+        }, 1000);
     }
 
     function handleAddTaskBlur() {
@@ -3802,6 +3823,7 @@
                     class:is-center-aligned={centerAlignTasks}
                     class:selected={selectedTaskId === task.id}
                     class:is-multi-selected={isMultiSelectMode && selectedTaskIds.has(task.id)}
+                    class:just-created={justCreatedTaskId === task.id}
                     on:pointerdown={() => handleTaskPointerDown(task)}
                     on:click={() => selectTask(task)}
                     on:contextmenu={(e) => handleContextMenu(e, task)}
@@ -4067,6 +4089,7 @@
                                 class:is-center-aligned={centerAlignTasks}
                                 class:selected={selectedTaskId === task.id}
                                 class:is-multi-selected={isMultiSelectMode && selectedTaskIds.has(task.id)}
+                                class:just-created={justCreatedTaskId === task.id}
                                 on:pointerdown={() => handleTaskPointerDown(task)}
                                 on:click={() => selectTask(task)}
                                 on:contextmenu={(e) => handleContextMenu(e, task)}
