@@ -17,13 +17,13 @@
     "esbuild-svelte": "^0.8.0",
     "eslint": "^9.39.5",
     "eslint-plugin-obsidianmd": "^0.4.2",
-    "obsidian": "latest",
+    "obsidian": "^1.14.4",
     "svelte": "^4.2.0",
     "svelte-preprocess": "^5.1.0",
     "typescript": "5.3.3"
   },
   "dependencies": {
     "lucide-svelte": "^0.300.0",
-    "svelte-dnd-action": "^0.9.70"
+    "svelte-dnd-action": "^0.9.80"
   }
 }

@@ -1,6 +1,6 @@
 # fluent-tasks Architecture
 
-Fluent Tasks (`manifest.json` id `fluent-tasks`, v1.0.40) is an Obsidian plugin. Tasks are Markdown checklists under `TodoData/*.md`. Cross-view traffic uses the `EventBus` singleton. Vault I/O uses `DataService`. There is **no** Microsoft Graph / To Do sync client; `TaskItem.msGraphId` / `msGraphListId` are optional serialized fields only. Cross-pane drag uses `window.__mstodo_drag_data` (legacy name).
+Fluent Tasks (`manifest.json` id `fluent-tasks`, v1.0.55) is an Obsidian plugin. Tasks are Markdown checklists under `TodoData/*.md`. Cross-view traffic uses the `EventBus` singleton. Vault I/O uses `DataService`. There is **no** Microsoft Graph / To Do sync client; `TaskItem.msGraphId` / `msGraphListId` are optional serialized fields only. Cross-pane drag uses `window.__mstodo_drag_data` (legacy name).
 
 ## Global Invariants
 
@@ -13,7 +13,9 @@ Fluent Tasks (`manifest.json` id `fluent-tasks`, v1.0.40) is an Obsidian plugin.
 | Subsystem | Doc | Owns | Do not put here |
 |---|---|---|---|
 | Plugin lifecycle | [plugin-lifecycle](./docs/modules/plugin-lifecycle.md) | `src/main.ts` `FluentTasksPlugin`, wrappers, `EventBus` | Markdown parse, task CRUD |
+| Action history (undo/redo) | [history-service](./docs/modules/history-service.md) | `HistoryService`, `HistoryToastContainer` | Task CRUD, Markdown parse |
 | Sidebar coordinator | [sidebar-coordinator](./docs/modules/sidebar-coordinator.md) | `src/services/SidebarCoordinator.ts` (sidebar split checks, drag-expand, auto-collapse/expand lifecycle) | Task CRUD, Markdown parse |
+| Backup service | [backup-service](./docs/modules/backup-service.md) | `BackupService`, `BackupModal` (`TodoData/Backups`) | Task domain rules, Svelte DOM |
 | Markdown parser | [markdown-parser](./docs/modules/markdown-parser.md) | `src/MarkdownParser.ts` codec | Vault I/O, EventBus |
 | Data facade + atomic I/O | [data-service](./docs/modules/data-service.md) | `DataService`, `AtomicIOPipeline` | Recurrence math, Svelte |
 | Task CRUD | [task-service](./docs/modules/task-service.md) | `src/services/TaskService.ts` | Sidebar metadata, linked-note create |
@@ -28,13 +30,13 @@ Fluent Tasks (`manifest.json` id `fluent-tasks`, v1.0.40) is an Obsidian plugin.
 
 View types (`src/types.ts`): `fluent-tasks-sidebar` (left), `fluent-tasks-main` (center), `fluent-tasks-detail` (right leaf, or `TaskDetailModal` when `openDetailInModal`).
 
-Static commands: `open-all-views`, `open-sidebar`, `open-main-view`, `open-detail-view`, `search-all-tasks`, `search-current-list`, `rename-hovered-list-or-group`, `open-quick-list-modal`, `open-quick-task-modal`, `open-backup-modal`, `toggle-task-star-hover`. Dynamic: `z-jump-to-list-*` from `registerCategoryCommands`.
+Static commands: `open-all-views`, `open-sidebar`, `open-main-view`, `open-detail-view`, `search-all-tasks`, `search-current-list`, `rename-hovered-list-or-group`, `open-quick-list-modal`, `open-quick-task-modal`, `open-backup-modal`, `toggle-task-star-hover`, `undo-action`, `redo-action`, `navigate-list-back`, `navigate-list-forward`. Dynamic: `z-jump-to-list-*` from `registerCategoryCommands`.
 
 Models in `src/types.ts`: `TaskItem` and `TaskStep` (both support optional `images?: string[]` attachments), `RecurrenceRule` (`daily` | `weekdays` | `weekly` | `custom`), `CategoryInfo`, `GroupInfo`, `SidebarItem`. Virtual category: `STARRED_CATEGORY_PATH = "__starred__"` aggregates starred tasks across all lists into a unified view. Context menu: task right-click places `Add side step` (`TaskStepsModal`) as item 1, followed by `Star task` / `Remove star` as item 2. Timing: `src/constants.ts`.
 
-On disk: `TodoData/<List>.md` (tasks), `TodoData/.metadata.json` (tree), `TodoData/<List>/<title5>_<List>_<Group>_<taskId>.md` (bound notes; frontmatter `title` is the full task title; `<title5>` is the first 5 letters or digits, newlines skipped), `TodoData/attachments/` (or vault attachment path for pasted/dragged images), `TodoData/debug.log` (`Logger`). Plugin options: Obsidian `saveData` (`FluentTasksSettings`).
+On disk: `TodoData/<List>.md` (tasks), `TodoData/.metadata.json` (tree), `TodoData/<List>/<title5>_<List>_<Group>_<taskId>.md` (bound notes; frontmatter `title` is the full task title; `<title5>` is the first 5 letters or digits, newlines skipped), `TodoData/attachments/` (or vault attachment path for pasted/dragged images), `TodoData/Backups/` (JSON snapshot archives), `TodoData/debug.log` (`Logger`). Plugin options: Obsidian `saveData` (`FluentTasksSettings`).
 
-`onload` (sync): `new DataService(app)`, setting tab, `Logger.init`, `loadSettings`, `registerView` ×3, ribbon, commands. `onLayoutReady`: `ensureDataFolder`, vault `modify`/`create`/`delete`/`rename`, EventBus wiring, `registerCategoryCommands`, `checkRecurringTasksRollover(true)` then 10s interval + `focus`. `onunload`: ribbon off, `EventBus.destroy()`, clear `__mstodo_drag_data`.
+`onload` (sync): `new DataService(app)`, `new SidebarCoordinator(this)`, setting tab, `Logger.init`, `loadSettings`, `registerView` ×3, global toasts (`UndoToastContainer`, `HistoryToastContainer`), `HistoryService` wiring + capture keydown for `Ctrl+Z`/`Ctrl+Y`, ribbon, commands. `onLayoutReady`: `ensureDataFolder`, `BackupService.checkDailyBackup`, vault `modify`/`create`/`delete`/`rename`, EventBus wiring, `registerCategoryCommands`, `checkRecurringTasksRollover(true)` then 10s interval + `focus`. `onunload`: ribbon off, `EventBus.destroy()`, destroy toasts and `HistoryService`, clear `__mstodo_drag_data`.
 
 ## EventBus (`src/EventBus.ts` + `EventName`)
 

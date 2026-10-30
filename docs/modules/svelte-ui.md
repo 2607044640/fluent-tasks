@@ -16,6 +16,8 @@ Obsidian `ItemView` wrappers in `src/main.ts` mount Svelte 4 components. Cross-p
 | `TaskStepsModal` + `TaskStepsModalView.svelte` | Large-type step editor with compact image thumbnails placed above step descriptions, draft input image previews above add-step card, `Ctrl+V` clipboard paste; `flushSaveSync` on close | Creating notes |
 | `TaskImageThumbnail.svelte` | Compact thumbnail card (38px/44px) placed top-aligned above step/note text; hover + Ctrl+C copy, hover + Ctrl+X cut, click to open preview | Binary file I/O |
 | `ImagePreviewModal` + `ImagePreviewModalView.svelte` | Full-screen image preview lightbox with zoom/pan and toolbar | Note parsing |
+| `HistoryToastContainer.svelte` | Top-right acrylic floating toast for `Ctrl+Z` / `Ctrl+Y` action feedback | Stack management |
+| `UndoToastContainer.svelte` | Bottom-right 2.5s floating undo bar for deleted task/step/list restoration | History stack storage |
 | Utils `dndUtils` / `domUtils` / `popoverUtils` / `sidebarTreeUtils` / `hotkeyUtils` / `timeUtils` / `imageAttachmentUtils` | Ghost kill, portal, autosize, popover coords, tree move/filter, hotkey tips, labels, image attachment saving/clipboard | Vault writes |
 
 ## Key Invariants
@@ -29,6 +31,9 @@ Obsidian `ItemView` wrappers in `src/main.ts` mount Svelte 4 components. Cross-p
 7. Inline renaming (F2 / `rename-hovered-list-or-group`) works consecutively across lists and groups in both `TaskSidebarView` and `TaskMainView` via container capture-phase keydown listeners and hover/focus tracking.
 8. Context menu ordering: task right-click menu places `Add side step` (opening `TaskStepsModal`) as item 1, followed by `Star task` / `Remove star` as item 2.
 9. Image attachments: images pasted via `Ctrl+V` or dragged into `TaskStepsModal` or `TaskDetailView` are stored directly in the vault attachment directory (or `TodoData/attachments/`). Thumbnails are positioned strictly above the step/note text for a clean, Antigravity-style top-aligned preview. Hover shortcuts (`Ctrl+X` / `Ctrl+C`) respect active text selections in input fields. Clicking thumbnails opens `ImagePreviewModal`.
+10. Header list title mode: When `showListTitleInHeader` is active, the active list name renders directly into `.view-header-title` with accent color, click-to-rename tooltip, and reduced canvas margins.
+11. Compact quick-add box: The add-task input stays squished (28px height, 12px font) while empty and unfocused, smoothly animating to full size on interaction.
+12. Priority weight scoring: 1–9 stepper next to task star allows direct digit presses or wheel rolling to adjust task score with stable sorting.
 
 ## Numbered Data Flow
 

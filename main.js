@@ -8574,10 +8574,61 @@ function _createForOfIteratorHelper(o, allowArrayLike) {
     }
   };
 }
+function getWindowOf(el) {
+  return el.ownerDocument.defaultView || window;
+}
+function setTimeoutIn(win, callback, ms) {
+  return {
+    win,
+    id: win.setTimeout(callback, ms)
+  };
+}
+function clearTimeoutIn(timeout) {
+  if (timeout)
+    timeout.win.clearTimeout(timeout.id);
+}
+function toString(object) {
+  return JSON.stringify(object, null, 2);
+}
+function getDepth(node) {
+  if (!node) {
+    throw new Error("cannot get depth of a falsy node");
+  }
+  return _getDepth(node, 0);
+}
+function _getDepth(node) {
+  var countSoFar = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : 0;
+  if (!node.parentElement) {
+    return countSoFar - 1;
+  }
+  return _getDepth(node.parentElement, countSoFar + 1);
+}
+function areObjectsShallowEqual(objA, objB) {
+  if (Object.keys(objA).length !== Object.keys(objB).length) {
+    return false;
+  }
+  for (var keyA in objA) {
+    if (!{}.hasOwnProperty.call(objB, keyA) || objB[keyA] !== objA[keyA]) {
+      return false;
+    }
+  }
+  return true;
+}
+function areArraysShallowEqualSameOrder(arrA, arrB) {
+  if (arrA.length !== arrB.length) {
+    return false;
+  }
+  for (var i = 0; i < arrA.length; i++) {
+    if (arrA[i] !== arrB[i]) {
+      return false;
+    }
+  }
+  return true;
+}
 var FINALIZE_EVENT_NAME = "finalize";
 var CONSIDER_EVENT_NAME = "consider";
 function dispatchFinalizeEvent(el, items, info) {
-  el.dispatchEvent(new CustomEvent(FINALIZE_EVENT_NAME, {
+  el.dispatchEvent(new (getWindowOf(el)).CustomEvent(FINALIZE_EVENT_NAME, {
     detail: {
       items,
       info
@@ -8585,7 +8636,7 @@ function dispatchFinalizeEvent(el, items, info) {
   }));
 }
 function dispatchConsiderEvent(el, items, info) {
-  el.dispatchEvent(new CustomEvent(CONSIDER_EVENT_NAME, {
+  el.dispatchEvent(new (getWindowOf(el)).CustomEvent(CONSIDER_EVENT_NAME, {
     detail: {
       items,
       info
@@ -8601,7 +8652,7 @@ var DRAGGED_LEFT_TYPES = {
   OUTSIDE_OF_ANY: "outsideOfAny"
 };
 function dispatchDraggedElementEnteredContainer(containerEl, indexObj, draggedEl2) {
-  containerEl.dispatchEvent(new CustomEvent(DRAGGED_ENTERED_EVENT_NAME, {
+  containerEl.dispatchEvent(new (getWindowOf(containerEl)).CustomEvent(DRAGGED_ENTERED_EVENT_NAME, {
     detail: {
       indexObj,
       draggedEl: draggedEl2
@@ -8609,7 +8660,7 @@ function dispatchDraggedElementEnteredContainer(containerEl, indexObj, draggedEl
   }));
 }
 function dispatchDraggedElementLeftContainerForAnother(containerEl, draggedEl2, theOtherDz) {
-  containerEl.dispatchEvent(new CustomEvent(DRAGGED_LEFT_EVENT_NAME, {
+  containerEl.dispatchEvent(new (getWindowOf(containerEl)).CustomEvent(DRAGGED_LEFT_EVENT_NAME, {
     detail: {
       draggedEl: draggedEl2,
       type: DRAGGED_LEFT_TYPES.LEFT_FOR_ANOTHER,
@@ -8618,7 +8669,7 @@ function dispatchDraggedElementLeftContainerForAnother(containerEl, draggedEl2, 
   }));
 }
 function dispatchDraggedElementLeftContainerForNone(containerEl, draggedEl2) {
-  containerEl.dispatchEvent(new CustomEvent(DRAGGED_LEFT_EVENT_NAME, {
+  containerEl.dispatchEvent(new (getWindowOf(containerEl)).CustomEvent(DRAGGED_LEFT_EVENT_NAME, {
     detail: {
       draggedEl: draggedEl2,
       type: DRAGGED_LEFT_TYPES.OUTSIDE_OF_ANY
@@ -8626,7 +8677,7 @@ function dispatchDraggedElementLeftContainerForNone(containerEl, draggedEl2) {
   }));
 }
 function dispatchDraggedElementIsOverIndex(containerEl, indexObj, draggedEl2) {
-  containerEl.dispatchEvent(new CustomEvent(DRAGGED_OVER_INDEX_EVENT_NAME, {
+  containerEl.dispatchEvent(new (getWindowOf(containerEl)).CustomEvent(DRAGGED_OVER_INDEX_EVENT_NAME, {
     detail: {
       indexObj,
       draggedEl: draggedEl2
@@ -8634,7 +8685,8 @@ function dispatchDraggedElementIsOverIndex(containerEl, indexObj, draggedEl2) {
   }));
 }
 function dispatchDraggedLeftDocument(draggedEl2) {
-  window.dispatchEvent(new CustomEvent(DRAGGED_LEFT_DOCUMENT_EVENT_NAME, {
+  var win = getWindowOf(draggedEl2);
+  win.dispatchEvent(new win.CustomEvent(DRAGGED_LEFT_DOCUMENT_EVENT_NAME, {
     detail: {
       draggedEl: draggedEl2
     }
@@ -8655,6 +8707,17 @@ var TRIGGERS = {
 var SOURCES = {
   POINTER: "pointer",
   KEYBOARD: "keyboard"
+};
+var KEYBOARD_DRAG_TRIGGER_KEYS = {
+  space: [" "],
+  enter: ["Enter"],
+  space_or_enter: [" ", "Enter"]
+};
+var DEFAULT_KEYBOARD_DRAG_TRIGGER = "space_or_enter";
+var KEYBOARD_DRAG_TRIGGER_PHRASES = {
+  space: "space-bar",
+  enter: "enter",
+  space_or_enter: "space-bar or enter"
 };
 var SHADOW_ITEM_MARKER_PROPERTY_NAME = "isDndShadowItem";
 var SHADOW_ELEMENT_ATTRIBUTE_NAME = "data-is-dnd-shadow-item-internal";
@@ -8679,7 +8742,7 @@ function getBoundingRectNoTransforms(el) {
   var onlyVisible = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : true;
   var ta;
   var rect = onlyVisible ? getVisibleRectRecursive(el) : el.getBoundingClientRect();
-  var style = getComputedStyle(el);
+  var style = getWindowOf(el).getComputedStyle(el);
   var tx = style.transform;
   if (tx) {
     var sx, sy, dx, dy;
@@ -8699,8 +8762,8 @@ function getBoundingRectNoTransforms(el) {
       return rect;
     }
     var to = style.transformOrigin;
-    var x = rect.x - dx - (1 - sx) * parseFloat(to);
-    var y = rect.y - dy - (1 - sy) * parseFloat(to.slice(to.indexOf(" ") + 1));
+    var x = rect.left - dx - (1 - sx) * parseFloat(to);
+    var y = rect.top - dy - (1 - sy) * parseFloat(to.slice(to.indexOf(" ") + 1));
     var w = sx ? rect.width / sx : el.offsetWidth;
     var h = sy ? rect.height / sy : el.offsetHeight;
     return {
@@ -8719,20 +8782,22 @@ function getBoundingRectNoTransforms(el) {
 }
 function getAbsoluteRectNoTransforms(el) {
   var rect = getBoundingRectNoTransforms(el);
+  var win = getWindowOf(el);
   return {
-    top: rect.top + window.scrollY,
-    bottom: rect.bottom + window.scrollY,
-    left: rect.left + window.scrollX,
-    right: rect.right + window.scrollX
+    top: rect.top + win.scrollY,
+    bottom: rect.bottom + win.scrollY,
+    left: rect.left + win.scrollX,
+    right: rect.right + win.scrollX
   };
 }
 function getAbsoluteRect(el) {
   var rect = el.getBoundingClientRect();
+  var win = getWindowOf(el);
   return {
-    top: rect.top + window.scrollY,
-    bottom: rect.bottom + window.scrollY,
-    left: rect.left + window.scrollX,
-    right: rect.right + window.scrollX
+    top: rect.top + win.scrollY,
+    bottom: rect.bottom + win.scrollY,
+    left: rect.left + win.scrollX,
+    right: rect.right + win.scrollX
   };
 }
 function findCenter(rect) {
@@ -8756,7 +8821,8 @@ function calcDistanceFromPointToCenter(point, el) {
 }
 function isElementOffDocument(el) {
   var rect = getAbsoluteRect(el);
-  return rect.right < 0 || rect.left > document.documentElement.scrollWidth || rect.bottom < 0 || rect.top > document.documentElement.scrollHeight;
+  var documentElement = el.ownerDocument.documentElement;
+  return rect.right < 0 || rect.left > documentElement.scrollWidth || rect.bottom < 0 || rect.top > documentElement.scrollHeight;
 }
 function getVisibleRectRecursive(element2) {
   var rect = element2.getBoundingClientRect();
@@ -8769,8 +8835,8 @@ function getVisibleRectRecursive(element2) {
   var wasClippedByScrollY = false;
   var wasClippedByScrollX = false;
   var parent = element2.parentElement;
-  while (parent && parent !== document.body) {
-    var style = window.getComputedStyle(parent);
+  while (parent && parent !== element2.ownerDocument.body) {
+    var style = getWindowOf(parent).getComputedStyle(parent);
     var overflowY = style.overflowY;
     var overflowX = style.overflowX;
     var isScrollableY = overflowY === "scroll" || overflowY === "auto";
@@ -8896,47 +8962,10 @@ function findWouldBeIndex(referencePoint, collectionBelowEl) {
     isProximityBased: true
   };
 }
-function toString(object) {
-  return JSON.stringify(object, null, 2);
-}
-function getDepth(node) {
-  if (!node) {
-    throw new Error("cannot get depth of a falsy node");
-  }
-  return _getDepth(node, 0);
-}
-function _getDepth(node) {
-  var countSoFar = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : 0;
-  if (!node.parentElement) {
-    return countSoFar - 1;
-  }
-  return _getDepth(node.parentElement, countSoFar + 1);
-}
-function areObjectsShallowEqual(objA, objB) {
-  if (Object.keys(objA).length !== Object.keys(objB).length) {
-    return false;
-  }
-  for (var keyA in objA) {
-    if (!{}.hasOwnProperty.call(objB, keyA) || objB[keyA] !== objA[keyA]) {
-      return false;
-    }
-  }
-  return true;
-}
-function areArraysShallowEqualSameOrder(arrA, arrB) {
-  if (arrA.length !== arrB.length) {
-    return false;
-  }
-  for (var i = 0; i < arrA.length; i++) {
-    if (arrA[i] !== arrB[i]) {
-      return false;
-    }
-  }
-  return true;
-}
 var INTERVAL_MS = 200;
 var TOLERANCE_PX = 10;
 var next;
+var currentObservation;
 function observe(draggedEl2, dropZones) {
   var intervalMs = arguments.length > 2 && arguments[2] !== void 0 ? arguments[2] : INTERVAL_MS;
   var multiScroller2 = arguments.length > 3 ? arguments[3] : void 0;
@@ -8945,6 +8974,9 @@ function observe(draggedEl2, dropZones) {
   var lastIndexFound;
   var lastIsDraggedInADropZone = false;
   var lastCentrePositionOfDragged;
+  var win = getWindowOf(draggedEl2);
+  var observation = {};
+  currentObservation = observation;
   var dropZonesFromDeepToShallow = Array.from(dropZones).sort(function(dz1, dz2) {
     return getDepth(dz2) - getDepth(dz1);
   });
@@ -8952,7 +8984,7 @@ function observe(draggedEl2, dropZones) {
     var referencePoint = getReferencePoint();
     var scrolled = multiScroller2.multiScrollIfNeeded();
     if (!scrolled && lastCentrePositionOfDragged && Math.abs(lastCentrePositionOfDragged.x - referencePoint.x) < TOLERANCE_PX && Math.abs(lastCentrePositionOfDragged.y - referencePoint.y) < TOLERANCE_PX) {
-      next = window.setTimeout(andNow, intervalMs);
+      next = setTimeoutIn(win, andNow, intervalMs);
       return;
     }
     if (isElementOffDocument(draggedEl2)) {
@@ -8978,6 +9010,8 @@ function observe(draggedEl2, dropZones) {
         isDraggedInADropZone = true;
         if (dz !== lastDropZoneFound) {
           lastDropZoneFound && dispatchDraggedElementLeftContainerForAnother(lastDropZoneFound, draggedEl2, dz);
+          if (currentObservation !== observation)
+            return;
           dispatchDraggedElementEnteredContainer(dz, indexObj, draggedEl2);
           lastDropZoneFound = dz;
         } else if (index !== lastIndexFound) {
@@ -8999,7 +9033,9 @@ function observe(draggedEl2, dropZones) {
     } else {
       lastIsDraggedInADropZone = true;
     }
-    next = window.setTimeout(andNow, intervalMs);
+    if (currentObservation !== observation)
+      return;
+    next = setTimeoutIn(win, andNow, intervalMs);
   }
   andNow();
 }
@@ -9007,7 +9043,9 @@ function unobserve() {
   printDebug(function() {
     return "unobserving";
   });
-  clearTimeout(next);
+  currentObservation = void 0;
+  clearTimeoutIn(next);
+  next = void 0;
   resetIndexesCache();
 }
 var SCROLL_ZONE_PX = 30;
@@ -9024,7 +9062,7 @@ function makeScroller() {
     var _scrollingInfo = scrollingInfo, directionObj = _scrollingInfo.directionObj, stepPx = _scrollingInfo.stepPx;
     if (directionObj) {
       containerEl.scrollBy(directionObj.x * stepPx, directionObj.y * stepPx);
-      window.requestAnimationFrame(function() {
+      getWindowOf(containerEl).requestAnimationFrame(function() {
         return scrollContainer(containerEl);
       });
     }
@@ -9095,11 +9133,11 @@ function makeScroller() {
   };
 }
 function calcInnerDistancesBetweenPointAndSidesOfElement(point, el) {
-  var rect = el === document.scrollingElement ? {
+  var rect = el === el.ownerDocument.scrollingElement ? {
     top: 0,
-    bottom: window.innerHeight,
+    bottom: getWindowOf(el).innerHeight,
     left: 0,
-    right: window.innerWidth
+    right: getWindowOf(el).innerWidth
   } : el.getBoundingClientRect();
   if (!isPointInsideRect(point, rect)) {
     return null;
@@ -9128,7 +9166,7 @@ function createMultiScroller() {
       return false;
     }
     var scrollContainersUnderCursor = scrollingContainersDeepToShallow.filter(function(el) {
-      return isPointInsideRect(mousePosition, el.getBoundingClientRect()) || el === document.scrollingElement;
+      return isPointInsideRect(mousePosition, el.getBoundingClientRect()) || el === el.ownerDocument.scrollingElement;
     });
     for (var i = 0; i < scrollContainersUnderCursor.length; i++) {
       var scrolled = scrollIfNeeded(mousePosition, scrollContainersUnderCursor[i]);
@@ -9154,7 +9192,7 @@ function findScrollableParents(element2) {
   var scrollableContainers = [];
   var parent = element2;
   while (parent) {
-    var _window$getComputedSt = window.getComputedStyle(parent), overflow = _window$getComputedSt.overflow;
+    var _getWindowOf$getCompu = getWindowOf(parent).getComputedStyle(parent), overflow = _getWindowOf$getCompu.overflow;
     if (overflow.split(" ").some(function(o) {
       return o.includes("auto") || o.includes("scroll");
     })) {
@@ -9173,14 +9211,15 @@ function findRelevantScrollContainers(dropZones) {
       findScrollableParents(dz).forEach(function(container) {
         return scrollingContainers.add(container);
       });
+      var scrollingElement = dz.ownerDocument.scrollingElement;
+      if (scrollingElement.scrollHeight > scrollingElement.clientHeight || scrollingElement.scrollWidth > scrollingElement.clientHeight) {
+        scrollingContainers.add(scrollingElement);
+      }
     }
   } catch (err) {
     _iterator.e(err);
   } finally {
     _iterator.f();
-  }
-  if (document.scrollingElement.scrollHeight > document.scrollingElement.clientHeight || document.scrollingElement.scrollWidth > document.scrollingElement.clientHeight) {
-    scrollingContainers.add(document.scrollingElement);
   }
   return scrollingContainers;
 }
@@ -9241,8 +9280,20 @@ var TRANSITION_DURATION_SECONDS = 0.2;
 function trs(property) {
   return "".concat(property, " ").concat(TRANSITION_DURATION_SECONDS, "s ease");
 }
+function ensureMorphSizeTransitions(draggedEl2) {
+  var transitionProperties = draggedEl2.style.transitionProperty.split(",").map(function(property) {
+    return property.trim();
+  });
+  if (transitionProperties.includes("all"))
+    return;
+  if (!transitionProperties.includes("width"))
+    draggedEl2.style.transition += ", ".concat(trs("width"));
+  if (!transitionProperties.includes("height"))
+    draggedEl2.style.transition += ", ".concat(trs("height"));
+}
 function createDraggedElementFrom(originalElement, positionCenterOnXY) {
   var rect = originalElement.getBoundingClientRect();
+  var win = getWindowOf(originalElement);
   var draggedEl2 = svelteNodeClone(originalElement);
   copyStylesFromTo(originalElement, draggedEl2);
   draggedEl2.id = DRAGGED_ELEMENT_ID;
@@ -9255,7 +9306,7 @@ function createDraggedElementFrom(originalElement, positionCenterOnXY) {
     var center = findCenter(rect);
     elTopPx -= center.y - positionCenterOnXY.y;
     elLeftPx -= center.x - positionCenterOnXY.x;
-    window.setTimeout(function() {
+    win.setTimeout(function() {
       draggedEl2.style.top = "".concat(elTopPx, "px");
       draggedEl2.style.left = "".concat(elLeftPx, "px");
     }, 0);
@@ -9265,8 +9316,8 @@ function createDraggedElementFrom(originalElement, positionCenterOnXY) {
   draggedEl2.style.height = "".concat(rect.height, "px");
   draggedEl2.style.width = "".concat(rect.width, "px");
   draggedEl2.style.transition = "".concat(trs("top"), ", ").concat(trs("left"), ", ").concat(trs("background-color"), ", ").concat(trs("opacity"), ", ").concat(trs("color"), " ");
-  window.setTimeout(function() {
-    return draggedEl2.style.transition += ", ".concat(trs("width"), ", ").concat(trs("height"));
+  win.setTimeout(function() {
+    return ensureMorphSizeTransitions(draggedEl2);
   }, 0);
   draggedEl2.style.zIndex = "9999";
   draggedEl2.style.cursor = "grabbing";
@@ -9276,26 +9327,30 @@ function moveDraggedElementToWasDroppedState(draggedEl2) {
   draggedEl2.style.cursor = "grab";
 }
 function morphDraggedElementToBeLike(draggedEl2, copyFromEl, currentMouseX, currentMouseY) {
+  ensureMorphSizeTransitions(draggedEl2);
   copyStylesFromTo(copyFromEl, draggedEl2);
   var newRect = copyFromEl.getBoundingClientRect();
   var draggedElRect = draggedEl2.getBoundingClientRect();
+  var draggedElComputedStyle = getWindowOf(draggedEl2).getComputedStyle(draggedEl2);
+  var currentLeft = parseFloat(draggedElComputedStyle.left);
+  var currentTop = parseFloat(draggedElComputedStyle.top);
   var widthChange = newRect.width - draggedElRect.width;
   var heightChange = newRect.height - draggedElRect.height;
   if (widthChange || heightChange) {
     var relativeDistanceOfMousePointerFromDraggedSides = {
-      left: (currentMouseX - draggedElRect.left) / draggedElRect.width,
-      top: (currentMouseY - draggedElRect.top) / draggedElRect.height
+      left: draggedElRect.width ? (currentMouseX - draggedElRect.left) / draggedElRect.width : 0,
+      top: draggedElRect.height ? (currentMouseY - draggedElRect.top) / draggedElRect.height : 0
     };
     if (!getFeatureFlag(FEATURE_FLAG_NAMES.USE_COMPUTED_STYLE_INSTEAD_OF_BOUNDING_RECT)) {
       draggedEl2.style.height = "".concat(newRect.height, "px");
       draggedEl2.style.width = "".concat(newRect.width, "px");
     }
-    draggedEl2.style.left = "".concat(parseFloat(draggedEl2.style.left) - relativeDistanceOfMousePointerFromDraggedSides.left * widthChange, "px");
-    draggedEl2.style.top = "".concat(parseFloat(draggedEl2.style.top) - relativeDistanceOfMousePointerFromDraggedSides.top * heightChange, "px");
+    draggedEl2.style.left = "".concat(currentLeft - relativeDistanceOfMousePointerFromDraggedSides.left * widthChange, "px");
+    draggedEl2.style.top = "".concat(currentTop - relativeDistanceOfMousePointerFromDraggedSides.top * heightChange, "px");
   }
 }
 function copyStylesFromTo(copyFromEl, copyToEl) {
-  var computedStyle = window.getComputedStyle(copyFromEl);
+  var computedStyle = getWindowOf(copyFromEl).getComputedStyle(copyFromEl);
   Array.from(computedStyle).filter(function(s) {
     return s.startsWith("background") || s.startsWith("padding") || s.startsWith("font") || s.startsWith("text") || s.startsWith("align") || s.startsWith("justify") || s.startsWith("display") || s.startsWith("flex") || s.startsWith("border") || s === "opacity" || s === "color" || s === "list-style-type" || // copying with and height to make up for rect update timing issues in some browsers
     getFeatureFlag(FEATURE_FLAG_NAMES.USE_COMPUTED_STYLE_INSTEAD_OF_BOUNDING_RECT) && (s === "width" || s === "height");
@@ -9365,9 +9420,10 @@ function styleInactiveDropZones(dropZones) {
 }
 function preventShrinking(el) {
   var originalMinHeight = el.style.minHeight;
-  el.style.minHeight = window.getComputedStyle(el).getPropertyValue("height");
+  var computedStyle = getWindowOf(el).getComputedStyle(el);
+  el.style.minHeight = computedStyle.getPropertyValue("height");
   var originalMinWidth = el.style.minWidth;
-  el.style.minWidth = window.getComputedStyle(el).getPropertyValue("width");
+  el.style.minWidth = computedStyle.getPropertyValue("width");
   return function undo() {
     el.style.minHeight = originalMinHeight;
     el.style.minWidth = originalMinWidth;
@@ -9401,6 +9457,10 @@ var multiScroller;
 var touchDragHoldTimer;
 var touchHoldElapsed = false;
 var useCursorForDetectionActive = false;
+var pendingDragOwner;
+var watchedDropZones = /* @__PURE__ */ new Set();
+var dragWindow;
+var dropFinalization;
 var typeToDropZones$1 = /* @__PURE__ */ new Map();
 var dzToConfig$1 = /* @__PURE__ */ new Map();
 var elToMouseDownListener = /* @__PURE__ */ new WeakMap();
@@ -9417,18 +9477,30 @@ function registerDropZone$1(dropZoneEl, type) {
   }
 }
 function unregisterDropZone$1(dropZoneEl, type) {
-  typeToDropZones$1.get(type)["delete"](dropZoneEl);
+  var dropZones = typeToDropZones$1.get(type);
+  if (!dropZones || !dropZones["delete"](dropZoneEl))
+    return;
   decrementActiveDropZoneCount();
-  if (typeToDropZones$1.get(type).size === 0) {
+  if (dropZones.size === 0) {
     typeToDropZones$1["delete"](type);
   }
+}
+function getDropZonesInDragWindow(type) {
+  return Array.from(typeToDropZones$1.get(type) || []).filter(function(dz) {
+    return dz.ownerDocument.defaultView === dragWindow;
+  });
 }
 function watchDraggedElement() {
   printDebug(function() {
     return "watching dragged element";
   });
-  var dropZones = typeToDropZones$1.get(draggedElType);
-  var _iterator = _createForOfIteratorHelper(dropZones), _step;
+  var dropZones = getDropZonesInDragWindow(draggedElType);
+  if (dropZones.length === 0)
+    return;
+  if (watchedDropZones.size > 0)
+    unWatchDraggedElement();
+  watchedDropZones = new Set(dropZones);
+  var _iterator = _createForOfIteratorHelper(watchedDropZones), _step;
   try {
     for (_iterator.s(); !(_step = _iterator.n()).done; ) {
       var dz = _step.value;
@@ -9441,30 +9513,29 @@ function watchDraggedElement() {
   } finally {
     _iterator.f();
   }
-  window.addEventListener(DRAGGED_LEFT_DOCUMENT_EVENT_NAME, handleDrop$1);
-  var setIntervalMs = Math.max.apply(Math, _toConsumableArray(Array.from(dropZones.keys()).map(function(dz2) {
+  dragWindow.addEventListener(DRAGGED_LEFT_DOCUMENT_EVENT_NAME, handleDrop$1);
+  var setIntervalMs = Math.max.apply(Math, _toConsumableArray(Array.from(watchedDropZones).map(function(dz2) {
     return dzToConfig$1.get(dz2).dropAnimationDurationMs;
   })));
   var observationIntervalMs = setIntervalMs === 0 ? DISABLED_OBSERVATION_INTERVAL_MS : Math.max(setIntervalMs, MIN_OBSERVATION_INTERVAL_MS);
-  multiScroller = createMultiScroller(dropZones, function() {
+  multiScroller = createMultiScroller(watchedDropZones, function() {
     return currentMousePosition;
   });
   var getReferencePoint = useCursorForDetectionActive ? function() {
     return {
-      x: currentMousePosition.x + window.scrollX,
-      y: currentMousePosition.y + window.scrollY
+      x: currentMousePosition.x + dragWindow.scrollX,
+      y: currentMousePosition.y + dragWindow.scrollY
     };
   } : function() {
     return findCenterOfElement(draggedEl);
   };
-  observe(draggedEl, dropZones, observationIntervalMs * 1.07, multiScroller, getReferencePoint);
+  observe(draggedEl, watchedDropZones, observationIntervalMs * 1.07, multiScroller, getReferencePoint);
 }
 function unWatchDraggedElement() {
   printDebug(function() {
     return "unwatching dragged element";
   });
-  var dropZones = typeToDropZones$1.get(draggedElType);
-  var _iterator2 = _createForOfIteratorHelper(dropZones), _step2;
+  var _iterator2 = _createForOfIteratorHelper(watchedDropZones), _step2;
   try {
     for (_iterator2.s(); !(_step2 = _iterator2.n()).done; ) {
       var dz = _step2.value;
@@ -9477,7 +9548,8 @@ function unWatchDraggedElement() {
   } finally {
     _iterator2.f();
   }
-  window.removeEventListener(DRAGGED_LEFT_DOCUMENT_EVENT_NAME, handleDrop$1);
+  watchedDropZones = /* @__PURE__ */ new Set();
+  dragWindow.removeEventListener(DRAGGED_LEFT_DOCUMENT_EVENT_NAME, handleDrop$1);
   if (multiScroller) {
     multiScroller.destroy();
     multiScroller = void 0;
@@ -9521,6 +9593,8 @@ function handleDraggedEntered(e) {
       id: draggedElData[ITEM_ID_KEY],
       source: SOURCES.POINTER
     });
+    if (!isWorkingOnPreviousDrag)
+      return;
   }
   var shadowElIdx = e.detail.indexObj.index;
   shadowElDropZone = e.currentTarget;
@@ -9565,6 +9639,8 @@ function handleDraggedLeft(e) {
       id: draggedElData[ITEM_ID_KEY],
       source: SOURCES.POINTER
     });
+    if (!isWorkingOnPreviousDrag)
+      return;
   }
   dispatchConsiderEvent(e.currentTarget, items, {
     trigger: TRIGGERS.DRAGGED_LEFT,
@@ -9611,10 +9687,10 @@ function handleDrop$1() {
     return "dropped";
   });
   finalizingPreviousDrag = true;
-  window.removeEventListener("mousemove", handleMouseMove);
-  window.removeEventListener("touchmove", handleMouseMove);
-  window.removeEventListener("mouseup", handleDrop$1);
-  window.removeEventListener("touchend", handleDrop$1);
+  dragWindow.removeEventListener("mousemove", handleMouseMove);
+  dragWindow.removeEventListener("touchmove", handleMouseMove);
+  dragWindow.removeEventListener("mouseup", handleDrop$1);
+  dragWindow.removeEventListener("touchend", handleDrop$1);
   unWatchDraggedElement();
   moveDraggedElementToWasDroppedState(draggedEl);
   if (!shadowElDropZone) {
@@ -9627,7 +9703,7 @@ function handleDrop$1() {
     return ["dropped in dz", shadowElDropZone];
   });
   var _dzToConfig$get4 = dzToConfig$1.get(shadowElDropZone), items = _dzToConfig$get4.items, type = _dzToConfig$get4.type;
-  styleInactiveDropZones(typeToDropZones$1.get(type), function(dz) {
+  styleInactiveDropZones(getDropZonesInDragWindow(type), function(dz) {
     return dzToConfig$1.get(dz).dropTargetStyle;
   }, function(dz) {
     return dzToConfig$1.get(dz).dropTargetClasses;
@@ -9642,6 +9718,7 @@ function handleDrop$1() {
     return item[SHADOW_ITEM_MARKER_PROPERTY_NAME] ? draggedElData : item;
   });
   function finalizeWithinZone() {
+    unWatchDraggedElement();
     unlockOriginDzMinDimensions();
     dispatchFinalizeEvent(shadowElDropZone, items, {
       trigger: isDraggedOutsideOfAnyDz ? TRIGGERS.DROPPED_OUTSIDE_OF_ANY : TRIGGERS.DROPPED_INTO_ZONE,
@@ -9678,16 +9755,39 @@ function animateDraggedToFinalPosition(shadowElIdx, callback) {
   var transition = "transform ".concat(dropAnimationDurationMs, "ms ease");
   draggedEl.style.transition = draggedEl.style.transition ? draggedEl.style.transition + "," + transition : transition;
   draggedEl.style.transform = "translate3d(".concat(newTransform.x, "px, ").concat(newTransform.y, "px, 0)");
-  window.setTimeout(callback, dropAnimationDurationMs);
+  dropFinalization = {
+    timeout: setTimeoutIn(dragWindow, finishDropAnimation, dropAnimationDurationMs),
+    finalize: callback
+  };
+}
+function finishDropAnimation() {
+  var _dropFinalization = dropFinalization, finalize = _dropFinalization.finalize;
+  dropFinalization = void 0;
+  finalize();
+}
+function handleDragWindowHidden() {
+  printDebug(function() {
+    return "the drag's window is going away";
+  });
+  if (!finalizingPreviousDrag) {
+    handleDrop$1();
+  }
+  if (dropFinalization) {
+    clearTimeoutIn(dropFinalization.timeout);
+    finishDropAnimation();
+  }
 }
 function scheduleDZForRemovalAfterDrop(dz, destroy) {
-  scheduledForRemovalAfterDrop.push({
+  var scheduledRemoval = {
     dz,
     destroy
-  });
-  window.requestAnimationFrame(function() {
+  };
+  scheduledForRemovalAfterDrop.push(scheduledRemoval);
+  getWindowOf(dz).requestAnimationFrame(function() {
+    if (!scheduledForRemovalAfterDrop.includes(scheduledRemoval))
+      return;
     hideElement(dz);
-    document.body.appendChild(dz);
+    dz.ownerDocument.body.appendChild(dz);
   });
 }
 function cleanupPostDrop() {
@@ -9711,12 +9811,13 @@ function cleanupPostDrop() {
   finalizingPreviousDrag = false;
   unlockOriginDzMinDimensions = void 0;
   isDraggedOutsideOfAnyDz = false;
-  if (touchDragHoldTimer) {
-    clearTimeout(touchDragHoldTimer);
-  }
+  dragWindow.removeEventListener("pagehide", handleDragWindowHidden);
+  dragWindow = void 0;
+  clearTimeoutIn(touchDragHoldTimer);
   touchDragHoldTimer = void 0;
   touchHoldElapsed = false;
   useCursorForDetectionActive = false;
+  pendingDragOwner = void 0;
   if (scheduledForRemovalAfterDrop.length) {
     printDebug(function() {
       return ["will destroy zones that were removed during drag", scheduledForRemovalAfterDrop];
@@ -9731,6 +9832,7 @@ function cleanupPostDrop() {
 }
 function dndzone$2(node, options) {
   var initialized = false;
+  var destroyed = false;
   var config = {
     items: void 0,
     type: void 0,
@@ -9754,38 +9856,49 @@ function dndzone$2(node, options) {
   });
   var elToIdx = /* @__PURE__ */ new Map();
   function addMaybeListeners() {
-    window.addEventListener("mousemove", handleMouseMoveMaybeDragStart, {
+    dragWindow.addEventListener("mousemove", handleMouseMoveMaybeDragStart, {
       passive: false
     });
-    window.addEventListener("touchmove", handleMouseMoveMaybeDragStart, {
+    dragWindow.addEventListener("touchmove", handleMouseMoveMaybeDragStart, {
       passive: false,
       capture: false
     });
-    window.addEventListener("mouseup", handleFalseAlarm, {
+    dragWindow.addEventListener("mouseup", handleFalseAlarm, {
       passive: false
     });
-    window.addEventListener("touchend", handleFalseAlarm, {
+    dragWindow.addEventListener("touchend", handleFalseAlarm, {
       passive: false
     });
+    dragWindow.addEventListener("pagehide", cancelPendingDrag);
   }
   function removeMaybeListeners() {
-    window.removeEventListener("mousemove", handleMouseMoveMaybeDragStart);
-    window.removeEventListener("touchmove", handleMouseMoveMaybeDragStart);
-    window.removeEventListener("mouseup", handleFalseAlarm);
-    window.removeEventListener("touchend", handleFalseAlarm);
+    dragWindow.removeEventListener("mousemove", handleMouseMoveMaybeDragStart);
+    dragWindow.removeEventListener("touchmove", handleMouseMoveMaybeDragStart);
+    dragWindow.removeEventListener("mouseup", handleFalseAlarm);
+    dragWindow.removeEventListener("touchend", handleFalseAlarm);
+    dragWindow.removeEventListener("pagehide", cancelPendingDrag);
     if (touchDragHoldTimer) {
-      clearTimeout(touchDragHoldTimer);
+      clearTimeoutIn(touchDragHoldTimer);
       touchDragHoldTimer = void 0;
       touchHoldElapsed = false;
     }
   }
-  function handleFalseAlarm(e) {
+  function cancelPendingDrag() {
+    if (pendingDragOwner !== node)
+      return;
     removeMaybeListeners();
+    dragWindow = void 0;
+    pendingDragOwner = void 0;
     originalDragTarget = void 0;
     dragStartMousePosition = void 0;
     currentMousePosition = void 0;
+  }
+  function handleFalseAlarm(e) {
+    if (pendingDragOwner !== node)
+      return;
+    cancelPendingDrag();
     if (e.type === "touchend") {
-      var clickEvent = new Event("click", {
+      var clickEvent = new (getWindowOf(e.target)).Event("click", {
         bubbles: true,
         cancelable: true
       });
@@ -9793,6 +9906,8 @@ function dndzone$2(node, options) {
     }
   }
   function handleMouseMoveMaybeDragStart(e) {
+    if (destroyed || pendingDragOwner !== node)
+      return;
     var isTouch = !!e.touches;
     var c = isTouch ? e.touches[0] : e;
     if (isTouch && config.delayTouchStartMs > 0 && !touchHoldElapsed) {
@@ -9801,10 +9916,8 @@ function dndzone$2(node, options) {
         y: c.clientY
       };
       if (Math.abs(currentMousePosition.x - dragStartMousePosition.x) >= MIN_MOVEMENT_BEFORE_DRAG_START_PX || Math.abs(currentMousePosition.y - dragStartMousePosition.y) >= MIN_MOVEMENT_BEFORE_DRAG_START_PX) {
-        if (touchDragHoldTimer) {
-          clearTimeout(touchDragHoldTimer);
-          touchDragHoldTimer = void 0;
-        }
+        clearTimeoutIn(touchDragHoldTimer);
+        touchDragHoldTimer = void 0;
         handleFalseAlarm(e);
       }
       return;
@@ -9815,7 +9928,6 @@ function dndzone$2(node, options) {
       y: c.clientY
     };
     if (Math.abs(currentMousePosition.x - dragStartMousePosition.x) >= MIN_MOVEMENT_BEFORE_DRAG_START_PX || Math.abs(currentMousePosition.y - dragStartMousePosition.y) >= MIN_MOVEMENT_BEFORE_DRAG_START_PX) {
-      removeMaybeListeners();
       handleDragStart();
     }
   }
@@ -9832,9 +9944,9 @@ function dndzone$2(node, options) {
       });
       return;
     }
-    if (isWorkingOnPreviousDrag) {
+    if (destroyed || isWorkingOnPreviousDrag || pendingDragOwner) {
       printDebug(function() {
-        return "cannot start a new drag before finalizing previous one";
+        return "cannot start a new drag before finalizing the current drag or pending gesture";
       });
       return;
     }
@@ -9844,6 +9956,7 @@ function dndzone$2(node, options) {
       e.preventDefault();
     }
     e.stopPropagation();
+    pendingDragOwner = node;
     var c = isTouchStart ? e.touches[0] : e;
     dragStartMousePosition = {
       x: c.clientX,
@@ -9851,19 +9964,27 @@ function dndzone$2(node, options) {
     };
     currentMousePosition = _objectSpread2({}, dragStartMousePosition);
     originalDragTarget = e.currentTarget;
+    dragWindow = getWindowOf(originalDragTarget);
     if (useDelay) {
+      var pendingTarget = originalDragTarget;
       touchHoldElapsed = false;
-      touchDragHoldTimer = window.setTimeout(function() {
-        if (!originalDragTarget)
+      touchDragHoldTimer = setTimeoutIn(dragWindow, function() {
+        if (destroyed || pendingDragOwner !== node || originalDragTarget !== pendingTarget)
           return;
         touchHoldElapsed = true;
-        removeMaybeListeners();
         handleDragStart();
       }, config.delayTouchStartMs);
     }
     addMaybeListeners();
   }
   function handleDragStart() {
+    var _originalDragTarget;
+    if (destroyed || pendingDragOwner !== node || isWorkingOnPreviousDrag || !((_originalDragTarget = originalDragTarget) !== null && _originalDragTarget !== void 0 && _originalDragTarget.parentElement)) {
+      cancelPendingDrag();
+      return;
+    }
+    removeMaybeListeners();
+    pendingDragOwner = void 0;
     printDebug(function() {
       return ["drag start config: ".concat(toString(config)), originalDragTarget];
     });
@@ -9882,21 +10003,23 @@ function dndzone$2(node, options) {
     draggedEl = createDraggedElementFrom(originalDragTarget, centreDraggedOnCursor && currentMousePosition);
     originDropZoneRoot.appendChild(draggedEl);
     function keepOriginalElementInDom() {
-      if (!draggedEl)
+      if (!draggedEl || finalizingPreviousDrag)
         return;
       if (!originalDragTarget.parentElement) {
         originalDragTarget.setAttribute(ORIGINAL_DRAGGED_ITEM_MARKER_ATTRIBUTE, true);
         originDropZoneRoot.appendChild(originalDragTarget);
         watchDraggedElement();
+        if (!draggedEl)
+          return;
         hideElement(originalDragTarget);
         shadowElData[ITEM_ID_KEY] = draggedElData[ITEM_ID_KEY];
         draggedEl.focus();
       } else {
-        window.requestAnimationFrame(keepOriginalElementInDom);
+        dragWindow.requestAnimationFrame(keepOriginalElementInDom);
       }
     }
-    window.requestAnimationFrame(keepOriginalElementInDom);
-    styleActiveDropZones(Array.from(typeToDropZones$1.get(config.type)).filter(function(dz) {
+    dragWindow.requestAnimationFrame(keepOriginalElementInDom);
+    styleActiveDropZones(getDropZonesInDragWindow(config.type).filter(function(dz) {
       return dz === originDropZone || !dzToConfig$1.get(dz).dropFromOthersDisabled;
     }), function(dz) {
       return dzToConfig$1.get(dz).dropTargetStyle;
@@ -9905,28 +10028,32 @@ function dndzone$2(node, options) {
     });
     items.splice(currentIdx, 1, shadowElData);
     unlockOriginDzMinDimensions = preventShrinking(originDropZone);
+    dragWindow.addEventListener("mousemove", handleMouseMove, {
+      passive: false
+    });
+    dragWindow.addEventListener("touchmove", handleMouseMove, {
+      passive: false,
+      capture: false
+    });
+    dragWindow.addEventListener("mouseup", handleDrop$1, {
+      passive: false
+    });
+    dragWindow.addEventListener("touchend", handleDrop$1, {
+      passive: false
+    });
+    dragWindow.addEventListener("pagehide", handleDragWindowHidden);
     dispatchConsiderEvent(originDropZone, items, {
       trigger: TRIGGERS.DRAG_STARTED,
       id: draggedElData[ITEM_ID_KEY],
       source: SOURCES.POINTER
     });
-    window.addEventListener("mousemove", handleMouseMove, {
-      passive: false
-    });
-    window.addEventListener("touchmove", handleMouseMove, {
-      passive: false,
-      capture: false
-    });
-    window.addEventListener("mouseup", handleDrop$1, {
-      passive: false
-    });
-    window.addEventListener("touchend", handleDrop$1, {
-      passive: false
-    });
   }
   function configure(_ref2) {
     var _ref2$items = _ref2.items, items = _ref2$items === void 0 ? void 0 : _ref2$items, _ref2$flipDurationMs = _ref2.flipDurationMs, dropAnimationDurationMs = _ref2$flipDurationMs === void 0 ? 0 : _ref2$flipDurationMs, _ref2$type = _ref2.type, newType = _ref2$type === void 0 ? DEFAULT_DROP_ZONE_TYPE$1 : _ref2$type, _ref2$dragDisabled = _ref2.dragDisabled, dragDisabled = _ref2$dragDisabled === void 0 ? false : _ref2$dragDisabled, _ref2$morphDisabled = _ref2.morphDisabled, morphDisabled = _ref2$morphDisabled === void 0 ? false : _ref2$morphDisabled, _ref2$dropFromOthersD = _ref2.dropFromOthersDisabled, dropFromOthersDisabled = _ref2$dropFromOthersD === void 0 ? false : _ref2$dropFromOthersD, _ref2$dropTargetStyle = _ref2.dropTargetStyle, dropTargetStyle = _ref2$dropTargetStyle === void 0 ? DEFAULT_DROP_TARGET_STYLE$1 : _ref2$dropTargetStyle, _ref2$dropTargetClass = _ref2.dropTargetClasses, dropTargetClasses = _ref2$dropTargetClass === void 0 ? [] : _ref2$dropTargetClass, _ref2$transformDragge = _ref2.transformDraggedElement, transformDraggedElement = _ref2$transformDragge === void 0 ? function() {
     } : _ref2$transformDragge, _ref2$centreDraggedOn = _ref2.centreDraggedOnCursor, centreDraggedOnCursor = _ref2$centreDraggedOn === void 0 ? false : _ref2$centreDraggedOn, _ref2$useCursorForDet = _ref2.useCursorForDetection, useCursorForDetection = _ref2$useCursorForDet === void 0 ? false : _ref2$useCursorForDet, _ref2$dropAnimationDi = _ref2.dropAnimationDisabled, dropAnimationDisabled = _ref2$dropAnimationDi === void 0 ? false : _ref2$dropAnimationDi, _ref2$delayTouchStart = _ref2.delayTouchStart, delayTouchStartOpt = _ref2$delayTouchStart === void 0 ? false : _ref2$delayTouchStart;
+    var isInDragWindow = isWorkingOnPreviousDrag && node.ownerDocument.defaultView === dragWindow;
+    var wasDropTarget = node === originDropZone || config.type === draggedElType && !config.dropFromOthersDisabled;
+    var isDropTarget = node === originDropZone || newType === draggedElType && !dropFromOthersDisabled;
     config.dropAnimationDurationMs = dropAnimationDurationMs;
     var effectiveDelayMs = 0;
     if (delayTouchStartOpt === true) {
@@ -9946,38 +10073,24 @@ function dndzone$2(node, options) {
     config.centreDraggedOnCursor = centreDraggedOnCursor;
     config.useCursorForDetection = useCursorForDetection;
     config.dropAnimationDisabled = dropAnimationDisabled;
-    if (initialized && isWorkingOnPreviousDrag && !finalizingPreviousDrag && (!areObjectsShallowEqual(dropTargetStyle, config.dropTargetStyle) || !areArraysShallowEqualSameOrder(dropTargetClasses, config.dropTargetClasses))) {
-      styleInactiveDropZones([node], function() {
-        return config.dropTargetStyle;
-      }, function() {
-        return dropTargetClasses;
-      });
-      styleActiveDropZones([node], function() {
-        return dropTargetStyle;
-      }, function() {
-        return dropTargetClasses;
-      });
-    }
-    config.dropTargetStyle = dropTargetStyle;
-    config.dropTargetClasses = _toConsumableArray(dropTargetClasses);
-    function getConfigProp(dz, propName) {
-      return dzToConfig$1.get(dz) ? dzToConfig$1.get(dz)[propName] : config[propName];
-    }
-    if (initialized && isWorkingOnPreviousDrag && config.dropFromOthersDisabled !== dropFromOthersDisabled) {
-      if (dropFromOthersDisabled) {
-        styleInactiveDropZones([node], function(dz) {
-          return getConfigProp(dz, "dropTargetStyle");
-        }, function(dz) {
-          return getConfigProp(dz, "dropTargetClasses");
+    if (initialized && isInDragWindow && !finalizingPreviousDrag && (wasDropTarget !== isDropTarget || !areObjectsShallowEqual(dropTargetStyle, config.dropTargetStyle) || !areArraysShallowEqualSameOrder(dropTargetClasses, config.dropTargetClasses))) {
+      if (wasDropTarget) {
+        styleInactiveDropZones([node], function() {
+          return config.dropTargetStyle;
+        }, function() {
+          return config.dropTargetClasses;
         });
-      } else {
-        styleActiveDropZones([node], function(dz) {
-          return getConfigProp(dz, "dropTargetStyle");
-        }, function(dz) {
-          return getConfigProp(dz, "dropTargetClasses");
+      }
+      if (isDropTarget) {
+        styleActiveDropZones([node], function() {
+          return dropTargetStyle;
+        }, function() {
+          return dropTargetClasses;
         });
       }
     }
+    config.dropTargetStyle = dropTargetStyle;
+    config.dropTargetClasses = _toConsumableArray(dropTargetClasses);
     config.dropFromOthersDisabled = dropFromOthersDisabled;
     dzToConfig$1.set(node, config);
     registerDropZone$1(node, newType);
@@ -10001,10 +10114,8 @@ function dndzone$2(node, options) {
         elToMouseDownListener.set(draggableEl, handleMouseDown);
       }
       elToIdx.set(draggableEl, idx);
-      if (!initialized) {
-        initialized = true;
-      }
     }
+    initialized = true;
   }
   configure(options);
   return {
@@ -10015,11 +10126,30 @@ function dndzone$2(node, options) {
       configure(newOptions);
     },
     destroy: function destroy() {
+      if (destroyed)
+        return;
+      destroyed = true;
+      cancelPendingDrag();
+      var _iterator3 = _createForOfIteratorHelper(node.children), _step3;
+      try {
+        for (_iterator3.s(); !(_step3 = _iterator3.n()).done; ) {
+          var draggableEl = _step3.value;
+          draggableEl.removeEventListener("mousedown", elToMouseDownListener.get(draggableEl));
+          draggableEl.removeEventListener("touchstart", elToMouseDownListener.get(draggableEl));
+        }
+      } catch (err) {
+        _iterator3.e(err);
+      } finally {
+        _iterator3.f();
+      }
       function destroyDz() {
         printDebug(function() {
           return "pointer dndzone will destroy";
         });
-        unregisterDropZone$1(node, dzToConfig$1.get(node).type);
+        var registeredConfig = dzToConfig$1.get(node);
+        if (!registeredConfig)
+          return;
+        unregisterDropZone$1(node, registeredConfig.type);
         dzToConfig$1["delete"](node);
       }
       if (isWorkingOnPreviousDrag && !node.closest("[".concat(ORIGINAL_DRAGGED_ITEM_MARKER_ATTRIBUTE, "]"))) {
@@ -10033,19 +10163,50 @@ function dndzone$2(node, options) {
     }
   };
 }
-var _ID_TO_INSTRUCTION;
+var _INSTRUCTION_ID_TO_ST;
 var INSTRUCTION_IDs$1 = {
   DND_ZONE_ACTIVE: "dnd-zone-active",
   DND_ZONE_DRAG_DISABLED: "dnd-zone-drag-disabled"
 };
-var ID_TO_INSTRUCTION = (_ID_TO_INSTRUCTION = {}, _defineProperty(_ID_TO_INSTRUCTION, INSTRUCTION_IDs$1.DND_ZONE_ACTIVE, "Tab to one the items and press space-bar or enter to start dragging it"), _defineProperty(_ID_TO_INSTRUCTION, INSTRUCTION_IDs$1.DND_ZONE_DRAG_DISABLED, "This is a disabled drag and drop list"), _ID_TO_INSTRUCTION);
+var INSTRUCTION_ID_TO_STRING_KEY = (_INSTRUCTION_ID_TO_ST = {}, _defineProperty(_INSTRUCTION_ID_TO_ST, INSTRUCTION_IDs$1.DND_ZONE_ACTIVE, "zoneActiveInstruction"), _defineProperty(_INSTRUCTION_ID_TO_ST, INSTRUCTION_IDs$1.DND_ZONE_DRAG_DISABLED, "zoneDragDisabledInstruction"), _INSTRUCTION_ID_TO_ST);
+var DEFAULT_ARIA_STRINGS = {
+  dragStarted: function dragStarted(_ref) {
+    var itemLabel = _ref.itemLabel, zoneLabel = _ref.zoneLabel, canMoveBetweenZones = _ref.canMoveBetweenZones;
+    return "Started dragging item ".concat(itemLabel, ". Use the arrow keys to move it within its list ").concat(zoneLabel) + (canMoveBetweenZones ? ", or tab to another list in order to move the item into it" : "");
+  },
+  movedToPosition: function movedToPosition(_ref2) {
+    var itemLabel = _ref2.itemLabel, zoneLabel = _ref2.zoneLabel, position = _ref2.position;
+    return "Moved item ".concat(itemLabel, " to position ").concat(position, " in the list ").concat(zoneLabel);
+  },
+  movedToZoneEnd: function movedToZoneEnd(_ref3) {
+    var itemLabel = _ref3.itemLabel, zoneLabel = _ref3.zoneLabel;
+    return "Moved item ".concat(itemLabel, " to the end of the list ").concat(zoneLabel);
+  },
+  movedToZoneStart: function movedToZoneStart(_ref4) {
+    var itemLabel = _ref4.itemLabel, zoneLabel = _ref4.zoneLabel;
+    return "Moved item ".concat(itemLabel, " to the beginning of the list ").concat(zoneLabel);
+  },
+  dropped: function dropped(_ref5) {
+    var itemLabel = _ref5.itemLabel;
+    return "Stopped dragging item ".concat(itemLabel);
+  },
+  zoneActiveInstruction: function zoneActiveInstruction(_ref6) {
+    var keyboardDragTrigger = _ref6.keyboardDragTrigger;
+    return "Tab to one the items and press ".concat(KEYBOARD_DRAG_TRIGGER_PHRASES[keyboardDragTrigger], " to start dragging it");
+  },
+  zoneDragDisabledInstruction: "This is a disabled drag and drop list"
+};
+var ariaStrings = _objectSpread2({}, DEFAULT_ARIA_STRINGS);
+var instructionCtx = {
+  keyboardDragTrigger: DEFAULT_KEYBOARD_DRAG_TRIGGER
+};
 var ALERT_DIV_ID = "dnd-action-aria-alert";
-var alertsDiv;
-function initAriaOnBrowser() {
-  if (alertsDiv) {
+var docToAlertsDiv = /* @__PURE__ */ new Map();
+function initAriaOnBrowser(doc) {
+  if (docToAlertsDiv.has(doc)) {
     return;
   }
-  alertsDiv = document.createElement("div");
+  var alertsDiv = doc.createElement("div");
   (function initAlertsDiv() {
     alertsDiv.id = ALERT_DIV_ID;
     alertsDiv.style.position = "fixed";
@@ -10057,52 +10218,99 @@ function initAriaOnBrowser() {
     alertsDiv.style.width = "0";
     alertsDiv.setAttribute("role", "alert");
   })();
-  document.body.prepend(alertsDiv);
-  Object.entries(ID_TO_INSTRUCTION).forEach(function(_ref) {
-    var _ref2 = _slicedToArray(_ref, 2), id = _ref2[0], txt = _ref2[1];
-    return document.body.prepend(instructionToHiddenDiv(id, txt));
+  doc.body.prepend(alertsDiv);
+  docToAlertsDiv.forEach(function(_, knownDoc) {
+    return !knownDoc.defaultView && docToAlertsDiv["delete"](knownDoc);
+  });
+  docToAlertsDiv.set(doc, alertsDiv);
+  Object.entries(INSTRUCTION_ID_TO_STRING_KEY).forEach(function(_ref7) {
+    var _ref8 = _slicedToArray(_ref7, 2), id = _ref8[0], key = _ref8[1];
+    return doc.body.prepend(instructionToHiddenDiv(doc, id, formatWithFallback(key, instructionCtx)));
   });
 }
-function initAria() {
+function initAria(doc) {
   if (isOnServer)
     return null;
-  if (document.readyState === "complete") {
-    initAriaOnBrowser();
+  doc = doc || document;
+  if (doc.readyState === "complete") {
+    initAriaOnBrowser(doc);
   } else {
-    window.addEventListener("DOMContentLoaded", initAriaOnBrowser);
+    doc.addEventListener("DOMContentLoaded", function() {
+      return initAriaOnBrowser(doc);
+    });
   }
   return _objectSpread2({}, INSTRUCTION_IDs$1);
 }
-function destroyAria() {
-  if (isOnServer || !alertsDiv)
+function destroyAria(doc) {
+  if (isOnServer)
     return;
-  Object.keys(ID_TO_INSTRUCTION).forEach(function(id) {
-    var _document$getElementB;
-    return (_document$getElementB = document.getElementById(id)) === null || _document$getElementB === void 0 ? void 0 : _document$getElementB.remove();
+  doc = doc || document;
+  var alertsDiv = docToAlertsDiv.get(doc);
+  if (!alertsDiv)
+    return;
+  Object.keys(INSTRUCTION_ID_TO_STRING_KEY).forEach(function(id) {
+    var _doc$getElementById;
+    return (_doc$getElementById = doc.getElementById(id)) === null || _doc$getElementById === void 0 ? void 0 : _doc$getElementById.remove();
   });
   alertsDiv.remove();
-  alertsDiv = void 0;
+  docToAlertsDiv["delete"](doc);
 }
-function instructionToHiddenDiv(id, txt) {
-  var div = document.createElement("div");
+function instructionToHiddenDiv(doc, id, txt) {
+  var div = doc.createElement("div");
   div.id = id;
-  div.innerHTML = "<p>".concat(txt, "</p>");
+  renderInstruction(div, txt);
   div.style.display = "none";
   div.style.position = "fixed";
   div.style.zIndex = "-5";
   return div;
 }
-function alertToScreenReader(txt) {
+function renderInstruction(div, txt) {
+  div.replaceChildren();
+  var paragraph = div.ownerDocument.createElement("p");
+  paragraph.textContent = txt;
+  div.appendChild(paragraph);
+}
+function alertToScreenReader(txt, doc) {
   if (isOnServer)
     return;
-  if (!alertsDiv) {
-    initAriaOnBrowser();
+  doc = doc || document;
+  if (!docToAlertsDiv.has(doc)) {
+    initAriaOnBrowser(doc);
   }
+  var alertsDiv = docToAlertsDiv.get(doc);
   alertsDiv.innerHTML = "";
-  var alertText = document.createTextNode(txt);
+  var alertText = doc.createTextNode(txt);
   alertsDiv.appendChild(alertText);
   alertsDiv.style.display = "none";
   alertsDiv.style.display = "inline";
+}
+function formatAriaString(strings, key, ctx) {
+  var ariaString = strings[key];
+  return typeof ariaString === "function" ? ariaString(ctx) : ariaString;
+}
+function formatWithFallback(key, ctx) {
+  try {
+    return formatAriaString(ariaStrings, key, ctx);
+  } catch (err) {
+    printDebug(function() {
+      return ['aria string formatter for "'.concat(key, '" threw, falling back to the default'), err];
+    });
+    try {
+      return formatAriaString(DEFAULT_ARIA_STRINGS, key, ctx);
+    } catch (defaultErr) {
+      printDebug(function() {
+        return ['default aria string formatter for "'.concat(key, '" also threw'), defaultErr];
+      });
+      return "";
+    }
+  }
+}
+function announceToScreenReader(key, ctx, doc) {
+  alertToScreenReader(formatWithFallback(key, ctx), doc);
+}
+var activeTrigger = DEFAULT_KEYBOARD_DRAG_TRIGGER;
+function isKeyboardDragTriggerKey(key) {
+  return KEYBOARD_DRAG_TRIGGER_KEYS[activeTrigger].includes(key);
 }
 var DEFAULT_DROP_ZONE_TYPE = "--any--";
 var DEFAULT_DROP_TARGET_STYLE = {
@@ -10115,25 +10323,88 @@ var focusedDzLabel = "";
 var focusedItem;
 var focusedItemId;
 var focusedItemLabel = "";
+var dragDocument;
 var allDragTargets = /* @__PURE__ */ new WeakSet();
 var elToKeyDownListeners = /* @__PURE__ */ new WeakMap();
 var elToFocusListeners = /* @__PURE__ */ new WeakMap();
 var dzToHandles = /* @__PURE__ */ new Map();
 var dzToConfig = /* @__PURE__ */ new Map();
 var typeToDropZones = /* @__PURE__ */ new Map();
+var dzToDocuments = /* @__PURE__ */ new Map();
+var documentToRegistration = /* @__PURE__ */ new Map();
 var INSTRUCTION_IDs;
+function getDocumentsAround(doc) {
+  var docs = [doc];
+  for (var frame = (_doc$defaultView = doc.defaultView) === null || _doc$defaultView === void 0 ? void 0 : _doc$defaultView.frameElement; frame && docs[docs.length - 1] !== document; frame = getWindowOf(frame).frameElement) {
+    var _doc$defaultView;
+    docs.push(frame.ownerDocument);
+  }
+  return docs;
+}
+function retainDocuments(dropZoneEl) {
+  var docs = getDocumentsAround(dropZoneEl.ownerDocument);
+  docs.forEach(function(doc, idx) {
+    var registration = documentToRegistration.get(doc);
+    if (!registration) {
+      printDebug(function() {
+        return "adding global keydown and click handlers";
+      });
+      var handlers = {
+        keydown: globalKeyDownHandler,
+        click: globalClickHandler,
+        pagehide: handleWindowHidden
+      };
+      registration = {
+        win: doc.defaultView,
+        zoneCount: 0,
+        documentCount: 0,
+        handlers: {}
+      };
+      Object.entries(handlers).forEach(function(_ref) {
+        var _registration$win;
+        var _ref2 = _slicedToArray(_ref, 2), type = _ref2[0], handler = _ref2[1];
+        registration.handlers[type] = function(e) {
+          return handler(e);
+        };
+        (_registration$win = registration.win) === null || _registration$win === void 0 ? void 0 : _registration$win.addEventListener(type, registration.handlers[type]);
+      });
+      documentToRegistration.set(doc, registration);
+    }
+    registration.documentCount++;
+    if (idx === 0 && registration.zoneCount++ === 0) {
+      INSTRUCTION_IDs = initAria(doc);
+    }
+  });
+  dzToDocuments.set(dropZoneEl, docs);
+}
+function releaseDocuments(dropZoneEl) {
+  var docs = dzToDocuments.get(dropZoneEl);
+  if (!docs)
+    return;
+  dzToDocuments["delete"](dropZoneEl);
+  docs.forEach(function(doc, idx) {
+    var registration = documentToRegistration.get(doc);
+    if (idx === 0 && --registration.zoneCount === 0) {
+      destroyAria(doc);
+    }
+    if (--registration.documentCount > 0)
+      return;
+    printDebug(function() {
+      return "removing global keydown and click handlers";
+    });
+    documentToRegistration["delete"](doc);
+    Object.entries(registration.handlers).forEach(function(_ref3) {
+      var _registration$win2;
+      var _ref4 = _slicedToArray(_ref3, 2), type = _ref4[0], handler = _ref4[1];
+      return (_registration$win2 = registration.win) === null || _registration$win2 === void 0 ? void 0 : _registration$win2.removeEventListener(type, handler);
+    });
+  });
+}
 function registerDropZone(dropZoneEl, type) {
+  var _dzToDocuments$get;
   printDebug(function() {
     return "registering drop-zone if absent";
   });
-  if (typeToDropZones.size === 0) {
-    printDebug(function() {
-      return "adding global keydown and click handlers";
-    });
-    INSTRUCTION_IDs = initAria();
-    window.addEventListener("keydown", globalKeyDownHandler);
-    window.addEventListener("click", globalClickHandler);
-  }
   if (!typeToDropZones.has(type)) {
     typeToDropZones.set(type, /* @__PURE__ */ new Set());
   }
@@ -10141,28 +10412,26 @@ function registerDropZone(dropZoneEl, type) {
     typeToDropZones.get(type).add(dropZoneEl);
     incrementActiveDropZoneCount();
   }
+  if (((_dzToDocuments$get = dzToDocuments.get(dropZoneEl)) === null || _dzToDocuments$get === void 0 ? void 0 : _dzToDocuments$get[0]) !== dropZoneEl.ownerDocument) {
+    releaseDocuments(dropZoneEl);
+    retainDocuments(dropZoneEl);
+  }
 }
 function unregisterDropZone(dropZoneEl, type) {
   printDebug(function() {
     return "unregistering drop-zone";
   });
-  if (focusedDz === dropZoneEl) {
+  if (isDragging && focusedDz === dropZoneEl) {
     handleDrop();
   }
-  typeToDropZones.get(type)["delete"](dropZoneEl);
+  var dropZones = typeToDropZones.get(type);
+  if (!dropZones || !dropZones["delete"](dropZoneEl))
+    return;
   decrementActiveDropZoneCount();
-  if (typeToDropZones.get(type).size === 0) {
+  if (dropZones.size === 0) {
     typeToDropZones["delete"](type);
   }
-  if (typeToDropZones.size === 0) {
-    printDebug(function() {
-      return "removing global keydown and click handlers";
-    });
-    window.removeEventListener("keydown", globalKeyDownHandler);
-    window.removeEventListener("click", globalClickHandler);
-    INSTRUCTION_IDs = void 0;
-    destroyAria();
-  }
+  releaseDocuments(dropZoneEl);
 }
 function globalKeyDownHandler(e) {
   if (!isDragging)
@@ -10174,15 +10443,56 @@ function globalKeyDownHandler(e) {
     }
   }
 }
-function globalClickHandler() {
+function globalClickHandler(e) {
   if (!isDragging)
     return;
-  if (!allDragTargets.has(document.activeElement)) {
+  if (!allDragTargets.has(e.currentTarget.document.activeElement)) {
     printDebug(function() {
       return "clicked outside of any draggable";
     });
     handleDrop();
   }
+}
+function handleWindowHidden(e) {
+  if (isDragging && focusedDz && getWindowOf(focusedDz) === e.currentTarget) {
+    printDebug(function() {
+      return "the focused zone's window is going away";
+    });
+    handleDrop();
+  }
+}
+function isInDragDocument(dropZoneEl) {
+  var doc = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : dragDocument;
+  return dropZoneEl.ownerDocument === doc;
+}
+function isAboveOrLeftOf(el, otherEl) {
+  var position = el.getBoundingClientRect();
+  var otherPosition = otherEl.getBoundingClientRect();
+  return position.top < otherPosition.top || position.left < otherPosition.left;
+}
+function isKeyboardDropTarget(dropZoneEl) {
+  var config = dzToConfig.get(dropZoneEl);
+  return config.type === draggedItemType && !config.dropFromOthersDisabled && !focusedItem.contains(dropZoneEl) && isInDragDocument(dropZoneEl);
+}
+function getActiveDragTabIndex(dropZoneEl) {
+  return dropZoneEl !== focusedDz && isKeyboardDropTarget(dropZoneEl) ? 0 : -1;
+}
+function refreshActiveDragTabIndices() {
+  dzToConfig.forEach(function(_, dropZoneEl) {
+    dropZoneEl.tabIndex = getActiveDragTabIndex(dropZoneEl);
+  });
+}
+function grabIsAlive() {
+  var focusedConfig = dzToConfig.get(focusedDz);
+  if (focusedConfig !== null && focusedConfig !== void 0 && focusedConfig.items.some(function(item) {
+    return item[ITEM_ID_KEY] === focusedItemId;
+  }))
+    return true;
+  printDebug(function() {
+    return "dragged item is gone, dropping";
+  });
+  handleDrop();
+  return false;
 }
 function handleZoneFocus(e) {
   printDebug(function() {
@@ -10191,8 +10501,12 @@ function handleZoneFocus(e) {
   if (!isDragging)
     return;
   var newlyFocusedDz = e.currentTarget;
-  if (newlyFocusedDz === focusedDz)
+  if (newlyFocusedDz === focusedDz || !isKeyboardDropTarget(newlyFocusedDz))
     return;
+  if (!grabIsAlive())
+    return;
+  var dzFrom = focusedDz;
+  var movedItemId = focusedItemId;
   focusedDzLabel = newlyFocusedDz.getAttribute("aria-label") || "";
   var _dzToConfig$get = dzToConfig.get(focusedDz), originItems = _dzToConfig$get.items;
   var originItem = originItems.find(function(item) {
@@ -10201,69 +10515,109 @@ function handleZoneFocus(e) {
   var originIdx = originItems.indexOf(originItem);
   var itemToMove = originItems.splice(originIdx, 1)[0];
   var _dzToConfig$get2 = dzToConfig.get(newlyFocusedDz), targetItems = _dzToConfig$get2.items, autoAriaDisabled = _dzToConfig$get2.autoAriaDisabled;
-  if (newlyFocusedDz.getBoundingClientRect().top < focusedDz.getBoundingClientRect().top || newlyFocusedDz.getBoundingClientRect().left < focusedDz.getBoundingClientRect().left) {
+  if (isAboveOrLeftOf(newlyFocusedDz, focusedDz)) {
     targetItems.push(itemToMove);
     if (!autoAriaDisabled) {
-      alertToScreenReader("Moved item ".concat(focusedItemLabel, " to the end of the list ").concat(focusedDzLabel));
+      announceToScreenReader("movedToZoneEnd", {
+        itemLabel: focusedItemLabel,
+        zoneLabel: focusedDzLabel,
+        position: targetItems.length,
+        count: targetItems.length
+      }, newlyFocusedDz.ownerDocument);
     }
   } else {
     targetItems.unshift(itemToMove);
     if (!autoAriaDisabled) {
-      alertToScreenReader("Moved item ".concat(focusedItemLabel, " to the beginning of the list ").concat(focusedDzLabel));
+      announceToScreenReader("movedToZoneStart", {
+        itemLabel: focusedItemLabel,
+        zoneLabel: focusedDzLabel,
+        position: 1,
+        count: targetItems.length
+      }, newlyFocusedDz.ownerDocument);
     }
   }
-  var dzFrom = focusedDz;
+  if (isDragging)
+    focusedDz = newlyFocusedDz;
   dispatchFinalizeEvent(dzFrom, originItems, {
     trigger: TRIGGERS.DROPPED_INTO_ANOTHER,
-    id: focusedItemId,
+    id: movedItemId,
     source: SOURCES.KEYBOARD
   });
-  dispatchFinalizeEvent(newlyFocusedDz, targetItems, {
-    trigger: TRIGGERS.DROPPED_INTO_ZONE,
-    id: focusedItemId,
-    source: SOURCES.KEYBOARD
-  });
-  focusedDz = newlyFocusedDz;
+  if (dzToConfig.has(newlyFocusedDz)) {
+    dispatchFinalizeEvent(newlyFocusedDz, targetItems, {
+      trigger: TRIGGERS.DROPPED_INTO_ZONE,
+      id: movedItemId,
+      source: SOURCES.KEYBOARD
+    });
+  }
 }
 function triggerAllDzsUpdate() {
-  dzToHandles.forEach(function(_ref, dz) {
-    var update2 = _ref.update;
+  dzToHandles.forEach(function(_ref5, dz) {
+    var update2 = _ref5.update;
     return update2(dzToConfig.get(dz));
   });
 }
 function handleDrop() {
   var dispatchConsider = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : true;
+  if (!isDragging || !focusedDz)
+    return;
   printDebug(function() {
     return "drop";
   });
-  if (!dzToConfig.get(focusedDz).autoAriaDisabled) {
-    alertToScreenReader("Stopped dragging item ".concat(focusedItemLabel));
-  }
-  if (allDragTargets.has(document.activeElement)) {
-    document.activeElement.blur();
-  }
-  if (dispatchConsider) {
-    dispatchConsiderEvent(focusedDz, dzToConfig.get(focusedDz).items, {
-      trigger: TRIGGERS.DRAG_STOPPED,
-      id: focusedItemId,
-      source: SOURCES.KEYBOARD
-    });
-  }
-  styleInactiveDropZones(typeToDropZones.get(draggedItemType), function(dz) {
-    return dzToConfig.get(dz).dropTargetStyle;
-  }, function(dz) {
-    return dzToConfig.get(dz).dropTargetClasses;
-  });
+  var droppedDz = focusedDz;
+  var droppedConfig = dzToConfig.get(droppedDz);
+  var droppedItemId = focusedItemId;
+  var droppedItemType = draggedItemType;
+  if (!droppedConfig)
+    return;
+  var droppedItemLabel = focusedItemLabel;
+  var droppedDzLabel = focusedDzLabel;
+  var droppedDocument = dragDocument;
   focusedItem = null;
   focusedItemId = null;
   focusedItemLabel = "";
   draggedItemType = null;
   focusedDz = null;
   focusedDzLabel = "";
+  dragDocument = void 0;
   isDragging = false;
+  if (!droppedConfig.autoAriaDisabled) {
+    var droppedItems = droppedConfig.items;
+    var droppedIdx = droppedItems.findIndex(function(item) {
+      return item[ITEM_ID_KEY] === droppedItemId;
+    });
+    announceToScreenReader("dropped", {
+      itemLabel: droppedItemLabel,
+      zoneLabel: droppedDzLabel,
+      position: (droppedIdx < 0 ? 0 : droppedIdx) + 1,
+      count: droppedItems.length
+    }, droppedDz.ownerDocument);
+  }
+  var activeElement = droppedDz.ownerDocument.activeElement;
+  if (allDragTargets.has(activeElement)) {
+    activeElement.blur();
+  }
+  if (dispatchConsider) {
+    dispatchConsiderEvent(droppedDz, droppedConfig.items, {
+      trigger: TRIGGERS.DRAG_STOPPED,
+      id: droppedItemId,
+      source: SOURCES.KEYBOARD
+    });
+  }
+  var dropZones = typeToDropZones.get(droppedItemType);
+  if (dropZones) {
+    styleInactiveDropZones(Array.from(dropZones).filter(function(dz) {
+      return isInDragDocument(dz, droppedDocument);
+    }), function(dz) {
+      return dzToConfig.get(dz).dropTargetStyle;
+    }, function(dz) {
+      return dzToConfig.get(dz).dropTargetClasses;
+    });
+  }
   triggerAllDzsUpdate();
 }
 function dndzone$1(node, options) {
+  var destroyed = false;
   var config = {
     items: void 0,
     type: void 0,
@@ -10280,6 +10634,9 @@ function dndzone$1(node, options) {
       return;
     arr.splice(j, 1, arr.splice(i, 1, arr[j])[0]);
   }
+  function ownsArrowKey(e) {
+    return isDragging && node === focusedDz && isInDragDocument(node) && e.currentTarget === focusedItem && e.target === focusedItem;
+  }
   function handleKeyDown(e) {
     printDebug(function() {
       return ["handling key down", e.key];
@@ -10287,6 +10644,9 @@ function dndzone$1(node, options) {
     switch (e.key) {
       case "Enter":
       case " ": {
+        if (!isKeyboardDragTriggerKey(e.key)) {
+          return;
+        }
         if ((e.target.disabled !== void 0 || e.target.href || e.target.isContentEditable) && !allDragTargets.has(e.target)) {
           return;
         }
@@ -10301,7 +10661,7 @@ function dndzone$1(node, options) {
       }
       case "ArrowDown":
       case "ArrowRight": {
-        if (!isDragging)
+        if (!ownsArrowKey(e))
           return;
         e.preventDefault();
         e.stopPropagation();
@@ -10313,8 +10673,15 @@ function dndzone$1(node, options) {
         });
         if (idx < children2.length - 1) {
           if (!config.autoAriaDisabled) {
-            alertToScreenReader("Moved item ".concat(focusedItemLabel, " to position ").concat(idx + 2, " in the list ").concat(focusedDzLabel));
+            announceToScreenReader("movedToPosition", {
+              itemLabel: focusedItemLabel,
+              zoneLabel: focusedDzLabel,
+              position: idx + 2,
+              count: items.length
+            }, node.ownerDocument);
           }
+          if (!ownsArrowKey(e))
+            break;
           swap(items, idx, idx + 1);
           dispatchFinalizeEvent(node, items, {
             trigger: TRIGGERS.DROPPED_INTO_ZONE,
@@ -10326,7 +10693,7 @@ function dndzone$1(node, options) {
       }
       case "ArrowUp":
       case "ArrowLeft": {
-        if (!isDragging)
+        if (!ownsArrowKey(e))
           return;
         e.preventDefault();
         e.stopPropagation();
@@ -10338,8 +10705,15 @@ function dndzone$1(node, options) {
         });
         if (_idx > 0) {
           if (!config.autoAriaDisabled) {
-            alertToScreenReader("Moved item ".concat(focusedItemLabel, " to position ").concat(_idx, " in the list ").concat(focusedDzLabel));
+            announceToScreenReader("movedToPosition", {
+              itemLabel: focusedItemLabel,
+              zoneLabel: focusedDzLabel,
+              position: _idx,
+              count: _items.length
+            }, node.ownerDocument);
           }
+          if (!ownsArrowKey(e))
+            break;
           swap(_items, _idx, _idx - 1);
           dispatchFinalizeEvent(node, _items, {
             trigger: TRIGGERS.DROPPED_INTO_ZONE,
@@ -10357,10 +10731,12 @@ function dndzone$1(node, options) {
     });
     setCurrentFocusedItem(e.currentTarget);
     focusedDz = node;
+    focusedDzLabel = node.getAttribute("aria-label") || "";
     draggedItemType = config.type;
     isDragging = true;
+    dragDocument = node.ownerDocument;
     var dropTargets = Array.from(typeToDropZones.get(config.type)).filter(function(dz) {
-      return dz === focusedDz || !dzToConfig.get(dz).dropFromOthersDisabled;
+      return dz === focusedDz || isKeyboardDropTarget(dz);
     });
     styleActiveDropZones(dropTargets, function(dz) {
       return dzToConfig.get(dz).dropTargetStyle;
@@ -10368,12 +10744,20 @@ function dndzone$1(node, options) {
       return dzToConfig.get(dz).dropTargetClasses;
     });
     if (!config.autoAriaDisabled) {
-      var msg = "Started dragging item ".concat(focusedItemLabel, ". Use the arrow keys to move it within its list ").concat(focusedDzLabel);
-      if (dropTargets.length > 1) {
-        msg += ", or tab to another list in order to move the item into it";
-      }
-      alertToScreenReader(msg);
+      var startItems = dzToConfig.get(node).items;
+      var startIdx = startItems.findIndex(function(item) {
+        return item[ITEM_ID_KEY] === focusedItemId;
+      });
+      announceToScreenReader("dragStarted", {
+        itemLabel: focusedItemLabel,
+        zoneLabel: focusedDzLabel,
+        position: (startIdx < 0 ? 0 : startIdx) + 1,
+        count: startItems.length,
+        canMoveBetweenZones: dropTargets.length > 1
+      }, node.ownerDocument);
     }
+    if (!isDragging)
+      return;
     dispatchConsiderEvent(node, dzToConfig.get(node).items, {
       trigger: TRIGGERS.DRAG_STARTED,
       id: focusedItemId,
@@ -10399,8 +10783,8 @@ function dndzone$1(node, options) {
     focusedItemId = items[focusedItemIdx][ITEM_ID_KEY];
     focusedItemLabel = children2[focusedItemIdx].getAttribute("aria-label") || "";
   }
-  function configure(_ref2) {
-    var _ref2$items = _ref2.items, items = _ref2$items === void 0 ? [] : _ref2$items, _ref2$type = _ref2.type, newType = _ref2$type === void 0 ? DEFAULT_DROP_ZONE_TYPE : _ref2$type, _ref2$dragDisabled = _ref2.dragDisabled, dragDisabled = _ref2$dragDisabled === void 0 ? false : _ref2$dragDisabled, _ref2$zoneTabIndex = _ref2.zoneTabIndex, zoneTabIndex = _ref2$zoneTabIndex === void 0 ? 0 : _ref2$zoneTabIndex, _ref2$zoneItemTabInde = _ref2.zoneItemTabIndex, zoneItemTabIndex = _ref2$zoneItemTabInde === void 0 ? 0 : _ref2$zoneItemTabInde, _ref2$dropFromOthersD = _ref2.dropFromOthersDisabled, dropFromOthersDisabled = _ref2$dropFromOthersD === void 0 ? false : _ref2$dropFromOthersD, _ref2$dropTargetStyle = _ref2.dropTargetStyle, dropTargetStyle = _ref2$dropTargetStyle === void 0 ? DEFAULT_DROP_TARGET_STYLE : _ref2$dropTargetStyle, _ref2$dropTargetClass = _ref2.dropTargetClasses, dropTargetClasses = _ref2$dropTargetClass === void 0 ? [] : _ref2$dropTargetClass, _ref2$autoAriaDisable = _ref2.autoAriaDisabled, autoAriaDisabled = _ref2$autoAriaDisable === void 0 ? false : _ref2$autoAriaDisable;
+  function configure(_ref6) {
+    var _ref6$items = _ref6.items, items = _ref6$items === void 0 ? [] : _ref6$items, _ref6$type = _ref6.type, newType = _ref6$type === void 0 ? DEFAULT_DROP_ZONE_TYPE : _ref6$type, _ref6$dragDisabled = _ref6.dragDisabled, dragDisabled = _ref6$dragDisabled === void 0 ? false : _ref6$dragDisabled, _ref6$zoneTabIndex = _ref6.zoneTabIndex, zoneTabIndex = _ref6$zoneTabIndex === void 0 ? 0 : _ref6$zoneTabIndex, _ref6$zoneItemTabInde = _ref6.zoneItemTabIndex, zoneItemTabIndex = _ref6$zoneItemTabInde === void 0 ? 0 : _ref6$zoneItemTabInde, _ref6$dropFromOthersD = _ref6.dropFromOthersDisabled, dropFromOthersDisabled = _ref6$dropFromOthersD === void 0 ? false : _ref6$dropFromOthersD, _ref6$dropTargetStyle = _ref6.dropTargetStyle, dropTargetStyle = _ref6$dropTargetStyle === void 0 ? DEFAULT_DROP_TARGET_STYLE : _ref6$dropTargetStyle, _ref6$dropTargetClass = _ref6.dropTargetClasses, dropTargetClasses = _ref6$dropTargetClass === void 0 ? [] : _ref6$dropTargetClass, _ref6$autoAriaDisable = _ref6.autoAriaDisabled, autoAriaDisabled = _ref6$autoAriaDisable === void 0 ? false : _ref6$autoAriaDisable;
     config.items = _toConsumableArray(items);
     config.dragDisabled = dragDisabled;
     config.dropFromOthersDisabled = dropFromOthersDisabled;
@@ -10419,13 +10803,22 @@ function dndzone$1(node, options) {
       node.setAttribute("aria-describedby", dragDisabled ? INSTRUCTION_IDs.DND_ZONE_DRAG_DISABLED : INSTRUCTION_IDs.DND_ZONE_ACTIVE);
     }
     dzToConfig.set(node, config);
+    var itemMovedToThisZone = false;
     if (isDragging) {
-      node.tabIndex = node === focusedDz || focusedItem.contains(node) || config.dropFromOthersDisabled || focusedDz && config.type !== dzToConfig.get(focusedDz).type ? -1 : 0;
+      itemMovedToThisZone = isInDragDocument(node) && config.type === draggedItemType && config.items.some(function(item) {
+        return item[ITEM_ID_KEY] === focusedItemId;
+      }) && node !== focusedDz;
+      if (itemMovedToThisZone) {
+        focusedDz = node;
+        focusedDzLabel = node.getAttribute("aria-label") || "";
+      }
+      node.tabIndex = getActiveDragTabIndex(node);
     } else {
       node.tabIndex = config.zoneTabIndex;
     }
     node.addEventListener("focus", handleZoneFocus);
     var _loop = function _loop2(i2) {
+      var _config$items$i;
       var draggableEl = node.children[i2];
       allDragTargets.add(draggableEl);
       draggableEl.tabIndex = isDragging ? -1 : config.zoneItemTabIndex;
@@ -10440,7 +10833,7 @@ function dndzone$1(node, options) {
         draggableEl.addEventListener("click", handleClick);
         elToFocusListeners.set(draggableEl, handleClick);
       }
-      if (isDragging && config.items[i2][ITEM_ID_KEY] === focusedItemId) {
+      if (isDragging && isInDragDocument(node) && config.type === draggedItemType && ((_config$items$i = config.items[i2]) === null || _config$items$i === void 0 ? void 0 : _config$items$i[ITEM_ID_KEY]) === focusedItemId) {
         printDebug(function() {
           return ["focusing on", {
             i: i2,
@@ -10455,6 +10848,9 @@ function dndzone$1(node, options) {
     for (var i = 0; i < node.children.length; i++) {
       _loop(i);
     }
+    if (itemMovedToThisZone && isDragging) {
+      refreshActiveDragTabIndices();
+    }
   }
   configure(options);
   var handles = {
@@ -10465,9 +10861,25 @@ function dndzone$1(node, options) {
       configure(newOptions);
     },
     destroy: function destroy() {
+      if (destroyed)
+        return;
+      destroyed = true;
       printDebug(function() {
         return "keyboard dndzone will destroy";
       });
+      node.removeEventListener("focus", handleZoneFocus);
+      var _iterator = _createForOfIteratorHelper(node.children), _step;
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done; ) {
+          var draggableEl = _step.value;
+          draggableEl.removeEventListener("keydown", elToKeyDownListeners.get(draggableEl));
+          draggableEl.removeEventListener("click", elToFocusListeners.get(draggableEl));
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
       unregisterDropZone(node, config.type);
       dzToConfig["delete"](node);
       dzToHandles["delete"](node);

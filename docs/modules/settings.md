@@ -53,16 +53,32 @@ Plugin settings are `FluentTasksSettings` stored by Obsidian `Plugin.saveData` /
 |---|---|
 | `accentColor` | `"#8b5cf6"` |
 | `openDetailInModal` | `false` |
+| `fullscreenDetailModal` | `true` |
+| `hideLeftSidebar` | `false` |
+| `autoExpandSidebarOnDrag` | `false` |
 | `autoExpandSidebar` | `true` |
 | `autoCollapseSidebarOnSwitch` | `true` |
 | `searchHideCompleted` | `true` |
 | `hideRibbonIcon` | `false` |
 | `wrapTaskTitles` | `true` |
+| `centerAlignTasks` | `true` |
+| `disableStars` | `false` |
+| `hiddenStarMode` | `false` |
+| `showStepsProgressPill` | `false` |
+| `mainListTitleSize` | `'medium'` |
+| `showListTitleInHeader` | `false` |
 | `quickModalAction` | `'direct'` |
 | `quickModalTipCount` | `0` |
 | `quickListGridLayout` | `true` |
-| `quickListMinColGap` | `20` |
-| `quickListMinRowGap` | `16` |
+| `quickListMinColGap` | `16` |
+| `quickListMinRowGap` | `12` |
+| `quickListMaxCardWidth` | `320` |
+| `quickListFocusCenter` | `false` |
+| `dailyBackupEnabled` | `true` |
+| `undoDurationSeconds` | `2.5` |
+| `enableTaskWeightMode` | `false` |
+| `enableFocusedLists` | `false` |
+| `focusedLists` | `[]` |
 
 <!-- BEGIN USER-SPECIFIED -->
 <!-- END USER-SPECIFIED -->

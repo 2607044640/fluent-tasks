@@ -39,6 +39,7 @@ There is no cloud lock-in or external server dependency. All data remains 100% l
 - **Focused Lists Quick Board & Drag Reordering**: Configure top priority lists as header selector buttons and quick pills with interactive horizontal drag-and-drop reordering, drag-hover highlighting, drop-to-move, and persistent configuration auto-saving.
 - **Header List Title Mode & Customizable List Size**: Option to display the active list name prominently inside the Obsidian leaf header bar (`.view-header-title`), saving vertical canvas height, alongside configurable main list title font sizing (`small`, `medium`, `large`).
 - **Compact Quick Add & Lossless Auto-Commit**: Streamlined, squished task input box that smoothly expands when active, accompanied by robust draft auto-commit flushing edits on blur, modal close, and app shutdown to prevent data loss.
+- **Global Undo & Redo (Ctrl+Z / Ctrl+Y)**: Full action-level undo and redo tracking task priority weight changes, why/methodology rationales, title renames, subtask edits, star/completion toggles, creations, deletions, and moves. Features intelligent 2.5s rapid change merging, non-intrusive focus isolation that never interferes with Obsidian note editing, and top-right acrylic feedback notifications.
 - **Card Blank-Space Click to Edit & Selection Preservation**: Clicking empty margin or card space around centered titles, checklist steps, notes, or add-step inputs immediately focuses the text field with smart start/end caret positioning, while seamlessly preserving active text selections and drag-selection interactions without caret jumping.
 - **Non-Intrusive Sidebar Coexistence**: Preserves Obsidian core tools (Search, File Explorer, Bookmarks, and third-party panels) by preventing unintended sidebar collapse when activating sidebar tools.
 - **In-List Search Non-Intrusive Navigation**: When searching tasks in floating UI mode, selecting a search result smoothly centers and highlights the task in the list without prematurely popping open the detail modal.
@@ -89,6 +90,10 @@ Static commands (`fluent-tasks:`):
 - `open-quick-task-modal`: Open Quick Task modal popup
 - `open-backup-modal`: Open Backup Manager modal
 - `toggle-task-star-hover`: Toggle star on hovered task
+- `undo-action`: Undo last task action (Ctrl+Z)
+- `redo-action`: Redo last task action (Ctrl+Y)
+- `navigate-list-back`: Navigate to previous list (Alt+Left)
+- `navigate-list-forward`: Navigate to next list (Alt+Right)
 
 Dynamic commands:
 - `z-jump-to-list-<hash>`: Dedicated jump command per list file path

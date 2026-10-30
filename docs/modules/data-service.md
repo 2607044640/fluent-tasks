@@ -6,7 +6,7 @@
 
 | Component | Responsible For | MUST NOT Contain |
 |---|---|---|
-| `DataService` (`src/DataService.ts`) | Delegate category/task APIs; flatten categories; `searchTasks`; `rolloverRecurringTasks` | Regex parsing, recurrence date math, Svelte |
+| `DataService` (`src/DataService.ts`) | Delegate category/task APIs; flatten categories; `searchTasks`; `rolloverRecurringTasks`; `HistoryService` recording aspect | Regex parsing, recurrence date math, Svelte |
 | `AtomicIOPipeline` (`src/services/AtomicIOPipeline.ts`) | `ensureDataFolder`, `readFile`, `processFile`, internal-write map | Task/category domain rules |
 | Internal-write map | `markInternalWrite(path, windowMs=800)` / `isInternalWrite` | Persistence of the map (in-memory only) |
 
@@ -22,7 +22,7 @@
 1. `FluentTasksPlugin.onload` does `new DataService(this.app)` → `new AtomicIOPipeline(app)` + `CategoryService` + `TaskService`.
 2. `ensureDataFolder()` creates `TodoData` if missing.
 3. Category calls (`getSidebarItems`, `createCategory`, …) go to `CategoryService` (metadata via adapter; `.md` via Vault).
-4. Task calls (`getTasks`, `saveTasks`, `addTask`, `updateTask`, `deleteTask`, `moveTask`) go to `TaskService.processFile` mutators.
+4. Task calls (`getTasks`, `saveTasks`, `addTask`, `updateTask`, `deleteTask`, `moveTask`) go to `TaskService.processFile` mutators. Mutating actions automatically notify `HistoryService` (if not currently undoing/redoing) to record before/after state diffs for `Ctrl+Z` / `Ctrl+Y`.
 5. Star mode routing: `getTasks(STARRED_CATEGORY_PATH)` loops all categories via `taskSvc.getTasks`, filtering `t.starred` and attaching `sourceFilepath`/`sourceCategoryName`. `saveTasks(STARRED_CATEGORY_PATH, tasks)` dispatches individual updates to each task's `sourceFilepath`.
 6. `searchTasks(query, scopeFilepath?)` lowercases the query, iterates `getCategories()` (optionally one list), `getTasks` each, matches title then steps then note (`includes`). Empty/whitespace query returns `[]`.
 7. `rolloverRecurringTasks()` loops categories and `TaskService.rolloverTasksInFile`.
@@ -32,6 +32,7 @@
 | Method | Signature | Side-Effects |
 |---|---|---|
 | `ensureDataFolder` | `(): Promise<void>` | May `vault.createFolder("TodoData")` |
+| `setHistoryService` | `(historySvc: HistoryService): void` | Injects action undo/redo tracking aspect |
 | `isInternalWrite` | `(filepath: string): boolean` | May delete expired map entries |
 | `markInternalWrite` | `(filepath: string, windowMs?: number): void` | Mutates in-memory expiry map |
 | `getSidebarItems` / `saveSidebarState` | see CategoryService | Metadata file I/O |

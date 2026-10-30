@@ -6,7 +6,7 @@ Obsidian plugin shell: registers three `ItemView` wrappers, commands, ribbon, va
 
 | Component | Responsible For | MUST NOT Contain |
 |---|---|---|
-| `FluentTasksPlugin` (`src/main.ts`) | `onload` / `onunload`, view + command registration, settings load/save, sidebar expand/collapse, recurrence interval, category jump commands | Markdown parse/serialize, task CRUD, settings field widgets |
+| `FluentTasksPlugin` (`src/main.ts`) | `onload` / `onunload`, view + command registration, settings load/save, sidebar expand/collapse, recurrence interval, category jump commands, `HistoryService` wiring, focus detection | Markdown parse/serialize, task CRUD, settings field widgets |
 | `TaskSidebarViewWrapper` / `TaskMainViewWrapper` / `TaskDetailViewWrapper` | Mount/destroy Svelte views; main leaf state `{ categoryFilepath, categoryName }` | Vault writes, recurrence math |
 | `EventBus` (`src/EventBus.ts`) | Sync pub/sub (`on` / `off` / `emit` / `destroy`) | Persistence |
 | `Logger` (`src/Logger.ts`) | Append lines to `TodoData/debug.log` | Task domain logic |
@@ -19,20 +19,22 @@ Obsidian plugin shell: registers three `ItemView` wrappers, commands, ribbon, va
 
 ## Numbered Data Flow
 
-1. `FluentTasksPlugin.onload` constructs `DataService(app)`, adds `FluentTasksSettingTab`, `Logger.init(app)`, `loadSettings()`, then `registerView` for `VIEW_TYPE_SIDEBAR|MAIN|DETAIL`.
-2. Commands and `refreshRibbonIcon()` register immediately; vault/folder work is deferred to `onLayoutReady`.
-3. On layout ready: `dataService.ensureDataFolder()`, `applySettings()` (CSS `--todo-accent*`), vault `modify`/`create`/`delete`/`rename`, EventBus handlers for `DETAIL_CLOSE`, `CATEGORY_SELECTED`, `TASK_SELECTED`, `CATEGORY_LIST_CHANGED`.
-4. `CATEGORY_SELECTED` activates/reveals the main leaf and `setViewState` (skipped when `fromHistory` to avoid history loops).
-5. `TASK_SELECTED` either `openTaskDetailModal` or `activateView(VIEW_TYPE_DETAIL, "right")` then `TaskDetailView.loadTask`.
-6. `checkRecurringTasksRollover(true)` runs once; then every 10s and on `window` `focus`. Non-force calls no-op when `lastRolloverDate === today`.
-7. `onunload` removes ribbon, `EventBus.destroy()`, clears `window.__mstodo_drag_data`.
+1. `FluentTasksPlugin.onload` constructs `DataService(app)`, `SidebarCoordinator(this)`, adds `FluentTasksSettingTab`, `Logger.init(app)`, `loadSettings()`, then `registerView` for `VIEW_TYPE_SIDEBAR|MAIN|DETAIL`.
+2. Global `UndoToastContainer` (bottom-right 2.5s delete undo) and `HistoryToastContainer` (top-right `Ctrl+Z` / `Ctrl+Y` feedback) mount to `document.body`.
+3. `HistoryService` initializes and binds to `DataService`. Global capture `keydown` listener intercepts `Ctrl+Z` and `Ctrl+Y` when `isFluentTasksFocused() && !isUserActivelyTyping()`.
+4. Commands (`open-all-views`, `open-sidebar`, `open-main-view`, `open-detail-view`, `undo-action`, `redo-action`, `navigate-list-back`, `navigate-list-forward`, `open-backup-modal`, etc.) and `refreshRibbonIcon()` register immediately; vault/folder work is deferred to `onLayoutReady`.
+5. On layout ready: `dataService.ensureDataFolder()`, `applySettings()`, vault `modify`/`create`/`delete`/`rename`, EventBus handlers for `DETAIL_CLOSE`, `CATEGORY_SELECTED`, `TASK_SELECTED`, `CATEGORY_LIST_CHANGED`.
+6. `CATEGORY_SELECTED` activates/reveals the main leaf and `setViewState` (skipped when `fromHistory` to avoid history loops).
+7. `TASK_SELECTED` either `openTaskDetailModal` or `activateView(VIEW_TYPE_DETAIL, "right")` then `TaskDetailView.loadTask`.
+8. `checkRecurringTasksRollover(true)` runs once; then every 10s and on `window` `focus`. Non-force calls no-op when `lastRolloverDate === today`.
+9. `onunload` removes ribbon, `EventBus.destroy()`, cleans up `HistoryService`, destroys toast components, clears `window.__mstodo_drag_data`.
 
 ## Side-effects API
 
 | Method | Signature | Side-Effects |
 |---|---|---|
 | `FluentTasksPlugin.onload` | `(): Promise<void>` | Registers views/commands; starts layout-ready async work |
-| `FluentTasksPlugin.onunload` | `(): void` | Drops ribbon, EventBus listeners, drag payload |
+| `FluentTasksPlugin.onunload` | `(): void` | Drops ribbon, EventBus listeners, toast components, drag payload |
 | `FluentTasksPlugin.saveSettings` | `(): Promise<void>` | `Plugin.saveData`; emits `EventName.SETTINGS_CHANGED` |
 | `FluentTasksPlugin.applySettings` | `(): void` | Sets `document.body` CSS vars `--todo-accent*` |
 | `FluentTasksPlugin.checkRecurringTasksRollover` | `(force?: boolean): Promise<void>` | May rewrite category files via `DataService.rolloverRecurringTasks`; emits `TASK_UPDATED` `{ isExternal: true }` |
@@ -40,6 +42,8 @@ Obsidian plugin shell: registers three `ItemView` wrappers, commands, ribbon, va
 | `FluentTasksPlugin.activateAllViews` | `(): Promise<void>` | Opens left + center (+ right unless modal mode) |
 | `FluentTasksPlugin.registerCategoryCommands` | `(): Promise<void>` | Adds/removes `z-jump-to-list-*` commands |
 | `FluentTasksPlugin.openTaskDetailModal` | `(task?, categoryFilepath?): void` | Opens or reuses `TaskDetailModal` |
+| `FluentTasksPlugin.isFluentTasksFocused` | `(): boolean` | Pure query; returns false inside notes/settings/prompts |
+| `FluentTasksPlugin.isUserActivelyTyping` | `(): boolean` | Pure query; checks for active text in focused inputs |
 | `EventBus.emit` | `(event: string, payload?: unknown): void` | Synchronously invokes listeners |
 | `Logger.log` | `(...args: unknown[]): Promise<void>` | Creates/appends `TodoData/debug.log` |
 
