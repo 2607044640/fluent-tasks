@@ -155,6 +155,9 @@ const zhCn: typeof en = {
     move_to_menu_title: "移动到",
     search_list_to_move: "搜索目标列表...",
     add_side_step: "添加子步骤",
+    star_task: "星标任务",
+    unstar_task: "取消星标",
+    delete_task: "删除任务",
     // Image attachment & clipboard operations
     image_copied: "图片已复制到剪贴板",
     image_cut: "图片已剪切至剪贴板",

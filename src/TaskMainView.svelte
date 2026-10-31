@@ -1254,6 +1254,9 @@
     }
 
     function handleWindowBlur() {
+        if (activeContextMenuCleanup) {
+            activeContextMenuCleanup();
+        }
         isCtrlPressed = false;
         hasComboModifierOrKey = false;
         hoveredTitleTarget = null;
@@ -1658,6 +1661,9 @@
     }
 
     onDestroy(() => {
+        if (activeContextMenuCleanup) {
+            activeContextMenuCleanup();
+        }
         if ((newTaskTitle.trim() || newTaskImages.length > 0) && currentCategory) {
             void addTask();
         } else if (newTaskImages.length > 0 && actualApp && dataService) {
@@ -3087,27 +3093,43 @@
     // =============================================
     // Context Menu (Right-click → Move to...)
     // =============================================
+    let activeContextMenuCleanup: (() => void) | null = null;
+
     async function handleContextMenu(e: MouseEvent, task: TaskItem) {
         e.preventDefault();
         if (!currentCategory) return;
 
+        if (activeContextMenuCleanup) {
+            activeContextMenuCleanup();
+        }
+
         const menu = new Menu();
 
-        // 1st item: Add side step (opens floating subtasks modal)
+        const executeAddStep = () => {
+            openStepsModal(task);
+        };
+
+        const executeStar = async () => {
+            await toggleStar(task, true);
+        };
+
+        // 1st item: Add side step (A)
+        const addStepLabel = t("add_side_step") || "Add side step";
         menu.addItem((item: any) => {
-            item.setTitle(t("add_side_step") || "Add side step")
+            item.setTitle(`${addStepLabel} (A)`)
                 .setIcon("list-plus")
                 .onClick(() => {
-                    openStepsModal(task);
+                    executeAddStep();
                 });
         });
 
-        // 2nd item: Star / Remove star
+        // 2nd item: Star / Remove star (S)
+        const starLabel = task.starred ? (t("unstar_task") || "Remove star") : (t("star_task") || "Star task");
         menu.addItem((item: any) => {
-            item.setTitle(task.starred ? "Remove star" : "Star task")
+            item.setTitle(`${starLabel} (S)`)
                 .setIcon("star")
                 .onClick(async () => {
-                    await toggleStar(task, true);
+                    await executeStar();
                 });
         });
 
@@ -3124,9 +3146,18 @@
             c => c.filepath !== actualSource && c.filepath !== STARRED_CATEGORY_PATH
         );
 
+        const executeMoveTo = () => {
+            if (plugin?.app && eligibleCategories.length > 0) {
+                new MoveToSuggestModal(plugin.app, eligibleCategories, (targetCat) => {
+                    void moveTaskToCategory(task, targetCat);
+                }).open();
+            }
+        };
+
         if (eligibleCategories.length > 0) {
+            const moveLabel = t("move_to_menu_title") || "Move to";
             menu.addItem((item: any) => {
-                item.setTitle(t("move_to_menu_title") || "Move to")
+                item.setTitle(`${moveLabel} (M)`)
                     .setIcon("folder-input");
 
                 if (typeof item.setSubmenu === "function") {
@@ -3137,11 +3168,7 @@
                         searchItem.setTitle(t("search_list_to_move") || "Search destination list...")
                             .setIcon("search")
                             .onClick(() => {
-                                if (plugin?.app) {
-                                    new MoveToSuggestModal(plugin.app, eligibleCategories, (targetCat) => {
-                                        void moveTaskToCategory(task, targetCat);
-                                    }).open();
-                                }
+                                executeMoveTo();
                             });
                     });
 
@@ -3207,36 +3234,86 @@
                     }
                 } else {
                     item.onClick(() => {
-                        if (plugin?.app) {
-                            new MoveToSuggestModal(plugin.app, eligibleCategories, (targetCat) => {
-                                void moveTaskToCategory(task, targetCat);
-                            }).open();
-                        }
+                        executeMoveTo();
                     });
                 }
             });
         }
 
+        const executeDelete = async () => {
+            const catPath = (currentCategory!.filepath === STARRED_CATEGORY_PATH && task.sourceFilepath)
+                ? task.sourceFilepath
+                : currentCategory!.filepath;
+            await promptDeleteTaskWithLinkedNote(
+                plugin.app,
+                task,
+                catPath,
+                dataService,
+                () => {
+                    incompleteTasks = incompleteTasks.filter(t => t.id !== task.id);
+                    completedTasks = completedTasks.filter(t => t.id !== task.id);
+                }
+            );
+        };
+
         menu.addSeparator();
+        const deleteLabel = t("delete_task") || "Delete task";
         menu.addItem((item: any) => {
-            item.setTitle("Delete task")
+            item.setTitle(`${deleteLabel} (D)`)
                 .setIcon("trash")
                 .onClick(async () => {
-                    const catPath = (currentCategory!.filepath === STARRED_CATEGORY_PATH && task.sourceFilepath)
-                        ? task.sourceFilepath
-                        : currentCategory!.filepath;
-                    await promptDeleteTaskWithLinkedNote(
-                        plugin.app,
-                        task,
-                        catPath,
-                        dataService,
-                        () => {
-                            incompleteTasks = incompleteTasks.filter(t => t.id !== task.id);
-                            completedTasks = completedTasks.filter(t => t.id !== task.id);
-                        }
-                    );
+                    await executeDelete();
                 });
         });
+
+        let isCleanedUp = false;
+        const cleanupMenuKeydown = () => {
+            if (isCleanedUp) return;
+            isCleanedUp = true;
+            window.removeEventListener("keydown", handleMenuKeydown, true);
+            window.removeEventListener("blur", cleanupMenuKeydown);
+            if (activeContextMenuCleanup === cleanupMenuKeydown) {
+                activeContextMenuCleanup = null;
+            }
+        };
+
+        const handleMenuKeydown = (ke: KeyboardEvent) => {
+            if (ke.isComposing || ke.keyCode === 229) return;
+            if (ke.ctrlKey || ke.altKey || ke.metaKey) return;
+            const key = ke.key.toLowerCase();
+            if (key === "a") {
+                ke.preventDefault();
+                ke.stopPropagation();
+                cleanupMenuKeydown();
+                menu.hide();
+                executeAddStep();
+            } else if (key === "s") {
+                ke.preventDefault();
+                ke.stopPropagation();
+                cleanupMenuKeydown();
+                menu.hide();
+                void executeStar();
+            } else if (key === "m") {
+                if (eligibleCategories.length > 0 && plugin?.app) {
+                    ke.preventDefault();
+                    ke.stopPropagation();
+                    cleanupMenuKeydown();
+                    menu.hide();
+                    executeMoveTo();
+                }
+            } else if (key === "d") {
+                ke.preventDefault();
+                ke.stopPropagation();
+                cleanupMenuKeydown();
+                menu.hide();
+                void executeDelete();
+            }
+        };
+
+        activeContextMenuCleanup = cleanupMenuKeydown;
+        window.addEventListener("keydown", handleMenuKeydown, true);
+        window.addEventListener("blur", cleanupMenuKeydown, { once: true });
+        menu.onHide(cleanupMenuKeydown);
 
         menu.showAtMouseEvent(e);
     }

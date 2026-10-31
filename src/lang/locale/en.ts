@@ -153,6 +153,9 @@ const en = {
     move_to_menu_title: "Move to",
     search_list_to_move: "Search destination list...",
     add_side_step: "Add side step",
+    star_task: "Star task",
+    unstar_task: "Remove star",
+    delete_task: "Delete task",
     // Image attachment & clipboard operations
     image_copied: "Image copied to clipboard",
     image_cut: "Image cut to clipboard",
