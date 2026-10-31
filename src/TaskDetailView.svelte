@@ -356,7 +356,6 @@
     }
 
     function shouldIgnoreContainerClick(e: MouseEvent): boolean {
-        if (isMouseDownOnInput) return true;
         if (mouseDownPos && Math.hypot(e.clientX - mouseDownPos.x, e.clientY - mouseDownPos.y) > 5) return true;
         const sel = window.getSelection();
         if (sel && !sel.isCollapsed && sel.toString().trim().length > 0) return true;
@@ -510,8 +509,17 @@
 
     async function handleExternalTaskUpdate(payload: any) {
         if (!task || !categoryFilepath || isDraggingSteps) return;
+        // Ignore self-emitted updates from this detail view instance
+        if (payload?.source === "detail") return;
+
         if (!payload.categoryFilepath || payload.categoryFilepath === categoryFilepath) {
             if (payload.task && payload.task.id === task.id) {
+                // If the user currently has an input focused inside this detail view,
+                // do not reassign task state to avoid interrupting text selection or cursor focus
+                const active = document.activeElement;
+                if (active && (active.tagName === "TEXTAREA" || active.tagName === "INPUT") && active.closest(".detail-container, .task-detail-floating-modal")) {
+                    return;
+                }
                 task = { ...payload.task, steps: ensureStepIds(payload.task.id, payload.task.steps ? payload.task.steps.map((s: any) => ({ ...s })) : []) };
                 return;
             }
@@ -520,6 +528,10 @@
                 const tasks = await dataService.getTasks(categoryFilepath);
                 const fresh = tasks.find(t => t.id === task?.id);
                 if (fresh) {
+                    const active = document.activeElement;
+                    if (active && (active.tagName === "TEXTAREA" || active.tagName === "INPUT") && active.closest(".detail-container, .task-detail-floating-modal")) {
+                        return;
+                    }
                     task = { ...fresh, steps: ensureStepIds(fresh.id, fresh.steps ? fresh.steps.map((s: any) => ({ ...s })) : []) };
                 }
             }
@@ -555,6 +567,7 @@
             EventBus.emit(EventName.TASK_UPDATED, {
                 task,
                 categoryFilepath,
+                source: "detail",
             });
         }, SAVE_DEBOUNCE_MS);
     }
@@ -593,21 +606,23 @@
     let noteTextareaEl: HTMLTextAreaElement | null = null;
     let addStepInputEl: HTMLTextAreaElement | null = null;
 
-    function handleTitleRowClick(e: MouseEvent) {
+    function handleDetailHeaderClick(e: MouseEvent) {
         const target = e.target as HTMLElement | null;
-        if (!target || target === titleTextareaEl) return;
-        if (shouldIgnoreContainerClick(e)) return;
+        if (!target) return;
         if (target.closest('.checkbox, .title-right-actions, .task-image-thumbnail, .task-img-strip-actions, button, [role="button"]')) {
             return;
         }
+        if (shouldIgnoreContainerClick(e)) return;
         if (titleTextareaEl) {
             titleTextareaEl.focus();
-            const rect = titleTextareaEl.getBoundingClientRect();
-            if (e.clientX < rect.left) {
-                titleTextareaEl.setSelectionRange(0, 0);
-            } else {
-                const len = titleTextareaEl.value.length;
-                titleTextareaEl.setSelectionRange(len, len);
+            if (target !== titleTextareaEl) {
+                const rect = titleTextareaEl.getBoundingClientRect();
+                if (e.clientX < rect.left) {
+                    titleTextareaEl.setSelectionRange(0, 0);
+                } else {
+                    const len = titleTextareaEl.value.length;
+                    titleTextareaEl.setSelectionRange(len, len);
+                }
             }
         }
     }
@@ -715,7 +730,7 @@
             }
         }
         await dataService.updateTask(pathToSave, taskToSave);
-        EventBus.emit(EventName.TASK_UPDATED, { task: taskToSave, categoryFilepath: pathToSave });
+        EventBus.emit(EventName.TASK_UPDATED, { task: taskToSave, categoryFilepath: pathToSave, source: "detail" });
     }
 
     async function immediateSave() {
@@ -1733,10 +1748,10 @@
         <!-- Scrollable Content Body -->
         <div class="detail-body" bind:this={detailBodyEl}>
             <!-- Header: Checkbox + Title + Star -->
-            <div class="detail-header" class:is-center-aligned={centerAlignTasks}>
-                <!-- svelte-ignore a11y-click-events-have-key-events -->
-                <!-- svelte-ignore a11y-no-static-element-interactions -->
-                <div class="title-row" class:is-center-aligned={centerAlignTasks} on:click={handleTitleRowClick}>
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <div class="detail-header" class:is-center-aligned={centerAlignTasks} on:click={handleDetailHeaderClick}>
+                <div class="title-row" class:is-center-aligned={centerAlignTasks}>
                 <!-- Completion circle -->
                 <span class="checkbox" on:click|stopPropagation={toggleComplete}
                       role="checkbox" aria-checked={task.completed} tabindex="0"

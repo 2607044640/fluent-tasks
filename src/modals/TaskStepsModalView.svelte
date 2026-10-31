@@ -641,7 +641,6 @@
     }
 
     function shouldIgnoreContainerClick(e: MouseEvent): boolean {
-        if (isMouseDownOnInput) return true;
         if (mouseDownPos && Math.hypot(e.clientX - mouseDownPos.x, e.clientY - mouseDownPos.y) > 5) return true;
         const sel = window.getSelection();
         if (sel && !sel.isCollapsed && sel.toString().trim().length > 0) return true;

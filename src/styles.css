@@ -1059,6 +1059,7 @@
     padding: 15px;
     margin-bottom: 0;
     flex-shrink: 0;
+    cursor: text;
 }
 
 .title-row {
@@ -1114,34 +1115,46 @@
     color: var(--todo-accent, #8b5cf6);
 }
 
-.detail-title-input {
+.detail-title-input,
+.detail-container .detail-title-input,
+body .task-detail-floating-modal .detail-title-input,
+body .task-detail-floating-modal.is-fullscreen .detail-title-input {
     field-sizing: content;
     flex-grow: 1;
-    width: 100%;
-    min-width: 0;
-    max-width: 100%;
-    background: transparent;
-    border: none;
-    color: var(--todo-text-main);
-    font-size: 16px;
-    font-weight: 600;
-    line-height: 1.45;
-    outline: none;
-    resize: none;
-    overflow: hidden;
-    white-space: pre-wrap;
-    word-break: break-word;
-    overflow-wrap: anywhere;
-    font-family: inherit;
-    padding: 0;
-    margin: 0;
+    width: 100% !important;
+    min-width: 120px !important;
+    max-width: 100% !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    -webkit-box-shadow: none !important;
+    outline: none !important;
+    color: var(--todo-text-main, var(--text-normal, #fff)) !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    line-height: 1.45 !important;
+    resize: none !important;
+    overflow: hidden !important;
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+    font-family: inherit !important;
+    padding: 0 !important;
+    margin: 0 !important;
     min-height: 24px;
-    box-sizing: border-box;
+    box-sizing: border-box !important;
+    cursor: text !important;
 }
 
-.detail-title-input:focus {
-    box-shadow: none;
-    border: none;
+.detail-title-input:focus,
+.detail-container .detail-title-input:focus,
+body .task-detail-floating-modal .detail-title-input:focus,
+body .task-detail-floating-modal.is-fullscreen .detail-title-input:focus {
+    background: transparent !important;
+    box-shadow: none !important;
+    -webkit-box-shadow: none !important;
+    border: none !important;
+    outline: none !important;
 }
 
 .detail-title-input::placeholder {
@@ -4593,6 +4606,7 @@ body .task-detail-floating-modal.is-fullscreen .detail-header {
     border: 1px solid var(--todo-border, var(--background-modifier-border, rgba(255, 255, 255, 0.08)));
     border-radius: 10px;
     padding: 16px 20px;
+    cursor: text;
 }
 
 body .task-detail-floating-modal.is-fullscreen .step-item {
@@ -6161,7 +6175,11 @@ body .task-detail-floating-modal.is-center-aligned .title-content-col {
 .detail-container.is-center-aligned .detail-title-input,
 body .task-detail-floating-modal.is-center-aligned .detail-title-input {
     text-align: center !important;
-    width: 100%;
+    width: 100% !important;
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
 }
 
 .detail-container.is-center-aligned .detail-title-input::placeholder,

@@ -15367,8 +15367,6 @@ function instance5($$self, $$props, $$invalidate) {
     flushSaveSync();
   }
   function shouldIgnoreContainerClick(e) {
-    if (isMouseDownOnInput)
-      return true;
     if (mouseDownPos && Math.hypot(e.clientX - mouseDownPos.x, e.clientY - mouseDownPos.y) > 5)
       return true;
     const sel = window.getSelection();
@@ -40914,12 +40912,6 @@ function create_if_block9(ctx) {
             /*keydown_handler_1*/
             ctx[131]
           ),
-          listen(
-            div2,
-            "click",
-            /*handleTitleRowClick*/
-            ctx[46]
-          ),
           action_destroyer(autosize_action_1 = autosize.call(
             null,
             textarea1,
@@ -40967,6 +40959,12 @@ function create_if_block9(ctx) {
             "click",
             /*handleAddStepCardClick*/
             ctx[48]
+          ),
+          listen(
+            div6,
+            "click",
+            /*handleDetailHeaderClick*/
+            ctx[46]
           ),
           listen(
             textarea2,
@@ -47691,8 +47689,6 @@ function instance9($$self, $$props, $$invalidate) {
     void flushSaveSync();
   }
   function shouldIgnoreContainerClick(e) {
-    if (isMouseDownOnInput)
-      return true;
     if (mouseDownPos && Math.hypot(e.clientX - mouseDownPos.x, e.clientY - mouseDownPos.y) > 5)
       return true;
     const sel = window.getSelection();
@@ -47841,8 +47837,14 @@ function instance9($$self, $$props, $$invalidate) {
   async function handleExternalTaskUpdate(payload) {
     if (!task || !categoryFilepath || isDraggingSteps)
       return;
+    if ((payload == null ? void 0 : payload.source) === "detail")
+      return;
     if (!payload.categoryFilepath || payload.categoryFilepath === categoryFilepath) {
       if (payload.task && payload.task.id === task.id) {
+        const active2 = document.activeElement;
+        if (active2 && (active2.tagName === "TEXTAREA" || active2.tagName === "INPUT") && active2.closest(".detail-container, .task-detail-floating-modal")) {
+          return;
+        }
         $$invalidate(5, task = {
           ...payload.task,
           steps: ensureStepIds(payload.task.id, payload.task.steps ? payload.task.steps.map((s) => ({ ...s })) : [])
@@ -47853,6 +47855,10 @@ function instance9($$self, $$props, $$invalidate) {
         const tasks2 = await dataService.getTasks(categoryFilepath);
         const fresh = tasks2.find((t2) => t2.id === (task == null ? void 0 : task.id));
         if (fresh) {
+          const active2 = document.activeElement;
+          if (active2 && (active2.tagName === "TEXTAREA" || active2.tagName === "INPUT") && active2.closest(".detail-container, .task-detail-floating-modal")) {
+            return;
+          }
           $$invalidate(5, task = {
             ...fresh,
             steps: ensureStepIds(fresh.id, fresh.steps ? fresh.steps.map((s) => ({ ...s })) : [])
@@ -47887,7 +47893,7 @@ function instance9($$self, $$props, $$invalidate) {
           }
         }
         await dataService.updateTask(categoryFilepath, task);
-        EventBus.emit("task:updated" /* TASK_UPDATED */, { task, categoryFilepath });
+        EventBus.emit("task:updated" /* TASK_UPDATED */, { task, categoryFilepath, source: "detail" });
       },
       SAVE_DEBOUNCE_MS
     );
@@ -47918,23 +47924,25 @@ function instance9($$self, $$props, $$invalidate) {
   let titleTextareaEl = null;
   let noteTextareaEl = null;
   let addStepInputEl = null;
-  function handleTitleRowClick(e) {
+  function handleDetailHeaderClick(e) {
     const target = e.target;
-    if (!target || target === titleTextareaEl)
-      return;
-    if (shouldIgnoreContainerClick(e))
+    if (!target)
       return;
     if (target.closest('.checkbox, .title-right-actions, .task-image-thumbnail, .task-img-strip-actions, button, [role="button"]')) {
       return;
     }
+    if (shouldIgnoreContainerClick(e))
+      return;
     if (titleTextareaEl) {
       titleTextareaEl.focus();
-      const rect = titleTextareaEl.getBoundingClientRect();
-      if (e.clientX < rect.left) {
-        titleTextareaEl.setSelectionRange(0, 0);
-      } else {
-        const len = titleTextareaEl.value.length;
-        titleTextareaEl.setSelectionRange(len, len);
+      if (target !== titleTextareaEl) {
+        const rect = titleTextareaEl.getBoundingClientRect();
+        if (e.clientX < rect.left) {
+          titleTextareaEl.setSelectionRange(0, 0);
+        } else {
+          const len = titleTextareaEl.value.length;
+          titleTextareaEl.setSelectionRange(len, len);
+        }
       }
     }
   }
@@ -48049,7 +48057,8 @@ function instance9($$self, $$props, $$invalidate) {
     await dataService.updateTask(pathToSave, taskToSave);
     EventBus.emit("task:updated" /* TASK_UPDATED */, {
       task: taskToSave,
-      categoryFilepath: pathToSave
+      categoryFilepath: pathToSave,
+      source: "detail"
     });
   }
   async function immediateSave() {
@@ -49325,7 +49334,7 @@ function instance9($$self, $$props, $$invalidate) {
     handleTitleCompositionEnd,
     handleTitleInput,
     handleTitleBlur,
-    handleTitleRowClick,
+    handleDetailHeaderClick,
     handleStepItemClick,
     handleAddStepCardClick,
     handleNoteSectionClick,
