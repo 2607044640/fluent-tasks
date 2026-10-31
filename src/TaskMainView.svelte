@@ -65,6 +65,8 @@
     let mainListTitleSize: "small" | "medium" | "large" = plugin?.settings?.mainListTitleSize ?? "medium";
     let showListTitleInHeader: boolean = plugin?.settings?.showListTitleInHeader ?? false;
     let isAddTaskFocused: boolean = false;
+    let newTaskImages: string[] = [];
+    let hoveredDraftImage: string | null = null;
     let justCreatedTaskId: string | null = null;
     let justCreatedTimeout: any = null;
     let enableTaskWeightMode: boolean = plugin?.settings?.enableTaskWeightMode ?? false;
@@ -1145,19 +1147,34 @@
             return;
         }
 
-        if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && hoveredThumbnail) {
-            const { task, imageRef } = hoveredThumbnail;
-            if (e.key === "c" || e.key === "C") {
-                e.preventDefault();
-                e.stopPropagation();
-                void copyImageToClipboard(imageRef, actualApp, t("image_copied") || "Image copied to clipboard / 图片已复制到剪贴板");
-                return;
-            }
-            if (e.key === "x" || e.key === "X") {
-                e.preventDefault();
-                e.stopPropagation();
-                void cutImageFromMainTaskTitle(task, imageRef);
-                return;
+        if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey) {
+            if (hoveredDraftImage) {
+                if (e.key === "c" || e.key === "C") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void copyImageToClipboard(hoveredDraftImage, actualApp, t("image_copied") || "Image copied to clipboard / 图片已复制到剪贴板");
+                    return;
+                }
+                if (e.key === "x" || e.key === "X") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void cutNewTaskImage(hoveredDraftImage);
+                    return;
+                }
+            } else if (hoveredThumbnail) {
+                const { task, imageRef } = hoveredThumbnail;
+                if (e.key === "c" || e.key === "C") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void copyImageToClipboard(imageRef, actualApp, t("image_copied") || "Image copied to clipboard / 图片已复制到剪贴板");
+                    return;
+                }
+                if (e.key === "x" || e.key === "X") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void cutImageFromMainTaskTitle(task, imageRef);
+                    return;
+                }
             }
         }
 
@@ -1642,8 +1659,12 @@
     }
 
     onDestroy(() => {
-        if (newTaskTitle.trim() && currentCategory) {
+        if ((newTaskTitle.trim() || newTaskImages.length > 0) && currentCategory) {
             void addTask();
+        } else if (newTaskImages.length > 0 && actualApp && dataService) {
+            const draftImages = [...newTaskImages];
+            newTaskImages = [];
+            void cleanupOrphanImages(draftImages, actualApp, dataService);
         }
         if (justCreatedTimeout) {
             clearTimeout(justCreatedTimeout);
@@ -2167,12 +2188,79 @@
     // Task Actions
     // =============================================
 
+    async function removeNewTaskImage(imageRef: string) {
+        newTaskImages = newTaskImages.filter(img => !isSameImageRef(img, imageRef));
+        if (hoveredDraftImage === imageRef) hoveredDraftImage = null;
+        if (actualApp && dataService) {
+            await cleanupOrphanImageAttachment(imageRef, actualApp, dataService);
+        }
+    }
+
+    async function cutNewTaskImage(imageRef: string) {
+        if (!actualApp) return;
+        await copyImageToClipboard(imageRef, actualApp, t("image_cut") || "Image cut to clipboard / 图片已剪切至剪贴板");
+        await removeNewTaskImage(imageRef);
+    }
+
+    function handleNewTaskImageHover(imageRef: string, isHovered: boolean) {
+        if (isHovered) {
+            hoveredDraftImage = imageRef;
+        } else if (hoveredDraftImage === imageRef) {
+            hoveredDraftImage = null;
+        }
+    }
+
+    function handleAddTaskPaste(e: ClipboardEvent) {
+        if (!actualApp || !currentCategory) return;
+        const files = getImagesFromClipboard(e);
+        if (!files || files.length === 0) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        void (async () => {
+            const targetCatPath = currentCategory.filepath;
+            for (const file of files) {
+                const savedPath = await saveImageAttachment(file, actualApp, targetCatPath);
+                if (!savedPath) continue;
+                newTaskImages = [...newTaskImages, savedPath];
+            }
+        })();
+    }
+
+    async function handleAddTaskDrop(e: DragEvent) {
+        if (!actualApp || !currentCategory) return;
+        const dataTransfer = e.dataTransfer;
+        if (!dataTransfer || !dataTransfer.files || dataTransfer.files.length === 0) return;
+        const imgFiles: File[] = [];
+        for (let i = 0; i < dataTransfer.files.length; i++) {
+            if (dataTransfer.files[i].type.startsWith("image/")) {
+                imgFiles.push(dataTransfer.files[i]);
+            }
+        }
+        if (imgFiles.length === 0) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        for (const file of imgFiles) {
+            const savedPath = await saveImageAttachment(file, actualApp, currentCategory.filepath);
+            if (!savedPath) continue;
+            newTaskImages = [...newTaskImages, savedPath];
+        }
+    }
+
     async function addTask() {
         const title = newTaskTitle.trim();
-        if (!title || !currentCategory) return;
+        const images = [...newTaskImages];
+        if ((!title && images.length === 0) || !currentCategory) return;
 
-        const newTask = await dataService.addTask(currentCategory.filepath, title);
+        const effectiveTitle = title;
+        const options: Partial<TaskItem> = images.length > 0 ? { titleImages: images } : {};
+
+        const newTask = await dataService.addTask(currentCategory.filepath, effectiveTitle, options);
         newTaskTitle = "";
+        newTaskImages = [];
 
         // Optimistic UI: insert into local state immediately.
         // We do NOT call loadTasks() here because Obsidian's async I/O might cause a race condition.
@@ -2195,8 +2283,12 @@
         }, 1000);
     }
 
-    function handleAddTaskBlur() {
-        if (newTaskTitle.trim() && currentCategory) {
+    function handleAddTaskBlur(e?: FocusEvent) {
+        const related = e?.relatedTarget as HTMLElement | null;
+        if (related && related.closest(".add-task-container")) {
+            return;
+        }
+        if ((newTaskTitle.trim() || newTaskImages.length > 0) && currentCategory) {
             void addTask();
         }
     }
@@ -2207,7 +2299,7 @@
             e.preventDefault();
             void addTask();
         } else if (e.key === "Escape") {
-            if (newTaskTitle.trim() && currentCategory) {
+            if ((newTaskTitle.trim() || newTaskImages.length > 0) && currentCategory) {
                 e.preventDefault();
                 void addTask();
             }
@@ -3785,26 +3877,45 @@
         <!-- svelte-ignore a11y-click-events-have-key-events -->
         <!-- svelte-ignore a11y-no-static-element-interactions -->
         <div class="add-task-container" 
-             class:is-editing={isAddTaskFocused || newTaskTitle.trim().length > 0}
-             on:click={() => addTaskInputEl?.focus()}>
-            <span class="plus-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"/>
-                    <line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-            </span>
-            <textarea
-                class="add-task-input"
-                use:autosize={newTaskTitle}
-                rows="1"
-                placeholder="Add a task (Press Enter to add, Shift+Enter for newline)"
-                bind:value={newTaskTitle}
-                bind:this={addTaskInputEl}
-                on:focus={() => { isAddTaskFocused = true; }}
-                on:blur={() => { isAddTaskFocused = false; handleAddTaskBlur(); }}
-                on:keydown={handleAddTaskKeydown}
-            />
+             class:has-images={newTaskImages.length > 0}
+             class:is-editing={isAddTaskFocused || newTaskTitle.trim().length > 0 || newTaskImages.length > 0}
+             on:click={() => addTaskInputEl?.focus()}
+             on:dragover|preventDefault
+             on:drop={handleAddTaskDrop}>
+            {#if newTaskImages.length > 0}
+                <div class="add-task-image-strip-wrapper">
+                    <TaskImageStrip
+                        images={newTaskImages}
+                        app={actualApp}
+                        size={38}
+                        isCenterAligned={centerAlignTasks}
+                        onDelete={(imgRef) => removeNewTaskImage(imgRef)}
+                        onCut={(imgRef) => cutNewTaskImage(imgRef)}
+                        onHover={(imgRef, isHovered) => handleNewTaskImageHover(imgRef, isHovered)}
+                    />
+                </div>
+            {/if}
+            <div class="add-task-main-row">
+                <span class="plus-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                </span>
+                <textarea
+                    class="add-task-input"
+                    use:autosize={newTaskTitle}
+                    rows="1"
+                    placeholder="Add a task (Press Enter to add, Shift+Enter for newline, Ctrl+V to paste image)"
+                    bind:value={newTaskTitle}
+                    bind:this={addTaskInputEl}
+                    on:focus={() => { isAddTaskFocused = true; }}
+                    on:blur={(e) => { isAddTaskFocused = false; handleAddTaskBlur(e); }}
+                    on:keydown={handleAddTaskKeydown}
+                    on:paste={handleAddTaskPaste}
+                />
+            </div>
         </div>
 
         <!-- Incomplete Tasks (drag-sortable) -->

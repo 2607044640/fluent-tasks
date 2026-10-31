@@ -558,7 +558,8 @@
 /* Add Task Input */
 .add-task-container {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    justify-content: center;
     background-color: var(--todo-item-bg);
     border-radius: var(--todo-radius);
     padding: 5px 12px;
@@ -568,6 +569,11 @@
     transition: border-color var(--todo-transition), background-color var(--todo-transition), padding 0.15s ease, margin-bottom 0.15s ease, min-height 0.15s ease;
 }
 
+.add-task-container.has-images {
+    min-height: auto;
+    padding: 10px 15px;
+}
+
 .add-task-container:hover {
     background-color: var(--todo-hover-bg);
     border-color: var(--background-modifier-border-hover, rgba(255, 255, 255, 0.12));
@@ -575,12 +581,27 @@
 
 .add-task-container:focus-within,
 .add-task-container.is-editing {
-    align-items: flex-start;
     padding: 12px 15px;
     margin-bottom: 20px;
     min-height: auto;
     background-color: var(--todo-hover-bg);
     border-color: var(--background-modifier-border-hover, rgba(255, 255, 255, 0.18));
+}
+
+.add-task-main-row {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.add-task-container:focus-within .add-task-main-row,
+.add-task-container.is-editing .add-task-main-row {
+    align-items: flex-start;
+}
+
+.add-task-image-strip-wrapper {
+    margin-bottom: 6px;
+    width: 100%;
 }
 
 .plus-icon {

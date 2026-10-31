@@ -207,7 +207,7 @@ export class DataService {
         }
     }
 
-    async addTask(categoryFilepath: string, title: string): Promise<TaskItem> {
+    async addTask(categoryFilepath: string, title: string, options?: Partial<TaskItem>): Promise<TaskItem> {
         let createdTask: TaskItem;
         let targetPath = categoryFilepath;
         if (categoryFilepath === STARRED_CATEGORY_PATH) {
@@ -217,14 +217,13 @@ export class DataService {
             }
             const targetCat = categories[0];
             targetPath = targetCat.filepath;
-            const newTask = await this.taskSvc.addTask(targetCat.filepath, title);
-            newTask.starred = true;
+            const newTask = await this.taskSvc.addTask(targetCat.filepath, title, { ...options, starred: true });
             newTask.sourceFilepath = targetCat.filepath;
             newTask.sourceCategoryName = targetCat.name;
             await this.taskSvc.updateTask(targetCat.filepath, newTask);
             createdTask = newTask;
         } else {
-            createdTask = await this.taskSvc.addTask(categoryFilepath, title);
+            createdTask = await this.taskSvc.addTask(categoryFilepath, title, options);
         }
 
         if (this.historySvc && !this.historySvc.isUndoingOrRedoing) {

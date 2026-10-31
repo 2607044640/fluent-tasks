@@ -254,16 +254,17 @@ export class MarkdownParser {
     /**
      * Factory: create a new TaskItem with sensible defaults.
      */
-    static createTask(title: string): TaskItem {
+    static createTask(title: string, options?: Partial<TaskItem>): TaskItem {
         const createdAt = new Date().toISOString();
         return {
-            id: generateStableId(title, createdAt),
+            id: generateStableId(title || "task", createdAt),
             title,
             completed: false,
             starred: false,
             steps: [],
             note: "",
             createdAt,
+            ...options,
         };
     }
 

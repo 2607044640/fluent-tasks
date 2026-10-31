@@ -79,12 +79,12 @@ export class TaskService {
     }
 
     /** Atomically add a task */
-    async addTask(filepath: string, title: string): Promise<TaskItem> {
+    async addTask(filepath: string, title: string, options?: Partial<TaskItem>): Promise<TaskItem> {
         let newTask: TaskItem | null = null;
         
         await this.io.processFile(filepath, (data: string) => {
             const tasks = MarkdownParser.parseTasksFromMarkdown(data);
-            newTask = MarkdownParser.createTask(title);
+            newTask = MarkdownParser.createTask(title, options);
             this.insertTaskBeforeCompleted(tasks, newTask);
             return MarkdownParser.serializeTasksToMarkdown(tasks);
         });
