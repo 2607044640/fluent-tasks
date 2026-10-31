@@ -13,7 +13,7 @@ Lists are flat Markdown files `TodoData/<name>.md`. Groups exist only in `TodoDa
 ## Key Invariants
 
 1. Metadata is read/written with `app.vault.adapter`, not `vault.read` / `vault.modify`. (Why chosen over Vault API: Obsidian ignores dotfiles.)
-2. `renameCategory` **updates metadata first**, then `vault.rename`. (Why chosen over rename-then-metadata: a vault `rename` event would treat the new file as an orphan at the bottom of the tree.)
+2. `renameCategory` **updates metadata first**, then `vault.rename`. Path strings are normalized to forward slashes (`replace(/\\/g, "/")`) to avoid Windows path divergence. If lookup fails, `findGroupNameForCategory` recovers the parent group association autonomously. The list retains its exact index in `containingGroup.items`. Internal write windows are marked for 5000ms (`markInternalWrite(filepath, 5000)`) to guard against concurrent vault rename listeners. (Why chosen over rename-then-metadata: a vault `rename` event would race with metadata persistence and treat the new file as an orphan at the bottom of the tree.)
 3. Deduplication in `.metadata.json` and tree construction is keyed by physical disk `filepath` (basename), NOT display name. Sibling-scoped unique name resolution (`resolveUniqueName`) auto-disambiguates collisions to `name(1)` when renaming within the same container or moving items, while allowing different groups to have lists with identical display names (`SidebarCategoryEntry` `{ name: string; file?: string }`). Files on disk not in metadata are appended as root categories. (Why chosen over display name deduplication: users expect independent namespaces per group, mirroring modern task managers like MS To Do.)
 
 ## Numbered Data Flow

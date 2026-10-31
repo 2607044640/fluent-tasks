@@ -34,6 +34,10 @@ Obsidian `ItemView` wrappers in `src/main.ts` mount Svelte 4 components. Cross-p
 10. Header list title mode: When `showListTitleInHeader` is active, the active list name renders directly into `.view-header-title` with accent color, click-to-rename tooltip, and reduced canvas margins.
 11. Compact quick-add box: The add-task input stays squished (28px height, 12px font) while empty and unfocused, smoothly animating to full size on interaction.
 12. Priority weight scoring: 1–9 stepper next to task star allows direct digit presses or wheel rolling to adjust task score with stable sorting.
+13. Focus isolation in `TaskDetailView`: `handleDetailHeaderClick` specifically excludes `.steps-container`, `.step-item`, `.add-step-card`, and non-title inputs (`INPUT`, non-title `TEXTAREA`). In addition, `.steps-container` has `on:click|stopPropagation` so clicking step items, the add-step card, or step textareas never hijacks the caret to the task title.
+14. External clipboard & window blur guard in `TaskMainView`: `handleAddTaskBlur` checks `document.hasFocus()` and ignores window-level blur (e.g. summoning Ditto, `Win+V`, or switching windows). `handleWindowBlur` does not auto-submit unfinished drafts. `handleAddTaskKeydown` ignores `Enter` keystrokes arriving within 350ms of window focus or paste (and while `isPastingImage` is saving), preventing selection-confirm Enter keys from external clipboards from triggering premature duplicate task creation.
+15. Drafting image attachments in main input: `newTaskImages` allows pasting/dropping image attachments directly into the main add-task row before title submission.
+16. Creation highlight & scroll: New tasks set `justCreatedTaskId` for 1000ms, triggering a 0.2s theme accent glow border animation and smooth scrolling into view.
 
 ## Numbered Data Flow
 
