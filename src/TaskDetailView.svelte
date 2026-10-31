@@ -609,7 +609,11 @@
     function handleDetailHeaderClick(e: MouseEvent) {
         const target = e.target as HTMLElement | null;
         if (!target) return;
-        if (target.closest('.checkbox, .title-right-actions, .task-image-thumbnail, .task-img-strip-actions, button, [role="button"]')) {
+        // Never hijack focus if clicking inside steps, controls, or action buttons
+        if (target.closest('.steps-container, .step-item, .add-step-card, .checkbox, .title-right-actions, .task-image-thumbnail, .task-img-strip-actions, button, [role="button"]')) {
+            return;
+        }
+        if (target.tagName === 'INPUT' || (target.tagName === 'TEXTAREA' && target !== titleTextareaEl)) {
             return;
         }
         if (shouldIgnoreContainerClick(e)) return;
@@ -1886,7 +1890,9 @@
             </div>
 
             <!-- Steps -->
-            <div class="steps-container" class:is-center-aligned={centerAlignTasks}>
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <div class="steps-container" class:is-center-aligned={centerAlignTasks} on:click|stopPropagation>
                 {#if task.steps && task.steps.length > 0}
                     <div
                         class="steps-dnd-zone"
