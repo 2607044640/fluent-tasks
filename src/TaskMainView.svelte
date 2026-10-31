@@ -1260,9 +1260,6 @@
         isDndActive = false;
         (window as any).__mstodo_drag_data = null;
         stopAutoScroll();
-        if (newTaskTitle.trim() && currentCategory) {
-            void addTask();
-        }
         if (pendingWeightReSort && !editingWeightTaskId) {
             pendingWeightReSort = false;
             incompleteTasks = applyWeightSort(rawIncompleteTasks, !!plugin?.settings?.enableTaskWeightMode);
@@ -1601,8 +1598,10 @@
     }
 
     let vaultModifyRef: any = null;
+    let lastWindowFocusTime = 0;
 
     function handleWindowFocusOrVisibility() {
+        lastWindowFocusTime = Date.now();
         if (document.visibilityState === "visible") {
             svgResolveCache.clear();
             void refreshActiveLightboxFromDisk();
@@ -2210,7 +2209,11 @@
         }
     }
 
+    let isPastingImage = false;
+    let lastPasteTime = 0;
+
     function handleAddTaskPaste(e: ClipboardEvent) {
+        lastPasteTime = Date.now();
         if (!actualApp || !currentCategory) return;
         const files = getImagesFromClipboard(e);
         if (!files || files.length === 0) return;
@@ -2218,12 +2221,17 @@
         e.preventDefault();
         e.stopPropagation();
 
+        isPastingImage = true;
         void (async () => {
-            const targetCatPath = currentCategory.filepath;
-            for (const file of files) {
-                const savedPath = await saveImageAttachment(file, actualApp, targetCatPath);
-                if (!savedPath) continue;
-                newTaskImages = [...newTaskImages, savedPath];
+            try {
+                const targetCatPath = currentCategory.filepath;
+                for (const file of files) {
+                    const savedPath = await saveImageAttachment(file, actualApp, targetCatPath);
+                    if (!savedPath) continue;
+                    newTaskImages = [...newTaskImages, savedPath];
+                }
+            } finally {
+                isPastingImage = false;
             }
         })();
     }
@@ -2250,40 +2258,55 @@
         }
     }
 
+    let isAddingTask = false;
+
     async function addTask() {
+        if (isAddingTask) return;
         const title = newTaskTitle.trim();
         const images = [...newTaskImages];
         if ((!title && images.length === 0) || !currentCategory) return;
 
-        const effectiveTitle = title;
-        const options: Partial<TaskItem> = images.length > 0 ? { titleImages: images } : {};
-
-        const newTask = await dataService.addTask(currentCategory.filepath, effectiveTitle, options);
+        isAddingTask = true;
+        // Synchronously consume input state immediately to prevent re-entrant duplicate tasks
         newTaskTitle = "";
         newTaskImages = [];
 
-        // Optimistic UI: insert into local state immediately.
-        // We do NOT call loadTasks() here because Obsidian's async I/O might cause a race condition.
-        rawIncompleteTasks = [newTask, ...rawIncompleteTasks];
-        incompleteTasks = applyWeightSort(rawIncompleteTasks, !!plugin?.settings?.enableTaskWeightMode);
+        try {
+            const effectiveTitle = title;
+            const options: Partial<TaskItem> = images.length > 0 ? { titleImages: images } : {};
 
-        justCreatedTaskId = newTask.id;
-        await tick();
+            const newTask = await dataService.addTask(currentCategory.filepath, effectiveTitle, options);
 
-        const el = document.getElementById('task-' + newTask.id);
-        if (el) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
+            // Optimistic UI: insert into local state immediately.
+            // We do NOT call loadTasks() here because Obsidian's async I/O might cause a race condition.
+            rawIncompleteTasks = [newTask, ...rawIncompleteTasks];
+            incompleteTasks = applyWeightSort(rawIncompleteTasks, !!plugin?.settings?.enableTaskWeightMode);
 
-        if (justCreatedTimeout) clearTimeout(justCreatedTimeout);
-        justCreatedTimeout = setTimeout(() => {
-            if (justCreatedTaskId === newTask.id) {
-                justCreatedTaskId = null;
+            justCreatedTaskId = newTask.id;
+            await tick();
+
+            const el = document.getElementById('task-' + newTask.id);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
-        }, 1000);
+
+            if (justCreatedTimeout) clearTimeout(justCreatedTimeout);
+            justCreatedTimeout = setTimeout(() => {
+                if (justCreatedTaskId === newTask.id) {
+                    justCreatedTaskId = null;
+                }
+            }, 1000);
+        } finally {
+            isAddingTask = false;
+        }
     }
 
     function handleAddTaskBlur(e?: FocusEvent) {
+        // If the window itself lost focus (e.g. user summoned Ditto, Win+V, Alt+Tab, or another application),
+        // do not auto-submit. The user is copying something or switching windows and will return to this draft.
+        if (!document.hasFocus()) {
+            return;
+        }
         const related = e?.relatedTarget as HTMLElement | null;
         if (related && related.closest(".add-task-container")) {
             return;
@@ -2296,6 +2319,14 @@
     function handleAddTaskKeydown(e: KeyboardEvent) {
         if (e.isComposing || e.keyCode === 229) return;
         if (e.key === "Enter" && !e.shiftKey) {
+            // Ignore Enter if it arrived within 350ms of window regaining focus or pasting
+            // (e.g. from pressing Enter in external clipboard tools like Ditto / Win+V)
+            const timeSinceFocus = Date.now() - lastWindowFocusTime;
+            const timeSincePaste = Date.now() - lastPasteTime;
+            if (timeSinceFocus < 350 || timeSincePaste < 350 || isPastingImage) {
+                e.preventDefault();
+                return;
+            }
             e.preventDefault();
             void addTask();
         } else if (e.key === "Escape") {
