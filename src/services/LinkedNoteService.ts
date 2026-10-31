@@ -394,7 +394,7 @@ export class LinkedNoteService {
         const lowerCleanBasename = cleanCandidateBasename.toLowerCase();
         const lowerRelative = relativeCandidate.toLowerCase().replace(/\.md$/i, "");
 
-        // 6a. Priority A: Path ending match (e.g. C:/ObsidianNote/OneNote/... ends with file.path)
+        // 6a. Priority A: Path ending match (e.g. Vault/OneNote/... ends with file.path)
         if (relativeCandidate.includes("/")) {
             for (const file of allMdFiles) {
                 const filePathLower = file.path.toLowerCase();
