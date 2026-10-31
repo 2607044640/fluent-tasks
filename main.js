@@ -1785,10 +1785,11 @@ var CategoryService = class {
         seenGroupIds.add(item.id);
         const children2 = [];
         for (const child of item.items || []) {
-          if (seenFilepaths.has(child.filepath))
+          const normChildFp = (child.filepath || "").replace(/\\/g, "/");
+          if (seenFilepaths.has(normChildFp))
             continue;
-          seenFilepaths.add(child.filepath);
-          const fileBasename = ((_a = child.filepath.split("/").pop()) == null ? void 0 : _a.replace(/\.md$/, "")) || child.name;
+          seenFilepaths.add(normChildFp);
+          const fileBasename = ((_a = normChildFp.split("/").pop()) == null ? void 0 : _a.replace(/\.md$/, "")) || child.name;
           if (fileBasename !== child.name) {
             children2.push({ name: child.name, file: fileBasename });
           } else {
@@ -1803,10 +1804,11 @@ var CategoryService = class {
           children: children2
         });
       } else if (item.type === "category") {
-        if (seenFilepaths.has(item.filepath))
+        const normItemFp = (item.filepath || "").replace(/\\/g, "/");
+        if (seenFilepaths.has(normItemFp))
           continue;
-        seenFilepaths.add(item.filepath);
-        const fileBasename = ((_b = item.filepath.split("/").pop()) == null ? void 0 : _b.replace(/\.md$/, "")) || item.name;
+        seenFilepaths.add(normItemFp);
+        const fileBasename = ((_b = normItemFp.split("/").pop()) == null ? void 0 : _b.replace(/\.md$/, "")) || item.name;
         if (fileBasename !== item.name) {
           state.push({
             type: "category",
@@ -2048,31 +2050,53 @@ var CategoryService = class {
     let targetCat = null;
     let siblingNames = [];
     let containingGroup = null;
+    const targetNorm = filepath.replace(/\\/g, "/");
+    const fileBasename = file.basename;
+    const isMatch = (c) => {
+      const cPath = (c.filepath || "").replace(/\\/g, "/");
+      const cId = (c.id || "").replace(/\\/g, "/");
+      return cPath === targetNorm || cId === targetNorm || cPath.endsWith("/" + file.name) || c.name === fileBasename;
+    };
     for (const item of items) {
       if (item.type === "category") {
-        if (item.filepath === filepath || item.id === filepath) {
+        if (isMatch(item)) {
           targetCat = item;
+          break;
         }
       } else if (item.type === "group" && item.items) {
-        const found = item.items.find((c) => c.filepath === filepath || c.id === filepath);
+        const found = item.items.find(isMatch);
         if (found) {
           targetCat = found;
           containingGroup = item;
+          break;
         }
       }
     }
     if (!targetCat) {
+      const groupName = await this.findGroupNameForCategory(filepath);
       targetCat = {
-        id: filepath,
+        id: file.path,
         type: "category",
-        name: file.basename,
-        filepath
+        name: fileBasename,
+        filepath: file.path
       };
+      if (groupName !== "ungrouped") {
+        const grp = items.find((i) => i.type === "group" && i.name === groupName);
+        if (grp) {
+          grp.items = grp.items || [];
+          grp.items.push(targetCat);
+          containingGroup = grp;
+        } else {
+          items.push(targetCat);
+        }
+      } else {
+        items.push(targetCat);
+      }
     }
     if (containingGroup) {
-      siblingNames = containingGroup.items.filter((c) => c.filepath !== filepath && c.id !== filepath).map((c) => c.name);
+      siblingNames = containingGroup.items.filter((c) => !isMatch(c)).map((c) => c.name);
     } else {
-      siblingNames = items.filter((i) => i.type === "category" && i.filepath !== filepath && i.id !== filepath).map((c) => c.name);
+      siblingNames = items.filter((i) => i.type === "category" && !isMatch(i)).map((c) => c.name);
     }
     const resolvedDisplayName = resolveUniqueName(siblingNames, trimmedName);
     const { filepath: newPath } = this.getAvailableDiskFilepath(resolvedDisplayName, filepath);
@@ -2081,8 +2105,8 @@ var CategoryService = class {
     targetCat.filepath = newPath;
     await this.saveSidebarState(items);
     if (newPath !== filepath) {
-      this.io.markInternalWrite(filepath);
-      this.io.markInternalWrite(newPath);
+      this.io.markInternalWrite(filepath, 5e3);
+      this.io.markInternalWrite(newPath, 5e3);
       await this.app.vault.rename(file, newPath);
       void Logger.log("Renamed category file:", filepath, "->", newPath);
     }
@@ -7059,6 +7083,8 @@ function instance($$self, $$props, $$invalidate) {
       await loadSidebarItems();
       const handleVaultChange = async (file) => {
         if (file && file.path && file.path.startsWith(DATA_FOLDER + "/") && file.path.endsWith(".md")) {
+          if (dataService == null ? void 0 : dataService.isInternalWrite(file.path))
+            return;
           await loadSidebarItems();
           const exists = sidebarItems.some((i) => i.type === "category" && i.filepath === activeCategoryPath) || sidebarItems.some((i) => i.type === "group" && i.items.some((c) => c.filepath === activeCategoryPath));
           if (activeCategoryPath && !exists && activeCategoryPath !== STARRED_CATEGORY_PATH) {
@@ -23154,8 +23180,29 @@ function instance6($$self, $$props, $$invalidate) {
       scheduleAdjustSpacing();
     }
   }
-  function handleExternalListChanged() {
-    void loadData();
+  async function handleExternalListChanged(payload) {
+    if (payload && Array.isArray(payload.sidebarItems)) {
+      $$invalidate(83, sidebarItems = payload.sidebarItems);
+      if (isFocusedListMode) {
+        $$invalidate(83, sidebarItems = sidebarItems.map((item) => {
+          if (item.type === "group") {
+            return { ...item, isExpanded: true };
+          }
+          return item;
+        }));
+      }
+      categories = getFlatCategories(sidebarItems);
+      await refreshStarredCount();
+      await refreshTaskCounts();
+      isDataLoaded = true;
+      await tick();
+      if (isGridLayout) {
+        updateLayoutColumns(true);
+      }
+      scheduleAdjustSpacing();
+      return;
+    }
+    await loadData();
   }
   function handleExternalTaskUpdated() {
     void refreshStarredCount();
@@ -23858,7 +23905,12 @@ function instance6($$self, $$props, $$invalidate) {
     isCommittingRename = true;
     try {
       if (itemType === "category") {
-        const cat = categories.find((c) => c.id === itemId || c.filepath === itemId);
+        const targetNorm = itemId.replace(/\\/g, "/");
+        const cat = categories.find((c) => {
+          const cId = (c.id || "").replace(/\\/g, "/");
+          const cFp = (c.filepath || "").replace(/\\/g, "/");
+          return cId === targetNorm || cFp === targetNorm || c.name === itemId;
+        });
         if (cat && cat.name !== newName) {
           const newCat = await dataService.renameCategory(cat.filepath, newName);
           if (((_a2 = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _a2.defaultQuickListFocusFilepath) === cat.filepath) {
@@ -59172,7 +59224,7 @@ var FluentTasksPlugin = class extends import_obsidian28.Plugin {
         this.registerEvent(
           this.app.vault.on("rename", (file, oldPath) => {
             handleCategoryVaultChange(file);
-            if (isCategoryFile(oldPath) && file && isCategoryFile(file.path)) {
+            if (isCategoryFile(oldPath) && file && isCategoryFile(file.path) && !this.dataService.isInternalWrite(file.path)) {
               void LinkedNoteService.handleCategoryRename(
                 this.app,
                 this.dataService,

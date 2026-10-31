@@ -638,8 +638,29 @@
         }
     }
 
-    function handleExternalListChanged() {
-        void loadData();
+    async function handleExternalListChanged(payload?: any) {
+        if (payload && Array.isArray(payload.sidebarItems)) {
+            sidebarItems = payload.sidebarItems;
+            if (isFocusedListMode) {
+                sidebarItems = sidebarItems.map(item => {
+                    if (item.type === "group") {
+                        return { ...item, isExpanded: true };
+                    }
+                    return item;
+                });
+            }
+            categories = getFlatCategories(sidebarItems);
+            await refreshStarredCount();
+            await refreshTaskCounts();
+            isDataLoaded = true;
+            await tick();
+            if (isGridLayout) {
+                updateLayoutColumns(true);
+            }
+            scheduleAdjustSpacing();
+            return;
+        }
+        await loadData();
     }
 
     function handleExternalTaskUpdated() {
@@ -1428,7 +1449,12 @@
         isCommittingRename = true;
         try {
             if (itemType === "category") {
-                const cat = categories.find(c => c.id === itemId || c.filepath === itemId);
+                const targetNorm = itemId.replace(/\\/g, "/");
+                const cat = categories.find(c => {
+                    const cId = (c.id || "").replace(/\\/g, "/");
+                    const cFp = (c.filepath || "").replace(/\\/g, "/");
+                    return cId === targetNorm || cFp === targetNorm || c.name === itemId;
+                });
                 if (cat && cat.name !== newName) {
                     const newCat = await dataService.renameCategory(cat.filepath, newName);
                     if (plugin?.settings?.defaultQuickListFocusFilepath === cat.filepath) {

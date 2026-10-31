@@ -214,10 +214,11 @@ export class CategoryService {
 
                 const children: Array<string | { name: string; file: string }> = [];
                 for (const child of item.items || []) {
-                    if (seenFilepaths.has(child.filepath)) continue;
-                    seenFilepaths.add(child.filepath);
+                    const normChildFp = (child.filepath || "").replace(/\\/g, "/");
+                    if (seenFilepaths.has(normChildFp)) continue;
+                    seenFilepaths.add(normChildFp);
 
-                    const fileBasename = child.filepath.split("/").pop()?.replace(/\.md$/, "") || child.name;
+                    const fileBasename = normChildFp.split("/").pop()?.replace(/\.md$/, "") || child.name;
                     if (fileBasename !== child.name) {
                         children.push({ name: child.name, file: fileBasename });
                     } else {
@@ -232,10 +233,11 @@ export class CategoryService {
                     children: children
                 });
             } else if (item.type === "category") {
-                if (seenFilepaths.has(item.filepath)) continue;
-                seenFilepaths.add(item.filepath);
+                const normItemFp = (item.filepath || "").replace(/\\/g, "/");
+                if (seenFilepaths.has(normItemFp)) continue;
+                seenFilepaths.add(normItemFp);
 
-                const fileBasename = item.filepath.split("/").pop()?.replace(/\.md$/, "") || item.name;
+                const fileBasename = normItemFp.split("/").pop()?.replace(/\.md$/, "") || item.name;
                 if (fileBasename !== item.name) {
                     state.push({
                         type: "category",
@@ -521,43 +523,67 @@ export class CategoryService {
 
         const items = await this.getSidebarItems();
 
-        // 1. Locate the category in the current tree structure
+        // 1. Locate the category in the current tree structure using normalized paths and basenames
         let targetCat: CategoryInfo | null = null;
         let siblingNames: string[] = [];
         let containingGroup: GroupInfo | null = null;
 
+        const targetNorm = filepath.replace(/\\/g, "/");
+        const fileBasename = file.basename;
+
+        const isMatch = (c: CategoryInfo) => {
+            const cPath = (c.filepath || "").replace(/\\/g, "/");
+            const cId = (c.id || "").replace(/\\/g, "/");
+            return cPath === targetNorm || cId === targetNorm || cPath.endsWith("/" + file.name) || c.name === fileBasename;
+        };
+
         for (const item of items) {
             if (item.type === "category") {
-                if (item.filepath === filepath || item.id === filepath) {
+                if (isMatch(item)) {
                     targetCat = item;
+                    break;
                 }
             } else if (item.type === "group" && item.items) {
-                const found = item.items.find(c => c.filepath === filepath || c.id === filepath);
+                const found = item.items.find(isMatch);
                 if (found) {
                     targetCat = found;
                     containingGroup = item;
+                    break;
                 }
             }
         }
 
         if (!targetCat) {
-            // Fallback if not found in sidebar tree
+            // Self-healing fallback: preserve group association if recorded in metadata
+            const groupName = await this.findGroupNameForCategory(filepath);
             targetCat = {
-                id: filepath,
+                id: file.path,
                 type: "category",
-                name: file.basename,
-                filepath: filepath
+                name: fileBasename,
+                filepath: file.path
             };
+            if (groupName !== "ungrouped") {
+                const grp = items.find(i => i.type === "group" && i.name === groupName) as GroupInfo | undefined;
+                if (grp) {
+                    grp.items = grp.items || [];
+                    grp.items.push(targetCat);
+                    containingGroup = grp;
+                } else {
+                    items.push(targetCat);
+                }
+            } else {
+                items.push(targetCat);
+            }
         }
 
         // 2. Determine sibling display names within the same container
         if (containingGroup) {
             siblingNames = containingGroup.items
-                .filter(c => c.filepath !== filepath && c.id !== filepath)
+                .filter(c => !isMatch(c))
                 .map(c => c.name);
         } else {
             siblingNames = items
-                .filter((i): i is CategoryInfo => i.type === "category" && i.filepath !== filepath && i.id !== filepath)
+                .filter((i): i is CategoryInfo => i.type === "category" && !isMatch(i))
                 .map(c => c.name);
         }
 
@@ -567,7 +593,7 @@ export class CategoryService {
         // 4. Resolve an available disk filename under TodoData/
         const { filepath: newPath } = this.getAvailableDiskFilepath(resolvedDisplayName, filepath);
 
-        // 5. Update the in-memory item
+        // 5. Update the in-memory item (retains its exact position in containingGroup.items)
         targetCat.name = resolvedDisplayName;
         targetCat.id = newPath;
         targetCat.filepath = newPath;
@@ -577,8 +603,8 @@ export class CategoryService {
 
         // 7. If disk path changed, rename the physical file
         if (newPath !== filepath) {
-            this.io.markInternalWrite(filepath);
-            this.io.markInternalWrite(newPath);
+            this.io.markInternalWrite(filepath, 5000);
+            this.io.markInternalWrite(newPath, 5000);
             await this.app.vault.rename(file, newPath);
             void Logger.log("Renamed category file:", filepath, "->", newPath);
         }

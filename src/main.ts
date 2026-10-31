@@ -748,7 +748,7 @@ export default class FluentTasksPlugin extends Plugin implements ISidebarPluginH
                     handleCategoryVaultChange(file);
 
                     // If a category list file was renamed externally
-                    if (isCategoryFile(oldPath) && file && isCategoryFile(file.path)) {
+                    if (isCategoryFile(oldPath) && file && isCategoryFile(file.path) && !this.dataService.isInternalWrite(file.path)) {
                         void LinkedNoteService.handleCategoryRename(
                             this.app,
                             this.dataService,

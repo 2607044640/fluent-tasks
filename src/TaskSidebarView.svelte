@@ -52,6 +52,7 @@
 
             const handleVaultChange = async (file: TAbstractFile) => {
                 if (file && file.path && file.path.startsWith(DATA_FOLDER + "/") && file.path.endsWith(".md")) {
+                    if (dataService?.isInternalWrite(file.path)) return;
                     await loadSidebarItems();
                     // Check if the currently active category was deleted externally
                     const exists = sidebarItems.some(i => i.type === "category" && i.filepath === activeCategoryPath) ||
