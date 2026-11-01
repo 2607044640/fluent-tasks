@@ -263,8 +263,8 @@
             : (modalContainerEl ? parseFloat(window.getComputedStyle(modalContainerEl).fontSize) || 14 : 14);
         const fontScale = Math.max(0.75, Math.min(2.5, baseFontSize / 14));
 
-        const estimatedItemH = Math.round(28 * fontScale);
-        const estimatedHeaderH = Math.round(38 * fontScale);
+        const estimatedItemH = Math.round(25 * fontScale);
+        const estimatedHeaderH = Math.round(32 * fontScale);
 
         // 2. Gather all cards with font-scaled initial estimated heights or cached measurements
         const cards: GridCardData[] = [];
@@ -333,17 +333,17 @@
         const availW = boardEl ? boardEl.clientWidth : 1200;
         const availH = boardEl ? boardEl.clientHeight : 540;
 
-        const minColGap = plugin?.settings?.quickListMinColGap ?? 16;
-        const minRowGap = plugin?.settings?.quickListMinRowGap ?? 12;
-        const maxColGap = Math.max(minColGap, Math.round(28 * fontScale));
+        const minColGap = plugin?.settings?.quickListMinColGap ?? 14;
+        const minRowGap = plugin?.settings?.quickListMinRowGap ?? 10;
+        const maxColGap = Math.max(minColGap, Math.round(18 * fontScale));
         const rowGap = minRowGap;
 
-        const minPadX = Math.round(24 * fontScale);
-        const minPadY = Math.max(12, Math.round(16 * fontScale));
+        const minPadX = Math.round(14 * fontScale);
+        const minPadY = Math.max(8, Math.round(12 * fontScale));
 
-        const configuredMaxCardW = plugin?.settings?.quickListMaxCardWidth ?? 320;
-        const minCardW = Math.max(180, Math.round(200 * fontScale));
-        const maxCardW = Math.max(minCardW + 20, Math.round(configuredMaxCardW * Math.min(1.4, fontScale)));
+        const configuredMaxCardW = plugin?.settings?.quickListMaxCardWidth ?? 380;
+        const minCardW = Math.max(200, Math.round(210 * fontScale));
+        const maxCardW = Math.max(minCardW + 40, Math.max(380, Math.round(configuredMaxCardW * Math.min(1.4, fontScale))));
 
         const availContentW = Math.max(100, availW - minPadX * 2);
         const maxColsByW = Math.max(1, Math.floor((availContentW + minColGap) / (minCardW + minColGap)));
@@ -352,7 +352,7 @@
         // Target peak height and maximum usable vertical bounds without overflow
         const maxUsableH = Math.max(160, availH - minPadY * 2);
         const maxSingleH = Math.max(...cards.map(c => c.height));
-        const targetPeakH = Math.min(maxUsableH, Math.max(maxSingleH, Math.floor(availH * 0.72)));
+        const targetPeakH = Math.min(maxUsableH, Math.max(maxSingleH, Math.floor(availH * 0.82)));
 
         // 5. Find optimal K (smarter height-capped distribution avoiding vertical cut-offs)
         let bestK = 1;
@@ -419,7 +419,7 @@
         const peakH = Math.max(...bestBins.map(b => b.h));
         const padY = Math.max(minPadY, Math.floor((availH - peakH) / 2));
 
-        const colGap = Math.min(maxColGap, Math.max(minColGap, Math.round(20 * fontScale)));
+        const colGap = Math.min(maxColGap, Math.max(minColGap, Math.round(14 * fontScale)));
         const totalGapsW = (bestK - 1) * colGap;
         const actualCardW = Math.min(maxCardW, Math.max(minCardW, Math.floor((availContentW - totalGapsW) / bestK)));
         const totalW = bestK * actualCardW + totalGapsW;
@@ -429,7 +429,7 @@
             boardEl.style.setProperty("--quick-grid-card-w", `${actualCardW}px`);
             boardEl.style.setProperty("--quick-grid-col-gap", `${colGap}px`);
             boardEl.style.setProperty("--quick-grid-row-gap", `${rowGap}px`);
-            boardEl.style.setProperty("--quick-grid-item-slot-w", `${Math.round(48 * fontScale)}px`);
+            boardEl.style.setProperty("--quick-grid-item-slot-w", `${Math.round(24 * fontScale)}px`);
             boardEl.style.paddingTop = `${padY}px`;
             boardEl.style.paddingBottom = `${padY}px`;
             boardEl.style.paddingLeft = `${padX}px`;

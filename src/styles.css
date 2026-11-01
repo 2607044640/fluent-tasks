@@ -4237,23 +4237,23 @@ body .quick-modal-task-item.is-focused {
     flex-direction: row;
     justify-content: center;
     align-items: flex-start;
-    gap: var(--quick-grid-col-gap, 28px);
-    padding: 20px 28px;
+    gap: var(--quick-grid-col-gap, 14px);
+    padding: 12px 14px;
     box-sizing: border-box;
 }
 
 /* Horizontal & Vertical scrollbar styling */
 .quick-list-grid-board::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
 }
 .quick-list-grid-board::-webkit-scrollbar-track {
     background: var(--background-secondary);
-    border-radius: 4px;
+    border-radius: 3px;
 }
 .quick-list-grid-board::-webkit-scrollbar-thumb {
     background: var(--background-modifier-border-hover, #4a4a4a);
-    border-radius: 4px;
+    border-radius: 3px;
 }
 .quick-list-grid-board::-webkit-scrollbar-thumb:hover {
     background: var(--todo-accent, #8b5cf6);
@@ -4262,10 +4262,10 @@ body .quick-modal-task-item.is-focused {
 .quick-grid-column {
     display: flex;
     flex-direction: column;
-    gap: var(--quick-grid-row-gap, 14px);
-    width: var(--quick-grid-card-w, 280px);
-    min-width: 180px;
-    max-width: 520px;
+    gap: var(--quick-grid-row-gap, 10px);
+    width: var(--quick-grid-card-w, 320px);
+    min-width: 200px;
+    max-width: 580px;
     flex-shrink: 0;
 }
 
@@ -4273,10 +4273,10 @@ body .quick-modal-task-item.is-focused {
     background: var(--background-secondary);
     border: 1px solid var(--background-modifier-border);
     border-radius: 8px;
-    padding: 8px 12px;
+    padding: 6px 8px;
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 2px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
     width: 100%;
@@ -4291,7 +4291,7 @@ body .quick-modal-task-item.is-focused {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding-bottom: 4px;
+    padding-bottom: 3px;
     margin-bottom: 2px;
     border-bottom: 1px solid var(--background-modifier-border);
     cursor: pointer;
@@ -4301,13 +4301,14 @@ body .quick-modal-task-item.is-focused {
 .quick-grid-card-title-wrap {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     overflow: hidden;
     flex: 1;
+    min-width: 0;
 }
 
 .quick-grid-card-title {
-    font-size: 12px;
+    font-size: 11.5px;
     font-weight: 700;
     color: var(--text-normal);
     overflow: hidden;
@@ -4317,15 +4318,19 @@ body .quick-modal-task-item.is-focused {
 }
 
 .quick-grid-card-count {
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 600;
     color: var(--text-muted);
     background: var(--background-primary);
-    padding: 1px 6px;
-    border-radius: 10px;
+    padding: 0 4px;
+    min-width: 13px;
+    height: 14px;
+    line-height: 14px;
+    text-align: center;
+    border-radius: 7px;
     border: 1px solid var(--background-modifier-border);
     flex-shrink: 0;
-    margin-left: 6px;
+    margin-left: 4px;
 }
 
 .quick-grid-card-items {
@@ -4338,11 +4343,11 @@ body .quick-modal-task-item.is-focused {
 }
 
 .quick-modal-list-item.is-grid-item {
-    padding: 3px 6px;
-    border-radius: 5px;
+    padding: 2.5px 4.5px;
+    border-radius: 4px;
     background: transparent;
-    font-size: 12px;
-    gap: 6px;
+    font-size: 11.5px;
+    gap: 4px;
     transition: background-color 0.15s ease;
 }
 
@@ -4357,13 +4362,46 @@ body .quick-modal-list-item.is-grid-item.is-focused {
 }
 
 .quick-modal-list-item.is-grid-item .quick-modal-list-icon {
-    font-size: 12px;
+    font-size: 11px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.quick-modal-list-item.is-grid-item .quick-modal-list-icon svg {
+    width: 11px !important;
+    height: 11px !important;
+    opacity: 0.65;
+}
+
+.quick-modal-list-item.is-grid-item .quick-modal-item-meta-right {
+    gap: 2.5px;
+    margin-left: auto;
+    flex-shrink: 0;
 }
 
 .quick-modal-list-item.is-grid-item .quick-modal-badge {
-    font-size: 9.5px;
-    padding: 0 5px;
+    font-size: 9px;
+    font-weight: 600;
+    padding: 0 3.5px;
+    min-width: 13px;
+    height: 14px;
+    line-height: 14px;
+    text-align: center;
+    border-radius: 7px;
     margin-left: 0;
+    flex-shrink: 0;
+}
+
+.quick-modal-list-item.is-grid-item .quick-modal-focus-tag {
+    height: 13px;
+    padding: 0 2.5px;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+
+.quick-modal-list-item.is-grid-item .quick-modal-focus-tag svg {
+    width: 8.5px;
+    height: 8.5px;
 }
 
 .quick-grid-card.is-root-card .quick-grid-card-icon {
@@ -4378,8 +4416,8 @@ body .quick-modal-list-item.is-grid-item.is-focused {
 
 .quick-grid-card.is-root-card .quick-grid-card-icon svg {
     display: block;
-    width: 13px;
-    height: 13px;
+    width: 11.5px;
+    height: 11.5px;
 }
 
 /* =============================================
@@ -5890,7 +5928,7 @@ body .task-steps-floating-modal .steps-modal-delete-btn:hover {
    ============================================= */
 .quick-modal-container.is-centered-titles .quick-modal-list-item:not(.quick-modal-header-btn) {
     display: grid;
-    grid-template-columns: var(--quick-grid-item-slot-w, 48px) minmax(0, 1fr) var(--quick-grid-item-slot-w, 48px);
+    grid-template-columns: minmax(var(--quick-grid-item-slot-w, 24px), max-content) minmax(0, 1fr) minmax(var(--quick-grid-item-slot-w, 24px), max-content);
     align-items: center;
     gap: 0;
 }
@@ -5898,14 +5936,14 @@ body .task-steps-floating-modal .steps-modal-delete-btn:hover {
 .quick-modal-container.is-centered-titles .quick-modal-list-item:not(.quick-modal-header-btn) .quick-modal-list-icon,
 .quick-modal-container.is-centered-titles .quick-modal-list-item:not(.quick-modal-header-btn) .quick-modal-smart-star-icon {
     justify-self: start;
-    margin-left: 2px;
+    margin-left: 1px;
 }
 
 .quick-modal-container.is-centered-titles .quick-modal-list-item:not(.quick-modal-header-btn) .quick-modal-list-name {
     width: 100%;
     text-align: center;
     margin: 0;
-    padding: 0 4px;
+    padding: 0 2px;
     box-sizing: border-box;
     overflow: hidden;
     text-overflow: ellipsis;

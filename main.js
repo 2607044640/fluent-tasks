@@ -22858,8 +22858,8 @@ function instance6($$self, $$props, $$invalidate) {
       return;
     const baseFontSize = boardEl ? parseFloat(window.getComputedStyle(boardEl).fontSize) || 14 : modalContainerEl ? parseFloat(window.getComputedStyle(modalContainerEl).fontSize) || 14 : 14;
     const fontScale = Math.max(0.75, Math.min(2.5, baseFontSize / 14));
-    const estimatedItemH = Math.round(28 * fontScale);
-    const estimatedHeaderH = Math.round(38 * fontScale);
+    const estimatedItemH = Math.round(25 * fontScale);
+    const estimatedHeaderH = Math.round(32 * fontScale);
     const cards = [];
     if (rootCategories.length > 0) {
       const itemCount = rootCategories.length;
@@ -22915,21 +22915,21 @@ function instance6($$self, $$props, $$invalidate) {
     }
     const availW = boardEl ? boardEl.clientWidth : 1200;
     const availH = boardEl ? boardEl.clientHeight : 540;
-    const minColGap = (_b2 = (_a2 = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _a2.quickListMinColGap) != null ? _b2 : 16;
-    const minRowGap = (_d2 = (_c2 = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _c2.quickListMinRowGap) != null ? _d2 : 12;
-    const maxColGap = Math.max(minColGap, Math.round(28 * fontScale));
+    const minColGap = (_b2 = (_a2 = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _a2.quickListMinColGap) != null ? _b2 : 14;
+    const minRowGap = (_d2 = (_c2 = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _c2.quickListMinRowGap) != null ? _d2 : 10;
+    const maxColGap = Math.max(minColGap, Math.round(18 * fontScale));
     const rowGap = minRowGap;
-    const minPadX = Math.round(24 * fontScale);
-    const minPadY = Math.max(12, Math.round(16 * fontScale));
-    const configuredMaxCardW = (_f2 = (_e2 = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _e2.quickListMaxCardWidth) != null ? _f2 : 320;
-    const minCardW = Math.max(180, Math.round(200 * fontScale));
-    const maxCardW = Math.max(minCardW + 20, Math.round(configuredMaxCardW * Math.min(1.4, fontScale)));
+    const minPadX = Math.round(14 * fontScale);
+    const minPadY = Math.max(8, Math.round(12 * fontScale));
+    const configuredMaxCardW = (_f2 = (_e2 = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _e2.quickListMaxCardWidth) != null ? _f2 : 380;
+    const minCardW = Math.max(200, Math.round(210 * fontScale));
+    const maxCardW = Math.max(minCardW + 40, Math.max(380, Math.round(configuredMaxCardW * Math.min(1.4, fontScale))));
     const availContentW = Math.max(100, availW - minPadX * 2);
     const maxColsByW = Math.max(1, Math.floor((availContentW + minColGap) / (minCardW + minColGap)));
     const maxCandidateK = Math.min(cards.length, maxColsByW);
     const maxUsableH = Math.max(160, availH - minPadY * 2);
     const maxSingleH = Math.max(...cards.map((c) => c.height));
-    const targetPeakH = Math.min(maxUsableH, Math.max(maxSingleH, Math.floor(availH * 0.72)));
+    const targetPeakH = Math.min(maxUsableH, Math.max(maxSingleH, Math.floor(availH * 0.82)));
     let bestK = 1;
     let bestBins = null;
     let bestScore = Infinity;
@@ -22977,7 +22977,7 @@ function instance6($$self, $$props, $$invalidate) {
     }
     const peakH = Math.max(...bestBins.map((b) => b.h));
     const padY = Math.max(minPadY, Math.floor((availH - peakH) / 2));
-    const colGap = Math.min(maxColGap, Math.max(minColGap, Math.round(20 * fontScale)));
+    const colGap = Math.min(maxColGap, Math.max(minColGap, Math.round(14 * fontScale)));
     const totalGapsW = (bestK - 1) * colGap;
     const actualCardW = Math.min(maxCardW, Math.max(minCardW, Math.floor((availContentW - totalGapsW) / bestK)));
     const totalW = bestK * actualCardW + totalGapsW;
@@ -22986,7 +22986,7 @@ function instance6($$self, $$props, $$invalidate) {
       boardEl.style.setProperty("--quick-grid-card-w", `${actualCardW}px`);
       boardEl.style.setProperty("--quick-grid-col-gap", `${colGap}px`);
       boardEl.style.setProperty("--quick-grid-row-gap", `${rowGap}px`);
-      boardEl.style.setProperty("--quick-grid-item-slot-w", `${Math.round(48 * fontScale)}px`);
+      boardEl.style.setProperty("--quick-grid-item-slot-w", `${Math.round(24 * fontScale)}px`);
       $$invalidate(38, boardEl.style.paddingTop = `${padY}px`, boardEl);
       $$invalidate(38, boardEl.style.paddingBottom = `${padY}px`, boardEl);
       $$invalidate(38, boardEl.style.paddingLeft = `${padX}px`, boardEl);
@@ -51299,9 +51299,9 @@ var DEFAULT_SETTINGS = {
   quickModalAction: "direct",
   quickModalTipCount: 0,
   quickListGridLayout: true,
-  quickListMinColGap: 16,
-  quickListMinRowGap: 12,
-  quickListMaxCardWidth: 320,
+  quickListMinColGap: 14,
+  quickListMinRowGap: 10,
+  quickListMaxCardWidth: 380,
   quickListFocusCenter: false,
   defaultQuickListFocusFilepath: "",
   dailyBackupEnabled: true,
@@ -51439,23 +51439,23 @@ var FluentTasksSettingTab = class extends import_obsidian22.PluginSettingTab {
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName("Quick List Modal: Min Column Gap").setDesc("Minimum horizontal gap (in px) between columns in the Quick List grid board layout (default: 16px).").addSlider((slider) => {
+    new import_obsidian22.Setting(containerEl).setName("Quick List Modal: Min Column Gap").setDesc("Minimum horizontal gap (in px) between columns in the Quick List grid board layout (default: 14px).").addSlider((slider) => {
       var _a;
-      return slider.setLimits(10, 64, 2).setValue((_a = this.plugin.settings.quickListMinColGap) != null ? _a : 16).setDynamicTooltip().onChange(async (value) => {
+      return slider.setLimits(8, 64, 2).setValue((_a = this.plugin.settings.quickListMinColGap) != null ? _a : 14).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.quickListMinColGap = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName("Quick List Modal: Min Row Gap").setDesc("Minimum vertical gap (in px) between stacked cards within the same column (default: 12px).").addSlider((slider) => {
+    new import_obsidian22.Setting(containerEl).setName("Quick List Modal: Min Row Gap").setDesc("Minimum vertical gap (in px) between stacked cards within the same column (default: 10px).").addSlider((slider) => {
       var _a;
-      return slider.setLimits(8, 48, 2).setValue((_a = this.plugin.settings.quickListMinRowGap) != null ? _a : 12).setDynamicTooltip().onChange(async (value) => {
+      return slider.setLimits(6, 48, 2).setValue((_a = this.plugin.settings.quickListMinRowGap) != null ? _a : 10).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.quickListMinRowGap = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName("Quick List Modal: Max Card Width").setDesc("Maximum width (in px) for cards in the Quick List grid board layout. Prevents excessive horizontal empty space on large displays (default: 320px).").addSlider((slider) => {
+    new import_obsidian22.Setting(containerEl).setName("Quick List Modal: Max Card Width").setDesc("Maximum width (in px) for cards in the Quick List grid board layout. Prevents excessive horizontal empty space on large displays (default: 380px).").addSlider((slider) => {
       var _a;
-      return slider.setLimits(220, 520, 10).setValue((_a = this.plugin.settings.quickListMaxCardWidth) != null ? _a : 320).setDynamicTooltip().onChange(async (value) => {
+      return slider.setLimits(220, 600, 10).setValue((_a = this.plugin.settings.quickListMaxCardWidth) != null ? _a : 380).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.quickListMaxCardWidth = value;
         await this.plugin.saveSettings();
       });
