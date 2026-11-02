@@ -178,6 +178,8 @@ const en = {
     image_hint_open: "Open",
     restore_window: "Restore window",
     fullscreen_window: "Full screen",
+    copy_task_info_xml: "Copy all info for AI (XML format)",
+    copy_task_info_success: "Copied all task info to clipboard",
     focused_lists_btn_tooltip: "Focused lists",
     focused_lists_save_btn: "Save",
     focused_lists_saved_notice: "Focused lists saved",

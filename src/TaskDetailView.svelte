@@ -115,6 +115,103 @@
         }
     }
 
+    let copiedInfoRecently: boolean = false;
+    let copiedInfoTimer: ReturnType<typeof setTimeout> | null = null;
+
+    async function copyAllTaskInfo() {
+        if (!task) return;
+
+        const sections: string[] = [];
+
+        // Title
+        if (task.title && task.title.trim()) {
+            sections.push(`<Title>\n${task.title.trim()}\n</Title>`);
+        }
+
+        // Steps / Items
+        if (task.steps && task.steps.length > 0) {
+            let itemIndex = 1;
+            for (const step of task.steps) {
+                let text = (step.text || "").trim();
+                if (step.images && step.images.length > 0) {
+                    const imgText = step.images.map(img => `![[${img}]]`).join("\n");
+                    text = text ? `${text}\n${imgText}` : imgText;
+                }
+                if (!text) continue;
+                const tag = step.done ? `Item_${itemIndex}_Excluded` : `Item_${itemIndex}`;
+                sections.push(`<${tag}>\n${text}\n</${tag}>`);
+                itemIndex++;
+            }
+        }
+
+        // Details / Note
+        let noteText = (task.note || "").trim();
+        if (task.images && task.images.length > 0) {
+            const noteImages = task.images
+                .filter(img => !noteText.includes(img))
+                .map(img => `![[${img}]]`)
+                .join("\n");
+            if (noteImages) {
+                noteText = noteText ? `${noteText}\n${noteImages}` : noteImages;
+            }
+        }
+        if (noteText) {
+            sections.push(`<Details>\n${noteText}\n</Details>`);
+        }
+
+        // Why / Core Reasoning
+        const whys = task.whys && task.whys.length > 0
+            ? task.whys.filter(w => w && w.trim())
+            : (task.why && task.why.trim() ? [task.why.trim()] : []);
+        if (whys.length > 0) {
+            sections.push(`<Why>\n${whys.join("\n")}\n</Why>`);
+        }
+
+        // Linked Notes
+        const linkedNotes: string[] = [];
+        if (task.task_note && task.task_note.trim()) linkedNotes.push(task.task_note.trim());
+        if (task.note_links && task.note_links.length > 0) {
+            for (const link of task.note_links) {
+                if (link && link.trim() && !linkedNotes.includes(link.trim())) {
+                    linkedNotes.push(link.trim());
+                }
+            }
+        } else if (task.note_link && task.note_link.trim() && !linkedNotes.includes(task.note_link.trim())) {
+            linkedNotes.push(task.note_link.trim());
+        }
+        if (linkedNotes.length > 0) {
+            sections.push(`<LinkedNote>\n${linkedNotes.join("\n")}\n</LinkedNote>`);
+        }
+
+        // Due date
+        if (task.dueDate && task.dueDate.trim()) {
+            sections.push(`<DueDate>\n${task.dueDate.trim()}\n</DueDate>`);
+        }
+
+        const formatted = sections.join("\n\n");
+        if (!formatted) return;
+
+        try {
+            if (navigator?.clipboard?.writeText) {
+                await navigator.clipboard.writeText(formatted);
+            } else {
+                const electron = (window as any).require ? (window as any).require("electron") : undefined;
+                if (electron?.clipboard?.writeText) {
+                    electron.clipboard.writeText(formatted);
+                }
+            }
+            new Notice(t("copy_task_info_success") || "Copied all task info to clipboard / 已复制全部信息至剪贴板");
+            copiedInfoRecently = true;
+            if (copiedInfoTimer) clearTimeout(copiedInfoTimer);
+            copiedInfoTimer = setTimeout(() => {
+                copiedInfoRecently = false;
+            }, 1500);
+        } catch (err) {
+            Logger.error("Failed to copy task info to clipboard", err);
+            new Notice("Failed to copy / 复制失败");
+        }
+    }
+
     function getScheduleBadge(t: TaskItem | null): {
         letter?: string;
         isOverdue: boolean;
@@ -429,6 +526,10 @@
         if (globalMouseUpTimeout) {
             clearTimeout(globalMouseUpTimeout);
             globalMouseUpTimeout = null;
+        }
+        if (copiedInfoTimer) {
+            clearTimeout(copiedInfoTimer);
+            copiedInfoTimer = null;
         }
     });
 
@@ -1898,28 +1999,24 @@
 
                     {#if isModal}
                         <div class="detail-modal-actions">
-                            <!-- Fullscreen / Restore Toggle Button -->
+                            <!-- Copy All Task Info Button (XML format for AI) -->
                             <!-- svelte-ignore a11y-click-events-have-key-events -->
-                            <span class="detail-modal-fullscreen-btn"
-                                  on:click={toggleFullscreen}
+                            <span class="detail-modal-copy-btn"
+                                  class:copied={copiedInfoRecently}
+                                  on:click={copyAllTaskInfo}
                                   role="button" tabindex="0"
-                                  title={isFullscreen ? (t("restore_window") || "Restore window / 还原窗口") : (t("fullscreen_window") || "Full screen / 全屏放大")}
-                                  on:keydown={(e) => e.key === "Enter" && toggleFullscreen()}>
-                                {#if isFullscreen}
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <polyline points="4 14 10 14 10 20"/>
-                                        <polyline points="20 10 14 10 14 4"/>
-                                        <line x1="14" y1="10" x2="21" y2="3"/>
-                                        <line x1="3" y1="21" x2="10" y2="14"/>
+                                  title={copiedInfoRecently ? (t("copy_task_info_success") || "Copied all task info to clipboard / 已复制全部信息至剪贴板") : (t("copy_task_info_xml") || "Copy all info for AI (XML format) / 复制全部信息(用于 AI 提示词)")}
+                                  on:keydown={(e) => e.key === "Enter" && copyAllTaskInfo()}>
+                                {#if copiedInfoRecently}
+                                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+                                         stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="20 6 9 17 4 12"/>
                                     </svg>
                                 {:else}
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
                                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <polyline points="15 3 21 3 21 9"/>
-                                        <polyline points="9 21 3 21 3 15"/>
-                                        <line x1="21" y1="3" x2="14" y2="10"/>
-                                        <line x1="3" y1="21" x2="10" y2="14"/>
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                                     </svg>
                                 {/if}
                             </span>
@@ -2714,29 +2811,6 @@
             {#if isModal}
                 <!-- svelte-ignore a11y-click-events-have-key-events -->
                 <div class="detail-empty-modal-header">
-                    <span class="detail-modal-fullscreen-btn"
-                          on:click={toggleFullscreen}
-                          role="button" tabindex="0"
-                          title={isFullscreen ? (t("restore_window") || "Restore window / 还原窗口") : (t("fullscreen_window") || "Full screen / 全屏放大")}
-                          on:keydown={(e) => e.key === "Enter" && toggleFullscreen()}>
-                        {#if isFullscreen}
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="4 14 10 14 10 20"/>
-                                <polyline points="20 10 14 10 14 4"/>
-                                <line x1="14" y1="10" x2="21" y2="3"/>
-                                <line x1="3" y1="21" x2="10" y2="14"/>
-                            </svg>
-                        {:else}
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="15 3 21 3 21 9"/>
-                                <polyline points="9 21 3 21 3 15"/>
-                                <line x1="21" y1="3" x2="14" y2="10"/>
-                                <line x1="3" y1="21" x2="10" y2="14"/>
-                            </svg>
-                        {/if}
-                    </span>
                     <span class="detail-modal-close-btn"
                           on:click={closePanel}
                           role="button" tabindex="0"

@@ -4926,6 +4926,7 @@ body .task-detail-floating-modal.is-fullscreen .detail-footer {
     margin-top: 2px;
 }
 
+.title-row .detail-modal-copy-btn,
 .title-row .detail-modal-fullscreen-btn,
 .detail-empty-modal-header .detail-modal-fullscreen-btn {
     flex-shrink: 0;
@@ -4939,15 +4940,21 @@ body .task-detail-floating-modal.is-fullscreen .detail-footer {
     transition: color 0.15s ease, background-color 0.15s ease, transform 0.1s ease;
 }
 
+.title-row .detail-modal-copy-btn:hover,
 .title-row .detail-modal-fullscreen-btn:hover,
 .detail-empty-modal-header .detail-modal-fullscreen-btn:hover {
     color: var(--text-normal, #fff);
     background-color: var(--todo-item-hover, rgba(255, 255, 255, 0.08));
 }
 
+.title-row .detail-modal-copy-btn:active,
 .title-row .detail-modal-fullscreen-btn:active,
 .detail-empty-modal-header .detail-modal-fullscreen-btn:active {
     transform: scale(0.92);
+}
+
+.title-row .detail-modal-copy-btn.copied {
+    color: var(--interactive-accent, #705df2);
 }
 
 .title-row .detail-modal-close-btn,

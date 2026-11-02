@@ -180,6 +180,8 @@ const zhCn: typeof en = {
     image_hint_open: "打开",
     restore_window: "还原窗口",
     fullscreen_window: "全屏放大",
+    copy_task_info_xml: "复制全部信息 (用于 AI 提示词)",
+    copy_task_info_success: "已复制全部信息至剪贴板",
     focused_lists_btn_tooltip: "聚焦清单",
     focused_lists_save_btn: "保存",
     focused_lists_saved_notice: "聚焦清单已保存",
