@@ -75,6 +75,29 @@
     let detailBodyEl: HTMLElement | null = null;
     let isDraggingSteps: boolean = false;
     let preDndSteps: TaskStep[] = [];
+    let expandedStepIds = new Set<string>();
+
+    function isStepCollapsed(step: TaskStep): boolean {
+        if (!isModal) return false;
+        if (!step.done) return false;
+        if (!step.id) return false;
+        return !expandedStepIds.has(step.id);
+    }
+
+    function toggleStepCollapse(stepId?: string) {
+        if (!stepId) return;
+        if (expandedStepIds.has(stepId)) {
+            expandedStepIds.delete(stepId);
+        } else {
+            expandedStepIds.add(stepId);
+        }
+        expandedStepIds = new Set(expandedStepIds);
+    }
+
+    function getCollapsedStepPreview(text?: string): string {
+        if (!text) return "";
+        return text.replace(/\r?\n+/g, " ").trim();
+    }
 
     function handleContainerWheel(e: WheelEvent) {
         if (detailBodyEl && e.target && !detailBodyEl.contains(e.target as Node)) {
@@ -412,6 +435,7 @@
         }
         task = { ...t, steps: ensureStepIds(t.id, t.steps ? t.steps.map(s => ({ ...s })) : []) };
         categoryFilepath = filepath;
+        expandedStepIds = new Set<string>();
         showScheduleSection = false;
         showRepeatPicker = false;
         showAddMetaModal = false;
@@ -632,12 +656,31 @@
     }
 
     function handleStepItemClick(e: MouseEvent, stepId?: string) {
+        if (!stepId) return;
+        const step = task?.steps?.find(s => s.id === stepId);
+        if (!step) return;
+
+        if (isStepCollapsed(step)) {
+            expandedStepIds.add(stepId);
+            expandedStepIds = new Set(expandedStepIds);
+            void tick().then(() => {
+                const stepEl = e.currentTarget as HTMLElement | null;
+                const textarea = stepEl?.querySelector('textarea') as HTMLTextAreaElement | null;
+                if (textarea) {
+                    textarea.focus();
+                    const len = textarea.value.length;
+                    textarea.setSelectionRange(len, len);
+                }
+            });
+            return;
+        }
+
         const target = e.target as HTMLElement | null;
         if (!target) return;
         const textarea = (e.currentTarget as HTMLElement).querySelector('textarea') as HTMLTextAreaElement | null;
         if (!textarea || target === textarea) return;
         if (shouldIgnoreContainerClick(e)) return;
-        if (target.closest('.step-left-controls, .delete-step, .task-image-thumbnail, .task-img-strip-actions, button, [role="button"]')) {
+        if (target.closest('.step-left-controls, .step-right-controls, .delete-step, .step-collapse-btn, .task-image-thumbnail, .task-img-strip-actions, button, [role="button"]')) {
             return;
         }
         textarea.focus();
@@ -1126,6 +1169,10 @@
         const step = task.steps.find(s => s.id === stepId);
         if (step) {
             step.done = !step.done;
+            if (step.done) {
+                expandedStepIds.delete(stepId);
+                expandedStepIds = new Set(expandedStepIds);
+            }
             task.steps = [...task.steps]; // trigger reactivity
             task = task;
             void Logger.log(`[DND Detail] Toggled step done: taskId=${task.id}, stepId=${stepId}, done=${step.done}`);
@@ -1909,7 +1956,10 @@
                         {#each task.steps as step (step.id)}
                             <!-- svelte-ignore a11y-click-events-have-key-events -->
                             <!-- svelte-ignore a11y-no-static-element-interactions -->
-                            <div class="step-item" class:is-center-aligned={centerAlignTasks} animate:flip={{ duration: DND_FLIP_DURATION }}
+                            <div class="step-item"
+                                 class:is-center-aligned={centerAlignTasks}
+                                 class:is-step-collapsed={isStepCollapsed(step)}
+                                 animate:flip={{ duration: DND_FLIP_DURATION }}
                                  on:click={(e) => handleStepItemClick(e, step.id)}>
                                 <div class="step-left-controls">
                                     <span class="step-drag-handle" title="Drag to reorder">
@@ -1939,62 +1989,96 @@
                                         {/if}
                                     </span>
                                 </div>
-                                <div class="step-content-col" class:is-center-aligned={centerAlignTasks}>
-                                    {#if getStepImages(step).length > 0}
-                                        <TaskImageStrip
-                                            images={getStepImages(step)}
-                                            app={actualApp}
-                                            size={38}
-                                            isCenterAligned={centerAlignTasks}
-                                            onDelete={(imgRef) => removeImageFromStep(step.id, imgRef)}
-                                            onCut={(imgRef) => removeImageFromStep(step.id, imgRef)}
-                                            onHover={(imgRef, isHovered) => {
-                                                if (isHovered && step.id) {
-                                                    hoveredImageRef = { imageRef: imgRef, stepId: step.id };
-                                                } else if (hoveredImageRef?.imageRef === imgRef) {
-                                                    hoveredImageRef = null;
+                                <div class="step-content-col" class:is-center-aligned={centerAlignTasks} class:is-collapsed={isStepCollapsed(step)}>
+                                    {#if isStepCollapsed(step)}
+                                        <div class="step-collapsed-row" class:is-center-aligned={centerAlignTasks} title="Click to expand / 点击展开">
+                                            {#if getStepImages(step).length > 0}
+                                                <span class="step-collapsed-image-badge" title="{getStepImages(step).length} image(s)">
+                                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                                                        <polyline points="21 15 16 10 5 21"/>
+                                                    </svg>
+                                                    <span>{getStepImages(step).length}</span>
+                                                </span>
+                                            {/if}
+                                            <span class="step-collapsed-text" class:is-center-aligned={centerAlignTasks}>
+                                                {getCollapsedStepPreview(step.text) || "Step description..."}
+                                            </span>
+                                            <span class="step-collapsed-expand-hint" title="Click to expand / 点击展开">
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="6 9 12 15 18 9"/>
+                                                </svg>
+                                            </span>
+                                        </div>
+                                    {:else}
+                                        {#if getStepImages(step).length > 0}
+                                            <TaskImageStrip
+                                                images={getStepImages(step)}
+                                                app={actualApp}
+                                                size={38}
+                                                isCenterAligned={centerAlignTasks}
+                                                onDelete={(imgRef) => removeImageFromStep(step.id, imgRef)}
+                                                onCut={(imgRef) => removeImageFromStep(step.id, imgRef)}
+                                                onHover={(imgRef, isHovered) => {
+                                                    if (isHovered && step.id) {
+                                                        hoveredImageRef = { imageRef: imgRef, stepId: step.id };
+                                                    } else if (hoveredImageRef?.imageRef === imgRef) {
+                                                        hoveredImageRef = null;
+                                                    }
+                                                }}
+                                            />
+                                        {/if}
+                                        <textarea
+                                            use:autosize={step.text}
+                                            rows="1"
+                                            value={step.text}
+                                            class:completed={step.done}
+                                            class:is-center-aligned={centerAlignTasks}
+                                            on:focus={() => { if (step.id) focusedTarget = { type: 'step', stepId: step.id }; }}
+                                            on:input={(e) => updateStepText(step.id, e.currentTarget.value)}
+                                            on:blur={() => handleStepBlur(step.id)}
+                                            on:keydown={(e) => {
+                                                if (e.key === "Enter" && !e.shiftKey) {
+                                                    if (isStepEmpty(step)) {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        if (focusedTarget?.type === 'step' && focusedTarget.stepId === step.id) {
+                                                            focusedTarget = null;
+                                                        }
+                                                        void deleteStep(step.id);
+                                                        return;
+                                                    }
+                                                    e.preventDefault();
+                                                    e.currentTarget.blur();
+                                                } else if (e.key === "Escape") {
+                                                    void flushSaveSync();
                                                 }
                                             }}
+                                            placeholder="Step text"
                                         />
                                     {/if}
-                                    <textarea
-                                        use:autosize={step.text}
-                                        rows="1"
-                                        value={step.text}
-                                        class:completed={step.done}
-                                        class:is-center-aligned={centerAlignTasks}
-                                        on:focus={() => { if (step.id) focusedTarget = { type: 'step', stepId: step.id }; }}
-                                        on:input={(e) => updateStepText(step.id, e.currentTarget.value)}
-                                        on:blur={() => handleStepBlur(step.id)}
-                                        on:keydown={(e) => {
-                                            if (e.key === "Enter" && !e.shiftKey) {
-                                                if (isStepEmpty(step)) {
-                                                    e.preventDefault();
-                                                    e.stopPropagation();
-                                                    if (focusedTarget?.type === 'step' && focusedTarget.stepId === step.id) {
-                                                        focusedTarget = null;
-                                                    }
-                                                    void deleteStep(step.id);
-                                                    return;
-                                                }
-                                                e.preventDefault();
-                                                e.currentTarget.blur();
-                                            } else if (e.key === "Escape") {
-                                                void flushSaveSync();
-                                            }
-                                        }}
-                                        placeholder="Step text"
-                                    />
                                 </div>
-                                <span class="delete-step" on:click|stopPropagation={() => deleteStep(step.id)}
-                                      role="button" tabindex="0"
-                                      on:keydown|stopPropagation={(e) => e.key === "Enter" && deleteStep(step.id)}>
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                         stroke="currentColor" stroke-width="2">
-                                        <line x1="18" y1="6" x2="6" y2="18"/>
-                                        <line x1="6" y1="6" x2="18" y2="18"/>
-                                    </svg>
-                                </span>
+                                <div class="step-right-controls">
+                                    {#if isModal && step.done && !isStepCollapsed(step)}
+                                        <span class="step-collapse-btn" on:click|stopPropagation={() => toggleStepCollapse(step.id)}
+                                              role="button" tabindex="0" title="Collapse / 折叠成单行"
+                                              on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleStepCollapse(step.id)}>
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="18 15 12 9 6 15"/>
+                                            </svg>
+                                        </span>
+                                    {/if}
+                                    <span class="delete-step" on:click|stopPropagation={() => deleteStep(step.id)}
+                                          role="button" tabindex="0"
+                                          on:keydown|stopPropagation={(e) => e.key === "Enter" && deleteStep(step.id)}>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                             stroke="currentColor" stroke-width="2">
+                                            <line x1="18" y1="6" x2="6" y2="18"/>
+                                            <line x1="6" y1="6" x2="18" y2="18"/>
+                                        </svg>
+                                    </span>
+                                </div>
                             </div>
                         {/each}
                     </div>

@@ -1331,6 +1331,106 @@ body .task-detail-floating-modal.is-fullscreen .detail-title-input:focus {
     opacity: 0.5;
 }
 
+.step-right-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.step-item.is-step-collapsed {
+    align-items: center;
+    cursor: pointer;
+}
+
+.step-collapsed-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    min-width: 0;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    padding: 2px 0;
+}
+
+.step-collapsed-row.is-center-aligned {
+    justify-content: center;
+}
+
+.step-collapsed-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-decoration: line-through;
+    opacity: 0.55;
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--todo-text-main, var(--text-normal));
+    flex: 1;
+    min-width: 0;
+}
+
+.step-collapsed-text.is-center-aligned {
+    text-align: center;
+    flex: initial;
+    max-width: 100%;
+}
+
+.step-collapsed-image-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: var(--background-modifier-hover, rgba(255, 255, 255, 0.08));
+    color: var(--text-muted, #888);
+    flex-shrink: 0;
+}
+
+.step-collapsed-expand-hint {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted, #888);
+    opacity: 0.45;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    flex-shrink: 0;
+}
+
+.step-item.is-step-collapsed:hover .step-collapsed-expand-hint {
+    opacity: 0.9;
+    color: var(--todo-accent, var(--interactive-accent));
+}
+
+.step-collapse-btn {
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity var(--todo-transition), color var(--todo-transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--todo-text-muted, var(--text-muted));
+    padding: 2px;
+    border-radius: 4px;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.step-item:hover .step-collapse-btn,
+.step-collapse-btn:focus-visible {
+    opacity: 0.75;
+}
+
+.step-collapse-btn:hover {
+    opacity: 1;
+    color: var(--todo-accent, var(--interactive-accent));
+    background: var(--background-modifier-hover, rgba(255, 255, 255, 0.08));
+}
+
 .delete-step {
     cursor: pointer;
     opacity: 0;
@@ -4703,6 +4803,11 @@ body .task-detail-floating-modal.is-fullscreen .step-item {
     margin-bottom: 8px;
 }
 
+body .task-detail-floating-modal.is-fullscreen .step-item.is-step-collapsed {
+    padding: 4px 14px;
+    margin-bottom: 6px;
+}
+
 body .task-detail-floating-modal.is-fullscreen .step-item:hover {
     background-color: var(--background-modifier-hover, rgba(255, 255, 255, 0.05));
     border-color: var(--background-modifier-border-hover, rgba(255, 255, 255, 0.12));
@@ -6322,6 +6427,8 @@ body .task-detail-floating-modal.is-center-aligned .step-item input[type="text"]
     text-align: center;
 }
 
+.detail-container.is-center-aligned .step-right-controls,
+body .task-detail-floating-modal.is-center-aligned .step-right-controls,
 .detail-container.is-center-aligned .delete-step,
 body .task-detail-floating-modal.is-center-aligned .delete-step {
     grid-column: 3;
