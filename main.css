@@ -706,6 +706,32 @@
     margin-bottom: 2px;
     cursor: pointer;
     transition: background-color var(--todo-transition);
+    position: relative;
+}
+
+/* Subtle separator line between task items */
+.task-item:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    bottom: -1px;
+    left: 4px;
+    right: 4px;
+    height: 1px;
+    background: linear-gradient(
+        90deg, 
+        transparent 0%, 
+        var(--background-modifier-border, rgba(255, 255, 255, 0.08)) 14px, 
+        var(--background-modifier-border, rgba(255, 255, 255, 0.08)) calc(100% - 14px), 
+        transparent 100%
+    );
+    opacity: 0.55;
+    pointer-events: none;
+    transition: opacity var(--todo-transition);
+}
+
+.task-item:hover::after,
+.task-item.selected::after {
+    opacity: 0.35;
 }
 
 .task-item:hover {
