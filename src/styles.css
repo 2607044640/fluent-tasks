@@ -1593,26 +1593,35 @@ body .task-detail-floating-modal.is-fullscreen .detail-title-input:focus {
     background-color: var(--todo-item-bg);
     border-radius: var(--todo-radius);
     margin-top: 0;
-    flex-grow: 1;
-    min-height: 120px;
+    padding: 12px 14px;
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
+    height: auto;
+    min-height: auto;
     cursor: text;
 }
 
 .note-textarea {
+    field-sizing: content;
     width: 100%;
-    flex-grow: 1;
-    min-height: 100px;
-    background: transparent;
-    border: none;
+    min-height: 48px;
+    height: auto;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
     color: var(--todo-text-main);
     resize: none;
-    outline: none;
-    padding: 15px;
-    font-size: 13px;
+    overflow: hidden !important;
+    padding: 0;
+    font-size: 13.5px;
+    line-height: 1.5;
     font-family: var(--todo-font);
+    box-sizing: border-box;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
 }
 
 .note-textarea::placeholder {
@@ -4933,11 +4942,16 @@ body .task-detail-floating-modal.is-fullscreen .add-step-row:focus-within {
     border: none !important;
 }
 
+body .task-detail-floating-modal .note-section,
 body .task-detail-floating-modal.is-fullscreen .note-section {
     border-radius: 10px;
     padding: 14px 18px;
     background-color: var(--todo-item-bg, rgba(255, 255, 255, 0.02));
     border: 1px solid var(--todo-border, var(--background-modifier-border, rgba(255, 255, 255, 0.06)));
+    min-height: auto;
+    height: auto;
+    flex-grow: 0;
+    flex-shrink: 0;
 }
 
 body .task-detail-floating-modal.is-fullscreen .detail-schedule-section {

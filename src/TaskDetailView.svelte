@@ -2180,6 +2180,8 @@
             {/if}
             <textarea
                 bind:this={noteTextareaEl}
+                use:autosize={task.note}
+                rows="1"
                 class="note-textarea"
                 class:is-center-aligned={centerAlignTasks}
                 placeholder="Add note (Ctrl+V to paste image)"

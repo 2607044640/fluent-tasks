@@ -41707,6 +41707,7 @@ function create_if_block9(ctx) {
   ).length > 0;
   let t9;
   let textarea2;
+  let autosize_action_2;
   let t10;
   let show_if = getTaskWhys(
     /*task*/
@@ -41985,6 +41986,7 @@ function create_if_block9(ctx) {
         /*centerAlignTasks*/
         ctx[1]
       );
+      attr(textarea2, "rows", "1");
       attr(textarea2, "class", "note-textarea");
       attr(textarea2, "placeholder", "Add note (Ctrl+V to paste image)");
       toggle_class(
@@ -42290,6 +42292,12 @@ function create_if_block9(ctx) {
             /*handleDetailHeaderClick*/
             ctx[49]
           ),
+          action_destroyer(autosize_action_2 = autosize.call(
+            null,
+            textarea2,
+            /*task*/
+            ctx[5].note
+          )),
           listen(
             textarea2,
             "input",
@@ -42627,6 +42635,13 @@ function create_if_block9(ctx) {
         });
         check_outros();
       }
+      if (autosize_action_2 && is_function(autosize_action_2.update) && dirty[0] & /*task*/
+      32)
+        autosize_action_2.update.call(
+          null,
+          /*task*/
+          ctx2[5].note
+        );
       if (dirty[0] & /*task*/
       32) {
         set_input_value(
