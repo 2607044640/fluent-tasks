@@ -220,6 +220,8 @@ const en = {
     setting_open_detail_modal_desc: "Open task details in a centered floating modal instead of expanding the right sidebar panel.",
     setting_fullscreen_detail_modal_title: "Task Details: Full-Screen Modal",
     setting_fullscreen_detail_modal_desc: "Open floating task details modal in full-screen mode (similar to Subtasks modal). When disabled, displays as a centered window card.",
+    setting_collapse_completed_steps_title: "Task Details: Collapse Completed Subtasks in Floating Modal",
+    setting_collapse_completed_steps_desc: "When enabled, completed checklist steps in the floating details modal automatically collapse into a compact single-line preview that can be clicked to expand. When disabled, completed steps remain fully expanded.",
     setting_show_steps_progress_title: "Task Details: Show Subtasks Progress Badge",
     setting_show_steps_progress_desc: "Display step completion progress badge (e.g. 0/3 steps completed) at the bottom of the subtasks floating modal. Disabled by default.",
 

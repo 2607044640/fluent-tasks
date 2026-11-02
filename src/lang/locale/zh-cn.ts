@@ -222,6 +222,8 @@ const zhCn: typeof en = {
     setting_open_detail_modal_desc: "点击任务时在屏幕居中的悬浮模态弹窗中打开详情，而非展开 Obsidian 右侧侧边栏面板。",
     setting_fullscreen_detail_modal_title: "任务详情：全屏任务详情弹窗 (Full-Screen Modal)",
     setting_fullscreen_detail_modal_desc: "悬浮打开任务详情时以全屏状态展示（类似于子步骤全屏模式）。关闭后恢复为居中小窗口卡片。",
+    setting_collapse_completed_steps_title: "任务详情：悬浮窗中折叠已完成子步骤 (Collapse Completed Subtasks)",
+    setting_collapse_completed_steps_desc: "开启时，悬浮详情弹窗中已完成的子步骤会自动折叠为紧凑的单行预览（点击可展开）；关闭时，已完成步骤保持原有完整多行展开状态。默认开启。",
     setting_show_steps_progress_title: "任务详情：显示子步骤完成进度胶囊",
     setting_show_steps_progress_desc: "在子步骤悬浮弹窗底部显示步骤完成进度胶囊（例如 0/3 steps completed）。默认关闭。",
 

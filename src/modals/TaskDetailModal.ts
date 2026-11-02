@@ -68,6 +68,7 @@ export class TaskDetailModal extends Modal {
                 isModal: true,
                 isFullscreen: isFullscreen,
                 centerAlignTasks: isCenterAligned,
+                collapseCompletedSteps: this.plugin?.settings?.collapseCompletedSteps ?? true,
                 onCloseModal: () => this.forceClose(),
                 onToggleFullscreen: (fullscreen: boolean) => {
                     modalEl.toggleClass("is-fullscreen", fullscreen);

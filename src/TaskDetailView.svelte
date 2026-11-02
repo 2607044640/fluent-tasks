@@ -46,6 +46,7 @@
     export let isModal: boolean = false;
     export let isFullscreen: boolean = plugin?.settings?.fullscreenDetailModal ?? true;
     export let centerAlignTasks: boolean = plugin?.settings?.centerAlignTasks ?? true;
+    export let collapseCompletedSteps: boolean = plugin?.settings?.collapseCompletedSteps ?? true;
     export let onCloseModal: (() => void) | undefined = undefined;
     export let onToggleFullscreen: ((fullscreen: boolean) => void) | undefined = undefined;
 
@@ -78,6 +79,7 @@
     let expandedStepIds = new Set<string>();
 
     function isStepCollapsed(step: TaskStep, _expanded: Set<string> = expandedStepIds): boolean {
+        if (!collapseCompletedSteps) return false;
         if (!isModal) return false;
         if (!step.done) return false;
         if (!step.id) return false;
@@ -389,6 +391,8 @@
     function handleSettingsChanged(payload?: any) {
         centerAlignTasks = payload?.settings?.centerAlignTasks ?? plugin?.settings?.centerAlignTasks ?? true;
         isFullscreen = payload?.settings?.fullscreenDetailModal ?? plugin?.settings?.fullscreenDetailModal ?? true;
+        collapseCompletedSteps = payload?.settings?.collapseCompletedSteps ?? plugin?.settings?.collapseCompletedSteps ?? true;
+        task = task;
     }
 
     onMount(() => {
@@ -2066,7 +2070,7 @@
                                     {/if}
                                 </div>
                                 <div class="step-right-controls">
-                                    {#if isModal && step.done && !isStepCollapsed(step, expandedStepIds)}
+                                    {#if isModal && collapseCompletedSteps && step.done && !isStepCollapsed(step, expandedStepIds)}
                                         <span class="step-collapse-btn" on:click|stopPropagation={() => toggleStepCollapse(step.id)}
                                               role="button" tabindex="0" title="Collapse / 折叠成单行"
                                               on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleStepCollapse(step.id)}>

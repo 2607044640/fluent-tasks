@@ -36,12 +36,14 @@ export interface FluentTasksSettings {
     mainListTitleSize: 'small' | 'medium' | 'large';
     showListTitleInHeader: boolean;
     taskSeparatorWidth: number;
+    collapseCompletedSteps: boolean;
 }
 
 export const DEFAULT_SETTINGS: FluentTasksSettings = {
     accentColor: "#8b5cf6",
     openDetailInModal: false,
     fullscreenDetailModal: true,
+    collapseCompletedSteps: true,
     hideLeftSidebar: false,
     autoExpandSidebarOnDrag: false,
     autoExpandSidebar: true,
@@ -245,6 +247,16 @@ export class FluentTasksSettingTab extends PluginSettingTab {
                     if (this.plugin.activeDetailModal) {
                         this.plugin.activeDetailModal.setFullscreen(value);
                     }
+                }));
+
+        new Setting(containerEl)
+            .setName(t("setting_collapse_completed_steps_title") || "Task Details: Collapse Completed Subtasks in Floating Modal")
+            .setDesc(t("setting_collapse_completed_steps_desc") || "When enabled, completed checklist steps in the floating details modal automatically collapse into a compact single-line preview that can be clicked to expand. When disabled, completed steps remain fully expanded.")
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.collapseCompletedSteps ?? true)
+                .onChange(async (value) => {
+                    this.plugin.settings.collapseCompletedSteps = value;
+                    await this.plugin.saveSettings();
                 }));
 
         new Setting(containerEl)
