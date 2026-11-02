@@ -782,10 +782,6 @@ var en = {
   main_view_search_list_only_btn: "List only",
   main_view_search_list_only_tooltip: "Current scope: List only. Click for info on searching all tasks.",
   main_view_search_all_tasks_hint: "To search across all tasks, set a hotkey for plugin command 'Search all tasks' in Settings -> Hotkeys.",
-  setting_hide_left_sidebar_title: "Hide Left Sidebar (Floating UI Mode)",
-  setting_hide_left_sidebar_desc: "Hide the left sidebar list view completely. Navigate lists using the Quick List Floating UI (modal). Recommended to bind a hotkey for quick access.",
-  setting_auto_expand_sidebar_on_drag_title: "Auto-Expand Left Sidebar on Task Drag",
-  setting_auto_expand_sidebar_on_drag_desc: "Temporarily expands the left sidebar when dragging a task to easily move it to other lists, and auto-collapses on release (if it was collapsed). If the sidebar is already open with Fluent Tasks, it only reveals the list.",
   warn_bind_hotkey_btn: "Set Floating UI Hotkey",
   warn_bind_hotkey_tooltip: "You enabled 'Hide Left Sidebar'. Please bind a hotkey for 'Open Quick List Modal' in Settings -> Hotkeys to switch lists conveniently.",
   warn_bind_hotkey_notice: "\u26A0\uFE0F [Fluent Tasks] 'Hide Left Sidebar' is enabled, but no hotkey is bound for the Floating UI! Please assign a hotkey in Settings -> Hotkeys.",
@@ -827,12 +823,8 @@ var en = {
   image_open: "Open",
   image_open_tooltip: "Open original file in Obsidian",
   image_hint_open: "Open",
-  setting_fullscreen_detail_modal_title: "Full-Screen Task Details Modal",
-  setting_fullscreen_detail_modal_desc: "Open floating task details modal in full-screen mode (similar to Subtasks modal). When disabled, displays as a centered window card.",
   restore_window: "Restore window",
   fullscreen_window: "Full screen",
-  setting_focused_lists_title: "Focused lists",
-  setting_focused_lists_desc: "Display focused list shortcuts and a quick selector next to the list title in the header. Disabled by default.",
   focused_lists_btn_tooltip: "Focused lists",
   focused_lists_save_btn: "Save",
   focused_lists_saved_notice: "Focused lists saved",
@@ -841,8 +833,68 @@ var en = {
   focused_lists_clear_all: "Clear all",
   focused_lists_search_placeholder: "Search lists...",
   focused_lists_no_results: "No matching lists found.",
-  setting_task_separator_width_title: "Task separator line width",
-  setting_task_separator_width_desc: "Adjust the horizontal width percentage of the subtle hairline gradient separator between tasks (0% hides the line, default: 60%)."
+  // Settings Sections
+  settings_section_appearance: "Appearance & Accent",
+  settings_section_task_list: "Task List & Layout",
+  settings_section_task_detail: "Task Details & Subtasks",
+  settings_section_quick_list: "Quick List Board Modal",
+  settings_section_sidebar: "Sidebar Behavior",
+  settings_section_system: "System & Workflow",
+  // Setting Names & Descs
+  setting_accent_color_title: "Appearance: Accent Color",
+  setting_accent_color_desc: "Choose the primary accent color for the plugin (e.g., active borders, stars).",
+  setting_list_title_size_title: "Appearance: List Title Font Size",
+  setting_list_title_size_desc: "Choose the font size of the active list title in the main view (default: Medium 22px).",
+  setting_show_list_title_header_title: "Appearance: Show List Title in Top Header",
+  setting_show_list_title_header_desc: "Display the active list title in the pane's top navigation bar (replacing 'Tasks') with accent color, hiding the large in-body title to maximize vertical reading space.",
+  setting_focused_lists_title: "Appearance: Focused Lists",
+  setting_focused_lists_desc: "Display focused list shortcuts and a quick selector next to the list title in the header. Disabled by default.",
+  setting_center_align_title: "Task List: Center-Align Tasks",
+  setting_center_align_desc: "Display task titles, steps, and metadata centered in the task list and modals. Enabled by default.",
+  setting_task_separator_width_title: "Task List: Separator Line Width",
+  setting_task_separator_width_desc: "Adjust the horizontal width percentage of the subtle hairline gradient separator between tasks (0% hides the line, default: 60%).",
+  setting_wrap_titles_title: "Task List: Wrap Task Titles",
+  setting_wrap_titles_desc: "Wrap long task titles across multiple lines in the task list instead of truncating with ellipsis.",
+  setting_hidden_star_title: "Task List: Hidden Star Mode",
+  setting_hidden_star_desc: "Hide the star (favorite) icon on tasks in the task list and modals, while still allowing starring via task context menu (first item) or hover hotkey. Disabled by default.",
+  setting_task_weight_title: "Task List: Task Weight Mode",
+  setting_task_weight_desc: "Enable 1-9 priority score ranking for tasks (9 is highest, default is 5). When enabled, tasks are dynamically prioritized by weight. Use mouse wheel or click the badge to edit the weight directly.",
+  setting_open_detail_modal_title: "Task Details: Open in Floating Modal",
+  setting_open_detail_modal_desc: "Open task details in a centered floating modal instead of expanding the right sidebar panel.",
+  setting_fullscreen_detail_modal_title: "Task Details: Full-Screen Modal",
+  setting_fullscreen_detail_modal_desc: "Open floating task details modal in full-screen mode (similar to Subtasks modal). When disabled, displays as a centered window card.",
+  setting_show_steps_progress_title: "Task Details: Show Subtasks Progress Badge",
+  setting_show_steps_progress_desc: "Display step completion progress badge (e.g. 0/3 steps completed) at the bottom of the subtasks floating modal. Disabled by default.",
+  setting_quick_list_grid_title: "Quick List: Grid Board Layout",
+  setting_quick_list_grid_desc: "Tile lists and groups across multi-column cards like a dashboard chart to fully display lists in the available screen space without scrolling. Turn off to revert to the classic single-column list.",
+  setting_quick_list_col_gap_title: "Quick List: Min Column Gap",
+  setting_quick_list_col_gap_desc: "Minimum horizontal gap (in px) between columns in the Quick List grid board layout (default: 14px).",
+  setting_quick_list_row_gap_title: "Quick List: Min Row Gap",
+  setting_quick_list_row_gap_desc: "Minimum vertical gap (in px) between stacked cards within the same column (default: 10px).",
+  setting_quick_list_card_width_title: "Quick List: Max Card Width",
+  setting_quick_list_card_width_desc: "Maximum width (in px) for cards in the Quick List grid board layout. Prevents excessive horizontal empty space on large displays (default: 380px).",
+  setting_quick_list_focus_center_title: "Quick List: Focus Center List on Open",
+  setting_quick_list_focus_center_desc: "Automatically focus the visually centered list when opening the Quick List board instead of the top-left list, enabling immediate multi-directional arrow navigation.",
+  setting_quick_list_search_mode_title: "Quick List: Search Mode",
+  setting_quick_list_search_mode_desc: "Choose whether the search bar in the Quick List modal searches lists or tasks by default.",
+  setting_quick_list_title_align_title: "Quick List: Title Alignment",
+  setting_quick_list_title_align_desc: "Choose whether list and group titles in the Quick List modal are centered or aligned to the left.",
+  setting_quick_task_action_title: "Quick List: Quick Task Modal Action",
+  setting_quick_task_action_desc: "Choose whether selecting a task/list in the Quick Task Modal manages it directly in the popup or navigates and reveals it in the main workspace.",
+  setting_hide_left_sidebar_title: "Sidebar: Hide Left Sidebar (Floating UI Mode)",
+  setting_hide_left_sidebar_desc: "Hide the left sidebar list view completely. Navigate lists using the Quick List Floating UI (modal). Recommended to bind a hotkey for quick access.",
+  setting_auto_expand_sidebar_on_drag_title: "Sidebar: Auto-Expand on Task Drag",
+  setting_auto_expand_sidebar_on_drag_desc: "Temporarily expand the left sidebar when dragging a task to easily move it to other lists, and auto-collapse on release (if it was collapsed). If the sidebar is already open with Fluent Tasks, it only reveals the list.",
+  setting_auto_expand_focus_title: "Sidebar: Auto-Expand on Tab Focus",
+  setting_auto_expand_focus_desc: "Automatically expand the left sidebar list panel when switching to Fluent Tasks tab (via Ctrl+Tab, Ctrl+Shift+Tab, or clicking the tab).",
+  setting_auto_collapse_switch_title: "Sidebar: Auto-Collapse on Tab Switch",
+  setting_auto_collapse_switch_desc: "Automatically collapse the sidebar when switching away to other tabs (notes, settings) if the sidebar is currently displaying Fluent Tasks.",
+  setting_search_hide_completed_title: "System: Search Hide Completed Tasks",
+  setting_search_hide_completed_desc: "When searching, hide completed tasks by default. Can also be toggled directly in the search modal.",
+  setting_undo_duration_title: "System: Deletion Undo Duration",
+  setting_undo_duration_desc: "Duration in seconds that the floating undo toast remains visible after deleting a task, step, or list (default: 2.5s).",
+  setting_hide_ribbon_title: "System: Hide Ribbon Icon",
+  setting_hide_ribbon_desc: "Hide the Fluent Tasks icon in the left ribbon."
 };
 var en_default = en;
 
@@ -975,10 +1027,6 @@ var zhCn = {
   main_view_search_list_only_btn: "List only",
   main_view_search_list_only_tooltip: "\u5F53\u524D\u68C0\u7D22\u8303\u56F4\uFF1A\u4EC5\u5F53\u524D\u5217\u8868\u3002\u70B9\u51FB\u67E5\u770B\u5982\u4F55\u641C\u7D22\u5168\u90E8\u4EFB\u52A1\u3002",
   main_view_search_all_tasks_hint: "\u5982\u679C\u60F3\u8981\u641C\u7D22\u5168\u90E8\u4EFB\u52A1 (All tasks)\uFF0C\u8BF7\u5728 Obsidian\u3010\u8BBE\u7F6E -> \u5FEB\u6377\u952E\u3011\u4E2D\u4E3A\u672C\u63D2\u4EF6\u547D\u4EE4\u3010Search all tasks\u3011\u7ED1\u5B9A\u5FEB\u6377\u952E\u3002",
-  setting_hide_left_sidebar_title: "\u9690\u85CF\u5DE6\u4FA7\u4FA7\u8FB9\u680F\uFF08\u60AC\u6D6EUI\u6A21\u5F0F\uFF09",
-  setting_hide_left_sidebar_desc: "\u5B8C\u5168\u9690\u85CF\u5DE6\u4FA7\u4FA7\u8FB9\u680F\u5217\u8868\u9762\u677F\uFF0C\u6539\u7528\u5FEB\u901F\u5217\u8868\u60AC\u6D6EUI\u5F39\u7A97\u8FDB\u884C\u5BFC\u822A\u4E0E\u5207\u6362\u3002\u5F3A\u70C8\u5EFA\u8BAE\u4E3A\u8BE5\u60AC\u6D6EUI\u7ED1\u5B9A\u5FEB\u6377\u952E\u3002",
-  setting_auto_expand_sidebar_on_drag_title: "\u62D6\u62FD\u4EFB\u52A1\u65F6\u81EA\u52A8\u5C55\u5F00\u5DE6\u4FA7\u8FB9\u680F",
-  setting_auto_expand_sidebar_on_drag_desc: "\u62D6\u62FD\u4EFB\u52A1\u65F6\u6682\u65F6\u5C55\u5F00\u5DE6\u4FA7\u8FB9\u680F\u4EE5\u4FBF\u79FB\u52A8\u5230\u5176\u4ED6\u6E05\u5355\uFF0C\u677E\u5F00\u65F6\u81EA\u52A8\u6536\u8D77\uFF08\u82E5\u539F\u672C\u5904\u4E8E\u6298\u53E0\u72B6\u6001\uFF09\u3002\u82E5\u5DE6\u4FA7\u8FB9\u680F\u672C\u6765\u5DF2\u5C55\u5F00\u4E14\u663E\u793A\u672C\u63D2\u4EF6\u5217\u8868\uFF0C\u5219\u4EC5\u5B9A\u4F4D\u6E05\u5355\u800C\u4E0D\u91CD\u65B0\u5C55\u5F00\u6536\u8D77\u3002",
   warn_bind_hotkey_btn: "\u8BF7\u7ED1\u5B9A\u60AC\u6D6EUI\u5FEB\u6377\u952E",
   warn_bind_hotkey_tooltip: "\u4F60\u5F00\u542F\u4E86\u300C\u9690\u85CF\u5DE6\u4FA7\u4FA7\u8FB9\u680F\u300D\u8BBE\u7F6E\uFF0C\u8BF7\u5728\u300C\u8BBE\u7F6E -> \u5FEB\u6377\u952E\u300D\u4E2D\u4E3A\u300C\u6253\u5F00\u5FEB\u901F\u5217\u8868\u5F39\u7A97\u300D\u7ED1\u5B9A\u5FEB\u6377\u952E\uFF0C\u4EE5\u4FBF\u968F\u65F6\u8C03\u51FA\u60AC\u6D6EUI\u5207\u6362\u5217\u8868\u3002",
   warn_bind_hotkey_notice: "\u26A0\uFE0F [Fluent Tasks] \u4F60\u5F00\u542F\u4E86\u300C\u9690\u85CF\u5DE6\u4FA7\u4FA7\u8FB9\u680F\u300D\u8BBE\u7F6E\uFF0C\u4F46\u5C1A\u672A\u4E3A\u60AC\u6D6EUI\u7ED1\u5B9A\u5FEB\u6377\u952E\uFF01\u8BF7\u524D\u5F80\u300C\u8BBE\u7F6E -> \u5FEB\u6377\u952E\u300D\u7ED1\u5B9A\u5FEB\u6377\u952E\u3002",
@@ -1020,12 +1068,8 @@ var zhCn = {
   image_open: "\u6253\u5F00",
   image_open_tooltip: "\u5728 Obsidian \u4E2D\u6253\u5F00\u539F\u59CB\u6587\u4EF6",
   image_hint_open: "\u6253\u5F00",
-  setting_fullscreen_detail_modal_title: "\u5168\u5C4F\u4EFB\u52A1\u8BE6\u60C5\u5F39\u7A97",
-  setting_fullscreen_detail_modal_desc: "\u60AC\u6D6E\u6253\u5F00\u4EFB\u52A1\u8BE6\u60C5\u65F6\u4EE5\u5168\u5C4F\u72B6\u6001\u5C55\u793A\uFF08\u7C7B\u4F3C\u4E8E\u5B50\u6B65\u9AA4\u5168\u5C4F\u6A21\u5F0F\uFF09\u3002\u5173\u95ED\u540E\u6062\u590D\u4E3A\u5C45\u4E2D\u5C0F\u7A97\u53E3\u5361\u7247\u3002",
   restore_window: "\u8FD8\u539F\u7A97\u53E3",
   fullscreen_window: "\u5168\u5C4F\u653E\u5927",
-  setting_focused_lists_title: "\u805A\u7126\u6E05\u5355 (Focused lists)",
-  setting_focused_lists_desc: "\u5728\u6807\u9898\u65C1\u663E\u793A\u805A\u7126\u6E05\u5355\u6309\u94AE\u53CA\u5FEB\u6377\u5207\u6362\u80F6\u56CA\u3002\u9ED8\u8BA4\u5173\u95ED\u3002",
   focused_lists_btn_tooltip: "\u805A\u7126\u6E05\u5355",
   focused_lists_save_btn: "\u4FDD\u5B58",
   focused_lists_saved_notice: "\u805A\u7126\u6E05\u5355\u5DF2\u4FDD\u5B58",
@@ -1034,8 +1078,68 @@ var zhCn = {
   focused_lists_clear_all: "\u6E05\u7A7A",
   focused_lists_search_placeholder: "\u641C\u7D22\u6E05\u5355...",
   focused_lists_no_results: "\u672A\u627E\u5230\u5339\u914D\u7684\u6E05\u5355\u3002",
-  setting_task_separator_width_title: "\u4EFB\u52A1\u95F4\u5206\u9694\u7EBF\u957F\u5EA6",
-  setting_task_separator_width_desc: "\u8C03\u6574\u4EFB\u52A1\u5217\u8868\u6BCF\u6761\u4EFB\u52A1\u4E4B\u95F4\u5FAE\u5F31\u6E10\u53D8\u7EC6\u7EBF\u7684\u6A2A\u5411\u5BBD\u5EA6\u767E\u5206\u6BD4\uFF080% \u4E3A\u9690\u85CF\uFF0C\u63A8\u8350 30% - 60%\uFF0C\u9ED8\u8BA4 60%\uFF09\u3002"
+  // Settings Sections
+  settings_section_appearance: "\u5916\u89C2\u4E0E\u4E3B\u9898 (Appearance & Accent)",
+  settings_section_task_list: "\u4EFB\u52A1\u5217\u8868\u4E0E\u5E03\u5C40 (Task List & Layout)",
+  settings_section_task_detail: "\u4EFB\u52A1\u8BE6\u60C5\u4E0E\u5B50\u6B65\u9AA4 (Task Details & Subtasks)",
+  settings_section_quick_list: "\u6E05\u5355\u770B\u677F\u6A21\u6001\u7A97 (Quick List Board)",
+  settings_section_sidebar: "\u4FA7\u8FB9\u680F\u4EA4\u4E92 (Sidebar Behavior)",
+  settings_section_system: "\u7CFB\u7EDF\u4E0E\u5E38\u89C4 (System & Workflow)",
+  // Setting Names & Descs
+  setting_accent_color_title: "\u5916\u89C2\uFF1A\u5F3A\u8C03\u8272 (Accent Color)",
+  setting_accent_color_desc: "\u9009\u62E9\u63D2\u4EF6\u7684\u6838\u5FC3\u4E3B\u9898\u5F3A\u8C03\u8272\uFF08\u7528\u4E8E\u6FC0\u6D3B\u8FB9\u6846\u3001\u661F\u6807\u7B49\u5173\u952E\u9AD8\u4EAE\u5143\u7D20\uFF09\u3002",
+  setting_list_title_size_title: "\u5916\u89C2\uFF1A\u5217\u8868\u6807\u9898\u5B57\u53F7 (List Title Font Size)",
+  setting_list_title_size_desc: "\u8BBE\u7F6E\u4E3B\u89C6\u56FE\u5F53\u524D\u6253\u5F00\u6E05\u5355\u6807\u9898\u7684\u5B57\u4F53\u5927\u5C0F\uFF08\u9ED8\u8BA4\uFF1A\u4E2D\u53F7 22px\uFF09\u3002",
+  setting_show_list_title_header_title: "\u5916\u89C2\uFF1A\u5728\u9876\u90E8\u5BFC\u822A\u680F\u663E\u793A\u5217\u8868\u6807\u9898",
+  setting_show_list_title_header_desc: "\u5728\u7A97\u683C\u9876\u90E8\u5BFC\u822A\u680F\u4E2D\u4EE5\u5F3A\u8C03\u8272\u663E\u793A\u5F53\u524D\u6E05\u5355\u6807\u9898\uFF08\u66FF\u6362\u539F Tasks \u5360\u4F4D\uFF09\uFF0C\u540C\u65F6\u9690\u85CF\u6B63\u6587\u4E2D\u7684\u5927\u6807\u9898\u4EE5\u6700\u5927\u5316\u7EB5\u5411\u9605\u8BFB\u7A7A\u95F4\u3002",
+  setting_focused_lists_title: "\u5916\u89C2\uFF1A\u805A\u7126\u6E05\u5355 (Focused lists)",
+  setting_focused_lists_desc: "\u5728\u6807\u9898\u65C1\u663E\u793A\u805A\u7126\u6E05\u5355\u6309\u94AE\u53CA\u5FEB\u6377\u5207\u6362\u80F6\u56CA\u3002\u9ED8\u8BA4\u5173\u95ED\u3002",
+  setting_center_align_title: "\u4EFB\u52A1\u5217\u8868\uFF1A\u5C45\u4E2D\u5BF9\u9F50\u4EFB\u52A1 (Center-Align)",
+  setting_center_align_desc: "\u5728\u4E3B\u4EFB\u52A1\u5217\u8868\u4E0E\u5404\u7C7B\u6A21\u6001\u5F39\u7A97\u4E2D\u4EE5\u5C45\u4E2D\u5BF9\u9F50\u5C55\u793A\u4EFB\u52A1\u6807\u9898\u3001\u5B50\u6B65\u9AA4\u4E0E\u5143\u6570\u636E\u3002\u9ED8\u8BA4\u5F00\u542F\u3002",
+  setting_task_separator_width_title: "\u4EFB\u52A1\u5217\u8868\uFF1A\u4EFB\u52A1\u95F4\u5206\u9694\u7EBF\u957F\u5EA6",
+  setting_task_separator_width_desc: "\u8C03\u6574\u4EFB\u52A1\u5217\u8868\u6BCF\u6761\u4EFB\u52A1\u4E4B\u95F4\u5FAE\u5F31\u6E10\u53D8\u7EC6\u7EBF\u7684\u6A2A\u5411\u5BBD\u5EA6\u767E\u5206\u6BD4\uFF080% \u4E3A\u9690\u85CF\uFF0C\u63A8\u8350 30% - 60%\uFF0C\u9ED8\u8BA4 60%\uFF09\u3002",
+  setting_wrap_titles_title: "\u4EFB\u52A1\u5217\u8868\uFF1A\u957F\u6807\u9898\u81EA\u52A8\u6362\u884C (Wrap Titles)",
+  setting_wrap_titles_desc: "\u5728\u4EFB\u52A1\u5217\u8868\u4E2D\u5141\u8BB8\u957F\u4EFB\u52A1\u6807\u9898\u8DE8\u591A\u884C\u5B8C\u6574\u663E\u793A\uFF0C\u907F\u514D\u4F7F\u7528\u7701\u7565\u53F7\u5355\u884C\u622A\u65AD\u3002",
+  setting_hidden_star_title: "\u4EFB\u52A1\u5217\u8868\uFF1A\u9690\u85CF\u661F\u6807\u56FE\u6807 (Hidden Star Mode)",
+  setting_hidden_star_desc: "\u5728\u4EFB\u52A1\u5217\u8868\u4E2D\u9690\u85CF\u661F\u6807\uFF08\u6536\u85CF\uFF09\u4E94\u89D2\u661F\u56FE\u6807\u4FDD\u6301\u7248\u9762\u7EAF\u7CB9\uFF0C\u4ECD\u53EF\u901A\u8FC7\u4EFB\u52A1\u53F3\u952E\u83DC\u5355\u7B2C\u4E00\u9879\u6216\u60AC\u6D6E\u5FEB\u6377\u952E\u6267\u884C\u661F\u6807\u64CD\u4F5C\u3002\u9ED8\u8BA4\u5173\u95ED\u3002",
+  setting_task_weight_title: "\u4EFB\u52A1\u5217\u8868\uFF1A\u4EFB\u52A1\u6743\u91CD\u4F18\u5148\u7EA7\u6A21\u5F0F (Weight Mode)",
+  setting_task_weight_desc: "\u542F\u7528 1-9 \u5206\u7684\u4EFB\u52A1\u6743\u91CD\u8BC4\u5206\u4F18\u5148\u7EA7\u673A\u5236\uFF089 \u5206\u6700\u9AD8\uFF0C\u9ED8\u8BA4 5 \u5206\uFF09\u3002\u542F\u7528\u540E\u6309\u6743\u91CD\u52A8\u6001\u6392\u5E8F\u4EFB\u52A1\uFF0C\u53EF\u7528\u9F20\u6807\u6EDA\u8F6E\u6216\u70B9\u51FB\u76F4\u63A5\u4FEE\u6539\u3002",
+  setting_open_detail_modal_title: "\u4EFB\u52A1\u8BE6\u60C5\uFF1A\u5728\u60AC\u6D6E\u5F39\u7A97\u4E2D\u6253\u5F00 (Floating Modal)",
+  setting_open_detail_modal_desc: "\u70B9\u51FB\u4EFB\u52A1\u65F6\u5728\u5C4F\u5E55\u5C45\u4E2D\u7684\u60AC\u6D6E\u6A21\u6001\u5F39\u7A97\u4E2D\u6253\u5F00\u8BE6\u60C5\uFF0C\u800C\u975E\u5C55\u5F00 Obsidian \u53F3\u4FA7\u4FA7\u8FB9\u680F\u9762\u677F\u3002",
+  setting_fullscreen_detail_modal_title: "\u4EFB\u52A1\u8BE6\u60C5\uFF1A\u5168\u5C4F\u4EFB\u52A1\u8BE6\u60C5\u5F39\u7A97 (Full-Screen Modal)",
+  setting_fullscreen_detail_modal_desc: "\u60AC\u6D6E\u6253\u5F00\u4EFB\u52A1\u8BE6\u60C5\u65F6\u4EE5\u5168\u5C4F\u72B6\u6001\u5C55\u793A\uFF08\u7C7B\u4F3C\u4E8E\u5B50\u6B65\u9AA4\u5168\u5C4F\u6A21\u5F0F\uFF09\u3002\u5173\u95ED\u540E\u6062\u590D\u4E3A\u5C45\u4E2D\u5C0F\u7A97\u53E3\u5361\u7247\u3002",
+  setting_show_steps_progress_title: "\u4EFB\u52A1\u8BE6\u60C5\uFF1A\u663E\u793A\u5B50\u6B65\u9AA4\u5B8C\u6210\u8FDB\u5EA6\u80F6\u56CA",
+  setting_show_steps_progress_desc: "\u5728\u5B50\u6B65\u9AA4\u60AC\u6D6E\u5F39\u7A97\u5E95\u90E8\u663E\u793A\u6B65\u9AA4\u5B8C\u6210\u8FDB\u5EA6\u80F6\u56CA\uFF08\u4F8B\u5982 0/3 steps completed\uFF09\u3002\u9ED8\u8BA4\u5173\u95ED\u3002",
+  setting_quick_list_grid_title: "\u6E05\u5355\u770B\u677F\uFF1A\u591A\u5217\u5361\u7247\u7F51\u683C\u5E03\u5C40 (Grid Board)",
+  setting_quick_list_grid_desc: "\u5C06\u6240\u6709\u5217\u8868\u4E0E\u5206\u7EC4\u4EE5\u591A\u5217\u5E73\u94FA\u5361\u7247\u5982\u770B\u677F\u4EEA\u8868\u76D8\u822C\u5C55\u793A\uFF0C\u5145\u5206\u5229\u7528\u53EF\u7528\u5C4F\u5E55\u7A7A\u95F4\u65E0\u9700\u6EDA\u52A8\u3002\u5173\u95ED\u540E\u6062\u590D\u4E3A\u4F20\u7EDF\u5355\u5217\u5217\u8868\u3002",
+  setting_quick_list_col_gap_title: "\u6E05\u5355\u770B\u677F\uFF1A\u6700\u5C0F\u5217\u95F4\u8DDD (Min Column Gap)",
+  setting_quick_list_col_gap_desc: "\u770B\u677F\u591A\u5217\u5361\u7247\u4E4B\u95F4\u7684\u6700\u5C0F\u6C34\u5E73\u95F4\u8DDD\u50CF\u7D20\uFF08\u9ED8\u8BA4\uFF1A14px\uFF09\u3002",
+  setting_quick_list_row_gap_title: "\u6E05\u5355\u770B\u677F\uFF1A\u6700\u5C0F\u884C\u95F4\u8DDD (Min Row Gap)",
+  setting_quick_list_row_gap_desc: "\u540C\u5217\u5782\u76F4\u5806\u53E0\u5361\u7247\u4E4B\u95F4\u7684\u6700\u5C0F\u5782\u76F4\u95F4\u8DDD\u50CF\u7D20\uFF08\u9ED8\u8BA4\uFF1A10px\uFF09\u3002",
+  setting_quick_list_card_width_title: "\u6E05\u5355\u770B\u677F\uFF1A\u5361\u7247\u6700\u5927\u5BBD\u5EA6 (Max Card Width)",
+  setting_quick_list_card_width_desc: "\u770B\u677F\u5361\u7247\u7684\u6700\u5927\u5BBD\u5EA6\u50CF\u7D20\uFF0C\u9632\u6B62\u5728\u5927\u5BBD\u5C4F\u663E\u793A\u5668\u4E0A\u5355\u5F20\u5361\u7247\u6A2A\u5411\u8FC7\u5EA6\u62C9\u4F38\u7559\u767D\uFF08\u9ED8\u8BA4\uFF1A380px\uFF09\u3002",
+  setting_quick_list_focus_center_title: "\u6E05\u5355\u770B\u677F\uFF1A\u6253\u5F00\u65F6\u81EA\u52A8\u805A\u7126\u6B63\u4E2D\u592E\u6E05\u5355",
+  setting_quick_list_focus_center_desc: "\u6253\u5F00\u6E05\u5355\u770B\u677F\u65F6\u81EA\u52A8\u5C06\u952E\u76D8\u9AD8\u4EAE\u7126\u70B9\u843D\u5728\u6B63\u4E2D\u592E\u5361\u7247\uFF0C\u800C\u975E\u5DE6\u4E0A\u89D2\u9996\u4E2A\u6E05\u5355\uFF0C\u4FBF\u4E8E\u5373\u523B\u8FDB\u884C\u5168\u5411\u65B9\u5411\u952E\u5FEB\u901F\u5BFC\u822A\u3002",
+  setting_quick_list_search_mode_title: "\u6E05\u5355\u770B\u677F\uFF1A\u9ED8\u8BA4\u641C\u7D22\u6A21\u5F0F (Search Mode)",
+  setting_quick_list_search_mode_desc: "\u9009\u62E9\u5728\u6E05\u5355\u770B\u677F\u5F39\u7A97\u4E2D\u6253\u5F00\u641C\u7D22\u680F\u65F6\uFF0C\u9ED8\u8BA4\u641C\u7D22\u6E05\u5355\u540D\u79F0\u8FD8\u662F\u4EFB\u52A1\u6761\u76EE\u3002",
+  setting_quick_list_title_align_title: "\u6E05\u5355\u770B\u677F\uFF1A\u6807\u9898\u5BF9\u9F50\u65B9\u5F0F (Title Alignment)",
+  setting_quick_list_title_align_desc: "\u9009\u62E9\u6E05\u5355\u770B\u677F\u4E2D\u5217\u8868\u4E0E\u5206\u7EC4\u6807\u9898\u7684\u6587\u5B57\u5BF9\u9F50\u65B9\u5F0F\uFF08\u5C45\u4E2D\u6216\u5C45\u5DE6\uFF09\u3002",
+  setting_quick_task_action_title: "\u6E05\u5355\u770B\u677F\uFF1A\u5FEB\u6377\u4EFB\u52A1\u5F39\u7A97\u64CD\u4F5C\u6A21\u5F0F",
+  setting_quick_task_action_desc: "\u9009\u62E9\u5728\u5FEB\u6377\u4EFB\u52A1\u5F39\u7A97\u4E2D\u9009\u4E2D\u6E05\u5355/\u4EFB\u52A1\u65F6\uFF0C\u662F\u5728\u5F39\u7A97\u5185\u76F4\u63A5\u52FE\u9009\u589E\u5220\u7BA1\u7406\uFF0C\u8FD8\u662F\u5728\u5DE5\u4F5C\u533A\u4E3B\u7A97\u53E3\u5B9A\u4F4D\u5E76\u6253\u5F00\u5BF9\u5E94\u6E05\u5355\u8BE6\u60C5\u3002",
+  setting_hide_left_sidebar_title: "\u4FA7\u8FB9\u680F\uFF1A\u5B8C\u5168\u9690\u85CF\u5DE6\u4FA7\u8FB9\u680F\uFF08\u60AC\u6D6EUI\u6A21\u5F0F\uFF09",
+  setting_hide_left_sidebar_desc: "\u5B8C\u5168\u9690\u85CF\u5DE6\u4FA7\u4FA7\u8FB9\u680F\u5217\u8868\u9762\u677F\uFF0C\u6539\u7528\u5FEB\u901F\u5217\u8868\u60AC\u6D6EUI\u5F39\u7A97\u8FDB\u884C\u5BFC\u822A\u4E0E\u5207\u6362\u3002\u5F3A\u70C8\u5EFA\u8BAE\u4E3A\u8BE5\u60AC\u6D6EUI\u7ED1\u5B9A\u5FEB\u6377\u952E\u3002",
+  setting_auto_expand_sidebar_on_drag_title: "\u4FA7\u8FB9\u680F\uFF1A\u62D6\u62FD\u4EFB\u52A1\u65F6\u81EA\u52A8\u5C55\u5F00\u5DE6\u4FA7\u8FB9\u680F",
+  setting_auto_expand_sidebar_on_drag_desc: "\u62D6\u62FD\u4EFB\u52A1\u65F6\u6682\u65F6\u5C55\u5F00\u5DE6\u4FA7\u8FB9\u680F\u4EE5\u4FBF\u79FB\u52A8\u5230\u5176\u4ED6\u6E05\u5355\uFF0C\u677E\u5F00\u65F6\u81EA\u52A8\u6536\u8D77\uFF08\u82E5\u539F\u672C\u5904\u4E8E\u6298\u53E0\u72B6\u6001\uFF09\u3002\u82E5\u5DE6\u4FA7\u8FB9\u680F\u672C\u6765\u5DF2\u5C55\u5F00\u4E14\u663E\u793A\u672C\u63D2\u4EF6\u5217\u8868\uFF0C\u5219\u4EC5\u5B9A\u4F4D\u6E05\u5355\u800C\u4E0D\u91CD\u65B0\u5C55\u5F00\u6536\u8D77\u3002",
+  setting_auto_expand_focus_title: "\u4FA7\u8FB9\u680F\uFF1A\u5207\u6362\u81F3\u4EFB\u52A1\u6807\u7B7E\u9875\u65F6\u81EA\u52A8\u5C55\u5F00",
+  setting_auto_expand_focus_desc: "\u901A\u8FC7 Ctrl+Tab\u3001Ctrl+Shift+Tab \u6216\u70B9\u51FB\u5207\u6362\u81F3 Fluent Tasks \u6807\u7B7E\u9875\u65F6\uFF0C\u81EA\u52A8\u5C55\u5F00\u5DE6\u4FA7\u8FB9\u680F\u5217\u8868\u9762\u677F\u3002",
+  setting_auto_collapse_switch_title: "\u4FA7\u8FB9\u680F\uFF1A\u5207\u51FA\u4EFB\u52A1\u6807\u7B7E\u9875\u65F6\u81EA\u52A8\u6298\u53E0",
+  setting_auto_collapse_switch_desc: "\u5F53\u5207\u6362\u79BB\u5F00\u4EFB\u52A1\u6807\u7B7E\u9875\u81F3\u5176\u4ED6\u7B14\u8BB0\u6216\u8BBE\u7F6E\u65F6\uFF0C\u82E5\u5DE6\u4FA7\u8FB9\u680F\u6B63\u663E\u793A\u672C\u63D2\u4EF6\uFF0C\u5219\u81EA\u52A8\u6536\u8D77\u8BE5\u4FA7\u8FB9\u680F\u3002",
+  setting_search_hide_completed_title: "\u7CFB\u7EDF\uFF1A\u641C\u7D22\u65F6\u9ED8\u8BA4\u9690\u85CF\u5DF2\u5B8C\u6210\u4EFB\u52A1",
+  setting_search_hide_completed_desc: "\u5168\u5C40\u641C\u7D22\u4EFB\u52A1\u65F6\u9ED8\u8BA4\u8FC7\u6EE4\u9690\u85CF\u5DF2\u5B8C\u6210\u7684\u4EFB\u52A1\uFF0C\u53EF\u5728\u641C\u7D22\u5F39\u7A97\u4E2D\u76F4\u63A5\u5B9E\u65F6\u5207\u6362\u3002",
+  setting_undo_duration_title: "\u7CFB\u7EDF\uFF1A\u5220\u9664\u64A4\u9500\u6C14\u6CE1\u4FDD\u7559\u65F6\u957F",
+  setting_undo_duration_desc: "\u5220\u9664\u4EFB\u52A1\u3001\u6B65\u9AA4\u6216\u5217\u8868\u540E\uFF0C\u53F3\u4E0B\u89D2\u60AC\u6D6E\u64A4\u9500\u63D0\u793A\u6C14\u6CE1\u4FDD\u7559\u663E\u793A\u7684\u79D2\u6570\uFF08\u9ED8\u8BA4\uFF1A2.5\u79D2\uFF09\u3002",
+  setting_hide_ribbon_title: "\u7CFB\u7EDF\uFF1A\u9690\u85CF\u5DE6\u4FA7\u6D3B\u52A8\u680F\u56FE\u6807",
+  setting_hide_ribbon_desc: "\u9690\u85CF Obsidian \u5DE6\u4FA7\u6D3B\u52A8\u680F\uFF08Ribbon\uFF09\u4E2D\u7684 Fluent Tasks \u5217\u8868\u56FE\u6807\u3002"
 };
 var zh_cn_default = zhCn;
 
@@ -51794,7 +51898,8 @@ var FluentTasksSettingTab = class extends import_obsidian22.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    const colorSetting = new import_obsidian22.Setting(containerEl).setName("Accent Color").setDesc("Choose the primary accent color for the plugin (e.g., active borders, stars).").addColorPicker((color) => color.setValue(this.plugin.settings.accentColor).onChange(async (value) => {
+    new import_obsidian22.Setting(containerEl).setHeading().setName(t("settings_section_appearance") || "Appearance & Accent");
+    const colorSetting = new import_obsidian22.Setting(containerEl).setName(t("setting_accent_color_title") || "Appearance: Accent Color").setDesc(t("setting_accent_color_desc") || "Choose the primary accent color for the plugin (e.g., active borders, stars).").addColorPicker((color) => color.setValue(this.plugin.settings.accentColor).onChange(async (value) => {
       this.plugin.settings.accentColor = value;
       await this.plugin.saveSettings();
       this.plugin.applySettings();
@@ -51808,7 +51913,67 @@ var FluentTasksSettingTab = class extends import_obsidian22.PluginSettingTab {
         this.plugin.applySettings();
       });
     }
-    new import_obsidian22.Setting(containerEl).setName("Open Task Details in Floating Modal").setDesc("Open task details in a centered floating modal instead of expanding the right sidebar panel.").addToggle((toggle) => {
+    new import_obsidian22.Setting(containerEl).setName(t("setting_list_title_size_title") || "Appearance: List Title Font Size").setDesc(t("setting_list_title_size_desc") || "Choose the font size of the active list title in the main view (default: Medium 22px).").addDropdown((dropdown) => {
+      var _a;
+      return dropdown.addOption("small", "Small (18px)").addOption("medium", "Medium (22px)").addOption("large", "Large (28px - Classic)").setValue((_a = this.plugin.settings.mainListTitleSize) != null ? _a : "medium").onChange(async (value) => {
+        this.plugin.settings.mainListTitleSize = value;
+        await this.plugin.saveSettings();
+      });
+    });
+    new import_obsidian22.Setting(containerEl).setName(t("setting_show_list_title_header_title") || "Appearance: Show List Title in Top Header").setDesc(t("setting_show_list_title_header_desc") || "Display the active list title in the pane's top navigation bar (replacing 'Tasks') with accent color, hiding the large in-body title to maximize vertical reading space.").addToggle((toggle) => {
+      var _a;
+      return toggle.setValue((_a = this.plugin.settings.showListTitleInHeader) != null ? _a : false).onChange(async (value) => {
+        this.plugin.settings.showListTitleInHeader = value;
+        await this.plugin.saveSettings();
+      });
+    });
+    new import_obsidian22.Setting(containerEl).setName(t("setting_focused_lists_title") || "Appearance: Focused Lists").setDesc(t("setting_focused_lists_desc") || "Display focused list shortcuts and a quick selector next to the list title in the header. Disabled by default.").addToggle((toggle) => {
+      var _a;
+      return toggle.setValue((_a = this.plugin.settings.enableFocusedLists) != null ? _a : false).onChange(async (value) => {
+        this.plugin.settings.enableFocusedLists = value;
+        await this.plugin.saveSettings();
+      });
+    });
+    new import_obsidian22.Setting(containerEl).setHeading().setName(t("settings_section_task_list") || "Task List & Layout");
+    new import_obsidian22.Setting(containerEl).setName(t("setting_center_align_title") || "Task List: Center-Align Tasks").setDesc(t("setting_center_align_desc") || "Display task titles, steps, and metadata centered in the task list and modals. Enabled by default.").addToggle((toggle) => {
+      var _a;
+      return toggle.setValue((_a = this.plugin.settings.centerAlignTasks) != null ? _a : true).onChange(async (value) => {
+        this.plugin.settings.centerAlignTasks = value;
+        await this.plugin.saveSettings();
+      });
+    });
+    new import_obsidian22.Setting(containerEl).setName(t("setting_task_separator_width_title") || "Task List: Separator Line Width").setDesc(t("setting_task_separator_width_desc") || "Adjust the horizontal width percentage of the subtle hairline gradient separator between tasks (0% to 100%, 0% hides the line, default: 60%).").addSlider((slider) => {
+      var _a;
+      return slider.setLimits(0, 100, 5).setValue((_a = this.plugin.settings.taskSeparatorWidth) != null ? _a : 60).setDynamicTooltip().onChange(async (value) => {
+        this.plugin.settings.taskSeparatorWidth = value;
+        await this.plugin.saveSettings();
+        this.plugin.applySettings();
+      });
+    });
+    new import_obsidian22.Setting(containerEl).setName(t("setting_wrap_titles_title") || "Task List: Wrap Task Titles").setDesc(t("setting_wrap_titles_desc") || "Wrap long task titles across multiple lines in the task list instead of truncating with ellipsis.").addToggle((toggle) => {
+      var _a;
+      return toggle.setValue((_a = this.plugin.settings.wrapTaskTitles) != null ? _a : true).onChange(async (value) => {
+        this.plugin.settings.wrapTaskTitles = value;
+        await this.plugin.saveSettings();
+      });
+    });
+    new import_obsidian22.Setting(containerEl).setName(t("setting_hidden_star_title") || "Task List: Hidden Star Mode").setDesc(t("setting_hidden_star_desc") || "Hide the star (favorite) icon on tasks in the task list and modals, while still allowing starring via task context menu (first item) or hover hotkey. Disabled by default.").addToggle((toggle) => {
+      var _a, _b;
+      return toggle.setValue((_b = (_a = this.plugin.settings.hiddenStarMode) != null ? _a : this.plugin.settings.disableStars) != null ? _b : false).onChange(async (value) => {
+        this.plugin.settings.hiddenStarMode = value;
+        this.plugin.settings.disableStars = value;
+        await this.plugin.saveSettings();
+      });
+    });
+    new import_obsidian22.Setting(containerEl).setName(t("setting_task_weight_title") || "Task List: Task Weight Mode").setDesc(t("setting_task_weight_desc") || "Enable 1-9 priority score ranking for tasks (9 is highest, default is 5). When enabled, tasks are dynamically prioritized by weight. Use mouse wheel or click the badge to edit the weight directly.").addToggle((toggle) => {
+      var _a;
+      return toggle.setValue((_a = this.plugin.settings.enableTaskWeightMode) != null ? _a : false).onChange(async (value) => {
+        this.plugin.settings.enableTaskWeightMode = value;
+        await this.plugin.saveSettings();
+      });
+    });
+    new import_obsidian22.Setting(containerEl).setHeading().setName(t("settings_section_task_detail") || "Task Details & Subtasks");
+    new import_obsidian22.Setting(containerEl).setName(t("setting_open_detail_modal_title") || "Task Details: Open in Floating Modal").setDesc(t("setting_open_detail_modal_desc") || "Open task details in a centered floating modal instead of expanding the right sidebar panel.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.openDetailInModal) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.openDetailInModal = value;
@@ -51822,7 +51987,7 @@ var FluentTasksSettingTab = class extends import_obsidian22.PluginSettingTab {
         }
       });
     });
-    new import_obsidian22.Setting(containerEl).setName(t("setting_fullscreen_detail_modal_title") || "Full-Screen Task Details Modal").setDesc(t("setting_fullscreen_detail_modal_desc") || "Open floating task details modal in full-screen mode (similar to Subtasks modal). When disabled, displays as a centered window card.").addToggle((toggle) => {
+    new import_obsidian22.Setting(containerEl).setName(t("setting_fullscreen_detail_modal_title") || "Task Details: Full-Screen Modal").setDesc(t("setting_fullscreen_detail_modal_desc") || "Open floating task details modal in full-screen mode (similar to Subtasks modal). When disabled, displays as a centered window card.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.fullscreenDetailModal) != null ? _a : true).onChange(async (value) => {
         this.plugin.settings.fullscreenDetailModal = value;
@@ -51832,7 +51997,72 @@ var FluentTasksSettingTab = class extends import_obsidian22.PluginSettingTab {
         }
       });
     });
-    new import_obsidian22.Setting(containerEl).setName(t("setting_hide_left_sidebar_title") || "Hide Left Sidebar (Floating UI Mode)").setDesc(t("setting_hide_left_sidebar_desc") || "Hide the left sidebar list view completely. Navigate lists using the Quick List Floating UI (modal). Recommended to bind a hotkey for quick access.").addToggle((toggle) => {
+    new import_obsidian22.Setting(containerEl).setName(t("setting_show_steps_progress_title") || "Task Details: Show Subtasks Progress Badge").setDesc(t("setting_show_steps_progress_desc") || "Display step completion progress badge (e.g. 0/3 steps completed) at the bottom of the subtasks floating modal. Disabled by default.").addToggle((toggle) => {
+      var _a;
+      return toggle.setValue((_a = this.plugin.settings.showStepsProgressPill) != null ? _a : false).onChange(async (value) => {
+        this.plugin.settings.showStepsProgressPill = value;
+        await this.plugin.saveSettings();
+      });
+    });
+    new import_obsidian22.Setting(containerEl).setHeading().setName(t("settings_section_quick_list") || "Quick List Board Modal");
+    new import_obsidian22.Setting(containerEl).setName(t("setting_quick_list_grid_title") || "Quick List: Grid Board Layout").setDesc(t("setting_quick_list_grid_desc") || "Tile lists and groups across multi-column cards like a dashboard chart to fully display lists in the available screen space without scrolling. Turn off to revert to the classic single-column list.").addToggle((toggle) => {
+      var _a;
+      return toggle.setValue((_a = this.plugin.settings.quickListGridLayout) != null ? _a : true).onChange(async (value) => {
+        this.plugin.settings.quickListGridLayout = value;
+        await this.plugin.saveSettings();
+      });
+    });
+    new import_obsidian22.Setting(containerEl).setName(t("setting_quick_list_card_width_title") || "Quick List: Max Card Width").setDesc(t("setting_quick_list_card_width_desc") || "Maximum width (in px) for cards in the Quick List grid board layout. Prevents excessive horizontal empty space on large displays (default: 380px).").addSlider((slider) => {
+      var _a;
+      return slider.setLimits(220, 600, 10).setValue((_a = this.plugin.settings.quickListMaxCardWidth) != null ? _a : 380).setDynamicTooltip().onChange(async (value) => {
+        this.plugin.settings.quickListMaxCardWidth = value;
+        await this.plugin.saveSettings();
+      });
+    });
+    new import_obsidian22.Setting(containerEl).setName(t("setting_quick_list_col_gap_title") || "Quick List: Min Column Gap").setDesc(t("setting_quick_list_col_gap_desc") || "Minimum horizontal gap (in px) between columns in the Quick List grid board layout (default: 14px).").addSlider((slider) => {
+      var _a;
+      return slider.setLimits(8, 64, 2).setValue((_a = this.plugin.settings.quickListMinColGap) != null ? _a : 14).setDynamicTooltip().onChange(async (value) => {
+        this.plugin.settings.quickListMinColGap = value;
+        await this.plugin.saveSettings();
+      });
+    });
+    new import_obsidian22.Setting(containerEl).setName(t("setting_quick_list_row_gap_title") || "Quick List: Min Row Gap").setDesc(t("setting_quick_list_row_gap_desc") || "Minimum vertical gap (in px) between stacked cards within the same column (default: 10px).").addSlider((slider) => {
+      var _a;
+      return slider.setLimits(6, 48, 2).setValue((_a = this.plugin.settings.quickListMinRowGap) != null ? _a : 10).setDynamicTooltip().onChange(async (value) => {
+        this.plugin.settings.quickListMinRowGap = value;
+        await this.plugin.saveSettings();
+      });
+    });
+    new import_obsidian22.Setting(containerEl).setName(t("setting_quick_list_focus_center_title") || "Quick List: Focus Center List on Open").setDesc(t("setting_quick_list_focus_center_desc") || "Automatically focus the visually centered list when opening the Quick List board instead of the top-left list, enabling immediate multi-directional arrow navigation.").addToggle((toggle) => {
+      var _a;
+      return toggle.setValue((_a = this.plugin.settings.quickListFocusCenter) != null ? _a : false).onChange(async (value) => {
+        this.plugin.settings.quickListFocusCenter = value;
+        await this.plugin.saveSettings();
+      });
+    });
+    new import_obsidian22.Setting(containerEl).setName(t("setting_quick_list_search_mode_title") || "Quick List: Search Mode").setDesc(t("setting_quick_list_search_mode_desc") || "Choose whether the search bar in the Quick List modal searches lists or tasks by default.").addDropdown((dropdown) => {
+      var _a;
+      return dropdown.addOption("list", "Search Lists").addOption("task", "Search Tasks").setValue((_a = this.plugin.settings.quickListSearchMode) != null ? _a : "list").onChange(async (value) => {
+        this.plugin.settings.quickListSearchMode = value;
+        await this.plugin.saveSettings();
+      });
+    });
+    new import_obsidian22.Setting(containerEl).setName(t("setting_quick_list_title_align_title") || "Quick List: Title Alignment").setDesc(t("setting_quick_list_title_align_desc") || "Choose whether list and group titles in the Quick List modal are centered or aligned to the left.").addDropdown((dropdown) => {
+      var _a;
+      return dropdown.addOption("center", "Center (Default)").addOption("left", "Left").setValue((_a = this.plugin.settings.quickListTitleAlignment) != null ? _a : "center").onChange(async (value) => {
+        this.plugin.settings.quickListTitleAlignment = value;
+        await this.plugin.saveSettings();
+      });
+    });
+    new import_obsidian22.Setting(containerEl).setName(t("setting_quick_task_action_title") || "Quick List: Quick Task Modal Action").setDesc(t("setting_quick_task_action_desc") || "Choose whether selecting a task/list in the Quick Task Modal manages it directly in the popup or navigates and reveals it in the main workspace.").addDropdown((dropdown) => {
+      var _a;
+      return dropdown.addOption("direct", "Direct In-Modal Management (Toggle & Add in popup)").addOption("navigate", "Navigate Workspace (Open list & details in workspace)").setValue((_a = this.plugin.settings.quickModalAction) != null ? _a : "direct").onChange(async (value) => {
+        this.plugin.settings.quickModalAction = value;
+        await this.plugin.saveSettings();
+      });
+    });
+    new import_obsidian22.Setting(containerEl).setHeading().setName(t("settings_section_sidebar") || "Sidebar Behavior");
+    new import_obsidian22.Setting(containerEl).setName(t("setting_hide_left_sidebar_title") || "Sidebar: Hide Left Sidebar (Floating UI Mode)").setDesc(t("setting_hide_left_sidebar_desc") || "Hide the left sidebar list view completely. Navigate lists using the Quick List Floating UI (modal). Recommended to bind a hotkey for quick access.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.hideLeftSidebar) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.hideLeftSidebar = value;
@@ -51841,157 +52071,37 @@ var FluentTasksSettingTab = class extends import_obsidian22.PluginSettingTab {
         await this.plugin.handleHideLeftSidebarChanged(value);
       });
     });
-    new import_obsidian22.Setting(containerEl).setName(t("setting_auto_expand_sidebar_on_drag_title") || "Auto-Expand Left Sidebar on Task Drag").setDesc(t("setting_auto_expand_sidebar_on_drag_desc") || "Temporarily expand the left sidebar when dragging a task to easily move it to other lists, and auto-collapse on release (if it was collapsed). If the sidebar is already open with Fluent Tasks, it only reveals the list.").addToggle((toggle) => {
+    new import_obsidian22.Setting(containerEl).setName(t("setting_auto_expand_sidebar_on_drag_title") || "Sidebar: Auto-Expand on Task Drag").setDesc(t("setting_auto_expand_sidebar_on_drag_desc") || "Temporarily expand the left sidebar when dragging a task to easily move it to other lists, and auto-collapse on release (if it was collapsed). If the sidebar is already open with Fluent Tasks, it only reveals the list.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.autoExpandSidebarOnDrag) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.autoExpandSidebarOnDrag = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName("Wrap Task Titles").setDesc("Wrap long task titles across multiple lines in the task list instead of truncating with ellipsis.").addToggle((toggle) => {
-      var _a;
-      return toggle.setValue((_a = this.plugin.settings.wrapTaskTitles) != null ? _a : true).onChange(async (value) => {
-        this.plugin.settings.wrapTaskTitles = value;
-        await this.plugin.saveSettings();
-      });
-    });
-    new import_obsidian22.Setting(containerEl).setName("Center-Align Tasks").setDesc("Display task titles, steps, and metadata centered in the task list and modals. Enabled by default.").addToggle((toggle) => {
-      var _a;
-      return toggle.setValue((_a = this.plugin.settings.centerAlignTasks) != null ? _a : true).onChange(async (value) => {
-        this.plugin.settings.centerAlignTasks = value;
-        await this.plugin.saveSettings();
-      });
-    });
-    new import_obsidian22.Setting(containerEl).setName(t("setting_task_separator_width_title") || "Task Separator Line Width").setDesc(t("setting_task_separator_width_desc") || "Adjust the horizontal width percentage of the subtle hairline gradient separator between tasks (0% to 100%, 0% hides the line, default: 60%).").addSlider((slider) => {
-      var _a;
-      return slider.setLimits(0, 100, 5).setValue((_a = this.plugin.settings.taskSeparatorWidth) != null ? _a : 60).setDynamicTooltip().onChange(async (value) => {
-        this.plugin.settings.taskSeparatorWidth = value;
-        await this.plugin.saveSettings();
-        this.plugin.applySettings();
-      });
-    });
-    new import_obsidian22.Setting(containerEl).setName("Hidden star mode").setDesc("Hide the star (favorite) icon on tasks in the task list and modals, while still allowing starring via task context menu (first item) or hover hotkey. Disabled by default.").addToggle((toggle) => {
-      var _a, _b;
-      return toggle.setValue((_b = (_a = this.plugin.settings.hiddenStarMode) != null ? _a : this.plugin.settings.disableStars) != null ? _b : false).onChange(async (value) => {
-        this.plugin.settings.hiddenStarMode = value;
-        this.plugin.settings.disableStars = value;
-        await this.plugin.saveSettings();
-      });
-    });
-    new import_obsidian22.Setting(containerEl).setName("Show Subtasks Progress Badge").setDesc("Display step completion progress badge (e.g. 0/3 steps completed) at the bottom of the subtasks floating modal. Disabled by default.").addToggle((toggle) => {
-      var _a;
-      return toggle.setValue((_a = this.plugin.settings.showStepsProgressPill) != null ? _a : false).onChange(async (value) => {
-        this.plugin.settings.showStepsProgressPill = value;
-        await this.plugin.saveSettings();
-      });
-    });
-    new import_obsidian22.Setting(containerEl).setName("List Title Font Size").setDesc("Choose the font size of the active list title in the main view (default: Medium 22px).").addDropdown((dropdown) => {
-      var _a;
-      return dropdown.addOption("small", "Small (18px)").addOption("medium", "Medium (22px)").addOption("large", "Large (28px - Classic)").setValue((_a = this.plugin.settings.mainListTitleSize) != null ? _a : "medium").onChange(async (value) => {
-        this.plugin.settings.mainListTitleSize = value;
-        await this.plugin.saveSettings();
-      });
-    });
-    new import_obsidian22.Setting(containerEl).setName("Show List Title in Top Header").setDesc("Display the active list title in the pane's top navigation bar (replacing 'Tasks') with accent color, hiding the large in-body title to maximize vertical reading space.").addToggle((toggle) => {
-      var _a;
-      return toggle.setValue((_a = this.plugin.settings.showListTitleInHeader) != null ? _a : false).onChange(async (value) => {
-        this.plugin.settings.showListTitleInHeader = value;
-        await this.plugin.saveSettings();
-      });
-    });
-    new import_obsidian22.Setting(containerEl).setName(t("setting_focused_lists_title") || "Focused lists").setDesc(t("setting_focused_lists_desc") || "Display focused list shortcuts and a quick selector next to the list title in the header. Disabled by default.").addToggle((toggle) => {
-      var _a;
-      return toggle.setValue((_a = this.plugin.settings.enableFocusedLists) != null ? _a : false).onChange(async (value) => {
-        this.plugin.settings.enableFocusedLists = value;
-        await this.plugin.saveSettings();
-      });
-    });
-    new import_obsidian22.Setting(containerEl).setName("Quick Task Modal Action").setDesc("Choose whether selecting a task/list in the Quick Task Modal manages it directly in the popup or navigates and reveals it in the main workspace.").addDropdown((dropdown) => {
-      var _a;
-      return dropdown.addOption("direct", "Direct In-Modal Management (Toggle & Add in popup)").addOption("navigate", "Navigate Workspace (Open list & details in workspace)").setValue((_a = this.plugin.settings.quickModalAction) != null ? _a : "direct").onChange(async (value) => {
-        this.plugin.settings.quickModalAction = value;
-        await this.plugin.saveSettings();
-      });
-    });
-    new import_obsidian22.Setting(containerEl).setName("Quick List Modal: Grid Board Layout").setDesc("Tile lists and groups across multi-column cards like a dashboard chart to fully display lists in the available screen space without scrolling. Turn off to revert to the classic single-column list.").addToggle((toggle) => {
-      var _a;
-      return toggle.setValue((_a = this.plugin.settings.quickListGridLayout) != null ? _a : true).onChange(async (value) => {
-        this.plugin.settings.quickListGridLayout = value;
-        await this.plugin.saveSettings();
-      });
-    });
-    new import_obsidian22.Setting(containerEl).setName("Quick List Modal: Min Column Gap").setDesc("Minimum horizontal gap (in px) between columns in the Quick List grid board layout (default: 14px).").addSlider((slider) => {
-      var _a;
-      return slider.setLimits(8, 64, 2).setValue((_a = this.plugin.settings.quickListMinColGap) != null ? _a : 14).setDynamicTooltip().onChange(async (value) => {
-        this.plugin.settings.quickListMinColGap = value;
-        await this.plugin.saveSettings();
-      });
-    });
-    new import_obsidian22.Setting(containerEl).setName("Quick List Modal: Min Row Gap").setDesc("Minimum vertical gap (in px) between stacked cards within the same column (default: 10px).").addSlider((slider) => {
-      var _a;
-      return slider.setLimits(6, 48, 2).setValue((_a = this.plugin.settings.quickListMinRowGap) != null ? _a : 10).setDynamicTooltip().onChange(async (value) => {
-        this.plugin.settings.quickListMinRowGap = value;
-        await this.plugin.saveSettings();
-      });
-    });
-    new import_obsidian22.Setting(containerEl).setName("Quick List Modal: Max Card Width").setDesc("Maximum width (in px) for cards in the Quick List grid board layout. Prevents excessive horizontal empty space on large displays (default: 380px).").addSlider((slider) => {
-      var _a;
-      return slider.setLimits(220, 600, 10).setValue((_a = this.plugin.settings.quickListMaxCardWidth) != null ? _a : 380).setDynamicTooltip().onChange(async (value) => {
-        this.plugin.settings.quickListMaxCardWidth = value;
-        await this.plugin.saveSettings();
-      });
-    });
-    new import_obsidian22.Setting(containerEl).setName("Quick List Modal: Focus Center List on Open").setDesc("Automatically focus the visually centered list when opening the Quick List board instead of the top-left list, enabling immediate multi-directional arrow navigation.").addToggle((toggle) => {
-      var _a;
-      return toggle.setValue((_a = this.plugin.settings.quickListFocusCenter) != null ? _a : false).onChange(async (value) => {
-        this.plugin.settings.quickListFocusCenter = value;
-        await this.plugin.saveSettings();
-      });
-    });
-    new import_obsidian22.Setting(containerEl).setName("Quick List Modal: Search Mode").setDesc("Choose whether the search bar in the Quick List modal searches lists or tasks by default.").addDropdown((dropdown) => {
-      var _a;
-      return dropdown.addOption("list", "Search Lists").addOption("task", "Search Tasks").setValue((_a = this.plugin.settings.quickListSearchMode) != null ? _a : "list").onChange(async (value) => {
-        this.plugin.settings.quickListSearchMode = value;
-        await this.plugin.saveSettings();
-      });
-    });
-    new import_obsidian22.Setting(containerEl).setName("Quick List Modal: Title Alignment").setDesc("Choose whether list and group titles in the Quick List modal are centered or aligned to the left.").addDropdown((dropdown) => {
-      var _a;
-      return dropdown.addOption("center", "Center (Default)").addOption("left", "Left").setValue((_a = this.plugin.settings.quickListTitleAlignment) != null ? _a : "center").onChange(async (value) => {
-        this.plugin.settings.quickListTitleAlignment = value;
-        await this.plugin.saveSettings();
-      });
-    });
-    new import_obsidian22.Setting(containerEl).setName("Auto-Expand Sidebar on Focus").setDesc("Automatically expand the left sidebar list panel when switching to Fluent Tasks tab (via Ctrl+Tab, Ctrl+Shift+Tab, or clicking the tab).").addToggle((toggle) => toggle.setValue(this.plugin.settings.autoExpandSidebar).onChange(async (value) => {
+    new import_obsidian22.Setting(containerEl).setName(t("setting_auto_expand_focus_title") || "Sidebar: Auto-Expand on Tab Focus").setDesc(t("setting_auto_expand_focus_desc") || "Automatically expand the left sidebar list panel when switching to Fluent Tasks tab (via Ctrl+Tab, Ctrl+Shift+Tab, or clicking the tab).").addToggle((toggle) => toggle.setValue(this.plugin.settings.autoExpandSidebar).onChange(async (value) => {
       this.plugin.settings.autoExpandSidebar = value;
       await this.plugin.saveSettings();
     }));
-    new import_obsidian22.Setting(containerEl).setName("Auto-Collapse Sidebar on Tab Switch").setDesc("Automatically collapse the sidebar when switching away to other tabs (notes, settings) if the sidebar is currently displaying Fluent Tasks.").addToggle((toggle) => {
+    new import_obsidian22.Setting(containerEl).setName(t("setting_auto_collapse_switch_title") || "Sidebar: Auto-Collapse on Tab Switch").setDesc(t("setting_auto_collapse_switch_desc") || "Automatically collapse the sidebar when switching away to other tabs (notes, settings) if the sidebar is currently displaying Fluent Tasks.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.autoCollapseSidebarOnSwitch) != null ? _a : true).onChange(async (value) => {
         this.plugin.settings.autoCollapseSidebarOnSwitch = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName("Search: Hide Completed Tasks").setDesc("When searching, hide completed tasks by default. Can also be toggled directly in the search modal.").addToggle((toggle) => toggle.setValue(this.plugin.settings.searchHideCompleted).onChange(async (value) => {
+    new import_obsidian22.Setting(containerEl).setHeading().setName(t("settings_section_system") || "System & Workflow");
+    new import_obsidian22.Setting(containerEl).setName(t("setting_search_hide_completed_title") || "System: Search Hide Completed Tasks").setDesc(t("setting_search_hide_completed_desc") || "When searching, hide completed tasks by default. Can also be toggled directly in the search modal.").addToggle((toggle) => toggle.setValue(this.plugin.settings.searchHideCompleted).onChange(async (value) => {
       this.plugin.settings.searchHideCompleted = value;
       await this.plugin.saveSettings();
     }));
-    new import_obsidian22.Setting(containerEl).setName("Deletion undo duration").setDesc("Duration in seconds that the floating undo toast remains visible after deleting a task, step, or list (default: 2.5s).").addSlider((slider) => {
+    new import_obsidian22.Setting(containerEl).setName(t("setting_undo_duration_title") || "System: Deletion Undo Duration").setDesc(t("setting_undo_duration_desc") || "Duration in seconds that the floating undo toast remains visible after deleting a task, step, or list (default: 2.5s).").addSlider((slider) => {
       var _a;
       return slider.setLimits(1, 10, 0.5).setValue((_a = this.plugin.settings.undoDurationSeconds) != null ? _a : 2.5).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.undoDurationSeconds = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName("Task weight mode").setDesc("Enable 1-9 priority score ranking for tasks (9 is highest, default is 5). When enabled, tasks are dynamically prioritized by weight. Use mouse wheel or click the badge to edit the weight directly.").addToggle((toggle) => {
-      var _a;
-      return toggle.setValue((_a = this.plugin.settings.enableTaskWeightMode) != null ? _a : false).onChange(async (value) => {
-        this.plugin.settings.enableTaskWeightMode = value;
-        await this.plugin.saveSettings();
-      });
-    });
-    new import_obsidian22.Setting(containerEl).setName("Hide Ribbon Icon").setDesc("Hide the Fluent Tasks icon in the left ribbon.").addToggle((toggle) => {
+    new import_obsidian22.Setting(containerEl).setName(t("setting_hide_ribbon_title") || "System: Hide Ribbon Icon").setDesc(t("setting_hide_ribbon_desc") || "Hide the Fluent Tasks icon in the left ribbon.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.hideRibbonIcon) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.hideRibbonIcon = value;
