@@ -77,11 +77,11 @@
     let preDndSteps: TaskStep[] = [];
     let expandedStepIds = new Set<string>();
 
-    function isStepCollapsed(step: TaskStep): boolean {
+    function isStepCollapsed(step: TaskStep, _expanded: Set<string> = expandedStepIds): boolean {
         if (!isModal) return false;
         if (!step.done) return false;
         if (!step.id) return false;
-        return !expandedStepIds.has(step.id);
+        return !_expanded.has(step.id);
     }
 
     function toggleStepCollapse(stepId?: string) {
@@ -92,6 +92,7 @@
             expandedStepIds.add(stepId);
         }
         expandedStepIds = new Set(expandedStepIds);
+        task = task;
     }
 
     function getCollapsedStepPreview(text?: string): string {
@@ -660,11 +661,12 @@
         const step = task?.steps?.find(s => s.id === stepId);
         if (!step) return;
 
-        if (isStepCollapsed(step)) {
+        if (isStepCollapsed(step, expandedStepIds)) {
             expandedStepIds.add(stepId);
             expandedStepIds = new Set(expandedStepIds);
+            task = task;
+            const stepEl = e.currentTarget as HTMLElement | null;
             void tick().then(() => {
-                const stepEl = e.currentTarget as HTMLElement | null;
                 const textarea = stepEl?.querySelector('textarea') as HTMLTextAreaElement | null;
                 if (textarea) {
                     textarea.focus();
@@ -1958,7 +1960,7 @@
                             <!-- svelte-ignore a11y-no-static-element-interactions -->
                             <div class="step-item"
                                  class:is-center-aligned={centerAlignTasks}
-                                 class:is-step-collapsed={isStepCollapsed(step)}
+                                 class:is-step-collapsed={isStepCollapsed(step, expandedStepIds)}
                                  animate:flip={{ duration: DND_FLIP_DURATION }}
                                  on:click={(e) => handleStepItemClick(e, step.id)}>
                                 <div class="step-left-controls">
@@ -1989,8 +1991,8 @@
                                         {/if}
                                     </span>
                                 </div>
-                                <div class="step-content-col" class:is-center-aligned={centerAlignTasks} class:is-collapsed={isStepCollapsed(step)}>
-                                    {#if isStepCollapsed(step)}
+                                <div class="step-content-col" class:is-center-aligned={centerAlignTasks} class:is-collapsed={isStepCollapsed(step, expandedStepIds)}>
+                                    {#if isStepCollapsed(step, expandedStepIds)}
                                         <div class="step-collapsed-row" class:is-center-aligned={centerAlignTasks} title="Click to expand / 点击展开">
                                             {#if getStepImages(step).length > 0}
                                                 <span class="step-collapsed-image-badge" title="{getStepImages(step).length} image(s)">
@@ -2005,7 +2007,11 @@
                                             <span class="step-collapsed-text" class:is-center-aligned={centerAlignTasks}>
                                                 {getCollapsedStepPreview(step.text) || "Step description..."}
                                             </span>
-                                            <span class="step-collapsed-expand-hint" title="Click to expand / 点击展开">
+                                            <span class="step-collapsed-expand-hint"
+                                                  role="button" tabindex="0"
+                                                  title="Click to expand / 点击展开"
+                                                  on:click|stopPropagation={() => toggleStepCollapse(step.id)}
+                                                  on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleStepCollapse(step.id)}>
                                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                     <polyline points="6 9 12 15 18 9"/>
                                                 </svg>
@@ -2060,7 +2066,7 @@
                                     {/if}
                                 </div>
                                 <div class="step-right-controls">
-                                    {#if isModal && step.done && !isStepCollapsed(step)}
+                                    {#if isModal && step.done && !isStepCollapsed(step, expandedStepIds)}
                                         <span class="step-collapse-btn" on:click|stopPropagation={() => toggleStepCollapse(step.id)}
                                               role="button" tabindex="0" title="Collapse / 折叠成单行"
                                               on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleStepCollapse(step.id)}>

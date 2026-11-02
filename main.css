@@ -1399,13 +1399,22 @@ body .task-detail-floating-modal.is-fullscreen .detail-title-input:focus {
     justify-content: center;
     color: var(--text-muted, #888);
     opacity: 0.45;
-    transition: opacity 0.15s ease, transform 0.15s ease;
+    transition: opacity 0.15s ease, transform 0.15s ease, color 0.15s ease, background-color 0.15s ease;
     flex-shrink: 0;
+    padding: 2px;
+    border-radius: 4px;
+    cursor: pointer;
 }
 
 .step-item.is-step-collapsed:hover .step-collapsed-expand-hint {
     opacity: 0.9;
     color: var(--todo-accent, var(--interactive-accent));
+}
+
+.step-collapsed-expand-hint:hover {
+    opacity: 1 !important;
+    color: var(--todo-accent, var(--interactive-accent));
+    background-color: var(--background-modifier-hover, rgba(255, 255, 255, 0.08));
 }
 
 .step-collapse-btn {
