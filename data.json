@@ -22,7 +22,7 @@
   "quickListMinRowGap": 10,
   "quickListMaxCardWidth": 380,
   "quickListFocusCenter": false,
-  "defaultQuickListFocusFilepath": "TodoData/Loopferno.md",
+  "defaultQuickListFocusFilepath": "TodoData/Loopferno(1).md",
   "dailyBackupEnabled": true,
   "lastDailyBackupDate": "2026-11-02",
   "undoDurationSeconds": 2.5,
@@ -32,9 +32,8 @@
   "enableFocusedLists": true,
   "focusedLists": [
     "TodoData/工作心流.md",
-    "TodoData/底层.md",
-    "TodoData/Loopferno_已验证规则.md",
-    "TodoData/Loopferno_待验证机制.md",
-    "TodoData/Loopferno_待拍板决策.md"
+    "TodoData/迅速恢复心流.md",
+    "TodoData/采集模拟器.md",
+    "TodoData/Loopferno(1).md"
   ]
 }
