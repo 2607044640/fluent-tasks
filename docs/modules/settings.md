@@ -16,6 +16,7 @@ Plugin settings are `FluentTasksSettings` stored by Obsidian `Plugin.saveData` /
 1. `loadSettings` is `Object.assign({}, DEFAULT_SETTINGS, await loadData())`. Missing keys get defaults. (Why chosen over requiring a full `data.json`: upgrades add fields.)
 2. Accent color is applied as CSS custom properties on `document.body`, not Svelte theme stores. (Why chosen over per-component props: one paint for all leaves.)
 3. Turning **on** `openDetailInModal` calls `handleDetailModalModeEnabled` (detach detail leaves, collapse right split if it was showing plugin detail). Turning **off** closes `activeDetailModal` if any. (Why chosen over leaving both UIs open: two detail surfaces would diverge.)
+4. Categorized settings structure: the setting tab organizes all controls into 6 standardized sections with uniform prefixes: 1. `Appearance / 外观` (Prefix: `Appearance: ` / `外观：`), 2. `Sidebar & Lists / 侧边栏与清单` (Prefix: `Sidebar: ` / `侧边栏：`), 3. `Board & Quick Modals / 任务看板与浮窗` (Prefix: `Board: ` / `看板：`), 4. `Details & Cards / 任务详情与卡片` (Prefix: `Details: ` / `详情：`), 5. `Data & Safety / 数据与安全` (Prefix: `Data: ` / `数据：`), 6. `Developer & Debug / 开发者与调试` (Prefix: `Debug: ` / `调试：`). This ensures intuitive discovery and consistent naming across languages.
 
 ## Numbered Data Flow
 
@@ -46,12 +47,14 @@ Plugin settings are `FluentTasksSettings` stored by Obsidian `Plugin.saveData` /
 3. **Hide ribbon** — toggle → `refreshRibbonIcon`.
 4. **Quick List board** — “Quick List Modal: Grid Board Layout” or in-modal layout toggle (`toggleLayoutMode`). Gaps: “Min Column Gap” (10–64, step 2) and “Min Row Gap” (8–48, step 2).
 5. **Hotkey tip cap** — Quick List/Task `onOpen` uses `getModalHotkeyTipInfo(..., "fluent-tasks:open-quick-list-modal" \| "...open-quick-task-modal")`; `MAX_TIP_COUNT = 5`; skipped if a custom hotkey already exists.
+6. **Task separator line width** — Settings → Appearance: Task Separator Line Width (`taskSeparatorWidth`, 20–100%, step 5, default 60%) updates CSS property `--task-separator-width` to customize hairline divider length between tasks.
 
 ### Default values (`DEFAULT_SETTINGS`)
 
 | Key | Default |
 |---|---|
 | `accentColor` | `"#8b5cf6"` |
+| `taskSeparatorWidth` | `60` |
 | `openDetailInModal` | `false` |
 | `fullscreenDetailModal` | `true` |
 | `hideLeftSidebar` | `false` |
