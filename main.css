@@ -712,10 +712,12 @@
 /* Subtle separator line between task items */
 .task-item:not(:last-child)::after {
     content: "";
+    display: var(--task-separator-display, block);
     position: absolute;
     bottom: -1px;
-    left: 4px;
-    right: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: var(--task-separator-width, 60%);
     height: 1px;
     background: linear-gradient(
         90deg, 
@@ -726,7 +728,7 @@
     );
     opacity: 0.55;
     pointer-events: none;
-    transition: opacity var(--todo-transition);
+    transition: opacity var(--todo-transition), width 0.15s ease;
 }
 
 .task-item:hover::after,

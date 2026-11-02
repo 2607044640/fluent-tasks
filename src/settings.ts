@@ -35,6 +35,7 @@ export interface FluentTasksSettings {
     focusedLists: string[];
     mainListTitleSize: 'small' | 'medium' | 'large';
     showListTitleInHeader: boolean;
+    taskSeparatorWidth: number;
 }
 
 export const DEFAULT_SETTINGS: FluentTasksSettings = {
@@ -70,6 +71,7 @@ export const DEFAULT_SETTINGS: FluentTasksSettings = {
     quickListTitleAlignment: 'center',
     enableFocusedLists: false,
     focusedLists: [],
+    taskSeparatorWidth: 60,
 }
 
 export class FluentTasksSettingTab extends PluginSettingTab {
@@ -179,6 +181,19 @@ export class FluentTasksSettingTab extends PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.centerAlignTasks = value;
                     await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName(t("setting_task_separator_width_title") || "Task Separator Line Width")
+            .setDesc(t("setting_task_separator_width_desc") || "Adjust the horizontal width percentage of the subtle hairline gradient separator between tasks (0% to 100%, 0% hides the line, default: 60%).")
+            .addSlider(slider => slider
+                .setLimits(0, 100, 5)
+                .setValue(this.plugin.settings.taskSeparatorWidth ?? 60)
+                .setDynamicTooltip()
+                .onChange(async (value) => {
+                    this.plugin.settings.taskSeparatorWidth = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.applySettings();
                 }));
 
         new Setting(containerEl)

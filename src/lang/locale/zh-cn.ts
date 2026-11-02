@@ -196,6 +196,8 @@ const zhCn: typeof en = {
     focused_lists_clear_all: "清空",
     focused_lists_search_placeholder: "搜索清单...",
     focused_lists_no_results: "未找到匹配的清单。",
+    setting_task_separator_width_title: "任务间分隔线长度",
+    setting_task_separator_width_desc: "调整任务列表每条任务之间微弱渐变细线的横向宽度百分比（0% 为隐藏，推荐 30% - 60%，默认 60%）。",
 };
 
 export default zhCn;

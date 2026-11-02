@@ -443,6 +443,7 @@ export default class FluentTasksPlugin extends Plugin implements ISidebarPluginH
         void Logger.log("Fluent Tasks plugin loading...");
 
         await this.loadSettings();
+        this.applySettings();
 
         // Register all three view types (must be synchronous, before layout ready)
         this.registerView(VIEW_TYPE_SIDEBAR, (leaf) => new TaskSidebarViewWrapper(leaf, this.dataService, this));
@@ -1051,6 +1052,7 @@ export default class FluentTasksPlugin extends Plugin implements ISidebarPluginH
     }
 
     applySettings() {
+        const separatorWidth = this.settings.taskSeparatorWidth !== undefined ? this.settings.taskSeparatorWidth : 60;
         document.body.setCssProps({
             "--todo-accent": this.settings.accentColor,
             "--todo-accent-glow": `${this.settings.accentColor}99`,
@@ -1058,6 +1060,8 @@ export default class FluentTasksPlugin extends Plugin implements ISidebarPluginH
             "--todo-star": this.settings.accentColor,
             "--todo-star-light": `${this.settings.accentColor}26`,
             "--todo-star-border": `${this.settings.accentColor}4d`,
+            "--task-separator-width": `${separatorWidth}%`,
+            "--task-separator-display": separatorWidth === 0 ? "none" : "block",
         });
     }
 

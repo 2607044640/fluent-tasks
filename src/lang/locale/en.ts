@@ -194,6 +194,8 @@ const en = {
     focused_lists_clear_all: "Clear all",
     focused_lists_search_placeholder: "Search lists...",
     focused_lists_no_results: "No matching lists found.",
+    setting_task_separator_width_title: "Task separator line width",
+    setting_task_separator_width_desc: "Adjust the horizontal width percentage of the subtle hairline gradient separator between tasks (0% hides the line, default: 60%).",
 };
 
 export default en;

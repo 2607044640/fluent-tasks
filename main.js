@@ -840,7 +840,9 @@ var en = {
   focused_lists_select_all: "Select all",
   focused_lists_clear_all: "Clear all",
   focused_lists_search_placeholder: "Search lists...",
-  focused_lists_no_results: "No matching lists found."
+  focused_lists_no_results: "No matching lists found.",
+  setting_task_separator_width_title: "Task separator line width",
+  setting_task_separator_width_desc: "Adjust the horizontal width percentage of the subtle hairline gradient separator between tasks (0% hides the line, default: 60%)."
 };
 var en_default = en;
 
@@ -1031,7 +1033,9 @@ var zhCn = {
   focused_lists_select_all: "\u5168\u9009",
   focused_lists_clear_all: "\u6E05\u7A7A",
   focused_lists_search_placeholder: "\u641C\u7D22\u6E05\u5355...",
-  focused_lists_no_results: "\u672A\u627E\u5230\u5339\u914D\u7684\u6E05\u5355\u3002"
+  focused_lists_no_results: "\u672A\u627E\u5230\u5339\u914D\u7684\u6E05\u5355\u3002",
+  setting_task_separator_width_title: "\u4EFB\u52A1\u95F4\u5206\u9694\u7EBF\u957F\u5EA6",
+  setting_task_separator_width_desc: "\u8C03\u6574\u4EFB\u52A1\u5217\u8868\u6BCF\u6761\u4EFB\u52A1\u4E4B\u95F4\u5FAE\u5F31\u6E10\u53D8\u7EC6\u7EBF\u7684\u6A2A\u5411\u5BBD\u5EA6\u767E\u5206\u6BD4\uFF080% \u4E3A\u9690\u85CF\uFF0C\u63A8\u8350 30% - 60%\uFF0C\u9ED8\u8BA4 60%\uFF09\u3002"
 };
 var zh_cn_default = zhCn;
 
@@ -51779,7 +51783,8 @@ var DEFAULT_SETTINGS = {
   quickListSearchMode: "list",
   quickListTitleAlignment: "center",
   enableFocusedLists: false,
-  focusedLists: []
+  focusedLists: [],
+  taskSeparatorWidth: 60
 };
 var FluentTasksSettingTab = class extends import_obsidian22.PluginSettingTab {
   constructor(app, plugin) {
@@ -51855,6 +51860,14 @@ var FluentTasksSettingTab = class extends import_obsidian22.PluginSettingTab {
       return toggle.setValue((_a = this.plugin.settings.centerAlignTasks) != null ? _a : true).onChange(async (value) => {
         this.plugin.settings.centerAlignTasks = value;
         await this.plugin.saveSettings();
+      });
+    });
+    new import_obsidian22.Setting(containerEl).setName(t("setting_task_separator_width_title") || "Task Separator Line Width").setDesc(t("setting_task_separator_width_desc") || "Adjust the horizontal width percentage of the subtle hairline gradient separator between tasks (0% to 100%, 0% hides the line, default: 60%).").addSlider((slider) => {
+      var _a;
+      return slider.setLimits(0, 100, 5).setValue((_a = this.plugin.settings.taskSeparatorWidth) != null ? _a : 60).setDynamicTooltip().onChange(async (value) => {
+        this.plugin.settings.taskSeparatorWidth = value;
+        await this.plugin.saveSettings();
+        this.plugin.applySettings();
       });
     });
     new import_obsidian22.Setting(containerEl).setName("Hidden star mode").setDesc("Hide the star (favorite) icon on tasks in the task list and modals, while still allowing starring via task context menu (first item) or hover hotkey. Disabled by default.").addToggle((toggle) => {
@@ -59529,6 +59542,7 @@ var FluentTasksPlugin = class extends import_obsidian28.Plugin {
     Logger.init(this.app);
     void Logger.log("Fluent Tasks plugin loading...");
     await this.loadSettings();
+    this.applySettings();
     this.registerView(VIEW_TYPE_SIDEBAR, (leaf) => new TaskSidebarViewWrapper(leaf, this.dataService, this));
     this.registerView(VIEW_TYPE_MAIN, (leaf) => new TaskMainViewWrapper(leaf, this.dataService, this));
     this.registerView(VIEW_TYPE_DETAIL, (leaf) => new TaskDetailViewWrapper(leaf, this.dataService, this));
@@ -60057,13 +60071,16 @@ var FluentTasksPlugin = class extends import_obsidian28.Plugin {
     }
   }
   applySettings() {
+    const separatorWidth = this.settings.taskSeparatorWidth !== void 0 ? this.settings.taskSeparatorWidth : 60;
     document.body.setCssProps({
       "--todo-accent": this.settings.accentColor,
       "--todo-accent-glow": `${this.settings.accentColor}99`,
       "--todo-accent-light": `${this.settings.accentColor}26`,
       "--todo-star": this.settings.accentColor,
       "--todo-star-light": `${this.settings.accentColor}26`,
-      "--todo-star-border": `${this.settings.accentColor}4d`
+      "--todo-star-border": `${this.settings.accentColor}4d`,
+      "--task-separator-width": `${separatorWidth}%`,
+      "--task-separator-display": separatorWidth === 0 ? "none" : "block"
     });
   }
   // =============================================
