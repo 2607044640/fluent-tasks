@@ -41076,10 +41076,10 @@ function create_if_block9(ctx) {
       t15 = text(t15_value);
       t16 = space();
       span5 = element("span");
-      span5.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`;
+      span5.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`;
       t17 = space();
       span6 = element("span");
-      span6.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+      span6.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
       t18 = space();
       if (if_block10)
         if_block10.c();
@@ -41227,8 +41227,8 @@ function create_if_block9(ctx) {
       attr(circle, "cy", "12");
       attr(circle, "r", "10");
       attr(polyline0, "points", "12 6 12 12 16 14");
-      attr(svg1, "width", "14");
-      attr(svg1, "height", "14");
+      attr(svg1, "width", "11");
+      attr(svg1, "height", "11");
       attr(svg1, "viewBox", "0 0 24 24");
       attr(svg1, "fill", "none");
       attr(svg1, "stroke", "currentColor");
@@ -45368,8 +45368,8 @@ function create_else_block_73(ctx) {
       attr(line2, "y1", "10");
       attr(line2, "x2", "21");
       attr(line2, "y2", "10");
-      attr(svg, "width", "18");
-      attr(svg, "height", "18");
+      attr(svg, "width", "14");
+      attr(svg, "height", "14");
       attr(svg, "viewBox", "0 0 24 24");
       attr(svg, "fill", "none");
       attr(svg, "stroke", "currentColor");
@@ -45409,8 +45409,8 @@ function create_if_block_233(ctx) {
       attr(path0, "d", "M3 11V9a4 4 0 0 1 4-4h14");
       attr(polyline1, "points", "7 23 3 19 7 15");
       attr(path1, "d", "M21 13v2a4 4 0 0 1-4 4H3");
-      attr(svg, "width", "18");
-      attr(svg, "height", "18");
+      attr(svg, "width", "14");
+      attr(svg, "height", "14");
       attr(svg, "viewBox", "0 0 24 24");
       attr(svg, "fill", "none");
       attr(svg, "stroke", "currentColor");

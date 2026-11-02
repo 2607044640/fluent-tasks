@@ -1056,7 +1056,7 @@
     flex-direction: column;
     height: 100%;
     background-color: var(--todo-panel-bg);
-    padding: 20px 20px 14px 20px;
+    padding: 16px 20px 4px 20px;
     font-family: var(--todo-font);
     color: var(--todo-text-main);
     box-sizing: border-box;
@@ -1556,14 +1556,16 @@ body .task-detail-floating-modal.is-fullscreen .detail-title-input:focus {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-top: 12px;
-    border-top: 1px solid var(--todo-border);
-    margin-top: 8px;
+    padding-top: 4px;
+    padding-bottom: 2px;
+    border-top: 1px solid var(--todo-border, var(--background-modifier-border, rgba(255, 255, 255, 0.08)));
+    margin-top: 4px;
     flex-shrink: 0;
+    min-height: 22px;
 }
 
 .created-info {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--todo-text-muted);
     flex-grow: 1;
     text-align: center;
@@ -1572,17 +1574,17 @@ body .task-detail-floating-modal.is-fullscreen .detail-title-input:focus {
 .footer-meta-tools {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
 }
 
 .time-badge-btn {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 11px;
+    gap: 4px;
+    font-size: 10px;
     color: var(--todo-text-muted);
-    padding: 4px 8px;
-    border-radius: var(--todo-radius);
+    padding: 2px 5px;
+    border-radius: var(--todo-radius-sm, 4px);
     border: 1px solid transparent;
     cursor: default;
     transition: color var(--todo-transition), border-color var(--todo-transition), background-color var(--todo-transition);
@@ -1595,13 +1597,15 @@ body .task-detail-floating-modal.is-fullscreen .detail-title-input:focus {
 }
 
 .time-badge-text {
+    font-size: 10px;
     font-weight: 500;
-    letter-spacing: 0.2px;
+    line-height: 1;
+    letter-spacing: 0.1px;
 }
 
 .add-meta-btn {
-    padding: 4px 6px;
-    border-radius: var(--todo-radius);
+    padding: 2px 4px;
+    border-radius: var(--todo-radius-sm, 4px);
     border: 1px dashed var(--todo-border);
     color: var(--todo-accent);
     background: transparent;
@@ -1617,11 +1621,12 @@ body .task-detail-floating-modal.is-fullscreen .detail-title-input:focus {
 
 .footer-btn {
     cursor: pointer;
-    padding: 6px;
+    padding: 2px 4px;
     display: flex;
     align-items: center;
+    justify-content: center;
     color: var(--todo-text-muted);
-    border-radius: var(--todo-radius);
+    border-radius: var(--todo-radius-sm, 4px);
     transition: color var(--todo-transition), background-color var(--todo-transition);
 }
 
@@ -1636,13 +1641,13 @@ body .task-detail-floating-modal.is-fullscreen .detail-title-input:focus {
 
 /* Schedule / Repeat Drawer Toggle Button */
 .footer-btn.schedule-toggle-btn {
-    min-width: 28px;
-    height: 28px;
-    padding: 4px 6px;
+    min-width: 22px;
+    height: 22px;
+    padding: 2px 4px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: var(--todo-radius);
+    border-radius: var(--todo-radius-sm, 4px);
     border: 1px solid transparent;
     font-weight: 600;
 }
@@ -1664,7 +1669,7 @@ body .task-detail-floating-modal.is-fullscreen .detail-title-input:focus {
 }
 
 .schedule-badge-letter {
-    font-size: 13px;
+    font-size: 11px;
     font-weight: 700;
     line-height: 1;
     display: inline-block;
@@ -4715,7 +4720,7 @@ body .task-detail-floating-modal .modal-content.task-detail-modal-content {
 body .task-detail-floating-modal .detail-container {
     height: 100%;
     width: 100%;
-    padding: 20px 22px 14px 22px;
+    padding: 16px 20px 4px 20px;
     box-sizing: border-box;
 }
 
@@ -4856,7 +4861,7 @@ body .task-detail-floating-modal.is-fullscreen .detail-footer {
     max-width: 1080px;
     width: 100%;
     margin: 0 auto;
-    padding: 14px 36px 24px 36px;
+    padding: 4px 36px 6px 36px;
     box-sizing: border-box;
     background-color: transparent;
     border-top: 1px solid var(--todo-border, var(--background-modifier-border, rgba(255, 255, 255, 0.08)));

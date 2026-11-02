@@ -2356,7 +2356,7 @@
                 {#if scheduleBadge.letter}
                     <span class="schedule-badge-letter">{scheduleBadge.letter}</span>
                 {:else if task.recurrence}
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="17 1 21 5 17 9"/>
                         <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
@@ -2364,7 +2364,7 @@
                         <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
                     </svg>
                 {:else}
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
                         <line x1="16" y1="2" x2="16" y2="6"/>
@@ -2379,7 +2379,7 @@
                 <span class="footer-btn time-badge-btn"
                       role="button" tabindex="0"
                       title={`Created: ${formatExactTime(task.createdAt)} (${getRelativeTime(task.createdAt)})`}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10"/>
                         <polyline points="12 6 12 12 16 14"/>
@@ -2391,7 +2391,7 @@
                       on:click={() => openAddMetaModal()}
                       on:keydown={(e) => e.key === "Enter" && openAddMetaModal()}
                       role="button" tabindex="0" title="Add / Edit metadata (Why, Note Link, SVG, Custom)">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="12" y1="5" x2="12" y2="19"/>
                         <line x1="5" y1="12" x2="19" y2="12"/>
@@ -2408,7 +2408,7 @@
                   }}
                   role="button" tabindex="0" title="Delete task (hold 1.5s to trash task & source files directly / 长按1.5秒直接删除任务及源文件)"
                   on:keydown={(e) => e.key === "Enter" && deleteTask()}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="3 6 5 6 21 6"/>
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
