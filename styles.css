@@ -6992,8 +6992,20 @@ body .task-focused-lists-modal .modal-content {
     opacity: 0.85;
 }
 
+/* Tighten header bar and top canvas padding when list title is embedded in leaf header */
+.workspace-leaf.has-fluent-tasks-header-title .view-header,
+.workspace-leaf:has(.main-container.has-header-title) .view-header {
+    --header-height: 32px;
+    height: 32px;
+    min-height: 32px;
+}
+
+.main-container.has-header-title {
+    padding-top: 6px;
+}
+
 .main-container.has-header-title .main-header {
-    margin-bottom: 12px;
+    margin-bottom: 8px;
 }
 
 /* =============================================
