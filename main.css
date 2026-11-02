@@ -1548,7 +1548,19 @@ body .task-detail-floating-modal.is-fullscreen .detail-title-input:focus {
 }
 
 .note-textarea::placeholder {
-    color: var(--todo-text-muted);
+    color: var(--todo-text-muted, var(--text-muted, rgba(255, 255, 255, 0.4))) !important;
+    opacity: 0.38;
+    transition: opacity var(--todo-transition);
+}
+
+.note-section:hover .note-textarea::placeholder,
+.note-textarea:hover::placeholder {
+    opacity: 0.65;
+}
+
+.note-section:focus-within .note-textarea::placeholder,
+.note-textarea:focus::placeholder {
+    opacity: 0.8;
 }
 
 /* Footer */
