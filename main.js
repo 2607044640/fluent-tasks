@@ -32,7 +32,7 @@ __export(main_exports, {
   default: () => FluentTasksPlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian28 = require("obsidian");
+var import_obsidian29 = require("obsidian");
 
 // src/types.ts
 var VIEW_TYPE_SIDEBAR = "fluent-tasks-sidebar";
@@ -11404,7 +11404,7 @@ function isStepCollapsed(step, expandedStepIds, collapseSetting = true, isModal 
 }
 
 // src/TaskMainView.svelte
-var import_obsidian18 = require("obsidian");
+var import_obsidian19 = require("obsidian");
 
 // src/modals/ConfirmDeleteLinkedNoteModal.ts
 var import_obsidian9 = require("obsidian");
@@ -11518,7 +11518,7 @@ async function promptDeleteTaskWithLinkedNote(app, task, categoryFilepath, dataS
 }
 
 // src/modals/TaskStepsModal.ts
-var import_obsidian11 = require("obsidian");
+var import_obsidian12 = require("obsidian");
 
 // src/utils/stepIds.ts
 function ensureStepIds(taskId, steps) {
@@ -13227,13 +13227,195 @@ var TaskImageStrip = class extends SvelteComponent {
 var TaskImageStrip_default = TaskImageStrip;
 
 // src/modals/TaskStepsModalView.svelte
+var import_obsidian11 = require("obsidian");
+
+// src/utils/aiExportUtils.ts
+function formatTaskAsAiXml(task, options) {
+  if (!task)
+    return "";
+  const sections = [];
+  if (task.title && task.title.trim()) {
+    sections.push(`<Title>
+${task.title.trim()}
+</Title>`);
+  }
+  const effectiveSteps = (options == null ? void 0 : options.steps) || task.steps;
+  if (effectiveSteps && effectiveSteps.length > 0) {
+    let itemIndex = 1;
+    for (const step of effectiveSteps) {
+      let text2 = (step.text || "").trim();
+      if (step.images && step.images.length > 0) {
+        const imgText = step.images.map((img) => `![[${img}]]`).join("\n");
+        text2 = text2 ? `${text2}
+${imgText}` : imgText;
+      }
+      if (!text2)
+        continue;
+      const tag = step.done ? `Item_${itemIndex}_Excluded` : `Item_${itemIndex}`;
+      sections.push(`<${tag}>
+${text2}
+</${tag}>`);
+      itemIndex++;
+    }
+  }
+  let noteText = (task.note || "").trim();
+  if (task.images && task.images.length > 0) {
+    const noteImages = task.images.filter((img) => !noteText.includes(img)).map((img) => `![[${img}]]`).join("\n");
+    if (noteImages) {
+      noteText = noteText ? `${noteText}
+${noteImages}` : noteImages;
+    }
+  }
+  if (noteText) {
+    sections.push(`<Details>
+${noteText}
+</Details>`);
+  }
+  const whys = task.whys && task.whys.length > 0 ? task.whys.filter((w) => w && w.trim()) : task.why && task.why.trim() ? [task.why.trim()] : [];
+  if (whys.length > 0) {
+    sections.push(`<Why>
+${whys.join("\n")}
+</Why>`);
+  }
+  const linkedNotes = [];
+  if (task.task_note && task.task_note.trim())
+    linkedNotes.push(task.task_note.trim());
+  if (task.note_links && task.note_links.length > 0) {
+    for (const link of task.note_links) {
+      if (link && link.trim() && !linkedNotes.includes(link.trim())) {
+        linkedNotes.push(link.trim());
+      }
+    }
+  } else if (task.note_link && task.note_link.trim() && !linkedNotes.includes(task.note_link.trim())) {
+    linkedNotes.push(task.note_link.trim());
+  }
+  if (linkedNotes.length > 0) {
+    sections.push(`<LinkedNote>
+${linkedNotes.join("\n")}
+</LinkedNote>`);
+  }
+  if (task.dueDate && task.dueDate.trim()) {
+    sections.push(`<DueDate>
+${task.dueDate.trim()}
+</DueDate>`);
+  }
+  return sections.join("\n\n");
+}
+
+// src/utils/clipboardUtils.ts
+async function copyTextToClipboard(text2) {
+  var _a, _b;
+  if (!text2)
+    return false;
+  if (typeof navigator !== "undefined" && ((_a = navigator.clipboard) == null ? void 0 : _a.writeText)) {
+    try {
+      await navigator.clipboard.writeText(text2);
+      return true;
+    } catch (e) {
+    }
+  }
+  try {
+    const electron = typeof window !== "undefined" && typeof window.require === "function" ? window.require("electron") : void 0;
+    if ((_b = electron == null ? void 0 : electron.clipboard) == null ? void 0 : _b.writeText) {
+      electron.clipboard.writeText(text2);
+      return true;
+    }
+  } catch (e) {
+  }
+  try {
+    if (typeof document !== "undefined") {
+      const textarea = document.createElement("textarea");
+      textarea.value = text2;
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      textarea.style.top = "-9999px";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      const success = document.execCommand("copy");
+      document.body.removeChild(textarea);
+      if (success)
+        return true;
+    }
+  } catch (e) {
+  }
+  return false;
+}
+
+// src/modals/TaskStepsModalView.svelte
 function add_css4(target) {
   append_styles(target, "svelte-1cj0jw5", ".steps-modal-left-controls.svelte-1cj0jw5{display:flex;align-items:center;gap:8px;flex-shrink:0}.steps-modal-text-col.svelte-1cj0jw5{flex:1;display:flex;flex-direction:column;min-width:0;gap:6px}.steps-modal-add-card.svelte-1cj0jw5{display:flex;flex-direction:column;gap:6px;flex-shrink:0}");
 }
 function get_each_context3(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[100] = list[i];
+  child_ctx[103] = list[i];
   return child_ctx;
+}
+function create_else_block_32(ctx) {
+  let svg;
+  let rect;
+  let path;
+  return {
+    c() {
+      svg = svg_element("svg");
+      rect = svg_element("rect");
+      path = svg_element("path");
+      attr(rect, "x", "9");
+      attr(rect, "y", "9");
+      attr(rect, "width", "13");
+      attr(rect, "height", "13");
+      attr(rect, "rx", "2");
+      attr(rect, "ry", "2");
+      attr(path, "d", "M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1");
+      attr(svg, "width", "15");
+      attr(svg, "height", "15");
+      attr(svg, "viewBox", "0 0 24 24");
+      attr(svg, "fill", "none");
+      attr(svg, "stroke", "currentColor");
+      attr(svg, "stroke-width", "2");
+      attr(svg, "stroke-linecap", "round");
+      attr(svg, "stroke-linejoin", "round");
+    },
+    m(target, anchor) {
+      insert(target, svg, anchor);
+      append(svg, rect);
+      append(svg, path);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(svg);
+      }
+    }
+  };
+}
+function create_if_block_122(ctx) {
+  let svg;
+  let polyline;
+  return {
+    c() {
+      svg = svg_element("svg");
+      polyline = svg_element("polyline");
+      attr(polyline, "points", "20 6 9 17 4 12");
+      attr(svg, "width", "15");
+      attr(svg, "height", "15");
+      attr(svg, "viewBox", "0 0 24 24");
+      attr(svg, "fill", "none");
+      attr(svg, "stroke", "var(--todo-accent)");
+      attr(svg, "stroke-width", "2.2");
+      attr(svg, "stroke-linecap", "round");
+      attr(svg, "stroke-linejoin", "round");
+    },
+    m(target, anchor) {
+      insert(target, svg, anchor);
+      append(svg, polyline);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(svg);
+      }
+    }
+  };
 }
 function create_if_block_10(ctx) {
   let div2;
@@ -13356,7 +13538,7 @@ function create_if_block_10(ctx) {
       append(svg0, line0);
       append(div0, t0);
       append(div0, input);
-      ctx[51](input);
+      ctx[53](input);
       set_input_value(
         input,
         /*searchQuery*/
@@ -13382,37 +13564,37 @@ function create_if_block_10(ctx) {
             input,
             "input",
             /*input_input_handler*/
-            ctx[52]
+            ctx[54]
           ),
           listen(
             input,
             "input",
             /*handleSearchInput*/
-            ctx[25]
+            ctx[26]
           ),
           listen(
             input,
             "keydown",
             /*handleSearchKeydown*/
-            ctx[26]
+            ctx[27]
           ),
           listen(
             button0,
             "click",
             /*prevMatch*/
-            ctx[24]
+            ctx[25]
           ),
           listen(
             button1,
             "click",
             /*nextMatch*/
-            ctx[23]
+            ctx[24]
           ),
           listen(
             button2,
             "click",
             /*closeSearch*/
-            ctx[22]
+            ctx[23]
           )
         ];
         mounted = true;
@@ -13459,7 +13641,7 @@ function create_if_block_10(ctx) {
       if (detaching) {
         detach(div2);
       }
-      ctx[51](null);
+      ctx[53](null);
       if (if_block)
         if_block.d();
       mounted = false;
@@ -13528,7 +13710,7 @@ function create_if_block_9(ctx) {
         div0,
         "width",
         /*progressPercent*/
-        ctx[20] + "%"
+        ctx[21] + "%"
       );
       attr(div1, "class", "task-steps-progress-track");
     },
@@ -13538,12 +13720,12 @@ function create_if_block_9(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*progressPercent*/
-      1048576) {
+      2097152) {
         set_style(
           div0,
           "width",
           /*progressPercent*/
-          ctx2[20] + "%"
+          ctx2[21] + "%"
         );
       }
     },
@@ -13568,7 +13750,7 @@ function create_else_block4(ctx) {
   );
   const get_key = (ctx2) => (
     /*step*/
-    ctx2[100].id
+    ctx2[103].id
   );
   for (let i = 0; i < each_value.length; i += 1) {
     let child_ctx = get_each_context3(ctx, each_value, i);
@@ -13608,22 +13790,22 @@ function create_else_block4(ctx) {
             div,
             "consider",
             /*handleDndConsider*/
-            ctx[32]
+            ctx[33]
           ),
           listen(
             div,
             "finalize",
             /*handleDndFinalize*/
-            ctx[33]
+            ctx[34]
           )
         ];
         mounted = true;
       }
     },
     p(ctx2, dirty) {
-      if (dirty[0] & /*steps, centerAlignTasks, expandedStepIds, collapseCompletedSteps, toggleStepCollapse, focusedStepId, handleStepInput, renderHighlightedText, searchQuery, activeMatchIndex, showSearchBar, actualApp, hoveredImageRef, toggleStep*/
-      2014104730 | dirty[1] & /*handleStepItemClick, deleteStep, getStepImages, handleStepBlur, handleStepKeydown, removeImageFromStep*/
-      2457) {
+      if (dirty[0] & /*steps, centerAlignTasks, expandedStepIds, collapseCompletedSteps, toggleStepCollapse, focusedStepId, renderHighlightedText, searchQuery, activeMatchIndex, showSearchBar, actualApp, hoveredImageRef, toggleStep*/
+      1880411290 | dirty[1] & /*handleStepItemClick, deleteStep, getStepImages, handleStepInput, handleStepBlur, handleStepKeydown, removeImageFromStep*/
+      4915) {
         each_value = ensure_array_like(
           /*steps*/
           ctx2[4]
@@ -13763,9 +13945,9 @@ function create_else_block_12(ctx) {
   let div1;
   let show_if_1 = (
     /*getStepImages*/
-    ctx[34](
+    ctx[35](
       /*step*/
-      ctx[100]
+      ctx[103]
     ).length > 0
   );
   let t0;
@@ -13787,18 +13969,18 @@ function create_else_block_12(ctx) {
   function focus_handler() {
     return (
       /*focus_handler*/
-      ctx[60](
+      ctx[62](
         /*step*/
-        ctx[100]
+        ctx[103]
       )
     );
   }
   function input_handler(...args) {
     return (
       /*input_handler*/
-      ctx[61](
+      ctx[63](
         /*step*/
-        ctx[100],
+        ctx[103],
         ...args
       )
     );
@@ -13806,18 +13988,18 @@ function create_else_block_12(ctx) {
   function blur_handler() {
     return (
       /*blur_handler*/
-      ctx[62](
+      ctx[64](
         /*step*/
-        ctx[100]
+        ctx[103]
       )
     );
   }
   function keydown_handler_2(...args) {
     return (
       /*keydown_handler_2*/
-      ctx[63](
+      ctx[65](
         /*step*/
-        ctx[100],
+        ctx[103],
         ...args
       )
     );
@@ -13836,13 +14018,13 @@ function create_else_block_12(ctx) {
       attr(textarea, "rows", "1");
       attr(textarea, "class", "steps-modal-textarea");
       textarea.value = textarea_value_value = /*step*/
-      ctx[100].text;
+      ctx[103].text;
       attr(textarea, "placeholder", "Step description...");
       toggle_class(
         textarea,
         "completed",
         /*step*/
-        ctx[100].done
+        ctx[103].done
       );
       attr(div0, "class", "steps-modal-text-wrapper");
       attr(div1, "class", "steps-modal-text-col svelte-1cj0jw5");
@@ -13870,7 +14052,7 @@ function create_else_block_12(ctx) {
             null,
             textarea,
             /*step*/
-            ctx[100].text
+            ctx[103].text
           )),
           listen(textarea, "focus", focus_handler),
           listen(textarea, "input", input_handler),
@@ -13885,9 +14067,9 @@ function create_else_block_12(ctx) {
       if (dirty[0] & /*steps*/
       16)
         show_if_1 = /*getStepImages*/
-        ctx[34](
+        ctx[35](
           /*step*/
-          ctx[100]
+          ctx[103]
         ).length > 0;
       if (show_if_1) {
         if (if_block0) {
@@ -13928,7 +14110,7 @@ function create_else_block_12(ctx) {
       }
       if (!current || dirty[0] & /*steps*/
       16 && textarea_value_value !== (textarea_value_value = /*step*/
-      ctx[100].text)) {
+      ctx[103].text)) {
         textarea.value = textarea_value_value;
       }
       if (autosize_action && is_function(autosize_action.update) && dirty[0] & /*steps*/
@@ -13936,7 +14118,7 @@ function create_else_block_12(ctx) {
         autosize_action.update.call(
           null,
           /*step*/
-          ctx[100].text
+          ctx[103].text
         );
       if (!current || dirty[0] & /*steps*/
       16) {
@@ -13944,7 +14126,7 @@ function create_else_block_12(ctx) {
           textarea,
           "completed",
           /*step*/
-          ctx[100].done
+          ctx[103].done
         );
       }
       if (!current || dirty[0] & /*centerAlignTasks*/
@@ -13984,16 +14166,16 @@ function create_if_block_42(ctx) {
   let div;
   let show_if = (
     /*getStepImages*/
-    ctx[34](
+    ctx[35](
       /*step*/
-      ctx[100]
+      ctx[103]
     ).length > 0
   );
   let t0;
   let span0;
   let t1_value = (getCollapsedStepPreview(
     /*step*/
-    ctx[100].text
+    ctx[103].text
   ) || "Step description...") + "";
   let t1;
   let t2;
@@ -14004,18 +14186,18 @@ function create_if_block_42(ctx) {
   function click_handler_2() {
     return (
       /*click_handler_2*/
-      ctx[55](
+      ctx[57](
         /*step*/
-        ctx[100]
+        ctx[103]
       )
     );
   }
   function keydown_handler_1(...args) {
     return (
       /*keydown_handler_1*/
-      ctx[56](
+      ctx[58](
         /*step*/
-        ctx[100],
+        ctx[103],
         ...args
       )
     );
@@ -14073,9 +14255,9 @@ function create_if_block_42(ctx) {
       if (dirty[0] & /*steps*/
       16)
         show_if = /*getStepImages*/
-        ctx[34](
+        ctx[35](
           /*step*/
-          ctx[100]
+          ctx[103]
         ).length > 0;
       if (show_if) {
         if (if_block) {
@@ -14092,7 +14274,7 @@ function create_if_block_42(ctx) {
       if (dirty[0] & /*steps*/
       16 && t1_value !== (t1_value = (getCollapsedStepPreview(
         /*step*/
-        ctx[100].text
+        ctx[103].text
       ) || "Step description...") + ""))
         set_data(t1, t1_value);
       if (dirty[0] & /*centerAlignTasks*/
@@ -14133,9 +14315,9 @@ function create_if_block_72(ctx) {
   function func2(...args) {
     return (
       /*func*/
-      ctx[57](
+      ctx[59](
         /*step*/
-        ctx[100],
+        ctx[103],
         ...args
       )
     );
@@ -14143,9 +14325,9 @@ function create_if_block_72(ctx) {
   function func_15(...args) {
     return (
       /*func_1*/
-      ctx[58](
+      ctx[60](
         /*step*/
-        ctx[100],
+        ctx[103],
         ...args
       )
     );
@@ -14153,9 +14335,9 @@ function create_if_block_72(ctx) {
   function func_22(...args) {
     return (
       /*func_2*/
-      ctx[59](
+      ctx[61](
         /*step*/
-        ctx[100],
+        ctx[103],
         ...args
       )
     );
@@ -14164,14 +14346,14 @@ function create_if_block_72(ctx) {
     props: {
       images: (
         /*getStepImages*/
-        ctx[34](
+        ctx[35](
           /*step*/
-          ctx[100]
+          ctx[103]
         )
       ),
       app: (
         /*actualApp*/
-        ctx[19]
+        ctx[20]
       ),
       size: 44,
       isCenterAligned: (
@@ -14197,14 +14379,14 @@ function create_if_block_72(ctx) {
       if (dirty[0] & /*steps*/
       16)
         taskimagestrip_changes.images = /*getStepImages*/
-        ctx[34](
+        ctx[35](
           /*step*/
-          ctx[100]
+          ctx[103]
         );
       if (dirty[0] & /*actualApp*/
-      524288)
+      1048576)
         taskimagestrip_changes.app = /*actualApp*/
-        ctx[19];
+        ctx[20];
       if (dirty[0] & /*centerAlignTasks*/
       2)
         taskimagestrip_changes.isCenterAligned = /*centerAlignTasks*/
@@ -14239,11 +14421,11 @@ function create_if_block_62(ctx) {
   let div;
   let raw_value = (
     /*renderHighlightedText*/
-    ctx[27](
+    ctx[28](
       /*step*/
-      ctx[100].text,
+      ctx[103].text,
       /*step*/
-      ctx[100].id,
+      ctx[103].id,
       /*searchQuery*/
       ctx[15],
       /*activeMatchIndex*/
@@ -14263,11 +14445,11 @@ function create_if_block_62(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*steps, searchQuery, activeMatchIndex*/
       294928 && raw_value !== (raw_value = /*renderHighlightedText*/
-      ctx2[27](
+      ctx2[28](
         /*step*/
-        ctx2[100].text,
+        ctx2[103].text,
         /*step*/
-        ctx2[100].id,
+        ctx2[103].id,
         /*searchQuery*/
         ctx2[15],
         /*activeMatchIndex*/
@@ -14293,9 +14475,9 @@ function create_if_block_52(ctx) {
   let span0;
   let t1_value = (
     /*getStepImages*/
-    ctx[34](
+    ctx[35](
       /*step*/
-      ctx[100]
+      ctx[103]
     ).length + ""
   );
   let t1;
@@ -14328,9 +14510,9 @@ function create_if_block_52(ctx) {
       attr(svg, "stroke-width", "2");
       attr(span1, "class", "step-collapsed-image-badge");
       attr(span1, "title", span1_title_value = /*getStepImages*/
-      ctx[34](
+      ctx[35](
         /*step*/
-        ctx[100]
+        ctx[103]
       ).length + " image(s)");
     },
     m(target, anchor) {
@@ -14346,16 +14528,16 @@ function create_if_block_52(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*steps*/
       16 && t1_value !== (t1_value = /*getStepImages*/
-      ctx2[34](
+      ctx2[35](
         /*step*/
-        ctx2[100]
+        ctx2[103]
       ).length + ""))
         set_data(t1, t1_value);
       if (dirty[0] & /*steps*/
       16 && span1_title_value !== (span1_title_value = /*getStepImages*/
-      ctx2[34](
+      ctx2[35](
         /*step*/
-        ctx2[100]
+        ctx2[103]
       ).length + " image(s)")) {
         attr(span1, "title", span1_title_value);
       }
@@ -14374,18 +14556,18 @@ function create_if_block_32(ctx) {
   function click_handler_32() {
     return (
       /*click_handler_3*/
-      ctx[64](
+      ctx[66](
         /*step*/
-        ctx[100]
+        ctx[103]
       )
     );
   }
   function keydown_handler_3(...args) {
     return (
       /*keydown_handler_3*/
-      ctx[65](
+      ctx[67](
         /*step*/
-        ctx[100],
+        ctx[103],
         ...args
       )
     );
@@ -14438,9 +14620,9 @@ function create_each_block3(key_1, ctx) {
   let show_if = (
     /*collapseCompletedSteps*/
     ctx[3] && /*step*/
-    ctx[100].done && !isStepCollapsed(
+    ctx[103].done && !isStepCollapsed(
       /*step*/
-      ctx[100],
+      ctx[103],
       /*expandedStepIds*/
       ctx[7],
       /*collapseCompletedSteps*/
@@ -14456,45 +14638,45 @@ function create_each_block3(key_1, ctx) {
   let current;
   let mounted;
   let dispose;
-  function select_block_type_1(ctx2, dirty) {
+  function select_block_type_2(ctx2, dirty) {
     if (
       /*step*/
-      ctx2[100].done
+      ctx2[103].done
     )
       return create_if_block_82;
     return create_else_block_22;
   }
-  let current_block_type = select_block_type_1(ctx, [-1, -1, -1, -1]);
+  let current_block_type = select_block_type_2(ctx, [-1, -1, -1, -1]);
   let if_block0 = current_block_type(ctx);
   function click_handler_12() {
     return (
       /*click_handler_1*/
-      ctx[53](
+      ctx[55](
         /*step*/
-        ctx[100]
+        ctx[103]
       )
     );
   }
   function keydown_handler(...args) {
     return (
       /*keydown_handler*/
-      ctx[54](
+      ctx[56](
         /*step*/
-        ctx[100],
+        ctx[103],
         ...args
       )
     );
   }
   const if_block_creators = [create_if_block_42, create_else_block_12];
   const if_blocks = [];
-  function select_block_type_2(ctx2, dirty) {
+  function select_block_type_3(ctx2, dirty) {
     if (dirty[0] & /*steps, expandedStepIds, collapseCompletedSteps*/
     152)
       show_if_1 = null;
     if (show_if_1 == null)
       show_if_1 = !!isStepCollapsed(
         /*step*/
-        ctx2[100],
+        ctx2[103],
         /*expandedStepIds*/
         ctx2[7],
         /*collapseCompletedSteps*/
@@ -14505,24 +14687,24 @@ function create_each_block3(key_1, ctx) {
       return 0;
     return 1;
   }
-  current_block_type_index = select_block_type_2(ctx, [-1, -1, -1, -1]);
+  current_block_type_index = select_block_type_3(ctx, [-1, -1, -1, -1]);
   if_block1 = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
   let if_block2 = show_if && create_if_block_32(ctx);
   function click_handler_4() {
     return (
       /*click_handler_4*/
-      ctx[66](
+      ctx[68](
         /*step*/
-        ctx[100]
+        ctx[103]
       )
     );
   }
   function keydown_handler_4(...args) {
     return (
       /*keydown_handler_4*/
-      ctx[67](
+      ctx[69](
         /*step*/
-        ctx[100],
+        ctx[103],
         ...args
       )
     );
@@ -14530,9 +14712,9 @@ function create_each_block3(key_1, ctx) {
   function click_handler_52(...args) {
     return (
       /*click_handler_5*/
-      ctx[68](
+      ctx[70](
         /*step*/
-        ctx[100],
+        ctx[103],
         ...args
       )
     );
@@ -14563,15 +14745,15 @@ function create_each_block3(key_1, ctx) {
       attr(span1, "class", "steps-modal-checkbox");
       attr(span1, "role", "checkbox");
       attr(span1, "aria-checked", span1_aria_checked_value = /*step*/
-      ctx[100].done);
+      ctx[103].done);
       attr(span1, "tabindex", "0");
       attr(span1, "aria-label", span1_aria_label_value = /*step*/
-      ctx[100].done ? "Mark step incomplete" : "Mark step complete");
+      ctx[103].done ? "Mark step incomplete" : "Mark step complete");
       toggle_class(
         span1,
         "checked",
         /*step*/
-        ctx[100].done
+        ctx[103].done
       );
       attr(div0, "class", "steps-modal-left-controls svelte-1cj0jw5");
       attr(span2, "class", "steps-modal-delete-btn");
@@ -14585,7 +14767,7 @@ function create_each_block3(key_1, ctx) {
         div2,
         "is-done",
         /*step*/
-        ctx[100].done
+        ctx[103].done
       );
       toggle_class(
         div2,
@@ -14595,7 +14777,7 @@ function create_each_block3(key_1, ctx) {
       );
       toggle_class(div2, "is-step-collapsed", isStepCollapsed(
         /*step*/
-        ctx[100],
+        ctx[103],
         /*expandedStepIds*/
         ctx[7],
         /*collapseCompletedSteps*/
@@ -14634,7 +14816,7 @@ function create_each_block3(key_1, ctx) {
     },
     p(new_ctx, dirty) {
       ctx = new_ctx;
-      if (current_block_type !== (current_block_type = select_block_type_1(ctx, dirty))) {
+      if (current_block_type !== (current_block_type = select_block_type_2(ctx, dirty))) {
         if_block0.d(1);
         if_block0 = current_block_type(ctx);
         if (if_block0) {
@@ -14644,12 +14826,12 @@ function create_each_block3(key_1, ctx) {
       }
       if (!current || dirty[0] & /*steps*/
       16 && span1_aria_checked_value !== (span1_aria_checked_value = /*step*/
-      ctx[100].done)) {
+      ctx[103].done)) {
         attr(span1, "aria-checked", span1_aria_checked_value);
       }
       if (!current || dirty[0] & /*steps*/
       16 && span1_aria_label_value !== (span1_aria_label_value = /*step*/
-      ctx[100].done ? "Mark step incomplete" : "Mark step complete")) {
+      ctx[103].done ? "Mark step incomplete" : "Mark step complete")) {
         attr(span1, "aria-label", span1_aria_label_value);
       }
       if (!current || dirty[0] & /*steps*/
@@ -14658,11 +14840,11 @@ function create_each_block3(key_1, ctx) {
           span1,
           "checked",
           /*step*/
-          ctx[100].done
+          ctx[103].done
         );
       }
       let previous_block_index = current_block_type_index;
-      current_block_type_index = select_block_type_2(ctx, dirty);
+      current_block_type_index = select_block_type_3(ctx, dirty);
       if (current_block_type_index === previous_block_index) {
         if_blocks[current_block_type_index].p(ctx, dirty);
       } else {
@@ -14685,9 +14867,9 @@ function create_each_block3(key_1, ctx) {
       152)
         show_if = /*collapseCompletedSteps*/
         ctx[3] && /*step*/
-        ctx[100].done && !isStepCollapsed(
+        ctx[103].done && !isStepCollapsed(
           /*step*/
-          ctx[100],
+          ctx[103],
           /*expandedStepIds*/
           ctx[7],
           /*collapseCompletedSteps*/
@@ -14712,7 +14894,7 @@ function create_each_block3(key_1, ctx) {
           div2,
           "is-done",
           /*step*/
-          ctx[100].done
+          ctx[103].done
         );
       }
       if (!current || dirty[0] & /*centerAlignTasks*/
@@ -14728,7 +14910,7 @@ function create_each_block3(key_1, ctx) {
       152) {
         toggle_class(div2, "is-step-collapsed", isStepCollapsed(
           /*step*/
-          ctx[100],
+          ctx[103],
           /*expandedStepIds*/
           ctx[7],
           /*collapseCompletedSteps*/
@@ -14782,7 +14964,7 @@ function create_if_block_14(ctx) {
       ),
       app: (
         /*actualApp*/
-        ctx[19]
+        ctx[20]
       ),
       size: 44,
       isCenterAligned: (
@@ -14791,15 +14973,15 @@ function create_if_block_14(ctx) {
       ),
       onDelete: (
         /*func_3*/
-        ctx[69]
+        ctx[71]
       ),
       onCut: (
         /*func_4*/
-        ctx[70]
+        ctx[72]
       ),
       onHover: (
         /*func_5*/
-        ctx[71]
+        ctx[73]
       )
     }
   });
@@ -14818,9 +15000,9 @@ function create_if_block_14(ctx) {
         taskimagestrip_changes.images = /*newStepImages*/
         ctx2[9];
       if (dirty[0] & /*actualApp*/
-      524288)
+      1048576)
         taskimagestrip_changes.app = /*actualApp*/
-        ctx2[19];
+        ctx2[20];
       if (dirty[0] & /*centerAlignTasks*/
       2)
         taskimagestrip_changes.isCenterAligned = /*centerAlignTasks*/
@@ -14828,7 +15010,7 @@ function create_if_block_14(ctx) {
       if (dirty[0] & /*hoveredImageRef*/
       2048)
         taskimagestrip_changes.onHover = /*func_5*/
-        ctx2[71];
+        ctx2[73];
       taskimagestrip.$set(taskimagestrip_changes);
     },
     i(local) {
@@ -14933,43 +15115,56 @@ function create_fragment5(ctx) {
   let t2;
   let div2;
   let button0;
+  let button0_title_value;
+  let t3;
+  let button1;
   let svg1;
   let circle;
   let line0;
-  let button0_title_value;
-  let t3;
+  let button1_title_value;
   let t4;
   let t5;
+  let t6;
   let div6;
   let current_block_type_index;
-  let if_block2;
-  let t6;
-  let div5;
+  let if_block3;
   let t7;
+  let div5;
+  let t8;
   let div4;
   let span;
-  let t8;
+  let t9;
   let textarea;
   let autosize_action;
-  let t9;
-  let button1;
   let t10;
-  let button1_disabled_value;
+  let button2;
   let t11;
+  let button2_disabled_value;
+  let t12;
   let current;
   let mounted;
   let dispose;
-  let if_block0 = (
+  function select_block_type(ctx2, dirty) {
+    if (
+      /*copiedInfoRecently*/
+      ctx2[19]
+    )
+      return create_if_block_122;
+    return create_else_block_32;
+  }
+  let current_block_type = select_block_type(ctx, [-1, -1, -1, -1]);
+  let if_block0 = current_block_type(ctx);
+  let if_block1 = (
     /*showSearchBar*/
     ctx[14] && create_if_block_10(ctx)
   );
-  let if_block1 = (
+  let if_block2 = (
     /*totalCount*/
     ctx[5] > 0 && create_if_block_9(ctx)
   );
   const if_block_creators = [create_if_block_22, create_else_block4];
   const if_blocks = [];
-  function select_block_type(ctx2, dirty) {
+  function select_block_type_1(ctx2, dirty) {
     if (
       /*steps*/
       ctx2[4].length === 0
@@ -14977,13 +15172,13 @@ function create_fragment5(ctx) {
       return 0;
     return 1;
   }
-  current_block_type_index = select_block_type(ctx, [-1, -1, -1, -1]);
-  if_block2 = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
-  let if_block3 = (
+  current_block_type_index = select_block_type_1(ctx, [-1, -1, -1, -1]);
+  if_block3 = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
+  let if_block4 = (
     /*newStepImages*/
     ctx[9].length > 0 && create_if_block_14(ctx)
   );
-  let if_block4 = (
+  let if_block5 = (
     /*showStepsProgressPill*/
     ctx[2] && /*totalCount*/
     ctx[5] > 0 && create_if_block5(ctx)
@@ -15002,34 +15197,37 @@ function create_fragment5(ctx) {
       t2 = space();
       div2 = element("div");
       button0 = element("button");
+      if_block0.c();
+      t3 = space();
+      button1 = element("button");
       svg1 = svg_element("svg");
       circle = svg_element("circle");
       line0 = svg_element("line");
-      t3 = space();
-      if (if_block0)
-        if_block0.c();
       t4 = space();
       if (if_block1)
         if_block1.c();
       t5 = space();
-      div6 = element("div");
-      if_block2.c();
+      if (if_block2)
+        if_block2.c();
       t6 = space();
-      div5 = element("div");
-      if (if_block3)
-        if_block3.c();
+      div6 = element("div");
+      if_block3.c();
       t7 = space();
+      div5 = element("div");
+      if (if_block4)
+        if_block4.c();
+      t8 = space();
       div4 = element("div");
       span = element("span");
       span.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`;
-      t8 = space();
-      textarea = element("textarea");
       t9 = space();
-      button1 = element("button");
-      t10 = text("Add");
-      t11 = space();
-      if (if_block4)
-        if_block4.c();
+      textarea = element("textarea");
+      t10 = space();
+      button2 = element("button");
+      t11 = text("Add");
+      t12 = space();
+      if (if_block5)
+        if_block5.c();
       attr(polyline, "points", "9 11 12 14 22 4");
       attr(path, "d", "M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11");
       attr(svg0, "class", "task-steps-header-icon");
@@ -15045,6 +15243,17 @@ function create_fragment5(ctx) {
       attr(div0, "title", div0_title_value = /*task*/
       ctx[0].title);
       attr(div1, "class", "task-steps-modal-title-box");
+      attr(button0, "type", "button");
+      attr(button0, "class", "task-steps-header-copy-btn");
+      attr(button0, "title", button0_title_value = /*copiedInfoRecently*/
+      ctx[19] ? t("copy_task_info_success") || "Copied all task info to clipboard / \u5DF2\u590D\u5236\u5168\u90E8\u4FE1\u606F\u81F3\u526A\u8D34\u677F" : t("copy_task_info_xml") || "Copy all info for AI (XML format) / \u590D\u5236\u5168\u90E8\u4FE1\u606F(\u7528\u4E8E AI \u63D0\u793A\u8BCD)");
+      attr(button0, "aria-label", "Copy all task info");
+      toggle_class(
+        button0,
+        "copied",
+        /*copiedInfoRecently*/
+        ctx[19]
+      );
       attr(circle, "cx", "11");
       attr(circle, "cy", "11");
       attr(circle, "r", "8");
@@ -15060,13 +15269,13 @@ function create_fragment5(ctx) {
       attr(svg1, "stroke-width", "2");
       attr(svg1, "stroke-linecap", "round");
       attr(svg1, "stroke-linejoin", "round");
-      attr(button0, "type", "button");
-      attr(button0, "class", "task-steps-header-search-btn");
-      attr(button0, "title", button0_title_value = /*showSearchBar*/
+      attr(button1, "type", "button");
+      attr(button1, "class", "task-steps-header-search-btn");
+      attr(button1, "title", button1_title_value = /*showSearchBar*/
       ctx[14] ? "Close search (Ctrl+F / Esc)" : "Search steps (Ctrl+F)");
-      attr(button0, "aria-label", "Search steps");
+      attr(button1, "aria-label", "Search steps");
       toggle_class(
-        button0,
+        button1,
         "is-active",
         /*showSearchBar*/
         ctx[14]
@@ -15077,9 +15286,9 @@ function create_fragment5(ctx) {
       attr(textarea, "rows", "1");
       attr(textarea, "class", "steps-modal-add-input");
       attr(textarea, "placeholder", "Add a step... (Press Enter to add, Shift+Enter for newline, Ctrl+V to paste image)");
-      attr(button1, "type", "button");
-      attr(button1, "class", "steps-modal-add-btn");
-      button1.disabled = button1_disabled_value = !/*newStepText*/
+      attr(button2, "type", "button");
+      attr(button2, "class", "steps-modal-add-btn");
+      button2.disabled = button2_disabled_value = !/*newStepText*/
       ctx[8].trim() && /*newStepImages*/
       ctx[9].length === 0;
       attr(div4, "class", "steps-modal-add-row");
@@ -15118,48 +15327,57 @@ function create_fragment5(ctx) {
       append(div3, t2);
       append(div3, div2);
       append(div2, button0);
-      append(button0, svg1);
+      if_block0.m(button0, null);
+      append(div2, t3);
+      append(div2, button1);
+      append(button1, svg1);
       append(svg1, circle);
       append(svg1, line0);
-      append(div7, t3);
-      if (if_block0)
-        if_block0.m(div7, null);
       append(div7, t4);
       if (if_block1)
         if_block1.m(div7, null);
       append(div7, t5);
+      if (if_block2)
+        if_block2.m(div7, null);
+      append(div7, t6);
       append(div7, div6);
       if_blocks[current_block_type_index].m(div6, null);
-      append(div6, t6);
+      append(div6, t7);
       append(div6, div5);
-      if (if_block3)
-        if_block3.m(div5, null);
-      append(div5, t7);
+      if (if_block4)
+        if_block4.m(div5, null);
+      append(div5, t8);
       append(div5, div4);
       append(div4, span);
-      append(div4, t8);
+      append(div4, t9);
       append(div4, textarea);
       set_input_value(
         textarea,
         /*newStepText*/
         ctx[8]
       );
-      ctx[73](textarea);
-      append(div4, t9);
-      append(div4, button1);
-      append(button1, t10);
-      ctx[75](div6);
-      append(div7, t11);
-      if (if_block4)
-        if_block4.m(div7, null);
+      ctx[75](textarea);
+      append(div4, t10);
+      append(div4, button2);
+      append(button2, t11);
+      ctx[77](div6);
+      append(div7, t12);
+      if (if_block5)
+        if_block5.m(div7, null);
       current = true;
       if (!mounted) {
         dispose = [
           listen(
             button0,
             "click",
+            /*copyAllTaskInfo*/
+            ctx[45]
+          ),
+          listen(
+            button1,
+            "click",
             /*click_handler*/
-            ctx[50]
+            ctx[52]
           ),
           action_destroyer(autosize_action = autosize.call(
             null,
@@ -15171,37 +15389,37 @@ function create_fragment5(ctx) {
             textarea,
             "input",
             /*textarea_input_handler*/
-            ctx[72]
+            ctx[74]
           ),
           listen(
             textarea,
             "focus",
             /*focus_handler_1*/
-            ctx[74]
+            ctx[76]
           ),
           listen(
             textarea,
             "keydown",
             /*handleAddInputKeydown*/
-            ctx[41]
+            ctx[42]
           ),
           listen(
             textarea,
             "blur",
             /*handleStepInputBlur*/
-            ctx[40]
+            ctx[41]
           ),
           listen(
-            button1,
+            button2,
             "click",
             /*addStep*/
-            ctx[37]
+            ctx[38]
           ),
           listen(
             div5,
             "click",
             /*handleAddStepCardClick*/
-            ctx[43]
+            ctx[44]
           )
         ];
         mounted = true;
@@ -15217,15 +15435,37 @@ function create_fragment5(ctx) {
       ctx2[0].title)) {
         attr(div0, "title", div0_title_value);
       }
-      if (!current || dirty[0] & /*showSearchBar*/
-      16384 && button0_title_value !== (button0_title_value = /*showSearchBar*/
-      ctx2[14] ? "Close search (Ctrl+F / Esc)" : "Search steps (Ctrl+F)")) {
+      if (current_block_type !== (current_block_type = select_block_type(ctx2, dirty))) {
+        if_block0.d(1);
+        if_block0 = current_block_type(ctx2);
+        if (if_block0) {
+          if_block0.c();
+          if_block0.m(button0, null);
+        }
+      }
+      if (!current || dirty[0] & /*copiedInfoRecently*/
+      524288 && button0_title_value !== (button0_title_value = /*copiedInfoRecently*/
+      ctx2[19] ? t("copy_task_info_success") || "Copied all task info to clipboard / \u5DF2\u590D\u5236\u5168\u90E8\u4FE1\u606F\u81F3\u526A\u8D34\u677F" : t("copy_task_info_xml") || "Copy all info for AI (XML format) / \u590D\u5236\u5168\u90E8\u4FE1\u606F(\u7528\u4E8E AI \u63D0\u793A\u8BCD)")) {
         attr(button0, "title", button0_title_value);
+      }
+      if (!current || dirty[0] & /*copiedInfoRecently*/
+      524288) {
+        toggle_class(
+          button0,
+          "copied",
+          /*copiedInfoRecently*/
+          ctx2[19]
+        );
+      }
+      if (!current || dirty[0] & /*showSearchBar*/
+      16384 && button1_title_value !== (button1_title_value = /*showSearchBar*/
+      ctx2[14] ? "Close search (Ctrl+F / Esc)" : "Search steps (Ctrl+F)")) {
+        attr(button1, "title", button1_title_value);
       }
       if (!current || dirty[0] & /*showSearchBar*/
       16384) {
         toggle_class(
-          button0,
+          button1,
           "is-active",
           /*showSearchBar*/
           ctx2[14]
@@ -15235,25 +15475,10 @@ function create_fragment5(ctx) {
         /*showSearchBar*/
         ctx2[14]
       ) {
-        if (if_block0) {
-          if_block0.p(ctx2, dirty);
-        } else {
-          if_block0 = create_if_block_10(ctx2);
-          if_block0.c();
-          if_block0.m(div7, t4);
-        }
-      } else if (if_block0) {
-        if_block0.d(1);
-        if_block0 = null;
-      }
-      if (
-        /*totalCount*/
-        ctx2[5] > 0
-      ) {
         if (if_block1) {
           if_block1.p(ctx2, dirty);
         } else {
-          if_block1 = create_if_block_9(ctx2);
+          if_block1 = create_if_block_10(ctx2);
           if_block1.c();
           if_block1.m(div7, t5);
         }
@@ -15261,8 +15486,23 @@ function create_fragment5(ctx) {
         if_block1.d(1);
         if_block1 = null;
       }
+      if (
+        /*totalCount*/
+        ctx2[5] > 0
+      ) {
+        if (if_block2) {
+          if_block2.p(ctx2, dirty);
+        } else {
+          if_block2 = create_if_block_9(ctx2);
+          if_block2.c();
+          if_block2.m(div7, t6);
+        }
+      } else if (if_block2) {
+        if_block2.d(1);
+        if_block2 = null;
+      }
       let previous_block_index = current_block_type_index;
-      current_block_type_index = select_block_type(ctx2, dirty);
+      current_block_type_index = select_block_type_1(ctx2, dirty);
       if (current_block_type_index === previous_block_index) {
         if_blocks[current_block_type_index].p(ctx2, dirty);
       } else {
@@ -15271,36 +15511,36 @@ function create_fragment5(ctx) {
           if_blocks[previous_block_index] = null;
         });
         check_outros();
-        if_block2 = if_blocks[current_block_type_index];
-        if (!if_block2) {
-          if_block2 = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx2);
-          if_block2.c();
+        if_block3 = if_blocks[current_block_type_index];
+        if (!if_block3) {
+          if_block3 = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx2);
+          if_block3.c();
         } else {
-          if_block2.p(ctx2, dirty);
+          if_block3.p(ctx2, dirty);
         }
-        transition_in(if_block2, 1);
-        if_block2.m(div6, t6);
+        transition_in(if_block3, 1);
+        if_block3.m(div6, t7);
       }
       if (
         /*newStepImages*/
         ctx2[9].length > 0
       ) {
-        if (if_block3) {
-          if_block3.p(ctx2, dirty);
+        if (if_block4) {
+          if_block4.p(ctx2, dirty);
           if (dirty[0] & /*newStepImages*/
           512) {
-            transition_in(if_block3, 1);
+            transition_in(if_block4, 1);
           }
         } else {
-          if_block3 = create_if_block_14(ctx2);
-          if_block3.c();
-          transition_in(if_block3, 1);
-          if_block3.m(div5, t7);
+          if_block4 = create_if_block_14(ctx2);
+          if_block4.c();
+          transition_in(if_block4, 1);
+          if_block4.m(div5, t8);
         }
-      } else if (if_block3) {
+      } else if (if_block4) {
         group_outros();
-        transition_out(if_block3, 1, 1, () => {
-          if_block3 = null;
+        transition_out(if_block4, 1, 1, () => {
+          if_block4 = null;
         });
         check_outros();
       }
@@ -15320,10 +15560,10 @@ function create_fragment5(ctx) {
         );
       }
       if (!current || dirty[0] & /*newStepText, newStepImages*/
-      768 && button1_disabled_value !== (button1_disabled_value = !/*newStepText*/
+      768 && button2_disabled_value !== (button2_disabled_value = !/*newStepText*/
       ctx2[8].trim() && /*newStepImages*/
       ctx2[9].length === 0)) {
-        button1.disabled = button1_disabled_value;
+        button2.disabled = button2_disabled_value;
       }
       if (!current || dirty[0] & /*centerAlignTasks*/
       2) {
@@ -15348,16 +15588,16 @@ function create_fragment5(ctx) {
         ctx2[2] && /*totalCount*/
         ctx2[5] > 0
       ) {
-        if (if_block4) {
-          if_block4.p(ctx2, dirty);
+        if (if_block5) {
+          if_block5.p(ctx2, dirty);
         } else {
-          if_block4 = create_if_block5(ctx2);
-          if_block4.c();
-          if_block4.m(div7, null);
+          if_block5 = create_if_block5(ctx2);
+          if_block5.c();
+          if_block5.m(div7, null);
         }
-      } else if (if_block4) {
-        if_block4.d(1);
-        if_block4 = null;
+      } else if (if_block5) {
+        if_block5.d(1);
+        if_block5 = null;
       }
       if (!current || dirty[0] & /*centerAlignTasks*/
       2) {
@@ -15372,30 +15612,31 @@ function create_fragment5(ctx) {
     i(local) {
       if (current)
         return;
-      transition_in(if_block2);
       transition_in(if_block3);
+      transition_in(if_block4);
       current = true;
     },
     o(local) {
-      transition_out(if_block2);
       transition_out(if_block3);
+      transition_out(if_block4);
       current = false;
     },
     d(detaching) {
       if (detaching) {
         detach(div7);
       }
-      if (if_block0)
-        if_block0.d();
+      if_block0.d();
       if (if_block1)
         if_block1.d();
+      if (if_block2)
+        if_block2.d();
       if_blocks[current_block_type_index].d();
-      if (if_block3)
-        if_block3.d();
-      ctx[73](null);
-      ctx[75](null);
       if (if_block4)
         if_block4.d();
+      ctx[75](null);
+      ctx[77](null);
+      if (if_block5)
+        if_block5.d();
       mounted = false;
       run_all(dispose);
     }
@@ -16172,6 +16413,34 @@ function instance5($$self, $$props, $$invalidate) {
       flushSaveSync();
     };
   });
+  let copiedInfoRecently = false;
+  let copiedInfoTimer = null;
+  async function copyAllTaskInfo() {
+    if (!task)
+      return;
+    const formatted = formatTaskAsAiXml(task, { steps });
+    if (!formatted)
+      return;
+    try {
+      const success = await copyTextToClipboard(formatted);
+      if (!success) {
+        throw new Error("Clipboard copy failed");
+      }
+      new import_obsidian11.Notice(t("copy_task_info_success") || "Copied all task info to clipboard / \u5DF2\u590D\u5236\u5168\u90E8\u4FE1\u606F\u81F3\u526A\u8D34\u677F");
+      $$invalidate(19, copiedInfoRecently = true);
+      if (copiedInfoTimer)
+        clearTimeout(copiedInfoTimer);
+      copiedInfoTimer = setTimeout(
+        () => {
+          $$invalidate(19, copiedInfoRecently = false);
+        },
+        1500
+      );
+    } catch (err) {
+      Logger.error("Failed to copy task info to clipboard", err);
+      new import_obsidian11.Notice("Failed to copy / \u590D\u5236\u5931\u8D25");
+    }
+  }
   function handleBeforeUnload() {
     commitDraftStep();
     flushSaveSync();
@@ -16179,6 +16448,10 @@ function instance5($$self, $$props, $$invalidate) {
   onDestroy(() => {
     commitDraftStep();
     flushSaveSync();
+    if (copiedInfoTimer) {
+      clearTimeout(copiedInfoTimer);
+      copiedInfoTimer = null;
+    }
     if (newStepImages.length > 0 && actualApp && dataService) {
       const draftImages = [...newStepImages];
       $$invalidate(9, newStepImages = []);
@@ -16264,17 +16537,17 @@ function instance5($$self, $$props, $$invalidate) {
   }
   $$self.$$set = ($$props2) => {
     if ("app" in $$props2)
-      $$invalidate(44, app = $$props2.app);
+      $$invalidate(46, app = $$props2.app);
     if ("plugin" in $$props2)
-      $$invalidate(45, plugin = $$props2.plugin);
+      $$invalidate(47, plugin = $$props2.plugin);
     if ("task" in $$props2)
       $$invalidate(0, task = $$props2.task);
     if ("categoryFilepath" in $$props2)
-      $$invalidate(46, categoryFilepath = $$props2.categoryFilepath);
+      $$invalidate(48, categoryFilepath = $$props2.categoryFilepath);
     if ("dataService" in $$props2)
-      $$invalidate(47, dataService = $$props2.dataService);
+      $$invalidate(49, dataService = $$props2.dataService);
     if ("closeModal" in $$props2)
-      $$invalidate(48, closeModal = $$props2.closeModal);
+      $$invalidate(50, closeModal = $$props2.closeModal);
     if ("centerAlignTasks" in $$props2)
       $$invalidate(1, centerAlignTasks = $$props2.centerAlignTasks);
     if ("showStepsProgressPill" in $$props2)
@@ -16284,9 +16557,9 @@ function instance5($$self, $$props, $$invalidate) {
   };
   $$self.$$.update = () => {
     if ($$self.$$.dirty[1] & /*app, dataService, plugin*/
-    90112) {
+    360448) {
       $:
-        $$invalidate(19, actualApp = app || (dataService == null ? void 0 : dataService.app) || (plugin == null ? void 0 : plugin.app) || window.app);
+        $$invalidate(20, actualApp = app || (dataService == null ? void 0 : dataService.app) || (plugin == null ? void 0 : plugin.app) || window.app);
     }
     if ($$self.$$.dirty[0] & /*steps*/
     16) {
@@ -16301,7 +16574,7 @@ function instance5($$self, $$props, $$invalidate) {
     if ($$self.$$.dirty[0] & /*totalCount, completedCount*/
     96) {
       $:
-        $$invalidate(20, progressPercent = totalCount > 0 ? Math.round(completedCount / totalCount * 100) : 0);
+        $$invalidate(21, progressPercent = totalCount > 0 ? Math.round(completedCount / totalCount * 100) : 0);
     }
   };
   return [
@@ -16324,6 +16597,7 @@ function instance5($$self, $$props, $$invalidate) {
     searchInputEl,
     allMatches,
     activeMatchIndex,
+    copiedInfoRecently,
     actualApp,
     progressPercent,
     openSearch,
@@ -16349,6 +16623,7 @@ function instance5($$self, $$props, $$invalidate) {
     handleAddInputKeydown,
     handleStepItemClick,
     handleAddStepCardClick,
+    copyAllTaskInfo,
     app,
     plugin,
     categoryFilepath,
@@ -16393,29 +16668,29 @@ var TaskStepsModalView = class extends SvelteComponent {
       create_fragment5,
       safe_not_equal,
       {
-        app: 44,
-        plugin: 45,
+        app: 46,
+        plugin: 47,
         task: 0,
-        categoryFilepath: 46,
-        dataService: 47,
-        closeModal: 48,
+        categoryFilepath: 48,
+        dataService: 49,
+        closeModal: 50,
         centerAlignTasks: 1,
         showStepsProgressPill: 2,
         collapseCompletedSteps: 3,
-        flushSaveSync: 49
+        flushSaveSync: 51
       },
       add_css4,
       [-1, -1, -1, -1]
     );
   }
   get flushSaveSync() {
-    return this.$$.ctx[49];
+    return this.$$.ctx[51];
   }
 };
 var TaskStepsModalView_default = TaskStepsModalView;
 
 // src/modals/TaskStepsModal.ts
-var TaskStepsModal = class extends import_obsidian11.Modal {
+var TaskStepsModal = class extends import_obsidian12.Modal {
   constructor(app, plugin, dataService, task, categoryFilepath) {
     super(app);
     this.component = null;
@@ -16475,10 +16750,10 @@ var TaskStepsModal = class extends import_obsidian11.Modal {
 };
 
 // src/modals/FocusedListsModal.ts
-var import_obsidian13 = require("obsidian");
+var import_obsidian14 = require("obsidian");
 
 // src/modals/QuickListModalView.svelte
-var import_obsidian12 = require("obsidian");
+var import_obsidian13 = require("obsidian");
 
 // src/utils/hotkeyUtils.ts
 var MAX_TIP_COUNT = 5;
@@ -21119,7 +21394,7 @@ function create_if_block_112(ctx) {
       ctx2[233].items && /*group*/
       ctx2[233].items.length > 0
     )
-      return create_if_block_122;
+      return create_if_block_123;
     return create_else_block_4;
   }
   let current_block_type = select_block_type_10(ctx, [-1, -1, -1, -1, -1, -1, -1, -1]);
@@ -21227,7 +21502,7 @@ function create_else_block_4(ctx) {
     }
   };
 }
-function create_if_block_122(ctx) {
+function create_if_block_123(ctx) {
   let each_blocks = [];
   let each_1_lookup = new Map_1();
   let each_1_anchor;
@@ -21335,7 +21610,7 @@ function create_if_block_16(ctx) {
     }
   };
 }
-function create_else_block_32(ctx) {
+function create_else_block_33(ctx) {
   let span;
   let t_1_value = (
     /*child*/
@@ -21520,7 +21795,7 @@ function create_each_block_3(key_1, ctx) {
       ctx2[234].filepath
     )
       return create_if_block_15;
-    return create_else_block_32;
+    return create_else_block_33;
   }
   let current_block_type = select_block_type_11(ctx, [-1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block1 = current_block_type(ctx);
@@ -23676,7 +23951,7 @@ function instance6($$self, $$props, $$invalidate) {
   function togglePickingDefaultFocus() {
     $$invalidate(20, isPickingDefaultFocus = !isPickingDefaultFocus);
     if (isPickingDefaultFocus) {
-      new import_obsidian12.Notice(t("focus_pick_mode_enabled"));
+      new import_obsidian13.Notice(t("focus_pick_mode_enabled"));
     }
   }
   function showFocusTooltip() {
@@ -23697,7 +23972,7 @@ function instance6($$self, $$props, $$invalidate) {
         $$invalidate(0, plugin.settings.defaultQuickListFocusFilepath = cat.filepath, plugin);
         await plugin.saveSettings();
       }
-      new import_obsidian12.Notice(t("focus_default_set", cat.name));
+      new import_obsidian13.Notice(t("focus_default_set", cat.name));
       const idx = flatCategories.findIndex((c) => c.filepath === cat.filepath);
       if (idx !== -1) {
         $$invalidate(7, focusedIndex = idx);
@@ -24043,7 +24318,7 @@ function instance6($$self, $$props, $$invalidate) {
     if (now2 - lastDragNoticeTime > 2500) {
       lastDragNoticeTime = now2;
       const message = isChinese() ? "\u5F53\u524D\u60AC\u6D6EUI\u4E0D\u652F\u6301\u62D6\u62FD\u5206\u7EC4\u3002\n\u539F\u56E0\uFF1A\u6392\u5217list\u4EE3\u7801\u672C\u8EAB\u8986\u76D6\u4E86\u62D6\u62FD\u64CD\u4F5C\uFF1B\u5982\u9700\u8C03\u6574\u5206\u7EC4\u987A\u5E8F\uFF0C\u8BF7\u5728\u5DE6\u4FA7\u8FB9\u680F\u64CD\u4F5C\u3002" : "Dragging groups is not supported in Quick View.\nReason: List arrangement code overrides drag operations; to adjust group order, please use the sidebar.";
-      new import_obsidian12.Notice(message, 5e3);
+      new import_obsidian13.Notice(message, 5e3);
     }
   }
   function getDraggedItem() {
@@ -24591,17 +24866,17 @@ function instance6($$self, $$props, $$invalidate) {
       return;
     e.preventDefault();
     e.stopPropagation();
-    const menu = new import_obsidian12.Menu();
+    const menu = new import_obsidian13.Menu();
     if (item.type === "category" && item.filepath) {
       const isCurrentlyDefault = ((_a2 = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _a2.defaultQuickListFocusFilepath) === item.filepath;
       menu.addItem((i) => {
         i.setTitle(isCurrentlyDefault ? t("focus_cancel_default") : t("focus_set_default")).setIcon("target").onClick(async () => {
           if (isCurrentlyDefault) {
             $$invalidate(0, plugin.settings.defaultQuickListFocusFilepath = "", plugin);
-            new import_obsidian12.Notice(t("focus_restored_default"));
+            new import_obsidian13.Notice(t("focus_restored_default"));
           } else {
             $$invalidate(0, plugin.settings.defaultQuickListFocusFilepath = item.filepath, plugin);
-            new import_obsidian12.Notice(t("focus_default_set", item.name));
+            new import_obsidian13.Notice(t("focus_default_set", item.name));
           }
           await plugin.saveSettings();
         });
@@ -24644,7 +24919,7 @@ function instance6($$self, $$props, $$invalidate) {
       await loadData();
       await openCategoryInCenterOnly(newCat);
     } catch (e) {
-      new import_obsidian12.Notice(`Failed to create list: ${e}`);
+      new import_obsidian13.Notice(`Failed to create list: ${e}`);
     } finally {
       isCommittingAddList = false;
     }
@@ -24670,7 +24945,7 @@ function instance6($$self, $$props, $$invalidate) {
       await dataService.createGroup(name);
       await loadData();
     } catch (e) {
-      new import_obsidian12.Notice(`Failed to create group: ${e}`);
+      new import_obsidian13.Notice(`Failed to create group: ${e}`);
     } finally {
       isCommittingAddGroup = false;
     }
@@ -24945,7 +25220,7 @@ function instance6($$self, $$props, $$invalidate) {
         e.preventDefault();
         e.stopPropagation();
         $$invalidate(20, isPickingDefaultFocus = false);
-        new import_obsidian12.Notice(t("focus_pick_cancelled"));
+        new import_obsidian13.Notice(t("focus_pick_cancelled"));
         return;
       }
       if (e.key === "Enter") {
@@ -25083,7 +25358,7 @@ function instance6($$self, $$props, $$invalidate) {
     if (plugin == null ? void 0 : plugin.settings) {
       $$invalidate(0, plugin.settings.defaultQuickListFocusFilepath = "", plugin);
       await plugin.saveSettings();
-      new import_obsidian12.Notice(t("focus_restored_default_notice"));
+      new import_obsidian13.Notice(t("focus_restored_default_notice"));
       applyInitialFocus();
     }
   };
@@ -25657,7 +25932,7 @@ var QuickListModalView = class extends SvelteComponent {
 var QuickListModalView_default = QuickListModalView;
 
 // src/modals/FocusedListsModal.ts
-var FocusedListsModal = class extends import_obsidian13.Modal {
+var FocusedListsModal = class extends import_obsidian14.Modal {
   constructor(app, plugin, dataService) {
     super(app);
     this.component = null;
@@ -25696,13 +25971,13 @@ var FocusedListsModal = class extends import_obsidian13.Modal {
 };
 
 // src/modals/BackupModal.ts
-var import_obsidian16 = require("obsidian");
+var import_obsidian17 = require("obsidian");
 
 // src/modals/BackupModalView.svelte
-var import_obsidian15 = require("obsidian");
+var import_obsidian16 = require("obsidian");
 
 // src/services/BackupService.ts
-var import_obsidian14 = require("obsidian");
+var import_obsidian15 = require("obsidian");
 var BackupService = class {
   static async ensureBackupFolder(app) {
     var _a, _b;
@@ -25724,9 +25999,9 @@ var BackupService = class {
     }
   }
   static getAbsoluteBackupFolderPath(app) {
-    if (app.vault.adapter instanceof import_obsidian14.FileSystemAdapter) {
+    if (app.vault.adapter instanceof import_obsidian15.FileSystemAdapter) {
       const base = app.vault.adapter.getBasePath();
-      const rel = (0, import_obsidian14.normalizePath)(this.BACKUP_FOLDER);
+      const rel = (0, import_obsidian15.normalizePath)(this.BACKUP_FOLDER);
       try {
         const path = window.require ? window.require("path") : null;
         if (path && path.resolve) {
@@ -25751,7 +26026,7 @@ var BackupService = class {
     } catch (e) {
       console.warn("[BackupService] Failed to open folder in OS:", e);
     }
-    new import_obsidian14.Notice(t("backup_dir", this.BACKUP_FOLDER));
+    new import_obsidian15.Notice(t("backup_dir", this.BACKUP_FOLDER));
   }
   static async collectFilesRecursively(app, folder) {
     const result = [];
@@ -25760,7 +26035,7 @@ var BackupService = class {
         return result;
       const listing = await app.vault.adapter.list(folder);
       for (const filePath of listing.files) {
-        const normPath = (0, import_obsidian14.normalizePath)(filePath);
+        const normPath = (0, import_obsidian15.normalizePath)(filePath);
         const fname = normPath.split("/").pop() || "";
         if (fname === "debug.log" || normPath.includes("/Backups/") || normPath.includes("/.backups/")) {
           continue;
@@ -25770,7 +26045,7 @@ var BackupService = class {
         }
       }
       for (const subFolder of listing.folders) {
-        const normFolder = (0, import_obsidian14.normalizePath)(subFolder);
+        const normFolder = (0, import_obsidian15.normalizePath)(subFolder);
         const folderName = normFolder.split("/").pop() || "";
         if (folderName === "Backups" || folderName === ".backups" || normFolder.includes("/Backups") || normFolder.includes("/.backups")) {
           continue;
@@ -25862,7 +26137,7 @@ var BackupService = class {
     const pad = (n) => n.toString().padStart(2, "0");
     for (const filePath of allFilePaths) {
       try {
-        const normPath = (0, import_obsidian14.normalizePath)(filePath);
+        const normPath = (0, import_obsidian15.normalizePath)(filePath);
         const content = await app.vault.adapter.read(normPath);
         const stat = await app.vault.adapter.stat(normPath);
         const parsed = JSON.parse(content);
@@ -25887,9 +26162,9 @@ var BackupService = class {
     return list;
   }
   static async restoreBackup(app, plugin, backupPath) {
-    const normPath = (0, import_obsidian14.normalizePath)(backupPath);
+    const normPath = (0, import_obsidian15.normalizePath)(backupPath);
     if (!await app.vault.adapter.exists(normPath)) {
-      new import_obsidian14.Notice(t("backup_file_not_found"));
+      new import_obsidian15.Notice(t("backup_file_not_found"));
       return false;
     }
     const raw = await app.vault.adapter.read(normPath);
@@ -25900,11 +26175,11 @@ var BackupService = class {
     try {
       const payload = JSON.parse(rawJson);
       if (!payload || typeof payload !== "object" || !payload.files) {
-        new import_obsidian14.Notice(t("backup_invalid_format"));
+        new import_obsidian15.Notice(t("backup_invalid_format"));
         return false;
       }
       for (const [relPath, content] of Object.entries(payload.files)) {
-        const normalized = (0, import_obsidian14.normalizePath)(relPath);
+        const normalized = (0, import_obsidian15.normalizePath)(relPath);
         const lastSlash = normalized.lastIndexOf("/");
         if (lastSlash > 0) {
           const folderPath = normalized.slice(0, lastSlash);
@@ -25914,27 +26189,27 @@ var BackupService = class {
         }
         await app.vault.adapter.write(normalized, content);
       }
-      new import_obsidian14.Notice(t("backup_restore_success", Object.keys(payload.files).length, (_a = payload.taskCount) != null ? _a : 0));
+      new import_obsidian15.Notice(t("backup_restore_success", Object.keys(payload.files).length, (_a = payload.taskCount) != null ? _a : 0));
       EventBus.emit("category:list-changed" /* CATEGORY_LIST_CHANGED */, {});
       return true;
     } catch (e) {
       console.error("[BackupService] Restore failed:", e);
-      new import_obsidian14.Notice(t("backup_restore_failed", String(e)));
+      new import_obsidian15.Notice(t("backup_restore_failed", String(e)));
       return false;
     }
   }
   static async deleteBackup(app, backupPath) {
-    const normPath = (0, import_obsidian14.normalizePath)(backupPath);
+    const normPath = (0, import_obsidian15.normalizePath)(backupPath);
     if (await app.vault.adapter.exists(normPath)) {
       await app.vault.adapter.remove(normPath);
-      new import_obsidian14.Notice(t("backup_deleted"));
+      new import_obsidian15.Notice(t("backup_deleted"));
     }
   }
   static async deleteAllBackups(app) {
     const backups = await this.getBackups(app);
     let deletedCount = 0;
     for (const b of backups) {
-      const normPath = (0, import_obsidian14.normalizePath)(b.filepath);
+      const normPath = (0, import_obsidian15.normalizePath)(b.filepath);
       try {
         if (await app.vault.adapter.exists(normPath)) {
           await app.vault.adapter.remove(normPath);
@@ -26797,7 +27072,7 @@ function instance7($$self, $$props, $$invalidate) {
     if (plugin == null ? void 0 : plugin.settings) {
       $$invalidate(15, plugin.settings.dailyBackupEnabled = dailyBackup, plugin);
       await plugin.saveSettings();
-      new import_obsidian15.Notice(dailyBackup ? t("daily_backup_enabled") : t("daily_backup_disabled"));
+      new import_obsidian16.Notice(dailyBackup ? t("daily_backup_enabled") : t("daily_backup_disabled"));
     }
   }
   async function handleBackupNow() {
@@ -26806,10 +27081,10 @@ function instance7($$self, $$props, $$invalidate) {
     $$invalidate(5, isBackingUp = true);
     try {
       const res = await BackupService.createBackup(app, plugin, false);
-      new import_obsidian15.Notice(t("data_saved_to", res.filepath));
+      new import_obsidian16.Notice(t("data_saved_to", res.filepath));
       await refreshBackups();
     } catch (e) {
-      new import_obsidian15.Notice(t("backup_failed", (e == null ? void 0 : e.message) || e));
+      new import_obsidian16.Notice(t("backup_failed", (e == null ? void 0 : e.message) || e));
     } finally {
       $$invalidate(5, isBackingUp = false);
     }
@@ -26868,7 +27143,7 @@ function instance7($$self, $$props, $$invalidate) {
       return;
     if (confirm(t("confirm_delete_all_backups", backups.length))) {
       const count = await BackupService.deleteAllBackups(app);
-      new import_obsidian15.Notice(t("all_backups_deleted", count));
+      new import_obsidian16.Notice(t("all_backups_deleted", count));
       await refreshBackups();
     }
   }
@@ -26921,7 +27196,7 @@ var BackupModalView = class extends SvelteComponent {
 var BackupModalView_default = BackupModalView;
 
 // src/modals/BackupModal.ts
-var BackupModal = class extends import_obsidian16.Modal {
+var BackupModal = class extends import_obsidian17.Modal {
   constructor(app, plugin, dataService) {
     super(app);
     this.component = null;
@@ -26951,8 +27226,8 @@ var BackupModal = class extends import_obsidian16.Modal {
 };
 
 // src/modals/MoveToSuggestModal.ts
-var import_obsidian17 = require("obsidian");
-var MoveToSuggestModal = class extends import_obsidian17.FuzzySuggestModal {
+var import_obsidian18 = require("obsidian");
+var MoveToSuggestModal = class extends import_obsidian18.FuzzySuggestModal {
   constructor(app, categories, onChoose) {
     super(app);
     this.categories = categories;
@@ -35345,7 +35620,7 @@ function create_if_block_93(ctx) {
   }
   let current_block_type = select_block_type_13(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block1 = current_block_type(ctx);
-  let if_block2 = show_if && create_if_block_123(ctx);
+  let if_block2 = show_if && create_if_block_124(ctx);
   let if_block3 = (
     /*lightboxData*/
     ctx[48].cleanPath && create_if_block_113(ctx)
@@ -35708,7 +35983,7 @@ function create_if_block_133(ctx) {
   function select_block_type_14(ctx2, dirty) {
     if (isChinese())
       return create_if_block_143;
-    return create_else_block_33;
+    return create_else_block_34;
   }
   let current_block_type = select_block_type_14(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block = current_block_type(ctx);
@@ -35741,7 +36016,7 @@ function create_if_block_133(ctx) {
     }
   };
 }
-function create_else_block_33(ctx) {
+function create_else_block_34(ctx) {
   let div0;
   let t2;
   let div1;
@@ -35937,7 +36212,7 @@ function create_if_block_143(ctx) {
     }
   };
 }
-function create_if_block_123(ctx) {
+function create_if_block_124(ctx) {
   let button;
   let button_title_value;
   let mounted;
@@ -37871,7 +38146,7 @@ function instance8($$self, $$props, $$invalidate) {
       appAny.setting.openTabById("community-plugins");
     }
     copyPluginName();
-    const NoticeCtor = window.Notice || import_obsidian18.Notice;
+    const NoticeCtor = window.Notice || import_obsidian19.Notice;
     new NoticeCtor(isChinese() ? "\u5DF2\u6253\u5F00\u793E\u533A\u63D2\u4EF6\u8BBE\u7F6E\uFF0C\u5E76\u5DF2\u590D\u5236\u300CSVG Quick Editor\u300D\u5230\u526A\u8D34\u677F\uFF0C\u8BF7\u70B9\u51FB\u201C\u6D4F\u89C8\u201D\u76F4\u63A5\u7C98\u8D34\u641C\u7D22\uFF01" : "Opened Community Plugins settings and copied 'SVG Quick Editor' to clipboard. Click 'Browse' and paste to search!");
     $$invalidate(53, showPluginDownloadModal = false);
   }
@@ -38124,7 +38399,7 @@ function instance8($$self, $$props, $$invalidate) {
     await cleanupSvgEmbedsInNotes(cleanPath);
     $$invalidate(50, showSvgDeleteConfirmModal = false);
     closeSvgLightbox();
-    const NoticeCtor = window.Notice || import_obsidian18.Notice;
+    const NoticeCtor = window.Notice || import_obsidian19.Notice;
     if (svgLinkedTaskCount > 0) {
       new NoticeCtor(isChinese() ? `SVG \u5DF2\u5220\u9664\u5E76\u89E3\u7ED1\u4EFB\u52A1: ${filename}` : `Deleted SVG and unlinked: ${filename}`);
     } else {
@@ -38463,13 +38738,13 @@ function instance8($$self, $$props, $$invalidate) {
   let hasComboModifierOrKey = false;
   let hoveredTitleTarget = null;
   function isControlKey(e) {
-    return import_obsidian18.Platform.isMacOS ? e.key === "Meta" || e.key === "Control" : e.key === "Control";
+    return import_obsidian19.Platform.isMacOS ? e.key === "Meta" || e.key === "Control" : e.key === "Control";
   }
   function isQuickPeekModifierPressed(e) {
     if (hasComboModifierOrKey || e.shiftKey || e.altKey) {
       return false;
     }
-    if (import_obsidian18.Platform.isMacOS) {
+    if (import_obsidian19.Platform.isMacOS) {
       return e.metaKey || e.ctrlKey;
     }
     return e.ctrlKey && !e.metaKey;
@@ -38513,7 +38788,7 @@ function instance8($$self, $$props, $$invalidate) {
       if (e.repeat)
         return;
       if (e.key === "ArrowLeft") {
-        const activeType = (_c2 = (_b2 = (_a2 = plugin == null ? void 0 : plugin.app) == null ? void 0 : _a2.workspace) == null ? void 0 : _b2.getActiveViewOfType(import_obsidian18.ItemView)) == null ? void 0 : _c2.getViewType();
+        const activeType = (_c2 = (_b2 = (_a2 = plugin == null ? void 0 : plugin.app) == null ? void 0 : _a2.workspace) == null ? void 0 : _b2.getActiveViewOfType(import_obsidian19.ItemView)) == null ? void 0 : _c2.getViewType();
         const isInsideMain = mainContainerEl && (mainContainerEl.contains(document.activeElement) || activeType === VIEW_TYPE_MAIN);
         if (isInsideMain) {
           e.preventDefault();
@@ -38522,7 +38797,7 @@ function instance8($$self, $$props, $$invalidate) {
           return;
         }
       } else if (e.key === "ArrowRight") {
-        const activeType = (_f2 = (_e2 = (_d2 = plugin == null ? void 0 : plugin.app) == null ? void 0 : _d2.workspace) == null ? void 0 : _e2.getActiveViewOfType(import_obsidian18.ItemView)) == null ? void 0 : _f2.getViewType();
+        const activeType = (_f2 = (_e2 = (_d2 = plugin == null ? void 0 : plugin.app) == null ? void 0 : _d2.workspace) == null ? void 0 : _e2.getActiveViewOfType(import_obsidian19.ItemView)) == null ? void 0 : _f2.getViewType();
         const isInsideMain = mainContainerEl && (mainContainerEl.contains(document.activeElement) || activeType === VIEW_TYPE_MAIN);
         if (isInsideMain) {
           e.preventDefault();
@@ -38533,9 +38808,9 @@ function instance8($$self, $$props, $$invalidate) {
       }
     }
     const isF = e.key === "f" || e.key === "F" || e.code === "KeyF";
-    const isMod = import_obsidian18.Platform.isMacOS ? e.metaKey || e.ctrlKey : e.ctrlKey && !e.metaKey;
+    const isMod = import_obsidian19.Platform.isMacOS ? e.metaKey || e.ctrlKey : e.ctrlKey && !e.metaKey;
     if (isMod && !e.shiftKey && !e.altKey && isF) {
-      const activeType = (_i2 = (_h2 = (_g2 = plugin == null ? void 0 : plugin.app) == null ? void 0 : _g2.workspace) == null ? void 0 : _h2.getActiveViewOfType(import_obsidian18.ItemView)) == null ? void 0 : _i2.getViewType();
+      const activeType = (_i2 = (_h2 = (_g2 = plugin == null ? void 0 : plugin.app) == null ? void 0 : _g2.workspace) == null ? void 0 : _h2.getActiveViewOfType(import_obsidian19.ItemView)) == null ? void 0 : _i2.getViewType();
       const isInsideMain = mainContainerEl && (mainContainerEl.contains(document.activeElement) || activeType === VIEW_TYPE_MAIN);
       if (isInsideMain) {
         e.preventDefault();
@@ -38681,7 +38956,7 @@ function instance8($$self, $$props, $$invalidate) {
           void Logger.log("[TaskMainView] openLinkText failed:", err);
         }
       } else {
-        new import_obsidian18.Notice(`Cannot find note in vault matching "${noteLink}"`);
+        new import_obsidian19.Notice(`Cannot find note in vault matching "${noteLink}"`);
       }
     }
   }
@@ -38783,7 +39058,7 @@ function instance8($$self, $$props, $$invalidate) {
     e.stopPropagation();
     e.preventDefault();
     const triggerEl = e.currentTarget;
-    const menu = new import_obsidian18.Menu();
+    const menu = new import_obsidian19.Menu();
     for (const badge of overflowBadges) {
       if (badge.type === "why") {
         const whyIdx = (_a2 = badge.index) != null ? _a2 : 0;
@@ -39190,7 +39465,7 @@ function instance8($$self, $$props, $$invalidate) {
       EventBus.emit("category:selected" /* CATEGORY_SELECTED */, { category: newCat });
     } catch (err) {
       console.error("[Fluent Tasks] Failed to rename list:", err);
-      new import_obsidian18.Notice(`Failed to rename list: ${(err == null ? void 0 : err.message) || err}`);
+      new import_obsidian19.Notice(`Failed to rename list: ${(err == null ? void 0 : err.message) || err}`);
     } finally {
       isCommittingCategoryRename = false;
       $$invalidate(23, isEditingCategoryName = false);
@@ -39604,7 +39879,7 @@ function instance8($$self, $$props, $$invalidate) {
       source: "main-view"
     });
     if (showNotice) {
-      new import_obsidian18.Notice(task.starred ? `Starred task: "${task.title}"` : `Removed star from: "${task.title}"`);
+      new import_obsidian19.Notice(task.starred ? `Starred task: "${task.title}"` : `Removed star from: "${task.title}"`);
     }
   }
   async function toggleStarByTaskId(taskId) {
@@ -39677,7 +39952,7 @@ function instance8($$self, $$props, $$invalidate) {
     if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || activeEl.isContentEditable)) {
       return;
     }
-    const activeType = (_c2 = (_b2 = (_a2 = plugin == null ? void 0 : plugin.app) == null ? void 0 : _a2.workspace) == null ? void 0 : _b2.getActiveViewOfType(import_obsidian18.ItemView)) == null ? void 0 : _c2.getViewType();
+    const activeType = (_c2 = (_b2 = (_a2 = plugin == null ? void 0 : plugin.app) == null ? void 0 : _a2.workspace) == null ? void 0 : _b2.getActiveViewOfType(import_obsidian19.ItemView)) == null ? void 0 : _c2.getViewType();
     const isInsideMain = mainContainerEl && (mainContainerEl.contains(activeEl) || activeType === VIEW_TYPE_MAIN);
     if (!isInsideMain)
       return;
@@ -39776,7 +40051,7 @@ function instance8($$self, $$props, $$invalidate) {
       e.preventDefault();
       e.stopPropagation();
     }
-    new import_obsidian18.Notice(t("main_view_search_all_tasks_hint") || "\u5982\u679C\u60F3\u8981\u641C\u7D22\u5168\u90E8\u4EFB\u52A1 (All tasks)\uFF0C\u8BF7\u5728 Obsidian\u3010\u8BBE\u7F6E -> \u5FEB\u6377\u952E\u3011\u4E2D\u4E3A\u672C\u63D2\u4EF6\u547D\u4EE4\u3010Search all tasks\u3011\u7ED1\u5B9A\u5FEB\u6377\u952E\u3002");
+    new import_obsidian19.Notice(t("main_view_search_all_tasks_hint") || "\u5982\u679C\u60F3\u8981\u641C\u7D22\u5168\u90E8\u4EFB\u52A1 (All tasks)\uFF0C\u8BF7\u5728 Obsidian\u3010\u8BBE\u7F6E -> \u5FEB\u6377\u952E\u3011\u4E2D\u4E3A\u672C\u63D2\u4EF6\u547D\u4EE4\u3010Search all tasks\u3011\u7ED1\u5B9A\u5FEB\u6377\u952E\u3002");
     searchInputEl == null ? void 0 : searchInputEl.focus();
   }
   async function openSearch() {
@@ -40135,7 +40410,7 @@ function instance8($$self, $$props, $$invalidate) {
         preDragIncompleteTasks = [];
         preDragCompletedTasks = [];
         killDndGhostElement();
-        const NoticeCtor = window.Notice || import_obsidian18.Notice;
+        const NoticeCtor = window.Notice || import_obsidian19.Notice;
         new NoticeCtor(
           isChinese() ? "\u26A0\uFE0F \u6743\u91CD\u6A21\u5F0F\u9650\u5236\uFF1A\u6570\u5B57\u8F83\u5C0F\u7684\u4EFB\u52A1\u4E0D\u80FD\u6392\u5728\u8F83\u5927\u4EFB\u52A1\u4E0A\u65B9\uFF01" : "\u26A0\uFE0F Weight mode: Smaller weight task cannot be placed above a larger weight task!",
           4e3
@@ -40188,7 +40463,7 @@ function instance8($$self, $$props, $$invalidate) {
         $$invalidate(6, completedTasks = [...completedTasks]);
         await dataService.updateTask(actualSource, task);
         EventBus.emit("task:updated" /* TASK_UPDATED */, { task, categoryFilepath: actualSource });
-        new import_obsidian18.Notice(isChinese() ? `\u5DF2\u661F\u6807\u4EFB\u52A1: "${task.title}"` : `Starred task: "${task.title}"`);
+        new import_obsidian19.Notice(isChinese() ? `\u5DF2\u661F\u6807\u4EFB\u52A1: "${task.title}"` : `Starred task: "${task.title}"`);
       }
       setTimeout(() => removeDndGhostShield(), ANTI_FLICKER_DURATION_MS);
       return;
@@ -40204,7 +40479,7 @@ function instance8($$self, $$props, $$invalidate) {
       sourcePath: actualSource,
       targetPath: targetCat.filepath
     });
-    new import_obsidian18.Notice(isChinese() ? `\u5DF2\u5C06\u4EFB\u52A1\u79FB\u52A8\u81F3 "${targetCat.name}"` : `Moved task to "${targetCat.name}"`);
+    new import_obsidian19.Notice(isChinese() ? `\u5DF2\u5C06\u4EFB\u52A1\u79FB\u52A8\u81F3 "${targetCat.name}"` : `Moved task to "${targetCat.name}"`);
     setTimeout(() => removeDndGhostShield(), ANTI_FLICKER_DURATION_MS);
   }
   let activeContextMenuCleanup = null;
@@ -40215,7 +40490,7 @@ function instance8($$self, $$props, $$invalidate) {
     if (activeContextMenuCleanup) {
       activeContextMenuCleanup();
     }
-    const menu = new import_obsidian18.Menu();
+    const menu = new import_obsidian19.Menu();
     const executeAddStep = () => {
       openStepsModal(task);
     };
@@ -40398,7 +40673,7 @@ function instance8($$self, $$props, $$invalidate) {
       selectedTaskIds.clear();
       $$invalidate(38, selectedTaskIds);
     } else {
-      new import_obsidian18.Notice(t("multi_select_mode_enabled"));
+      new import_obsidian19.Notice(t("multi_select_mode_enabled"));
     }
   }
   function openBackupModal() {
@@ -40467,7 +40742,7 @@ function instance8($$self, $$props, $$invalidate) {
     $$invalidate(5, incompleteTasks = [...incompleteTasks]);
     $$invalidate(6, completedTasks = [...completedTasks]);
     await dataService.saveTasks(currentCategory.filepath, [...incompleteTasks, ...completedTasks]);
-    new import_obsidian18.Notice(shouldStar ? t("batch_starred_tasks", selected.length) : t("batch_unstarred_tasks", selected.length));
+    new import_obsidian19.Notice(shouldStar ? t("batch_starred_tasks", selected.length) : t("batch_unstarred_tasks", selected.length));
   }
   async function handleBatchDelete() {
     if (!currentCategory || selectedTaskIds.size === 0)
@@ -40511,7 +40786,7 @@ function instance8($$self, $$props, $$invalidate) {
   function openHeaderMoreMenu(e) {
     e.preventDefault();
     e.stopPropagation();
-    const menu = new import_obsidian18.Menu();
+    const menu = new import_obsidian19.Menu();
     menu.addItem((item) => {
       item.setTitle(t("rename_list_menu_item") || "Rename list (F2)").setIcon("edit-3").onClick(() => {
         startRenameCategory();
@@ -41228,7 +41503,7 @@ var TaskMainView = class extends SvelteComponent {
 var TaskMainView_default = TaskMainView;
 
 // src/TaskDetailView.svelte
-var import_obsidian19 = require("obsidian");
+var import_obsidian20 = require("obsidian");
 var { Map: Map_13 } = globals;
 function add_css5(target) {
   append_styles(target, "svelte-399gjs", ".step-content-col.svelte-399gjs{flex:1;display:flex;flex-direction:column;min-width:0;gap:4px}.add-step-card.svelte-399gjs{display:flex;flex-direction:column;gap:6px}.title-right-actions.svelte-399gjs{display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:auto}.step-left-controls.svelte-399gjs{display:flex;align-items:center;gap:6px;flex-shrink:0}");
@@ -45955,7 +46230,7 @@ function create_if_block_213(ctx) {
       /*metaFormType*/
       ctx2[22] === "svg"
     )
-      return create_if_block_124;
+      return create_if_block_125;
     if (
       /*metaFormType*/
       ctx2[22] === "custom"
@@ -46368,7 +46643,7 @@ function create_if_block_193(ctx) {
     }
   };
 }
-function create_if_block_124(ctx) {
+function create_if_block_125(ctx) {
   let div;
   let span;
   let t0;
@@ -47498,7 +47773,7 @@ function create_if_block_134(ctx) {
       ctx2[268].srcUrl
     )
       return create_if_block_153;
-    return create_else_block_34;
+    return create_else_block_35;
   }
   let current_block_type = select_block_type_13(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block = current_block_type(ctx);
@@ -47643,7 +47918,7 @@ function create_if_block_134(ctx) {
     }
   };
 }
-function create_else_block_34(ctx) {
+function create_else_block_35(ctx) {
   let div;
   return {
     c() {
@@ -48803,87 +49078,17 @@ function instance9($$self, $$props, $$invalidate) {
   let copiedInfoRecently = false;
   let copiedInfoTimer = null;
   async function copyAllTaskInfo() {
-    var _a2, _b2;
     if (!task)
       return;
-    const sections = [];
-    if (task.title && task.title.trim()) {
-      sections.push(`<Title>
-${task.title.trim()}
-</Title>`);
-    }
-    if (task.steps && task.steps.length > 0) {
-      let itemIndex = 1;
-      for (const step of task.steps) {
-        let text2 = (step.text || "").trim();
-        if (step.images && step.images.length > 0) {
-          const imgText = step.images.map((img) => `![[${img}]]`).join("\n");
-          text2 = text2 ? `${text2}
-${imgText}` : imgText;
-        }
-        if (!text2)
-          continue;
-        const tag = step.done ? `Item_${itemIndex}_Excluded` : `Item_${itemIndex}`;
-        sections.push(`<${tag}>
-${text2}
-</${tag}>`);
-        itemIndex++;
-      }
-    }
-    let noteText = (task.note || "").trim();
-    if (task.images && task.images.length > 0) {
-      const noteImages = task.images.filter((img) => !noteText.includes(img)).map((img) => `![[${img}]]`).join("\n");
-      if (noteImages) {
-        noteText = noteText ? `${noteText}
-${noteImages}` : noteImages;
-      }
-    }
-    if (noteText) {
-      sections.push(`<Details>
-${noteText}
-</Details>`);
-    }
-    const whys = task.whys && task.whys.length > 0 ? task.whys.filter((w) => w && w.trim()) : task.why && task.why.trim() ? [task.why.trim()] : [];
-    if (whys.length > 0) {
-      sections.push(`<Why>
-${whys.join("\n")}
-</Why>`);
-    }
-    const linkedNotes = [];
-    if (task.task_note && task.task_note.trim())
-      linkedNotes.push(task.task_note.trim());
-    if (task.note_links && task.note_links.length > 0) {
-      for (const link of task.note_links) {
-        if (link && link.trim() && !linkedNotes.includes(link.trim())) {
-          linkedNotes.push(link.trim());
-        }
-      }
-    } else if (task.note_link && task.note_link.trim() && !linkedNotes.includes(task.note_link.trim())) {
-      linkedNotes.push(task.note_link.trim());
-    }
-    if (linkedNotes.length > 0) {
-      sections.push(`<LinkedNote>
-${linkedNotes.join("\n")}
-</LinkedNote>`);
-    }
-    if (task.dueDate && task.dueDate.trim()) {
-      sections.push(`<DueDate>
-${task.dueDate.trim()}
-</DueDate>`);
-    }
-    const formatted = sections.join("\n\n");
+    const formatted = formatTaskAsAiXml(task);
     if (!formatted)
       return;
     try {
-      if ((_a2 = navigator == null ? void 0 : navigator.clipboard) == null ? void 0 : _a2.writeText) {
-        await navigator.clipboard.writeText(formatted);
-      } else {
-        const electron = window.require ? window.require("electron") : void 0;
-        if ((_b2 = electron == null ? void 0 : electron.clipboard) == null ? void 0 : _b2.writeText) {
-          electron.clipboard.writeText(formatted);
-        }
+      const success = await copyTextToClipboard(formatted);
+      if (!success) {
+        throw new Error("Clipboard copy failed");
       }
-      new import_obsidian19.Notice(t("copy_task_info_success") || "Copied all task info to clipboard / \u5DF2\u590D\u5236\u5168\u90E8\u4FE1\u606F\u81F3\u526A\u8D34\u677F");
+      new import_obsidian20.Notice(t("copy_task_info_success") || "Copied all task info to clipboard / \u5DF2\u590D\u5236\u5168\u90E8\u4FE1\u606F\u81F3\u526A\u8D34\u677F");
       $$invalidate(16, copiedInfoRecently = true);
       if (copiedInfoTimer)
         clearTimeout(copiedInfoTimer);
@@ -48895,7 +49100,7 @@ ${task.dueDate.trim()}
       );
     } catch (err) {
       Logger.error("Failed to copy task info to clipboard", err);
-      new import_obsidian19.Notice("Failed to copy / \u590D\u5236\u5931\u8D25");
+      new import_obsidian20.Notice("Failed to copy / \u590D\u5236\u5931\u8D25");
     }
   }
   function getScheduleBadge(t2) {
@@ -49662,7 +49867,7 @@ ${task.dueDate.trim()}
         $$invalidate(5, task);
         await immediateSave();
         await LinkedNoteService.openLinkedNoteFile(plugin.app, res.file);
-        new import_obsidian19.Notice(t("task_note_recreated", res.file.basename));
+        new import_obsidian20.Notice(t("task_note_recreated", res.file.basename));
         if (isModal) {
           closePanel();
         }
@@ -49673,7 +49878,7 @@ ${task.dueDate.trim()}
       $$invalidate(5, task);
       await immediateSave();
       await LinkedNoteService.openLinkedNoteFile(plugin.app, res.file);
-      new import_obsidian19.Notice(t("task_note_created", res.file.basename));
+      new import_obsidian20.Notice(t("task_note_created", res.file.basename));
       if (isModal) {
         closePanel();
       }
@@ -49684,7 +49889,7 @@ ${task.dueDate.trim()}
       return;
     e.preventDefault();
     e.stopPropagation();
-    const menu = new import_obsidian19.Menu();
+    const menu = new import_obsidian20.Menu();
     menu.addItem((item) => {
       item.setTitle(t("open_task_note")).setIcon("file-text").onClick(() => {
         void handleTaskNoteClick(e);
@@ -49700,7 +49905,7 @@ ${task.dueDate.trim()}
         }
         $$invalidate(5, task);
         await immediateSave();
-        new import_obsidian19.Notice(t("unlink_task_note_success"));
+        new import_obsidian20.Notice(t("unlink_task_note_success"));
       });
     });
     menu.showAtMouseEvent(e);
@@ -50202,7 +50407,7 @@ ${task.dueDate.trim()}
     const file = LinkedNoteService.resolveLinkedNoteFile(plugin.app, val, categoryFilepath);
     if (file) {
       await LinkedNoteService.openLinkedNoteFile(plugin.app, file);
-      new import_obsidian19.Notice(`Opened note: ${file.basename}`);
+      new import_obsidian20.Notice(`Opened note: ${file.basename}`);
     } else {
       const clean = LinkedNoteService.sanitizeLinkpath(val);
       if (clean && !clean.includes(":")) {
@@ -50213,7 +50418,7 @@ ${task.dueDate.trim()}
           void Logger.log("[TaskDetail] openLinkText failed:", e);
         }
       }
-      new import_obsidian19.Notice(`Cannot find note in vault matching "${val.trim()}"`);
+      new import_obsidian20.Notice(`Cannot find note in vault matching "${val.trim()}"`);
     }
   }
   async function saveMetadata() {
@@ -50401,22 +50606,22 @@ ${task.dueDate.trim()}
     if (!file && plugin.app.vault) {
       file = plugin.app.vault.getAbstractFileByPath(cleanPath);
     }
-    return file instanceof import_obsidian19.TFile ? file : null;
+    return file instanceof import_obsidian20.TFile ? file : null;
   }
   async function trashSourceFile(file) {
     var _a2;
     if (!file) {
-      new import_obsidian19.Notice("\u5185\u8054 SVG \u65E0\u7269\u7406\u6E90\u6587\u4EF6\uFF0C\u4EC5\u4ECE\u4EFB\u52A1\u5143\u6570\u636E\u4E2D\u79FB\u9664");
+      new import_obsidian20.Notice("\u5185\u8054 SVG \u65E0\u7269\u7406\u6E90\u6587\u4EF6\uFF0C\u4EC5\u4ECE\u4EFB\u52A1\u5143\u6570\u636E\u4E2D\u79FB\u9664");
       return;
     }
     if (!((_a2 = plugin == null ? void 0 : plugin.app) == null ? void 0 : _a2.fileManager))
       return;
     try {
       await plugin.app.fileManager.trashFile(file);
-      new import_obsidian19.Notice(`\u5DF2\u5C06\u6E90\u6587\u4EF6\u79FB\u81F3\u5E9F\u7EB8\u7BD3: ${file.name}`);
+      new import_obsidian20.Notice(`\u5DF2\u5C06\u6E90\u6587\u4EF6\u79FB\u81F3\u5E9F\u7EB8\u7BD3: ${file.name}`);
     } catch (err) {
       console.error("Failed to trash file:", err);
-      new import_obsidian19.Notice(`\u79FB\u81F3\u5E9F\u7EB8\u7BD3\u5931\u8D25: ${(err == null ? void 0 : err.message) || err}`);
+      new import_obsidian20.Notice(`\u79FB\u81F3\u5E9F\u7EB8\u7BD3\u5931\u8D25: ${(err == null ? void 0 : err.message) || err}`);
     }
   }
   async function deleteSvgWithSourceFile(idx) {
@@ -50473,7 +50678,7 @@ ${task.dueDate.trim()}
     });
     $$invalidate(5, task = null);
     $$invalidate(7, categoryFilepath = "");
-    new import_obsidian19.Notice("\u5DF2\u76F4\u63A5\u5220\u9664\u4EFB\u52A1\u53CA\u6E90\u6587\u4EF6\u81F3\u5E9F\u7EB8\u7BD3");
+    new import_obsidian20.Notice("\u5DF2\u76F4\u63A5\u5220\u9664\u4EFB\u52A1\u53CA\u6E90\u6587\u4EF6\u81F3\u5E9F\u7EB8\u7BD3");
   }
   function handleOpenSvgFile(resolved) {
     if (!resolved.isInline && resolved.cleanPath && (plugin == null ? void 0 : plugin.app)) {
@@ -51059,7 +51264,7 @@ var TaskDetailView = class extends SvelteComponent {
 var TaskDetailView_default = TaskDetailView;
 
 // src/UndoToastContainer.svelte
-var import_obsidian20 = require("obsidian");
+var import_obsidian21 = require("obsidian");
 function get_each_context8(ctx, list, i) {
   const child_ctx = ctx.slice();
   child_ctx[18] = list[i];
@@ -51439,10 +51644,10 @@ function instance10($$self, $$props, $$invalidate) {
       const { categoryName, categoryFilepath, fileContent, groupName, index } = toast.categoryPayload;
       try {
         await dataService.restoreCategory(categoryName, categoryFilepath, fileContent, groupName, index);
-        new import_obsidian20.Notice(`Restored list: "${formatToastTitle(categoryName)}"`);
+        new import_obsidian21.Notice(`Restored list: "${formatToastTitle(categoryName)}"`);
       } catch (err) {
         console.error("Failed to restore list:", err);
-        new import_obsidian20.Notice("Failed to undo list deletion.");
+        new import_obsidian21.Notice("Failed to undo list deletion.");
       }
       return;
     }
@@ -51485,10 +51690,10 @@ function instance10($$self, $$props, $$invalidate) {
           categoryFilepath,
           isExternal: true
         });
-        new import_obsidian20.Notice(`Restored step: "${formatToastTitle(step.text)}"`);
+        new import_obsidian21.Notice(`Restored step: "${formatToastTitle(step.text)}"`);
       } catch (err) {
         console.error("Failed to restore step:", err);
-        new import_obsidian20.Notice("Failed to undo step deletion.");
+        new import_obsidian21.Notice("Failed to undo step deletion.");
       }
       return;
     }
@@ -51566,10 +51771,10 @@ function instance10($$self, $$props, $$invalidate) {
             }
           }
         }
-        new import_obsidian20.Notice(newRestores.length === 1 ? `Restored: "${formatToastTitle(newRestores[0].title)}"` : `Restored ${newRestores.length} tasks`);
+        new import_obsidian21.Notice(newRestores.length === 1 ? `Restored: "${formatToastTitle(newRestores[0].title)}"` : `Restored ${newRestores.length} tasks`);
       } catch (err) {
         console.error("Failed to restore task(s):", err);
-        new import_obsidian20.Notice("Failed to undo task deletion.");
+        new import_obsidian21.Notice("Failed to undo task deletion.");
       }
     }
   }
@@ -51976,7 +52181,7 @@ var HistoryToastContainer = class extends SvelteComponent {
 var HistoryToastContainer_default = HistoryToastContainer;
 
 // src/services/HistoryService.ts
-var import_obsidian21 = require("obsidian");
+var import_obsidian22 = require("obsidian");
 function deepCloneTask(task) {
   return JSON.parse(JSON.stringify(task));
 }
@@ -52299,7 +52504,7 @@ var _HistoryService = class _HistoryService {
       return true;
     } catch (err) {
       console.error("[FluentTasks] Error executing undo:", err);
-      new import_obsidian21.Notice("Failed to undo action.");
+      new import_obsidian22.Notice("Failed to undo action.");
       return false;
     } finally {
       this.isUndoingOrRedoing = false;
@@ -52361,7 +52566,7 @@ var _HistoryService = class _HistoryService {
       return true;
     } catch (err) {
       console.error("[FluentTasks] Error executing redo:", err);
-      new import_obsidian21.Notice("Failed to redo action.");
+      new import_obsidian22.Notice("Failed to redo action.");
       return false;
     } finally {
       this.isUndoingOrRedoing = false;
@@ -52378,7 +52583,7 @@ _HistoryService.MERGE_WINDOW_MS = 2500;
 var HistoryService = _HistoryService;
 
 // src/settings.ts
-var import_obsidian22 = require("obsidian");
+var import_obsidian23 = require("obsidian");
 var DEFAULT_SETTINGS = {
   accentColor: "#8b5cf6",
   openDetailInModal: false,
@@ -52415,7 +52620,7 @@ var DEFAULT_SETTINGS = {
   focusedLists: [],
   taskSeparatorWidth: 60
 };
-var FluentTasksSettingTab = class extends import_obsidian22.PluginSettingTab {
+var FluentTasksSettingTab = class extends import_obsidian23.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
     this.plugin = plugin;
@@ -52423,8 +52628,8 @@ var FluentTasksSettingTab = class extends import_obsidian22.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    new import_obsidian22.Setting(containerEl).setHeading().setName(t("settings_section_appearance") || "Appearance & Accent");
-    const colorSetting = new import_obsidian22.Setting(containerEl).setName(t("setting_accent_color_title") || "Appearance: Accent Color").setDesc(t("setting_accent_color_desc") || "Choose the primary accent color for the plugin (e.g., active borders, stars).").addColorPicker((color) => color.setValue(this.plugin.settings.accentColor).onChange(async (value) => {
+    new import_obsidian23.Setting(containerEl).setHeading().setName(t("settings_section_appearance") || "Appearance & Accent");
+    const colorSetting = new import_obsidian23.Setting(containerEl).setName(t("setting_accent_color_title") || "Appearance: Accent Color").setDesc(t("setting_accent_color_desc") || "Choose the primary accent color for the plugin (e.g., active borders, stars).").addColorPicker((color) => color.setValue(this.plugin.settings.accentColor).onChange(async (value) => {
       this.plugin.settings.accentColor = value;
       await this.plugin.saveSettings();
       this.plugin.applySettings();
@@ -52438,36 +52643,36 @@ var FluentTasksSettingTab = class extends import_obsidian22.PluginSettingTab {
         this.plugin.applySettings();
       });
     }
-    new import_obsidian22.Setting(containerEl).setName(t("setting_list_title_size_title") || "Appearance: List Title Font Size").setDesc(t("setting_list_title_size_desc") || "Choose the font size of the active list title in the main view (default: Medium 22px).").addDropdown((dropdown) => {
+    new import_obsidian23.Setting(containerEl).setName(t("setting_list_title_size_title") || "Appearance: List Title Font Size").setDesc(t("setting_list_title_size_desc") || "Choose the font size of the active list title in the main view (default: Medium 22px).").addDropdown((dropdown) => {
       var _a;
       return dropdown.addOption("small", "Small (18px)").addOption("medium", "Medium (22px)").addOption("large", "Large (28px - Classic)").setValue((_a = this.plugin.settings.mainListTitleSize) != null ? _a : "medium").onChange(async (value) => {
         this.plugin.settings.mainListTitleSize = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName(t("setting_show_list_title_header_title") || "Appearance: Show List Title in Top Header").setDesc(t("setting_show_list_title_header_desc") || "Display the active list title in the pane's top navigation bar (replacing 'Tasks') with accent color, hiding the large in-body title to maximize vertical reading space.").addToggle((toggle) => {
+    new import_obsidian23.Setting(containerEl).setName(t("setting_show_list_title_header_title") || "Appearance: Show List Title in Top Header").setDesc(t("setting_show_list_title_header_desc") || "Display the active list title in the pane's top navigation bar (replacing 'Tasks') with accent color, hiding the large in-body title to maximize vertical reading space.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.showListTitleInHeader) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.showListTitleInHeader = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName(t("setting_focused_lists_title") || "Appearance: Focused Lists").setDesc(t("setting_focused_lists_desc") || "Display focused list shortcuts and a quick selector next to the list title in the header. Disabled by default.").addToggle((toggle) => {
+    new import_obsidian23.Setting(containerEl).setName(t("setting_focused_lists_title") || "Appearance: Focused Lists").setDesc(t("setting_focused_lists_desc") || "Display focused list shortcuts and a quick selector next to the list title in the header. Disabled by default.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.enableFocusedLists) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.enableFocusedLists = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setHeading().setName(t("settings_section_task_list") || "Task List & Layout");
-    new import_obsidian22.Setting(containerEl).setName(t("setting_center_align_title") || "Task List: Center-Align Tasks").setDesc(t("setting_center_align_desc") || "Display task titles, steps, and metadata centered in the task list and modals. Enabled by default.").addToggle((toggle) => {
+    new import_obsidian23.Setting(containerEl).setHeading().setName(t("settings_section_task_list") || "Task List & Layout");
+    new import_obsidian23.Setting(containerEl).setName(t("setting_center_align_title") || "Task List: Center-Align Tasks").setDesc(t("setting_center_align_desc") || "Display task titles, steps, and metadata centered in the task list and modals. Enabled by default.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.centerAlignTasks) != null ? _a : true).onChange(async (value) => {
         this.plugin.settings.centerAlignTasks = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName(t("setting_task_separator_width_title") || "Task List: Separator Line Width").setDesc(t("setting_task_separator_width_desc") || "Adjust the horizontal width percentage of the subtle hairline gradient separator between tasks (0% to 100%, 0% hides the line, default: 60%).").addSlider((slider) => {
+    new import_obsidian23.Setting(containerEl).setName(t("setting_task_separator_width_title") || "Task List: Separator Line Width").setDesc(t("setting_task_separator_width_desc") || "Adjust the horizontal width percentage of the subtle hairline gradient separator between tasks (0% to 100%, 0% hides the line, default: 60%).").addSlider((slider) => {
       var _a;
       return slider.setLimits(0, 100, 5).setValue((_a = this.plugin.settings.taskSeparatorWidth) != null ? _a : 60).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.taskSeparatorWidth = value;
@@ -52475,14 +52680,14 @@ var FluentTasksSettingTab = class extends import_obsidian22.PluginSettingTab {
         this.plugin.applySettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName(t("setting_wrap_titles_title") || "Task List: Wrap Task Titles").setDesc(t("setting_wrap_titles_desc") || "Wrap long task titles across multiple lines in the task list instead of truncating with ellipsis.").addToggle((toggle) => {
+    new import_obsidian23.Setting(containerEl).setName(t("setting_wrap_titles_title") || "Task List: Wrap Task Titles").setDesc(t("setting_wrap_titles_desc") || "Wrap long task titles across multiple lines in the task list instead of truncating with ellipsis.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.wrapTaskTitles) != null ? _a : true).onChange(async (value) => {
         this.plugin.settings.wrapTaskTitles = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName(t("setting_hidden_star_title") || "Task List: Hidden Star Mode").setDesc(t("setting_hidden_star_desc") || "Hide the star (favorite) icon on tasks in the task list and modals, while still allowing starring via task context menu (first item) or hover hotkey. Disabled by default.").addToggle((toggle) => {
+    new import_obsidian23.Setting(containerEl).setName(t("setting_hidden_star_title") || "Task List: Hidden Star Mode").setDesc(t("setting_hidden_star_desc") || "Hide the star (favorite) icon on tasks in the task list and modals, while still allowing starring via task context menu (first item) or hover hotkey. Disabled by default.").addToggle((toggle) => {
       var _a, _b;
       return toggle.setValue((_b = (_a = this.plugin.settings.hiddenStarMode) != null ? _a : this.plugin.settings.disableStars) != null ? _b : false).onChange(async (value) => {
         this.plugin.settings.hiddenStarMode = value;
@@ -52490,15 +52695,15 @@ var FluentTasksSettingTab = class extends import_obsidian22.PluginSettingTab {
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName(t("setting_task_weight_title") || "Task List: Task Weight Mode").setDesc(t("setting_task_weight_desc") || "Enable 1-9 priority score ranking for tasks (9 is highest, default is 5). When enabled, tasks are dynamically prioritized by weight. Use mouse wheel or click the badge to edit the weight directly.").addToggle((toggle) => {
+    new import_obsidian23.Setting(containerEl).setName(t("setting_task_weight_title") || "Task List: Task Weight Mode").setDesc(t("setting_task_weight_desc") || "Enable 1-9 priority score ranking for tasks (9 is highest, default is 5). When enabled, tasks are dynamically prioritized by weight. Use mouse wheel or click the badge to edit the weight directly.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.enableTaskWeightMode) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.enableTaskWeightMode = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setHeading().setName(t("settings_section_task_detail") || "Task Details & Subtasks");
-    new import_obsidian22.Setting(containerEl).setName(t("setting_open_detail_modal_title") || "Task Details: Open in Floating Modal").setDesc(t("setting_open_detail_modal_desc") || "Open task details in a centered floating modal instead of expanding the right sidebar panel.").addToggle((toggle) => {
+    new import_obsidian23.Setting(containerEl).setHeading().setName(t("settings_section_task_detail") || "Task Details & Subtasks");
+    new import_obsidian23.Setting(containerEl).setName(t("setting_open_detail_modal_title") || "Task Details: Open in Floating Modal").setDesc(t("setting_open_detail_modal_desc") || "Open task details in a centered floating modal instead of expanding the right sidebar panel.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.openDetailInModal) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.openDetailInModal = value;
@@ -52512,7 +52717,7 @@ var FluentTasksSettingTab = class extends import_obsidian22.PluginSettingTab {
         }
       });
     });
-    new import_obsidian22.Setting(containerEl).setName(t("setting_fullscreen_detail_modal_title") || "Task Details: Full-Screen Modal").setDesc(t("setting_fullscreen_detail_modal_desc") || "Open floating task details modal in full-screen mode (similar to Subtasks modal). When disabled, displays as a centered window card.").addToggle((toggle) => {
+    new import_obsidian23.Setting(containerEl).setName(t("setting_fullscreen_detail_modal_title") || "Task Details: Full-Screen Modal").setDesc(t("setting_fullscreen_detail_modal_desc") || "Open floating task details modal in full-screen mode (similar to Subtasks modal). When disabled, displays as a centered window card.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.fullscreenDetailModal) != null ? _a : true).onChange(async (value) => {
         this.plugin.settings.fullscreenDetailModal = value;
@@ -52522,79 +52727,79 @@ var FluentTasksSettingTab = class extends import_obsidian22.PluginSettingTab {
         }
       });
     });
-    new import_obsidian22.Setting(containerEl).setName(t("setting_collapse_completed_steps_title") || "Task Details: Collapse Completed Subtasks in Floating Modal").setDesc(t("setting_collapse_completed_steps_desc") || "When enabled, completed checklist steps in the floating details modal automatically collapse into a compact single-line preview that can be clicked to expand. When disabled, completed steps remain fully expanded.").addToggle((toggle) => {
+    new import_obsidian23.Setting(containerEl).setName(t("setting_collapse_completed_steps_title") || "Task Details: Collapse Completed Subtasks in Floating Modal").setDesc(t("setting_collapse_completed_steps_desc") || "When enabled, completed checklist steps in the floating details modal automatically collapse into a compact single-line preview that can be clicked to expand. When disabled, completed steps remain fully expanded.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.collapseCompletedSteps) != null ? _a : true).onChange(async (value) => {
         this.plugin.settings.collapseCompletedSteps = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName(t("setting_show_steps_progress_title") || "Task Details: Show Subtasks Progress Badge").setDesc(t("setting_show_steps_progress_desc") || "Display step completion progress badge (e.g. 0/3 steps completed) at the bottom of the subtasks floating modal. Disabled by default.").addToggle((toggle) => {
+    new import_obsidian23.Setting(containerEl).setName(t("setting_show_steps_progress_title") || "Task Details: Show Subtasks Progress Badge").setDesc(t("setting_show_steps_progress_desc") || "Display step completion progress badge (e.g. 0/3 steps completed) at the bottom of the subtasks floating modal. Disabled by default.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.showStepsProgressPill) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.showStepsProgressPill = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setHeading().setName(t("settings_section_quick_list") || "Quick List Board Modal");
-    new import_obsidian22.Setting(containerEl).setName(t("setting_quick_list_grid_title") || "Quick List: Grid Board Layout").setDesc(t("setting_quick_list_grid_desc") || "Tile lists and groups across multi-column cards like a dashboard chart to fully display lists in the available screen space without scrolling. Turn off to revert to the classic single-column list.").addToggle((toggle) => {
+    new import_obsidian23.Setting(containerEl).setHeading().setName(t("settings_section_quick_list") || "Quick List Board Modal");
+    new import_obsidian23.Setting(containerEl).setName(t("setting_quick_list_grid_title") || "Quick List: Grid Board Layout").setDesc(t("setting_quick_list_grid_desc") || "Tile lists and groups across multi-column cards like a dashboard chart to fully display lists in the available screen space without scrolling. Turn off to revert to the classic single-column list.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.quickListGridLayout) != null ? _a : true).onChange(async (value) => {
         this.plugin.settings.quickListGridLayout = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName(t("setting_quick_list_card_width_title") || "Quick List: Max Card Width").setDesc(t("setting_quick_list_card_width_desc") || "Maximum width (in px) for cards in the Quick List grid board layout. Prevents excessive horizontal empty space on large displays (default: 380px).").addSlider((slider) => {
+    new import_obsidian23.Setting(containerEl).setName(t("setting_quick_list_card_width_title") || "Quick List: Max Card Width").setDesc(t("setting_quick_list_card_width_desc") || "Maximum width (in px) for cards in the Quick List grid board layout. Prevents excessive horizontal empty space on large displays (default: 380px).").addSlider((slider) => {
       var _a;
       return slider.setLimits(220, 600, 10).setValue((_a = this.plugin.settings.quickListMaxCardWidth) != null ? _a : 380).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.quickListMaxCardWidth = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName(t("setting_quick_list_col_gap_title") || "Quick List: Min Column Gap").setDesc(t("setting_quick_list_col_gap_desc") || "Minimum horizontal gap (in px) between columns in the Quick List grid board layout (default: 14px).").addSlider((slider) => {
+    new import_obsidian23.Setting(containerEl).setName(t("setting_quick_list_col_gap_title") || "Quick List: Min Column Gap").setDesc(t("setting_quick_list_col_gap_desc") || "Minimum horizontal gap (in px) between columns in the Quick List grid board layout (default: 14px).").addSlider((slider) => {
       var _a;
       return slider.setLimits(8, 64, 2).setValue((_a = this.plugin.settings.quickListMinColGap) != null ? _a : 14).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.quickListMinColGap = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName(t("setting_quick_list_row_gap_title") || "Quick List: Min Row Gap").setDesc(t("setting_quick_list_row_gap_desc") || "Minimum vertical gap (in px) between stacked cards within the same column (default: 10px).").addSlider((slider) => {
+    new import_obsidian23.Setting(containerEl).setName(t("setting_quick_list_row_gap_title") || "Quick List: Min Row Gap").setDesc(t("setting_quick_list_row_gap_desc") || "Minimum vertical gap (in px) between stacked cards within the same column (default: 10px).").addSlider((slider) => {
       var _a;
       return slider.setLimits(6, 48, 2).setValue((_a = this.plugin.settings.quickListMinRowGap) != null ? _a : 10).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.quickListMinRowGap = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName(t("setting_quick_list_focus_center_title") || "Quick List: Focus Center List on Open").setDesc(t("setting_quick_list_focus_center_desc") || "Automatically focus the visually centered list when opening the Quick List board instead of the top-left list, enabling immediate multi-directional arrow navigation.").addToggle((toggle) => {
+    new import_obsidian23.Setting(containerEl).setName(t("setting_quick_list_focus_center_title") || "Quick List: Focus Center List on Open").setDesc(t("setting_quick_list_focus_center_desc") || "Automatically focus the visually centered list when opening the Quick List board instead of the top-left list, enabling immediate multi-directional arrow navigation.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.quickListFocusCenter) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.quickListFocusCenter = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName(t("setting_quick_list_search_mode_title") || "Quick List: Search Mode").setDesc(t("setting_quick_list_search_mode_desc") || "Choose whether the search bar in the Quick List modal searches lists or tasks by default.").addDropdown((dropdown) => {
+    new import_obsidian23.Setting(containerEl).setName(t("setting_quick_list_search_mode_title") || "Quick List: Search Mode").setDesc(t("setting_quick_list_search_mode_desc") || "Choose whether the search bar in the Quick List modal searches lists or tasks by default.").addDropdown((dropdown) => {
       var _a;
       return dropdown.addOption("list", "Search Lists").addOption("task", "Search Tasks").setValue((_a = this.plugin.settings.quickListSearchMode) != null ? _a : "list").onChange(async (value) => {
         this.plugin.settings.quickListSearchMode = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName(t("setting_quick_list_title_align_title") || "Quick List: Title Alignment").setDesc(t("setting_quick_list_title_align_desc") || "Choose whether list and group titles in the Quick List modal are centered or aligned to the left.").addDropdown((dropdown) => {
+    new import_obsidian23.Setting(containerEl).setName(t("setting_quick_list_title_align_title") || "Quick List: Title Alignment").setDesc(t("setting_quick_list_title_align_desc") || "Choose whether list and group titles in the Quick List modal are centered or aligned to the left.").addDropdown((dropdown) => {
       var _a;
       return dropdown.addOption("center", "Center (Default)").addOption("left", "Left").setValue((_a = this.plugin.settings.quickListTitleAlignment) != null ? _a : "center").onChange(async (value) => {
         this.plugin.settings.quickListTitleAlignment = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName(t("setting_quick_task_action_title") || "Quick List: Quick Task Modal Action").setDesc(t("setting_quick_task_action_desc") || "Choose whether selecting a task/list in the Quick Task Modal manages it directly in the popup or navigates and reveals it in the main workspace.").addDropdown((dropdown) => {
+    new import_obsidian23.Setting(containerEl).setName(t("setting_quick_task_action_title") || "Quick List: Quick Task Modal Action").setDesc(t("setting_quick_task_action_desc") || "Choose whether selecting a task/list in the Quick Task Modal manages it directly in the popup or navigates and reveals it in the main workspace.").addDropdown((dropdown) => {
       var _a;
       return dropdown.addOption("direct", "Direct In-Modal Management (Toggle & Add in popup)").addOption("navigate", "Navigate Workspace (Open list & details in workspace)").setValue((_a = this.plugin.settings.quickModalAction) != null ? _a : "direct").onChange(async (value) => {
         this.plugin.settings.quickModalAction = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setHeading().setName(t("settings_section_sidebar") || "Sidebar Behavior");
-    new import_obsidian22.Setting(containerEl).setName(t("setting_hide_left_sidebar_title") || "Sidebar: Hide Left Sidebar (Floating UI Mode)").setDesc(t("setting_hide_left_sidebar_desc") || "Hide the left sidebar list view completely. Navigate lists using the Quick List Floating UI (modal). Recommended to bind a hotkey for quick access.").addToggle((toggle) => {
+    new import_obsidian23.Setting(containerEl).setHeading().setName(t("settings_section_sidebar") || "Sidebar Behavior");
+    new import_obsidian23.Setting(containerEl).setName(t("setting_hide_left_sidebar_title") || "Sidebar: Hide Left Sidebar (Floating UI Mode)").setDesc(t("setting_hide_left_sidebar_desc") || "Hide the left sidebar list view completely. Navigate lists using the Quick List Floating UI (modal). Recommended to bind a hotkey for quick access.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.hideLeftSidebar) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.hideLeftSidebar = value;
@@ -52603,37 +52808,37 @@ var FluentTasksSettingTab = class extends import_obsidian22.PluginSettingTab {
         await this.plugin.handleHideLeftSidebarChanged(value);
       });
     });
-    new import_obsidian22.Setting(containerEl).setName(t("setting_auto_expand_sidebar_on_drag_title") || "Sidebar: Auto-Expand on Task Drag").setDesc(t("setting_auto_expand_sidebar_on_drag_desc") || "Temporarily expand the left sidebar when dragging a task to easily move it to other lists, and auto-collapse on release (if it was collapsed). If the sidebar is already open with Fluent Tasks, it only reveals the list.").addToggle((toggle) => {
+    new import_obsidian23.Setting(containerEl).setName(t("setting_auto_expand_sidebar_on_drag_title") || "Sidebar: Auto-Expand on Task Drag").setDesc(t("setting_auto_expand_sidebar_on_drag_desc") || "Temporarily expand the left sidebar when dragging a task to easily move it to other lists, and auto-collapse on release (if it was collapsed). If the sidebar is already open with Fluent Tasks, it only reveals the list.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.autoExpandSidebarOnDrag) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.autoExpandSidebarOnDrag = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName(t("setting_auto_expand_focus_title") || "Sidebar: Auto-Expand on Tab Focus").setDesc(t("setting_auto_expand_focus_desc") || "Automatically expand the left sidebar list panel when switching to Fluent Tasks tab (via Ctrl+Tab, Ctrl+Shift+Tab, or clicking the tab).").addToggle((toggle) => toggle.setValue(this.plugin.settings.autoExpandSidebar).onChange(async (value) => {
+    new import_obsidian23.Setting(containerEl).setName(t("setting_auto_expand_focus_title") || "Sidebar: Auto-Expand on Tab Focus").setDesc(t("setting_auto_expand_focus_desc") || "Automatically expand the left sidebar list panel when switching to Fluent Tasks tab (via Ctrl+Tab, Ctrl+Shift+Tab, or clicking the tab).").addToggle((toggle) => toggle.setValue(this.plugin.settings.autoExpandSidebar).onChange(async (value) => {
       this.plugin.settings.autoExpandSidebar = value;
       await this.plugin.saveSettings();
     }));
-    new import_obsidian22.Setting(containerEl).setName(t("setting_auto_collapse_switch_title") || "Sidebar: Auto-Collapse on Tab Switch").setDesc(t("setting_auto_collapse_switch_desc") || "Automatically collapse the sidebar when switching away to other tabs (notes, settings) if the sidebar is currently displaying Fluent Tasks.").addToggle((toggle) => {
+    new import_obsidian23.Setting(containerEl).setName(t("setting_auto_collapse_switch_title") || "Sidebar: Auto-Collapse on Tab Switch").setDesc(t("setting_auto_collapse_switch_desc") || "Automatically collapse the sidebar when switching away to other tabs (notes, settings) if the sidebar is currently displaying Fluent Tasks.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.autoCollapseSidebarOnSwitch) != null ? _a : true).onChange(async (value) => {
         this.plugin.settings.autoCollapseSidebarOnSwitch = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setHeading().setName(t("settings_section_system") || "System & Workflow");
-    new import_obsidian22.Setting(containerEl).setName(t("setting_search_hide_completed_title") || "System: Search Hide Completed Tasks").setDesc(t("setting_search_hide_completed_desc") || "When searching, hide completed tasks by default. Can also be toggled directly in the search modal.").addToggle((toggle) => toggle.setValue(this.plugin.settings.searchHideCompleted).onChange(async (value) => {
+    new import_obsidian23.Setting(containerEl).setHeading().setName(t("settings_section_system") || "System & Workflow");
+    new import_obsidian23.Setting(containerEl).setName(t("setting_search_hide_completed_title") || "System: Search Hide Completed Tasks").setDesc(t("setting_search_hide_completed_desc") || "When searching, hide completed tasks by default. Can also be toggled directly in the search modal.").addToggle((toggle) => toggle.setValue(this.plugin.settings.searchHideCompleted).onChange(async (value) => {
       this.plugin.settings.searchHideCompleted = value;
       await this.plugin.saveSettings();
     }));
-    new import_obsidian22.Setting(containerEl).setName(t("setting_undo_duration_title") || "System: Deletion Undo Duration").setDesc(t("setting_undo_duration_desc") || "Duration in seconds that the floating undo toast remains visible after deleting a task, step, or list (default: 2.5s).").addSlider((slider) => {
+    new import_obsidian23.Setting(containerEl).setName(t("setting_undo_duration_title") || "System: Deletion Undo Duration").setDesc(t("setting_undo_duration_desc") || "Duration in seconds that the floating undo toast remains visible after deleting a task, step, or list (default: 2.5s).").addSlider((slider) => {
       var _a;
       return slider.setLimits(1, 10, 0.5).setValue((_a = this.plugin.settings.undoDurationSeconds) != null ? _a : 2.5).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.undoDurationSeconds = value;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian22.Setting(containerEl).setName(t("setting_hide_ribbon_title") || "System: Hide Ribbon Icon").setDesc(t("setting_hide_ribbon_desc") || "Hide the Fluent Tasks icon in the left ribbon.").addToggle((toggle) => {
+    new import_obsidian23.Setting(containerEl).setName(t("setting_hide_ribbon_title") || "System: Hide Ribbon Icon").setDesc(t("setting_hide_ribbon_desc") || "Hide the Fluent Tasks icon in the left ribbon.").addToggle((toggle) => {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.hideRibbonIcon) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.hideRibbonIcon = value;
@@ -52645,10 +52850,10 @@ var FluentTasksSettingTab = class extends import_obsidian22.PluginSettingTab {
 };
 
 // src/modals/QuickTaskModal.ts
-var import_obsidian24 = require("obsidian");
+var import_obsidian25 = require("obsidian");
 
 // src/modals/QuickTaskModalView.svelte
-var import_obsidian23 = require("obsidian");
+var import_obsidian24 = require("obsidian");
 function get_each_context10(ctx, list, i) {
   const child_ctx = ctx.slice();
   child_ctx[180] = list[i];
@@ -55540,7 +55745,7 @@ function create_if_block_135(ctx) {
     }
   };
 }
-function create_if_block_125(ctx) {
+function create_if_block_126(ctx) {
   let span;
   let t0_value = (
     /*task*/
@@ -55673,7 +55878,7 @@ function create_if_block_118(ctx) {
     }
   };
 }
-function create_else_block_35(ctx) {
+function create_else_block_36(ctx) {
   let svg;
   let path0;
   let path1;
@@ -55766,7 +55971,7 @@ function create_each_block_44(ctx) {
       ctx2[186].isDedicated
     )
       return create_if_block_105;
-    return create_else_block_35;
+    return create_else_block_36;
   }
   let current_block_type = select_block_type_10(ctx, [-1, -1, -1, -1, -1, -1, -1]);
   let if_block = current_block_type(ctx);
@@ -55988,7 +56193,7 @@ function create_each_block_34(key_1, ctx) {
   let if_block1 = (
     /*task*/
     ctx[189].steps && /*task*/
-    ctx[189].steps.length > 0 && create_if_block_125(ctx)
+    ctx[189].steps.length > 0 && create_if_block_126(ctx)
   );
   let if_block2 = (
     /*task*/
@@ -56181,7 +56386,7 @@ function create_each_block_34(key_1, ctx) {
         if (if_block1) {
           if_block1.p(ctx, dirty);
         } else {
-          if_block1 = create_if_block_125(ctx);
+          if_block1 = create_if_block_126(ctx);
           if_block1.c();
           if_block1.m(div, t4);
         }
@@ -58146,7 +58351,7 @@ function instance12($$self, $$props, $$invalidate) {
             categoryFilepath: dragData.sourceFilepath
           });
           await refreshStarredCount();
-          new import_obsidian23.Notice(`Starred task: "${dragData.task.title}"`);
+          new import_obsidian24.Notice(`Starred task: "${dragData.task.title}"`);
           if ((selectedCategory == null ? void 0 : selectedCategory.filepath) === STARRED_CATEGORY_PATH) {
             await loadTasksForCategory(selectedCategory);
           }
@@ -58161,7 +58366,7 @@ function instance12($$self, $$props, $$invalidate) {
       });
       EventBus.emit("task:updated" /* TASK_UPDATED */, { categoryFilepath: targetCat.filepath });
       await loadData();
-      new import_obsidian23.Notice(`Moved task to "${targetCat.name}"`);
+      new import_obsidian24.Notice(`Moved task to "${targetCat.name}"`);
     } catch (e) {
       console.error("[QuickTaskModal] Failed to move task:", e);
     }
@@ -58172,7 +58377,7 @@ function instance12($$self, $$props, $$invalidate) {
     if (now2 - lastDragNoticeTime > 2500) {
       lastDragNoticeTime = now2;
       const message = isChinese() ? "\u5F53\u524D\u60AC\u6D6EUI\u4E0D\u652F\u6301\u62D6\u62FD\u5206\u7EC4\u3002\n\u539F\u56E0\uFF1A\u6392\u5217list\u4EE3\u7801\u672C\u8EAB\u8986\u76D6\u4E86\u62D6\u62FD\u64CD\u4F5C\uFF1B\u5982\u9700\u8C03\u6574\u5206\u7EC4\u987A\u5E8F\uFF0C\u8BF7\u5728\u5DE6\u4FA7\u8FB9\u680F\u64CD\u4F5C\u3002" : "Dragging groups is not supported in Quick View.\nReason: List arrangement code overrides drag operations; to adjust group order, please use the sidebar.";
-      new import_obsidian23.Notice(message, 5e3);
+      new import_obsidian24.Notice(message, 5e3);
     }
   }
   function handleListDragStart(e, item) {
@@ -58297,7 +58502,7 @@ function instance12($$self, $$props, $$invalidate) {
       return;
     e.preventDefault();
     e.stopPropagation();
-    const menu = new import_obsidian23.Menu();
+    const menu = new import_obsidian24.Menu();
     menu.addItem((i) => {
       i.setTitle("Rename (F2)").setIcon("edit").onClick(() => startRenameItem(item));
     });
@@ -58335,7 +58540,7 @@ function instance12($$self, $$props, $$invalidate) {
       await loadData();
       await selectCategory(newCat);
     } catch (e) {
-      new import_obsidian23.Notice(`Failed to create list: ${e}`);
+      new import_obsidian24.Notice(`Failed to create list: ${e}`);
     }
     $$invalidate(17, isAddingList = false);
     $$invalidate(18, newListName = "");
@@ -58361,7 +58566,7 @@ function instance12($$self, $$props, $$invalidate) {
       await dataService.createGroup(name);
       await loadData();
     } catch (e) {
-      new import_obsidian23.Notice(`Failed to create group: ${e}`);
+      new import_obsidian24.Notice(`Failed to create group: ${e}`);
     }
     $$invalidate(19, isAddingGroup = false);
     $$invalidate(20, newGroupName = "");
@@ -58409,7 +58614,7 @@ function instance12($$self, $$props, $$invalidate) {
       $$invalidate(5, completedTasks = [...completedTasks]);
     }
     await refreshStarredCount();
-    new import_obsidian23.Notice(taskItem.starred ? `Starred task: "${taskItem.title}"` : `Removed star from: "${taskItem.title}"`);
+    new import_obsidian24.Notice(taskItem.starred ? `Starred task: "${taskItem.title}"` : `Removed star from: "${taskItem.title}"`);
   }
   async function moveTaskToCategory(task, targetCat) {
     var _a2;
@@ -58432,13 +58637,13 @@ function instance12($$self, $$props, $$invalidate) {
     });
     await refreshTaskCounts();
     await refreshStarredCount();
-    new import_obsidian23.Notice(isChinese() ? `\u5DF2\u5C06\u4EFB\u52A1\u79FB\u52A8\u81F3 "${targetCat.name}"` : `Moved task to "${targetCat.name}"`);
+    new import_obsidian24.Notice(isChinese() ? `\u5DF2\u5C06\u4EFB\u52A1\u79FB\u52A8\u81F3 "${targetCat.name}"` : `Moved task to "${targetCat.name}"`);
   }
   function handleTaskContextMenu(e, task) {
     var _a2;
     e.preventDefault();
     e.stopPropagation();
-    const menu = new import_obsidian23.Menu();
+    const menu = new import_obsidian24.Menu();
     menu.addItem((item) => {
       item.setTitle(t("add_side_step") || "Add side step").setIcon("list-plus").onClick(() => {
         openStepsModal(task);
@@ -59261,7 +59466,7 @@ var QuickTaskModalView = class extends SvelteComponent {
 var QuickTaskModalView_default = QuickTaskModalView;
 
 // src/modals/QuickTaskModal.ts
-var QuickTaskModal = class extends import_obsidian24.Modal {
+var QuickTaskModal = class extends import_obsidian25.Modal {
   constructor(app, plugin, dataService) {
     super(app);
     this.component = null;
@@ -59314,8 +59519,8 @@ var QuickTaskModal = class extends import_obsidian24.Modal {
 };
 
 // src/modals/QuickListModal.ts
-var import_obsidian25 = require("obsidian");
-var QuickListModal = class extends import_obsidian25.Modal {
+var import_obsidian26 = require("obsidian");
+var QuickListModal = class extends import_obsidian26.Modal {
   constructor(app, plugin, dataService) {
     super(app);
     this.component = null;
@@ -59360,8 +59565,8 @@ var QuickListModal = class extends import_obsidian25.Modal {
 };
 
 // src/modals/TaskDetailModal.ts
-var import_obsidian26 = require("obsidian");
-var TaskDetailModal = class extends import_obsidian26.Modal {
+var import_obsidian27 = require("obsidian");
+var TaskDetailModal = class extends import_obsidian27.Modal {
   constructor(app, plugin, dataService, task, categoryFilepath) {
     super(app);
     this.component = null;
@@ -59470,7 +59675,7 @@ var TaskDetailModal = class extends import_obsidian26.Modal {
 };
 
 // src/services/SidebarCoordinator.ts
-var import_obsidian27 = require("obsidian");
+var import_obsidian28 = require("obsidian");
 var SidebarCoordinator = class {
   constructor(host) {
     this.isUserClosingSidebar = false;
@@ -59491,7 +59696,7 @@ var SidebarCoordinator = class {
    */
   registerEventListeners(plugin) {
     var _a;
-    let lastActiveViewType = ((_a = this.host.app.workspace.getActiveViewOfType(import_obsidian27.ItemView)) == null ? void 0 : _a.getViewType()) || "";
+    let lastActiveViewType = ((_a = this.host.app.workspace.getActiveViewOfType(import_obsidian28.ItemView)) == null ? void 0 : _a.getViewType()) || "";
     plugin.registerEvent(
       this.host.app.workspace.on("active-leaf-change", (leaf) => {
         var _a2, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m;
@@ -59741,7 +59946,7 @@ var SidebarCoordinator = class {
    */
   isPluginPageActive() {
     var _a, _b;
-    const activeType = (_a = this.host.app.workspace.getActiveViewOfType(import_obsidian27.ItemView)) == null ? void 0 : _a.getViewType();
+    const activeType = (_a = this.host.app.workspace.getActiveViewOfType(import_obsidian28.ItemView)) == null ? void 0 : _a.getViewType();
     if (activeType === VIEW_TYPE_MAIN || activeType === VIEW_TYPE_SIDEBAR || activeType === VIEW_TYPE_DETAIL) {
       return true;
     }
@@ -59814,7 +60019,7 @@ var SidebarCoordinator = class {
         leftSplit.collapse();
       }
       if (!isQuickListHotkeyAssigned(this.host.app)) {
-        new import_obsidian27.Notice(t("warn_bind_hotkey_notice") || "\u26A0\uFE0F [Fluent Tasks] 'Hide Left Sidebar' is enabled, but no hotkey is bound for the Floating UI! Please assign a hotkey in Settings -> Hotkeys.", 8e3);
+        new import_obsidian28.Notice(t("warn_bind_hotkey_notice") || "\u26A0\uFE0F [Fluent Tasks] 'Hide Left Sidebar' is enabled, but no hotkey is bound for the Floating UI! Please assign a hotkey in Settings -> Hotkeys.", 8e3);
       }
     } else {
       await this.host.activateView(VIEW_TYPE_SIDEBAR, "left");
@@ -59841,13 +60046,13 @@ var SidebarCoordinator = class {
 };
 
 // src/main.ts
-var TaskSidebarViewWrapper = class extends import_obsidian28.ItemView {
+var TaskSidebarViewWrapper = class extends import_obsidian29.ItemView {
   constructor(leaf, dataService, plugin) {
     super(leaf);
     this.component = null;
     this.dataService = dataService;
     this.plugin = plugin;
-    this.scope = new import_obsidian28.Scope(this.app.scope);
+    this.scope = new import_obsidian29.Scope(this.app.scope);
     this.scope.register([], "F2", (evt) => {
       var _a;
       if ((_a = this.component) == null ? void 0 : _a.triggerRenameHoveredOrActive()) {
@@ -59892,7 +60097,7 @@ var TaskSidebarViewWrapper = class extends import_obsidian28.ItemView {
     return this.component;
   }
 };
-var TaskMainViewWrapper = class extends import_obsidian28.ItemView {
+var TaskMainViewWrapper = class extends import_obsidian29.ItemView {
   // Enables Obsidian Leaf Navigation & History tracking
   constructor(leaf, dataService, plugin) {
     super(leaf);
@@ -59901,7 +60106,7 @@ var TaskMainViewWrapper = class extends import_obsidian28.ItemView {
     this.navigation = true;
     this.dataService = dataService;
     this.plugin = plugin;
-    this.scope = new import_obsidian28.Scope(this.app.scope);
+    this.scope = new import_obsidian29.Scope(this.app.scope);
     this.scope.register(["Mod"], "f", (evt) => {
       var _a;
       if ((_a = this.component) == null ? void 0 : _a.openSearch) {
@@ -59995,7 +60200,7 @@ var TaskMainViewWrapper = class extends import_obsidian28.ItemView {
     await super.setState(state, result);
     if (state && state.categoryFilepath) {
       const file = this.app.vault.getAbstractFileByPath(state.categoryFilepath);
-      if (file && file instanceof import_obsidian28.TFile) {
+      if (file && file instanceof import_obsidian29.TFile) {
         const cat = {
           id: state.categoryFilepath,
           type: "category",
@@ -60030,7 +60235,7 @@ var TaskMainViewWrapper = class extends import_obsidian28.ItemView {
     const state = this.getState();
     if (state == null ? void 0 : state.categoryFilepath) {
       const file = this.app.vault.getAbstractFileByPath(state.categoryFilepath);
-      if (file && file instanceof import_obsidian28.TFile) {
+      if (file && file instanceof import_obsidian29.TFile) {
         const cat = {
           id: state.categoryFilepath,
           type: "category",
@@ -60070,13 +60275,13 @@ var TaskMainViewWrapper = class extends import_obsidian28.ItemView {
     const cat = (_a = this.component) == null ? void 0 : _a.getCurrentCategory();
     if (cat && cat.filepath) {
       const f = this.app.vault.getAbstractFileByPath(cat.filepath);
-      if (f instanceof import_obsidian28.TFile)
+      if (f instanceof import_obsidian29.TFile)
         return f;
     }
     return null;
   }
 };
-var TaskDetailViewWrapper = class extends import_obsidian28.ItemView {
+var TaskDetailViewWrapper = class extends import_obsidian29.ItemView {
   constructor(leaf, dataService, plugin) {
     super(leaf);
     this.component = null;
@@ -60110,7 +60315,7 @@ var TaskDetailViewWrapper = class extends import_obsidian28.ItemView {
     return this.component;
   }
 };
-var FluentTasksPlugin = class extends import_obsidian28.Plugin {
+var FluentTasksPlugin = class extends import_obsidian29.Plugin {
   constructor() {
     super(...arguments);
     this.ribbonIconEl = null;
@@ -60421,7 +60626,7 @@ var FluentTasksPlugin = class extends import_obsidian28.Plugin {
         };
         this.registerEvent(
           this.app.vault.on("modify", (file) => {
-            if (!file || !(file instanceof import_obsidian28.TFile))
+            if (!file || !(file instanceof import_obsidian29.TFile))
               return;
             if (isCategoryFile(file.path)) {
               if (this.dataService.isInternalWrite(file.path)) {
@@ -60440,7 +60645,7 @@ var FluentTasksPlugin = class extends import_obsidian28.Plugin {
         );
         this.registerEvent(
           this.app.metadataCache.on("changed", (file) => {
-            if (file instanceof import_obsidian28.TFile && file.path.startsWith(DATA_FOLDER + "/") && file.extension === "md" && !isCategoryFile(file.path)) {
+            if (file instanceof import_obsidian29.TFile && file.path.startsWith(DATA_FOLDER + "/") && file.extension === "md" && !isCategoryFile(file.path)) {
               if (!this.dataService.isInternalWrite(file.path)) {
                 void LinkedNoteService.syncNotePropertyToTask(this.app, this.dataService, file);
               }
@@ -60465,7 +60670,7 @@ var FluentTasksPlugin = class extends import_obsidian28.Plugin {
                 file.path
               );
             }
-            if (file instanceof import_obsidian28.TFile && file.extension === "md") {
+            if (file instanceof import_obsidian29.TFile && file.extension === "md") {
               if (!LinkedNoteService.isInternalRename(oldPath, file.path)) {
                 void LinkedNoteService.syncNoteRenameToTasks(
                   this.app,

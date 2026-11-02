@@ -28,6 +28,8 @@
     import { Notice } from "obsidian";
     import { ImagePreviewModal } from "./ImagePreviewModal";
     import { isStepCollapsed, getCollapsedStepPreview, isStepEmpty } from "../utils/taskUtils";
+    import { formatTaskAsAiXml } from "../utils/aiExportUtils";
+    import { copyTextToClipboard } from "../utils/clipboardUtils";
 
     // =============================================
     // Props
@@ -850,6 +852,32 @@
         };
     });
 
+    let copiedInfoRecently: boolean = false;
+    let copiedInfoTimer: ReturnType<typeof setTimeout> | null = null;
+
+    async function copyAllTaskInfo() {
+        if (!task) return;
+
+        const formatted = formatTaskAsAiXml(task, { steps });
+        if (!formatted) return;
+
+        try {
+            const success = await copyTextToClipboard(formatted);
+            if (!success) {
+                throw new Error("Clipboard copy failed");
+            }
+            new Notice(t("copy_task_info_success") || "Copied all task info to clipboard / 已复制全部信息至剪贴板");
+            copiedInfoRecently = true;
+            if (copiedInfoTimer) clearTimeout(copiedInfoTimer);
+            copiedInfoTimer = setTimeout(() => {
+                copiedInfoRecently = false;
+            }, 1500);
+        } catch (err) {
+            Logger.error("Failed to copy task info to clipboard", err);
+            new Notice("Failed to copy / 复制失败");
+        }
+    }
+
     function handleBeforeUnload() {
         commitDraftStep();
         flushSaveSync();
@@ -858,6 +886,10 @@
     onDestroy(() => {
         commitDraftStep();
         flushSaveSync();
+        if (copiedInfoTimer) {
+            clearTimeout(copiedInfoTimer);
+            copiedInfoTimer = null;
+        }
         if (newStepImages.length > 0 && actualApp && dataService) {
             const draftImages = [...newStepImages];
             newStepImages = [];
@@ -885,6 +917,25 @@
             <div class="task-steps-modal-title" title={task.title}>{task.title}</div>
         </div>
         <div class="task-steps-modal-header-actions">
+            <button
+                type="button"
+                class="task-steps-header-copy-btn"
+                class:copied={copiedInfoRecently}
+                title={copiedInfoRecently ? (t("copy_task_info_success") || "Copied all task info to clipboard / 已复制全部信息至剪贴板") : (t("copy_task_info_xml") || "Copy all info for AI (XML format) / 复制全部信息(用于 AI 提示词)")}
+                aria-label="Copy all task info"
+                on:click={copyAllTaskInfo}
+            >
+                {#if copiedInfoRecently}
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--todo-accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                {:else}
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                {/if}
+            </button>
             <button
                 type="button"
                 class="task-steps-header-search-btn"

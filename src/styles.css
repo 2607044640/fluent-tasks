@@ -6947,6 +6947,7 @@ body .task-detail-floating-modal.is-center-aligned .detail-meta-chips-section {
     background: rgba(244, 67, 54, 0.15) !important;
 }
 
+.task-steps-header-copy-btn,
 .task-steps-header-search-btn {
     display: flex !important;
     align-items: center !important;
@@ -6959,12 +6960,22 @@ body .task-detail-floating-modal.is-center-aligned .detail-meta-chips-section {
     border-radius: 6px !important;
     color: var(--text-muted, #888) !important;
     cursor: pointer !important;
-    transition: background 0.15s ease, color 0.15s ease !important;
+    transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease !important;
 }
 
+.task-steps-header-copy-btn:hover,
 .task-steps-header-search-btn:hover,
 .task-steps-header-search-btn.is-active {
     background: var(--background-modifier-hover, rgba(255, 255, 255, 0.08)) !important;
+    color: var(--text-normal, #fff) !important;
+}
+
+.task-steps-header-copy-btn:active,
+.task-steps-header-search-btn:active {
+    transform: scale(0.92) !important;
+}
+
+.task-steps-header-copy-btn.copied {
     color: var(--todo-accent, #7057ff) !important;
 }
 

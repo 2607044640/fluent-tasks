@@ -9,6 +9,8 @@
     import { portal, autosize, longPress } from "./utils/domUtils";
     import { ensureStepIds, persistableSteps, reconcileDndSteps } from "./utils/stepIds";
     import { isTaskEmpty, isStepEmpty, isStepCollapsed, getCollapsedStepPreview } from "./utils/taskUtils";
+    import { formatTaskAsAiXml } from "./utils/aiExportUtils";
+    import { copyTextToClipboard } from "./utils/clipboardUtils";
     import { DAY_LABELS, formatExactTime, getRelativeTime, getRecurrenceLabel } from "./utils/timeUtils";
     import { LinkedNoteService } from "./services/LinkedNoteService";
     import { promptDeleteTaskWithLinkedNote } from "./modals/ConfirmDeleteLinkedNoteModal";
@@ -108,84 +110,13 @@
     async function copyAllTaskInfo() {
         if (!task) return;
 
-        const sections: string[] = [];
-
-        // Title
-        if (task.title && task.title.trim()) {
-            sections.push(`<Title>\n${task.title.trim()}\n</Title>`);
-        }
-
-        // Steps / Items
-        if (task.steps && task.steps.length > 0) {
-            let itemIndex = 1;
-            for (const step of task.steps) {
-                let text = (step.text || "").trim();
-                if (step.images && step.images.length > 0) {
-                    const imgText = step.images.map(img => `![[${img}]]`).join("\n");
-                    text = text ? `${text}\n${imgText}` : imgText;
-                }
-                if (!text) continue;
-                const tag = step.done ? `Item_${itemIndex}_Excluded` : `Item_${itemIndex}`;
-                sections.push(`<${tag}>\n${text}\n</${tag}>`);
-                itemIndex++;
-            }
-        }
-
-        // Details / Note
-        let noteText = (task.note || "").trim();
-        if (task.images && task.images.length > 0) {
-            const noteImages = task.images
-                .filter(img => !noteText.includes(img))
-                .map(img => `![[${img}]]`)
-                .join("\n");
-            if (noteImages) {
-                noteText = noteText ? `${noteText}\n${noteImages}` : noteImages;
-            }
-        }
-        if (noteText) {
-            sections.push(`<Details>\n${noteText}\n</Details>`);
-        }
-
-        // Why / Core Reasoning
-        const whys = task.whys && task.whys.length > 0
-            ? task.whys.filter(w => w && w.trim())
-            : (task.why && task.why.trim() ? [task.why.trim()] : []);
-        if (whys.length > 0) {
-            sections.push(`<Why>\n${whys.join("\n")}\n</Why>`);
-        }
-
-        // Linked Notes
-        const linkedNotes: string[] = [];
-        if (task.task_note && task.task_note.trim()) linkedNotes.push(task.task_note.trim());
-        if (task.note_links && task.note_links.length > 0) {
-            for (const link of task.note_links) {
-                if (link && link.trim() && !linkedNotes.includes(link.trim())) {
-                    linkedNotes.push(link.trim());
-                }
-            }
-        } else if (task.note_link && task.note_link.trim() && !linkedNotes.includes(task.note_link.trim())) {
-            linkedNotes.push(task.note_link.trim());
-        }
-        if (linkedNotes.length > 0) {
-            sections.push(`<LinkedNote>\n${linkedNotes.join("\n")}\n</LinkedNote>`);
-        }
-
-        // Due date
-        if (task.dueDate && task.dueDate.trim()) {
-            sections.push(`<DueDate>\n${task.dueDate.trim()}\n</DueDate>`);
-        }
-
-        const formatted = sections.join("\n\n");
+        const formatted = formatTaskAsAiXml(task);
         if (!formatted) return;
 
         try {
-            if (navigator?.clipboard?.writeText) {
-                await navigator.clipboard.writeText(formatted);
-            } else {
-                const electron = (window as any).require ? (window as any).require("electron") : undefined;
-                if (electron?.clipboard?.writeText) {
-                    electron.clipboard.writeText(formatted);
-                }
+            const success = await copyTextToClipboard(formatted);
+            if (!success) {
+                throw new Error("Clipboard copy failed");
             }
             new Notice(t("copy_task_info_success") || "Copied all task info to clipboard / 已复制全部信息至剪贴板");
             copiedInfoRecently = true;
