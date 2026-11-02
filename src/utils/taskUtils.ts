@@ -103,3 +103,27 @@ export function applyWeightSort(items: TaskItem[], enableWeightMode: boolean = f
         })
         .map(({ item }) => item);
 }
+
+/**
+ * Normalizes multi-line step text to a single-line preview string for collapsed view.
+ */
+export function getCollapsedStepPreview(text?: string): string {
+    if (!text) return "";
+    return text.replace(/\r?\n+/g, " ").trim();
+}
+
+/**
+ * Determines whether a step should be rendered in collapsed single-line mode.
+ */
+export function isStepCollapsed(
+    step: TaskStep,
+    expandedStepIds: Set<string>,
+    collapseSetting: boolean = true,
+    isModal: boolean = true
+): boolean {
+    if (!collapseSetting) return false;
+    if (!isModal) return false;
+    if (!step.done) return false;
+    if (!step.id) return false;
+    return !expandedStepIds.has(step.id);
+}

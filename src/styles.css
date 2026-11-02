@@ -1341,36 +1341,57 @@ body .task-detail-floating-modal.is-fullscreen .detail-title-input:focus {
     flex-shrink: 0;
 }
 
-.step-item.is-step-collapsed {
+.step-item.is-step-collapsed,
+.steps-modal-item.is-step-collapsed {
     align-items: center;
     cursor: pointer;
     margin-bottom: 4px;
     gap: 8px;
     min-height: 22px;
+    padding: 2px 10px;
 }
 
 .step-item.is-step-collapsed .step-drag-handle,
-.step-item.is-step-collapsed .checkbox {
+.steps-modal-item.is-step-collapsed .steps-modal-drag-handle,
+.step-item.is-step-collapsed .checkbox,
+.steps-modal-item.is-step-collapsed .steps-modal-checkbox {
     margin-top: 0;
 }
 
-.step-item.is-step-collapsed .checkbox svg {
+.step-item.is-step-collapsed .checkbox svg,
+.steps-modal-item.is-step-collapsed .steps-modal-checkbox svg {
     width: 14px;
     height: 14px;
 }
 
-.step-item.is-step-collapsed .step-drag-handle svg {
+.step-item.is-step-collapsed .step-drag-handle svg,
+.steps-modal-item.is-step-collapsed .steps-modal-drag-handle svg {
     width: 10px;
     height: 10px;
 }
 
-.step-item.is-step-collapsed .step-left-controls {
+.step-item.is-step-collapsed .step-left-controls,
+.steps-modal-item.is-step-collapsed .steps-modal-left-controls {
     gap: 6px;
 }
 
-.step-item.is-step-collapsed .delete-step svg {
+.step-item.is-step-collapsed .delete-step svg,
+.steps-modal-item.is-step-collapsed .steps-modal-delete-btn svg {
     width: 12px;
     height: 12px;
+}
+
+.steps-modal-right-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.steps-modal-item.is-step-collapsed .steps-modal-right-controls,
+.steps-modal-item.is-step-collapsed .steps-modal-delete-btn {
+    margin-top: 0;
 }
 
 .step-collapsed-row {
@@ -1433,7 +1454,8 @@ body .task-detail-floating-modal.is-fullscreen .detail-title-input:focus {
     cursor: pointer;
 }
 
-.step-item.is-step-collapsed:hover .step-collapsed-expand-hint {
+.step-item.is-step-collapsed:hover .step-collapsed-expand-hint,
+.steps-modal-item.is-step-collapsed:hover .step-collapsed-expand-hint {
     opacity: 0.9;
     color: var(--todo-accent, var(--interactive-accent));
 }
@@ -1459,6 +1481,7 @@ body .task-detail-floating-modal.is-fullscreen .detail-title-input:focus {
 }
 
 .step-item:hover .step-collapse-btn,
+.steps-modal-item:hover .step-collapse-btn,
 .step-collapse-btn:focus-visible {
     opacity: 0.75;
 }

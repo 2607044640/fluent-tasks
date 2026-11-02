@@ -8,7 +8,7 @@
     import { SAVE_DEBOUNCE_MS } from "./constants";
     import { portal, autosize, longPress } from "./utils/domUtils";
     import { ensureStepIds, persistableSteps, reconcileDndSteps } from "./utils/stepIds";
-    import { isTaskEmpty, isStepEmpty } from "./utils/taskUtils";
+    import { isTaskEmpty, isStepEmpty, isStepCollapsed, getCollapsedStepPreview } from "./utils/taskUtils";
     import { DAY_LABELS, formatExactTime, getRelativeTime, getRecurrenceLabel } from "./utils/timeUtils";
     import { LinkedNoteService } from "./services/LinkedNoteService";
     import { promptDeleteTaskWithLinkedNote } from "./modals/ConfirmDeleteLinkedNoteModal";
@@ -78,14 +78,6 @@
     let preDndSteps: TaskStep[] = [];
     let expandedStepIds = new Set<string>();
 
-    function isStepCollapsed(step: TaskStep, _expanded: Set<string> = expandedStepIds): boolean {
-        if (!collapseCompletedSteps) return false;
-        if (!isModal) return false;
-        if (!step.done) return false;
-        if (!step.id) return false;
-        return !_expanded.has(step.id);
-    }
-
     function toggleStepCollapse(stepId?: string) {
         if (!stepId) return;
         if (expandedStepIds.has(stepId)) {
@@ -95,11 +87,6 @@
         }
         expandedStepIds = new Set(expandedStepIds);
         task = task;
-    }
-
-    function getCollapsedStepPreview(text?: string): string {
-        if (!text) return "";
-        return text.replace(/\r?\n+/g, " ").trim();
     }
 
     function handleContainerWheel(e: WheelEvent) {
@@ -766,7 +753,7 @@
         const step = task?.steps?.find(s => s.id === stepId);
         if (!step) return;
 
-        if (isStepCollapsed(step, expandedStepIds)) {
+        if (isStepCollapsed(step, expandedStepIds, collapseCompletedSteps, isModal)) {
             expandedStepIds.add(stepId);
             expandedStepIds = new Set(expandedStepIds);
             task = task;
@@ -2061,7 +2048,7 @@
                             <!-- svelte-ignore a11y-no-static-element-interactions -->
                             <div class="step-item"
                                  class:is-center-aligned={centerAlignTasks}
-                                 class:is-step-collapsed={isStepCollapsed(step, expandedStepIds)}
+                                 class:is-step-collapsed={isStepCollapsed(step, expandedStepIds, collapseCompletedSteps, isModal)}
                                  animate:flip={{ duration: DND_FLIP_DURATION }}
                                  on:click={(e) => handleStepItemClick(e, step.id)}>
                                 <div class="step-left-controls">
@@ -2092,8 +2079,8 @@
                                         {/if}
                                     </span>
                                 </div>
-                                <div class="step-content-col" class:is-center-aligned={centerAlignTasks} class:is-collapsed={isStepCollapsed(step, expandedStepIds)}>
-                                    {#if isStepCollapsed(step, expandedStepIds)}
+                                <div class="step-content-col" class:is-center-aligned={centerAlignTasks} class:is-collapsed={isStepCollapsed(step, expandedStepIds, collapseCompletedSteps, isModal)}>
+                                    {#if isStepCollapsed(step, expandedStepIds, collapseCompletedSteps, isModal)}
                                         <div class="step-collapsed-row" class:is-center-aligned={centerAlignTasks} title="Click to expand / 点击展开">
                                             {#if getStepImages(step).length > 0}
                                                 <span class="step-collapsed-image-badge" title="{getStepImages(step).length} image(s)">
@@ -2167,7 +2154,7 @@
                                     {/if}
                                 </div>
                                 <div class="step-right-controls">
-                                    {#if isModal && collapseCompletedSteps && step.done && !isStepCollapsed(step, expandedStepIds)}
+                                    {#if isModal && collapseCompletedSteps && step.done && !isStepCollapsed(step, expandedStepIds, collapseCompletedSteps, isModal)}
                                         <span class="step-collapse-btn" on:click|stopPropagation={() => toggleStepCollapse(step.id)}
                                               role="button" tabindex="0" title="Collapse / 折叠成单行"
                                               on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleStepCollapse(step.id)}>

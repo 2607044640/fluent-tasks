@@ -27,6 +27,7 @@
     import { t } from "../lang/helpers";
     import { Notice } from "obsidian";
     import { ImagePreviewModal } from "./ImagePreviewModal";
+    import { isStepCollapsed, getCollapsedStepPreview, isStepEmpty } from "../utils/taskUtils";
 
     // =============================================
     // Props
@@ -39,12 +40,14 @@
     export let closeModal: () => void = () => {};
     export let centerAlignTasks: boolean = true;
     export let showStepsProgressPill: boolean = false;
+    export let collapseCompletedSteps: boolean = plugin?.settings?.collapseCompletedSteps ?? true;
 
     // =============================================
     // Local State
     // =============================================
     $: actualApp = app || dataService?.app || plugin?.app || (window as any).app;
     let steps: TaskStep[] = task.steps ? ensureStepIds(task.id, task.steps) : [];
+    let expandedStepIds: Set<string> = new Set();
     let newStepText: string = "";
     let newStepImages: string[] = [];
     let focusedStepId: string | null = null;
@@ -134,6 +137,13 @@
         if (activeMatchIndex < 0 || activeMatchIndex >= allMatches.length) return;
         const currentMatch = allMatches[activeMatchIndex];
         if (!currentMatch) return;
+
+        if (currentMatch.stepId && !expandedStepIds.has(currentMatch.stepId)) {
+            expandedStepIds.add(currentMatch.stepId);
+            expandedStepIds = new Set(expandedStepIds);
+            steps = [...steps];
+            await tick();
+        }
 
         const markEl = modalBodyEl?.querySelector(`#step-search-mark-${currentMatch.globalIndex}`) as HTMLElement;
         if (markEl && modalBodyEl) {
@@ -316,11 +326,26 @@
     // =============================================
     // Step Actions & Drag-and-Drop
     // =============================================
+    function toggleStepCollapse(stepId?: string) {
+        if (!stepId) return;
+        if (expandedStepIds.has(stepId)) {
+            expandedStepIds.delete(stepId);
+        } else {
+            expandedStepIds.add(stepId);
+        }
+        expandedStepIds = new Set(expandedStepIds);
+        steps = [...steps];
+    }
+
     async function toggleStep(stepId?: string) {
         if (!stepId) return;
         const step = steps.find(s => s.id === stepId);
         if (!step) return;
         step.done = !step.done;
+        if (expandedStepIds.has(stepId)) {
+            expandedStepIds.delete(stepId);
+            expandedStepIds = new Set(expandedStepIds);
+        }
         steps = [...steps];
         await persistTask();
     }
@@ -648,12 +673,32 @@
     }
 
     function handleStepItemClick(e: MouseEvent, stepId?: string) {
+        if (!stepId) return;
+        const step = steps.find(s => s.id === stepId);
+        if (!step) return;
+
+        if (isStepCollapsed(step, expandedStepIds, collapseCompletedSteps, true)) {
+            expandedStepIds.add(stepId);
+            expandedStepIds = new Set(expandedStepIds);
+            steps = [...steps];
+            const stepEl = e.currentTarget as HTMLElement | null;
+            void tick().then(() => {
+                const textarea = stepEl?.querySelector('textarea') as HTMLTextAreaElement | null;
+                if (textarea) {
+                    textarea.focus();
+                    const len = textarea.value.length;
+                    textarea.setSelectionRange(len, len);
+                }
+            });
+            return;
+        }
+
         const target = e.target as HTMLElement | null;
         if (!target) return;
         const textarea = (e.currentTarget as HTMLElement).querySelector('textarea') as HTMLTextAreaElement | null;
         if (!textarea || target === textarea) return;
         if (shouldIgnoreContainerClick(e)) return;
-        if (target.closest('.steps-modal-left-controls, .steps-modal-delete-btn, .task-image-thumbnail, .task-img-strip-actions, button, [role="button"]')) {
+        if (target.closest('.steps-modal-left-controls, .steps-modal-right-controls, .steps-modal-delete-btn, .step-collapse-btn, .task-image-thumbnail, .task-img-strip-actions, button, [role="button"]')) {
             return;
         }
         textarea.focus();
@@ -965,6 +1010,7 @@
                         class="steps-modal-item"
                         class:is-done={step.done}
                         class:is-center-aligned={centerAlignTasks}
+                        class:is-step-collapsed={isStepCollapsed(step, expandedStepIds, collapseCompletedSteps, true)}
                         animate:flip={{ duration: DND_FLIP_DURATION }}
                         on:click={(e) => handleStepItemClick(e, step.id)}
                     >
@@ -1006,62 +1052,101 @@
                             </span>
                         </div>
 
-                        <!-- Multi-line auto-resizing textarea with thumbnail row placed ABOVE the text -->
-                        <div class="steps-modal-text-col" class:is-center-aligned={centerAlignTasks}>
-                            {#if getStepImages(step).length > 0}
-                                <TaskImageStrip
-                                    images={getStepImages(step)}
-                                    app={actualApp}
-                                    size={44}
-                                    isCenterAligned={centerAlignTasks}
-                                    onDelete={(imgRef) => removeImageFromStep(step.id, imgRef)}
-                                    onCut={(imgRef) => removeImageFromStep(step.id, imgRef)}
-                                    onHover={(imgRef, isHovered) => {
-                                        if (isHovered && step.id) {
-                                            hoveredImageRef = { imageRef: imgRef, stepId: step.id };
-                                        } else if (hoveredImageRef?.imageRef === imgRef) {
-                                            hoveredImageRef = null;
-                                        }
-                                    }}
-                                />
-                            {/if}
-                            <div class="steps-modal-text-wrapper">
-                                {#if showSearchBar && searchQuery.trim()}
-                                    <div class="steps-modal-text-backdrop" aria-hidden="true">
-                                        {@html renderHighlightedText(step.text, step.id, searchQuery, activeMatchIndex)}
-                                    </div>
+                        {#if isStepCollapsed(step, expandedStepIds, collapseCompletedSteps, true)}
+                            <div class="step-collapsed-row" class:is-center-aligned={centerAlignTasks} title="Click to expand / 点击展开">
+                                {#if getStepImages(step).length > 0}
+                                    <span class="step-collapsed-image-badge" title="{getStepImages(step).length} image(s)">
+                                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                                            <polyline points="21 15 16 10 5 21"/>
+                                        </svg>
+                                        <span>{getStepImages(step).length}</span>
+                                    </span>
                                 {/if}
-                                <textarea
-                                    use:autosize={step.text}
-                                    rows="1"
-                                    class="steps-modal-textarea"
-                                    class:completed={step.done}
-                                    value={step.text}
-                                    placeholder="Step description..."
-                                    on:focus={() => { focusedStepId = step.id || null; }}
-                                    on:input={(e) => handleStepInput(step.id, e.currentTarget.value)}
-                                    on:blur={() => handleStepBlur(step.id)}
-                                    on:keydown={(e) => handleStepKeydown(e, step.id)}
-                                />
+                                <span class="step-collapsed-text" class:is-center-aligned={centerAlignTasks}>
+                                    {getCollapsedStepPreview(step.text) || "Step description..."}
+                                </span>
+                                <span class="step-collapsed-expand-hint"
+                                      role="button" tabindex="0"
+                                      title="Click to expand / 点击展开"
+                                      on:click|stopPropagation={() => toggleStepCollapse(step.id)}
+                                      on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleStepCollapse(step.id)}>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="6 9 12 15 18 9"/>
+                                    </svg>
+                                </span>
                             </div>
-                        </div>
+                        {:else}
+                            <!-- Multi-line auto-resizing textarea with thumbnail row placed ABOVE the text -->
+                            <div class="steps-modal-text-col" class:is-center-aligned={centerAlignTasks}>
+                                {#if getStepImages(step).length > 0}
+                                    <TaskImageStrip
+                                        images={getStepImages(step)}
+                                        app={actualApp}
+                                        size={44}
+                                        isCenterAligned={centerAlignTasks}
+                                        onDelete={(imgRef) => removeImageFromStep(step.id, imgRef)}
+                                        onCut={(imgRef) => removeImageFromStep(step.id, imgRef)}
+                                        onHover={(imgRef, isHovered) => {
+                                            if (isHovered && step.id) {
+                                                hoveredImageRef = { imageRef: imgRef, stepId: step.id };
+                                            } else if (hoveredImageRef?.imageRef === imgRef) {
+                                                hoveredImageRef = null;
+                                            }
+                                        }}
+                                    />
+                                {/if}
+                                <div class="steps-modal-text-wrapper">
+                                    {#if showSearchBar && searchQuery.trim()}
+                                        <div class="steps-modal-text-backdrop" aria-hidden="true">
+                                            {@html renderHighlightedText(step.text, step.id, searchQuery, activeMatchIndex)}
+                                        </div>
+                                    {/if}
+                                    <textarea
+                                        use:autosize={step.text}
+                                        rows="1"
+                                        class="steps-modal-textarea"
+                                        class:completed={step.done}
+                                        value={step.text}
+                                        placeholder="Step description..."
+                                        on:focus={() => { focusedStepId = step.id || null; }}
+                                        on:input={(e) => handleStepInput(step.id, e.currentTarget.value)}
+                                        on:blur={() => handleStepBlur(step.id)}
+                                        on:keydown={(e) => handleStepKeydown(e, step.id)}
+                                    />
+                                </div>
+                            </div>
+                        {/if}
 
-                        <!-- Delete step button -->
-                        <!-- svelte-ignore a11y-click-events-have-key-events -->
-                        <span
-                            class="steps-modal-delete-btn"
-                            role="button"
-                            tabindex="0"
-                            on:click|stopPropagation={() => deleteStep(step.id)}
-                            on:keydown|stopPropagation={(e) => e.key === "Enter" && deleteStep(step.id)}
-                            title="Delete step"
-                            aria-label="Delete step"
-                        >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="18" y1="6" x2="6" y2="18"/>
-                                <line x1="6" y1="6" x2="18" y2="18"/>
-                            </svg>
-                        </span>
+                        <!-- Right controls -->
+                        <div class="steps-modal-right-controls">
+                            {#if collapseCompletedSteps && step.done && !isStepCollapsed(step, expandedStepIds, collapseCompletedSteps, true)}
+                                <span class="step-collapse-btn" on:click|stopPropagation={() => toggleStepCollapse(step.id)}
+                                      role="button" tabindex="0" title="Collapse / 折叠成单行"
+                                      on:keydown|stopPropagation={(e) => e.key === "Enter" && toggleStepCollapse(step.id)}>
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="18 15 12 9 6 15"/>
+                                    </svg>
+                                </span>
+                            {/if}
+                            <!-- Delete step button -->
+                            <!-- svelte-ignore a11y-click-events-have-key-events -->
+                            <span
+                                class="steps-modal-delete-btn"
+                                role="button"
+                                tabindex="0"
+                                on:click|stopPropagation={() => deleteStep(step.id)}
+                                on:keydown|stopPropagation={(e) => e.key === "Enter" && deleteStep(step.id)}
+                                title="Delete step"
+                                aria-label="Delete step"
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"/>
+                                    <line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                            </span>
+                        </div>
                     </div>
                 {/each}
             </div>
