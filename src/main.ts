@@ -10,6 +10,7 @@
  *
  * All cross-view communication flows through EventBus.
  * All data I/O flows through DataService.
+ * UI Style: Floating card layout for subtasks & detail, borderless title and outer container.
  */
 
 import { Plugin, ItemView, WorkspaceLeaf, TFile, Scope, App, ViewStateResult, Notice } from "obsidian";

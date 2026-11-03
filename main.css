@@ -1103,9 +1103,12 @@
 
 /* Header Block */
 .detail-header {
-    background-color: var(--todo-item-bg);
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
     border-radius: var(--todo-radius);
-    padding: 15px;
+    padding: 15px 4px;
     margin-bottom: 0;
     flex-shrink: 0;
     cursor: text;
@@ -4778,7 +4781,9 @@ body .quick-modal-list-item.is-grid-item.is-focused {
 /* =============================================
    Floating Task Detail Modal (Tier 1)
    ============================================= */
-body .task-detail-floating-modal {
+body .modal.task-detail-floating-modal,
+body .task-detail-floating-modal,
+body .modal-container:has(.task-detail-floating-modal) .modal {
     width: 680px !important;
     max-width: 90vw !important;
     height: 85vh !important;
@@ -4787,6 +4792,7 @@ body .task-detail-floating-modal {
     border-radius: 12px;
     overflow: hidden;
     box-shadow: none !important;
+    background: transparent !important;
     background-color: transparent !important;
     border: none !important;
     display: flex;
@@ -4797,6 +4803,7 @@ body .task-detail-floating-modal .modal-close-button {
     display: none !important;
 }
 
+body .task-detail-floating-modal .modal-content,
 body .task-detail-floating-modal .modal-content.task-detail-modal-content {
     height: 100% !important;
     max-height: 100% !important;
@@ -4805,6 +4812,10 @@ body .task-detail-floating-modal .modal-content.task-detail-modal-content {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 body .task-detail-floating-modal .detail-container {
@@ -4812,6 +4823,10 @@ body .task-detail-floating-modal .detail-container {
     width: 100%;
     padding: 16px 20px 4px 20px;
     box-sizing: border-box;
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 /* =============================================
@@ -4885,10 +4900,12 @@ body .task-detail-floating-modal.is-fullscreen .detail-body {
 
 body .task-detail-floating-modal .detail-header,
 body .task-detail-floating-modal.is-fullscreen .detail-header {
-    background-color: var(--todo-item-bg, var(--background-secondary, rgba(255, 255, 255, 0.03))) !important;
-    border: 1px solid var(--todo-border, var(--background-modifier-border, rgba(255, 255, 255, 0.08))) !important;
-    border-radius: 10px;
-    padding: 16px 20px;
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0;
+    padding: 16px 4px;
     cursor: text;
     box-sizing: border-box;
 }
@@ -5124,8 +5141,11 @@ body .task-steps-floating-modal .modal-content.task-steps-modal-content {
     justify-content: space-between;
     gap: 16px;
     padding: 14px 48px 14px 28px;
-    border-bottom: 1px solid var(--todo-border, var(--background-modifier-border, #333));
-    background-color: var(--background-primary);
+    border: none !important;
+    border-bottom: none !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
     flex-shrink: 0;
 }
 
@@ -6480,6 +6500,10 @@ body .task-steps-floating-modal .steps-modal-delete-btn:hover {
 .detail-container.is-center-aligned .detail-header,
 body .task-detail-floating-modal.is-center-aligned .detail-header {
     width: 100%;
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 .detail-container.is-center-aligned .title-row,
