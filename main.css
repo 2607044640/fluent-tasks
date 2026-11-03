@@ -709,14 +709,10 @@
     position: relative;
 }
 
-/* Subtle separator line between task items, step items, headers and sections */
+/* Subtle separator line between task items and step items */
 .task-item:not(:last-child)::after,
 .step-item::after,
-.steps-modal-item::after,
-.detail-header::after,
-.task-steps-modal-header::after,
-.add-step-card::after,
-.steps-modal-add-card::after {
+.steps-modal-item::after {
     content: "";
     display: var(--task-separator-display, block);
     position: absolute;
@@ -737,21 +733,42 @@
     transition: opacity var(--todo-transition), width 0.15s ease;
 }
 
-.detail-header::after,
-.task-steps-modal-header::after,
-.add-step-card::after,
-.steps-modal-add-card::after {
-    bottom: 0;
-}
-
 .task-item:hover::after,
 .task-item.selected::after,
 .step-item:hover::after,
-.steps-modal-item:hover::after,
-.detail-header:hover::after,
-.task-steps-modal-header:hover::after,
-.add-step-card:hover::after,
-.steps-modal-add-card:hover::after {
+.steps-modal-item:hover::after {
+    opacity: 0.85;
+}
+
+/* Top separator line above the first sidestep */
+.step-item:first-child::before,
+.step-item:first-of-type::before,
+.steps-modal-item:first-child::before,
+.steps-modal-item:first-of-type::before {
+    content: "";
+    display: var(--task-separator-display, block);
+    position: absolute;
+    top: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: var(--task-separator-width, 90%);
+    height: 1px;
+    background: linear-gradient(
+        90deg, 
+        transparent 0%, 
+        var(--background-modifier-border, rgba(255, 255, 255, 0.16)) 16px, 
+        var(--background-modifier-border, rgba(255, 255, 255, 0.16)) calc(100% - 16px), 
+        transparent 100%
+    );
+    opacity: 0.65;
+    pointer-events: none;
+    transition: opacity var(--todo-transition), width 0.15s ease;
+}
+
+.step-item:first-child:hover::before,
+.step-item:first-of-type:hover::before,
+.steps-modal-item:first-child:hover::before,
+.steps-modal-item:first-of-type:hover::before {
     opacity: 0.85;
 }
 
@@ -4913,6 +4930,11 @@ body .task-detail-floating-modal.is-fullscreen .detail-header {
     position: relative;
     cursor: text;
     box-sizing: border-box;
+}
+
+body .task-detail-floating-modal .steps-container,
+body .task-detail-floating-modal.is-fullscreen .steps-container {
+    padding: 0;
 }
 
 body .task-detail-floating-modal .step-item,
