@@ -66,6 +66,7 @@
     let disableStars: boolean = plugin?.settings?.disableStars ?? false;
     let hiddenStarMode: boolean = plugin?.settings?.hiddenStarMode ?? plugin?.settings?.disableStars ?? false;
     let centerAlignTasks: boolean = plugin?.settings?.centerAlignTasks ?? true;
+    let minimalPlaceholders: boolean = plugin?.settings?.minimalPlaceholders ?? false;
     let starredCount: number = 0;
 
     // DOM Element Bindings
@@ -155,6 +156,11 @@
             centerAlignTasks = payload.settings.centerAlignTasks;
         } else if (plugin?.settings?.centerAlignTasks !== undefined) {
             centerAlignTasks = plugin.settings.centerAlignTasks;
+        }
+        if (payload?.settings?.minimalPlaceholders !== undefined) {
+            minimalPlaceholders = payload.settings.minimalPlaceholders;
+        } else if (plugin?.settings?.minimalPlaceholders !== undefined) {
+            minimalPlaceholders = plugin.settings.minimalPlaceholders;
         }
         incompleteTasks = [...incompleteTasks];
         completedTasks = [...completedTasks];
@@ -1466,7 +1472,7 @@
                             rows="1" 
                             use:autosize={newTaskTitle}
                             class="quick-modal-add-input" 
-                            placeholder="What needs to be done? (Enter to add, Shift+Enter for newline, Esc to cancel)"
+                            placeholder={minimalPlaceholders ? "Add a task" : "What needs to be done? (Enter to add, Shift+Enter for newline, Esc to cancel)"}
                             bind:value={newTaskTitle}
                             bind:this={addTaskInputEl}
                             on:keydown={handleQuickAddTaskKeydown}

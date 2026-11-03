@@ -74,6 +74,7 @@
     let hiddenStarMode: boolean = plugin?.settings?.hiddenStarMode ?? plugin?.settings?.disableStars ?? false;
     let disableStars: boolean = hiddenStarMode;
     let hideLeftSidebar: boolean = plugin?.settings?.hideLeftSidebar ?? false;
+    let minimalPlaceholders: boolean = plugin?.settings?.minimalPlaceholders ?? false;
     let hasFloatingModalHotkey: boolean = true;
     $: showNoHotkeyWarning = hideLeftSidebar && !hasFloatingModalHotkey;
 
@@ -1370,6 +1371,7 @@
         showListTitleInHeader = s.showListTitleInHeader ?? false;
         enableTaskWeightMode = s.enableTaskWeightMode ?? false;
         centerAlignTasks = s.centerAlignTasks ?? true;
+        minimalPlaceholders = s.minimalPlaceholders ?? false;
         hiddenStarMode = s.hiddenStarMode !== undefined ? s.hiddenStarMode : (s.disableStars ?? false);
         disableStars = hiddenStarMode;
         checkHotkeyStatus();
@@ -4015,7 +4017,7 @@
                     class="add-task-input"
                     use:autosize={newTaskTitle}
                     rows="1"
-                    placeholder="Add a task (Press Enter to add, Shift+Enter for newline, Ctrl+V to paste image)"
+                    placeholder={minimalPlaceholders ? "Add a task" : "Add a task (Press Enter to add, Shift+Enter for newline, Ctrl+V to paste image)"}
                     bind:value={newTaskTitle}
                     bind:this={addTaskInputEl}
                     on:focus={() => { isAddTaskFocused = true; }}

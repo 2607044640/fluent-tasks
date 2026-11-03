@@ -1002,6 +1002,8 @@ export default class FluentTasksPlugin extends Plugin implements ISidebarPluginH
         // Clean up global drag data
         (window as Window & { __mstodo_drag_data?: unknown }).__mstodo_drag_data = null;
 
+        document.body.classList.remove("minimal-placeholders");
+
         void Logger.log("Fluent Tasks plugin unloaded.");
     }
 
@@ -1051,7 +1053,10 @@ export default class FluentTasksPlugin extends Plugin implements ISidebarPluginH
 
         if (this.activeDetailModal) {
             this.activeDetailModal.setCenterAligned(this.settings.centerAlignTasks ?? true);
+            this.activeDetailModal.setMinimalPlaceholders(this.settings.minimalPlaceholders ?? false);
         }
+
+        this.applySettings();
     }
 
     applySettings() {
@@ -1066,6 +1071,7 @@ export default class FluentTasksPlugin extends Plugin implements ISidebarPluginH
             "--task-separator-width": `${separatorWidth}%`,
             "--task-separator-display": separatorWidth === 0 ? "none" : "block",
         });
+        document.body.classList.toggle("minimal-placeholders", !!this.settings.minimalPlaceholders);
     }
 
     // =============================================

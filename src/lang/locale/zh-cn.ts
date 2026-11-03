@@ -219,6 +219,8 @@ const zhCn: typeof en = {
     setting_hidden_star_desc: "在任务列表中隐藏星标（收藏）五角星图标保持版面纯粹，仍可通过任务右键菜单第一项或悬浮快捷键执行星标操作。默认关闭。",
     setting_task_weight_title: "任务列表：任务权重优先级模式 (Weight Mode)",
     setting_task_weight_desc: "启用 1-9 分的任务权重评分优先级机制（9 分最高，默认 5 分）。启用后按权重动态排序任务，可用鼠标滚轮或点击直接修改。",
+    setting_minimal_placeholders_title: "任务列表：极简占位提示 (Minimal Placeholders)",
+    setting_minimal_placeholders_desc: "去除输入框占位符中括号内的快捷键提示（如 Press Enter to add, Ctrl+V to paste image），仅保留简洁动词，并降低提示文字的不透明度。默认关闭。",
 
     setting_open_detail_modal_title: "任务详情：在悬浮弹窗中打开 (Floating Modal)",
     setting_open_detail_modal_desc: "点击任务时在屏幕居中的悬浮模态弹窗中打开详情，而非展开 Obsidian 右侧侧边栏面板。",

@@ -37,6 +37,7 @@ export interface FluentTasksSettings {
     showListTitleInHeader: boolean;
     taskSeparatorWidth: number;
     collapseCompletedSteps: boolean;
+    minimalPlaceholders: boolean;
 }
 
 export const DEFAULT_SETTINGS: FluentTasksSettings = {
@@ -44,6 +45,7 @@ export const DEFAULT_SETTINGS: FluentTasksSettings = {
     openDetailInModal: false,
     fullscreenDetailModal: true,
     collapseCompletedSteps: true,
+    minimalPlaceholders: false,
     hideLeftSidebar: false,
     autoExpandSidebarOnDrag: false,
     autoExpandSidebar: true,
@@ -210,6 +212,17 @@ export class FluentTasksSettingTab extends PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.enableTaskWeightMode = value;
                     await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName(t("setting_minimal_placeholders_title") || "Task List: Minimal Input Placeholders")
+            .setDesc(t("setting_minimal_placeholders_desc") || "Strip shortcut hints in parentheses (e.g. Press Enter to add, Ctrl+V to paste image) from task, step, and note placeholders, keeping concise action labels with reduced opacity.")
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.minimalPlaceholders ?? false)
+                .onChange(async (value) => {
+                    this.plugin.settings.minimalPlaceholders = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.applySettings();
                 }));
 
         // =============================================

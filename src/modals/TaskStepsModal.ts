@@ -56,6 +56,7 @@ export class TaskStepsModal extends Modal {
                 centerAlignTasks: this.plugin?.settings?.centerAlignTasks ?? true,
                 showStepsProgressPill: this.plugin?.settings?.showStepsProgressPill ?? false,
                 collapseCompletedSteps: this.plugin?.settings?.collapseCompletedSteps ?? true,
+                minimalPlaceholders: this.plugin?.settings?.minimalPlaceholders ?? false,
             },
         });
     }

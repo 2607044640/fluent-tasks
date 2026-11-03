@@ -43,6 +43,7 @@
     export let centerAlignTasks: boolean = true;
     export let showStepsProgressPill: boolean = false;
     export let collapseCompletedSteps: boolean = plugin?.settings?.collapseCompletedSteps ?? true;
+    export let minimalPlaceholders: boolean = plugin?.settings?.minimalPlaceholders ?? false;
 
     // =============================================
     // Local State
@@ -1235,7 +1236,7 @@
                     use:autosize={newStepText}
                     rows="1"
                     class="steps-modal-add-input"
-                    placeholder="Add a step... (Press Enter to add, Shift+Enter for newline, Ctrl+V to paste image)"
+                    placeholder={minimalPlaceholders ? "Add a step..." : "Add a step... (Press Enter to add, Shift+Enter for newline, Ctrl+V to paste image)"}
                     bind:value={newStepText}
                     bind:this={addInputEl}
                     on:focus={() => { focusedStepId = "__new__"; }}

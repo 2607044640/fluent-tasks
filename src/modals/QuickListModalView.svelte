@@ -47,6 +47,7 @@
     let showFocusPopover: boolean = false;
     let titleAlignment: 'center' | 'left' = plugin?.settings?.quickListTitleAlignment ?? 'center';
     let hideLeftSidebar: boolean = plugin?.settings?.hideLeftSidebar ?? false;
+    let minimalPlaceholders: boolean = plugin?.settings?.minimalPlaceholders ?? false;
     let hasFloatingModalHotkey: boolean = true;
     $: showNoHotkeyWarning = hideLeftSidebar && !hasFloatingModalHotkey;
 
@@ -632,6 +633,11 @@
             titleAlignment = payload.settings.quickListTitleAlignment;
         } else if (plugin?.settings?.quickListTitleAlignment !== undefined) {
             titleAlignment = plugin.settings.quickListTitleAlignment;
+        }
+        if (payload?.settings?.minimalPlaceholders !== undefined) {
+            minimalPlaceholders = payload.settings.minimalPlaceholders;
+        } else if (plugin?.settings?.minimalPlaceholders !== undefined) {
+            minimalPlaceholders = plugin.settings.minimalPlaceholders;
         }
         if (isGridLayout) {
             scheduleAdjustSpacing();
@@ -2757,7 +2763,7 @@
                     <input 
                         type="text" 
                         class="quick-modal-inline-add-input"
-                        placeholder="New list name (Enter to save, Esc to cancel)..."
+                        placeholder={minimalPlaceholders ? "New list name..." : "New list name (Enter to save, Esc to cancel)..."}
                         bind:value={newListName}
                         bind:this={addListInputEl}
                         on:keydown={(e) => {
@@ -2780,7 +2786,7 @@
                     <input 
                         type="text" 
                         class="quick-modal-inline-add-input"
-                        placeholder="New group name (Enter to save, Esc to cancel)..."
+                        placeholder={minimalPlaceholders ? "New group name..." : "New group name (Enter to save, Esc to cancel)..."}
                         bind:value={newGroupName}
                         bind:this={addGroupInputEl}
                         on:keydown={(e) => {

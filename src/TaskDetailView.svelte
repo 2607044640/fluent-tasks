@@ -49,6 +49,7 @@
     export let isFullscreen: boolean = plugin?.settings?.fullscreenDetailModal ?? true;
     export let centerAlignTasks: boolean = plugin?.settings?.centerAlignTasks ?? true;
     export let collapseCompletedSteps: boolean = plugin?.settings?.collapseCompletedSteps ?? true;
+    export let minimalPlaceholders: boolean = plugin?.settings?.minimalPlaceholders ?? false;
     export let onCloseModal: (() => void) | undefined = undefined;
     export let onToggleFullscreen: ((fullscreen: boolean) => void) | undefined = undefined;
 
@@ -407,6 +408,7 @@
         centerAlignTasks = payload?.settings?.centerAlignTasks ?? plugin?.settings?.centerAlignTasks ?? true;
         isFullscreen = payload?.settings?.fullscreenDetailModal ?? plugin?.settings?.fullscreenDetailModal ?? true;
         collapseCompletedSteps = payload?.settings?.collapseCompletedSteps ?? plugin?.settings?.collapseCompletedSteps ?? true;
+        minimalPlaceholders = payload?.settings?.minimalPlaceholders ?? plugin?.settings?.minimalPlaceholders ?? false;
         task = task;
     }
 
@@ -2142,7 +2144,7 @@
                             rows="1"
                             class="add-step-input"
                             class:is-center-aligned={centerAlignTasks}
-                            placeholder="Add step (Press Enter to add, Shift+Enter for newline, Ctrl+V to paste image)"
+                            placeholder={minimalPlaceholders ? "Add step" : "Add step (Press Enter to add, Shift+Enter for newline, Ctrl+V to paste image)"}
                             bind:value={newStepText}
                             on:focus={() => { focusedTarget = { type: 'newStep' }; }}
                             on:input={handleStepInput}
@@ -2184,7 +2186,7 @@
                 rows="1"
                 class="note-textarea"
                 class:is-center-aligned={centerAlignTasks}
-                placeholder="Add note (Ctrl+V to paste image)"
+                placeholder={minimalPlaceholders ? "Add note" : "Add note (Ctrl+V to paste image)"}
                 bind:value={task.note}
                 on:focus={() => { focusedTarget = { type: 'note' }; }}
                 on:input={handleNoteInput}

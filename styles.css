@@ -7426,6 +7426,45 @@ body .task-focused-lists-modal .modal-content {
     }
 }
 
+/* =============================================
+   Minimal Input Placeholders Mode
+   ============================================= */
+body.minimal-placeholders .add-task-input::placeholder,
+body.minimal-placeholders .add-step-input::placeholder,
+body.minimal-placeholders .note-textarea::placeholder,
+body.minimal-placeholders .steps-modal-add-input::placeholder,
+body.minimal-placeholders .quick-modal-add-input::placeholder,
+body.minimal-placeholders .quick-modal-inline-add-input::placeholder {
+    opacity: 0.22 !important;
+}
+
+body.minimal-placeholders .add-task-container:hover .add-task-input::placeholder,
+body.minimal-placeholders .add-step-row:hover .add-step-input::placeholder,
+body.minimal-placeholders .note-section:hover .note-textarea::placeholder,
+body.minimal-placeholders .steps-modal-add-row:hover .steps-modal-add-input::placeholder,
+body.minimal-placeholders .quick-modal-add-input:hover::placeholder,
+body.minimal-placeholders .quick-modal-inline-add-input:hover::placeholder,
+body.minimal-placeholders .add-task-input:hover::placeholder,
+body.minimal-placeholders .add-step-input:hover::placeholder,
+body.minimal-placeholders .note-textarea:hover::placeholder,
+body.minimal-placeholders .steps-modal-add-input:hover::placeholder {
+    opacity: 0.42 !important;
+}
+
+body.minimal-placeholders .add-task-container:focus-within .add-task-input::placeholder,
+body.minimal-placeholders .add-step-row:focus-within .add-step-input::placeholder,
+body.minimal-placeholders .note-section:focus-within .note-textarea::placeholder,
+body.minimal-placeholders .steps-modal-add-row:focus-within .steps-modal-add-input::placeholder,
+body.minimal-placeholders .quick-modal-add-input:focus::placeholder,
+body.minimal-placeholders .quick-modal-inline-add-input:focus::placeholder,
+body.minimal-placeholders .add-task-input:focus::placeholder,
+body.minimal-placeholders .add-step-input:focus::placeholder,
+body.minimal-placeholders .note-textarea:focus::placeholder,
+body.minimal-placeholders .steps-modal-add-input:focus::placeholder {
+    opacity: 0.55 !important;
+}
+
+
 
 
 

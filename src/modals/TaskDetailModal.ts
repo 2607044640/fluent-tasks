@@ -69,6 +69,7 @@ export class TaskDetailModal extends Modal {
                 isFullscreen: isFullscreen,
                 centerAlignTasks: isCenterAligned,
                 collapseCompletedSteps: this.plugin?.settings?.collapseCompletedSteps ?? true,
+                minimalPlaceholders: this.plugin?.settings?.minimalPlaceholders ?? false,
                 onCloseModal: () => this.forceClose(),
                 onToggleFullscreen: (fullscreen: boolean) => {
                     modalEl.toggleClass("is-fullscreen", fullscreen);
@@ -95,6 +96,12 @@ export class TaskDetailModal extends Modal {
         this.containerEl.toggleClass("is-center-aligned", centerAligned);
         if (this.component) {
             this.component.$set({ centerAlignTasks: centerAligned });
+        }
+    }
+
+    public setMinimalPlaceholders(minimal: boolean) {
+        if (this.component) {
+            this.component.$set({ minimalPlaceholders: minimal });
         }
     }
 
