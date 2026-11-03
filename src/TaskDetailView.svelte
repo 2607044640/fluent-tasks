@@ -1821,15 +1821,13 @@
     }
 </script>
 
-<div class="detail-container" class:is-center-aligned={centerAlignTasks} on:wheel={handleContainerWheel} on:paste={handlePaste} on:dragover|preventDefault on:drop={handleDrop}>
+<div class="detail-container" class:is-center-aligned={centerAlignTasks} class:is-modal={isModal} on:wheel={handleContainerWheel} on:paste={handlePaste} on:dragover|preventDefault on:drop={handleDrop}>
     {#if task}
-        <!-- Scrollable Content Body -->
-        <div class="detail-body" bind:this={detailBodyEl}>
-            <!-- Header: Checkbox + Title + Star -->
-            <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <!-- svelte-ignore a11y-no-static-element-interactions -->
-            <div class="detail-header" class:is-center-aligned={centerAlignTasks} on:click={handleDetailHeaderClick}>
-                <div class="title-row" class:is-center-aligned={centerAlignTasks}>
+        <!-- Pinned Header: Checkbox + Title + Actions -->
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <!-- svelte-ignore a11y-no-static-element-interactions -->
+        <div class="detail-header" class:is-center-aligned={centerAlignTasks} on:click={handleDetailHeaderClick}>
+            <div class="title-row" class:is-center-aligned={centerAlignTasks}>
                 <!-- Completion circle -->
                 <span class="checkbox" on:click|stopPropagation={toggleComplete}
                       role="checkbox" aria-checked={task.completed} tabindex="0"
@@ -1958,11 +1956,17 @@
                     {/if}
                 </div>
             </div>
+        </div>
 
+        <!-- Horizontal Divider underneath Header -->
+        <div class="detail-header-divider"></div>
+
+        <!-- Scrollable Content Body -->
+        <div class="detail-body" bind:this={detailBodyEl}>
             <!-- Steps -->
             <!-- svelte-ignore a11y-click-events-have-key-events -->
             <!-- svelte-ignore a11y-no-static-element-interactions -->
-            <div class="steps-container" class:is-center-aligned={centerAlignTasks} on:click|stopPropagation>
+            <div class="steps-container" class:is-center-aligned={centerAlignTasks}>
                 {#if task.steps && task.steps.length > 0}
                     <div
                         class="steps-dnd-zone"
@@ -2155,7 +2159,6 @@
                     </div>
                 </div>
             </div>
-        </div>
 
         <!-- Note -->
         <!-- svelte-ignore a11y-click-events-have-key-events -->

@@ -4845,9 +4845,12 @@ body .task-detail-floating-modal .modal-content.task-detail-modal-content {
 body .task-detail-floating-modal .detail-container {
     height: 100%;
     width: 100%;
-    padding: 16px 20px 4px 20px;
+    padding: 0 !important;
     box-sizing: border-box;
     background-color: var(--background-primary) !important;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 /* =============================================
@@ -4904,12 +4907,34 @@ body .task-detail-floating-modal.is-fullscreen .detail-container {
     overflow: hidden;
 }
 
+body .task-detail-floating-modal .detail-header,
+body .task-detail-floating-modal.is-fullscreen .detail-header {
+    background-color: var(--background-primary) !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0;
+    padding: 14px 48px 14px 28px;
+    margin-bottom: 0;
+    position: relative;
+    cursor: text;
+    box-sizing: border-box;
+    width: 100%;
+    flex-shrink: 0;
+}
+
+.detail-header-divider {
+    width: 100%;
+    height: 1px;
+    background-color: var(--todo-border, var(--background-modifier-border, rgba(255, 255, 255, 0.08)));
+    flex-shrink: 0;
+}
+
 body .task-detail-floating-modal.is-fullscreen .detail-body {
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
     scrollbar-width: thin;
-    padding: 28px 36px 20px 36px;
+    padding: 24px 32px 32px 32px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -4917,19 +4942,6 @@ body .task-detail-floating-modal.is-fullscreen .detail-body {
     max-width: 1080px;
     width: 100%;
     margin: 0 auto;
-}
-
-body .task-detail-floating-modal .detail-header,
-body .task-detail-floating-modal.is-fullscreen .detail-header {
-    background-color: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    border-radius: 0;
-    padding: 16px 14px;
-    margin-bottom: 6px;
-    position: relative;
-    cursor: text;
-    box-sizing: border-box;
 }
 
 body .task-detail-floating-modal .steps-container,
@@ -6398,46 +6410,96 @@ body .task-steps-floating-modal .steps-modal-delete-btn:hover {
     flex-shrink: 0;
 }
 
-.task-steps-floating-modal.is-center-aligned .task-steps-modal-title,
-.task-steps-modal-container.is-center-aligned .task-steps-modal-title {
-    text-align: center;
+.task-steps-floating-modal.is-center-aligned .task-steps-modal-header,
+.task-steps-modal-container.is-center-aligned .task-steps-modal-header {
+    position: relative;
+    width: 100%;
+    justify-content: center;
+}
+
+.task-steps-floating-modal.is-center-aligned .task-steps-header-icon,
+.task-steps-modal-container.is-center-aligned .task-steps-header-icon {
+    position: absolute;
+    left: 28px;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0;
+    z-index: 2;
 }
 
 .task-steps-floating-modal.is-center-aligned .task-steps-modal-title-box,
 .task-steps-modal-container.is-center-aligned .task-steps-modal-title-box {
+    width: 100%;
     justify-content: center;
     text-align: center;
+    padding: 0 110px;
+    box-sizing: border-box;
+    position: relative;
+}
+
+.task-steps-floating-modal.is-center-aligned .task-steps-modal-title,
+.task-steps-modal-container.is-center-aligned .task-steps-modal-title {
+    width: 100%;
+    text-align: center;
+}
+
+.task-steps-floating-modal.is-center-aligned .task-steps-modal-header-actions,
+.task-steps-modal-container.is-center-aligned .task-steps-modal-header-actions {
+    position: absolute;
+    right: 28px;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0;
+    z-index: 2;
 }
 
 .task-steps-floating-modal.is-center-aligned .steps-modal-item,
 .task-steps-modal-container.is-center-aligned .steps-modal-item {
-    display: grid;
-    grid-template-columns: minmax(min-content, 1fr) auto minmax(min-content, 1fr);
+    position: relative;
+    width: 100%;
+    display: flex;
     align-items: center;
-    column-gap: 12px;
+    justify-content: center;
 }
 
 .task-steps-floating-modal.is-center-aligned .steps-modal-left-controls,
 .task-steps-modal-container.is-center-aligned .steps-modal-left-controls {
-    grid-column: 1;
-    justify-self: start;
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .task-steps-floating-modal.is-center-aligned .steps-modal-text-col,
 .task-steps-modal-container.is-center-aligned .steps-modal-text-col {
-    grid-column: 2;
-    align-items: center;
-    text-align: center;
     width: 100%;
-    min-width: 0;
+    padding: 0 48px;
+    box-sizing: border-box;
+    text-align: center;
     display: flex;
     flex-direction: column;
+    align-items: center;
+    min-width: 0;
 }
 
+.task-steps-floating-modal.is-center-aligned .steps-modal-right-controls,
+.task-steps-modal-container.is-center-aligned .steps-modal-right-controls,
 .task-steps-floating-modal.is-center-aligned .steps-modal-delete-btn,
 .task-steps-modal-container.is-center-aligned .steps-modal-delete-btn {
-    grid-column: 3;
-    justify-self: end;
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .task-steps-floating-modal.is-center-aligned .autosize-field-sizing {
@@ -6447,6 +6509,8 @@ body .task-steps-floating-modal .steps-modal-delete-btn:hover {
 .steps-modal-textarea,
 .task-steps-modal-container.is-center-aligned .steps-modal-textarea {
     text-align: center !important;
+    width: 100% !important;
+    box-sizing: border-box;
 }
 
 .task-steps-floating-modal.is-center-aligned .steps-modal-textarea::placeholder,
@@ -6467,13 +6531,39 @@ body .task-steps-floating-modal .steps-modal-delete-btn:hover {
 
 .task-steps-floating-modal.is-center-aligned .steps-modal-add-row,
 .task-steps-modal-container.is-center-aligned .steps-modal-add-row {
-    justify-content: center;
+    position: relative;
     width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.task-steps-floating-modal.is-center-aligned .steps-modal-add-icon,
+.task-steps-modal-container.is-center-aligned .steps-modal-add-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0;
+    z-index: 2;
+}
+
+.task-steps-floating-modal.is-center-aligned .steps-modal-add-btn,
+.task-steps-modal-container.is-center-aligned .steps-modal-add-btn {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0;
+    z-index: 2;
 }
 
 .task-steps-floating-modal.is-center-aligned .steps-modal-add-input,
 .task-steps-modal-container.is-center-aligned .steps-modal-add-input {
-    text-align: center;
+    width: 100% !important;
+    padding: 4px 48px !important;
+    box-sizing: border-box;
+    text-align: center !important;
 }
 
 .task-steps-floating-modal.is-center-aligned .steps-modal-add-input::placeholder,
@@ -6508,6 +6598,7 @@ body .task-steps-floating-modal .steps-modal-delete-btn:hover {
 .detail-container.is-center-aligned .detail-header,
 body .task-detail-floating-modal.is-center-aligned .detail-header {
     width: 100%;
+    position: relative;
     background: transparent !important;
     background-color: transparent !important;
     border: none !important;
@@ -6516,28 +6607,32 @@ body .task-detail-floating-modal.is-center-aligned .detail-header {
 
 .detail-container.is-center-aligned .title-row,
 body .task-detail-floating-modal.is-center-aligned .title-row {
-    display: grid;
-    grid-template-columns: minmax(min-content, 1fr) auto minmax(min-content, 1fr);
-    align-items: center;
-    column-gap: 12px;
+    position: relative;
     width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .detail-container.is-center-aligned .title-row .checkbox,
 body .task-detail-floating-modal.is-center-aligned .title-row .checkbox {
-    grid-column: 1;
-    justify-self: start;
-    align-self: start;
-    margin-top: 3px;
-    margin-right: 0;
+    position: absolute;
+    left: 28px;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0;
+    z-index: 2;
 }
 
 .detail-container.is-center-aligned .title-content-col,
 body .task-detail-floating-modal.is-center-aligned .title-content-col {
-    grid-column: 2;
+    width: 100%;
+    padding: 0 110px;
+    box-sizing: border-box;
     align-items: center;
     text-align: center;
-    width: 100%;
+    display: flex;
+    flex-direction: column;
     min-width: 0;
 }
 
@@ -6549,6 +6644,7 @@ body .task-detail-floating-modal.is-center-aligned .detail-title-input {
     border: none !important;
     outline: none !important;
     box-shadow: none !important;
+    box-sizing: border-box;
 }
 
 .detail-container.is-center-aligned .detail-title-input::placeholder,
@@ -6558,37 +6654,49 @@ body .task-detail-floating-modal.is-center-aligned .detail-title-input::placehol
 
 .detail-container.is-center-aligned .title-right-actions,
 body .task-detail-floating-modal.is-center-aligned .title-right-actions {
-    grid-column: 3;
-    justify-self: end;
-    align-self: start;
-    margin-top: 2px;
-    margin-left: 0;
+    position: absolute;
+    right: 28px;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .detail-container.is-center-aligned .step-item,
 body .task-detail-floating-modal.is-center-aligned .step-item {
-    display: grid;
-    grid-template-columns: minmax(min-content, 1fr) auto minmax(min-content, 1fr);
-    align-items: center;
-    column-gap: 12px;
+    position: relative;
     width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .detail-container.is-center-aligned .step-left-controls,
 body .task-detail-floating-modal.is-center-aligned .step-left-controls {
-    grid-column: 1;
-    justify-self: start;
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .detail-container.is-center-aligned .step-content-col,
 body .task-detail-floating-modal.is-center-aligned .step-content-col {
-    grid-column: 2;
+    width: 100%;
+    padding: 0 48px;
+    box-sizing: border-box;
     align-items: center;
     text-align: center;
-    width: 100%;
-    min-width: 0;
     display: flex;
     flex-direction: column;
+    min-width: 0;
 }
 
 .detail-container.is-center-aligned .step-item textarea,
@@ -6596,7 +6704,8 @@ body .task-detail-floating-modal.is-center-aligned .step-content-col {
 body .task-detail-floating-modal.is-center-aligned .step-item textarea,
 body .task-detail-floating-modal.is-center-aligned .step-item input[type="text"] {
     text-align: center !important;
-    width: 100%;
+    width: 100% !important;
+    box-sizing: border-box;
 }
 
 .detail-container.is-center-aligned .step-item textarea::placeholder,
@@ -6610,8 +6719,15 @@ body .task-detail-floating-modal.is-center-aligned .step-item input[type="text"]
 body .task-detail-floating-modal.is-center-aligned .step-right-controls,
 .detail-container.is-center-aligned .delete-step,
 body .task-detail-floating-modal.is-center-aligned .delete-step {
-    grid-column: 3;
-    justify-self: end;
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .detail-container.is-center-aligned .add-step-card,
@@ -6620,16 +6736,33 @@ body .task-detail-floating-modal.is-center-aligned .add-step-card {
     flex-direction: column;
     align-items: center;
     width: 100%;
+    position: relative;
 }
 
 .detail-container.is-center-aligned .add-step-row,
 body .task-detail-floating-modal.is-center-aligned .add-step-row {
-    justify-content: center;
+    position: relative;
     width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.detail-container.is-center-aligned .add-step-row svg,
+body .task-detail-floating-modal.is-center-aligned .add-step-row svg {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0;
+    z-index: 2;
 }
 
 .detail-container.is-center-aligned .add-step-input,
 body .task-detail-floating-modal.is-center-aligned .add-step-input {
+    width: 100% !important;
+    padding: 4px 48px !important;
+    box-sizing: border-box;
     text-align: center !important;
 }
 
@@ -6640,12 +6773,20 @@ body .task-detail-floating-modal.is-center-aligned .add-step-input::placeholder 
 
 .detail-container.is-center-aligned .note-section,
 body .task-detail-floating-modal.is-center-aligned .note-section {
+    position: relative;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    text-align: center;
+    justify-content: center;
+    box-sizing: border-box;
 }
 
 .detail-container.is-center-aligned .note-textarea,
 body .task-detail-floating-modal.is-center-aligned .note-textarea {
+    width: 100% !important;
+    padding: 0 48px !important;
+    box-sizing: border-box;
     text-align: center !important;
 }
 
