@@ -709,10 +709,14 @@
     position: relative;
 }
 
-/* Subtle separator line between task items and step items */
+/* Subtle separator line between task items, step items, headers and sections */
 .task-item:not(:last-child)::after,
-.step-item:not(:last-child)::after,
-.steps-modal-item:not(:last-child)::after {
+.step-item::after,
+.steps-modal-item::after,
+.detail-header::after,
+.task-steps-modal-header::after,
+.add-step-card::after,
+.steps-modal-add-card::after {
     content: "";
     display: var(--task-separator-display, block);
     position: absolute;
@@ -724,20 +728,31 @@
     background: linear-gradient(
         90deg, 
         transparent 0%, 
-        var(--background-modifier-border, rgba(255, 255, 255, 0.08)) 16px, 
-        var(--background-modifier-border, rgba(255, 255, 255, 0.08)) calc(100% - 16px), 
+        var(--background-modifier-border, rgba(255, 255, 255, 0.16)) 16px, 
+        var(--background-modifier-border, rgba(255, 255, 255, 0.16)) calc(100% - 16px), 
         transparent 100%
     );
-    opacity: 0.55;
+    opacity: 0.65;
     pointer-events: none;
     transition: opacity var(--todo-transition), width 0.15s ease;
+}
+
+.detail-header::after,
+.task-steps-modal-header::after,
+.add-step-card::after,
+.steps-modal-add-card::after {
+    bottom: 0;
 }
 
 .task-item:hover::after,
 .task-item.selected::after,
 .step-item:hover::after,
-.steps-modal-item:hover::after {
-    opacity: 0.35;
+.steps-modal-item:hover::after,
+.detail-header:hover::after,
+.task-steps-modal-header:hover::after,
+.add-step-card:hover::after,
+.steps-modal-add-card:hover::after {
+    opacity: 0.85;
 }
 
 .task-item:hover {
@@ -1113,6 +1128,7 @@
     margin-bottom: 0;
     flex-shrink: 0;
     cursor: text;
+    position: relative;
 }
 
 .title-row {
@@ -4893,6 +4909,8 @@ body .task-detail-floating-modal.is-fullscreen .detail-header {
     box-shadow: none !important;
     border-radius: 0;
     padding: 16px 14px;
+    margin-bottom: 6px;
+    position: relative;
     cursor: text;
     box-sizing: border-box;
 }
@@ -4924,7 +4942,8 @@ body .task-detail-floating-modal.is-fullscreen .step-item:hover {
 
 body .task-detail-floating-modal .add-step-card,
 body .task-detail-floating-modal.is-fullscreen .add-step-card {
-    padding: 2px 0;
+    padding: 2px 0 6px 0;
+    position: relative;
 }
 
 body .task-detail-floating-modal .add-step-row,
@@ -5109,7 +5128,8 @@ body .task-steps-floating-modal .modal-content.task-steps-modal-content {
     justify-content: space-between;
     gap: 16px;
     padding: 14px 48px 14px 28px;
-    border-bottom: 1px solid var(--todo-border, var(--background-modifier-border, rgba(255, 255, 255, 0.08)));
+    border-bottom: none !important;
+    position: relative;
     background-color: var(--background-primary);
     flex-shrink: 0;
 }
@@ -6413,11 +6433,14 @@ body .task-steps-floating-modal .steps-modal-delete-btn:hover {
 }
 
 .task-steps-floating-modal.is-center-aligned .steps-modal-add-card,
-.task-steps-modal-container.is-center-aligned .steps-modal-add-card {
+.task-steps-modal-container.is-center-aligned .steps-modal-add-card,
+.steps-modal-add-card {
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 100%;
+    position: relative;
+    padding-bottom: 8px;
 }
 
 .task-steps-floating-modal.is-center-aligned .steps-modal-add-row,
