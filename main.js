@@ -52633,7 +52633,7 @@ var DEFAULT_SETTINGS = {
   quickListTitleAlignment: "center",
   enableFocusedLists: false,
   focusedLists: [],
-  taskSeparatorWidth: 60
+  taskSeparatorWidth: 90
 };
 var FluentTasksSettingTab = class extends import_obsidian23.PluginSettingTab {
   constructor(app, plugin) {
@@ -52687,9 +52687,9 @@ var FluentTasksSettingTab = class extends import_obsidian23.PluginSettingTab {
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian23.Setting(containerEl).setName(t("setting_task_separator_width_title") || "Task List: Separator Line Width").setDesc(t("setting_task_separator_width_desc") || "Adjust the horizontal width percentage of the subtle hairline gradient separator between tasks (0% to 100%, 0% hides the line, default: 60%).").addSlider((slider) => {
+    new import_obsidian23.Setting(containerEl).setName(t("setting_task_separator_width_title") || "Task List: Separator Line Width").setDesc(t("setting_task_separator_width_desc") || "Adjust the horizontal width percentage of the subtle hairline gradient separator between tasks (0% to 100%, 0% hides the line, default: 90%).").addSlider((slider) => {
       var _a;
-      return slider.setLimits(0, 100, 5).setValue((_a = this.plugin.settings.taskSeparatorWidth) != null ? _a : 60).setDynamicTooltip().onChange(async (value) => {
+      return slider.setLimits(0, 100, 5).setValue((_a = this.plugin.settings.taskSeparatorWidth) != null ? _a : 90).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.taskSeparatorWidth = value;
         await this.plugin.saveSettings();
         this.plugin.applySettings();
@@ -60910,6 +60910,9 @@ var FluentTasksPlugin = class extends import_obsidian29.Plugin {
   // =============================================
   async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    if (this.settings.taskSeparatorWidth === 60 || this.settings.taskSeparatorWidth === void 0) {
+      this.settings.taskSeparatorWidth = 90;
+    }
     if (this.settings.disableStars !== void 0 && this.settings.hiddenStarMode === void 0) {
       this.settings.hiddenStarMode = this.settings.disableStars;
     }
@@ -60934,7 +60937,7 @@ var FluentTasksPlugin = class extends import_obsidian29.Plugin {
     }
   }
   applySettings() {
-    const separatorWidth = this.settings.taskSeparatorWidth !== void 0 ? this.settings.taskSeparatorWidth : 60;
+    const separatorWidth = this.settings.taskSeparatorWidth !== void 0 ? this.settings.taskSeparatorWidth : 90;
     document.body.setCssProps({
       "--todo-accent": this.settings.accentColor,
       "--todo-accent-glow": `${this.settings.accentColor}99`,

@@ -709,21 +709,23 @@
     position: relative;
 }
 
-/* Subtle separator line between task items */
-.task-item:not(:last-child)::after {
+/* Subtle separator line between task items and step items */
+.task-item:not(:last-child)::after,
+.step-item:not(:last-child)::after,
+.steps-modal-item:not(:last-child)::after {
     content: "";
     display: var(--task-separator-display, block);
     position: absolute;
     bottom: -1px;
     left: 50%;
     transform: translateX(-50%);
-    width: var(--task-separator-width, 60%);
+    width: var(--task-separator-width, 90%);
     height: 1px;
     background: linear-gradient(
         90deg, 
         transparent 0%, 
-        var(--background-modifier-border, rgba(255, 255, 255, 0.08)) 14px, 
-        var(--background-modifier-border, rgba(255, 255, 255, 0.08)) calc(100% - 14px), 
+        var(--background-modifier-border, rgba(255, 255, 255, 0.08)) 16px, 
+        var(--background-modifier-border, rgba(255, 255, 255, 0.08)) calc(100% - 16px), 
         transparent 100%
     );
     opacity: 0.55;
@@ -732,7 +734,9 @@
 }
 
 .task-item:hover::after,
-.task-item.selected::after {
+.task-item.selected::after,
+.step-item:hover::after,
+.steps-modal-item:hover::after {
     opacity: 0.35;
 }
 
@@ -1055,7 +1059,7 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    background-color: var(--todo-panel-bg);
+    background-color: var(--background-primary);
     padding: 16px 20px 4px 20px;
     font-family: var(--todo-font);
     color: var(--todo-text-main);
@@ -1103,12 +1107,9 @@
 
 /* Header Block */
 .detail-header {
-    background: transparent !important;
-    background-color: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
+    background-color: var(--todo-item-bg);
     border-radius: var(--todo-radius);
-    padding: 15px 4px;
+    padding: 15px;
     margin-bottom: 0;
     flex-shrink: 0;
     cursor: text;
@@ -1355,13 +1356,10 @@ body .task-detail-floating-modal.is-fullscreen .detail-title-input:focus {
 .steps-modal-item.is-step-collapsed {
     align-items: center;
     cursor: pointer;
-    margin-bottom: 6px;
+    margin-bottom: 2px;
     gap: 8px;
-    min-height: 24px;
-    padding: 4px 14px;
-    border-radius: 8px;
-    background-color: var(--todo-item-bg, var(--background-secondary, rgba(255, 255, 255, 0.02))) !important;
-    border: 1px solid var(--todo-border, var(--background-modifier-border, rgba(255, 255, 255, 0.06))) !important;
+    min-height: 22px;
+    padding: 2px 10px;
 }
 
 .step-item.is-step-collapsed .step-drag-handle,
@@ -4781,9 +4779,7 @@ body .quick-modal-list-item.is-grid-item.is-focused {
 /* =============================================
    Floating Task Detail Modal (Tier 1)
    ============================================= */
-body .modal.task-detail-floating-modal,
-body .task-detail-floating-modal,
-body .modal-container:has(.task-detail-floating-modal) .modal {
+body .task-detail-floating-modal {
     width: 680px !important;
     max-width: 90vw !important;
     height: 85vh !important;
@@ -4791,10 +4787,9 @@ body .modal-container:has(.task-detail-floating-modal) .modal {
     padding: 0 !important;
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: none !important;
-    background: transparent !important;
-    background-color: transparent !important;
-    border: none !important;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+    background-color: var(--background-primary) !important;
+    border: 1px solid var(--todo-border, var(--background-modifier-border, rgba(255, 255, 255, 0.08)));
     display: flex;
     flex-direction: column;
 }
@@ -4803,7 +4798,6 @@ body .task-detail-floating-modal .modal-close-button {
     display: none !important;
 }
 
-body .task-detail-floating-modal .modal-content,
 body .task-detail-floating-modal .modal-content.task-detail-modal-content {
     height: 100% !important;
     max-height: 100% !important;
@@ -4812,10 +4806,7 @@ body .task-detail-floating-modal .modal-content.task-detail-modal-content {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    background: transparent !important;
-    background-color: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
+    background-color: var(--background-primary) !important;
 }
 
 body .task-detail-floating-modal .detail-container {
@@ -4823,10 +4814,7 @@ body .task-detail-floating-modal .detail-container {
     width: 100%;
     padding: 16px 20px 4px 20px;
     box-sizing: border-box;
-    background: transparent !important;
-    background-color: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
+    background-color: var(--background-primary) !important;
 }
 
 /* =============================================
@@ -4900,97 +4888,77 @@ body .task-detail-floating-modal.is-fullscreen .detail-body {
 
 body .task-detail-floating-modal .detail-header,
 body .task-detail-floating-modal.is-fullscreen .detail-header {
-    background: transparent !important;
     background-color: transparent !important;
     border: none !important;
     box-shadow: none !important;
     border-radius: 0;
-    padding: 16px 4px;
+    padding: 16px 14px;
     cursor: text;
     box-sizing: border-box;
 }
 
-body .task-detail-floating-modal .steps-container,
-body .task-detail-floating-modal.is-fullscreen .steps-container {
-    padding: 0 !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
-}
-
 body .task-detail-floating-modal .step-item,
 body .task-detail-floating-modal.is-fullscreen .step-item {
-    padding: 10px 16px;
-    border-radius: 10px;
-    background-color: var(--todo-item-bg, var(--background-secondary, rgba(255, 255, 255, 0.03))) !important;
-    border: 1px solid var(--todo-border, var(--background-modifier-border, rgba(255, 255, 255, 0.08))) !important;
+    padding: 8px 14px;
+    border-radius: var(--todo-radius, 6px);
+    background-color: transparent !important;
+    border: none !important;
     box-shadow: none !important;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
-    margin-bottom: 8px;
+    transition: background-color 0.15s ease;
+    margin-bottom: 2px;
     position: relative;
-    box-sizing: border-box;
 }
 
 body .task-detail-floating-modal .step-item.is-step-collapsed,
 body .task-detail-floating-modal.is-fullscreen .step-item.is-step-collapsed {
-    padding: 4px 14px;
-    margin-bottom: 6px;
+    padding: 2px 10px;
+    margin-bottom: 2px;
     min-height: 24px;
-    border-radius: 8px;
-    background-color: var(--todo-item-bg, var(--background-secondary, rgba(255, 255, 255, 0.02))) !important;
-    border: 1px solid var(--todo-border, var(--background-modifier-border, rgba(255, 255, 255, 0.06))) !important;
 }
 
 body .task-detail-floating-modal .step-item:hover,
 body .task-detail-floating-modal.is-fullscreen .step-item:hover {
-    background-color: var(--background-modifier-hover, rgba(255, 255, 255, 0.06)) !important;
-    border-color: var(--background-modifier-border-hover, rgba(255, 255, 255, 0.15)) !important;
+    background-color: var(--todo-hover-bg, rgba(255, 255, 255, 0.04));
+    border: none !important;
 }
 
 body .task-detail-floating-modal .add-step-card,
 body .task-detail-floating-modal.is-fullscreen .add-step-card {
-    padding: 0;
-    width: 100%;
+    padding: 2px 0;
 }
 
 body .task-detail-floating-modal .add-step-row,
 body .task-detail-floating-modal.is-fullscreen .add-step-row {
-    padding: 10px 16px;
-    border-radius: 10px;
-    background-color: var(--todo-item-bg, var(--background-secondary, rgba(255, 255, 255, 0.02))) !important;
-    border: 1px solid var(--todo-border, var(--background-modifier-border, rgba(255, 255, 255, 0.06))) !important;
+    padding: 8px 14px;
+    border-radius: var(--todo-radius, 6px);
+    background-color: transparent !important;
+    border: none !important;
     box-shadow: none !important;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
-    box-sizing: border-box;
+    transition: background-color 0.15s ease;
 }
 
 body .task-detail-floating-modal .add-step-row:hover,
 body .task-detail-floating-modal.is-fullscreen .add-step-row:hover {
-    background-color: var(--background-modifier-hover, rgba(255, 255, 255, 0.05)) !important;
-    border-color: var(--background-modifier-border-hover, rgba(255, 255, 255, 0.14)) !important;
+    background-color: var(--todo-hover-bg, rgba(255, 255, 255, 0.04));
+    border: none !important;
 }
 
 body .task-detail-floating-modal .add-step-row:focus-within,
 body .task-detail-floating-modal.is-fullscreen .add-step-row:focus-within {
-    background-color: var(--background-modifier-hover, rgba(255, 255, 255, 0.06)) !important;
-    border-color: var(--background-modifier-border-hover, rgba(255, 255, 255, 0.18)) !important;
+    background-color: var(--todo-hover-bg, rgba(255, 255, 255, 0.04));
+    border: none !important;
 }
 
 body .task-detail-floating-modal .note-section,
 body .task-detail-floating-modal.is-fullscreen .note-section {
     border-radius: 10px;
     padding: 14px 18px;
-    background-color: var(--todo-item-bg, var(--background-secondary, rgba(255, 255, 255, 0.02))) !important;
-    border: 1px solid var(--todo-border, var(--background-modifier-border, rgba(255, 255, 255, 0.08))) !important;
+    background-color: var(--todo-item-bg, rgba(255, 255, 255, 0.02));
+    border: 1px solid var(--todo-border, var(--background-modifier-border, rgba(255, 255, 255, 0.06)));
     min-height: auto;
     height: auto;
     flex-grow: 0;
     flex-shrink: 0;
-    box-sizing: border-box;
-}
-
-body .task-detail-floating-modal .note-section:hover,
-body .task-detail-floating-modal.is-fullscreen .note-section:hover {
-    border-color: var(--background-modifier-border-hover, rgba(255, 255, 255, 0.14));
 }
 
 body .task-detail-floating-modal.is-fullscreen .detail-schedule-section {
@@ -5141,11 +5109,8 @@ body .task-steps-floating-modal .modal-content.task-steps-modal-content {
     justify-content: space-between;
     gap: 16px;
     padding: 14px 48px 14px 28px;
-    border: none !important;
-    border-bottom: none !important;
-    background: transparent !important;
-    background-color: transparent !important;
-    box-shadow: none !important;
+    border-bottom: 1px solid var(--todo-border, var(--background-modifier-border, rgba(255, 255, 255, 0.08)));
+    background-color: var(--background-primary);
     flex-shrink: 0;
 }
 
@@ -5245,7 +5210,7 @@ body .task-steps-floating-modal .modal-content.task-steps-modal-content {
 .task-steps-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 2px;
 }
 
 .task-steps-list:focus {
@@ -5279,16 +5244,15 @@ body .task-steps-floating-modal .modal-content.task-steps-modal-content {
     display: flex;
     align-items: flex-start;
     gap: 12px;
-    padding: 10px 16px;
-    border-radius: 10px;
-    background-color: var(--todo-item-bg, var(--background-secondary, rgba(255, 255, 255, 0.03))) !important;
-    border: 1px solid var(--todo-border, var(--background-modifier-border, rgba(255, 255, 255, 0.08))) !important;
+    padding: 8px 12px;
+    border-radius: var(--todo-radius, 6px);
+    background-color: transparent !important;
+    border: none !important;
     box-shadow: none !important;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
+    transition: background-color 0.15s ease;
     cursor: text;
     position: relative;
-    margin-bottom: 0;
-    box-sizing: border-box;
+    margin-bottom: 2px;
 }
 
 .steps-modal-text-col,
@@ -5302,12 +5266,12 @@ body .task-steps-floating-modal .modal-content.task-steps-modal-content {
 }
 
 .steps-modal-item:hover {
-    background-color: var(--background-modifier-hover, rgba(255, 255, 255, 0.06)) !important;
-    border-color: var(--background-modifier-border-hover, rgba(255, 255, 255, 0.15)) !important;
+    background-color: var(--todo-hover-bg, rgba(255, 255, 255, 0.04));
+    border: none !important;
 }
 
 .steps-modal-item.is-done {
-    background-color: var(--todo-item-bg, var(--background-secondary, rgba(255, 255, 255, 0.02))) !important;
+    background-color: transparent !important;
     opacity: 0.85;
 }
 
@@ -5426,24 +5390,23 @@ body .task-steps-floating-modal .steps-modal-delete-btn:hover {
     display: flex;
     align-items: flex-start;
     gap: 12px;
-    padding: 10px 16px;
-    border-radius: 10px;
-    border: 1px solid var(--todo-border, var(--background-modifier-border, rgba(255, 255, 255, 0.06))) !important;
+    padding: 10px 14px;
+    border-radius: var(--todo-radius, 6px);
+    border: none !important;
     box-shadow: none !important;
-    background-color: var(--todo-item-bg, var(--background-secondary, rgba(255, 255, 255, 0.02))) !important;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
+    background-color: transparent !important;
+    transition: background-color 0.15s ease;
     flex-shrink: 0;
-    box-sizing: border-box;
 }
 
 .steps-modal-add-row:hover {
-    background-color: var(--background-modifier-hover, rgba(255, 255, 255, 0.05)) !important;
-    border-color: var(--background-modifier-border-hover, rgba(255, 255, 255, 0.14)) !important;
+    background-color: var(--todo-hover-bg, rgba(255, 255, 255, 0.04));
+    border: none !important;
 }
 
 .steps-modal-add-row:focus-within {
-    border-color: var(--background-modifier-border-hover, rgba(255, 255, 255, 0.18)) !important;
-    background-color: var(--background-modifier-hover, rgba(255, 255, 255, 0.06)) !important;
+    border: none !important;
+    background-color: var(--todo-hover-bg, rgba(255, 255, 255, 0.04));
 }
 
 .steps-modal-add-icon {

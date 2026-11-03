@@ -10,7 +10,6 @@
  *
  * All cross-view communication flows through EventBus.
  * All data I/O flows through DataService.
- * UI Style: Floating card layout for subtasks & detail, borderless title and outer container.
  */
 
 import { Plugin, ItemView, WorkspaceLeaf, TFile, Scope, App, ViewStateResult, Notice } from "obsidian";
@@ -1025,6 +1024,9 @@ export default class FluentTasksPlugin extends Plugin implements ISidebarPluginH
 
     async loadSettings() {
         this.settings = Object.assign({}, DEFAULT_SETTINGS, (await this.loadData()) as Partial<FluentTasksSettings> | null);
+        if (this.settings.taskSeparatorWidth === 60 || this.settings.taskSeparatorWidth === undefined) {
+            this.settings.taskSeparatorWidth = 90;
+        }
         if ((this.settings as any).disableStars !== undefined && this.settings.hiddenStarMode === undefined) {
             this.settings.hiddenStarMode = (this.settings as any).disableStars;
         }
@@ -1053,7 +1055,7 @@ export default class FluentTasksPlugin extends Plugin implements ISidebarPluginH
     }
 
     applySettings() {
-        const separatorWidth = this.settings.taskSeparatorWidth !== undefined ? this.settings.taskSeparatorWidth : 60;
+        const separatorWidth = this.settings.taskSeparatorWidth !== undefined ? this.settings.taskSeparatorWidth : 90;
         document.body.setCssProps({
             "--todo-accent": this.settings.accentColor,
             "--todo-accent-glow": `${this.settings.accentColor}99`,
