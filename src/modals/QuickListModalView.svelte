@@ -1405,7 +1405,10 @@
 
         // Priority 3: Explicit mouseenter/mouseleave target tracking
         if (hoveredRenameTarget) {
-            const cat = categories.find(c => c.id === hoveredRenameTarget!.id || c.filepath === hoveredRenameTarget!.filepath || c.name === hoveredRenameTarget!.name);
+            const clean = (p?: string) => (p || "").replace(/\\/g, "/").replace(/^\/+/, "");
+            const hId = clean(hoveredRenameTarget.id);
+            const hFp = clean(hoveredRenameTarget.filepath);
+            const cat = categories.find(c => (hId && clean(c.id) === hId) || (hFp && clean(c.filepath) === hFp));
             if (cat) {
                 return { id: cat.id || cat.filepath, name: cat.name, type: "category", filepath: cat.filepath };
             }
@@ -1455,11 +1458,12 @@
         isCommittingRename = true;
         try {
             if (itemType === "category") {
-                const targetNorm = itemId.replace(/\\/g, "/");
+                const clean = (p?: string) => (p || "").replace(/\\/g, "/").replace(/^\/+/, "");
+                const targetNorm = clean(itemId);
                 const cat = categories.find(c => {
-                    const cId = (c.id || "").replace(/\\/g, "/");
-                    const cFp = (c.filepath || "").replace(/\\/g, "/");
-                    return cId === targetNorm || cFp === targetNorm || c.name === itemId;
+                    const cId = clean(c.id);
+                    const cFp = clean(c.filepath);
+                    return Boolean(targetNorm && (cId === targetNorm || cFp === targetNorm));
                 });
                 if (cat && cat.name !== newName) {
                     const newCat = await dataService.renameCategory(cat.filepath, newName);

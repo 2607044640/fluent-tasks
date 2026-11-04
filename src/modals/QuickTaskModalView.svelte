@@ -553,7 +553,9 @@
 
         try {
             if (editingItemType === "category") {
-                const cat = categories.find(c => c.id === editingItemId || c.filepath === editingItemId);
+                const clean = (p?: string) => (p || "").replace(/\\/g, "/").replace(/^\/+/, "");
+                const targetNorm = clean(editingItemId);
+                const cat = categories.find(c => Boolean(targetNorm && (clean(c.id) === targetNorm || clean(c.filepath) === targetNorm)));
                 if (cat && cat.name !== newName) {
                     await dataService.renameCategory(cat.filepath, newName);
                 }

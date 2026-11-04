@@ -1787,13 +1787,15 @@ var CategoryService = class {
    * If TodoData/<baseName>.md exists, tries <baseName>(1).md, <baseName>(2).md, etc.
    */
   getAvailableDiskFilepath(baseName, currentFilepath) {
+    const cleanPath = (p) => (p || "").replace(/\\/g, "/").replace(/^\/+/, "");
+    const normCurrent = currentFilepath ? cleanPath(currentFilepath) : void 0;
     let candidateBasename = baseName;
     let candidatePath = `${DATA_FOLDER}/${candidateBasename}.md`;
-    if (currentFilepath && candidatePath === currentFilepath) {
+    if (normCurrent && cleanPath(candidatePath) === normCurrent) {
       return { filepath: candidatePath, basename: candidateBasename };
     }
     let file = this.app.vault.getAbstractFileByPath(candidatePath);
-    if (!file || currentFilepath && file.path === currentFilepath) {
+    if (!file || normCurrent && cleanPath(file.path) === normCurrent) {
       return { filepath: candidatePath, basename: candidateBasename };
     }
     const match = baseName.match(/^(.*?)(?:\s*\(([0-9]+)\))?$/);
@@ -1803,7 +1805,7 @@ var CategoryService = class {
       candidateBasename = `${rawBase}(${index})`;
       candidatePath = `${DATA_FOLDER}/${candidateBasename}.md`;
       file = this.app.vault.getAbstractFileByPath(candidatePath);
-      if (!file || currentFilepath && file.path === currentFilepath) {
+      if (!file || normCurrent && cleanPath(file.path) === normCurrent) {
         return { filepath: candidatePath, basename: candidateBasename };
       }
       index++;
@@ -1849,6 +1851,10 @@ var CategoryService = class {
             file = fileMap.get(childName);
           }
           if (file) {
+            if (usedFiles.has(file.basename)) {
+              hasDuplicateMetadata = true;
+              continue;
+            }
             groupItems.push({
               id: file.path,
               type: "category",
@@ -1877,6 +1883,10 @@ var CategoryService = class {
           file = fileMap.get(childName);
         }
         if (file) {
+          if (usedFiles.has(file.basename)) {
+            hasDuplicateMetadata = true;
+            continue;
+          }
           sidebarItems.push({
             id: file.path,
             type: "category",
@@ -1905,15 +1915,32 @@ var CategoryService = class {
   }
   /** Sidebar group display name for a list file. Root lists are "ungrouped". */
   async findGroupNameForCategory(categoryFilepath) {
-    const target = categoryFilepath.replace(/\\/g, "/");
+    var _a;
+    const cleanPath = (p) => (p || "").replace(/\\/g, "/").replace(/^\/+/, "");
+    const target = cleanPath(categoryFilepath);
     const items = await this.getSidebarItems();
     for (const item of items) {
       if (item.type !== "group")
         continue;
       for (const child of item.items || []) {
-        if (child.filepath.replace(/\\/g, "/") === target)
+        if (cleanPath(child.filepath) === target || cleanPath(child.id) === target)
           return item.name;
       }
+    }
+    try {
+      const fileBasename = ((_a = target.split("/").pop()) == null ? void 0 : _a.replace(/\.md$/, "")) || "";
+      const state = await this.loadSidebarState();
+      for (const item of state) {
+        if (item.type !== "group")
+          continue;
+        for (const rawChild of item.children || []) {
+          const childFile = typeof rawChild === "string" ? rawChild : rawChild.file || rawChild.name;
+          if (childFile === fileBasename || cleanPath(`${DATA_FOLDER}/${childFile}.md`) === target) {
+            return item.name;
+          }
+        }
+      }
+    } catch (e) {
     }
     return "ungrouped";
   }
@@ -2087,16 +2114,18 @@ var CategoryService = class {
     let groupName;
     let index = -1;
     let categoryDisplayName = basename;
+    const cleanPath = (p) => (p || "").replace(/\\/g, "/").replace(/^\/+/, "");
+    const targetNorm = cleanPath(filepath);
     try {
       const currentItems = await this.getSidebarItems();
       for (let i = 0; i < currentItems.length; i++) {
         const item = currentItems[i];
-        if (item.type === "category" && (item.filepath === filepath || item.id === filepath)) {
+        if (item.type === "category" && (cleanPath(item.filepath) === targetNorm || cleanPath(item.id) === targetNorm)) {
           categoryDisplayName = item.name;
           index = i;
           break;
         } else if (item.type === "group" && item.items) {
-          const subIdx = item.items.findIndex((c) => c.filepath === filepath || c.id === filepath);
+          const subIdx = item.items.findIndex((c) => cleanPath(c.filepath) === targetNorm || cleanPath(c.id) === targetNorm);
           if (subIdx !== -1) {
             categoryDisplayName = item.items[subIdx].name;
             groupName = item.name;
@@ -2124,10 +2153,10 @@ var CategoryService = class {
     const cleanup = (list) => {
       for (let i = list.length - 1; i >= 0; i--) {
         const item = list[i];
-        if (item.type === "category" && (item.filepath === filepath || item.id === filepath)) {
+        if (item.type === "category" && (cleanPath(item.filepath) === targetNorm || cleanPath(item.id) === targetNorm)) {
           list.splice(i, 1);
         } else if (item.type === "group" && item.items) {
-          item.items = item.items.filter((c) => c.filepath !== filepath && c.id !== filepath);
+          item.items = item.items.filter((c) => cleanPath(c.filepath) !== targetNorm && cleanPath(c.id) !== targetNorm);
         }
       }
     };
@@ -2161,15 +2190,17 @@ var CategoryService = class {
       filepath: categoryFilepath
     };
     const items = await this.getSidebarItems();
+    const cleanPath = (p) => (p || "").replace(/\\/g, "/").replace(/^\/+/, "");
+    const targetNorm = cleanPath(categoryFilepath);
     let existingItem = null;
     for (let i = items.length - 1; i >= 0; i--) {
       const item = items[i];
-      if (item.type === "category" && (item.filepath === categoryFilepath || item.id === categoryFilepath)) {
+      if (item.type === "category" && (cleanPath(item.filepath) === targetNorm || cleanPath(item.id) === targetNorm)) {
         existingItem = item;
         items.splice(i, 1);
         break;
       } else if (item.type === "group" && item.items) {
-        const subIdx = item.items.findIndex((c) => c.filepath === categoryFilepath || c.id === categoryFilepath);
+        const subIdx = item.items.findIndex((c) => cleanPath(c.filepath) === targetNorm || cleanPath(c.id) === targetNorm);
         if (subIdx !== -1) {
           existingItem = item.items[subIdx];
           item.items.splice(subIdx, 1);
@@ -2217,12 +2248,13 @@ var CategoryService = class {
     let targetCat = null;
     let siblingNames = [];
     let containingGroup = null;
-    const targetNorm = filepath.replace(/\\/g, "/");
+    const cleanPath = (p) => (p || "").replace(/\\/g, "/").replace(/^\/+/, "");
+    const targetNorm = cleanPath(filepath);
     const fileBasename = file.basename;
     const isMatch = (c) => {
-      const cPath = (c.filepath || "").replace(/\\/g, "/");
-      const cId = (c.id || "").replace(/\\/g, "/");
-      return cPath === targetNorm || cId === targetNorm || cPath.endsWith("/" + file.name) || c.name === fileBasename;
+      const cPath = cleanPath(c.filepath);
+      const cId = cleanPath(c.id);
+      return cPath === targetNorm || cId === targetNorm;
     };
     for (const item of items) {
       if (item.type === "category") {
@@ -7653,13 +7685,15 @@ function instance($$self, $$props, $$invalidate) {
       return;
     }
     if (targetType === "category") {
+      const clean = (p) => (p || "").replace(/\\/g, "/").replace(/^\/+/, "");
+      const tId = clean(targetId);
       let catFilepath = "";
       for (const item of sidebarItems) {
-        if (item.id === targetId && item.type === "category") {
+        if (item.type === "category" && (clean(item.id) === tId || clean(item.filepath) === tId)) {
           catFilepath = item.filepath;
           break;
         } else if (item.type === "group") {
-          const child = item.items.find((c) => c.id === targetId);
+          const child = item.items.find((c) => clean(c.id) === tId || clean(c.filepath) === tId);
           if (child) {
             catFilepath = child.filepath;
             break;
@@ -24837,7 +24871,10 @@ function instance6($$self, $$props, $$invalidate) {
       }
     }
     if (hoveredRenameTarget) {
-      const cat = categories.find((c) => c.id === hoveredRenameTarget.id || c.filepath === hoveredRenameTarget.filepath || c.name === hoveredRenameTarget.name);
+      const clean = (p) => (p || "").replace(/\\/g, "/").replace(/^\/+/, "");
+      const hId = clean(hoveredRenameTarget.id);
+      const hFp = clean(hoveredRenameTarget.filepath);
+      const cat = categories.find((c) => hId && clean(c.id) === hId || hFp && clean(c.filepath) === hFp);
       if (cat) {
         return {
           id: cat.id || cat.filepath,
@@ -24898,11 +24935,12 @@ function instance6($$self, $$props, $$invalidate) {
     isCommittingRename = true;
     try {
       if (itemType === "category") {
-        const targetNorm = itemId.replace(/\\/g, "/");
+        const clean = (p) => (p || "").replace(/\\/g, "/").replace(/^\/+/, "");
+        const targetNorm = clean(itemId);
         const cat = categories.find((c) => {
-          const cId = (c.id || "").replace(/\\/g, "/");
-          const cFp = (c.filepath || "").replace(/\\/g, "/");
-          return cId === targetNorm || cFp === targetNorm || c.name === itemId;
+          const cId = clean(c.id);
+          const cFp = clean(c.filepath);
+          return Boolean(targetNorm && (cId === targetNorm || cFp === targetNorm));
         });
         if (cat && cat.name !== newName) {
           const newCat = await dataService.renameCategory(cat.filepath, newName);
@@ -58652,7 +58690,9 @@ function instance12($$self, $$props, $$invalidate) {
     }
     try {
       if (editingItemType === "category") {
-        const cat = categories.find((c) => c.id === editingItemId || c.filepath === editingItemId);
+        const clean = (p) => (p || "").replace(/\\/g, "/").replace(/^\/+/, "");
+        const targetNorm = clean(editingItemId);
+        const cat = categories.find((c) => Boolean(targetNorm && (clean(c.id) === targetNorm || clean(c.filepath) === targetNorm)));
         if (cat && cat.name !== newName) {
           await dataService.renameCategory(cat.filepath, newName);
         }

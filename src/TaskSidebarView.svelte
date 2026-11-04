@@ -484,13 +484,15 @@
         }
 
         if (targetType === "category") {
+            const clean = (p?: string) => (p || "").replace(/\\/g, "/").replace(/^\/+/, "");
+            const tId = clean(targetId);
             let catFilepath = "";
             for (const item of sidebarItems) {
-                if (item.id === targetId && item.type === "category") {
+                if (item.type === "category" && (clean(item.id) === tId || clean(item.filepath) === tId)) {
                     catFilepath = item.filepath;
                     break;
                 } else if (item.type === "group") {
-                    const child = item.items.find(c => c.id === targetId);
+                    const child = item.items.find(c => clean(c.id) === tId || clean(c.filepath) === tId);
                     if (child) {
                         catFilepath = child.filepath;
                         break;
