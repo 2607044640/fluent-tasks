@@ -255,6 +255,8 @@ const en = {
 
     setting_minimal_placeholders_title: "Task List: Minimal Input Placeholders",
     setting_minimal_placeholders_desc: "Strip shortcut hints in parentheses (e.g. Press Enter to add, Ctrl+V to paste image) from task, step, and note placeholders, keeping concise action labels with reduced opacity. Disabled by default.",
+    setting_inject_ai_directive_title: "Task List: AI Directive for Completed Tasks (Archive Guardrail)",
+    setting_inject_ai_directive_desc: "Automatically group completed tasks at the bottom of the Markdown file and inject an AI agent directive block above them, instructing external AI assistants to treat completed items as archived/disabled drafts rather than active specifications. Enabled by default.",
 
     setting_search_hide_completed_title: "System: Search Hide Completed Tasks",
     setting_search_hide_completed_desc: "When searching, hide completed tasks by default. Can also be toggled directly in the search modal.",

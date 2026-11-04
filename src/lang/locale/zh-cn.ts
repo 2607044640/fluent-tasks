@@ -221,6 +221,8 @@ const zhCn: typeof en = {
     setting_task_weight_desc: "启用 1-9 分的任务权重评分优先级机制（9 分最高，默认 5 分）。启用后按权重动态排序任务，可用鼠标滚轮或点击直接修改。",
     setting_minimal_placeholders_title: "任务列表：极简占位提示 (Minimal Placeholders)",
     setting_minimal_placeholders_desc: "去除输入框占位符中括号内的快捷键提示（如 Press Enter to add, Ctrl+V to paste image），仅保留简洁动词，并降低提示文字的不透明度。默认关闭。",
+    setting_inject_ai_directive_title: "任务列表：已完成条目 AI 归档隔离指令 (Archive Guardrail)",
+    setting_inject_ai_directive_desc: "在保存 Markdown 文件时，自动将已勾选/已完成的任务置底，并在其上方注入 AI 隔离指令块，防止外部 AI 误将已归档/废弃的历史草案当作当前生效规则。默认开启。",
 
     setting_open_detail_modal_title: "任务详情：在悬浮弹窗中打开 (Floating Modal)",
     setting_open_detail_modal_desc: "点击任务时在屏幕居中的悬浮模态弹窗中打开详情，而非展开 Obsidian 右侧侧边栏面板。",

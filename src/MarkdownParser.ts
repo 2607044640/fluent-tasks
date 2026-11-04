@@ -13,9 +13,22 @@
 import { TaskItem, TaskStep, RecurrenceRule, DATA_FOLDER } from "./types";
 
 // =============================================
-// Internal Constants
+// Internal Constants & Directives
 // =============================================
 const META_REGEX = /%%(\{.*?\})%%/;
+
+/**
+ * Standard AI Agent directive header injected above completed/archived tasks.
+ * Instructs external AI code/spec reading agents to treat completed tasks as archived/disabled drafts.
+ */
+export const AI_COMPLETED_DIRECTIVE = [
+    "<!-- ========================================================================= -->",
+    "<!-- ⚠️ [AI AGENT DIRECTIVE / 归档与历史草案说明] -->",
+    "<!-- 1. 语义边界：以下所有标记为 - [x] 的项目均为【历史归档 / 临时禁用 / 废弃验证】的设计原语与草案。 -->",
+    "<!-- 2. 行为准则：它们【绝非】当前生效的系统规范或待办任务！在需求分析、代码生成、架构推导时默认 100% 忽略。 -->",
+    "<!-- 3. 唤醒例外：仅当用户在 Prompt 中明确要求“参考/调取/恢复历史归档设计”时，才允许查阅与引用以下条目。 -->",
+    "<!-- ========================================================================= -->"
+].join("\n");
 
 // =============================================
 // Helpers
@@ -38,6 +51,7 @@ function generateStableId(title: string, createdAt: string): string {
 // =============================================
 
 export class MarkdownParser {
+    public static injectAiArchiveDirective: boolean = true;
 
     /**
      * Parse raw markdown content into a TaskItem array.
@@ -58,6 +72,16 @@ export class MarkdownParser {
 
         for (const rawLine of rawLines) {
             const trimmed = rawLine.trim();
+
+            // Guard against AI directive comment lines or markdown comments being swallowed as task continuations
+            if (trimmed.startsWith("<!--") || trimmed.startsWith("-->")) {
+                if (currentBlock) {
+                    blocks.push(currentBlock);
+                    currentBlock = null;
+                }
+                continue;
+            }
+
             const startMatch = trimmed.match(TASK_START_REGEX);
 
             if (startMatch) {
@@ -173,68 +197,95 @@ export class MarkdownParser {
     }
 
     /**
+     * Serialize a single TaskItem to a single Markdown line.
+     */
+    static serializeSingleTask(task: TaskItem): string {
+        const checkbox = task.completed ? "[x]" : "[ ]";
+        const cleanSteps = Array.isArray(task.steps)
+            ? task.steps.map((s) => {
+                const stepObj: Record<string, unknown> = {
+                    text: s.text,
+                    done: s.done,
+                };
+                if (s.id) stepObj.id = s.id;
+                if (Array.isArray(s.images) && s.images.length > 0) {
+                    stepObj.images = s.images;
+                }
+                return stepObj;
+            })
+            : [];
+
+        const meta: Record<string, unknown> = {
+            id: task.id,
+            starred: task.starred,
+            steps: cleanSteps,
+            note: task.note,
+            createdAt: task.createdAt,
+        };
+        if (Array.isArray(task.images) && task.images.length > 0) meta.images = task.images;
+        if (Array.isArray(task.titleImages) && task.titleImages.length > 0) meta.titleImages = task.titleImages;
+        if (task.completedAt) meta.completedAt = task.completedAt;
+        if (task.dueDate) meta.dueDate = task.dueDate;
+        if (task.msGraphId) meta.msGraphId = task.msGraphId;
+        if (task.msGraphListId) meta.msGraphListId = task.msGraphListId;
+        if (task.recurrence) meta.recurrence = task.recurrence;
+        if (task.whys && task.whys.length > 0) {
+            meta.whys = task.whys;
+            meta.why = task.whys[0];
+        } else if (task.why) {
+            meta.why = task.why;
+        }
+        if (task.svgs && task.svgs.length > 0) meta.svgs = task.svgs;
+        if (task.task_note) {
+            meta.task_note = task.task_note;
+        } else if (task.note_link) {
+            const clean = task.note_link.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
+            if (clean.startsWith(`${DATA_FOLDER}/`) || clean.startsWith(`${DATA_FOLDER}\\`)) {
+                meta.task_note = task.note_link;
+            }
+        }
+
+        if (task.note_links && task.note_links.length > 0) {
+            meta.note_links = task.note_links;
+            meta.note_link = task.note_links[0];
+        } else if (task.note_link && !meta.task_note) {
+            meta.note_link = task.note_link;
+        }
+        if (task.customMeta && Object.keys(task.customMeta).length > 0) meta.customMeta = task.customMeta;
+        if (typeof task.weight === "number") meta.weight = task.weight;
+
+        const safeTitle = (task.title || "").replace(/\r?\n/g, "<br>");
+        return `- ${checkbox} ${safeTitle} %%${JSON.stringify(meta)}%%`;
+    }
+
+    /**
      * Serialize a TaskItem array back to markdown text.
      * Encodes newlines in titles as <br> to ensure each task is a single physical line.
+     * Partitions incomplete tasks at the top, and groups completed tasks at the bottom
+     * guarded by AI_COMPLETED_DIRECTIVE to prevent external AI hallucination.
      */
-    static serializeTasksToMarkdown(tasks: TaskItem[]): string {
-        return tasks.map(task => {
-            const checkbox = task.completed ? "[x]" : "[ ]";
-            const cleanSteps = Array.isArray(task.steps)
-                ? task.steps.map((s) => {
-                    const stepObj: Record<string, unknown> = {
-                        text: s.text,
-                        done: s.done,
-                    };
-                    if (s.id) stepObj.id = s.id;
-                    if (Array.isArray(s.images) && s.images.length > 0) {
-                        stepObj.images = s.images;
-                    }
-                    return stepObj;
-                })
-                : [];
+    static serializeTasksToMarkdown(tasks: TaskItem[], options?: { injectAiDirective?: boolean }): string {
+        const incomplete = tasks.filter(t => !t.completed);
+        const completed = tasks.filter(t => t.completed);
 
-            const meta: Record<string, unknown> = {
-                id: task.id,
-                starred: task.starred,
-                steps: cleanSteps,
-                note: task.note,
-                createdAt: task.createdAt,
-            };
-            if (Array.isArray(task.images) && task.images.length > 0) meta.images = task.images;
-            if (Array.isArray(task.titleImages) && task.titleImages.length > 0) meta.titleImages = task.titleImages;
-            if (task.completedAt) meta.completedAt = task.completedAt;
-            if (task.dueDate) meta.dueDate = task.dueDate;
-            if (task.msGraphId) meta.msGraphId = task.msGraphId;
-            if (task.msGraphListId) meta.msGraphListId = task.msGraphListId;
-            if (task.recurrence) meta.recurrence = task.recurrence;
-            if (task.whys && task.whys.length > 0) {
-                meta.whys = task.whys;
-                meta.why = task.whys[0];
-            } else if (task.why) {
-                meta.why = task.why;
-            }
-            if (task.svgs && task.svgs.length > 0) meta.svgs = task.svgs;
-            if (task.task_note) {
-                meta.task_note = task.task_note;
-            } else if (task.note_link) {
-                const clean = task.note_link.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].trim();
-                if (clean.startsWith(`${DATA_FOLDER}/`) || clean.startsWith(`${DATA_FOLDER}\\`)) {
-                    meta.task_note = task.note_link;
-                }
-            }
+        const incompleteLines = incomplete.map(t => this.serializeSingleTask(t));
+        const shouldInject = options?.injectAiDirective ?? this.injectAiArchiveDirective;
 
-            if (task.note_links && task.note_links.length > 0) {
-                meta.note_links = task.note_links;
-                meta.note_link = task.note_links[0];
-            } else if (task.note_link && !meta.task_note) {
-                meta.note_link = task.note_link;
-            }
-            if (task.customMeta && Object.keys(task.customMeta).length > 0) meta.customMeta = task.customMeta;
-            if (typeof task.weight === "number") meta.weight = task.weight;
+        if (completed.length === 0) {
+            return incompleteLines.join("\n");
+        }
 
-            const safeTitle = (task.title || "").replace(/\r?\n/g, "<br>");
-            return `- ${checkbox} ${safeTitle} %%${JSON.stringify(meta)}%%`;
-        }).join("\n");
+        const completedLines = completed.map(t => this.serializeSingleTask(t));
+
+        if (!shouldInject) {
+            return [...incompleteLines, ...completedLines].join("\n");
+        }
+
+        if (incompleteLines.length === 0) {
+            return [AI_COMPLETED_DIRECTIVE, ...completedLines].join("\n");
+        }
+
+        return [...incompleteLines, "", AI_COMPLETED_DIRECTIVE, ...completedLines].join("\n");
     }
 
     /**

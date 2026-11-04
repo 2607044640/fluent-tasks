@@ -1,6 +1,7 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import type FluentTasksPlugin from "./main";
 import { t } from "./lang/helpers";
+import { MarkdownParser } from "./MarkdownParser";
 
 export interface FluentTasksSettings {
     accentColor: string;
@@ -38,6 +39,7 @@ export interface FluentTasksSettings {
     taskSeparatorWidth: number;
     collapseCompletedSteps: boolean;
     minimalPlaceholders: boolean;
+    injectAiArchiveDirective: boolean;
 }
 
 export const DEFAULT_SETTINGS: FluentTasksSettings = {
@@ -46,6 +48,7 @@ export const DEFAULT_SETTINGS: FluentTasksSettings = {
     fullscreenDetailModal: true,
     collapseCompletedSteps: true,
     minimalPlaceholders: false,
+    injectAiArchiveDirective: true,
     hideLeftSidebar: false,
     autoExpandSidebarOnDrag: false,
     autoExpandSidebar: true,
@@ -223,6 +226,17 @@ export class FluentTasksSettingTab extends PluginSettingTab {
                     this.plugin.settings.minimalPlaceholders = value;
                     await this.plugin.saveSettings();
                     this.plugin.applySettings();
+                }));
+
+        new Setting(containerEl)
+            .setName(t("setting_inject_ai_directive_title") || "AI Directive for Completed Tasks (Archive Guardrail)")
+            .setDesc(t("setting_inject_ai_directive_desc") || "Automatically group completed tasks at the bottom of the Markdown file and inject an AI agent directive block above them, instructing external AI assistants to treat completed items as archived/disabled drafts rather than active specifications. Enabled by default.")
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.injectAiArchiveDirective ?? true)
+                .onChange(async (value) => {
+                    this.plugin.settings.injectAiArchiveDirective = value;
+                    MarkdownParser.injectAiArchiveDirective = value;
+                    await this.plugin.saveSettings();
                 }));
 
         // =============================================

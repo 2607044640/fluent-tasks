@@ -17,6 +17,7 @@ import { VIEW_TYPE_SIDEBAR, VIEW_TYPE_MAIN, VIEW_TYPE_DETAIL, DATA_FOLDER, Event
 import { EventBus } from "./EventBus";
 import { Logger } from "./Logger";
 import { DataService } from "./DataService";
+import { MarkdownParser } from "./MarkdownParser";
 import TaskSidebarView from "./TaskSidebarView.svelte";
 import TaskMainView from "./TaskMainView.svelte";
 import TaskDetailView from "./TaskDetailView.svelte";
@@ -1033,10 +1034,12 @@ export default class FluentTasksPlugin extends Plugin implements ISidebarPluginH
             this.settings.hiddenStarMode = (this.settings as any).disableStars;
         }
         this.settings.disableStars = this.settings.hiddenStarMode;
+        MarkdownParser.injectAiArchiveDirective = this.settings.injectAiArchiveDirective !== false;
     }
 
     async saveSettings() {
         this.settings.disableStars = this.settings.hiddenStarMode;
+        MarkdownParser.injectAiArchiveDirective = this.settings.injectAiArchiveDirective !== false;
         await this.saveData(this.settings);
         EventBus.emit(EventName.SETTINGS_CHANGED, { settings: this.settings });
 
