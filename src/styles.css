@@ -5053,7 +5053,34 @@ body .task-detail-floating-modal.is-fullscreen .detail-footer {
     color: var(--todo-text-muted);
     border-radius: var(--todo-radius-sm, 4px);
     padding: 2px;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
     transition: color 0.15s ease, background-color 0.15s ease, transform 0.1s ease;
+}
+
+.title-row .detail-modal-copy-btn:focus,
+.title-row .detail-modal-copy-btn:focus-visible,
+.title-row .detail-modal-fullscreen-btn:focus,
+.title-row .detail-modal-fullscreen-btn:focus-visible,
+.detail-empty-modal-header .detail-modal-fullscreen-btn:focus,
+.detail-empty-modal-header .detail-modal-fullscreen-btn:focus-visible,
+.title-row .detail-link-note-btn:focus,
+.title-row .detail-link-note-btn:focus-visible,
+.title-row .detail-modal-close-btn:focus,
+.title-row .detail-modal-close-btn:focus-visible,
+body .task-detail-floating-modal .detail-modal-copy-btn:focus,
+body .task-detail-floating-modal .detail-modal-copy-btn:focus-visible,
+body .task-detail-floating-modal .detail-link-note-btn:focus,
+body .task-detail-floating-modal .detail-link-note-btn:focus-visible,
+body .task-detail-floating-modal .detail-modal-close-btn:focus,
+body .task-detail-floating-modal .detail-modal-close-btn:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: transparent !important;
+    color: var(--todo-text-muted) !important;
+    transform: none !important;
 }
 
 .title-row .detail-modal-copy-btn:hover,
@@ -7157,7 +7184,11 @@ body .task-detail-floating-modal.is-center-aligned .detail-meta-chips-section {
 }
 
 .task-steps-header-copy-btn,
-.task-steps-header-search-btn {
+.task-steps-header-search-btn,
+body .task-steps-floating-modal .task-steps-header-copy-btn,
+body .task-steps-floating-modal .task-steps-header-search-btn,
+body .task-steps-modal-container .task-steps-header-copy-btn,
+body .task-steps-modal-container .task-steps-header-search-btn {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -7165,11 +7196,33 @@ body .task-detail-floating-modal.is-center-aligned .detail-meta-chips-section {
     height: 28px !important;
     padding: 0 !important;
     border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
     background: transparent !important;
     border-radius: 6px !important;
     color: var(--text-muted, #888) !important;
     cursor: pointer !important;
     transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease !important;
+}
+
+.task-steps-header-copy-btn:focus,
+.task-steps-header-copy-btn:focus-visible,
+.task-steps-header-search-btn:focus,
+.task-steps-header-search-btn:focus-visible,
+body .task-steps-floating-modal .task-steps-header-copy-btn:focus,
+body .task-steps-floating-modal .task-steps-header-copy-btn:focus-visible,
+body .task-steps-floating-modal .task-steps-header-search-btn:focus,
+body .task-steps-floating-modal .task-steps-header-search-btn:focus-visible,
+body .task-steps-modal-container .task-steps-header-copy-btn:focus,
+body .task-steps-modal-container .task-steps-header-copy-btn:focus-visible,
+body .task-steps-modal-container .task-steps-header-search-btn:focus,
+body .task-steps-modal-container .task-steps-header-search-btn:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: transparent !important;
+    color: var(--text-muted, #888) !important;
+    transform: none !important;
 }
 
 .task-steps-header-copy-btn:hover,
