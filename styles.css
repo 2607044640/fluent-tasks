@@ -4526,6 +4526,76 @@ body .quick-modal-task-item.is-focused {
     flex-shrink: 0;
 }
 
+/* Quick List: Table Board Dropzones & Snapping */
+.quick-table-col-dropzone {
+    border: 1.5px dashed var(--background-modifier-border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 11px;
+    letter-spacing: 0.3px;
+    transition: all 0.15s ease;
+    background: rgba(255, 255, 255, 0.02);
+    box-sizing: border-box;
+    cursor: pointer;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quick-table-col-dropzone.drag-over {
+    border-color: var(--todo-accent, #8b5cf6);
+    background: rgba(139, 92, 246, 0.12);
+    color: var(--todo-accent, #8b5cf6);
+    box-shadow: 0 0 10px -2px var(--todo-accent-glow, rgba(139, 92, 246, 0.4));
+}
+
+.quick-table-new-col-dropzone {
+    width: var(--quick-grid-card-w, 320px);
+    min-width: 200px;
+    max-width: 580px;
+    min-height: 140px;
+    border: 2px dashed var(--background-modifier-border);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: var(--text-muted);
+    font-size: 12px;
+    transition: all 0.15s ease;
+    background: rgba(255, 255, 255, 0.015);
+    flex-shrink: 0;
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+.quick-table-new-col-dropzone.drag-over {
+    border-color: var(--todo-accent, #8b5cf6);
+    background: rgba(139, 92, 246, 0.12);
+    color: var(--todo-accent, #8b5cf6);
+    box-shadow: 0 0 12px -2px var(--todo-accent-glow, rgba(139, 92, 246, 0.4));
+}
+
+.quick-table-new-col-icon {
+    font-size: 18px;
+    line-height: 1;
+    font-weight: 500;
+}
+
+.quick-grid-card.drag-over-top {
+    border-top: 2px solid var(--todo-accent, #8b5cf6) !important;
+    box-shadow: 0 -4px 12px -2px var(--todo-accent-glow, rgba(139, 92, 246, 0.4)) !important;
+}
+
+.quick-grid-card.drag-over-bottom {
+    border-bottom: 2px solid var(--todo-accent, #8b5cf6) !important;
+    box-shadow: 0 4px 12px -2px var(--todo-accent-glow, rgba(139, 92, 246, 0.4)) !important;
+}
+
 .quick-grid-card {
     background: var(--background-secondary);
     border: 1px solid var(--background-modifier-border);

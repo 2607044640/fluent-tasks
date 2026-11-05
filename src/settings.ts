@@ -17,6 +17,8 @@ export interface FluentTasksSettings {
     quickModalAction: 'direct' | 'navigate';
     quickModalTipCount: number;
     quickListGridLayout: boolean;
+    quickListLayoutMode: 'grid' | 'table' | 'list';
+    quickListGroupPositions: Record<string, [number, number]>;
     quickListMinColGap: number;
     quickListMinRowGap: number;
     quickListFocusCenter: boolean;
@@ -65,6 +67,8 @@ export const DEFAULT_SETTINGS: FluentTasksSettings = {
     quickModalAction: 'direct',
     quickModalTipCount: 0,
     quickListGridLayout: true,
+    quickListLayoutMode: 'grid',
+    quickListGroupPositions: {},
     quickListMinColGap: 14,
     quickListMinRowGap: 10,
     quickListMaxCardWidth: 380,
@@ -304,12 +308,17 @@ export class FluentTasksSettingTab extends PluginSettingTab {
             .setName(t("settings_section_quick_list") || "Quick List Board Modal");
 
         new Setting(containerEl)
-            .setName(t("setting_quick_list_grid_title") || "Quick List: Grid Board Layout")
-            .setDesc(t("setting_quick_list_grid_desc") || "Tile lists and groups across multi-column cards like a dashboard chart to fully display lists in the available screen space without scrolling. Turn off to revert to the classic single-column list.")
-            .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.quickListGridLayout ?? true)
-                .onChange(async (value) => {
-                    this.plugin.settings.quickListGridLayout = value;
+            .setName("Quick List: Layout Mode")
+            .setDesc("Select layout mode for the Quick List modal: Grid (Auto Bin-Packing), Table (Custom Blueprint Grid), or Classic List.")
+            .addDropdown(dropdown => dropdown
+                .addOption("grid", "Grid Board (Auto)")
+                .addOption("table", "Table Board (Custom)")
+                .addOption("list", "Classic Single-Column List")
+                .setValue(this.plugin.settings.quickListLayoutMode ?? (this.plugin.settings.quickListGridLayout ? "grid" : "list"))
+                .onChange(async (value: string) => {
+                    const mode = value as 'grid' | 'table' | 'list';
+                    this.plugin.settings.quickListLayoutMode = mode;
+                    this.plugin.settings.quickListGridLayout = (mode !== "list");
                     await this.plugin.saveSettings();
                 }));
 

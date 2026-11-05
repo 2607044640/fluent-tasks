@@ -31,7 +31,8 @@
     let starredCount: number = 0;
     let searchQuery: string = "";
     let focusedIndex: number = -1;
-    let isGridLayout: boolean = plugin?.settings?.quickListGridLayout ?? true;
+    let layoutMode: 'grid' | 'table' | 'list' = plugin?.settings?.quickListLayoutMode ?? (plugin?.settings?.quickListGridLayout === false ? 'list' : 'grid');
+    $: isGridLayout = layoutMode !== 'list';
     let searchMode: 'list' | 'task' = isFocusedListMode ? 'list' : (plugin?.settings?.quickListSearchMode ?? 'list');
     let hideCompleted: boolean = plugin?.settings?.searchHideCompleted ?? true;
     let taskSearchResults: Array<{ task: TaskItem; category: CategoryInfo; matchField: string }> = [];
@@ -93,20 +94,45 @@
     }
 
     function handleBoardWheel(e: WheelEvent) {
-        if (e.deltaY !== 0 && !e.shiftKey) {
-            const target = e.target as HTMLElement | null;
-            const cardItems = target?.closest(".quick-grid-card-items") as HTMLElement | null;
-            if (cardItems && cardItems.scrollHeight > cardItems.clientHeight) {
-                const canScrollDown = e.deltaY > 0 && cardItems.scrollTop + cardItems.clientHeight < cardItems.scrollHeight - 1;
-                const canScrollUp = e.deltaY < 0 && cardItems.scrollTop > 1;
-                if (canScrollDown || canScrollUp) {
-                    return;
+        const board = e.currentTarget as HTMLElement;
+        if (!board) return;
+
+        // If hovering over an inner scrollable list container, let it scroll its own content
+        const target = e.target as HTMLElement | null;
+        const cardItems = target?.closest(".quick-grid-card-items") as HTMLElement | null;
+        if (cardItems && cardItems.scrollHeight > cardItems.clientHeight) {
+            const canScrollDown = e.deltaY > 0 && cardItems.scrollTop + cardItems.clientHeight < cardItems.scrollHeight - 1;
+            const canScrollUp = e.deltaY < 0 && cardItems.scrollTop > 1;
+            if (canScrollDown || canScrollUp) {
+                return;
+            }
+        }
+
+        if (layoutMode === "table") {
+            // Table Mode: Shift + Wheel or trackpad deltaX -> horizontal scroll
+            if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+                if (board.scrollWidth > board.clientWidth) {
+                    const delta = e.shiftKey ? e.deltaY : e.deltaX;
+                    board.scrollLeft += delta;
+                    e.preventDefault();
+                }
+            } else if (e.deltaY !== 0) {
+                // Normal vertical wheel: scroll vertically if vertical overflow exists
+                if (board.scrollHeight > board.clientHeight) {
+                    board.scrollTop += e.deltaY;
+                    e.preventDefault();
+                } else if (board.scrollWidth > board.clientWidth) {
+                    // Fallback to horizontal scroll if only horizontal overflow exists
+                    board.scrollLeft += e.deltaY;
+                    e.preventDefault();
                 }
             }
-            const board = e.currentTarget as HTMLElement;
-            if (board && board.scrollWidth > board.clientWidth) {
-                board.scrollLeft += e.deltaY;
-                e.preventDefault();
+        } else if (layoutMode === "grid") {
+            if (e.deltaY !== 0 && !e.shiftKey) {
+                if (board.scrollWidth > board.clientWidth) {
+                    board.scrollLeft += e.deltaY;
+                    e.preventDefault();
+                }
             }
         }
     }
@@ -238,6 +264,73 @@
         });
     }
 
+    function computeTableColumns(cards: GridCardData[]): GridCardData[][] {
+        const positions = plugin?.settings?.quickListGroupPositions || {};
+        const colMap = new Map<number, Array<{ card: GridCardData; row: number }>>();
+        const unassigned: GridCardData[] = [];
+
+        for (const card of cards) {
+            const rawPos = positions[card.name] ?? positions[card.id];
+            if (rawPos && Array.isArray(rawPos) && typeof rawPos[0] === "number") {
+                const col = Math.max(0, Math.floor(rawPos[0]));
+                const row = Math.max(0, Math.floor(rawPos[1]));
+                if (!colMap.has(col)) colMap.set(col, []);
+                colMap.get(col)!.push({ card, row });
+            } else {
+                unassigned.push(card);
+            }
+        }
+
+        if (colMap.size > 0) {
+            for (const card of unassigned) {
+                let minCol = 0;
+                let minCount = Infinity;
+                for (const [colIdx, items] of colMap.entries()) {
+                    if (items.length < minCount) {
+                        minCount = items.length;
+                        minCol = colIdx;
+                    }
+                }
+                const colItems = colMap.get(minCol)!;
+                const maxRow = colItems.length > 0 ? Math.max(...colItems.map(i => i.row)) + 1 : 0;
+                colItems.push({ card, row: maxRow });
+            }
+        } else if (cards.length > 0) {
+            const targetCols = Math.min(4, Math.max(1, cards.length));
+            for (let i = 0; i < cards.length; i++) {
+                const col = i % targetCols;
+                const row = Math.floor(i / targetCols);
+                if (!colMap.has(col)) colMap.set(col, []);
+                colMap.get(col)!.push({ card: cards[i], row });
+            }
+            const initialPositions: Record<string, [number, number]> = {};
+            for (const [c, items] of colMap.entries()) {
+                for (const item of items) {
+                    initialPositions[item.card.name] = [c, item.row];
+                    if (item.card.id && item.card.id !== item.card.name) {
+                        initialPositions[item.card.id] = [c, item.row];
+                    }
+                }
+            }
+            if (plugin?.settings) {
+                plugin.settings.quickListGroupPositions = initialPositions;
+                void plugin.saveSettings();
+            }
+        }
+
+        const sortedColIndices = Array.from(colMap.keys()).sort((a, b) => a - b);
+        const result: GridCardData[][] = [];
+
+        for (const colIdx of sortedColIndices) {
+            const items = colMap.get(colIdx) || [];
+            if (items.length === 0) continue;
+            items.sort((a, b) => a.row - b.row);
+            result.push(items.map(i => i.card));
+        }
+
+        return result;
+    }
+
     function packCardsIntoK(cardsToPack: GridCardData[], k: number, rowGap: number): { items: GridCardData[]; h: number }[] {
         const maxPerCol = Math.ceil(cardsToPack.length / k);
         const sorted = [...cardsToPack].sort((a, b) => b.height - a.height);
@@ -355,60 +448,72 @@
         const maxSingleH = Math.max(...cards.map(c => c.height));
         const targetPeakH = Math.min(maxUsableH, Math.max(maxSingleH, Math.floor(availH * 0.82)));
 
-        // 5. Find optimal K (smarter height-capped distribution avoiding vertical cut-offs)
+        // 5. Find optimal K or compute Table mode columns
         let bestK = 1;
         let bestBins: { items: GridCardData[]; h: number }[] | null = null;
-        let bestScore = Infinity;
 
-        const sortedCards = [...cards].sort((a, b) => b.height - a.height);
+        if (layoutMode === "table") {
+            const tableCols = computeTableColumns(cards);
+            bestBins = tableCols.map(colItems => {
+                let colH = 0;
+                for (let idx = 0; idx < colItems.length; idx++) {
+                    colH += idx === 0 ? colItems[idx].height : (colItems[idx].height + rowGap);
+                }
+                return { items: colItems, h: colH };
+            });
+            bestK = Math.max(1, bestBins.length);
+        } else {
+            let bestScore = Infinity;
+            const sortedCards = [...cards].sort((a, b) => b.height - a.height);
 
-        for (let k = maxCandidateK; k >= 1; k--) {
-            const bins: { items: GridCardData[]; h: number }[] = Array.from({ length: k }, () => ({ items: [], h: 0 }));
+            for (let k = maxCandidateK; k >= 1; k--) {
+                const bins: { items: GridCardData[]; h: number }[] = Array.from({ length: k }, () => ({ items: [], h: 0 }));
 
-            for (const c of sortedCards) {
-                bins.sort((a, b) => a.h - b.h);
-                // Try to find a bin where adding this card stays <= targetPeakH
-                const underTarget = bins.filter(b => (b.h + (b.items.length === 0 ? c.height : c.height + rowGap)) <= targetPeakH);
-                const chosen = underTarget.length > 0 ? underTarget[0] : bins[0];
-                const needed = chosen.items.length === 0 ? c.height : (c.height + rowGap);
-                chosen.items.push(c);
-                chosen.h += needed;
+                for (const c of sortedCards) {
+                    bins.sort((a, b) => a.h - b.h);
+                    // Try to find a bin where adding this card stays <= targetPeakH
+                    const underTarget = bins.filter(b => (b.h + (b.items.length === 0 ? c.height : c.height + rowGap)) <= targetPeakH);
+                    const chosen = underTarget.length > 0 ? underTarget[0] : bins[0];
+                    const needed = chosen.items.length === 0 ? c.height : (c.height + rowGap);
+                    chosen.items.push(c);
+                    chosen.h += needed;
+                }
+
+                const peakH = Math.max(...bins.map(b => b.h));
+
+                // Heavy penalty if columns exceed usable screen height to prevent bottom cut-offs
+                const overflow = Math.max(0, peakH - maxUsableH);
+                const overflowPenalty = overflow * 20000;
+
+                const excess = Math.max(0, peakH - targetPeakH);
+                const excessPenalty = excess * 150;
+                const shortPenalty = Math.max(0, Math.round(180 * fontScale) - peakH) * 40;
+                const avgH = bins.reduce((sum, b) => sum + b.h, 0) / k;
+                const variance = bins.reduce((sum, b) => sum + (b.h - avgH) ** 2, 0) / k;
+                const kBonus = (maxCandidateK - k) * 60;
+
+                const score = overflowPenalty + excessPenalty + shortPenalty + Math.sqrt(variance) * 5 + kBonus;
+
+                if (score < bestScore) {
+                    bestScore = score;
+                    bestK = k;
+                    bestBins = bins;
+                }
             }
 
-            const peakH = Math.max(...bins.map(b => b.h));
-
-            // Heavy penalty if columns exceed usable screen height to prevent bottom cut-offs
-            const overflow = Math.max(0, peakH - maxUsableH);
-            const overflowPenalty = overflow * 20000;
-
-            const excess = Math.max(0, peakH - targetPeakH);
-            const excessPenalty = excess * 150;
-            const shortPenalty = Math.max(0, Math.round(180 * fontScale) - peakH) * 40;
-            const avgH = bins.reduce((sum, b) => sum + b.h, 0) / k;
-            const variance = bins.reduce((sum, b) => sum + (b.h - avgH) ** 2, 0) / k;
-            const kBonus = (maxCandidateK - k) * 60;
-
-            const score = overflowPenalty + excessPenalty + shortPenalty + Math.sqrt(variance) * 5 + kBonus;
-
-            if (score < bestScore) {
-                bestScore = score;
-                bestK = k;
-                bestBins = bins;
+            if (!bestBins) {
+                bestBins = packCardsIntoK(cards, maxCandidateK, rowGap);
+                bestK = maxCandidateK;
             }
-        }
 
-        if (!bestBins) {
-            bestBins = packCardsIntoK(cards, maxCandidateK, rowGap);
-            bestK = maxCandidateK;
+            // Sort columns so that taller/anchor cards are balanced by initial order
+            const cardOrderMap = new Map(cards.map((c, i) => [c.id, i]));
+            bestBins.sort((a, b) => {
+                const orderA = cardOrderMap.get(a.items[0]?.id || "") ?? 0;
+                const orderB = cardOrderMap.get(b.items[0]?.id || "") ?? 0;
+                return orderA - orderB;
+            });
         }
-
-        // Sort columns so that taller/anchor cards are balanced by initial order
-        const cardOrderMap = new Map(cards.map((c, i) => [c.id, i]));
-        bestBins.sort((a, b) => {
-            const orderA = cardOrderMap.get(a.items[0]?.id || "") ?? 0;
-            const orderB = cardOrderMap.get(b.items[0]?.id || "") ?? 0;
-            return orderA - orderB;
-        });
 
         // 6. Update layoutColumns when forced or when column structure/items change
         const newColumns = bestBins.map(b => b.items);
@@ -422,7 +527,8 @@
 
         const colGap = Math.min(maxColGap, Math.max(minColGap, Math.round(14 * fontScale)));
         const totalGapsW = (bestK - 1) * colGap;
-        const actualCardW = Math.min(maxCardW, Math.max(minCardW, Math.floor((availContentW - totalGapsW) / bestK)));
+        const divisor = layoutMode === "table" ? Math.max(1, Math.min(bestK, maxCandidateK)) : bestK;
+        const actualCardW = Math.min(maxCardW, Math.max(minCardW, Math.floor((availContentW - totalGapsW) / divisor)));
         const totalW = bestK * actualCardW + totalGapsW;
         const padX = Math.max(minPadX, Math.floor((availW - totalW) / 2));
 
@@ -529,13 +635,22 @@
     }
 
     async function toggleLayoutMode() {
-        isGridLayout = !isGridLayout;
+        if (layoutMode === "grid") {
+            layoutMode = "table";
+        } else if (layoutMode === "table") {
+            layoutMode = "list";
+        } else {
+            layoutMode = "grid";
+        }
+
         if (plugin?.settings) {
-            plugin.settings.quickListGridLayout = isGridLayout;
+            plugin.settings.quickListLayoutMode = layoutMode;
+            plugin.settings.quickListGridLayout = (layoutMode !== "list");
             await plugin.saveSettings();
         }
+
         hasInitializedFocus = false;
-        if (isGridLayout) {
+        if (layoutMode !== "list") {
             scheduleAdjustSpacing();
         } else {
             hasInitializedFocus = true;
@@ -558,7 +673,7 @@
         searchInputEl?.focus();
         if (isFocusedListMode) {
             searchMode = 'list';
-            isGridLayout = true;
+            if (layoutMode === 'list') layoutMode = 'grid';
             setTimeout(() => {
                 searchInputEl?.focus();
                 searchInputEl?.select();
@@ -908,15 +1023,21 @@
     }
 
     function handleListDragStart(e: DragEvent, item: SidebarItem | CategoryInfo) {
-        if (item.type === "group") {
+        if (item.type === "group" || (item as any).type === "root" || item.id === "__root__") {
             isDraggingGroup = true;
             draggedListId = item.id;
             (window as any).__mstodo_category_drag = true;
             if (e.dataTransfer) {
                 e.dataTransfer.setData("text/plain", item.id);
+                if (layoutMode === "table") {
+                    e.dataTransfer.effectAllowed = "move";
+                    return;
+                }
                 e.dataTransfer.effectAllowed = "none";
             }
-            showDragForbiddenNotice();
+            if (layoutMode !== "table") {
+                showDragForbiddenNotice();
+            }
             return;
         }
 
@@ -1090,6 +1211,21 @@
         e.preventDefault();
         e.stopPropagation();
 
+        if (layoutMode === "table" && isDraggingGroup) {
+            if (!draggedListId || group.id === draggedListId) {
+                dragOverListId = "";
+                dragListPosition = null;
+                return;
+            }
+            if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+            const targetEl = (e.currentTarget as HTMLElement).closest(".quick-grid-card") as HTMLElement || (e.currentTarget as HTMLElement);
+            const rect = targetEl.getBoundingClientRect();
+            const relY = e.clientY - rect.top;
+            dragListPosition = relY < rect.height * 0.5 ? "top" : "bottom";
+            dragOverListId = group.id;
+            return;
+        }
+
         if (isDraggingGroup) {
             if (e.dataTransfer) e.dataTransfer.dropEffect = "none";
             dragOverListId = "";
@@ -1145,6 +1281,21 @@
         e.preventDefault();
         e.stopPropagation();
 
+        if (layoutMode === "table" && isDraggingGroup) {
+            if (!draggedListId || draggedListId === "__root__") {
+                dragOverListId = "";
+                dragListPosition = null;
+                return;
+            }
+            if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+            const targetEl = (e.currentTarget as HTMLElement).closest(".quick-grid-card") as HTMLElement || (e.currentTarget as HTMLElement);
+            const rect = targetEl.getBoundingClientRect();
+            const relY = e.clientY - rect.top;
+            dragListPosition = relY < rect.height * 0.5 ? "top" : "bottom";
+            dragOverListId = "__root__";
+            return;
+        }
+
         if (isDraggingGroup) {
             if (e.dataTransfer) e.dataTransfer.dropEffect = "none";
             dragOverListId = "";
@@ -1187,6 +1338,11 @@
         e.stopPropagation();
 
         if (isDraggingGroup) {
+            if (layoutMode === "table" && draggedListId && draggedListId !== "__root__") {
+                await moveGroupInTable(draggedListId, "__root__", dragListPosition || "bottom");
+                handleListDragEnd();
+                return;
+            }
             handleListDragEnd();
             showDragForbiddenNotice();
             return;
@@ -1223,6 +1379,11 @@
         e.stopPropagation();
 
         if (isDraggingGroup) {
+            if (layoutMode === "table" && draggedListId && draggedListId !== group.id) {
+                await moveGroupInTable(draggedListId, group.id, dragListPosition || "bottom");
+                handleListDragEnd();
+                return;
+            }
             handleListDragEnd();
             showDragForbiddenNotice();
             return;
@@ -1302,6 +1463,120 @@
         // 5. Persist to disk and notify peers
         await dataService.saveSidebarState(sidebarItems);
         EventBus.emit(EventName.CATEGORY_LIST_CHANGED, { sidebarItems });
+    }
+
+    async function moveGroupInTable(draggedId: string, targetCardId: string, position: 'top' | 'bottom' | 'inside') {
+        let srcColIdx = -1;
+        let srcRowIdx = -1;
+        let tgtColIdx = -1;
+        let tgtRowIdx = -1;
+        let draggedCard: GridCardData | null = null;
+
+        for (let c = 0; c < layoutColumns.length; c++) {
+            const col = layoutColumns[c];
+            for (let r = 0; r < col.length; r++) {
+                if (col[r].id === draggedId) {
+                    srcColIdx = c;
+                    srcRowIdx = r;
+                    draggedCard = col[r];
+                }
+                if (col[r].id === targetCardId) {
+                    tgtColIdx = c;
+                    tgtRowIdx = r;
+                }
+            }
+        }
+
+        if (!draggedCard || tgtColIdx === -1) return;
+
+        const cols: GridCardData[][] = layoutColumns.map(col => [...col]);
+        cols[srcColIdx].splice(srcRowIdx, 1);
+
+        if (srcColIdx === tgtColIdx && srcRowIdx < tgtRowIdx) {
+            tgtRowIdx--;
+        }
+
+        const insertAt = position === "top" ? tgtRowIdx : tgtRowIdx + 1;
+        cols[tgtColIdx].splice(insertAt, 0, draggedCard);
+
+        const prunedCols = cols.filter(c => c.length > 0);
+        await saveTableLayoutPositions(prunedCols);
+    }
+
+    async function moveGroupToColumnBottom(draggedId: string, targetColIdx: number) {
+        let srcColIdx = -1;
+        let srcRowIdx = -1;
+        let draggedCard: GridCardData | null = null;
+
+        for (let c = 0; c < layoutColumns.length; c++) {
+            const col = layoutColumns[c];
+            for (let r = 0; r < col.length; r++) {
+                if (col[r].id === draggedId) {
+                    srcColIdx = c;
+                    srcRowIdx = r;
+                    draggedCard = col[r];
+                    break;
+                }
+            }
+            if (draggedCard) break;
+        }
+
+        if (!draggedCard || targetColIdx >= layoutColumns.length) return;
+
+        const cols: GridCardData[][] = layoutColumns.map(col => [...col]);
+        cols[srcColIdx].splice(srcRowIdx, 1);
+        cols[targetColIdx].push(draggedCard);
+
+        const prunedCols = cols.filter(c => c.length > 0);
+        await saveTableLayoutPositions(prunedCols);
+    }
+
+    async function moveGroupToNewColumn(draggedId: string) {
+        let srcColIdx = -1;
+        let srcRowIdx = -1;
+        let draggedCard: GridCardData | null = null;
+
+        for (let c = 0; c < layoutColumns.length; c++) {
+            const col = layoutColumns[c];
+            for (let r = 0; r < col.length; r++) {
+                if (col[r].id === draggedId) {
+                    srcColIdx = c;
+                    srcRowIdx = r;
+                    draggedCard = col[r];
+                    break;
+                }
+            }
+            if (draggedCard) break;
+        }
+
+        if (!draggedCard) return;
+
+        const cols: GridCardData[][] = layoutColumns.map(col => [...col]);
+        cols[srcColIdx].splice(srcRowIdx, 1);
+        cols.push([draggedCard]);
+
+        const prunedCols = cols.filter(c => c.length > 0);
+        await saveTableLayoutPositions(prunedCols);
+    }
+
+    async function saveTableLayoutPositions(prunedCols: GridCardData[][]) {
+        const positions: Record<string, [number, number]> = {};
+        prunedCols.forEach((colCards, colIdx) => {
+            colCards.forEach((card, rowIdx) => {
+                positions[card.name] = [colIdx, rowIdx];
+                if (card.id && card.id !== card.name) {
+                    positions[card.id] = [colIdx, rowIdx];
+                }
+            });
+        });
+
+        if (plugin?.settings) {
+            plugin.settings.quickListGroupPositions = positions;
+            await plugin.saveSettings();
+        }
+
+        layoutColumns = prunedCols;
+        scheduleAdjustSpacing();
     }
 
     // =============================================
@@ -2187,10 +2462,14 @@
 
             <button 
                 class="quick-modal-header-btn quick-modal-layout-toggle-btn"
-                title={isGridLayout ? "Switch to Classic Single-Column List" : "Switch to Grid Board Layout"}
+                title={layoutMode === "grid" 
+                    ? "Current: Grid (Auto Bin-Packing). Click to switch to Table Board" 
+                    : (layoutMode === "table" 
+                        ? "Current: Table (Custom Blueprint Grid). Click to switch to Classic List" 
+                        : "Current: Classic List. Click to switch to Auto Grid")}
                 on:click={toggleLayoutMode}
             >
-                {#if isGridLayout}
+                {#if layoutMode === "grid"}
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="3" width="7" height="7"></rect>
                         <rect x="14" y="3" width="7" height="7"></rect>
@@ -2198,6 +2477,15 @@
                         <rect x="3" y="14" width="7" height="7"></rect>
                     </svg>
                     <span>Grid</span>
+                {:else if layoutMode === "table"}
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                        <line x1="3" y1="9" x2="21" y2="9"></line>
+                        <line x1="3" y1="15" x2="21" y2="15"></line>
+                        <line x1="9" y1="3" x2="9" y2="21"></line>
+                        <line x1="15" y1="3" x2="15" y2="21"></line>
+                    </svg>
+                    <span>Table</span>
                 {:else}
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="8" y1="6" x2="21" y2="6"></line>
@@ -2524,8 +2812,59 @@
                                 </div>
                             {/if}
                         {/each}
+
+                        {#if layoutMode === "table" && isDraggingGroup}
+                            <div 
+                                class="quick-table-col-dropzone"
+                                class:drag-over={dragOverListId === `col_drop_${colIdx}`}
+                                on:dragover={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+                                    dragOverListId = `col_drop_${colIdx}`;
+                                    dragListPosition = "bottom";
+                                }}
+                                on:dragleave={() => {
+                                    if (dragOverListId === `col_drop_${colIdx}`) dragOverListId = "";
+                                }}
+                                on:drop|preventDefault={async () => {
+                                    if (draggedListId) {
+                                        await moveGroupToColumnBottom(draggedListId, colIdx);
+                                    }
+                                    handleListDragEnd();
+                                }}
+                            >
+                                + Drop at bottom
+                            </div>
+                        {/if}
                     </div>
                 {/each}
+
+                {#if layoutMode === "table" && isDraggingGroup}
+                    <div 
+                        class="quick-table-new-col-dropzone"
+                        class:drag-over={dragOverListId === "__new_col_drop__"}
+                        on:dragover={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+                            dragOverListId = "__new_col_drop__";
+                            dragListPosition = "inside";
+                        }}
+                        on:dragleave={() => {
+                            if (dragOverListId === "__new_col_drop__") dragOverListId = "";
+                        }}
+                        on:drop|preventDefault={async () => {
+                            if (draggedListId) {
+                                await moveGroupToNewColumn(draggedListId);
+                            }
+                            handleListDragEnd();
+                        }}
+                    >
+                        <span class="quick-table-new-col-icon">+</span>
+                        <span>New Column</span>
+                    </div>
+                {/if}
             {/if}
         </div>
     {:else}
@@ -2827,6 +3166,15 @@
 
         <div class="quick-modal-status-bar">
             <span><b>↑↓←→</b> Navigate</span>
+            {#if layoutMode === "table"}
+                <span><b>Wheel</b> Scroll Y</span>
+                <span><b>Shift+Wheel</b> Scroll X</span>
+                <span><b>Drag Group</b> Arrange Table</span>
+            {:else if layoutMode === "grid"}
+                <span><b>Wheel</b> Scroll Board</span>
+            {:else}
+                <span><b>Wheel</b> Scroll List</span>
+            {/if}
             <span><b>F2</b> Rename</span>
             <span><b>Enter</b> Open in Center View</span>
             <span><b>Tab</b> Switch to {searchMode === 'task' ? 'Lists' : 'Tasks'}</span>
