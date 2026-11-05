@@ -1566,11 +1566,19 @@
         try {
             const newCat = await dataService.createCategory(name);
             await loadData();
-            await openCategoryInCenterOnly(newCat);
+            await tick();
+            const idx = flatCategories.findIndex(c => c.filepath === newCat.filepath || c.id === newCat.id);
+            if (idx !== -1) {
+                focusedIndex = idx;
+                scrollFocusedIntoView();
+            }
         } catch (e) {
             new Notice(`Failed to create list: ${e}`);
         } finally {
             isCommittingAddList = false;
+            setTimeout(() => {
+                modalContainerEl?.focus();
+            }, 30);
         }
     }
 
@@ -1598,6 +1606,9 @@
             new Notice(`Failed to create group: ${e}`);
         } finally {
             isCommittingAddGroup = false;
+            setTimeout(() => {
+                modalContainerEl?.focus();
+            }, 30);
         }
     }
 

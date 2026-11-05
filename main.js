@@ -25033,11 +25033,22 @@ function instance6($$self, $$props, $$invalidate) {
     try {
       const newCat = await dataService.createCategory(name);
       await loadData();
-      await openCategoryInCenterOnly(newCat);
+      await tick();
+      const idx = flatCategories.findIndex((c) => c.filepath === newCat.filepath || c.id === newCat.id);
+      if (idx !== -1) {
+        $$invalidate(7, focusedIndex = idx);
+        scrollFocusedIntoView();
+      }
     } catch (e) {
       new import_obsidian13.Notice(`Failed to create list: ${e}`);
     } finally {
       isCommittingAddList = false;
+      setTimeout(
+        () => {
+          modalContainerEl == null ? void 0 : modalContainerEl.focus();
+        },
+        30
+      );
     }
   }
   function startAddGroup() {
@@ -25064,6 +25075,12 @@ function instance6($$self, $$props, $$invalidate) {
       new import_obsidian13.Notice(`Failed to create group: ${e}`);
     } finally {
       isCommittingAddGroup = false;
+      setTimeout(
+        () => {
+          modalContainerEl == null ? void 0 : modalContainerEl.focus();
+        },
+        30
+      );
     }
   }
   function navigateDirection(direction) {
