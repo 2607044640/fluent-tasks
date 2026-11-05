@@ -4593,6 +4593,206 @@ body .quick-modal-task-item.is-focused {
     box-shadow: 0 4px 12px -2px var(--todo-accent-glow, rgba(139, 92, 246, 0.4)) !important;
 }
 
+/* Table Mode: Vibrant Card Insertion Line with Leading Pip (Like Obsidian list DnD) */
+.is-table-mode .quick-grid-card {
+    position: relative;
+}
+
+.is-table-mode .quick-grid-card.drag-over-top::before {
+    content: "";
+    position: absolute;
+    top: -7px;
+    left: -4px;
+    right: -4px;
+    height: 3px;
+    background: var(--todo-accent, #8b5cf6);
+    border-radius: 3px;
+    box-shadow: 0 0 10px 2px var(--todo-accent-glow, rgba(139, 92, 246, 0.7));
+    z-index: 100;
+    pointer-events: none;
+}
+
+.is-table-mode .quick-grid-card.drag-over-top::after {
+    content: "";
+    position: absolute;
+    top: -11px;
+    left: -8px;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--todo-accent, #8b5cf6);
+    box-shadow: 0 0 8px 2px var(--todo-accent-glow, rgba(139, 92, 246, 0.8));
+    z-index: 101;
+    pointer-events: none;
+}
+
+.is-table-mode .quick-grid-card.drag-over-bottom::before {
+    content: "";
+    position: absolute;
+    bottom: -7px;
+    left: -4px;
+    right: -4px;
+    height: 3px;
+    background: var(--todo-accent, #8b5cf6);
+    border-radius: 3px;
+    box-shadow: 0 0 10px 2px var(--todo-accent-glow, rgba(139, 92, 246, 0.7));
+    z-index: 100;
+    pointer-events: none;
+}
+
+.is-table-mode .quick-grid-card.drag-over-bottom::after {
+    content: "";
+    position: absolute;
+    bottom: -11px;
+    left: -8px;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--todo-accent, #8b5cf6);
+    box-shadow: 0 0 8px 2px var(--todo-accent-glow, rgba(139, 92, 246, 0.8));
+    z-index: 101;
+    pointer-events: none;
+}
+
+/* Inter-Column Insertion Zones */
+.quick-table-col-insert-zone {
+    width: 16px;
+    margin: 0 -8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    align-self: stretch;
+    min-height: 200px;
+    z-index: 20;
+    cursor: col-resize;
+}
+
+.quick-table-col-insert-line {
+    width: 3px;
+    height: 100%;
+    min-height: 180px;
+    border-radius: 3px;
+    background: transparent;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.quick-table-col-insert-zone.drag-over .quick-table-col-insert-line {
+    background: var(--todo-accent, #8b5cf6);
+    box-shadow: 0 0 12px 2px var(--todo-accent-glow, rgba(139, 92, 246, 0.85));
+}
+
+/* RTS Edge Panning Directions Cursor Override */
+.quick-modal-container.edge-dir-left,
+.quick-modal-container.edge-dir-left * {
+    cursor: w-resize !important;
+}
+.quick-modal-container.edge-dir-right,
+.quick-modal-container.edge-dir-right * {
+    cursor: e-resize !important;
+}
+.quick-modal-container.edge-dir-up,
+.quick-modal-container.edge-dir-up * {
+    cursor: n-resize !important;
+}
+.quick-modal-container.edge-dir-down,
+.quick-modal-container.edge-dir-down * {
+    cursor: s-resize !important;
+}
+.quick-modal-container.edge-dir-up-left,
+.quick-modal-container.edge-dir-up-left * {
+    cursor: nw-resize !important;
+}
+.quick-modal-container.edge-dir-up-right,
+.quick-modal-container.edge-dir-up-right * {
+    cursor: ne-resize !important;
+}
+.quick-modal-container.edge-dir-down-left,
+.quick-modal-container.edge-dir-down-left * {
+    cursor: sw-resize !important;
+}
+.quick-modal-container.edge-dir-down-right,
+.quick-modal-container.edge-dir-down-right * {
+    cursor: se-resize !important;
+}
+
+/* RTS Edge Arrow Visual Indicators */
+.quick-table-edge-arrow {
+    position: absolute;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 700;
+    color: #ffffff;
+    background: var(--todo-accent, #8b5cf6);
+    box-shadow: 0 0 16px 4px var(--todo-accent-glow, rgba(139, 92, 246, 0.9));
+    pointer-events: none;
+    border-radius: 8px;
+    transition: opacity 0.15s ease;
+}
+
+.quick-table-edge-arrow.is-left {
+    top: 50%;
+    left: 8px;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 56px;
+}
+
+.quick-table-edge-arrow.is-right {
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 56px;
+}
+
+.quick-table-edge-arrow.is-up {
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 56px;
+    height: 28px;
+}
+
+.quick-table-edge-arrow.is-down {
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 56px;
+    height: 28px;
+}
+
+.quick-table-edge-arrow.is-up-left {
+    top: 8px;
+    left: 8px;
+    width: 36px;
+    height: 36px;
+}
+
+.quick-table-edge-arrow.is-up-right {
+    top: 8px;
+    right: 8px;
+    width: 36px;
+    height: 36px;
+}
+
+.quick-table-edge-arrow.is-down-left {
+    bottom: 8px;
+    left: 8px;
+    width: 36px;
+    height: 36px;
+}
+
+.quick-table-edge-arrow.is-down-right {
+    bottom: 8px;
+    right: 8px;
+    width: 36px;
+    height: 36px;
+}
+
 .quick-grid-card {
     background: var(--background-secondary);
     border: 1px solid var(--background-modifier-border);

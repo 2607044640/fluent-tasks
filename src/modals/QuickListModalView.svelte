@@ -715,6 +715,7 @@
     });
 
     onDestroy(() => {
+        stopTableDragSession();
         window.removeEventListener("focus", checkHotkeyStatus);
         document.removeEventListener("visibilitychange", checkHotkeyStatus);
         if (searchDebounceTimer) {
@@ -1022,11 +1023,169 @@
         return null;
     }
 
+    // =============================================
+    // RTS Screen Edge Auto-Panning & Drag Wheel
+    // =============================================
+    let edgeRafId: number | null = null;
+    let edgeScrollVx = 0;
+    let edgeScrollVy = 0;
+    let activeEdgeDirection: string | null = null;
+    const EDGE_PAN_THRESHOLD = 56;
+
+    function startTableDragSession() {
+        window.addEventListener("dragover", handleGlobalTableDragOver, { capture: true });
+        window.addEventListener("drag", handleGlobalTableDrag, { capture: true });
+        window.addEventListener("wheel", handleGlobalTableWheel, { capture: true, passive: false });
+    }
+
+    function stopTableDragSession() {
+        window.removeEventListener("dragover", handleGlobalTableDragOver, { capture: true });
+        window.removeEventListener("drag", handleGlobalTableDrag, { capture: true });
+        window.removeEventListener("wheel", handleGlobalTableWheel, { capture: true });
+        stopEdgePanning();
+    }
+
+    function handleGlobalTableWheel(e: WheelEvent) {
+        if (!boardEl || layoutMode !== "table") return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+            const delta = e.shiftKey ? e.deltaY : e.deltaX;
+            boardEl.scrollLeft += delta;
+        } else if (e.deltaY !== 0) {
+            if (boardEl.scrollHeight > boardEl.clientHeight) {
+                boardEl.scrollTop += e.deltaY;
+            } else {
+                boardEl.scrollLeft += e.deltaY;
+            }
+        }
+    }
+
+    function handleGlobalTableDragOver(e: DragEvent) {
+        if (layoutMode !== "table" || (!isDraggingGroup && !draggedListId)) return;
+        updateEdgePanning(e.clientX, e.clientY);
+    }
+
+    function handleGlobalTableDrag(e: DragEvent) {
+        if (layoutMode !== "table" || (!isDraggingGroup && !draggedListId)) return;
+        if (e.clientX !== 0 || e.clientY !== 0) {
+            updateEdgePanning(e.clientX, e.clientY);
+        }
+    }
+
+    function updateEdgePanning(clientX: number, clientY: number) {
+        if (!boardEl || layoutMode !== "table") {
+            stopEdgePanning();
+            return;
+        }
+
+        const rect = boardEl.getBoundingClientRect();
+        if (clientX <= 0 && clientY <= 0) return;
+        if (clientX < rect.left - 60 || clientX > rect.right + 60 || clientY < rect.top - 60 || clientY > rect.bottom + 60) {
+            stopEdgePanning();
+            return;
+        }
+
+        const distLeft = clientX - rect.left;
+        const distRight = rect.right - clientX;
+        const distTop = clientY - rect.top;
+        const distBottom = rect.bottom - clientY;
+
+        const canScrollLeft = boardEl.scrollLeft > 0;
+        const canScrollRight = boardEl.scrollLeft + boardEl.clientWidth < boardEl.scrollWidth - 1;
+        const canScrollUp = boardEl.scrollTop > 0;
+        const canScrollDown = boardEl.scrollTop + boardEl.clientHeight < boardEl.scrollHeight - 1;
+
+        let vx = 0;
+        let vy = 0;
+        let dirX: "left" | "right" | null = null;
+        let dirY: "up" | "down" | null = null;
+
+        if (distLeft <= EDGE_PAN_THRESHOLD && distLeft >= -20) {
+            dirX = "left";
+            if (canScrollLeft) {
+                vx = -calculateEdgeSpeed(distLeft, EDGE_PAN_THRESHOLD);
+            }
+        } else if (distRight <= EDGE_PAN_THRESHOLD && distRight >= -20) {
+            dirX = "right";
+            if (canScrollRight) {
+                vx = calculateEdgeSpeed(distRight, EDGE_PAN_THRESHOLD);
+            }
+        }
+
+        if (distTop <= EDGE_PAN_THRESHOLD && distTop >= -20) {
+            dirY = "up";
+            if (canScrollUp) {
+                vy = -calculateEdgeSpeed(distTop, EDGE_PAN_THRESHOLD);
+            }
+        } else if (distBottom <= EDGE_PAN_THRESHOLD && distBottom >= -20) {
+            dirY = "down";
+            if (canScrollDown) {
+                vy = calculateEdgeSpeed(distBottom, EDGE_PAN_THRESHOLD);
+            }
+        }
+
+        if (dirX && dirY) {
+            activeEdgeDirection = `${dirY}-${dirX}`;
+        } else if (dirX) {
+            activeEdgeDirection = dirX;
+        } else if (dirY) {
+            activeEdgeDirection = dirY;
+        } else {
+            activeEdgeDirection = null;
+        }
+
+        edgeScrollVx = vx;
+        edgeScrollVy = vy;
+
+        if (edgeScrollVx !== 0 || edgeScrollVy !== 0) {
+            if (edgeRafId === null) {
+                edgeRafId = requestAnimationFrame(edgePanStep);
+            }
+        } else {
+            if (edgeRafId !== null) {
+                cancelAnimationFrame(edgeRafId);
+                edgeRafId = null;
+            }
+        }
+    }
+
+    function calculateEdgeSpeed(dist: number, maxZone: number): number {
+        const clamped = Math.max(0, Math.min(dist, maxZone));
+        const factor = 1 - (clamped / maxZone);
+        return Math.round(8 + factor * 22);
+    }
+
+    function edgePanStep() {
+        if (!boardEl || (edgeScrollVx === 0 && edgeScrollVy === 0)) {
+            edgeRafId = null;
+            return;
+        }
+        boardEl.scrollLeft += edgeScrollVx;
+        boardEl.scrollTop += edgeScrollVy;
+        edgeRafId = requestAnimationFrame(edgePanStep);
+    }
+
+    function stopEdgePanning() {
+        if (edgeRafId !== null) {
+            cancelAnimationFrame(edgeRafId);
+            edgeRafId = null;
+        }
+        edgeScrollVx = 0;
+        edgeScrollVy = 0;
+        activeEdgeDirection = null;
+    }
+
     function handleRootDragStart(e: DragEvent) {
         handleListDragStart(e, { id: "__root__", name: "Lists", type: "root" } as any);
     }
 
     function handleListDragStart(e: DragEvent, item: SidebarItem | CategoryInfo) {
+        if (layoutMode === "table") {
+            startTableDragSession();
+        }
+
         if (item.type === "group" || (item as any).type === "root" || item.id === "__root__") {
             isDraggingGroup = true;
             draggedListId = item.id;
@@ -1055,6 +1214,7 @@
     }
 
     function handleListDragEnd() {
+        stopTableDragSession();
         draggedListId = "";
         dragOverListId = "";
         dragListPosition = null;
@@ -1158,6 +1318,14 @@
         e.stopPropagation();
 
         if (isDraggingGroup) {
+            if (layoutMode === "table") {
+                if (parentGroup) {
+                    handleGroupCardDragOver(e, parentGroup);
+                    return;
+                }
+                handleRootCardDragOver(e);
+                return;
+            }
             if (e.dataTransfer) e.dataTransfer.dropEffect = "none";
             dragOverListId = "";
             dragListPosition = null;
@@ -1428,8 +1596,15 @@
 
     async function handleListDrop(target?: SidebarItem | CategoryInfo, forcedPosition?: "top" | "bottom" | "inside") {
         if (isDraggingGroup) {
+            if (layoutMode === "table" && draggedListId) {
+                const targetCardId = dragOverListId || (target as any)?.id;
+                if (targetCardId && targetCardId !== draggedListId) {
+                    await moveGroupInTable(draggedListId, targetCardId, dragListPosition || "bottom");
+                }
+            } else {
+                showDragForbiddenNotice();
+            }
             handleListDragEnd();
-            showDragForbiddenNotice();
             return;
         }
 
@@ -1507,6 +1682,8 @@
         await saveTableLayoutPositions(prunedCols);
     }
 
+
+
     async function moveGroupToColumnBottom(draggedId: string, targetColIdx: number) {
         let srcColIdx = -1;
         let srcRowIdx = -1;
@@ -1535,6 +1712,8 @@
         await saveTableLayoutPositions(prunedCols);
     }
 
+
+
     async function moveGroupToNewColumn(draggedId: string) {
         let srcColIdx = -1;
         let srcRowIdx = -1;
@@ -1562,6 +1741,120 @@
         const prunedCols = cols.filter(c => c.length > 0);
         await saveTableLayoutPositions(prunedCols);
     }
+
+    async function moveGroupToNewColumnAt(draggedId: string, targetColIdx: number) {
+        let srcColIdx = -1;
+        let srcRowIdx = -1;
+        let draggedCard: GridCardData | null = null;
+
+        for (let c = 0; c < layoutColumns.length; c++) {
+            const col = layoutColumns[c];
+            for (let r = 0; r < col.length; r++) {
+                if (col[r].id === draggedId) {
+                    srcColIdx = c;
+                    srcRowIdx = r;
+                    draggedCard = col[r];
+                    break;
+                }
+            }
+            if (draggedCard) break;
+        }
+
+        if (!draggedCard) return;
+
+        const cols: GridCardData[][] = layoutColumns.map(col => [...col]);
+        cols[srcColIdx].splice(srcRowIdx, 1);
+
+        let insertCol = targetColIdx;
+        if (srcColIdx < targetColIdx && cols[srcColIdx].length === 0) {
+            insertCol = Math.max(0, insertCol - 1);
+        }
+        insertCol = Math.max(0, Math.min(insertCol, cols.length));
+
+        cols.splice(insertCol, 0, [draggedCard]);
+
+        const prunedCols = cols.filter(c => c.length > 0);
+        await saveTableLayoutPositions(prunedCols);
+    }
+
+    function handleColumnDragOver(e: DragEvent, colIdx: number) {
+        if (layoutMode !== "table" || !isDraggingGroup || !draggedListId) return;
+        e.preventDefault();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+
+        const colCards = layoutColumns[colIdx];
+        if (!colCards || colCards.length === 0) {
+            dragOverListId = `col_drop_${colIdx}`;
+            dragListPosition = "bottom";
+            return;
+        }
+
+        const colEl = e.currentTarget as HTMLElement;
+        const cardEls = Array.from(colEl.querySelectorAll<HTMLElement>(".quick-grid-card"));
+        if (cardEls.length === 0) {
+            dragOverListId = `col_drop_${colIdx}`;
+            dragListPosition = "bottom";
+            return;
+        }
+
+        let closestCardId = "";
+        let closestPos: "top" | "bottom" = "bottom";
+        let minDistance = Infinity;
+
+        for (const cardEl of cardEls) {
+            const cardId = cardEl.getAttribute("data-card-id") || cardEl.getAttribute("data-group-id");
+            if (!cardId || cardId === draggedListId) continue;
+            const rect = cardEl.getBoundingClientRect();
+
+            if (e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                closestCardId = cardId;
+                closestPos = (e.clientY - rect.top < rect.height * 0.5) ? "top" : "bottom";
+                minDistance = 0;
+                break;
+            }
+
+            const distToTop = Math.abs(e.clientY - rect.top);
+            if (distToTop < minDistance) {
+                minDistance = distToTop;
+                closestCardId = cardId;
+                closestPos = "top";
+            }
+
+            const distToBottom = Math.abs(e.clientY - rect.bottom);
+            if (distToBottom < minDistance) {
+                minDistance = distToBottom;
+                closestCardId = cardId;
+                closestPos = "bottom";
+            }
+        }
+
+        if (closestCardId) {
+            dragOverListId = closestCardId;
+            dragListPosition = closestPos;
+        }
+    }
+
+    async function handleColumnDrop(e: DragEvent, colIdx: number) {
+        if (layoutMode !== "table" || !isDraggingGroup || !draggedListId) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (dragOverListId && dragListPosition) {
+            if (dragOverListId.startsWith("col_drop_")) {
+                await moveGroupToColumnBottom(draggedListId, colIdx);
+            } else if (dragOverListId.startsWith("col_insert_")) {
+                const targetIdx = parseInt(dragOverListId.replace("col_insert_", ""), 10);
+                await moveGroupToNewColumnAt(draggedListId, isNaN(targetIdx) ? colIdx : targetIdx);
+            } else if (dragOverListId !== draggedListId) {
+                await moveGroupInTable(draggedListId, dragOverListId, dragListPosition);
+            }
+        } else {
+            await moveGroupToColumnBottom(draggedListId, colIdx);
+        }
+        handleListDragEnd();
+    }
+
+
 
     async function saveTableLayoutPositions(prunedCols: GridCardData[][]) {
         const positions: Record<string, [number, number]> = {};
@@ -2299,6 +2592,14 @@
     class:is-picking-focus={isPickingDefaultFocus}
     class:is-dragging-group={isDraggingGroup && layoutMode !== "table"}
     class:is-table-mode={layoutMode === "table"}
+    class:edge-dir-left={activeEdgeDirection === 'left'}
+    class:edge-dir-right={activeEdgeDirection === 'right'}
+    class:edge-dir-up={activeEdgeDirection === 'up'}
+    class:edge-dir-down={activeEdgeDirection === 'down'}
+    class:edge-dir-up-left={activeEdgeDirection === 'up-left'}
+    class:edge-dir-up-right={activeEdgeDirection === 'up-right'}
+    class:edge-dir-down-left={activeEdgeDirection === 'down-left'}
+    class:edge-dir-down-right={activeEdgeDirection === 'down-right'}
     bind:this={modalContainerEl}
     on:pointerleave={handlePointerLeave}
     tabindex="0"
@@ -2567,18 +2868,76 @@
         <!-- =============================================
              Grid Board / Dashboard Card Layout (图表平铺看板 - 横向滑动 + 纵向换列)
              ============================================= -->
-        <div class="quick-list-grid-board" class:is-table-mode={layoutMode === "table"} bind:this={boardEl} on:wheel={handleBoardWheel}>
+        <div 
+            class="quick-list-grid-board" 
+            class:is-table-mode={layoutMode === "table"} 
+            bind:this={boardEl} 
+            on:wheel={handleBoardWheel}
+            on:dragover={(e) => {
+                if (layoutMode === "table" && isDraggingGroup) {
+                    e.preventDefault();
+                    if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+                }
+            }}
+        >
+            {#if activeEdgeDirection}
+                <div class="quick-table-edge-arrow is-{activeEdgeDirection}">
+                    {#if activeEdgeDirection === 'left'}◀
+                    {:else if activeEdgeDirection === 'right'}▶
+                    {:else if activeEdgeDirection === 'up'}▲
+                    {:else if activeEdgeDirection === 'down'}▼
+                    {:else if activeEdgeDirection === 'up-left'}◤
+                    {:else if activeEdgeDirection === 'up-right'}◥
+                    {:else if activeEdgeDirection === 'down-left'}◣
+                    {:else if activeEdgeDirection === 'down-right'}◢
+                    {/if}
+                </div>
+            {/if}
+
             {#if filteredItems.length === 0 && !isStarredMatching}
                 <div class="quick-modal-empty">No matching lists or groups found.</div>
             {:else}
                 {#each layoutColumns as column, colIdx (colIdx)}
-                    <div class="quick-grid-column">
+                    {#if layoutMode === "table" && isDraggingGroup}
+                        <div 
+                            class="quick-table-col-insert-zone"
+                            class:drag-over={dragOverListId === `col_insert_${colIdx}`}
+                            on:dragover={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+                                dragOverListId = `col_insert_${colIdx}`;
+                                dragListPosition = "inside";
+                            }}
+                            on:dragleave={() => {
+                                if (dragOverListId === `col_insert_${colIdx}`) dragOverListId = "";
+                            }}
+                            on:drop|preventDefault={async (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (draggedListId) {
+                                    await moveGroupToNewColumnAt(draggedListId, colIdx);
+                                }
+                                handleListDragEnd();
+                            }}
+                        >
+                            <div class="quick-table-col-insert-line"></div>
+                        </div>
+                    {/if}
+
+                    <div 
+                        class="quick-grid-column"
+                        on:dragover={(e) => handleColumnDragOver(e, colIdx)}
+                        on:drop|preventDefault={(e) => handleColumnDrop(e, colIdx)}
+                    >
                         {#each column as card (card.id + "_" + (card.group ? (card.group.isExpanded ? "exp" : "col") : "root"))}
                             {#if card.type === "root"}
                                 <!-- Standalone Root Categories Card -->
                                 <div 
                                     class="quick-grid-card is-root-card" 
                                     data-card-id="__root__"
+                                    class:drag-over-top={dragOverListId === "__root__" && dragListPosition === "top"}
+                                    class:drag-over-bottom={dragOverListId === "__root__" && dragListPosition === "bottom"}
                                     class:drag-over-inside={rootCategories.length === 0 && dragOverListId === "__root__"}
                                     on:dragover={handleRootCardDragOver}
                                     on:dragleave={handleRootCardDragLeave}
@@ -2704,7 +3063,13 @@
                                         on:mouseleave={() => clearHoveredTarget(group.id)}
                                         on:dragstart={(e) => handleListDragStart(e, group)}
                                         on:dragend={handleListDragEnd}
-                                        on:dragover={(e) => handleListDragOver(e, group, true)}
+                                        on:dragover={(e) => {
+                                            if (layoutMode === "table" && isDraggingGroup) {
+                                                handleGroupCardDragOver(e, group);
+                                            } else {
+                                                handleListDragOver(e, group, true);
+                                            }
+                                        }}
                                         on:drop|preventDefault={(e) => handleGroupCardDrop(e, group)}
                                         on:contextmenu={(e) => showItemContextMenu(e, { id: group.id, name: group.name, type: "group" })}
                                     >
@@ -3187,8 +3552,8 @@
         <div class="quick-modal-status-bar">
             <span><b>↑↓←→</b> Navigate</span>
             {#if layoutMode === "table"}
-                <span><b>Wheel</b> Scroll Y</span>
-                <span><b>Shift+Wheel</b> Scroll X</span>
+                <span><b>Wheel / Shift+Wheel</b> Pan Board</span>
+                <span><b>Edge Pan</b> RTS Auto-Scroll</span>
                 <span><b>Drag Group</b> Arrange Table</span>
             {:else if layoutMode === "grid"}
                 <span><b>Wheel</b> Scroll Board</span>
