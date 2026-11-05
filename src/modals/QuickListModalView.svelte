@@ -117,12 +117,13 @@
                     e.preventDefault();
                 }
             } else if (e.deltaY !== 0) {
-                // Normal vertical wheel: scroll vertically if vertical overflow exists
-                if (board.scrollHeight > board.clientHeight) {
+                const canScrollUp = e.deltaY < 0 && board.scrollTop > 1;
+                const canScrollDown = e.deltaY > 0 && board.scrollTop + board.clientHeight < board.scrollHeight - 1;
+                if (canScrollUp || canScrollDown) {
                     board.scrollTop += e.deltaY;
                     e.preventDefault();
                 } else if (board.scrollWidth > board.clientWidth) {
-                    // Fallback to horizontal scroll if only horizontal overflow exists
+                    // Fallback to horizontal scroll if vertical boundary reached
                     board.scrollLeft += e.deltaY;
                     e.preventDefault();
                 }
@@ -530,7 +531,7 @@
         const divisor = layoutMode === "table" ? Math.max(1, Math.min(bestK, maxCandidateK)) : bestK;
         const actualCardW = Math.min(maxCardW, Math.max(minCardW, Math.floor((availContentW - totalGapsW) / divisor)));
         const totalW = bestK * actualCardW + totalGapsW;
-        const padX = Math.max(minPadX, Math.floor((availW - totalW) / 2));
+        const padX = layoutMode === "table" ? minPadX : Math.max(minPadX, Math.floor((availW - totalW) / 2));
 
         if (boardEl) {
             boardEl.style.setProperty("--quick-grid-card-w", `${actualCardW}px`);
@@ -542,7 +543,7 @@
             boardEl.style.paddingLeft = `${padX}px`;
             boardEl.style.paddingRight = `${padX}px`;
 
-            if (totalW > availW) {
+            if (layoutMode === "table" || totalW > availW) {
                 boardEl.style.justifyContent = "flex-start";
             } else {
                 boardEl.style.justifyContent = "center";
@@ -1054,9 +1055,11 @@
             const delta = e.shiftKey ? e.deltaY : e.deltaX;
             boardEl.scrollLeft += delta;
         } else if (e.deltaY !== 0) {
-            if (boardEl.scrollHeight > boardEl.clientHeight) {
+            const canScrollUp = e.deltaY < 0 && boardEl.scrollTop > 1;
+            const canScrollDown = e.deltaY > 0 && boardEl.scrollTop + boardEl.clientHeight < boardEl.scrollHeight - 1;
+            if (canScrollUp || canScrollDown) {
                 boardEl.scrollTop += e.deltaY;
-            } else {
+            } else if (boardEl.scrollWidth > boardEl.clientWidth) {
                 boardEl.scrollLeft += e.deltaY;
             }
         }
@@ -1092,37 +1095,37 @@
         const distTop = clientY - rect.top;
         const distBottom = rect.bottom - clientY;
 
-        const canScrollLeft = boardEl.scrollLeft > 0;
-        const canScrollRight = boardEl.scrollLeft + boardEl.clientWidth < boardEl.scrollWidth - 1;
-        const canScrollUp = boardEl.scrollTop > 0;
-        const canScrollDown = boardEl.scrollTop + boardEl.clientHeight < boardEl.scrollHeight - 1;
+        const canScrollLeft = boardEl.scrollLeft > 1;
+        const canScrollRight = boardEl.scrollLeft + boardEl.clientWidth < boardEl.scrollWidth - 2;
+        const canScrollUp = boardEl.scrollTop > 1;
+        const canScrollDown = boardEl.scrollTop + boardEl.clientHeight < boardEl.scrollHeight - 2;
 
         let vx = 0;
         let vy = 0;
         let dirX: "left" | "right" | null = null;
         let dirY: "up" | "down" | null = null;
 
-        if (distLeft <= EDGE_PAN_THRESHOLD && distLeft >= -20) {
+        if (distLeft <= EDGE_PAN_THRESHOLD && clientX >= 0) {
             dirX = "left";
             if (canScrollLeft) {
-                vx = -calculateEdgeSpeed(distLeft, EDGE_PAN_THRESHOLD);
+                vx = -calculateEdgeSpeed(Math.max(0, distLeft), EDGE_PAN_THRESHOLD);
             }
-        } else if (distRight <= EDGE_PAN_THRESHOLD && distRight >= -20) {
+        } else if (distRight <= EDGE_PAN_THRESHOLD && clientX <= window.innerWidth) {
             dirX = "right";
             if (canScrollRight) {
-                vx = calculateEdgeSpeed(distRight, EDGE_PAN_THRESHOLD);
+                vx = calculateEdgeSpeed(Math.max(0, distRight), EDGE_PAN_THRESHOLD);
             }
         }
 
-        if (distTop <= EDGE_PAN_THRESHOLD && distTop >= -20) {
+        if (distTop <= EDGE_PAN_THRESHOLD && clientY >= 0) {
             dirY = "up";
             if (canScrollUp) {
-                vy = -calculateEdgeSpeed(distTop, EDGE_PAN_THRESHOLD);
+                vy = -calculateEdgeSpeed(Math.max(0, distTop), EDGE_PAN_THRESHOLD);
             }
-        } else if (distBottom <= EDGE_PAN_THRESHOLD && distBottom >= -20) {
+        } else if (distBottom <= EDGE_PAN_THRESHOLD && clientY <= window.innerHeight) {
             dirY = "down";
             if (canScrollDown) {
-                vy = calculateEdgeSpeed(distBottom, EDGE_PAN_THRESHOLD);
+                vy = calculateEdgeSpeed(Math.max(0, distBottom), EDGE_PAN_THRESHOLD);
             }
         }
 
@@ -1159,6 +1162,20 @@
 
     function edgePanStep() {
         if (!boardEl || (edgeScrollVx === 0 && edgeScrollVy === 0)) {
+            edgeRafId = null;
+            return;
+        }
+        if (edgeScrollVx < 0 && boardEl.scrollLeft <= 0) {
+            edgeScrollVx = 0;
+        } else if (edgeScrollVx > 0 && boardEl.scrollLeft + boardEl.clientWidth >= boardEl.scrollWidth - 1) {
+            edgeScrollVx = 0;
+        }
+        if (edgeScrollVy < 0 && boardEl.scrollTop <= 0) {
+            edgeScrollVy = 0;
+        } else if (edgeScrollVy > 0 && boardEl.scrollTop + boardEl.clientHeight >= boardEl.scrollHeight - 1) {
+            edgeScrollVy = 0;
+        }
+        if (edgeScrollVx === 0 && edgeScrollVy === 0) {
             edgeRafId = null;
             return;
         }

@@ -4489,11 +4489,23 @@ body .quick-modal-task-item.is-focused {
     overflow-y: auto;
     display: flex;
     flex-direction: row;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: flex-start;
     gap: var(--quick-grid-col-gap, 14px);
     padding: 12px 14px;
     box-sizing: border-box;
+}
+
+.quick-list-grid-board.is-table-mode {
+    justify-content: flex-start !important;
+}
+
+.quick-list-grid-board::after {
+    content: "";
+    flex: 0 0 14px;
+    width: 14px;
+    height: 1px;
+    pointer-events: none;
 }
 
 /* Horizontal & Vertical scrollbar styling */
