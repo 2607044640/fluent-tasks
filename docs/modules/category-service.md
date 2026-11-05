@@ -19,13 +19,13 @@ Lists are flat Markdown files `TodoData/<name>.md`. Groups exist only in `TodoDa
 ## Numbered Data Flow
 
 1. `getSidebarItems`: `ensureDataFolder` → list `TFolder` children that are `.md` and not `.*` → `loadSidebarState` → walk state, match by `childFile` or `childName`, deduplicate by physical file basename (`usedFiles`) → append orphans → maybe `saveSidebarState` (auto-heal).
-2. `saveSidebarState`: dedupe groups and physical filepaths → convert item to `{ name, file: fileBasename }` only if disk basename diverges from display name (otherwise plain string or `{ name }`) → `adapter.write` `{ sidebar: SidebarItemState[] }` after `markInternalWrite`.
-3. `createCategory(name)`: resolve unique display name among root lists via `resolveUniqueName`; find available disk path via `getAvailableDiskFilepath`; update in-memory state and save metadata FIRST; `vault.create(path, "")`; emit `CATEGORY_LIST_CHANGED`.
+2. `saveSidebarState`: dedupe groups and physical filepaths → save group children as clean string arrays of file basenames (`children: string[]`) matching `file.basename` 1:1 → `adapter.write` `{ sidebar: SidebarItemState[] }` after `markInternalWrite`.
+3. `createCategory(name)`: resolve unique display name globally across all groups and root via `resolveUniqueName(this.getAllCategoryNames(items), trimmed)`; find available disk path via `getAvailableDiskFilepath`; update in-memory state and save metadata FIRST; `vault.create(path, "")`; emit `CATEGORY_LIST_CHANGED`.
 4. `createGroup`: in-memory `GroupInfo` with random id, unshift, save, emit.
-5. `deleteGroup`: splice group, splice its children into the parent list, auto-disambiguating colliding names against root lists via `resolveUniqueName`.
+5. `deleteGroup`: splice group, hoist its children into the root list, auto-disambiguating colliding names globally across all groups via `resolveUniqueName`.
 6. `deleteCategory`: locate item and its group; `fileManager.trashFile` if present; strip from tree; save; emit `CATEGORY_LIST_CHANGED` and `CATEGORY_DELETED` (with file content and index for undo).
 7. `renameCategory`: locate category in containing group or root; resolve unique display name globally across all groups via `resolveUniqueName`; find available disk path via `getAvailableDiskFilepath`; update in-memory state; `saveSidebarState` FIRST; if disk path changed, `vault.rename`; emit `CATEGORY_LIST_CHANGED`.
-8. `restoreCategory`: undo helper; re-creates/overwrites file on disk; inserts into original group or root with sibling name disambiguation; saves metadata and selects restored category.
+8. `restoreCategory`: undo helper; re-creates/overwrites file on disk; inserts into original group or root with global name disambiguation via `getAllCategoryNames`; saves metadata and selects restored category.
 
 ## Side-effects API
 
@@ -48,7 +48,7 @@ Lists are flat Markdown files `TodoData/<name>.md`. Groups exist only in `TodoDa
 1. **Load sidebar** — `TaskSidebarView.loadSidebarItems` → `dataService.getSidebarItems`.
 2. **Add list** — `confirmAddList` → `dataService.createCategory(name)` → select it via `CATEGORY_SELECTED`.
 3. **F2 rename** — `triggerRenameHoveredOrActive` → `confirmRename` → `renameCategory` or `renameGroup`. Global collision resolves to `name(1)` across all groups.
-4. **Drag list into group** — sidebar HTML5 DnD rebuilds `SidebarItem[]` then `saveSidebarState`. Shared helper in Quick modals: `moveSidebarItem` (`sidebarTreeUtils.ts`) resolves sibling collisions via `ensureUniqueCategoryName`.
+4. **Drag list into group** — sidebar HTML5 DnD rebuilds `SidebarItem[]` then `saveSidebarState`. Shared helper in Quick modals: `moveSidebarItem` (`sidebarTreeUtils.ts`) preserves the globally unique name and physical file without duplicating.
 5. **Refresh Command Palette jumps** — plugin listens `CATEGORY_LIST_CHANGED` → `registerCategoryCommands`.
 6. **Undo list deletion** — `restoreCategory` re-creates/overwrites list `.md`, cleans orphan state, re-inserts into target group or root, and focuses the list.
 
