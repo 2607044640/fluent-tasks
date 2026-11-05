@@ -45,9 +45,10 @@ Plugin settings are `FluentTasksSettings` stored by Obsidian `Plugin.saveData` /
 1. **Change accent** — Settings → Accent Color → `saveSettings` + `applySettings`.
 2. **Details as modal** — toggle “Open Task Details in Floating Modal”; enabling detaches the right pane.
 3. **Hide ribbon** — toggle → `refreshRibbonIcon`.
-4. **Quick List board** — “Quick List Modal: Grid Board Layout” or in-modal layout toggle (`toggleLayoutMode`). Gaps: “Min Column Gap” (10–64, step 2) and “Min Row Gap” (8–48, step 2).
-5. **Hotkey tip cap** — Quick List/Task `onOpen` uses `getModalHotkeyTipInfo(..., "fluent-tasks:open-quick-list-modal" \| "...open-quick-task-modal")`; `MAX_TIP_COUNT = 5`; skipped if a custom hotkey already exists.
-6. **Task separator line width** — Settings → Appearance: Task Separator Line Width (`taskSeparatorWidth`, 20–100%, step 5, default 60%) updates CSS property `--task-separator-width` to customize hairline divider length between tasks.
+4. **Quick List board** — “Quick List: Layout Mode” selects between Grid Board (Auto), Table Board (Custom), and Classic Single-Column List. Gaps: “Min Column Gap” (10–64, step 2) and “Min Row Gap” (8–48, step 2). Group positions in Table mode are persisted into `quickListGroupPositions`.
+5. **Edge drag sidebar expansion** — “Sidebar: Only Expand Near Left Edge on Drag” (`dragToEdgeToExpandSidebar`) prevents premature left sidebar drawer opening during in-list reordering, waiting until cursor nears screen left edge.
+6. **Hotkey tip cap** — Quick List/Task `onOpen` uses `getModalHotkeyTipInfo(..., "fluent-tasks:open-quick-list-modal" \| "...open-quick-task-modal")`; `MAX_TIP_COUNT = 5`; skipped if a custom hotkey already exists.
+7. **Task separator line width** — Settings → Appearance: Task Separator Line Width (`taskSeparatorWidth`, 20–100%, step 5, default 60%) updates CSS property `--task-separator-width` to customize hairline divider length between tasks.
 
 ### Default values (`DEFAULT_SETTINGS`)
 
@@ -60,6 +61,7 @@ Plugin settings are `FluentTasksSettings` stored by Obsidian `Plugin.saveData` /
 | `collapseCompletedSteps` | `true` |
 | `hideLeftSidebar` | `false` |
 | `autoExpandSidebarOnDrag` | `false` |
+| `dragToEdgeToExpandSidebar` | `false` |
 | `autoExpandSidebar` | `true` |
 | `autoCollapseSidebarOnSwitch` | `true` |
 | `searchHideCompleted` | `true` |
@@ -74,6 +76,8 @@ Plugin settings are `FluentTasksSettings` stored by Obsidian `Plugin.saveData` /
 | `quickModalAction` | `'direct'` |
 | `quickModalTipCount` | `0` |
 | `quickListGridLayout` | `true` |
+| `quickListLayoutMode` | `'grid'` |
+| `quickListGroupPositions` | `{}` |
 | `quickListMinColGap` | `16` |
 | `quickListMinRowGap` | `12` |
 | `quickListMaxCardWidth` | `320` |
