@@ -9,6 +9,7 @@ export interface FluentTasksSettings {
     fullscreenDetailModal: boolean;
     hideLeftSidebar: boolean;
     autoExpandSidebarOnDrag: boolean;
+    dragToEdgeToExpandSidebar: boolean;
     autoExpandSidebar: boolean;
     autoCollapseSidebarOnSwitch: boolean;
     searchHideCompleted: boolean;
@@ -53,6 +54,7 @@ export const DEFAULT_SETTINGS: FluentTasksSettings = {
     injectAiArchiveDirective: true,
     hideLeftSidebar: false,
     autoExpandSidebarOnDrag: false,
+    dragToEdgeToExpandSidebar: false,
     autoExpandSidebar: true,
     autoCollapseSidebarOnSwitch: true,
     searchHideCompleted: true,
@@ -430,6 +432,16 @@ export class FluentTasksSettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.autoExpandSidebarOnDrag ?? false)
                 .onChange(async (value) => {
                     this.plugin.settings.autoExpandSidebarOnDrag = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName("Sidebar: Only Expand Near Left Edge on Drag")
+            .setDesc("When dragging a task, only expand the left sidebar if the cursor is dragged near the far left edge of the screen, instead of expanding immediately. Keeps in-list task reordering clean and distraction-free.")
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.dragToEdgeToExpandSidebar ?? false)
+                .onChange(async (value) => {
+                    this.plugin.settings.dragToEdgeToExpandSidebar = value;
                     await this.plugin.saveSettings();
                 }));
 

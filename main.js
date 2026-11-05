@@ -53467,6 +53467,7 @@ var DEFAULT_SETTINGS = {
   injectAiArchiveDirective: true,
   hideLeftSidebar: false,
   autoExpandSidebarOnDrag: false,
+  dragToEdgeToExpandSidebar: false,
   autoExpandSidebar: true,
   autoCollapseSidebarOnSwitch: true,
   searchHideCompleted: true,
@@ -53708,6 +53709,13 @@ var FluentTasksSettingTab = class extends import_obsidian23.PluginSettingTab {
       var _a;
       return toggle.setValue((_a = this.plugin.settings.autoExpandSidebarOnDrag) != null ? _a : false).onChange(async (value) => {
         this.plugin.settings.autoExpandSidebarOnDrag = value;
+        await this.plugin.saveSettings();
+      });
+    });
+    new import_obsidian23.Setting(containerEl).setName("Sidebar: Only Expand Near Left Edge on Drag").setDesc("When dragging a task, only expand the left sidebar if the cursor is dragged near the far left edge of the screen, instead of expanding immediately. Keeps in-list task reordering clean and distraction-free.").addToggle((toggle) => {
+      var _a;
+      return toggle.setValue((_a = this.plugin.settings.dragToEdgeToExpandSidebar) != null ? _a : false).onChange(async (value) => {
+        this.plugin.settings.dragToEdgeToExpandSidebar = value;
         await this.plugin.saveSettings();
       });
     });
@@ -60777,17 +60785,42 @@ var SidebarCoordinator = class {
     }, 120);
   }
   /**
-   * When hideLeftSidebar (Floating UI mode) or autoExpandSidebarOnDrag is enabled,
-   * temporarily open the left sidebar when a task starts being dragged,
-   * and locate/reveal the current category in the tree.
-   * If the sidebar is already open and displaying Fluent Tasks sidebar,
-   * do not open again, only locate the list.
+   * Determines if a clientX horizontal position is at the far left edge of the screen/workspace.
+   * Adapts automatically to ribbon visibility, windowed vs maximized mode, and custom margins.
    */
-  async handleTaskDragStart(targetCategoryPath) {
+  isNearLeftEdge(clientX) {
     var _a;
-    const isEnabled = this.host.settings.hideLeftSidebar || this.host.settings.autoExpandSidebarOnDrag;
-    if (!isEnabled)
-      return;
+    const leftSplit = this.host.app.workspace.leftSplit;
+    const splitRect = (_a = leftSplit == null ? void 0 : leftSplit.containerEl) == null ? void 0 : _a.getBoundingClientRect();
+    const ribbonEl = document.querySelector(".workspace-ribbon.mod-left, .workspace-ribbon");
+    let ribbonRight = 0;
+    if (ribbonEl) {
+      const rect = ribbonEl.getBoundingClientRect();
+      if (rect.width > 0 && rect.right > 0) {
+        ribbonRight = rect.right;
+      }
+    }
+    const baseLeft = splitRect && typeof splitRect.left === "number" && splitRect.left >= 0 ? splitRect.left : ribbonRight;
+    const threshold = baseLeft + (baseLeft > 0 ? 30 : 35);
+    if (clientX <= threshold) {
+      return true;
+    }
+    const mainContainer = document.querySelector(".fluent-tasks-main .main-container, .main-container");
+    if (mainContainer) {
+      const mainRect = mainContainer.getBoundingClientRect();
+      if (mainRect.left > threshold + 50) {
+        if (clientX <= mainRect.left + 30) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+  /**
+   * Temporarily expand the left sidebar and locate the category during a task drag.
+   */
+  async expandSidebarForDrag(targetCategoryPath) {
+    var _a;
     if (this.dragEndCollapseTimeout !== null) {
       window.clearTimeout(this.dragEndCollapseTimeout);
       this.dragEndCollapseTimeout = null;
@@ -60823,18 +60856,70 @@ var SidebarCoordinator = class {
         }
       }, 60);
     }
+  }
+  /**
+   * When hideLeftSidebar (Floating UI mode) or autoExpandSidebarOnDrag is enabled,
+   * temporarily open the left sidebar when a task starts being dragged,
+   * and locate/reveal the current category in the tree.
+   * If dragToEdgeToExpandSidebar is enabled, delays expansion until the cursor
+   * reaches the far left edge of the screen/workspace.
+   */
+  async handleTaskDragStart(targetCategoryPath) {
+    const isEnabled = this.host.settings.hideLeftSidebar || this.host.settings.autoExpandSidebarOnDrag || this.host.settings.dragToEdgeToExpandSidebar;
+    if (!isEnabled)
+      return;
+    if (this.dragEndCollapseTimeout !== null) {
+      window.clearTimeout(this.dragEndCollapseTimeout);
+      this.dragEndCollapseTimeout = null;
+    }
     if (this.activeSafetyCleanup) {
       this.activeSafetyCleanup();
     }
+    const leftSplit = this.host.app.workspace.leftSplit;
+    const isAlreadyExpandedWithPlugin = !!(leftSplit && !leftSplit.collapsed && this.isPluginLeftSidebarActive());
+    if (isAlreadyExpandedWithPlugin) {
+      await this.expandSidebarForDrag(targetCategoryPath);
+      return;
+    }
+    let dragMoveListener = null;
     const safetyCleanup = () => {
       window.removeEventListener("pointerup", safetyCleanup, true);
       window.removeEventListener("pointercancel", safetyCleanup, true);
+      window.removeEventListener("dragend", safetyCleanup, true);
+      window.removeEventListener("drop", safetyCleanup, true);
+      if (dragMoveListener) {
+        window.removeEventListener("pointermove", dragMoveListener, true);
+        window.removeEventListener("dragover", dragMoveListener, true);
+        dragMoveListener = null;
+      }
       this.activeSafetyCleanup = null;
       this.handleTaskDragEnd();
     };
     this.activeSafetyCleanup = safetyCleanup;
     window.addEventListener("pointerup", safetyCleanup, { once: true, capture: true });
     window.addEventListener("pointercancel", safetyCleanup, { once: true, capture: true });
+    window.addEventListener("dragend", safetyCleanup, { once: true, capture: true });
+    window.addEventListener("drop", safetyCleanup, { once: true, capture: true });
+    if (!this.host.settings.dragToEdgeToExpandSidebar) {
+      await this.expandSidebarForDrag(targetCategoryPath);
+      return;
+    }
+    let hasTriggered = false;
+    dragMoveListener = (e) => {
+      if (hasTriggered)
+        return;
+      if (this.isNearLeftEdge(e.clientX)) {
+        hasTriggered = true;
+        if (dragMoveListener) {
+          window.removeEventListener("pointermove", dragMoveListener, true);
+          window.removeEventListener("dragover", dragMoveListener, true);
+          dragMoveListener = null;
+        }
+        void this.expandSidebarForDrag(targetCategoryPath);
+      }
+    };
+    window.addEventListener("pointermove", dragMoveListener, { capture: true, passive: true });
+    window.addEventListener("dragover", dragMoveListener, { capture: true, passive: true });
   }
   /**
    * When task dragging finishes, hide the temporarily opened left sidebar.
