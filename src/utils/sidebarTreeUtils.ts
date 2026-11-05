@@ -31,13 +31,8 @@ function ensureUniqueCategoryName(
     item: SidebarItem | CategoryInfo,
     destinationCategoryNames: string[]
 ): SidebarItem | CategoryInfo {
-    if (item.type === "category" || ("filepath" in item && !("items" in item))) {
-        const cat = item;
-        if (destinationCategoryNames.includes(cat.name)) {
-            const uniqueName = resolveUniqueName(destinationCategoryNames, cat.name);
-            return { ...cat, name: uniqueName };
-        }
-    }
+    // Under the global uniqueness invariant, every category name is already unique across the entire vault.
+    // Moving an item across groups or to root preserves its exact name and physical file.
     return item;
 }
 

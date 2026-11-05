@@ -217,13 +217,6 @@ function resolveUniqueName(existingNames, desiredName) {
   return `${base}(${index})`;
 }
 function ensureUniqueCategoryName(item, destinationCategoryNames) {
-  if (item.type === "category" || "filepath" in item && !("items" in item)) {
-    const cat = item;
-    if (destinationCategoryNames.includes(cat.name)) {
-      const uniqueName = resolveUniqueName(destinationCategoryNames, cat.name);
-      return { ...cat, name: uniqueName };
-    }
-  }
   return item;
 }
 function moveSidebarItem(items, movedItemId, targetId, position) {
@@ -1840,14 +1833,10 @@ var CategoryService = class {
         for (const rawChild of itemState.children || []) {
           const childName = typeof rawChild === "string" ? rawChild : rawChild.name;
           const childFile = typeof rawChild === "string" ? rawChild : rawChild.file || rawChild.name;
-          if (!childName)
+          if (!childName && !childFile)
             continue;
-          if (usedFiles.has(childFile)) {
-            hasDuplicateMetadata = true;
-            continue;
-          }
-          let file = fileMap.get(childFile);
-          if (!file && childName !== childFile) {
+          let file = childFile ? fileMap.get(childFile) : void 0;
+          if (!file && childName && childName !== childFile) {
             file = fileMap.get(childName);
           }
           if (file) {
@@ -1855,10 +1844,13 @@ var CategoryService = class {
               hasDuplicateMetadata = true;
               continue;
             }
+            if (typeof rawChild !== "string" || rawChild !== file.basename) {
+              hasDuplicateMetadata = true;
+            }
             groupItems.push({
               id: file.path,
               type: "category",
-              name: childName,
+              name: file.basename,
               filepath: file.path
             });
             usedFiles.add(file.basename);
@@ -1874,12 +1866,8 @@ var CategoryService = class {
       } else if (itemState.type === "category") {
         const childName = itemState.name;
         const childFile = itemState.file || itemState.name;
-        if (usedFiles.has(childFile)) {
-          hasDuplicateMetadata = true;
-          continue;
-        }
-        let file = fileMap.get(childFile);
-        if (!file && childName !== childFile) {
+        let file = childFile ? fileMap.get(childFile) : void 0;
+        if (!file && childName && childName !== childFile) {
           file = fileMap.get(childName);
         }
         if (file) {
@@ -1887,10 +1875,13 @@ var CategoryService = class {
             hasDuplicateMetadata = true;
             continue;
           }
+          if (itemState.file || itemState.name !== file.basename) {
+            hasDuplicateMetadata = true;
+          }
           sidebarItems.push({
             id: file.path,
             type: "category",
-            name: childName,
+            name: file.basename,
             filepath: file.path
           });
           usedFiles.add(file.basename);
@@ -1979,16 +1970,12 @@ var CategoryService = class {
         seenGroupIds.add(item.id);
         const children2 = [];
         for (const child of item.items || []) {
-          const normChildFp = (child.filepath || "").replace(/\\/g, "/");
+          const normChildFp = (child.filepath || child.id || "").replace(/\\/g, "/");
           if (seenFilepaths.has(normChildFp))
             continue;
           seenFilepaths.add(normChildFp);
           const fileBasename = ((_a = normChildFp.split("/").pop()) == null ? void 0 : _a.replace(/\.md$/, "")) || child.name;
-          if (fileBasename !== child.name) {
-            children2.push({ name: child.name, file: fileBasename });
-          } else {
-            children2.push(child.name);
-          }
+          children2.push(fileBasename);
         }
         state.push({
           type: "group",
@@ -1998,28 +1985,45 @@ var CategoryService = class {
           children: children2
         });
       } else if (item.type === "category") {
-        const normItemFp = (item.filepath || "").replace(/\\/g, "/");
+        const normItemFp = (item.filepath || item.id || "").replace(/\\/g, "/");
         if (seenFilepaths.has(normItemFp))
           continue;
         seenFilepaths.add(normItemFp);
         const fileBasename = ((_b = normItemFp.split("/").pop()) == null ? void 0 : _b.replace(/\.md$/, "")) || item.name;
-        if (fileBasename !== item.name) {
-          state.push({
-            type: "category",
-            name: item.name,
-            file: fileBasename
-          });
-        } else {
-          state.push({
-            type: "category",
-            name: item.name
-          });
-        }
+        state.push({
+          type: "category",
+          name: fileBasename
+        });
       }
     }
     const content = JSON.stringify({ sidebar: state }, null, 2);
     this.io.markInternalWrite(path);
     await this.app.vault.adapter.write(path, content);
+  }
+  /**
+   * Gathers all category display names across the entire sidebar tree (groups + root).
+   * If excludeFilepath is specified, excludes that category from the list.
+   */
+  getAllCategoryNames(items, excludeFilepath) {
+    const clean = (p) => (p || "").replace(/\\/g, "/").replace(/^\/+/, "");
+    const targetExclude = excludeFilepath ? clean(excludeFilepath) : null;
+    const names = [];
+    for (const item of items) {
+      if (item.type === "category") {
+        if (targetExclude && (clean(item.filepath) === targetExclude || clean(item.id) === targetExclude)) {
+          continue;
+        }
+        names.push(item.name);
+      } else if (item.type === "group" && item.items) {
+        for (const child of item.items) {
+          if (targetExclude && (clean(child.filepath) === targetExclude || clean(child.id) === targetExclude)) {
+            continue;
+          }
+          names.push(child.name);
+        }
+      }
+    }
+    return names;
   }
   async createCategory(name) {
     await this.io.ensureDataFolder();
@@ -2028,10 +2032,11 @@ var CategoryService = class {
       throw new Error("Category name cannot be empty");
     }
     const items = await this.getSidebarItems();
-    const rootNames = items.filter((i) => i.type === "category").map((c) => c.name);
-    const resolvedDisplayName = resolveUniqueName(rootNames, trimmed);
-    const { filepath } = this.getAvailableDiskFilepath(resolvedDisplayName);
-    const newCat = { id: filepath, type: "category", name: resolvedDisplayName, filepath };
+    const allCategoryNames = this.getAllCategoryNames(items);
+    const resolvedDisplayName = resolveUniqueName(allCategoryNames, trimmed);
+    const { filepath, basename } = this.getAvailableDiskFilepath(resolvedDisplayName);
+    const finalName = basename || resolvedDisplayName;
+    const newCat = { id: filepath, type: "category", name: finalName, filepath };
     items.unshift(newCat);
     await this.saveSidebarState(items);
     this.io.markInternalWrite(filepath);
@@ -2209,24 +2214,20 @@ var CategoryService = class {
       }
     }
     const catToInsert = existingItem || restoredCat;
+    const allOtherNames = this.getAllCategoryNames(items, categoryFilepath);
+    catToInsert.name = resolveUniqueName(allOtherNames, catToInsert.name);
     if (groupName) {
       const targetGroup = items.find((item) => item.type === "group" && item.name === groupName);
       if (targetGroup && targetGroup.type === "group") {
         if (!targetGroup.items)
           targetGroup.items = [];
-        const siblingNames = targetGroup.items.map((c) => c.name);
-        catToInsert.name = resolveUniqueName(siblingNames, catToInsert.name);
         const insertIdx = typeof index === "number" && index >= 0 && index <= targetGroup.items.length ? index : targetGroup.items.length;
         targetGroup.items.splice(insertIdx, 0, catToInsert);
       } else {
-        const rootNames = items.filter((i) => i.type === "category").map((c) => c.name);
-        catToInsert.name = resolveUniqueName(rootNames, catToInsert.name);
         const insertIdx = typeof index === "number" && index >= 0 && index <= items.length ? index : items.length;
         items.splice(insertIdx, 0, catToInsert);
       }
     } else {
-      const rootNames = items.filter((i) => i.type === "category").map((c) => c.name);
-      catToInsert.name = resolveUniqueName(rootNames, catToInsert.name);
       const insertIdx = typeof index === "number" && index >= 0 && index <= items.length ? index : items.length;
       items.splice(insertIdx, 0, catToInsert);
     }
@@ -2292,14 +2293,11 @@ var CategoryService = class {
         items.push(targetCat);
       }
     }
-    if (containingGroup) {
-      siblingNames = containingGroup.items.filter((c) => !isMatch(c)).map((c) => c.name);
-    } else {
-      siblingNames = items.filter((i) => i.type === "category" && !isMatch(i)).map((c) => c.name);
-    }
-    const resolvedDisplayName = resolveUniqueName(siblingNames, trimmedName);
-    const { filepath: newPath } = this.getAvailableDiskFilepath(resolvedDisplayName, filepath);
-    targetCat.name = resolvedDisplayName;
+    const allOtherNames = this.getAllCategoryNames(items, filepath);
+    const resolvedDisplayName = resolveUniqueName(allOtherNames, trimmedName);
+    const { filepath: newPath, basename: newBasename } = this.getAvailableDiskFilepath(resolvedDisplayName, filepath);
+    const finalName = newBasename || resolvedDisplayName;
+    targetCat.name = finalName;
     targetCat.id = newPath;
     targetCat.filepath = newPath;
     await this.saveSidebarState(items);
@@ -2312,7 +2310,7 @@ var CategoryService = class {
     const newCat = {
       id: newPath,
       type: "category",
-      name: resolvedDisplayName,
+      name: finalName,
       filepath: newPath
     };
     EventBus.emit("category:renamed" /* CATEGORY_RENAMED */, { oldFilepath: filepath, category: newCat });

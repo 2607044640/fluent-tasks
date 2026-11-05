@@ -14,7 +14,7 @@ Lists are flat Markdown files `TodoData/<name>.md`. Groups exist only in `TodoDa
 
 1. Metadata is read/written with `app.vault.adapter`, not `vault.read` / `vault.modify`. (Why chosen over Vault API: Obsidian ignores dotfiles.)
 2. `renameCategory` **updates metadata first**, then `vault.rename`. Path strings are normalized to forward slashes (`replace(/\\/g, "/")`) to avoid Windows path divergence. If lookup fails, `findGroupNameForCategory` recovers the parent group association autonomously. The list retains its exact index in `containingGroup.items`. Internal write windows are marked for 5000ms (`markInternalWrite(filepath, 5000)`) to guard against concurrent vault rename listeners. (Why chosen over rename-then-metadata: a vault `rename` event would race with metadata persistence and treat the new file as an orphan at the bottom of the tree.)
-3. Deduplication in `.metadata.json` and tree construction is keyed by physical disk `filepath` (basename), NOT display name. Sibling-scoped unique name resolution (`resolveUniqueName`) auto-disambiguates collisions to `name(1)` when renaming within the same container or moving items, while allowing different groups to have lists with identical display names (`SidebarCategoryEntry` `{ name: string; file?: string }`). Files on disk not in metadata are appended as root categories. (Why chosen over display name deduplication: users expect independent namespaces per group, mirroring modern task managers like MS To Do.)
+3. Deduplication in `.metadata.json` and tree construction is keyed by physical disk `filepath` (basename), matching display name 1:1. Global unique name resolution (`resolveUniqueName` across all groups and root) auto-disambiguates collisions to `name(1)` when creating, renaming, or restoring lists. Files on disk not in metadata are appended as root categories. (Why chosen over decoupled display names: avoids desynchronization across UI, linked notes `TodoData/<ListName>`, search, settings, and sidebar tree parsing.)
 
 ## Numbered Data Flow
 
@@ -24,7 +24,7 @@ Lists are flat Markdown files `TodoData/<name>.md`. Groups exist only in `TodoDa
 4. `createGroup`: in-memory `GroupInfo` with random id, unshift, save, emit.
 5. `deleteGroup`: splice group, splice its children into the parent list, auto-disambiguating colliding names against root lists via `resolveUniqueName`.
 6. `deleteCategory`: locate item and its group; `fileManager.trashFile` if present; strip from tree; save; emit `CATEGORY_LIST_CHANGED` and `CATEGORY_DELETED` (with file content and index for undo).
-7. `renameCategory`: locate category in containing group or root; determine sibling display names; resolve unique display name via `resolveUniqueName`; find available disk path via `getAvailableDiskFilepath`; update in-memory state; `saveSidebarState` FIRST; if disk path changed, `vault.rename`; emit `CATEGORY_LIST_CHANGED`.
+7. `renameCategory`: locate category in containing group or root; resolve unique display name globally across all groups via `resolveUniqueName`; find available disk path via `getAvailableDiskFilepath`; update in-memory state; `saveSidebarState` FIRST; if disk path changed, `vault.rename`; emit `CATEGORY_LIST_CHANGED`.
 8. `restoreCategory`: undo helper; re-creates/overwrites file on disk; inserts into original group or root with sibling name disambiguation; saves metadata and selects restored category.
 
 ## Side-effects API
@@ -47,7 +47,7 @@ Lists are flat Markdown files `TodoData/<name>.md`. Groups exist only in `TodoDa
 
 1. **Load sidebar** — `TaskSidebarView.loadSidebarItems` → `dataService.getSidebarItems`.
 2. **Add list** — `confirmAddList` → `dataService.createCategory(name)` → select it via `CATEGORY_SELECTED`.
-3. **F2 rename** — `triggerRenameHoveredOrActive` → `confirmRename` → `renameCategory` or `renameGroup`. Sibling collision resolves to `name(1)` in same container.
+3. **F2 rename** — `triggerRenameHoveredOrActive` → `confirmRename` → `renameCategory` or `renameGroup`. Global collision resolves to `name(1)` across all groups.
 4. **Drag list into group** — sidebar HTML5 DnD rebuilds `SidebarItem[]` then `saveSidebarState`. Shared helper in Quick modals: `moveSidebarItem` (`sidebarTreeUtils.ts`) resolves sibling collisions via `ensureUniqueCategoryName`.
 5. **Refresh Command Palette jumps** — plugin listens `CATEGORY_LIST_CHANGED` → `registerCategoryCommands`.
 6. **Undo list deletion** — `restoreCategory` re-creates/overwrites list `.md`, cleans orphan state, re-inserts into target group or root, and focuses the list.
