@@ -4351,7 +4351,7 @@ body .quick-modal-task-item.is-focused {
     padding: 5px 8px;
 }
 
-/* Drag and Drop Disabled / Forbidden Indicators for Groups in Quick Modal */
+/* Drag and Drop Disabled / Forbidden Indicators for Groups in Quick Modal (Grid/List mode only) */
 .quick-modal-container.is-dragging-group,
 .quick-modal-container.is-dragging-group *,
 .task-quick-list-modal.is-dragging-group,
@@ -4359,15 +4359,12 @@ body .quick-modal-task-item.is-focused {
     cursor: not-allowed !important;
 }
 
-.quick-modal-group-header,
-.quick-grid-card-header {
+.quick-modal-group-header {
     cursor: not-allowed;
 }
 
 .quick-modal-group-chevron,
-.quick-modal-group-title,
-.quick-grid-card-title-wrap,
-.quick-grid-card-title {
+.quick-modal-group-title {
     cursor: pointer;
 }
 
@@ -4377,7 +4374,7 @@ body .quick-modal-task-item.is-focused {
 }
 
 .quick-modal-group-header.is-dragging,
-.quick-grid-card.is-dragging {
+:not(.is-table-mode) .quick-grid-card.is-dragging {
     cursor: not-allowed !important;
 }
 
@@ -4621,8 +4618,18 @@ body .quick-modal-task-item.is-focused {
     padding-bottom: 3px;
     margin-bottom: 2px;
     border-bottom: 1px solid var(--background-modifier-border);
-    cursor: pointer;
-    user-select: none;
+    cursor: grab !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+}
+
+.quick-grid-card-header:active {
+    cursor: grabbing !important;
+}
+
+.quick-grid-card-header.is-dragging {
+    cursor: grabbing !important;
+    opacity: 0.38 !important;
 }
 
 .quick-grid-card-title-wrap {
@@ -4632,6 +4639,9 @@ body .quick-modal-task-item.is-focused {
     overflow: hidden;
     flex: 1;
     min-width: 0;
+    pointer-events: none;
+    user-select: none !important;
+    -webkit-user-select: none !important;
 }
 
 .quick-grid-card-title {
@@ -4642,6 +4652,9 @@ body .quick-modal-task-item.is-focused {
     text-overflow: ellipsis;
     white-space: nowrap;
     letter-spacing: 0.2px;
+    pointer-events: none;
+    user-select: none !important;
+    -webkit-user-select: none !important;
 }
 
 .quick-grid-card-count {
@@ -4658,6 +4671,29 @@ body .quick-modal-task-item.is-focused {
     border: 1px solid var(--background-modifier-border);
     flex-shrink: 0;
     margin-left: 4px;
+    pointer-events: none;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+}
+
+.quick-grid-card-icon {
+    pointer-events: none;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+}
+
+.quick-grid-card-header .quick-modal-group-chevron {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+}
+
+.quick-grid-card-header .quick-modal-inline-rename-input {
+    pointer-events: auto !important;
+    cursor: text !important;
+    user-select: text !important;
+    -webkit-user-select: text !important;
 }
 
 .quick-grid-card-items {

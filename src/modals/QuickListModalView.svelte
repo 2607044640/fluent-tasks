@@ -1022,6 +1022,10 @@
         return null;
     }
 
+    function handleRootDragStart(e: DragEvent) {
+        handleListDragStart(e, { id: "__root__", name: "Lists", type: "root" } as any);
+    }
+
     function handleListDragStart(e: DragEvent, item: SidebarItem | CategoryInfo) {
         if (item.type === "group" || (item as any).type === "root" || item.id === "__root__") {
             isDraggingGroup = true;
@@ -2293,7 +2297,8 @@
     class="quick-modal-container quick-list-only-container"
     class:is-centered-titles={titleAlignment === 'center'}
     class:is-picking-focus={isPickingDefaultFocus}
-    class:is-dragging-group={isDraggingGroup}
+    class:is-dragging-group={isDraggingGroup && layoutMode !== "table"}
+    class:is-table-mode={layoutMode === "table"}
     bind:this={modalContainerEl}
     on:pointerleave={handlePointerLeave}
     tabindex="0"
@@ -2562,7 +2567,7 @@
         <!-- =============================================
              Grid Board / Dashboard Card Layout (图表平铺看板 - 横向滑动 + 纵向换列)
              ============================================= -->
-        <div class="quick-list-grid-board" bind:this={boardEl} on:wheel={handleBoardWheel}>
+        <div class="quick-list-grid-board" class:is-table-mode={layoutMode === "table"} bind:this={boardEl} on:wheel={handleBoardWheel}>
             {#if filteredItems.length === 0 && !isStarredMatching}
                 <div class="quick-modal-empty">No matching lists or groups found.</div>
             {:else}
@@ -2579,7 +2584,15 @@
                                     on:dragleave={handleRootCardDragLeave}
                                     on:drop|preventDefault={handleRootCardDrop}
                                 >
-                                    <div class="quick-grid-card-header">
+                                    <div 
+                                        class="quick-grid-card-header is-root-header"
+                                        data-group-id="__root__"
+                                        draggable={layoutMode === "table"}
+                                        on:dragstart={handleRootDragStart}
+                                        on:dragend={handleListDragEnd}
+                                        on:dragover={handleRootCardDragOver}
+                                        on:drop|preventDefault={handleRootCardDrop}
+                                    >
                                         <div class="quick-grid-card-title-wrap">
                                             <span class="quick-grid-card-icon">
                                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2697,7 +2710,12 @@
                                     >
                                         <div class="quick-grid-card-title-wrap">
                                             <!-- svelte-ignore a11y-click-events-have-key-events -->
-                                            <span class="quick-modal-group-chevron" on:click|stopPropagation={() => toggleGroup(group)}>
+                                            <span 
+                                                class="quick-modal-group-chevron" 
+                                                draggable="false"
+                                                on:dragstart|stopPropagation|preventDefault
+                                                on:click|stopPropagation={() => toggleGroup(group)}
+                                            >
                                                 {group.isExpanded ? "▼" : "▶"}
                                             </span>
 
@@ -2705,13 +2723,15 @@
                                                 <input 
                                                     type="text" 
                                                     class="quick-modal-inline-rename-input"
+                                                    draggable="false"
+                                                    on:dragstart|stopPropagation
                                                     bind:value={editingName}
                                                     bind:this={renameInputEl}
                                                     on:blur={commitRename}
                                                     on:click|stopPropagation
                                                 />
                                             {:else}
-                                                <span class="quick-grid-card-title" on:click|stopPropagation={() => toggleGroup(group)}>
+                                                <span class="quick-grid-card-title">
                                                     {group.name}
                                                 </span>
                                             {/if}
