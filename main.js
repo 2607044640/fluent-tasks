@@ -21484,10 +21484,14 @@ function create_if_block_142(ctx) {
       attr(span0, "class", "quick-modal-group-chevron");
       attr(span0, "draggable", "false");
       attr(div0, "class", "quick-grid-card-title-wrap");
+      attr(div0, "draggable", "true");
       attr(span1, "class", "quick-grid-card-count");
+      attr(span1, "draggable", "true");
       attr(div1, "class", "quick-grid-card-header");
       attr(div1, "data-group-id", div1_data_group_id_value = /*group*/
       ctx[270].id);
+      attr(div1, "role", "button");
+      attr(div1, "tabindex", "0");
       attr(div1, "draggable", "true");
       attr(div2, "class", "quick-grid-card");
       attr(div2, "data-card-id", div2_data_card_id_value = /*group*/
@@ -21675,6 +21679,15 @@ function create_if_block_92(ctx) {
   let div3;
   let div1;
   let div0;
+  let span0;
+  let svg;
+  let path;
+  let span0_draggable_value;
+  let t0;
+  let span1;
+  let t1;
+  let span1_draggable_value;
+  let div0_draggable_value;
   let t2;
   let span2;
   let t3_value = (
@@ -21682,6 +21695,7 @@ function create_if_block_92(ctx) {
     ctx[44].length + ""
   );
   let t3;
+  let span2_draggable_value;
   let div1_draggable_value;
   let t4;
   let div2;
@@ -21707,7 +21721,12 @@ function create_if_block_92(ctx) {
       div3 = element("div");
       div1 = element("div");
       div0 = element("div");
-      div0.innerHTML = `<span class="quick-grid-card-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path></svg></span> <span class="quick-grid-card-title">Lists</span>`;
+      span0 = element("span");
+      svg = svg_element("svg");
+      path = svg_element("path");
+      t0 = space();
+      span1 = element("span");
+      t1 = text("Lists");
       t2 = space();
       span2 = element("span");
       t3 = text(t3_value);
@@ -21716,10 +21735,31 @@ function create_if_block_92(ctx) {
       for (let i = 0; i < each_blocks.length; i += 1) {
         each_blocks[i].c();
       }
+      attr(path, "d", "M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z");
+      attr(svg, "width", "13");
+      attr(svg, "height", "13");
+      attr(svg, "viewBox", "0 0 24 24");
+      attr(svg, "fill", "none");
+      attr(svg, "stroke", "currentColor");
+      attr(svg, "stroke-width", "2");
+      attr(svg, "stroke-linecap", "round");
+      attr(svg, "stroke-linejoin", "round");
+      attr(span0, "class", "quick-grid-card-icon");
+      attr(span0, "draggable", span0_draggable_value = /*layoutMode*/
+      ctx[8] === "table");
+      attr(span1, "class", "quick-grid-card-title");
+      attr(span1, "draggable", span1_draggable_value = /*layoutMode*/
+      ctx[8] === "table");
       attr(div0, "class", "quick-grid-card-title-wrap");
+      attr(div0, "draggable", div0_draggable_value = /*layoutMode*/
+      ctx[8] === "table");
       attr(span2, "class", "quick-grid-card-count");
+      attr(span2, "draggable", span2_draggable_value = /*layoutMode*/
+      ctx[8] === "table");
       attr(div1, "class", "quick-grid-card-header is-root-header");
       attr(div1, "data-group-id", "__root__");
+      attr(div1, "role", "button");
+      attr(div1, "tabindex", "0");
       attr(div1, "draggable", div1_draggable_value = /*layoutMode*/
       ctx[8] === "table");
       attr(div2, "class", "quick-grid-card-items");
@@ -21757,6 +21797,12 @@ function create_if_block_92(ctx) {
       insert(target, div3, anchor);
       append(div3, div1);
       append(div1, div0);
+      append(div0, span0);
+      append(span0, svg);
+      append(svg, path);
+      append(div0, t0);
+      append(div0, span1);
+      append(span1, t1);
       append(div1, t2);
       append(div1, span2);
       append(span2, t3);
@@ -21822,10 +21868,30 @@ function create_if_block_92(ctx) {
       }
     },
     p(ctx2, dirty) {
+      if (dirty[0] & /*layoutMode*/
+      256 && span0_draggable_value !== (span0_draggable_value = /*layoutMode*/
+      ctx2[8] === "table")) {
+        attr(span0, "draggable", span0_draggable_value);
+      }
+      if (dirty[0] & /*layoutMode*/
+      256 && span1_draggable_value !== (span1_draggable_value = /*layoutMode*/
+      ctx2[8] === "table")) {
+        attr(span1, "draggable", span1_draggable_value);
+      }
+      if (dirty[0] & /*layoutMode*/
+      256 && div0_draggable_value !== (div0_draggable_value = /*layoutMode*/
+      ctx2[8] === "table")) {
+        attr(div0, "draggable", div0_draggable_value);
+      }
       if (dirty[1] & /*rootCategories*/
       8192 && t3_value !== (t3_value = /*rootCategories*/
       ctx2[44].length + ""))
         set_data(t3, t3_value);
+      if (dirty[0] & /*layoutMode*/
+      256 && span2_draggable_value !== (span2_draggable_value = /*layoutMode*/
+      ctx2[8] === "table")) {
+        attr(span2, "draggable", span2_draggable_value);
+      }
       if (dirty[0] & /*layoutMode*/
       256 && div1_draggable_value !== (div1_draggable_value = /*layoutMode*/
       ctx2[8] === "table")) {
@@ -21905,6 +21971,7 @@ function create_else_block_6(ctx) {
       span = element("span");
       t_1 = text(t_1_value);
       attr(span, "class", "quick-grid-card-title");
+      attr(span, "draggable", "true");
     },
     m(target, anchor) {
       insert(target, span, anchor);
@@ -25694,6 +25761,7 @@ function instance6($$self, $$props, $$invalidate) {
     });
   }
   function handleListDragStart(e, item) {
+    var _a2, _b2;
     if (layoutMode === "table") {
       startTableDragSession();
     }
@@ -25705,6 +25773,13 @@ function instance6($$self, $$props, $$invalidate) {
         e.dataTransfer.setData("text/plain", item.id);
         if (layoutMode === "table") {
           e.dataTransfer.effectAllowed = "move";
+          const headerEl = ((_a2 = e.currentTarget) == null ? void 0 : _a2.closest(".quick-grid-card-header")) || e.currentTarget || ((_b2 = e.target) == null ? void 0 : _b2.closest(".quick-grid-card-header"));
+          if (headerEl && typeof e.dataTransfer.setDragImage === "function") {
+            const rect = headerEl.getBoundingClientRect();
+            const offsetX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+            const offsetY = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
+            e.dataTransfer.setDragImage(headerEl, offsetX, offsetY);
+          }
           return;
         }
         e.dataTransfer.effectAllowed = "none";

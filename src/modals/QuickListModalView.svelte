@@ -1211,6 +1211,15 @@
                 e.dataTransfer.setData("text/plain", item.id);
                 if (layoutMode === "table") {
                     e.dataTransfer.effectAllowed = "move";
+                    const headerEl = (e.currentTarget as HTMLElement)?.closest(".quick-grid-card-header") as HTMLElement
+                        || (e.currentTarget as HTMLElement)
+                        || (e.target as HTMLElement)?.closest(".quick-grid-card-header") as HTMLElement;
+                    if (headerEl && typeof e.dataTransfer.setDragImage === "function") {
+                        const rect = headerEl.getBoundingClientRect();
+                        const offsetX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+                        const offsetY = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
+                        e.dataTransfer.setDragImage(headerEl, offsetX, offsetY);
+                    }
                     return;
                 }
                 e.dataTransfer.effectAllowed = "none";
@@ -2963,21 +2972,23 @@
                                     <div 
                                         class="quick-grid-card-header is-root-header"
                                         data-group-id="__root__"
+                                        role="button"
+                                        tabindex="0"
                                         draggable={layoutMode === "table"}
                                         on:dragstart={handleRootDragStart}
                                         on:dragend={handleListDragEnd}
                                         on:dragover={handleRootCardDragOver}
                                         on:drop|preventDefault={handleRootCardDrop}
                                     >
-                                        <div class="quick-grid-card-title-wrap">
-                                            <span class="quick-grid-card-icon">
+                                        <div class="quick-grid-card-title-wrap" draggable={layoutMode === "table"}>
+                                            <span class="quick-grid-card-icon" draggable={layoutMode === "table"}>
                                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                     <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
                                                 </svg>
                                             </span>
-                                            <span class="quick-grid-card-title">Lists</span>
+                                            <span class="quick-grid-card-title" draggable={layoutMode === "table"}>Lists</span>
                                         </div>
-                                        <span class="quick-grid-card-count">{rootCategories.length}</span>
+                                        <span class="quick-grid-card-count" draggable={layoutMode === "table"}>{rootCategories.length}</span>
                                     </div>
                                     <div 
                                         class="quick-grid-card-items"
@@ -3075,6 +3086,8 @@
                                     <div 
                                         class="quick-grid-card-header"
                                         data-group-id={group.id}
+                                        role="button"
+                                        tabindex="0"
                                         draggable="true"
                                         on:mouseenter={() => setHoveredTarget({ id: group.id, name: group.name, type: "group" })}
                                         on:mouseleave={() => clearHoveredTarget(group.id)}
@@ -3090,7 +3103,7 @@
                                         on:drop|preventDefault={(e) => handleGroupCardDrop(e, group)}
                                         on:contextmenu={(e) => showItemContextMenu(e, { id: group.id, name: group.name, type: "group" })}
                                     >
-                                        <div class="quick-grid-card-title-wrap">
+                                        <div class="quick-grid-card-title-wrap" draggable="true">
                                             <!-- svelte-ignore a11y-click-events-have-key-events -->
                                             <span 
                                                 class="quick-modal-group-chevron" 
@@ -3113,13 +3126,13 @@
                                                     on:click|stopPropagation
                                                 />
                                             {:else}
-                                                <span class="quick-grid-card-title">
+                                                <span class="quick-grid-card-title" draggable="true">
                                                     {group.name}
                                                 </span>
                                             {/if}
                                         </div>
 
-                                        <span class="quick-grid-card-count">
+                                        <span class="quick-grid-card-count" draggable="true">
                                             {group.items ? group.items.length : 0}
                                         </span>
                                     </div>

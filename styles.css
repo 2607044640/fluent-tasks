@@ -4833,6 +4833,7 @@ body .quick-modal-task-item.is-focused {
     cursor: grab !important;
     user-select: none !important;
     -webkit-user-select: none !important;
+    -webkit-user-drag: element !important;
 }
 
 .quick-grid-card-header:active {
@@ -4851,9 +4852,10 @@ body .quick-modal-task-item.is-focused {
     overflow: hidden;
     flex: 1;
     min-width: 0;
-    pointer-events: none;
     user-select: none !important;
     -webkit-user-select: none !important;
+    -webkit-user-drag: element !important;
+    cursor: grab !important;
 }
 
 .quick-grid-card-title {
@@ -4864,9 +4866,10 @@ body .quick-modal-task-item.is-focused {
     text-overflow: ellipsis;
     white-space: nowrap;
     letter-spacing: 0.2px;
-    pointer-events: none;
     user-select: none !important;
     -webkit-user-select: none !important;
+    -webkit-user-drag: element !important;
+    cursor: grab !important;
 }
 
 .quick-grid-card-count {
@@ -4883,15 +4886,17 @@ body .quick-modal-task-item.is-focused {
     border: 1px solid var(--background-modifier-border);
     flex-shrink: 0;
     margin-left: 4px;
-    pointer-events: none;
     user-select: none !important;
     -webkit-user-select: none !important;
+    -webkit-user-drag: element !important;
+    cursor: grab !important;
 }
 
 .quick-grid-card-icon {
-    pointer-events: none;
     user-select: none !important;
     -webkit-user-select: none !important;
+    -webkit-user-drag: element !important;
+    cursor: grab !important;
 }
 
 .quick-grid-card-header .quick-modal-group-chevron {
@@ -4899,6 +4904,7 @@ body .quick-modal-task-item.is-focused {
     cursor: pointer !important;
     user-select: none !important;
     -webkit-user-select: none !important;
+    -webkit-user-drag: none !important;
 }
 
 .quick-grid-card-header .quick-modal-inline-rename-input {
@@ -4906,6 +4912,7 @@ body .quick-modal-task-item.is-focused {
     cursor: text !important;
     user-select: text !important;
     -webkit-user-select: text !important;
+    -webkit-user-drag: none !important;
 }
 
 .quick-grid-card-items {
