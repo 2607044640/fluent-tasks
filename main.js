@@ -16914,51 +16914,51 @@ function openHotkeySettingsForQuickList(app) {
 var { Map: Map_1, window: window_12 } = globals;
 function get_each_context_4(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[274] = list[i];
+  child_ctx[285] = list[i];
   return child_ctx;
 }
 function get_each_context_5(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[271] = list[i];
+  child_ctx[282] = list[i];
   return child_ctx;
 }
 function get_each_context4(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[261] = list[i];
-  child_ctx[263] = i;
+  child_ctx[272] = list[i];
+  child_ctx[274] = i;
   return child_ctx;
 }
 function get_each_context_12(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[264] = list[i];
+  child_ctx[275] = list[i];
   return child_ctx;
 }
 function get_each_context_3(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[271] = list[i];
+  child_ctx[282] = list[i];
   return child_ctx;
 }
 function get_each_context_2(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[267] = list[i];
+  child_ctx[278] = list[i];
   return child_ctx;
 }
 function get_if_ctx(ctx) {
   const child_ctx = ctx.slice();
   const constants_0 = (
     /*card*/
-    child_ctx[264].group
+    child_ctx[275].group
   );
-  child_ctx[270] = constants_0;
+  child_ctx[281] = constants_0;
   return child_ctx;
 }
 function get_each_context_6(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[274] = list[i];
-  child_ctx[280] = i;
+  child_ctx[285] = list[i];
+  child_ctx[291] = i;
   return child_ctx;
 }
-function create_if_block_64(ctx) {
+function create_if_block_67(ctx) {
   let div;
   let raw_value = t(
     "quick_list_tip",
@@ -16991,7 +16991,7 @@ function create_if_block_64(ctx) {
     }
   };
 }
-function create_if_block_63(ctx) {
+function create_if_block_66(ctx) {
   let button;
   let mounted;
   let dispose;
@@ -17008,7 +17008,7 @@ function create_if_block_63(ctx) {
           button,
           "click",
           /*click_handler_6*/
-          ctx[110]
+          ctx[112]
         );
         mounted = true;
       }
@@ -17023,7 +17023,7 @@ function create_if_block_63(ctx) {
     }
   };
 }
-function create_if_block_61(ctx) {
+function create_if_block_64(ctx) {
   let button;
   let t0;
   let span0;
@@ -17037,7 +17037,7 @@ function create_if_block_61(ctx) {
   let dispose;
   let if_block = (
     /*isFocusedListMode*/
-    ctx[3] && create_if_block_622(ctx)
+    ctx[3] && create_if_block_65(ctx)
   );
   return {
     c() {
@@ -17055,7 +17055,7 @@ function create_if_block_61(ctx) {
       span2 = element("span");
       t5 = text(
         /*starredCount*/
-        ctx[5]
+        ctx[4]
       );
       attr(span0, "class", "quick-modal-smart-star-icon");
       attr(span1, "class", "quick-modal-starred-label");
@@ -17065,14 +17065,14 @@ function create_if_block_61(ctx) {
       attr(button, "data-item-id", STARRED_CATEGORY_PATH);
       attr(button, "title", button_title_value = /*isFocusedListMode*/
       ctx[3] ? "Starred tasks: click to toggle focused list" : `Starred tasks (${/*starredCount*/
-      ctx[5]}): click to open in center view`);
+      ctx[4]}): click to open in center view`);
       toggle_class(
         button,
         "is-focused",
         /*flatCategories*/
-        ((_a = ctx[11][
+        ((_a = ctx[10][
           /*focusedIndex*/
-          ctx[7]
+          ctx[6]
         ]) == null ? void 0 : _a.filepath) === STARRED_CATEGORY_PATH
       );
       toggle_class(
@@ -17099,7 +17099,7 @@ function create_if_block_61(ctx) {
           button,
           "click",
           /*click_handler_8*/
-          ctx[112]
+          ctx[114]
         );
         mounted = true;
       }
@@ -17113,7 +17113,7 @@ function create_if_block_61(ctx) {
         if (if_block) {
           if_block.p(ctx2, dirty);
         } else {
-          if_block = create_if_block_622(ctx2);
+          if_block = create_if_block_65(ctx2);
           if_block.c();
           if_block.m(button, t0);
         }
@@ -17122,27 +17122,27 @@ function create_if_block_61(ctx) {
         if_block = null;
       }
       if (dirty[0] & /*starredCount*/
-      32)
+      16)
         set_data(
           t5,
           /*starredCount*/
-          ctx2[5]
+          ctx2[4]
         );
       if (dirty[0] & /*isFocusedListMode, starredCount*/
-      40 && button_title_value !== (button_title_value = /*isFocusedListMode*/
+      24 && button_title_value !== (button_title_value = /*isFocusedListMode*/
       ctx2[3] ? "Starred tasks: click to toggle focused list" : `Starred tasks (${/*starredCount*/
-      ctx2[5]}): click to open in center view`)) {
+      ctx2[4]}): click to open in center view`)) {
         attr(button, "title", button_title_value);
       }
       if (dirty[0] & /*flatCategories, focusedIndex*/
-      2176) {
+      1088) {
         toggle_class(
           button,
           "is-focused",
           /*flatCategories*/
-          ((_a = ctx2[11][
+          ((_a = ctx2[10][
             /*focusedIndex*/
-            ctx2[7]
+            ctx2[6]
           ]) == null ? void 0 : _a.filepath) === STARRED_CATEGORY_PATH
         );
       }
@@ -17168,7 +17168,7 @@ function create_if_block_61(ctx) {
     }
   };
 }
-function create_if_block_622(ctx) {
+function create_if_block_65(ctx) {
   let input;
   let input_checked_value;
   let mounted;
@@ -17187,7 +17187,7 @@ function create_if_block_622(ctx) {
       if (!mounted) {
         dispose = listen(input, "click", stop_propagation(
           /*click_handler_7*/
-          ctx[111]
+          ctx[113]
         ));
         mounted = true;
       }
@@ -17208,7 +17208,7 @@ function create_if_block_622(ctx) {
     }
   };
 }
-function create_else_block_14(ctx) {
+function create_else_block_13(ctx) {
   let t0;
   let button0;
   let button0_title_value;
@@ -17222,40 +17222,40 @@ function create_else_block_14(ctx) {
   let dispose;
   let if_block0 = (
     /*searchMode*/
-    ctx[9] === "task" && create_if_block_60(ctx)
+    ctx[8] === "task" && create_if_block_63(ctx)
   );
   function select_block_type_1(ctx2, dirty) {
     if (
       /*searchMode*/
-      ctx2[9] === "task"
+      ctx2[8] === "task"
     )
-      return create_if_block_59;
-    return create_else_block_17;
+      return create_if_block_622;
+    return create_else_block_16;
   }
   let current_block_type = select_block_type_1(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block1 = current_block_type(ctx);
   let if_block2 = (
     /*isGridLayout*/
-    ctx[10] && create_if_block_56(ctx)
+    ctx[9] && create_if_block_59(ctx)
   );
   function select_block_type_3(ctx2, dirty) {
     if (
       /*layoutMode*/
-      ctx2[8] === "grid"
+      ctx2[7] === "grid"
     )
-      return create_if_block_54;
+      return create_if_block_57;
     if (
       /*layoutMode*/
-      ctx2[8] === "table"
+      ctx2[7] === "table"
     )
-      return create_if_block_55;
-    return create_else_block_15;
+      return create_if_block_58;
+    return create_else_block_14;
   }
   let current_block_type_1 = select_block_type_3(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block3 = current_block_type_1(ctx);
   let if_block4 = (
     /*showNoHotkeyWarning*/
-    ctx[46] && create_if_block_53(ctx)
+    ctx[46] && create_if_block_56(ctx)
   );
   return {
     c() {
@@ -17276,18 +17276,18 @@ function create_else_block_14(ctx) {
       if_block4_anchor = empty();
       attr(button0, "class", "quick-modal-header-btn quick-modal-search-mode-btn");
       attr(button0, "title", button0_title_value = /*searchMode*/
-      ctx[9] === "task" ? t("quick_list_search_mode_title_to_list") || "Currently searching tasks. Click to permanently switch to list search." : t("quick_list_search_mode_title_to_task") || "Currently searching lists. Click to permanently switch to task search.");
+      ctx[8] === "task" ? t("quick_list_search_mode_title_to_list") || "Currently searching tasks. Click to permanently switch to list search." : t("quick_list_search_mode_title_to_task") || "Currently searching lists. Click to permanently switch to task search.");
       toggle_class(
         button0,
         "is-task-mode",
         /*searchMode*/
-        ctx[9] === "task"
+        ctx[8] === "task"
       );
       attr(button1, "class", "quick-modal-header-btn quick-modal-layout-toggle-btn");
       attr(button1, "title", button1_title_value = /*layoutMode*/
-      ctx[8] === "grid" ? "Current: Grid (Auto Bin-Packing). Click to switch to Table Board" : (
+      ctx[7] === "grid" ? "Current: Grid (Auto Bin-Packing). Click to switch to Table Board" : (
         /*layoutMode*/
-        ctx[8] === "table" ? "Current: Table (Custom Blueprint Grid). Click to switch to Classic List" : "Current: Classic List. Click to switch to Auto Grid"
+        ctx[7] === "table" ? "Current: Table (Custom Blueprint Grid). Click to switch to Classic List" : "Current: Classic List. Click to switch to Auto Grid"
       ));
     },
     m(target, anchor) {
@@ -17327,12 +17327,12 @@ function create_else_block_14(ctx) {
     p(ctx2, dirty) {
       if (
         /*searchMode*/
-        ctx2[9] === "task"
+        ctx2[8] === "task"
       ) {
         if (if_block0) {
           if_block0.p(ctx2, dirty);
         } else {
-          if_block0 = create_if_block_60(ctx2);
+          if_block0 = create_if_block_63(ctx2);
           if_block0.c();
           if_block0.m(t0.parentNode, t0);
         }
@@ -17349,27 +17349,27 @@ function create_else_block_14(ctx) {
         }
       }
       if (dirty[0] & /*searchMode*/
-      512 && button0_title_value !== (button0_title_value = /*searchMode*/
-      ctx2[9] === "task" ? t("quick_list_search_mode_title_to_list") || "Currently searching tasks. Click to permanently switch to list search." : t("quick_list_search_mode_title_to_task") || "Currently searching lists. Click to permanently switch to task search.")) {
+      256 && button0_title_value !== (button0_title_value = /*searchMode*/
+      ctx2[8] === "task" ? t("quick_list_search_mode_title_to_list") || "Currently searching tasks. Click to permanently switch to list search." : t("quick_list_search_mode_title_to_task") || "Currently searching lists. Click to permanently switch to task search.")) {
         attr(button0, "title", button0_title_value);
       }
       if (dirty[0] & /*searchMode*/
-      512) {
+      256) {
         toggle_class(
           button0,
           "is-task-mode",
           /*searchMode*/
-          ctx2[9] === "task"
+          ctx2[8] === "task"
         );
       }
       if (
         /*isGridLayout*/
-        ctx2[10]
+        ctx2[9]
       ) {
         if (if_block2) {
           if_block2.p(ctx2, dirty);
         } else {
-          if_block2 = create_if_block_56(ctx2);
+          if_block2 = create_if_block_59(ctx2);
           if_block2.c();
           if_block2.m(t2.parentNode, t2);
         }
@@ -17386,10 +17386,10 @@ function create_else_block_14(ctx) {
         }
       }
       if (dirty[0] & /*layoutMode*/
-      256 && button1_title_value !== (button1_title_value = /*layoutMode*/
-      ctx2[8] === "grid" ? "Current: Grid (Auto Bin-Packing). Click to switch to Table Board" : (
+      128 && button1_title_value !== (button1_title_value = /*layoutMode*/
+      ctx2[7] === "grid" ? "Current: Grid (Auto Bin-Packing). Click to switch to Table Board" : (
         /*layoutMode*/
-        ctx2[8] === "table" ? "Current: Table (Custom Blueprint Grid). Click to switch to Classic List" : "Current: Classic List. Click to switch to Auto Grid"
+        ctx2[7] === "table" ? "Current: Table (Custom Blueprint Grid). Click to switch to Classic List" : "Current: Classic List. Click to switch to Auto Grid"
       ))) {
         attr(button1, "title", button1_title_value);
       }
@@ -17400,7 +17400,7 @@ function create_else_block_14(ctx) {
         if (if_block4) {
           if_block4.p(ctx2, dirty);
         } else {
-          if_block4 = create_if_block_53(ctx2);
+          if_block4 = create_if_block_56(ctx2);
           if_block4.c();
           if_block4.m(if_block4_anchor.parentNode, if_block4_anchor);
         }
@@ -17432,7 +17432,7 @@ function create_else_block_14(ctx) {
     }
   };
 }
-function create_if_block_51(ctx) {
+function create_if_block_54(ctx) {
   let button;
   let svg;
   let line0;
@@ -17448,7 +17448,7 @@ function create_if_block_51(ctx) {
   let dispose;
   let if_block = (
     /*focusedListSet*/
-    ctx[25].size > 0 && create_if_block_522(ctx)
+    ctx[25].size > 0 && create_if_block_55(ctx)
   );
   return {
     c() {
@@ -17522,7 +17522,7 @@ function create_if_block_51(ctx) {
         if (if_block) {
           if_block.p(ctx2, dirty);
         } else {
-          if_block = create_if_block_522(ctx2);
+          if_block = create_if_block_55(ctx2);
           if_block.c();
           if_block.m(if_block_anchor.parentNode, if_block_anchor);
         }
@@ -17544,11 +17544,11 @@ function create_if_block_51(ctx) {
     }
   };
 }
-function create_if_block_60(ctx) {
+function create_if_block_63(ctx) {
   let button;
   let t_1_value = (
     /*hideCompleted*/
-    (ctx[16] ? t("quick_list_search_filter_active_only") || "Active only" : t("quick_list_search_filter_all_tasks") || "All tasks") + ""
+    (ctx[15] ? t("quick_list_search_filter_active_only") || "Active only" : t("quick_list_search_filter_all_tasks") || "All tasks") + ""
   );
   let t_1;
   let button_aria_label_value;
@@ -17567,7 +17567,7 @@ function create_if_block_60(ctx) {
         button,
         "is-active",
         /*hideCompleted*/
-        ctx[16]
+        ctx[15]
       );
     },
     m(target, anchor) {
@@ -17585,16 +17585,16 @@ function create_if_block_60(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*hideCompleted*/
-      65536 && t_1_value !== (t_1_value = /*hideCompleted*/
-      (ctx2[16] ? t("quick_list_search_filter_active_only") || "Active only" : t("quick_list_search_filter_all_tasks") || "All tasks") + ""))
+      32768 && t_1_value !== (t_1_value = /*hideCompleted*/
+      (ctx2[15] ? t("quick_list_search_filter_active_only") || "Active only" : t("quick_list_search_filter_all_tasks") || "All tasks") + ""))
         set_data(t_1, t_1_value);
       if (dirty[0] & /*hideCompleted*/
-      65536) {
+      32768) {
         toggle_class(
           button,
           "is-active",
           /*hideCompleted*/
-          ctx2[16]
+          ctx2[15]
         );
       }
     },
@@ -17607,7 +17607,7 @@ function create_if_block_60(ctx) {
     }
   };
 }
-function create_else_block_17(ctx) {
+function create_else_block_16(ctx) {
   let svg;
   let line0;
   let line1;
@@ -17680,7 +17680,7 @@ function create_else_block_17(ctx) {
     }
   };
 }
-function create_if_block_59(ctx) {
+function create_if_block_622(ctx) {
   let svg;
   let polyline;
   let path;
@@ -17719,7 +17719,7 @@ function create_if_block_59(ctx) {
     }
   };
 }
-function create_if_block_56(ctx) {
+function create_if_block_59(ctx) {
   let button;
   let svg;
   let circle0;
@@ -17732,7 +17732,7 @@ function create_if_block_56(ctx) {
   let span;
   let t1_value = (
     /*isPickingDefaultFocus*/
-    (ctx[21] ? t("focus_picking_target") : (
+    (ctx[20] ? t("focus_picking_target") : (
       /*defaultFocusListName*/
       ctx[45] ? t(
         "focus_target_label",
@@ -17748,7 +17748,7 @@ function create_if_block_56(ctx) {
   let dispose;
   let if_block = (
     /*showFocusPopover*/
-    ctx[22] && create_if_block_57(ctx)
+    ctx[21] && create_if_block_60(ctx)
   );
   return {
     c() {
@@ -17800,7 +17800,7 @@ function create_if_block_56(ctx) {
         button,
         "is-active",
         /*isPickingDefaultFocus*/
-        ctx[21]
+        ctx[20]
       );
     },
     m(target, anchor) {
@@ -17829,7 +17829,7 @@ function create_if_block_56(ctx) {
           ),
           listen(button, "contextmenu", prevent_default(
             /*contextmenu_handler*/
-            ctx[113]
+            ctx[115]
           )),
           listen(
             button,
@@ -17849,9 +17849,9 @@ function create_if_block_56(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*isPickingDefaultFocus*/
-      2097152 | dirty[1] & /*defaultFocusListName*/
+      1048576 | dirty[1] & /*defaultFocusListName*/
       16384 && t1_value !== (t1_value = /*isPickingDefaultFocus*/
-      (ctx2[21] ? t("focus_picking_target") : (
+      (ctx2[20] ? t("focus_picking_target") : (
         /*defaultFocusListName*/
         ctx2[45] ? t(
           "focus_target_label",
@@ -17861,22 +17861,22 @@ function create_if_block_56(ctx) {
       )) + ""))
         set_data(t1, t1_value);
       if (dirty[0] & /*isPickingDefaultFocus*/
-      2097152) {
+      1048576) {
         toggle_class(
           button,
           "is-active",
           /*isPickingDefaultFocus*/
-          ctx2[21]
+          ctx2[20]
         );
       }
       if (
         /*showFocusPopover*/
-        ctx2[22]
+        ctx2[21]
       ) {
         if (if_block) {
           if_block.p(ctx2, dirty);
         } else {
-          if_block = create_if_block_57(ctx2);
+          if_block = create_if_block_60(ctx2);
           if_block.c();
           if_block.m(if_block_anchor.parentNode, if_block_anchor);
         }
@@ -17898,7 +17898,7 @@ function create_if_block_56(ctx) {
     }
   };
 }
-function create_if_block_57(ctx) {
+function create_if_block_60(ctx) {
   let div3;
   let div0;
   let t1;
@@ -17910,8 +17910,8 @@ function create_if_block_57(ctx) {
       /*defaultFocusListName*/
       ctx2[45]
     )
-      return create_if_block_58;
-    return create_else_block_16;
+      return create_if_block_61;
+    return create_else_block_15;
   }
   let current_block_type = select_block_type_2(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block = current_block_type(ctx);
@@ -17960,7 +17960,7 @@ function create_if_block_57(ctx) {
     }
   };
 }
-function create_else_block_16(ctx) {
+function create_else_block_15(ctx) {
   let t0_value = t("focus_unset_prefix") + "";
   let t0;
   let b;
@@ -17983,7 +17983,7 @@ function create_else_block_16(ctx) {
     }
   };
 }
-function create_if_block_58(ctx) {
+function create_if_block_61(ctx) {
   let t0_value = t("focus_current_prefix") + "";
   let t0;
   let b;
@@ -18019,7 +18019,7 @@ function create_if_block_58(ctx) {
     }
   };
 }
-function create_else_block_15(ctx) {
+function create_else_block_14(ctx) {
   let svg;
   let line0;
   let line1;
@@ -18092,7 +18092,7 @@ function create_else_block_15(ctx) {
     }
   };
 }
-function create_if_block_55(ctx) {
+function create_if_block_58(ctx) {
   let svg;
   let rect;
   let line0;
@@ -18159,7 +18159,7 @@ function create_if_block_55(ctx) {
     }
   };
 }
-function create_if_block_54(ctx) {
+function create_if_block_57(ctx) {
   let svg;
   let rect0;
   let rect1;
@@ -18218,7 +18218,7 @@ function create_if_block_54(ctx) {
     }
   };
 }
-function create_if_block_53(ctx) {
+function create_if_block_56(ctx) {
   let button;
   let svg;
   let path;
@@ -18285,7 +18285,7 @@ function create_if_block_53(ctx) {
     }
   };
 }
-function create_if_block_522(ctx) {
+function create_if_block_55(ctx) {
   let span;
   let t_1_value = t(
     "focused_lists_selected_count",
@@ -18319,20 +18319,20 @@ function create_if_block_522(ctx) {
     }
   };
 }
-function create_if_block_46(ctx) {
+function create_if_block_49(ctx) {
   let div;
   function select_block_type_4(ctx2, dirty) {
     if (
       /*isSearchingTasks*/
-      ctx2[19]
+      ctx2[18]
     )
-      return create_if_block_47;
+      return create_if_block_50;
     if (
       /*taskSearchResults*/
-      ctx2[17].length === 0
+      ctx2[16].length === 0
     )
-      return create_if_block_48;
-    return create_else_block_13;
+      return create_if_block_51;
+    return create_else_block_122;
   }
   let current_block_type = select_block_type_4(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block = current_block_type(ctx);
@@ -18345,7 +18345,7 @@ function create_if_block_46(ctx) {
     m(target, anchor) {
       insert(target, div, anchor);
       if_block.m(div, null);
-      ctx[116](div);
+      ctx[118](div);
     },
     p(ctx2, dirty) {
       if (current_block_type === (current_block_type = select_block_type_4(ctx2, dirty)) && if_block) {
@@ -18364,21 +18364,21 @@ function create_if_block_46(ctx) {
         detach(div);
       }
       if_block.d();
-      ctx[116](null);
+      ctx[118](null);
     }
   };
 }
-function create_else_block_13(ctx) {
+function create_else_block_122(ctx) {
   let div;
   let each_blocks = [];
   let each_1_lookup = new Map_1();
   let each_value_6 = ensure_array_like(
     /*taskSearchResults*/
-    ctx[17]
+    ctx[16]
   );
   const get_key = (ctx2) => (
     /*item*/
-    ctx2[274].task.id
+    ctx2[285].task.id
   );
   for (let i = 0; i < each_value_6.length; i += 1) {
     let child_ctx = get_each_context_6(ctx, each_value_6, i);
@@ -18404,11 +18404,11 @@ function create_else_block_13(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*taskFocusedIndex, taskSearchResults*/
-      393216 | dirty[2] & /*openTaskInCenter*/
+      196608 | dirty[2] & /*openTaskInCenter*/
       1) {
         each_value_6 = ensure_array_like(
           /*taskSearchResults*/
-          ctx2[17]
+          ctx2[16]
         );
         each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_6, each_1_lookup, div, destroy_block, create_each_block_6, null, get_each_context_6);
       }
@@ -18423,7 +18423,7 @@ function create_else_block_13(ctx) {
     }
   };
 }
-function create_if_block_48(ctx) {
+function create_if_block_51(ctx) {
   let div;
   return {
     c() {
@@ -18442,7 +18442,7 @@ function create_if_block_48(ctx) {
     }
   };
 }
-function create_if_block_47(ctx) {
+function create_if_block_50(ctx) {
   let div;
   return {
     c() {
@@ -18461,7 +18461,7 @@ function create_if_block_47(ctx) {
     }
   };
 }
-function create_if_block_50(ctx) {
+function create_if_block_53(ctx) {
   let t_1;
   return {
     c() {
@@ -18477,7 +18477,7 @@ function create_if_block_50(ctx) {
     }
   };
 }
-function create_if_block_49(ctx) {
+function create_if_block_522(ctx) {
   let span0;
   let t1;
   let span1;
@@ -18513,7 +18513,7 @@ function create_each_block_6(key_1, ctx) {
   let span1;
   let t1_value = (
     /*item*/
-    ctx[274].task.title + ""
+    ctx[285].task.title + ""
   );
   let t1;
   let t2;
@@ -18521,7 +18521,7 @@ function create_each_block_6(key_1, ctx) {
   let span2;
   let t3_value = (
     /*item*/
-    ctx[274].category.name + ""
+    ctx[285].category.name + ""
   );
   let t3;
   let t4;
@@ -18531,7 +18531,7 @@ function create_each_block_6(key_1, ctx) {
   let t7;
   let t8_value = (
     /*item*/
-    ctx[274].matchField + ""
+    ctx[285].matchField + ""
   );
   let t8;
   let t9;
@@ -18541,27 +18541,27 @@ function create_each_block_6(key_1, ctx) {
   let dispose;
   let if_block0 = (
     /*item*/
-    ctx[274].task.completed && create_if_block_50(ctx)
+    ctx[285].task.completed && create_if_block_53(ctx)
   );
   let if_block1 = (
     /*item*/
-    ctx[274].task.completed && create_if_block_49(ctx)
+    ctx[285].task.completed && create_if_block_522(ctx)
   );
   function mouseenter_handler() {
     return (
       /*mouseenter_handler*/
-      ctx[114](
+      ctx[116](
         /*idx*/
-        ctx[280]
+        ctx[291]
       )
     );
   }
   function click_handler_9() {
     return (
       /*click_handler_9*/
-      ctx[115](
+      ctx[117](
         /*item*/
-        ctx[274]
+        ctx[285]
       )
     );
   }
@@ -18597,7 +18597,7 @@ function create_each_block_6(key_1, ctx) {
         span0,
         "is-done",
         /*item*/
-        ctx[274].task.completed
+        ctx[285].task.completed
       );
       attr(span1, "class", "quick-modal-task-title");
       attr(div0, "class", "quick-modal-task-main");
@@ -18608,21 +18608,21 @@ function create_each_block_6(key_1, ctx) {
       attr(div2, "class", "quick-modal-task-item");
       attr(div2, "role", "option");
       attr(div2, "aria-selected", div2_aria_selected_value = /*taskFocusedIndex*/
-      ctx[18] === /*idx*/
-      ctx[280]);
+      ctx[17] === /*idx*/
+      ctx[291]);
       attr(div2, "tabindex", "0");
       toggle_class(
         div2,
         "is-focused",
         /*taskFocusedIndex*/
-        ctx[18] === /*idx*/
-        ctx[280]
+        ctx[17] === /*idx*/
+        ctx[291]
       );
       toggle_class(
         div2,
         "is-completed",
         /*item*/
-        ctx[274].task.completed
+        ctx[285].task.completed
       );
       this.first = div2;
     },
@@ -18661,11 +18661,11 @@ function create_each_block_6(key_1, ctx) {
       ctx = new_ctx;
       if (
         /*item*/
-        ctx[274].task.completed
+        ctx[285].task.completed
       ) {
         if (if_block0) {
         } else {
-          if_block0 = create_if_block_50(ctx);
+          if_block0 = create_if_block_53(ctx);
           if_block0.c();
           if_block0.m(span0, null);
         }
@@ -18674,33 +18674,33 @@ function create_each_block_6(key_1, ctx) {
         if_block0 = null;
       }
       if (dirty[0] & /*taskSearchResults*/
-      131072) {
+      65536) {
         toggle_class(
           span0,
           "is-done",
           /*item*/
-          ctx[274].task.completed
+          ctx[285].task.completed
         );
       }
       if (dirty[0] & /*taskSearchResults*/
-      131072 && t1_value !== (t1_value = /*item*/
-      ctx[274].task.title + ""))
+      65536 && t1_value !== (t1_value = /*item*/
+      ctx[285].task.title + ""))
         set_data(t1, t1_value);
       if (dirty[0] & /*taskSearchResults*/
-      131072 && t3_value !== (t3_value = /*item*/
-      ctx[274].category.name + ""))
+      65536 && t3_value !== (t3_value = /*item*/
+      ctx[285].category.name + ""))
         set_data(t3, t3_value);
       if (dirty[0] & /*taskSearchResults*/
-      131072 && t8_value !== (t8_value = /*item*/
-      ctx[274].matchField + ""))
+      65536 && t8_value !== (t8_value = /*item*/
+      ctx[285].matchField + ""))
         set_data(t8, t8_value);
       if (
         /*item*/
-        ctx[274].task.completed
+        ctx[285].task.completed
       ) {
         if (if_block1) {
         } else {
-          if_block1 = create_if_block_49(ctx);
+          if_block1 = create_if_block_522(ctx);
           if_block1.c();
           if_block1.m(div1, null);
         }
@@ -18709,28 +18709,28 @@ function create_each_block_6(key_1, ctx) {
         if_block1 = null;
       }
       if (dirty[0] & /*taskFocusedIndex, taskSearchResults*/
-      393216 && div2_aria_selected_value !== (div2_aria_selected_value = /*taskFocusedIndex*/
-      ctx[18] === /*idx*/
-      ctx[280])) {
+      196608 && div2_aria_selected_value !== (div2_aria_selected_value = /*taskFocusedIndex*/
+      ctx[17] === /*idx*/
+      ctx[291])) {
         attr(div2, "aria-selected", div2_aria_selected_value);
       }
       if (dirty[0] & /*taskFocusedIndex, taskSearchResults*/
-      393216) {
+      196608) {
         toggle_class(
           div2,
           "is-focused",
           /*taskFocusedIndex*/
-          ctx[18] === /*idx*/
-          ctx[280]
+          ctx[17] === /*idx*/
+          ctx[291]
         );
       }
       if (dirty[0] & /*taskSearchResults*/
-      131072) {
+      65536) {
         toggle_class(
           div2,
           "is-completed",
           /*item*/
-          ctx[274].task.completed
+          ctx[285].task.completed
         );
       }
     },
@@ -18747,23 +18747,23 @@ function create_each_block_6(key_1, ctx) {
     }
   };
 }
-function create_else_block_7(ctx) {
+function create_else_block_6(ctx) {
   let div;
   let t_1;
   let if_block0 = (
     /*isStarredMatching*/
-    ctx[14] && create_if_block_44(ctx)
+    ctx[13] && create_if_block_47(ctx)
   );
-  function select_block_type_13(ctx2, dirty) {
+  function select_block_type_15(ctx2, dirty) {
     if (
       /*filteredItems*/
-      ctx2[12].length === 0 && !/*isStarredMatching*/
-      ctx2[14]
+      ctx2[11].length === 0 && !/*isStarredMatching*/
+      ctx2[13]
     )
-      return create_if_block_322;
-    return create_else_block_8;
+      return create_if_block_35;
+    return create_else_block_7;
   }
-  let current_block_type = select_block_type_13(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
+  let current_block_type = select_block_type_15(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block1 = current_block_type(ctx);
   return {
     c() {
@@ -18784,12 +18784,12 @@ function create_else_block_7(ctx) {
     p(ctx2, dirty) {
       if (
         /*isStarredMatching*/
-        ctx2[14]
+        ctx2[13]
       ) {
         if (if_block0) {
           if_block0.p(ctx2, dirty);
         } else {
-          if_block0 = create_if_block_44(ctx2);
+          if_block0 = create_if_block_47(ctx2);
           if_block0.c();
           if_block0.m(div, t_1);
         }
@@ -18797,7 +18797,7 @@ function create_else_block_7(ctx) {
         if_block0.d(1);
         if_block0 = null;
       }
-      if (current_block_type === (current_block_type = select_block_type_13(ctx2, dirty)) && if_block1) {
+      if (current_block_type === (current_block_type = select_block_type_15(ctx2, dirty)) && if_block1) {
         if_block1.p(ctx2, dirty);
       } else {
         if_block1.d(1);
@@ -18818,23 +18818,23 @@ function create_else_block_7(ctx) {
     }
   };
 }
-function create_if_block_510(ctx) {
+function create_if_block_43(ctx) {
   let div;
   let t_1;
   let mounted;
   let dispose;
   let if_block0 = (
     /*activeEdgeDirection*/
-    ctx[43] && create_if_block_23(ctx)
+    ctx[43] && create_if_block_26(ctx)
   );
   function select_block_type_7(ctx2, dirty) {
     if (
       /*filteredItems*/
-      ctx2[12].length === 0 && !/*isStarredMatching*/
-      ctx2[14]
+      ctx2[11].length === 0 && !/*isStarredMatching*/
+      ctx2[13]
     )
-      return create_if_block_65;
-    return create_else_block_23;
+      return create_if_block_510;
+    return create_else_block_17;
   }
   let current_block_type = select_block_type_7(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block1 = current_block_type(ctx);
@@ -18850,7 +18850,7 @@ function create_if_block_510(ctx) {
         div,
         "is-table-mode",
         /*layoutMode*/
-        ctx[8] === "table"
+        ctx[7] === "table"
       );
     },
     m(target, anchor) {
@@ -18859,7 +18859,7 @@ function create_if_block_510(ctx) {
         if_block0.m(div, null);
       append(div, t_1);
       if_block1.m(div, null);
-      ctx[164](div);
+      ctx[172](div);
       if (!mounted) {
         dispose = [
           listen(
@@ -18871,8 +18871,8 @@ function create_if_block_510(ctx) {
           listen(
             div,
             "dragover",
-            /*dragover_handler_9*/
-            ctx[165]
+            /*dragover_handler_11*/
+            ctx[173]
           )
         ];
         mounted = true;
@@ -18886,7 +18886,7 @@ function create_if_block_510(ctx) {
         if (if_block0) {
           if_block0.p(ctx2, dirty);
         } else {
-          if_block0 = create_if_block_23(ctx2);
+          if_block0 = create_if_block_26(ctx2);
           if_block0.c();
           if_block0.m(div, t_1);
         }
@@ -18905,12 +18905,12 @@ function create_if_block_510(ctx) {
         }
       }
       if (dirty[0] & /*layoutMode*/
-      256) {
+      128) {
         toggle_class(
           div,
           "is-table-mode",
           /*layoutMode*/
-          ctx2[8] === "table"
+          ctx2[7] === "table"
         );
       }
     },
@@ -18921,13 +18921,13 @@ function create_if_block_510(ctx) {
       if (if_block0)
         if_block0.d();
       if_block1.d();
-      ctx[164](null);
+      ctx[172](null);
       mounted = false;
       run_all(dispose);
     }
   };
 }
-function create_if_block_44(ctx) {
+function create_if_block_47(ctx) {
   let div1;
   let span0;
   let t0;
@@ -18942,7 +18942,7 @@ function create_if_block_44(ctx) {
   let dispose;
   let if_block = (
     /*isFocusedListMode*/
-    ctx[3] && create_if_block_45(ctx)
+    ctx[3] && create_if_block_48(ctx)
   );
   return {
     c() {
@@ -18960,7 +18960,7 @@ function create_if_block_44(ctx) {
       span2 = element("span");
       t4 = text(
         /*starredCount*/
-        ctx[5]
+        ctx[4]
       );
       attr(span0, "class", "quick-modal-smart-star-icon");
       attr(span1, "class", "quick-modal-list-name");
@@ -18977,9 +18977,9 @@ function create_if_block_44(ctx) {
         div1,
         "is-focused",
         /*flatCategories*/
-        ((_a = ctx[11][
+        ((_a = ctx[10][
           /*focusedIndex*/
-          ctx[7]
+          ctx[6]
         ]) == null ? void 0 : _a.filepath) === STARRED_CATEGORY_PATH
       );
       toggle_class(
@@ -19007,7 +19007,7 @@ function create_if_block_44(ctx) {
           div1,
           "click",
           /*click_handler_16*/
-          ctx[167]
+          ctx[175]
         );
         mounted = true;
       }
@@ -19021,7 +19021,7 @@ function create_if_block_44(ctx) {
         if (if_block) {
           if_block.p(ctx2, dirty);
         } else {
-          if_block = create_if_block_45(ctx2);
+          if_block = create_if_block_48(ctx2);
           if_block.c();
           if_block.m(span0, t0);
         }
@@ -19030,11 +19030,11 @@ function create_if_block_44(ctx) {
         if_block = null;
       }
       if (dirty[0] & /*starredCount*/
-      32)
+      16)
         set_data(
           t4,
           /*starredCount*/
-          ctx2[5]
+          ctx2[4]
         );
       if (dirty[0] & /*isFocusedListMode*/
       8 && div1_title_value !== (div1_title_value = /*isFocusedListMode*/
@@ -19042,14 +19042,14 @@ function create_if_block_44(ctx) {
         attr(div1, "title", div1_title_value);
       }
       if (dirty[0] & /*flatCategories, focusedIndex*/
-      2176) {
+      1088) {
         toggle_class(
           div1,
           "is-focused",
           /*flatCategories*/
-          ((_a = ctx2[11][
+          ((_a = ctx2[10][
             /*focusedIndex*/
-            ctx2[7]
+            ctx2[6]
           ]) == null ? void 0 : _a.filepath) === STARRED_CATEGORY_PATH
         );
       }
@@ -19075,7 +19075,7 @@ function create_if_block_44(ctx) {
     }
   };
 }
-function create_if_block_45(ctx) {
+function create_if_block_48(ctx) {
   let input;
   let input_checked_value;
   let mounted;
@@ -19094,7 +19094,7 @@ function create_if_block_45(ctx) {
       if (!mounted) {
         dispose = listen(input, "click", stop_propagation(
           /*click_handler_15*/
-          ctx[166]
+          ctx[174]
         ));
         mounted = true;
       }
@@ -19115,17 +19115,17 @@ function create_if_block_45(ctx) {
     }
   };
 }
-function create_else_block_8(ctx) {
+function create_else_block_7(ctx) {
   let each_blocks = [];
   let each_1_lookup = new Map_1();
   let each_1_anchor;
   let each_value_4 = ensure_array_like(
     /*filteredItems*/
-    ctx[12]
+    ctx[11]
   );
   const get_key = (ctx2) => (
     /*item*/
-    ctx2[274].id
+    ctx2[285].id
   );
   for (let i = 0; i < each_value_4.length; i += 1) {
     let child_ctx = get_each_context_4(ctx, each_value_4, i);
@@ -19149,12 +19149,12 @@ function create_else_block_8(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*filteredItems, flatCategories, focusedIndex, isFocusedListMode, focusedListSet, plugin, taskCounts, editingItemId*/
-      1107335305 | dirty[1] & /*draggedListId, dragOverListId, dragListPosition, handleCategoryClick, editingName, renameInputEl, toggleFocusedList, toggleGroup*/
+      1107315785 | dirty[1] & /*draggedListId, dragOverListId, dragListPosition, handleCategoryClick, editingName, renameInputEl, toggleFocusedList, toggleGroup*/
       335609887 | dirty[2] & /*handleGroupCardDragLeave, handleGroupCardDragOver, handleGroupCardDrop, setHoveredTarget, clearHoveredTarget, handleListDragStart, handleListDragEnd, handleListDragOver, handleListDragLeave, handleListDrop, showItemContextMenu, commitRename*/
-      15735228) {
+      31463868) {
         each_value_4 = ensure_array_like(
           /*filteredItems*/
-          ctx2[12]
+          ctx2[11]
         );
         each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_4, each_1_lookup, each_1_anchor.parentNode, destroy_block, create_each_block_4, each_1_anchor, get_each_context_4);
       }
@@ -19169,7 +19169,7 @@ function create_else_block_8(ctx) {
     }
   };
 }
-function create_if_block_322(ctx) {
+function create_if_block_35(ctx) {
   let div;
   return {
     c() {
@@ -19188,7 +19188,7 @@ function create_if_block_322(ctx) {
     }
   };
 }
-function create_else_block_11(ctx) {
+function create_else_block_10(ctx) {
   var _a, _b, _c;
   let div1;
   let span;
@@ -19206,105 +19206,105 @@ function create_else_block_11(ctx) {
   let dispose;
   let if_block0 = (
     /*isFocusedListMode*/
-    ctx[3] && create_if_block_43(ctx)
+    ctx[3] && create_if_block_46(ctx)
   );
-  function select_block_type_17(ctx2, dirty) {
+  function select_block_type_19(ctx2, dirty) {
     if (
       /*editingItemId*/
       ctx2[30] === /*item*/
-      ctx2[274].id || /*item*/
-      ctx2[274].filepath && /*editingItemId*/
+      ctx2[285].id || /*item*/
+      ctx2[285].filepath && /*editingItemId*/
       ctx2[30] === /*item*/
-      ctx2[274].filepath
+      ctx2[285].filepath
     )
-      return create_if_block_422;
-    return create_else_block_122;
+      return create_if_block_45;
+    return create_else_block_11;
   }
-  let current_block_type = select_block_type_17(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
+  let current_block_type = select_block_type_19(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block1 = current_block_type(ctx);
   let if_block2 = (
     /*taskCounts*/
-    ((_a = ctx[15][
+    ((_a = ctx[14][
       /*item*/
-      ctx[274].filepath
-    ]) != null ? _a : 0) > 0 && create_if_block_41(ctx)
+      ctx[285].filepath
+    ]) != null ? _a : 0) > 0 && create_if_block_44(ctx)
   );
   let if_block3 = !/*isFocusedListMode*/
   ctx[3] && /*plugin*/
   ((_c = (_b = ctx[0]) == null ? void 0 : _b.settings) == null ? void 0 : _c.defaultQuickListFocusFilepath) === /*item*/
-  ctx[274].filepath && create_if_block_40(ctx);
+  ctx[285].filepath && create_if_block_432(ctx);
   function mouseenter_handler_6() {
     return (
       /*mouseenter_handler_6*/
-      ctx[195](
+      ctx[203](
         /*item*/
-        ctx[274]
+        ctx[285]
       )
     );
   }
   function mouseleave_handler_5() {
     return (
       /*mouseleave_handler_5*/
-      ctx[196](
+      ctx[204](
         /*item*/
-        ctx[274]
+        ctx[285]
       )
     );
   }
   function dragstart_handler_7(...args) {
     return (
       /*dragstart_handler_7*/
-      ctx[197](
+      ctx[205](
         /*item*/
-        ctx[274],
+        ctx[285],
         ...args
       )
     );
   }
-  function dragover_handler_13(...args) {
+  function dragover_handler_15(...args) {
     return (
-      /*dragover_handler_13*/
-      ctx[198](
+      /*dragover_handler_15*/
+      ctx[206](
         /*item*/
-        ctx[274],
+        ctx[285],
         ...args
       )
     );
   }
-  function dragleave_handler_8(...args) {
+  function dragleave_handler_10(...args) {
     return (
-      /*dragleave_handler_8*/
-      ctx[199](
+      /*dragleave_handler_10*/
+      ctx[207](
         /*item*/
-        ctx[274],
+        ctx[285],
         ...args
       )
     );
   }
-  function drop_handler_12() {
+  function drop_handler_14() {
     return (
-      /*drop_handler_12*/
-      ctx[200](
+      /*drop_handler_14*/
+      ctx[208](
         /*item*/
-        ctx[274]
+        ctx[285]
       )
     );
   }
   function click_handler_22() {
     return (
       /*click_handler_22*/
-      ctx[201](
+      ctx[209](
         /*item*/
-        ctx[274]
+        ctx[285]
       )
     );
   }
   function contextmenu_handler_6(...args) {
     return (
       /*contextmenu_handler_6*/
-      ctx[202](
+      ctx[210](
         /*item*/
-        ctx[274],
+        ctx[285],
         ...args
       )
     );
@@ -19342,9 +19342,9 @@ function create_else_block_11(ctx) {
       attr(div0, "class", "quick-modal-item-meta-right");
       attr(div1, "class", "quick-modal-list-item");
       attr(div1, "data-filepath", div1_data_filepath_value = /*item*/
-      ctx[274].filepath);
+      ctx[285].filepath);
       attr(div1, "data-item-id", div1_data_item_id_value = /*item*/
-      ctx[274].id);
+      ctx[285].id);
       attr(div1, "role", "button");
       attr(div1, "tabindex", "0");
       attr(div1, "draggable", "true");
@@ -19352,11 +19352,11 @@ function create_else_block_11(ctx) {
         div1,
         "is-focused",
         /*flatCategories*/
-        ((_a2 = ctx[11][
+        ((_a2 = ctx[10][
           /*focusedIndex*/
-          ctx[7]
+          ctx[6]
         ]) == null ? void 0 : _a2.filepath) === /*item*/
-        ctx[274].filepath
+        ctx[285].filepath
       );
       toggle_class(
         div1,
@@ -19365,26 +19365,26 @@ function create_else_block_11(ctx) {
         ctx[3] && /*focusedListSet*/
         ctx[25].has(
           /*item*/
-          ctx[274].filepath
+          ctx[285].filepath
         )
       );
       toggle_class(div1, "is-default-focus", !/*isFocusedListMode*/
       ctx[3] && /*plugin*/
       ((_c2 = (_b2 = ctx[0]) == null ? void 0 : _b2.settings) == null ? void 0 : _c2.defaultQuickListFocusFilepath) === /*item*/
-      ctx[274].filepath);
+      ctx[285].filepath);
       toggle_class(
         div1,
         "is-dragging",
         /*draggedListId*/
         ctx[33] === /*item*/
-        ctx[274].id
+        ctx[285].id
       );
       toggle_class(
         div1,
         "drag-over-top",
         /*dragOverListId*/
         ctx[34] === /*item*/
-        ctx[274].id && /*dragListPosition*/
+        ctx[285].id && /*dragListPosition*/
         ctx[35] === "top"
       );
       toggle_class(
@@ -19392,7 +19392,7 @@ function create_else_block_11(ctx) {
         "drag-over-bottom",
         /*dragOverListId*/
         ctx[34] === /*item*/
-        ctx[274].id && /*dragListPosition*/
+        ctx[285].id && /*dragListPosition*/
         ctx[35] === "bottom"
       );
     },
@@ -19425,9 +19425,9 @@ function create_else_block_11(ctx) {
             /*handleListDragEnd*/
             ctx[65]
           ),
-          listen(div1, "dragover", dragover_handler_13),
-          listen(div1, "dragleave", dragleave_handler_8),
-          listen(div1, "drop", prevent_default(drop_handler_12)),
+          listen(div1, "dragover", dragover_handler_15),
+          listen(div1, "dragleave", dragleave_handler_10),
+          listen(div1, "drop", prevent_default(drop_handler_14)),
           listen(div1, "click", click_handler_22),
           listen(div1, "contextmenu", contextmenu_handler_6)
         ];
@@ -19444,7 +19444,7 @@ function create_else_block_11(ctx) {
         if (if_block0) {
           if_block0.p(ctx, dirty);
         } else {
-          if_block0 = create_if_block_43(ctx);
+          if_block0 = create_if_block_46(ctx);
           if_block0.c();
           if_block0.m(span, t0);
         }
@@ -19452,7 +19452,7 @@ function create_else_block_11(ctx) {
         if_block0.d(1);
         if_block0 = null;
       }
-      if (current_block_type === (current_block_type = select_block_type_17(ctx, dirty)) && if_block1) {
+      if (current_block_type === (current_block_type = select_block_type_19(ctx, dirty)) && if_block1) {
         if_block1.p(ctx, dirty);
       } else {
         if_block1.d(1);
@@ -19464,15 +19464,15 @@ function create_else_block_11(ctx) {
       }
       if (
         /*taskCounts*/
-        ((_a2 = ctx[15][
+        ((_a2 = ctx[14][
           /*item*/
-          ctx[274].filepath
+          ctx[285].filepath
         ]) != null ? _a2 : 0) > 0
       ) {
         if (if_block2) {
           if_block2.p(ctx, dirty);
         } else {
-          if_block2 = create_if_block_41(ctx);
+          if_block2 = create_if_block_44(ctx);
           if_block2.c();
           if_block2.m(div0, t3);
         }
@@ -19483,10 +19483,10 @@ function create_else_block_11(ctx) {
       if (!/*isFocusedListMode*/
       ctx[3] && /*plugin*/
       ((_c2 = (_b2 = ctx[0]) == null ? void 0 : _b2.settings) == null ? void 0 : _c2.defaultQuickListFocusFilepath) === /*item*/
-      ctx[274].filepath) {
+      ctx[285].filepath) {
         if (if_block3) {
         } else {
-          if_block3 = create_if_block_40(ctx);
+          if_block3 = create_if_block_432(ctx);
           if_block3.c();
           if_block3.m(div0, null);
         }
@@ -19495,30 +19495,30 @@ function create_else_block_11(ctx) {
         if_block3 = null;
       }
       if (dirty[0] & /*filteredItems*/
-      4096 && div1_data_filepath_value !== (div1_data_filepath_value = /*item*/
-      ctx[274].filepath)) {
+      2048 && div1_data_filepath_value !== (div1_data_filepath_value = /*item*/
+      ctx[285].filepath)) {
         attr(div1, "data-filepath", div1_data_filepath_value);
       }
       if (dirty[0] & /*filteredItems*/
-      4096 && div1_data_item_id_value !== (div1_data_item_id_value = /*item*/
-      ctx[274].id)) {
+      2048 && div1_data_item_id_value !== (div1_data_item_id_value = /*item*/
+      ctx[285].id)) {
         attr(div1, "data-item-id", div1_data_item_id_value);
       }
       if (dirty[0] & /*flatCategories, focusedIndex, filteredItems*/
-      6272) {
+      3136) {
         toggle_class(
           div1,
           "is-focused",
           /*flatCategories*/
-          ((_d = ctx[11][
+          ((_d = ctx[10][
             /*focusedIndex*/
-            ctx[7]
+            ctx[6]
           ]) == null ? void 0 : _d.filepath) === /*item*/
-          ctx[274].filepath
+          ctx[285].filepath
         );
       }
       if (dirty[0] & /*isFocusedListMode, focusedListSet, filteredItems*/
-      33558536) {
+      33556488) {
         toggle_class(
           div1,
           "is-focused-selected",
@@ -19526,49 +19526,49 @@ function create_else_block_11(ctx) {
           ctx[3] && /*focusedListSet*/
           ctx[25].has(
             /*item*/
-            ctx[274].filepath
+            ctx[285].filepath
           )
         );
       }
       if (dirty[0] & /*isFocusedListMode, plugin, filteredItems*/
-      4105) {
+      2057) {
         toggle_class(div1, "is-default-focus", !/*isFocusedListMode*/
         ctx[3] && /*plugin*/
         ((_f = (_e = ctx[0]) == null ? void 0 : _e.settings) == null ? void 0 : _f.defaultQuickListFocusFilepath) === /*item*/
-        ctx[274].filepath);
+        ctx[285].filepath);
       }
       if (dirty[0] & /*filteredItems*/
-      4096 | dirty[1] & /*draggedListId*/
+      2048 | dirty[1] & /*draggedListId*/
       4) {
         toggle_class(
           div1,
           "is-dragging",
           /*draggedListId*/
           ctx[33] === /*item*/
-          ctx[274].id
+          ctx[285].id
         );
       }
       if (dirty[0] & /*filteredItems*/
-      4096 | dirty[1] & /*dragOverListId, dragListPosition*/
+      2048 | dirty[1] & /*dragOverListId, dragListPosition*/
       24) {
         toggle_class(
           div1,
           "drag-over-top",
           /*dragOverListId*/
           ctx[34] === /*item*/
-          ctx[274].id && /*dragListPosition*/
+          ctx[285].id && /*dragListPosition*/
           ctx[35] === "top"
         );
       }
       if (dirty[0] & /*filteredItems*/
-      4096 | dirty[1] & /*dragOverListId, dragListPosition*/
+      2048 | dirty[1] & /*dragOverListId, dragListPosition*/
       24) {
         toggle_class(
           div1,
           "drag-over-bottom",
           /*dragOverListId*/
           ctx[34] === /*item*/
-          ctx[274].id && /*dragListPosition*/
+          ctx[285].id && /*dragListPosition*/
           ctx[35] === "bottom"
         );
       }
@@ -19589,13 +19589,13 @@ function create_else_block_11(ctx) {
     }
   };
 }
-function create_if_block_33(ctx) {
+function create_if_block_36(ctx) {
   let div1;
   let div0;
   let span;
   let t0_value = (
     /*item*/
-    ctx[274].isExpanded ? "\u25BC" : "\u25B6"
+    ctx[285].isExpanded ? "\u25BC" : "\u25B6"
   );
   let t0;
   let t1;
@@ -19608,67 +19608,67 @@ function create_if_block_33(ctx) {
   function click_handler_17() {
     return (
       /*click_handler_17*/
-      ctx[168](
+      ctx[176](
         /*item*/
-        ctx[274]
+        ctx[285]
       )
     );
   }
-  function select_block_type_15(ctx2, dirty) {
+  function select_block_type_17(ctx2, dirty) {
     if (
       /*editingItemId*/
       ctx2[30] === /*item*/
-      ctx2[274].id
+      ctx2[285].id
     )
-      return create_if_block_39;
-    return create_else_block_10;
+      return create_if_block_422;
+    return create_else_block_9;
   }
-  let current_block_type = select_block_type_15(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
+  let current_block_type = select_block_type_17(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block0 = current_block_type(ctx);
   function mouseenter_handler_4() {
     return (
       /*mouseenter_handler_4*/
-      ctx[172](
+      ctx[180](
         /*item*/
-        ctx[274]
+        ctx[285]
       )
     );
   }
   function mouseleave_handler_3() {
     return (
       /*mouseleave_handler_3*/
-      ctx[173](
+      ctx[181](
         /*item*/
-        ctx[274]
+        ctx[285]
       )
     );
   }
   function dragstart_handler_5(...args) {
     return (
       /*dragstart_handler_5*/
-      ctx[174](
+      ctx[182](
         /*item*/
-        ctx[274],
+        ctx[285],
         ...args
       )
     );
   }
-  function dragover_handler_10(...args) {
+  function dragover_handler_12(...args) {
     return (
-      /*dragover_handler_10*/
-      ctx[175](
+      /*dragover_handler_12*/
+      ctx[183](
         /*item*/
-        ctx[274],
+        ctx[285],
         ...args
       )
     );
   }
-  function drop_handler_9(...args) {
+  function drop_handler_11(...args) {
     return (
-      /*drop_handler_9*/
-      ctx[176](
+      /*drop_handler_11*/
+      ctx[184](
         /*item*/
-        ctx[274],
+        ctx[285],
         ...args
       )
     );
@@ -19676,24 +19676,24 @@ function create_if_block_33(ctx) {
   function contextmenu_handler_4(...args) {
     return (
       /*contextmenu_handler_4*/
-      ctx[177](
+      ctx[185](
         /*item*/
-        ctx[274],
+        ctx[285],
         ...args
       )
     );
   }
   let if_block1 = (
     /*item*/
-    ctx[274].isExpanded && /*item*/
-    ctx[274].items && create_if_block_34(ctx)
+    ctx[285].isExpanded && /*item*/
+    ctx[285].items && create_if_block_37(ctx)
   );
-  function dragleave_handler_7(...args) {
+  function dragleave_handler_9(...args) {
     return (
-      /*dragleave_handler_7*/
-      ctx[191](
+      /*dragleave_handler_9*/
+      ctx[199](
         /*item*/
-        ctx[274],
+        ctx[285],
         ...args
       )
     );
@@ -19713,24 +19713,24 @@ function create_if_block_33(ctx) {
       attr(span, "class", "quick-modal-group-chevron");
       attr(div0, "class", "quick-modal-group-header");
       attr(div0, "data-group-id", div0_data_group_id_value = /*item*/
-      ctx[274].id);
+      ctx[285].id);
       attr(div0, "draggable", "true");
       attr(div1, "class", "quick-modal-group-container");
       attr(div1, "data-group-id", div1_data_group_id_value = /*item*/
-      ctx[274].id);
+      ctx[285].id);
       toggle_class(
         div1,
         "is-dragging",
         /*draggedListId*/
         ctx[33] === /*item*/
-        ctx[274].id
+        ctx[285].id
       );
       toggle_class(
         div1,
         "drag-over-top",
         /*dragOverListId*/
         ctx[34] === /*item*/
-        ctx[274].id && /*dragListPosition*/
+        ctx[285].id && /*dragListPosition*/
         ctx[35] === "top"
       );
       toggle_class(
@@ -19738,14 +19738,14 @@ function create_if_block_33(ctx) {
         "drag-over-bottom",
         /*dragOverListId*/
         ctx[34] === /*item*/
-        ctx[274].id && /*dragListPosition*/
+        ctx[285].id && /*dragListPosition*/
         ctx[35] === "bottom"
       );
       toggle_class(div1, "drag-over-inside", (!/*item*/
-      ctx[274].items || /*item*/
-      ctx[274].items.length === 0) && /*dragOverListId*/
+      ctx[285].items || /*item*/
+      ctx[285].items.length === 0) && /*dragOverListId*/
       ctx[34] === /*item*/
-      ctx[274].id && /*dragListPosition*/
+      ctx[285].id && /*dragListPosition*/
       ctx[35] === "inside");
     },
     m(target, anchor) {
@@ -19771,10 +19771,10 @@ function create_if_block_33(ctx) {
             /*handleListDragEnd*/
             ctx[65]
           ),
-          listen(div0, "dragover", dragover_handler_10),
-          listen(div0, "drop", prevent_default(drop_handler_9)),
+          listen(div0, "dragover", dragover_handler_12),
+          listen(div0, "drop", prevent_default(drop_handler_11)),
           listen(div0, "contextmenu", contextmenu_handler_4),
-          listen(div1, "dragleave", dragleave_handler_7)
+          listen(div1, "dragleave", dragleave_handler_9)
         ];
         mounted = true;
       }
@@ -19782,10 +19782,10 @@ function create_if_block_33(ctx) {
     p(new_ctx, dirty) {
       ctx = new_ctx;
       if (dirty[0] & /*filteredItems*/
-      4096 && t0_value !== (t0_value = /*item*/
-      ctx[274].isExpanded ? "\u25BC" : "\u25B6"))
+      2048 && t0_value !== (t0_value = /*item*/
+      ctx[285].isExpanded ? "\u25BC" : "\u25B6"))
         set_data(t0, t0_value);
-      if (current_block_type === (current_block_type = select_block_type_15(ctx, dirty)) && if_block0) {
+      if (current_block_type === (current_block_type = select_block_type_17(ctx, dirty)) && if_block0) {
         if_block0.p(ctx, dirty);
       } else {
         if_block0.d(1);
@@ -19796,19 +19796,19 @@ function create_if_block_33(ctx) {
         }
       }
       if (dirty[0] & /*filteredItems*/
-      4096 && div0_data_group_id_value !== (div0_data_group_id_value = /*item*/
-      ctx[274].id)) {
+      2048 && div0_data_group_id_value !== (div0_data_group_id_value = /*item*/
+      ctx[285].id)) {
         attr(div0, "data-group-id", div0_data_group_id_value);
       }
       if (
         /*item*/
-        ctx[274].isExpanded && /*item*/
-        ctx[274].items
+        ctx[285].isExpanded && /*item*/
+        ctx[285].items
       ) {
         if (if_block1) {
           if_block1.p(ctx, dirty);
         } else {
-          if_block1 = create_if_block_34(ctx);
+          if_block1 = create_if_block_37(ctx);
           if_block1.c();
           if_block1.m(div1, t3);
         }
@@ -19817,53 +19817,53 @@ function create_if_block_33(ctx) {
         if_block1 = null;
       }
       if (dirty[0] & /*filteredItems*/
-      4096 && div1_data_group_id_value !== (div1_data_group_id_value = /*item*/
-      ctx[274].id)) {
+      2048 && div1_data_group_id_value !== (div1_data_group_id_value = /*item*/
+      ctx[285].id)) {
         attr(div1, "data-group-id", div1_data_group_id_value);
       }
       if (dirty[0] & /*filteredItems*/
-      4096 | dirty[1] & /*draggedListId*/
+      2048 | dirty[1] & /*draggedListId*/
       4) {
         toggle_class(
           div1,
           "is-dragging",
           /*draggedListId*/
           ctx[33] === /*item*/
-          ctx[274].id
+          ctx[285].id
         );
       }
       if (dirty[0] & /*filteredItems*/
-      4096 | dirty[1] & /*dragOverListId, dragListPosition*/
+      2048 | dirty[1] & /*dragOverListId, dragListPosition*/
       24) {
         toggle_class(
           div1,
           "drag-over-top",
           /*dragOverListId*/
           ctx[34] === /*item*/
-          ctx[274].id && /*dragListPosition*/
+          ctx[285].id && /*dragListPosition*/
           ctx[35] === "top"
         );
       }
       if (dirty[0] & /*filteredItems*/
-      4096 | dirty[1] & /*dragOverListId, dragListPosition*/
+      2048 | dirty[1] & /*dragOverListId, dragListPosition*/
       24) {
         toggle_class(
           div1,
           "drag-over-bottom",
           /*dragOverListId*/
           ctx[34] === /*item*/
-          ctx[274].id && /*dragListPosition*/
+          ctx[285].id && /*dragListPosition*/
           ctx[35] === "bottom"
         );
       }
       if (dirty[0] & /*filteredItems*/
-      4096 | dirty[1] & /*dragOverListId, dragListPosition*/
+      2048 | dirty[1] & /*dragOverListId, dragListPosition*/
       24) {
         toggle_class(div1, "drag-over-inside", (!/*item*/
-        ctx[274].items || /*item*/
-        ctx[274].items.length === 0) && /*dragOverListId*/
+        ctx[285].items || /*item*/
+        ctx[285].items.length === 0) && /*dragOverListId*/
         ctx[34] === /*item*/
-        ctx[274].id && /*dragListPosition*/
+        ctx[285].id && /*dragListPosition*/
         ctx[35] === "inside");
       }
     },
@@ -19879,7 +19879,7 @@ function create_if_block_33(ctx) {
     }
   };
 }
-function create_if_block_43(ctx) {
+function create_if_block_46(ctx) {
   let input;
   let input_checked_value;
   let mounted;
@@ -19887,9 +19887,9 @@ function create_if_block_43(ctx) {
   function click_handler_21() {
     return (
       /*click_handler_21*/
-      ctx[192](
+      ctx[200](
         /*item*/
-        ctx[274]
+        ctx[285]
       )
     );
   }
@@ -19901,7 +19901,7 @@ function create_if_block_43(ctx) {
       input.checked = input_checked_value = /*focusedListSet*/
       ctx[25].has(
         /*item*/
-        ctx[274].filepath
+        ctx[285].filepath
       );
       attr(input, "tabindex", "-1");
     },
@@ -19915,10 +19915,10 @@ function create_if_block_43(ctx) {
     p(new_ctx, dirty) {
       ctx = new_ctx;
       if (dirty[0] & /*focusedListSet, filteredItems*/
-      33558528 && input_checked_value !== (input_checked_value = /*focusedListSet*/
+      33556480 && input_checked_value !== (input_checked_value = /*focusedListSet*/
       ctx[25].has(
         /*item*/
-        ctx[274].filepath
+        ctx[285].filepath
       ))) {
         input.checked = input_checked_value;
       }
@@ -19932,11 +19932,11 @@ function create_if_block_43(ctx) {
     }
   };
 }
-function create_else_block_122(ctx) {
+function create_else_block_11(ctx) {
   let span;
   let t_1_value = (
     /*item*/
-    ctx[274].name + ""
+    ctx[285].name + ""
   );
   let t_1;
   return {
@@ -19951,8 +19951,8 @@ function create_else_block_122(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*filteredItems*/
-      4096 && t_1_value !== (t_1_value = /*item*/
-      ctx2[274].name + ""))
+      2048 && t_1_value !== (t_1_value = /*item*/
+      ctx2[285].name + ""))
         set_data(t_1, t_1_value);
     },
     d(detaching) {
@@ -19962,7 +19962,7 @@ function create_else_block_122(ctx) {
     }
   };
 }
-function create_if_block_422(ctx) {
+function create_if_block_45(ctx) {
   let input;
   let mounted;
   let dispose;
@@ -19979,24 +19979,24 @@ function create_if_block_422(ctx) {
         /*editingName*/
         ctx[31]
       );
-      ctx[194](input);
+      ctx[202](input);
       if (!mounted) {
         dispose = [
           listen(
             input,
             "input",
             /*input_input_handler_6*/
-            ctx[193]
+            ctx[201]
           ),
           listen(
             input,
             "blur",
             /*commitRename*/
-            ctx[84]
+            ctx[85]
           ),
           listen(input, "click", stop_propagation(
             /*click_handler_5*/
-            ctx[107]
+            ctx[109]
           ))
         ];
         mounted = true;
@@ -20017,19 +20017,19 @@ function create_if_block_422(ctx) {
       if (detaching) {
         detach(input);
       }
-      ctx[194](null);
+      ctx[202](null);
       mounted = false;
       run_all(dispose);
     }
   };
 }
-function create_if_block_41(ctx) {
+function create_if_block_44(ctx) {
   let span;
   let t_1_value = (
     /*taskCounts*/
-    ctx[15][
+    ctx[14][
       /*item*/
-      ctx[274].filepath
+      ctx[285].filepath
     ] + ""
   );
   let t_1;
@@ -20045,10 +20045,10 @@ function create_if_block_41(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*taskCounts, filteredItems*/
-      36864 && t_1_value !== (t_1_value = /*taskCounts*/
-      ctx2[15][
+      18432 && t_1_value !== (t_1_value = /*taskCounts*/
+      ctx2[14][
         /*item*/
-        ctx2[274].filepath
+        ctx2[285].filepath
       ] + ""))
         set_data(t_1, t_1_value);
     },
@@ -20059,7 +20059,7 @@ function create_if_block_41(ctx) {
     }
   };
 }
-function create_if_block_40(ctx) {
+function create_if_block_432(ctx) {
   let span;
   let span_title_value;
   return {
@@ -20079,11 +20079,11 @@ function create_if_block_40(ctx) {
     }
   };
 }
-function create_else_block_10(ctx) {
+function create_else_block_9(ctx) {
   let span;
   let t_1_value = (
     /*item*/
-    ctx[274].name + ""
+    ctx[285].name + ""
   );
   let t_1;
   let mounted;
@@ -20091,9 +20091,9 @@ function create_else_block_10(ctx) {
   function click_handler_18() {
     return (
       /*click_handler_18*/
-      ctx[171](
+      ctx[179](
         /*item*/
-        ctx[274]
+        ctx[285]
       )
     );
   }
@@ -20114,8 +20114,8 @@ function create_else_block_10(ctx) {
     p(new_ctx, dirty) {
       ctx = new_ctx;
       if (dirty[0] & /*filteredItems*/
-      4096 && t_1_value !== (t_1_value = /*item*/
-      ctx[274].name + ""))
+      2048 && t_1_value !== (t_1_value = /*item*/
+      ctx[285].name + ""))
         set_data(t_1, t_1_value);
     },
     d(detaching) {
@@ -20127,7 +20127,7 @@ function create_else_block_10(ctx) {
     }
   };
 }
-function create_if_block_39(ctx) {
+function create_if_block_422(ctx) {
   let input;
   let mounted;
   let dispose;
@@ -20144,24 +20144,24 @@ function create_if_block_39(ctx) {
         /*editingName*/
         ctx[31]
       );
-      ctx[170](input);
+      ctx[178](input);
       if (!mounted) {
         dispose = [
           listen(
             input,
             "input",
             /*input_input_handler_4*/
-            ctx[169]
+            ctx[177]
           ),
           listen(
             input,
             "blur",
             /*commitRename*/
-            ctx[84]
+            ctx[85]
           ),
           listen(input, "click", stop_propagation(
             /*click_handler_3*/
-            ctx[106]
+            ctx[108]
           ))
         ];
         mounted = true;
@@ -20182,13 +20182,13 @@ function create_if_block_39(ctx) {
       if (detaching) {
         detach(input);
       }
-      ctx[170](null);
+      ctx[178](null);
       mounted = false;
       run_all(dispose);
     }
   };
 }
-function create_if_block_34(ctx) {
+function create_if_block_37(ctx) {
   let div;
   let each_blocks = [];
   let each_1_lookup = new Map_1();
@@ -20196,33 +20196,33 @@ function create_if_block_34(ctx) {
   let dispose;
   let each_value_5 = ensure_array_like(
     /*item*/
-    ctx[274].items
+    ctx[285].items
   );
   const get_key = (ctx2) => (
     /*child*/
-    ctx2[271].id
+    ctx2[282].id
   );
   for (let i = 0; i < each_value_5.length; i += 1) {
     let child_ctx = get_each_context_5(ctx, each_value_5, i);
     let key = get_key(child_ctx);
     each_1_lookup.set(key, each_blocks[i] = create_each_block_5(key, child_ctx));
   }
-  function dragover_handler_12(...args) {
+  function dragover_handler_14(...args) {
     return (
-      /*dragover_handler_12*/
-      ctx[189](
+      /*dragover_handler_14*/
+      ctx[197](
         /*item*/
-        ctx[274],
+        ctx[285],
         ...args
       )
     );
   }
-  function drop_handler_11(...args) {
+  function drop_handler_13(...args) {
     return (
-      /*drop_handler_11*/
-      ctx[190](
+      /*drop_handler_13*/
+      ctx[198](
         /*item*/
-        ctx[274],
+        ctx[285],
         ...args
       )
     );
@@ -20244,8 +20244,8 @@ function create_if_block_34(ctx) {
       }
       if (!mounted) {
         dispose = [
-          listen(div, "dragover", dragover_handler_12),
-          listen(div, "drop", prevent_default(drop_handler_11))
+          listen(div, "dragover", dragover_handler_14),
+          listen(div, "drop", prevent_default(drop_handler_13))
         ];
         mounted = true;
       }
@@ -20253,12 +20253,12 @@ function create_if_block_34(ctx) {
     p(new_ctx, dirty) {
       ctx = new_ctx;
       if (dirty[0] & /*filteredItems, flatCategories, focusedIndex, isFocusedListMode, focusedListSet, plugin, taskCounts, editingItemId*/
-      1107335305 | dirty[1] & /*draggedListId, dragOverListId, dragListPosition, handleCategoryClick, editingName, renameInputEl, toggleFocusedList*/
+      1107315785 | dirty[1] & /*draggedListId, dragOverListId, dragListPosition, handleCategoryClick, editingName, renameInputEl, toggleFocusedList*/
       67174431 | dirty[2] & /*setHoveredTarget, clearHoveredTarget, handleListDragStart, handleListDragEnd, handleListDragOver, handleListDragLeave, handleListDrop, showItemContextMenu, commitRename*/
-      15732892) {
+      31461532) {
         each_value_5 = ensure_array_like(
           /*item*/
-          ctx[274].items
+          ctx[285].items
         );
         each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx, each_value_5, each_1_lookup, div, destroy_block, create_each_block_5, null, get_each_context_5);
       }
@@ -20275,7 +20275,7 @@ function create_if_block_34(ctx) {
     }
   };
 }
-function create_if_block_38(ctx) {
+function create_if_block_41(ctx) {
   let input;
   let input_checked_value;
   let mounted;
@@ -20283,9 +20283,9 @@ function create_if_block_38(ctx) {
   function click_handler_19() {
     return (
       /*click_handler_19*/
-      ctx[178](
+      ctx[186](
         /*child*/
-        ctx[271]
+        ctx[282]
       )
     );
   }
@@ -20297,7 +20297,7 @@ function create_if_block_38(ctx) {
       input.checked = input_checked_value = /*focusedListSet*/
       ctx[25].has(
         /*child*/
-        ctx[271].filepath
+        ctx[282].filepath
       );
       attr(input, "tabindex", "-1");
     },
@@ -20311,10 +20311,10 @@ function create_if_block_38(ctx) {
     p(new_ctx, dirty) {
       ctx = new_ctx;
       if (dirty[0] & /*focusedListSet, filteredItems*/
-      33558528 && input_checked_value !== (input_checked_value = /*focusedListSet*/
+      33556480 && input_checked_value !== (input_checked_value = /*focusedListSet*/
       ctx[25].has(
         /*child*/
-        ctx[271].filepath
+        ctx[282].filepath
       ))) {
         input.checked = input_checked_value;
       }
@@ -20328,11 +20328,11 @@ function create_if_block_38(ctx) {
     }
   };
 }
-function create_else_block_9(ctx) {
+function create_else_block_8(ctx) {
   let span;
   let t_1_value = (
     /*child*/
-    ctx[271].name + ""
+    ctx[282].name + ""
   );
   let t_1;
   return {
@@ -20347,8 +20347,8 @@ function create_else_block_9(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*filteredItems*/
-      4096 && t_1_value !== (t_1_value = /*child*/
-      ctx2[271].name + ""))
+      2048 && t_1_value !== (t_1_value = /*child*/
+      ctx2[282].name + ""))
         set_data(t_1, t_1_value);
     },
     d(detaching) {
@@ -20358,7 +20358,7 @@ function create_else_block_9(ctx) {
     }
   };
 }
-function create_if_block_37(ctx) {
+function create_if_block_40(ctx) {
   let input;
   let mounted;
   let dispose;
@@ -20375,24 +20375,24 @@ function create_if_block_37(ctx) {
         /*editingName*/
         ctx[31]
       );
-      ctx[180](input);
+      ctx[188](input);
       if (!mounted) {
         dispose = [
           listen(
             input,
             "input",
             /*input_input_handler_5*/
-            ctx[179]
+            ctx[187]
           ),
           listen(
             input,
             "blur",
             /*commitRename*/
-            ctx[84]
+            ctx[85]
           ),
           listen(input, "click", stop_propagation(
             /*click_handler_4*/
-            ctx[105]
+            ctx[107]
           ))
         ];
         mounted = true;
@@ -20413,19 +20413,19 @@ function create_if_block_37(ctx) {
       if (detaching) {
         detach(input);
       }
-      ctx[180](null);
+      ctx[188](null);
       mounted = false;
       run_all(dispose);
     }
   };
 }
-function create_if_block_36(ctx) {
+function create_if_block_39(ctx) {
   let span;
   let t_1_value = (
     /*taskCounts*/
-    ctx[15][
+    ctx[14][
       /*child*/
-      ctx[271].filepath
+      ctx[282].filepath
     ] + ""
   );
   let t_1;
@@ -20441,10 +20441,10 @@ function create_if_block_36(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*taskCounts, filteredItems*/
-      36864 && t_1_value !== (t_1_value = /*taskCounts*/
-      ctx2[15][
+      18432 && t_1_value !== (t_1_value = /*taskCounts*/
+      ctx2[14][
         /*child*/
-        ctx2[271].filepath
+        ctx2[282].filepath
       ] + ""))
         set_data(t_1, t_1_value);
     },
@@ -20455,7 +20455,7 @@ function create_if_block_36(ctx) {
     }
   };
 }
-function create_if_block_35(ctx) {
+function create_if_block_38(ctx) {
   let span;
   let span_title_value;
   return {
@@ -20493,107 +20493,107 @@ function create_each_block_5(key_1, ctx) {
   let dispose;
   let if_block0 = (
     /*isFocusedListMode*/
-    ctx[3] && create_if_block_38(ctx)
+    ctx[3] && create_if_block_41(ctx)
   );
-  function select_block_type_16(ctx2, dirty) {
+  function select_block_type_18(ctx2, dirty) {
     if (
       /*editingItemId*/
       ctx2[30] === /*child*/
-      ctx2[271].id || /*child*/
-      ctx2[271].filepath && /*editingItemId*/
+      ctx2[282].id || /*child*/
+      ctx2[282].filepath && /*editingItemId*/
       ctx2[30] === /*child*/
-      ctx2[271].filepath
+      ctx2[282].filepath
     )
-      return create_if_block_37;
-    return create_else_block_9;
+      return create_if_block_40;
+    return create_else_block_8;
   }
-  let current_block_type = select_block_type_16(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
+  let current_block_type = select_block_type_18(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block1 = current_block_type(ctx);
   let if_block2 = (
     /*taskCounts*/
-    ((_a = ctx[15][
+    ((_a = ctx[14][
       /*child*/
-      ctx[271].filepath
-    ]) != null ? _a : 0) > 0 && create_if_block_36(ctx)
+      ctx[282].filepath
+    ]) != null ? _a : 0) > 0 && create_if_block_39(ctx)
   );
   let if_block3 = !/*isFocusedListMode*/
   ctx[3] && /*plugin*/
   ((_c = (_b = ctx[0]) == null ? void 0 : _b.settings) == null ? void 0 : _c.defaultQuickListFocusFilepath) === /*child*/
-  ctx[271].filepath && create_if_block_35(ctx);
+  ctx[282].filepath && create_if_block_38(ctx);
   function mouseenter_handler_5() {
     return (
       /*mouseenter_handler_5*/
-      ctx[181](
+      ctx[189](
         /*child*/
-        ctx[271]
+        ctx[282]
       )
     );
   }
   function mouseleave_handler_4() {
     return (
       /*mouseleave_handler_4*/
-      ctx[182](
+      ctx[190](
         /*child*/
-        ctx[271]
+        ctx[282]
       )
     );
   }
   function dragstart_handler_6(...args) {
     return (
       /*dragstart_handler_6*/
-      ctx[183](
+      ctx[191](
         /*child*/
-        ctx[271],
+        ctx[282],
         ...args
       )
     );
   }
-  function dragover_handler_11(...args) {
+  function dragover_handler_13(...args) {
     return (
-      /*dragover_handler_11*/
-      ctx[184](
+      /*dragover_handler_13*/
+      ctx[192](
         /*child*/
-        ctx[271],
+        ctx[282],
         /*item*/
-        ctx[274],
+        ctx[285],
         ...args
       )
     );
   }
-  function dragleave_handler_6(...args) {
+  function dragleave_handler_8(...args) {
     return (
-      /*dragleave_handler_6*/
-      ctx[185](
+      /*dragleave_handler_8*/
+      ctx[193](
         /*child*/
-        ctx[271],
+        ctx[282],
         ...args
       )
     );
   }
-  function drop_handler_10() {
+  function drop_handler_12() {
     return (
-      /*drop_handler_10*/
-      ctx[186](
+      /*drop_handler_12*/
+      ctx[194](
         /*child*/
-        ctx[271]
+        ctx[282]
       )
     );
   }
   function click_handler_20() {
     return (
       /*click_handler_20*/
-      ctx[187](
+      ctx[195](
         /*child*/
-        ctx[271]
+        ctx[282]
       )
     );
   }
   function contextmenu_handler_5(...args) {
     return (
       /*contextmenu_handler_5*/
-      ctx[188](
+      ctx[196](
         /*child*/
-        ctx[271],
+        ctx[282],
         ...args
       )
     );
@@ -20633,9 +20633,9 @@ function create_each_block_5(key_1, ctx) {
       attr(div0, "class", "quick-modal-item-meta-right");
       attr(div1, "class", "quick-modal-list-item is-nested");
       attr(div1, "data-filepath", div1_data_filepath_value = /*child*/
-      ctx[271].filepath);
+      ctx[282].filepath);
       attr(div1, "data-item-id", div1_data_item_id_value = /*child*/
-      ctx[271].id);
+      ctx[282].id);
       attr(div1, "role", "button");
       attr(div1, "tabindex", "0");
       attr(div1, "draggable", "true");
@@ -20643,11 +20643,11 @@ function create_each_block_5(key_1, ctx) {
         div1,
         "is-focused",
         /*flatCategories*/
-        ((_a2 = ctx[11][
+        ((_a2 = ctx[10][
           /*focusedIndex*/
-          ctx[7]
+          ctx[6]
         ]) == null ? void 0 : _a2.filepath) === /*child*/
-        ctx[271].filepath
+        ctx[282].filepath
       );
       toggle_class(
         div1,
@@ -20656,26 +20656,26 @@ function create_each_block_5(key_1, ctx) {
         ctx[3] && /*focusedListSet*/
         ctx[25].has(
           /*child*/
-          ctx[271].filepath
+          ctx[282].filepath
         )
       );
       toggle_class(div1, "is-default-focus", !/*isFocusedListMode*/
       ctx[3] && /*plugin*/
       ((_c2 = (_b2 = ctx[0]) == null ? void 0 : _b2.settings) == null ? void 0 : _c2.defaultQuickListFocusFilepath) === /*child*/
-      ctx[271].filepath);
+      ctx[282].filepath);
       toggle_class(
         div1,
         "is-dragging",
         /*draggedListId*/
         ctx[33] === /*child*/
-        ctx[271].id
+        ctx[282].id
       );
       toggle_class(
         div1,
         "drag-over-top",
         /*dragOverListId*/
         ctx[34] === /*child*/
-        ctx[271].id && /*dragListPosition*/
+        ctx[282].id && /*dragListPosition*/
         ctx[35] === "top"
       );
       toggle_class(
@@ -20683,7 +20683,7 @@ function create_each_block_5(key_1, ctx) {
         "drag-over-bottom",
         /*dragOverListId*/
         ctx[34] === /*child*/
-        ctx[271].id && /*dragListPosition*/
+        ctx[282].id && /*dragListPosition*/
         ctx[35] === "bottom"
       );
       this.first = div1;
@@ -20717,9 +20717,9 @@ function create_each_block_5(key_1, ctx) {
             /*handleListDragEnd*/
             ctx[65]
           ),
-          listen(div1, "dragover", dragover_handler_11),
-          listen(div1, "dragleave", dragleave_handler_6),
-          listen(div1, "drop", prevent_default(drop_handler_10)),
+          listen(div1, "dragover", dragover_handler_13),
+          listen(div1, "dragleave", dragleave_handler_8),
+          listen(div1, "drop", prevent_default(drop_handler_12)),
           listen(div1, "click", click_handler_20),
           listen(div1, "contextmenu", contextmenu_handler_5)
         ];
@@ -20736,7 +20736,7 @@ function create_each_block_5(key_1, ctx) {
         if (if_block0) {
           if_block0.p(ctx, dirty);
         } else {
-          if_block0 = create_if_block_38(ctx);
+          if_block0 = create_if_block_41(ctx);
           if_block0.c();
           if_block0.m(span, t0);
         }
@@ -20744,7 +20744,7 @@ function create_each_block_5(key_1, ctx) {
         if_block0.d(1);
         if_block0 = null;
       }
-      if (current_block_type === (current_block_type = select_block_type_16(ctx, dirty)) && if_block1) {
+      if (current_block_type === (current_block_type = select_block_type_18(ctx, dirty)) && if_block1) {
         if_block1.p(ctx, dirty);
       } else {
         if_block1.d(1);
@@ -20756,15 +20756,15 @@ function create_each_block_5(key_1, ctx) {
       }
       if (
         /*taskCounts*/
-        ((_a2 = ctx[15][
+        ((_a2 = ctx[14][
           /*child*/
-          ctx[271].filepath
+          ctx[282].filepath
         ]) != null ? _a2 : 0) > 0
       ) {
         if (if_block2) {
           if_block2.p(ctx, dirty);
         } else {
-          if_block2 = create_if_block_36(ctx);
+          if_block2 = create_if_block_39(ctx);
           if_block2.c();
           if_block2.m(div0, t3);
         }
@@ -20775,10 +20775,10 @@ function create_each_block_5(key_1, ctx) {
       if (!/*isFocusedListMode*/
       ctx[3] && /*plugin*/
       ((_c2 = (_b2 = ctx[0]) == null ? void 0 : _b2.settings) == null ? void 0 : _c2.defaultQuickListFocusFilepath) === /*child*/
-      ctx[271].filepath) {
+      ctx[282].filepath) {
         if (if_block3) {
         } else {
-          if_block3 = create_if_block_35(ctx);
+          if_block3 = create_if_block_38(ctx);
           if_block3.c();
           if_block3.m(div0, null);
         }
@@ -20787,30 +20787,30 @@ function create_each_block_5(key_1, ctx) {
         if_block3 = null;
       }
       if (dirty[0] & /*filteredItems*/
-      4096 && div1_data_filepath_value !== (div1_data_filepath_value = /*child*/
-      ctx[271].filepath)) {
+      2048 && div1_data_filepath_value !== (div1_data_filepath_value = /*child*/
+      ctx[282].filepath)) {
         attr(div1, "data-filepath", div1_data_filepath_value);
       }
       if (dirty[0] & /*filteredItems*/
-      4096 && div1_data_item_id_value !== (div1_data_item_id_value = /*child*/
-      ctx[271].id)) {
+      2048 && div1_data_item_id_value !== (div1_data_item_id_value = /*child*/
+      ctx[282].id)) {
         attr(div1, "data-item-id", div1_data_item_id_value);
       }
       if (dirty[0] & /*flatCategories, focusedIndex, filteredItems*/
-      6272) {
+      3136) {
         toggle_class(
           div1,
           "is-focused",
           /*flatCategories*/
-          ((_d = ctx[11][
+          ((_d = ctx[10][
             /*focusedIndex*/
-            ctx[7]
+            ctx[6]
           ]) == null ? void 0 : _d.filepath) === /*child*/
-          ctx[271].filepath
+          ctx[282].filepath
         );
       }
       if (dirty[0] & /*isFocusedListMode, focusedListSet, filteredItems*/
-      33558536) {
+      33556488) {
         toggle_class(
           div1,
           "is-focused-selected",
@@ -20818,49 +20818,49 @@ function create_each_block_5(key_1, ctx) {
           ctx[3] && /*focusedListSet*/
           ctx[25].has(
             /*child*/
-            ctx[271].filepath
+            ctx[282].filepath
           )
         );
       }
       if (dirty[0] & /*isFocusedListMode, plugin, filteredItems*/
-      4105) {
+      2057) {
         toggle_class(div1, "is-default-focus", !/*isFocusedListMode*/
         ctx[3] && /*plugin*/
         ((_f = (_e = ctx[0]) == null ? void 0 : _e.settings) == null ? void 0 : _f.defaultQuickListFocusFilepath) === /*child*/
-        ctx[271].filepath);
+        ctx[282].filepath);
       }
       if (dirty[0] & /*filteredItems*/
-      4096 | dirty[1] & /*draggedListId*/
+      2048 | dirty[1] & /*draggedListId*/
       4) {
         toggle_class(
           div1,
           "is-dragging",
           /*draggedListId*/
           ctx[33] === /*child*/
-          ctx[271].id
+          ctx[282].id
         );
       }
       if (dirty[0] & /*filteredItems*/
-      4096 | dirty[1] & /*dragOverListId, dragListPosition*/
+      2048 | dirty[1] & /*dragOverListId, dragListPosition*/
       24) {
         toggle_class(
           div1,
           "drag-over-top",
           /*dragOverListId*/
           ctx[34] === /*child*/
-          ctx[271].id && /*dragListPosition*/
+          ctx[282].id && /*dragListPosition*/
           ctx[35] === "top"
         );
       }
       if (dirty[0] & /*filteredItems*/
-      4096 | dirty[1] & /*dragOverListId, dragListPosition*/
+      2048 | dirty[1] & /*dragOverListId, dragListPosition*/
       24) {
         toggle_class(
           div1,
           "drag-over-bottom",
           /*dragOverListId*/
           ctx[34] === /*child*/
-          ctx[271].id && /*dragListPosition*/
+          ctx[282].id && /*dragListPosition*/
           ctx[35] === "bottom"
         );
       }
@@ -20884,15 +20884,15 @@ function create_each_block_5(key_1, ctx) {
 function create_each_block_4(key_1, ctx) {
   let first;
   let if_block_anchor;
-  function select_block_type_14(ctx2, dirty) {
+  function select_block_type_16(ctx2, dirty) {
     if (
       /*item*/
-      ctx2[274].type === "group"
+      ctx2[285].type === "group"
     )
-      return create_if_block_33;
-    return create_else_block_11;
+      return create_if_block_36;
+    return create_else_block_10;
   }
-  let current_block_type = select_block_type_14(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
+  let current_block_type = select_block_type_16(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block = current_block_type(ctx);
   return {
     key: key_1,
@@ -20910,7 +20910,7 @@ function create_each_block_4(key_1, ctx) {
     },
     p(new_ctx, dirty) {
       ctx = new_ctx;
-      if (current_block_type === (current_block_type = select_block_type_14(ctx, dirty)) && if_block) {
+      if (current_block_type === (current_block_type = select_block_type_16(ctx, dirty)) && if_block) {
         if_block.p(ctx, dirty);
       } else {
         if_block.d(1);
@@ -20930,7 +20930,7 @@ function create_each_block_4(key_1, ctx) {
     }
   };
 }
-function create_if_block_23(ctx) {
+function create_if_block_26(ctx) {
   let div;
   let div_class_value;
   function select_block_type_6(ctx2, dirty) {
@@ -20938,42 +20938,42 @@ function create_if_block_23(ctx) {
       /*activeEdgeDirection*/
       ctx2[43] === "left"
     )
-      return create_if_block_24;
+      return create_if_block_27;
     if (
       /*activeEdgeDirection*/
       ctx2[43] === "right"
     )
-      return create_if_block_25;
+      return create_if_block_28;
     if (
       /*activeEdgeDirection*/
       ctx2[43] === "up"
     )
-      return create_if_block_26;
+      return create_if_block_29;
     if (
       /*activeEdgeDirection*/
       ctx2[43] === "down"
     )
-      return create_if_block_27;
+      return create_if_block_30;
     if (
       /*activeEdgeDirection*/
       ctx2[43] === "up-left"
     )
-      return create_if_block_28;
+      return create_if_block_31;
     if (
       /*activeEdgeDirection*/
       ctx2[43] === "up-right"
     )
-      return create_if_block_29;
+      return create_if_block_322;
     if (
       /*activeEdgeDirection*/
       ctx2[43] === "down-left"
     )
-      return create_if_block_30;
+      return create_if_block_33;
     if (
       /*activeEdgeDirection*/
       ctx2[43] === "down-right"
     )
-      return create_if_block_31;
+      return create_if_block_34;
   }
   let current_block_type = select_block_type_6(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block = current_block_type && current_block_type(ctx);
@@ -21016,7 +21016,7 @@ function create_if_block_23(ctx) {
     }
   };
 }
-function create_if_block_31(ctx) {
+function create_if_block_34(ctx) {
   let t_1;
   return {
     c() {
@@ -21032,7 +21032,7 @@ function create_if_block_31(ctx) {
     }
   };
 }
-function create_if_block_30(ctx) {
+function create_if_block_33(ctx) {
   let t_1;
   return {
     c() {
@@ -21048,7 +21048,7 @@ function create_if_block_30(ctx) {
     }
   };
 }
-function create_if_block_29(ctx) {
+function create_if_block_322(ctx) {
   let t_1;
   return {
     c() {
@@ -21064,7 +21064,7 @@ function create_if_block_29(ctx) {
     }
   };
 }
-function create_if_block_28(ctx) {
+function create_if_block_31(ctx) {
   let t_1;
   return {
     c() {
@@ -21080,7 +21080,7 @@ function create_if_block_28(ctx) {
     }
   };
 }
-function create_if_block_27(ctx) {
+function create_if_block_30(ctx) {
   let t_1;
   return {
     c() {
@@ -21096,7 +21096,7 @@ function create_if_block_27(ctx) {
     }
   };
 }
-function create_if_block_26(ctx) {
+function create_if_block_29(ctx) {
   let t_1;
   return {
     c() {
@@ -21112,7 +21112,7 @@ function create_if_block_26(ctx) {
     }
   };
 }
-function create_if_block_25(ctx) {
+function create_if_block_28(ctx) {
   let t_1;
   return {
     c() {
@@ -21128,7 +21128,7 @@ function create_if_block_25(ctx) {
     }
   };
 }
-function create_if_block_24(ctx) {
+function create_if_block_27(ctx) {
   let t_1;
   return {
     c() {
@@ -21144,7 +21144,7 @@ function create_if_block_24(ctx) {
     }
   };
 }
-function create_else_block_23(ctx) {
+function create_else_block_17(ctx) {
   let each_blocks = [];
   let each_1_lookup = new Map_1();
   let t_1;
@@ -21155,7 +21155,7 @@ function create_else_block_23(ctx) {
   );
   const get_key = (ctx2) => (
     /*colIdx*/
-    ctx2[263]
+    ctx2[274]
   );
   for (let i = 0; i < each_value.length; i += 1) {
     let child_ctx = get_each_context4(ctx, each_value, i);
@@ -21164,8 +21164,7 @@ function create_else_block_23(ctx) {
   }
   let if_block = (
     /*layoutMode*/
-    ctx[8] === "table" && /*isDraggingGroup*/
-    ctx[42] && create_if_block_73(ctx)
+    ctx[7] === "table" && create_if_block_68(ctx)
   );
   return {
     c() {
@@ -21190,9 +21189,9 @@ function create_else_block_23(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*layoutMode, flatCategories, focusedIndex, isFocusedListMode, focusedListSet, plugin, taskCounts, editingItemId*/
-      1107331465 | dirty[1] & /*layoutColumns, dragOverListId, dragListPosition, draggedListId, isDraggingGroup, rootCategories, handleCategoryClick, editingName, renameInputEl, toggleFocusedList, toggleGroup*/
-      335621151 | dirty[2] & /*handleColumnDragOver, handleColumnDrop, moveGroupToColumnBottom, handleListDragEnd, handleRootCardDragOver, handleRootCardDragLeave, handleRootCardDrop, setHoveredTarget, clearHoveredTarget, handleListDragStart, handleListDragOver, handleListDragLeave, handleListDrop, showItemContextMenu, commitRename, handleRootDragStart, handleGroupCardDragOver, handleGroupCardDragLeave, handleGroupCardDrop, moveGroupToNewColumnAt*/
-      15974398) {
+      1107313865 | dirty[1] & /*layoutColumns, dragOverListId, dragListPosition, draggedListId, isDraggingGroup, rootCategories, handleCategoryClick, editingName, renameInputEl, toggleFocusedList, toggleGroup*/
+      335621151 | dirty[2] & /*handleColumnDragOver, handleColumnDrop, moveGroupToColumnBottom, handleListDragEnd, createGroupFromListAtColumn, handleRootCardDragOver, handleRootCardDragLeave, handleRootCardDrop, setHoveredTarget, clearHoveredTarget, handleListDragStart, handleListDragOver, handleListDragLeave, handleListDrop, showItemContextMenu, commitRename, handleRootDragStart, handleGroupCardDragOver, handleGroupCardDragLeave, handleGroupCardDrop, moveGroupToNewColumnAt*/
+      31965182) {
         each_value = ensure_array_like(
           /*layoutColumns*/
           ctx2[41]
@@ -21201,13 +21200,12 @@ function create_else_block_23(ctx) {
       }
       if (
         /*layoutMode*/
-        ctx2[8] === "table" && /*isDraggingGroup*/
-        ctx2[42]
+        ctx2[7] === "table"
       ) {
         if (if_block) {
           if_block.p(ctx2, dirty);
         } else {
-          if_block = create_if_block_73(ctx2);
+          if_block = create_if_block_68(ctx2);
           if_block.c();
           if_block.m(if_block_anchor.parentNode, if_block_anchor);
         }
@@ -21229,7 +21227,7 @@ function create_else_block_23(ctx) {
     }
   };
 }
-function create_if_block_65(ctx) {
+function create_if_block_510(ctx) {
   let div;
   return {
     c() {
@@ -21248,16 +21246,16 @@ function create_if_block_65(ctx) {
     }
   };
 }
-function create_if_block_222(ctx) {
+function create_if_block_25(ctx) {
   let div1;
   let mounted;
   let dispose;
   function dragover_handler(...args) {
     return (
       /*dragover_handler*/
-      ctx[117](
+      ctx[119](
         /*colIdx*/
-        ctx[263],
+        ctx[274],
         ...args
       )
     );
@@ -21265,18 +21263,18 @@ function create_if_block_222(ctx) {
   function dragleave_handler() {
     return (
       /*dragleave_handler*/
-      ctx[118](
+      ctx[120](
         /*colIdx*/
-        ctx[263]
+        ctx[274]
       )
     );
   }
   function drop_handler(...args) {
     return (
       /*drop_handler*/
-      ctx[119](
+      ctx[121](
         /*colIdx*/
-        ctx[263],
+        ctx[274],
         ...args
       )
     );
@@ -21291,7 +21289,7 @@ function create_if_block_222(ctx) {
         "drag-over",
         /*dragOverListId*/
         ctx[34] === `col_insert_${/*colIdx*/
-        ctx[263]}`
+        ctx[274]}`
       );
     },
     m(target, anchor) {
@@ -21314,7 +21312,7 @@ function create_if_block_222(ctx) {
           "drag-over",
           /*dragOverListId*/
           ctx[34] === `col_insert_${/*colIdx*/
-          ctx[263]}`
+          ctx[274]}`
         );
       }
     },
@@ -21327,14 +21325,14 @@ function create_if_block_222(ctx) {
     }
   };
 }
-function create_if_block_142(ctx) {
+function create_if_block_17(ctx) {
   let div2;
   let div1;
   let div0;
   let span0;
   let t0_value = (
     /*group*/
-    ctx[270].isExpanded ? "\u25BC" : "\u25B6"
+    ctx[281].isExpanded ? "\u25BC" : "\u25B6"
   );
   let t0;
   let t1;
@@ -21342,9 +21340,9 @@ function create_if_block_142(ctx) {
   let span1;
   let t3_value = (
     /*group*/
-    (ctx[270].items ? (
+    (ctx[281].items ? (
       /*group*/
-      ctx[270].items.length
+      ctx[281].items.length
     ) : 0) + ""
   );
   let t3;
@@ -21357,9 +21355,9 @@ function create_if_block_142(ctx) {
   function click_handler_12() {
     return (
       /*click_handler_12*/
-      ctx[131](
+      ctx[133](
         /*group*/
-        ctx[270]
+        ctx[281]
       )
     );
   }
@@ -21367,37 +21365,37 @@ function create_if_block_142(ctx) {
     if (
       /*editingItemId*/
       ctx2[30] === /*group*/
-      ctx2[270].id
+      ctx2[281].id
     )
-      return create_if_block_21;
-    return create_else_block_6;
+      return create_if_block_24;
+    return create_else_block_5;
   }
   let current_block_type = select_block_type_10(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block0 = current_block_type(ctx);
   function mouseenter_handler_2() {
     return (
       /*mouseenter_handler_2*/
-      ctx[134](
+      ctx[136](
         /*group*/
-        ctx[270]
+        ctx[281]
       )
     );
   }
   function mouseleave_handler_1() {
     return (
       /*mouseleave_handler_1*/
-      ctx[135](
+      ctx[137](
         /*group*/
-        ctx[270]
+        ctx[281]
       )
     );
   }
   function dragstart_handler_3(...args) {
     return (
       /*dragstart_handler_3*/
-      ctx[136](
+      ctx[138](
         /*group*/
-        ctx[270],
+        ctx[281],
         ...args
       )
     );
@@ -21405,9 +21403,9 @@ function create_if_block_142(ctx) {
   function dragover_handler_2(...args) {
     return (
       /*dragover_handler_2*/
-      ctx[137](
+      ctx[139](
         /*group*/
-        ctx[270],
+        ctx[281],
         ...args
       )
     );
@@ -21415,9 +21413,9 @@ function create_if_block_142(ctx) {
   function drop_handler_2(...args) {
     return (
       /*drop_handler_2*/
-      ctx[138](
+      ctx[140](
         /*group*/
-        ctx[270],
+        ctx[281],
         ...args
       )
     );
@@ -21425,23 +21423,23 @@ function create_if_block_142(ctx) {
   function contextmenu_handler_2(...args) {
     return (
       /*contextmenu_handler_2*/
-      ctx[139](
+      ctx[141](
         /*group*/
-        ctx[270],
+        ctx[281],
         ...args
       )
     );
   }
   let if_block1 = (
     /*group*/
-    ctx[270].isExpanded && create_if_block_15(ctx)
+    ctx[281].isExpanded && create_if_block_18(ctx)
   );
   function dragover_handler_5(...args) {
     return (
       /*dragover_handler_5*/
-      ctx[153](
+      ctx[155](
         /*group*/
-        ctx[270],
+        ctx[281],
         ...args
       )
     );
@@ -21449,9 +21447,9 @@ function create_if_block_142(ctx) {
   function dragleave_handler_3(...args) {
     return (
       /*dragleave_handler_3*/
-      ctx[154](
+      ctx[156](
         /*group*/
-        ctx[270],
+        ctx[281],
         ...args
       )
     );
@@ -21459,9 +21457,9 @@ function create_if_block_142(ctx) {
   function drop_handler_5(...args) {
     return (
       /*drop_handler_5*/
-      ctx[155](
+      ctx[157](
         /*group*/
-        ctx[270],
+        ctx[281],
         ...args
       )
     );
@@ -21489,28 +21487,28 @@ function create_if_block_142(ctx) {
       attr(span1, "draggable", "true");
       attr(div1, "class", "quick-grid-card-header");
       attr(div1, "data-group-id", div1_data_group_id_value = /*group*/
-      ctx[270].id);
+      ctx[281].id);
       attr(div1, "role", "button");
       attr(div1, "tabindex", "0");
       attr(div1, "draggable", "true");
       attr(div2, "class", "quick-grid-card");
       attr(div2, "data-card-id", div2_data_card_id_value = /*group*/
-      ctx[270].id);
+      ctx[281].id);
       attr(div2, "data-group-id", div2_data_group_id_value = /*group*/
-      ctx[270].id);
+      ctx[281].id);
       toggle_class(
         div2,
         "is-dragging",
         /*draggedListId*/
         ctx[33] === /*group*/
-        ctx[270].id
+        ctx[281].id
       );
       toggle_class(
         div2,
         "drag-over-top",
         /*dragOverListId*/
         ctx[34] === /*group*/
-        ctx[270].id && /*dragListPosition*/
+        ctx[281].id && /*dragListPosition*/
         ctx[35] === "top"
       );
       toggle_class(
@@ -21518,14 +21516,14 @@ function create_if_block_142(ctx) {
         "drag-over-bottom",
         /*dragOverListId*/
         ctx[34] === /*group*/
-        ctx[270].id && /*dragListPosition*/
+        ctx[281].id && /*dragListPosition*/
         ctx[35] === "bottom"
       );
       toggle_class(div2, "drag-over-inside", (!/*group*/
-      ctx[270].items || /*group*/
-      ctx[270].items.length === 0) && /*dragOverListId*/
+      ctx[281].items || /*group*/
+      ctx[281].items.length === 0) && /*dragOverListId*/
       ctx[34] === /*group*/
-      ctx[270].id && /*dragListPosition*/
+      ctx[281].id && /*dragListPosition*/
       ctx[35] === "inside");
     },
     m(target, anchor) {
@@ -21546,7 +21544,7 @@ function create_if_block_142(ctx) {
         dispose = [
           listen(span0, "dragstart", stop_propagation(prevent_default(
             /*dragstart_handler*/
-            ctx[104]
+            ctx[106]
           ))),
           listen(span0, "click", stop_propagation(click_handler_12)),
           listen(div1, "mouseenter", mouseenter_handler_2),
@@ -21572,7 +21570,7 @@ function create_if_block_142(ctx) {
       ctx = new_ctx;
       if (dirty[1] & /*layoutColumns*/
       1024 && t0_value !== (t0_value = /*group*/
-      ctx[270].isExpanded ? "\u25BC" : "\u25B6"))
+      ctx[281].isExpanded ? "\u25BC" : "\u25B6"))
         set_data(t0, t0_value);
       if (current_block_type === (current_block_type = select_block_type_10(ctx, dirty)) && if_block0) {
         if_block0.p(ctx, dirty);
@@ -21586,24 +21584,24 @@ function create_if_block_142(ctx) {
       }
       if (dirty[1] & /*layoutColumns*/
       1024 && t3_value !== (t3_value = /*group*/
-      (ctx[270].items ? (
+      (ctx[281].items ? (
         /*group*/
-        ctx[270].items.length
+        ctx[281].items.length
       ) : 0) + ""))
         set_data(t3, t3_value);
       if (dirty[1] & /*layoutColumns*/
       1024 && div1_data_group_id_value !== (div1_data_group_id_value = /*group*/
-      ctx[270].id)) {
+      ctx[281].id)) {
         attr(div1, "data-group-id", div1_data_group_id_value);
       }
       if (
         /*group*/
-        ctx[270].isExpanded
+        ctx[281].isExpanded
       ) {
         if (if_block1) {
           if_block1.p(ctx, dirty);
         } else {
-          if_block1 = create_if_block_15(ctx);
+          if_block1 = create_if_block_18(ctx);
           if_block1.c();
           if_block1.m(div2, null);
         }
@@ -21613,12 +21611,12 @@ function create_if_block_142(ctx) {
       }
       if (dirty[1] & /*layoutColumns*/
       1024 && div2_data_card_id_value !== (div2_data_card_id_value = /*group*/
-      ctx[270].id)) {
+      ctx[281].id)) {
         attr(div2, "data-card-id", div2_data_card_id_value);
       }
       if (dirty[1] & /*layoutColumns*/
       1024 && div2_data_group_id_value !== (div2_data_group_id_value = /*group*/
-      ctx[270].id)) {
+      ctx[281].id)) {
         attr(div2, "data-group-id", div2_data_group_id_value);
       }
       if (dirty[1] & /*draggedListId, layoutColumns*/
@@ -21628,7 +21626,7 @@ function create_if_block_142(ctx) {
           "is-dragging",
           /*draggedListId*/
           ctx[33] === /*group*/
-          ctx[270].id
+          ctx[281].id
         );
       }
       if (dirty[1] & /*dragOverListId, layoutColumns, dragListPosition*/
@@ -21638,7 +21636,7 @@ function create_if_block_142(ctx) {
           "drag-over-top",
           /*dragOverListId*/
           ctx[34] === /*group*/
-          ctx[270].id && /*dragListPosition*/
+          ctx[281].id && /*dragListPosition*/
           ctx[35] === "top"
         );
       }
@@ -21649,17 +21647,17 @@ function create_if_block_142(ctx) {
           "drag-over-bottom",
           /*dragOverListId*/
           ctx[34] === /*group*/
-          ctx[270].id && /*dragListPosition*/
+          ctx[281].id && /*dragListPosition*/
           ctx[35] === "bottom"
         );
       }
       if (dirty[1] & /*layoutColumns, dragOverListId, dragListPosition*/
       1048) {
         toggle_class(div2, "drag-over-inside", (!/*group*/
-        ctx[270].items || /*group*/
-        ctx[270].items.length === 0) && /*dragOverListId*/
+        ctx[281].items || /*group*/
+        ctx[281].items.length === 0) && /*dragOverListId*/
         ctx[34] === /*group*/
-        ctx[270].id && /*dragListPosition*/
+        ctx[281].id && /*dragListPosition*/
         ctx[35] === "inside");
       }
     },
@@ -21675,7 +21673,7 @@ function create_if_block_142(ctx) {
     }
   };
 }
-function create_if_block_92(ctx) {
+function create_if_block_123(ctx) {
   let div3;
   let div1;
   let div0;
@@ -21709,7 +21707,7 @@ function create_if_block_92(ctx) {
   );
   const get_key = (ctx2) => (
     /*cat*/
-    ctx2[267].id
+    ctx2[278].id
   );
   for (let i = 0; i < each_value_2.length; i += 1) {
     let child_ctx = get_each_context_2(ctx, each_value_2, i);
@@ -21746,22 +21744,22 @@ function create_if_block_92(ctx) {
       attr(svg, "stroke-linejoin", "round");
       attr(span0, "class", "quick-grid-card-icon");
       attr(span0, "draggable", span0_draggable_value = /*layoutMode*/
-      ctx[8] === "table");
+      ctx[7] === "table");
       attr(span1, "class", "quick-grid-card-title");
       attr(span1, "draggable", span1_draggable_value = /*layoutMode*/
-      ctx[8] === "table");
+      ctx[7] === "table");
       attr(div0, "class", "quick-grid-card-title-wrap");
       attr(div0, "draggable", div0_draggable_value = /*layoutMode*/
-      ctx[8] === "table");
+      ctx[7] === "table");
       attr(span2, "class", "quick-grid-card-count");
       attr(span2, "draggable", span2_draggable_value = /*layoutMode*/
-      ctx[8] === "table");
+      ctx[7] === "table");
       attr(div1, "class", "quick-grid-card-header is-root-header");
       attr(div1, "data-group-id", "__root__");
       attr(div1, "role", "button");
       attr(div1, "tabindex", "0");
       attr(div1, "draggable", div1_draggable_value = /*layoutMode*/
-      ctx[8] === "table");
+      ctx[7] === "table");
       attr(div2, "class", "quick-grid-card-items");
       toggle_class(
         div2,
@@ -21869,18 +21867,18 @@ function create_if_block_92(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*layoutMode*/
-      256 && span0_draggable_value !== (span0_draggable_value = /*layoutMode*/
-      ctx2[8] === "table")) {
+      128 && span0_draggable_value !== (span0_draggable_value = /*layoutMode*/
+      ctx2[7] === "table")) {
         attr(span0, "draggable", span0_draggable_value);
       }
       if (dirty[0] & /*layoutMode*/
-      256 && span1_draggable_value !== (span1_draggable_value = /*layoutMode*/
-      ctx2[8] === "table")) {
+      128 && span1_draggable_value !== (span1_draggable_value = /*layoutMode*/
+      ctx2[7] === "table")) {
         attr(span1, "draggable", span1_draggable_value);
       }
       if (dirty[0] & /*layoutMode*/
-      256 && div0_draggable_value !== (div0_draggable_value = /*layoutMode*/
-      ctx2[8] === "table")) {
+      128 && div0_draggable_value !== (div0_draggable_value = /*layoutMode*/
+      ctx2[7] === "table")) {
         attr(div0, "draggable", div0_draggable_value);
       }
       if (dirty[1] & /*rootCategories*/
@@ -21888,19 +21886,19 @@ function create_if_block_92(ctx) {
       ctx2[44].length + ""))
         set_data(t3, t3_value);
       if (dirty[0] & /*layoutMode*/
-      256 && span2_draggable_value !== (span2_draggable_value = /*layoutMode*/
-      ctx2[8] === "table")) {
+      128 && span2_draggable_value !== (span2_draggable_value = /*layoutMode*/
+      ctx2[7] === "table")) {
         attr(span2, "draggable", span2_draggable_value);
       }
       if (dirty[0] & /*layoutMode*/
-      256 && div1_draggable_value !== (div1_draggable_value = /*layoutMode*/
-      ctx2[8] === "table")) {
+      128 && div1_draggable_value !== (div1_draggable_value = /*layoutMode*/
+      ctx2[7] === "table")) {
         attr(div1, "draggable", div1_draggable_value);
       }
       if (dirty[0] & /*flatCategories, focusedIndex, isFocusedListMode, focusedListSet, plugin, taskCounts, editingItemId*/
-      1107331209 | dirty[1] & /*rootCategories, draggedListId, dragOverListId, dragListPosition, handleCategoryClick, editingName, renameInputEl, toggleFocusedList*/
+      1107313737 | dirty[1] & /*rootCategories, draggedListId, dragOverListId, dragListPosition, handleCategoryClick, editingName, renameInputEl, toggleFocusedList*/
       67182623 | dirty[2] & /*setHoveredTarget, clearHoveredTarget, handleListDragStart, handleListDragEnd, handleListDragOver, handleListDragLeave, handleListDrop, showItemContextMenu, commitRename*/
-      15732892) {
+      31461532) {
         each_value_2 = ensure_array_like(
           /*rootCategories*/
           ctx2[44]
@@ -21959,11 +21957,11 @@ function create_if_block_92(ctx) {
     }
   };
 }
-function create_else_block_6(ctx) {
+function create_else_block_5(ctx) {
   let span;
   let t_1_value = (
     /*group*/
-    ctx[270].name + ""
+    ctx[281].name + ""
   );
   let t_1;
   return {
@@ -21980,7 +21978,7 @@ function create_else_block_6(ctx) {
     p(ctx2, dirty) {
       if (dirty[1] & /*layoutColumns*/
       1024 && t_1_value !== (t_1_value = /*group*/
-      ctx2[270].name + ""))
+      ctx2[281].name + ""))
         set_data(t_1, t_1_value);
     },
     d(detaching) {
@@ -21990,7 +21988,7 @@ function create_else_block_6(ctx) {
     }
   };
 }
-function create_if_block_21(ctx) {
+function create_if_block_24(ctx) {
   let input;
   let mounted;
   let dispose;
@@ -22008,28 +22006,28 @@ function create_if_block_21(ctx) {
         /*editingName*/
         ctx[31]
       );
-      ctx[133](input);
+      ctx[135](input);
       if (!mounted) {
         dispose = [
           listen(input, "dragstart", stop_propagation(
             /*dragstart_handler_1*/
-            ctx[102]
+            ctx[104]
           )),
           listen(
             input,
             "input",
             /*input_input_handler_2*/
-            ctx[132]
+            ctx[134]
           ),
           listen(
             input,
             "blur",
             /*commitRename*/
-            ctx[84]
+            ctx[85]
           ),
           listen(input, "click", stop_propagation(
             /*click_handler_1*/
-            ctx[103]
+            ctx[105]
           ))
         ];
         mounted = true;
@@ -22050,33 +22048,33 @@ function create_if_block_21(ctx) {
       if (detaching) {
         detach(input);
       }
-      ctx[133](null);
+      ctx[135](null);
       mounted = false;
       run_all(dispose);
     }
   };
 }
-function create_if_block_15(ctx) {
+function create_if_block_18(ctx) {
   let div;
   let mounted;
   let dispose;
   function select_block_type_11(ctx2, dirty) {
     if (
       /*group*/
-      ctx2[270].items && /*group*/
-      ctx2[270].items.length > 0
+      ctx2[281].items && /*group*/
+      ctx2[281].items.length > 0
     )
-      return create_if_block_16;
-    return create_else_block_5;
+      return create_if_block_19;
+    return create_else_block_4;
   }
   let current_block_type = select_block_type_11(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block = current_block_type(ctx);
   function dragover_handler_4(...args) {
     return (
       /*dragover_handler_4*/
-      ctx[151](
+      ctx[153](
         /*group*/
-        ctx[270],
+        ctx[281],
         ...args
       )
     );
@@ -22084,9 +22082,9 @@ function create_if_block_15(ctx) {
   function drop_handler_4(...args) {
     return (
       /*drop_handler_4*/
-      ctx[152](
+      ctx[154](
         /*group*/
-        ctx[270],
+        ctx[281],
         ...args
       )
     );
@@ -22097,13 +22095,13 @@ function create_if_block_15(ctx) {
       if_block.c();
       attr(div, "class", "quick-grid-card-items");
       toggle_class(div, "is-empty", !/*group*/
-      ctx[270].items || /*group*/
-      ctx[270].items.length === 0);
+      ctx[281].items || /*group*/
+      ctx[281].items.length === 0);
       toggle_class(div, "drag-over-inside", (!/*group*/
-      ctx[270].items || /*group*/
-      ctx[270].items.length === 0) && /*dragOverListId*/
+      ctx[281].items || /*group*/
+      ctx[281].items.length === 0) && /*dragOverListId*/
       ctx[34] === /*group*/
-      ctx[270].id && /*dragListPosition*/
+      ctx[281].id && /*dragListPosition*/
       ctx[35] === "inside");
     },
     m(target, anchor) {
@@ -22132,16 +22130,16 @@ function create_if_block_15(ctx) {
       if (dirty[1] & /*layoutColumns*/
       1024) {
         toggle_class(div, "is-empty", !/*group*/
-        ctx[270].items || /*group*/
-        ctx[270].items.length === 0);
+        ctx[281].items || /*group*/
+        ctx[281].items.length === 0);
       }
       if (dirty[1] & /*layoutColumns, dragOverListId, dragListPosition*/
       1048) {
         toggle_class(div, "drag-over-inside", (!/*group*/
-        ctx[270].items || /*group*/
-        ctx[270].items.length === 0) && /*dragOverListId*/
+        ctx[281].items || /*group*/
+        ctx[281].items.length === 0) && /*dragOverListId*/
         ctx[34] === /*group*/
-        ctx[270].id && /*dragListPosition*/
+        ctx[281].id && /*dragListPosition*/
         ctx[35] === "inside");
       }
     },
@@ -22155,7 +22153,7 @@ function create_if_block_15(ctx) {
     }
   };
 }
-function create_else_block_5(ctx) {
+function create_else_block_4(ctx) {
   let div;
   return {
     c() {
@@ -22174,17 +22172,17 @@ function create_else_block_5(ctx) {
     }
   };
 }
-function create_if_block_16(ctx) {
+function create_if_block_19(ctx) {
   let each_blocks = [];
   let each_1_lookup = new Map_1();
   let each_1_anchor;
   let each_value_3 = ensure_array_like(
     /*group*/
-    ctx[270].items
+    ctx[281].items
   );
   const get_key = (ctx2) => (
     /*child*/
-    ctx2[271].id
+    ctx2[282].id
   );
   for (let i = 0; i < each_value_3.length; i += 1) {
     let child_ctx = get_each_context_3(ctx, each_value_3, i);
@@ -22208,12 +22206,12 @@ function create_if_block_16(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*flatCategories, focusedIndex, isFocusedListMode, focusedListSet, plugin, taskCounts, editingItemId*/
-      1107331209 | dirty[1] & /*layoutColumns, draggedListId, dragOverListId, dragListPosition, handleCategoryClick, editingName, renameInputEl, toggleFocusedList*/
+      1107313737 | dirty[1] & /*layoutColumns, draggedListId, dragOverListId, dragListPosition, handleCategoryClick, editingName, renameInputEl, toggleFocusedList*/
       67175455 | dirty[2] & /*setHoveredTarget, clearHoveredTarget, handleListDragStart, handleListDragEnd, handleListDragOver, handleListDragLeave, handleListDrop, showItemContextMenu, commitRename*/
-      15732892) {
+      31461532) {
         each_value_3 = ensure_array_like(
           /*group*/
-          ctx2[270].items
+          ctx2[281].items
         );
         each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_3, each_1_lookup, each_1_anchor.parentNode, destroy_block, create_each_block_3, each_1_anchor, get_each_context_3);
       }
@@ -22228,7 +22226,7 @@ function create_if_block_16(ctx) {
     }
   };
 }
-function create_if_block_20(ctx) {
+function create_if_block_23(ctx) {
   let input;
   let input_checked_value;
   let mounted;
@@ -22236,9 +22234,9 @@ function create_if_block_20(ctx) {
   function click_handler_13() {
     return (
       /*click_handler_13*/
-      ctx[140](
+      ctx[142](
         /*child*/
-        ctx[271]
+        ctx[282]
       )
     );
   }
@@ -22250,7 +22248,7 @@ function create_if_block_20(ctx) {
       input.checked = input_checked_value = /*focusedListSet*/
       ctx[25].has(
         /*child*/
-        ctx[271].filepath
+        ctx[282].filepath
       );
       attr(input, "tabindex", "-1");
     },
@@ -22268,7 +22266,7 @@ function create_if_block_20(ctx) {
       1024 && input_checked_value !== (input_checked_value = /*focusedListSet*/
       ctx[25].has(
         /*child*/
-        ctx[271].filepath
+        ctx[282].filepath
       ))) {
         input.checked = input_checked_value;
       }
@@ -22282,11 +22280,11 @@ function create_if_block_20(ctx) {
     }
   };
 }
-function create_else_block_4(ctx) {
+function create_else_block_33(ctx) {
   let span;
   let t_1_value = (
     /*child*/
-    ctx[271].name + ""
+    ctx[282].name + ""
   );
   let t_1;
   let span_title_value;
@@ -22296,7 +22294,7 @@ function create_else_block_4(ctx) {
       t_1 = text(t_1_value);
       attr(span, "class", "quick-modal-list-name");
       attr(span, "title", span_title_value = /*child*/
-      ctx[271].name);
+      ctx[282].name);
     },
     m(target, anchor) {
       insert(target, span, anchor);
@@ -22305,11 +22303,11 @@ function create_else_block_4(ctx) {
     p(ctx2, dirty) {
       if (dirty[1] & /*layoutColumns*/
       1024 && t_1_value !== (t_1_value = /*child*/
-      ctx2[271].name + ""))
+      ctx2[282].name + ""))
         set_data(t_1, t_1_value);
       if (dirty[1] & /*layoutColumns*/
       1024 && span_title_value !== (span_title_value = /*child*/
-      ctx2[271].name)) {
+      ctx2[282].name)) {
         attr(span, "title", span_title_value);
       }
     },
@@ -22320,7 +22318,7 @@ function create_else_block_4(ctx) {
     }
   };
 }
-function create_if_block_19(ctx) {
+function create_if_block_222(ctx) {
   let input;
   let mounted;
   let dispose;
@@ -22337,24 +22335,24 @@ function create_if_block_19(ctx) {
         /*editingName*/
         ctx[31]
       );
-      ctx[142](input);
+      ctx[144](input);
       if (!mounted) {
         dispose = [
           listen(
             input,
             "input",
             /*input_input_handler_3*/
-            ctx[141]
+            ctx[143]
           ),
           listen(
             input,
             "blur",
             /*commitRename*/
-            ctx[84]
+            ctx[85]
           ),
           listen(input, "click", stop_propagation(
             /*click_handler_2*/
-            ctx[101]
+            ctx[103]
           ))
         ];
         mounted = true;
@@ -22375,19 +22373,19 @@ function create_if_block_19(ctx) {
       if (detaching) {
         detach(input);
       }
-      ctx[142](null);
+      ctx[144](null);
       mounted = false;
       run_all(dispose);
     }
   };
 }
-function create_if_block_18(ctx) {
+function create_if_block_21(ctx) {
   let span;
   let t_1_value = (
     /*taskCounts*/
-    ctx[15][
+    ctx[14][
       /*child*/
-      ctx[271].filepath
+      ctx[282].filepath
     ] + ""
   );
   let t_1;
@@ -22403,11 +22401,11 @@ function create_if_block_18(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*taskCounts*/
-      32768 | dirty[1] & /*layoutColumns*/
+      16384 | dirty[1] & /*layoutColumns*/
       1024 && t_1_value !== (t_1_value = /*taskCounts*/
-      ctx2[15][
+      ctx2[14][
         /*child*/
-        ctx2[271].filepath
+        ctx2[282].filepath
       ] + ""))
         set_data(t_1, t_1_value);
     },
@@ -22418,7 +22416,7 @@ function create_if_block_18(ctx) {
     }
   };
 }
-function create_if_block_17(ctx) {
+function create_if_block_20(ctx) {
   let span;
   let span_title_value;
   return {
@@ -22455,57 +22453,57 @@ function create_each_block_3(key_1, ctx) {
   let dispose;
   let if_block0 = (
     /*isFocusedListMode*/
-    ctx[3] && create_if_block_20(ctx)
+    ctx[3] && create_if_block_23(ctx)
   );
   function select_block_type_12(ctx2, dirty) {
     if (
       /*editingItemId*/
       ctx2[30] === /*child*/
-      ctx2[271].id || /*child*/
-      ctx2[271].filepath && /*editingItemId*/
+      ctx2[282].id || /*child*/
+      ctx2[282].filepath && /*editingItemId*/
       ctx2[30] === /*child*/
-      ctx2[271].filepath
+      ctx2[282].filepath
     )
-      return create_if_block_19;
-    return create_else_block_4;
+      return create_if_block_222;
+    return create_else_block_33;
   }
   let current_block_type = select_block_type_12(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block1 = current_block_type(ctx);
   let if_block2 = (
     /*taskCounts*/
-    ((_a = ctx[15][
+    ((_a = ctx[14][
       /*child*/
-      ctx[271].filepath
-    ]) != null ? _a : 0) > 0 && create_if_block_18(ctx)
+      ctx[282].filepath
+    ]) != null ? _a : 0) > 0 && create_if_block_21(ctx)
   );
   let if_block3 = !/*isFocusedListMode*/
   ctx[3] && /*plugin*/
   ((_c = (_b = ctx[0]) == null ? void 0 : _b.settings) == null ? void 0 : _c.defaultQuickListFocusFilepath) === /*child*/
-  ctx[271].filepath && create_if_block_17(ctx);
+  ctx[282].filepath && create_if_block_20(ctx);
   function mouseenter_handler_3() {
     return (
       /*mouseenter_handler_3*/
-      ctx[143](
+      ctx[145](
         /*child*/
-        ctx[271]
+        ctx[282]
       )
     );
   }
   function mouseleave_handler_2() {
     return (
       /*mouseleave_handler_2*/
-      ctx[144](
+      ctx[146](
         /*child*/
-        ctx[271]
+        ctx[282]
       )
     );
   }
   function dragstart_handler_4(...args) {
     return (
       /*dragstart_handler_4*/
-      ctx[145](
+      ctx[147](
         /*child*/
-        ctx[271],
+        ctx[282],
         ...args
       )
     );
@@ -22513,11 +22511,11 @@ function create_each_block_3(key_1, ctx) {
   function dragover_handler_3(...args) {
     return (
       /*dragover_handler_3*/
-      ctx[146](
+      ctx[148](
         /*child*/
-        ctx[271],
+        ctx[282],
         /*group*/
-        ctx[270],
+        ctx[281],
         ...args
       )
     );
@@ -22525,9 +22523,9 @@ function create_each_block_3(key_1, ctx) {
   function dragleave_handler_2(...args) {
     return (
       /*dragleave_handler_2*/
-      ctx[147](
+      ctx[149](
         /*child*/
-        ctx[271],
+        ctx[282],
         ...args
       )
     );
@@ -22535,27 +22533,27 @@ function create_each_block_3(key_1, ctx) {
   function drop_handler_3() {
     return (
       /*drop_handler_3*/
-      ctx[148](
+      ctx[150](
         /*child*/
-        ctx[271]
+        ctx[282]
       )
     );
   }
   function click_handler_14() {
     return (
       /*click_handler_14*/
-      ctx[149](
+      ctx[151](
         /*child*/
-        ctx[271]
+        ctx[282]
       )
     );
   }
   function contextmenu_handler_3(...args) {
     return (
       /*contextmenu_handler_3*/
-      ctx[150](
+      ctx[152](
         /*child*/
-        ctx[271],
+        ctx[282],
         ...args
       )
     );
@@ -22594,9 +22592,9 @@ function create_each_block_3(key_1, ctx) {
       attr(div0, "class", "quick-modal-item-meta-right");
       attr(div1, "class", "quick-modal-list-item is-grid-item");
       attr(div1, "data-filepath", div1_data_filepath_value = /*child*/
-      ctx[271].filepath);
+      ctx[282].filepath);
       attr(div1, "data-item-id", div1_data_item_id_value = /*child*/
-      ctx[271].id);
+      ctx[282].id);
       attr(div1, "role", "button");
       attr(div1, "tabindex", "0");
       attr(div1, "draggable", "true");
@@ -22604,11 +22602,11 @@ function create_each_block_3(key_1, ctx) {
         div1,
         "is-focused",
         /*flatCategories*/
-        ((_a2 = ctx[11][
+        ((_a2 = ctx[10][
           /*focusedIndex*/
-          ctx[7]
+          ctx[6]
         ]) == null ? void 0 : _a2.filepath) === /*child*/
-        ctx[271].filepath
+        ctx[282].filepath
       );
       toggle_class(
         div1,
@@ -22617,26 +22615,26 @@ function create_each_block_3(key_1, ctx) {
         ctx[3] && /*focusedListSet*/
         ctx[25].has(
           /*child*/
-          ctx[271].filepath
+          ctx[282].filepath
         )
       );
       toggle_class(div1, "is-default-focus", !/*isFocusedListMode*/
       ctx[3] && /*plugin*/
       ((_c2 = (_b2 = ctx[0]) == null ? void 0 : _b2.settings) == null ? void 0 : _c2.defaultQuickListFocusFilepath) === /*child*/
-      ctx[271].filepath);
+      ctx[282].filepath);
       toggle_class(
         div1,
         "is-dragging",
         /*draggedListId*/
         ctx[33] === /*child*/
-        ctx[271].id
+        ctx[282].id
       );
       toggle_class(
         div1,
         "drag-over-top",
         /*dragOverListId*/
         ctx[34] === /*child*/
-        ctx[271].id && /*dragListPosition*/
+        ctx[282].id && /*dragListPosition*/
         ctx[35] === "top"
       );
       toggle_class(
@@ -22644,7 +22642,7 @@ function create_each_block_3(key_1, ctx) {
         "drag-over-bottom",
         /*dragOverListId*/
         ctx[34] === /*child*/
-        ctx[271].id && /*dragListPosition*/
+        ctx[282].id && /*dragListPosition*/
         ctx[35] === "bottom"
       );
       this.first = div1;
@@ -22696,7 +22694,7 @@ function create_each_block_3(key_1, ctx) {
         if (if_block0) {
           if_block0.p(ctx, dirty);
         } else {
-          if_block0 = create_if_block_20(ctx);
+          if_block0 = create_if_block_23(ctx);
           if_block0.c();
           if_block0.m(span, t0);
         }
@@ -22716,15 +22714,15 @@ function create_each_block_3(key_1, ctx) {
       }
       if (
         /*taskCounts*/
-        ((_a2 = ctx[15][
+        ((_a2 = ctx[14][
           /*child*/
-          ctx[271].filepath
+          ctx[282].filepath
         ]) != null ? _a2 : 0) > 0
       ) {
         if (if_block2) {
           if_block2.p(ctx, dirty);
         } else {
-          if_block2 = create_if_block_18(ctx);
+          if_block2 = create_if_block_21(ctx);
           if_block2.c();
           if_block2.m(div0, t3);
         }
@@ -22735,10 +22733,10 @@ function create_each_block_3(key_1, ctx) {
       if (!/*isFocusedListMode*/
       ctx[3] && /*plugin*/
       ((_c2 = (_b2 = ctx[0]) == null ? void 0 : _b2.settings) == null ? void 0 : _c2.defaultQuickListFocusFilepath) === /*child*/
-      ctx[271].filepath) {
+      ctx[282].filepath) {
         if (if_block3) {
         } else {
-          if_block3 = create_if_block_17(ctx);
+          if_block3 = create_if_block_20(ctx);
           if_block3.c();
           if_block3.m(div0, null);
         }
@@ -22748,26 +22746,26 @@ function create_each_block_3(key_1, ctx) {
       }
       if (dirty[1] & /*layoutColumns*/
       1024 && div1_data_filepath_value !== (div1_data_filepath_value = /*child*/
-      ctx[271].filepath)) {
+      ctx[282].filepath)) {
         attr(div1, "data-filepath", div1_data_filepath_value);
       }
       if (dirty[1] & /*layoutColumns*/
       1024 && div1_data_item_id_value !== (div1_data_item_id_value = /*child*/
-      ctx[271].id)) {
+      ctx[282].id)) {
         attr(div1, "data-item-id", div1_data_item_id_value);
       }
       if (dirty[0] & /*flatCategories, focusedIndex*/
-      2176 | dirty[1] & /*layoutColumns*/
+      1088 | dirty[1] & /*layoutColumns*/
       1024) {
         toggle_class(
           div1,
           "is-focused",
           /*flatCategories*/
-          ((_d = ctx[11][
+          ((_d = ctx[10][
             /*focusedIndex*/
-            ctx[7]
+            ctx[6]
           ]) == null ? void 0 : _d.filepath) === /*child*/
-          ctx[271].filepath
+          ctx[282].filepath
         );
       }
       if (dirty[0] & /*isFocusedListMode, focusedListSet*/
@@ -22780,7 +22778,7 @@ function create_each_block_3(key_1, ctx) {
           ctx[3] && /*focusedListSet*/
           ctx[25].has(
             /*child*/
-            ctx[271].filepath
+            ctx[282].filepath
           )
         );
       }
@@ -22790,7 +22788,7 @@ function create_each_block_3(key_1, ctx) {
         toggle_class(div1, "is-default-focus", !/*isFocusedListMode*/
         ctx[3] && /*plugin*/
         ((_f = (_e = ctx[0]) == null ? void 0 : _e.settings) == null ? void 0 : _f.defaultQuickListFocusFilepath) === /*child*/
-        ctx[271].filepath);
+        ctx[282].filepath);
       }
       if (dirty[1] & /*draggedListId, layoutColumns*/
       1028) {
@@ -22799,7 +22797,7 @@ function create_each_block_3(key_1, ctx) {
           "is-dragging",
           /*draggedListId*/
           ctx[33] === /*child*/
-          ctx[271].id
+          ctx[282].id
         );
       }
       if (dirty[1] & /*dragOverListId, layoutColumns, dragListPosition*/
@@ -22809,7 +22807,7 @@ function create_each_block_3(key_1, ctx) {
           "drag-over-top",
           /*dragOverListId*/
           ctx[34] === /*child*/
-          ctx[271].id && /*dragListPosition*/
+          ctx[282].id && /*dragListPosition*/
           ctx[35] === "top"
         );
       }
@@ -22820,7 +22818,7 @@ function create_each_block_3(key_1, ctx) {
           "drag-over-bottom",
           /*dragOverListId*/
           ctx[34] === /*child*/
-          ctx[271].id && /*dragListPosition*/
+          ctx[282].id && /*dragListPosition*/
           ctx[35] === "bottom"
         );
       }
@@ -22841,7 +22839,7 @@ function create_each_block_3(key_1, ctx) {
     }
   };
 }
-function create_if_block_132(ctx) {
+function create_if_block_16(ctx) {
   let input;
   let input_checked_value;
   let mounted;
@@ -22849,9 +22847,9 @@ function create_if_block_132(ctx) {
   function click_handler_10() {
     return (
       /*click_handler_10*/
-      ctx[120](
+      ctx[122](
         /*cat*/
-        ctx[267]
+        ctx[278]
       )
     );
   }
@@ -22863,7 +22861,7 @@ function create_if_block_132(ctx) {
       input.checked = input_checked_value = /*focusedListSet*/
       ctx[25].has(
         /*cat*/
-        ctx[267].filepath
+        ctx[278].filepath
       );
       attr(input, "tabindex", "-1");
     },
@@ -22881,7 +22879,7 @@ function create_if_block_132(ctx) {
       8192 && input_checked_value !== (input_checked_value = /*focusedListSet*/
       ctx[25].has(
         /*cat*/
-        ctx[267].filepath
+        ctx[278].filepath
       ))) {
         input.checked = input_checked_value;
       }
@@ -22895,11 +22893,11 @@ function create_if_block_132(ctx) {
     }
   };
 }
-function create_else_block_33(ctx) {
+function create_else_block_23(ctx) {
   let span;
   let t_1_value = (
     /*cat*/
-    ctx[267].name + ""
+    ctx[278].name + ""
   );
   let t_1;
   let span_title_value;
@@ -22909,7 +22907,7 @@ function create_else_block_33(ctx) {
       t_1 = text(t_1_value);
       attr(span, "class", "quick-modal-list-name");
       attr(span, "title", span_title_value = /*cat*/
-      ctx[267].name);
+      ctx[278].name);
     },
     m(target, anchor) {
       insert(target, span, anchor);
@@ -22918,11 +22916,11 @@ function create_else_block_33(ctx) {
     p(ctx2, dirty) {
       if (dirty[1] & /*rootCategories*/
       8192 && t_1_value !== (t_1_value = /*cat*/
-      ctx2[267].name + ""))
+      ctx2[278].name + ""))
         set_data(t_1, t_1_value);
       if (dirty[1] & /*rootCategories*/
       8192 && span_title_value !== (span_title_value = /*cat*/
-      ctx2[267].name)) {
+      ctx2[278].name)) {
         attr(span, "title", span_title_value);
       }
     },
@@ -22933,7 +22931,7 @@ function create_else_block_33(ctx) {
     }
   };
 }
-function create_if_block_123(ctx) {
+function create_if_block_15(ctx) {
   let input;
   let mounted;
   let dispose;
@@ -22950,24 +22948,24 @@ function create_if_block_123(ctx) {
         /*editingName*/
         ctx[31]
       );
-      ctx[122](input);
+      ctx[124](input);
       if (!mounted) {
         dispose = [
           listen(
             input,
             "input",
             /*input_input_handler_1*/
-            ctx[121]
+            ctx[123]
           ),
           listen(
             input,
             "blur",
             /*commitRename*/
-            ctx[84]
+            ctx[85]
           ),
           listen(input, "click", stop_propagation(
             /*click_handler*/
-            ctx[100]
+            ctx[102]
           ))
         ];
         mounted = true;
@@ -22988,19 +22986,19 @@ function create_if_block_123(ctx) {
       if (detaching) {
         detach(input);
       }
-      ctx[122](null);
+      ctx[124](null);
       mounted = false;
       run_all(dispose);
     }
   };
 }
-function create_if_block_112(ctx) {
+function create_if_block_142(ctx) {
   let span;
   let t_1_value = (
     /*taskCounts*/
-    ctx[15][
+    ctx[14][
       /*cat*/
-      ctx[267].filepath
+      ctx[278].filepath
     ] + ""
   );
   let t_1;
@@ -23016,11 +23014,11 @@ function create_if_block_112(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*taskCounts*/
-      32768 | dirty[1] & /*rootCategories*/
+      16384 | dirty[1] & /*rootCategories*/
       8192 && t_1_value !== (t_1_value = /*taskCounts*/
-      ctx2[15][
+      ctx2[14][
         /*cat*/
-        ctx2[267].filepath
+        ctx2[278].filepath
       ] + ""))
         set_data(t_1, t_1_value);
     },
@@ -23031,7 +23029,7 @@ function create_if_block_112(ctx) {
     }
   };
 }
-function create_if_block_102(ctx) {
+function create_if_block_132(ctx) {
   let span;
   let span_title_value;
   return {
@@ -23068,57 +23066,57 @@ function create_each_block_2(key_1, ctx) {
   let dispose;
   let if_block0 = (
     /*isFocusedListMode*/
-    ctx[3] && create_if_block_132(ctx)
+    ctx[3] && create_if_block_16(ctx)
   );
   function select_block_type_9(ctx2, dirty) {
     if (
       /*editingItemId*/
       ctx2[30] === /*cat*/
-      ctx2[267].id || /*cat*/
-      ctx2[267].filepath && /*editingItemId*/
+      ctx2[278].id || /*cat*/
+      ctx2[278].filepath && /*editingItemId*/
       ctx2[30] === /*cat*/
-      ctx2[267].filepath
+      ctx2[278].filepath
     )
-      return create_if_block_123;
-    return create_else_block_33;
+      return create_if_block_15;
+    return create_else_block_23;
   }
   let current_block_type = select_block_type_9(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block1 = current_block_type(ctx);
   let if_block2 = (
     /*taskCounts*/
-    ((_a = ctx[15][
+    ((_a = ctx[14][
       /*cat*/
-      ctx[267].filepath
-    ]) != null ? _a : 0) > 0 && create_if_block_112(ctx)
+      ctx[278].filepath
+    ]) != null ? _a : 0) > 0 && create_if_block_142(ctx)
   );
   let if_block3 = !/*isFocusedListMode*/
   ctx[3] && /*plugin*/
   ((_c = (_b = ctx[0]) == null ? void 0 : _b.settings) == null ? void 0 : _c.defaultQuickListFocusFilepath) === /*cat*/
-  ctx[267].filepath && create_if_block_102(ctx);
+  ctx[278].filepath && create_if_block_132(ctx);
   function mouseenter_handler_1() {
     return (
       /*mouseenter_handler_1*/
-      ctx[123](
+      ctx[125](
         /*cat*/
-        ctx[267]
+        ctx[278]
       )
     );
   }
   function mouseleave_handler() {
     return (
       /*mouseleave_handler*/
-      ctx[124](
+      ctx[126](
         /*cat*/
-        ctx[267]
+        ctx[278]
       )
     );
   }
   function dragstart_handler_2(...args) {
     return (
       /*dragstart_handler_2*/
-      ctx[125](
+      ctx[127](
         /*cat*/
-        ctx[267],
+        ctx[278],
         ...args
       )
     );
@@ -23126,9 +23124,9 @@ function create_each_block_2(key_1, ctx) {
   function dragover_handler_1(...args) {
     return (
       /*dragover_handler_1*/
-      ctx[126](
+      ctx[128](
         /*cat*/
-        ctx[267],
+        ctx[278],
         ...args
       )
     );
@@ -23136,9 +23134,9 @@ function create_each_block_2(key_1, ctx) {
   function dragleave_handler_1(...args) {
     return (
       /*dragleave_handler_1*/
-      ctx[127](
+      ctx[129](
         /*cat*/
-        ctx[267],
+        ctx[278],
         ...args
       )
     );
@@ -23146,27 +23144,27 @@ function create_each_block_2(key_1, ctx) {
   function drop_handler_1() {
     return (
       /*drop_handler_1*/
-      ctx[128](
+      ctx[130](
         /*cat*/
-        ctx[267]
+        ctx[278]
       )
     );
   }
   function click_handler_11() {
     return (
       /*click_handler_11*/
-      ctx[129](
+      ctx[131](
         /*cat*/
-        ctx[267]
+        ctx[278]
       )
     );
   }
   function contextmenu_handler_1(...args) {
     return (
       /*contextmenu_handler_1*/
-      ctx[130](
+      ctx[132](
         /*cat*/
-        ctx[267],
+        ctx[278],
         ...args
       )
     );
@@ -23205,9 +23203,9 @@ function create_each_block_2(key_1, ctx) {
       attr(div0, "class", "quick-modal-item-meta-right");
       attr(div1, "class", "quick-modal-list-item is-grid-item");
       attr(div1, "data-filepath", div1_data_filepath_value = /*cat*/
-      ctx[267].filepath);
+      ctx[278].filepath);
       attr(div1, "data-item-id", div1_data_item_id_value = /*cat*/
-      ctx[267].id);
+      ctx[278].id);
       attr(div1, "role", "button");
       attr(div1, "tabindex", "0");
       attr(div1, "draggable", "true");
@@ -23215,11 +23213,11 @@ function create_each_block_2(key_1, ctx) {
         div1,
         "is-focused",
         /*flatCategories*/
-        ((_a2 = ctx[11][
+        ((_a2 = ctx[10][
           /*focusedIndex*/
-          ctx[7]
+          ctx[6]
         ]) == null ? void 0 : _a2.filepath) === /*cat*/
-        ctx[267].filepath
+        ctx[278].filepath
       );
       toggle_class(
         div1,
@@ -23228,26 +23226,26 @@ function create_each_block_2(key_1, ctx) {
         ctx[3] && /*focusedListSet*/
         ctx[25].has(
           /*cat*/
-          ctx[267].filepath
+          ctx[278].filepath
         )
       );
       toggle_class(div1, "is-default-focus", !/*isFocusedListMode*/
       ctx[3] && /*plugin*/
       ((_c2 = (_b2 = ctx[0]) == null ? void 0 : _b2.settings) == null ? void 0 : _c2.defaultQuickListFocusFilepath) === /*cat*/
-      ctx[267].filepath);
+      ctx[278].filepath);
       toggle_class(
         div1,
         "is-dragging",
         /*draggedListId*/
         ctx[33] === /*cat*/
-        ctx[267].id
+        ctx[278].id
       );
       toggle_class(
         div1,
         "drag-over-top",
         /*dragOverListId*/
         ctx[34] === /*cat*/
-        ctx[267].id && /*dragListPosition*/
+        ctx[278].id && /*dragListPosition*/
         ctx[35] === "top"
       );
       toggle_class(
@@ -23255,7 +23253,7 @@ function create_each_block_2(key_1, ctx) {
         "drag-over-bottom",
         /*dragOverListId*/
         ctx[34] === /*cat*/
-        ctx[267].id && /*dragListPosition*/
+        ctx[278].id && /*dragListPosition*/
         ctx[35] === "bottom"
       );
       this.first = div1;
@@ -23307,7 +23305,7 @@ function create_each_block_2(key_1, ctx) {
         if (if_block0) {
           if_block0.p(ctx, dirty);
         } else {
-          if_block0 = create_if_block_132(ctx);
+          if_block0 = create_if_block_16(ctx);
           if_block0.c();
           if_block0.m(span, t0);
         }
@@ -23327,15 +23325,15 @@ function create_each_block_2(key_1, ctx) {
       }
       if (
         /*taskCounts*/
-        ((_a2 = ctx[15][
+        ((_a2 = ctx[14][
           /*cat*/
-          ctx[267].filepath
+          ctx[278].filepath
         ]) != null ? _a2 : 0) > 0
       ) {
         if (if_block2) {
           if_block2.p(ctx, dirty);
         } else {
-          if_block2 = create_if_block_112(ctx);
+          if_block2 = create_if_block_142(ctx);
           if_block2.c();
           if_block2.m(div0, t3);
         }
@@ -23346,10 +23344,10 @@ function create_each_block_2(key_1, ctx) {
       if (!/*isFocusedListMode*/
       ctx[3] && /*plugin*/
       ((_c2 = (_b2 = ctx[0]) == null ? void 0 : _b2.settings) == null ? void 0 : _c2.defaultQuickListFocusFilepath) === /*cat*/
-      ctx[267].filepath) {
+      ctx[278].filepath) {
         if (if_block3) {
         } else {
-          if_block3 = create_if_block_102(ctx);
+          if_block3 = create_if_block_132(ctx);
           if_block3.c();
           if_block3.m(div0, null);
         }
@@ -23359,26 +23357,26 @@ function create_each_block_2(key_1, ctx) {
       }
       if (dirty[1] & /*rootCategories*/
       8192 && div1_data_filepath_value !== (div1_data_filepath_value = /*cat*/
-      ctx[267].filepath)) {
+      ctx[278].filepath)) {
         attr(div1, "data-filepath", div1_data_filepath_value);
       }
       if (dirty[1] & /*rootCategories*/
       8192 && div1_data_item_id_value !== (div1_data_item_id_value = /*cat*/
-      ctx[267].id)) {
+      ctx[278].id)) {
         attr(div1, "data-item-id", div1_data_item_id_value);
       }
       if (dirty[0] & /*flatCategories, focusedIndex*/
-      2176 | dirty[1] & /*rootCategories*/
+      1088 | dirty[1] & /*rootCategories*/
       8192) {
         toggle_class(
           div1,
           "is-focused",
           /*flatCategories*/
-          ((_d = ctx[11][
+          ((_d = ctx[10][
             /*focusedIndex*/
-            ctx[7]
+            ctx[6]
           ]) == null ? void 0 : _d.filepath) === /*cat*/
-          ctx[267].filepath
+          ctx[278].filepath
         );
       }
       if (dirty[0] & /*isFocusedListMode, focusedListSet*/
@@ -23391,7 +23389,7 @@ function create_each_block_2(key_1, ctx) {
           ctx[3] && /*focusedListSet*/
           ctx[25].has(
             /*cat*/
-            ctx[267].filepath
+            ctx[278].filepath
           )
         );
       }
@@ -23401,7 +23399,7 @@ function create_each_block_2(key_1, ctx) {
         toggle_class(div1, "is-default-focus", !/*isFocusedListMode*/
         ctx[3] && /*plugin*/
         ((_f = (_e = ctx[0]) == null ? void 0 : _e.settings) == null ? void 0 : _f.defaultQuickListFocusFilepath) === /*cat*/
-        ctx[267].filepath);
+        ctx[278].filepath);
       }
       if (dirty[1] & /*draggedListId, rootCategories*/
       8196) {
@@ -23410,7 +23408,7 @@ function create_each_block_2(key_1, ctx) {
           "is-dragging",
           /*draggedListId*/
           ctx[33] === /*cat*/
-          ctx[267].id
+          ctx[278].id
         );
       }
       if (dirty[1] & /*dragOverListId, rootCategories, dragListPosition*/
@@ -23420,7 +23418,7 @@ function create_each_block_2(key_1, ctx) {
           "drag-over-top",
           /*dragOverListId*/
           ctx[34] === /*cat*/
-          ctx[267].id && /*dragListPosition*/
+          ctx[278].id && /*dragListPosition*/
           ctx[35] === "top"
         );
       }
@@ -23431,7 +23429,7 @@ function create_each_block_2(key_1, ctx) {
           "drag-over-bottom",
           /*dragOverListId*/
           ctx[34] === /*cat*/
-          ctx[267].id && /*dragListPosition*/
+          ctx[278].id && /*dragListPosition*/
           ctx[35] === "bottom"
         );
       }
@@ -23458,18 +23456,18 @@ function create_each_block_12(key_1, ctx) {
   function select_block_type_8(ctx2, dirty) {
     if (
       /*card*/
-      ctx2[264].type === "root"
+      ctx2[275].type === "root"
     )
-      return create_if_block_92;
+      return create_if_block_123;
     if (
       /*card*/
-      ctx2[264].type === "group" && /*card*/
-      ctx2[264].group
+      ctx2[275].type === "group" && /*card*/
+      ctx2[275].group
     )
-      return create_if_block_142;
+      return create_if_block_17;
   }
   function select_block_ctx(ctx2, type) {
-    if (type === create_if_block_142)
+    if (type === create_if_block_17)
       return get_if_ctx(ctx2);
     return ctx2;
   }
@@ -23516,16 +23514,144 @@ function create_each_block_12(key_1, ctx) {
     }
   };
 }
-function create_if_block_83(ctx) {
+function create_if_block_92(ctx) {
+  let if_block_anchor;
+  function select_block_type_13(ctx2, dirty) {
+    if (
+      /*isDraggingGroup*/
+      ctx2[42]
+    )
+      return create_if_block_102;
+    if (
+      /*draggedListId*/
+      ctx2[33]
+    )
+      return create_if_block_112;
+  }
+  let current_block_type = select_block_type_13(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
+  let if_block = current_block_type && current_block_type(ctx);
+  return {
+    c() {
+      if (if_block)
+        if_block.c();
+      if_block_anchor = empty();
+    },
+    m(target, anchor) {
+      if (if_block)
+        if_block.m(target, anchor);
+      insert(target, if_block_anchor, anchor);
+    },
+    p(ctx2, dirty) {
+      if (current_block_type === (current_block_type = select_block_type_13(ctx2, dirty)) && if_block) {
+        if_block.p(ctx2, dirty);
+      } else {
+        if (if_block)
+          if_block.d(1);
+        if_block = current_block_type && current_block_type(ctx2);
+        if (if_block) {
+          if_block.c();
+          if_block.m(if_block_anchor.parentNode, if_block_anchor);
+        }
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(if_block_anchor);
+      }
+      if (if_block) {
+        if_block.d(detaching);
+      }
+    }
+  };
+}
+function create_if_block_112(ctx) {
+  let div;
+  let mounted;
+  let dispose;
+  function dragover_handler_7(...args) {
+    return (
+      /*dragover_handler_7*/
+      ctx[161](
+        /*colIdx*/
+        ctx[274],
+        ...args
+      )
+    );
+  }
+  function dragleave_handler_5() {
+    return (
+      /*dragleave_handler_5*/
+      ctx[162](
+        /*colIdx*/
+        ctx[274]
+      )
+    );
+  }
+  function drop_handler_7() {
+    return (
+      /*drop_handler_7*/
+      ctx[163](
+        /*colIdx*/
+        ctx[274]
+      )
+    );
+  }
+  return {
+    c() {
+      div = element("div");
+      div.textContent = "+ New Group";
+      attr(div, "class", "quick-table-col-dropzone is-new-group-zone");
+      toggle_class(
+        div,
+        "drag-over",
+        /*dragOverListId*/
+        ctx[34] === `col_new_group_${/*colIdx*/
+        ctx[274]}`
+      );
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      if (!mounted) {
+        dispose = [
+          listen(div, "dragover", dragover_handler_7),
+          listen(div, "dragleave", dragleave_handler_5),
+          listen(div, "drop", prevent_default(drop_handler_7))
+        ];
+        mounted = true;
+      }
+    },
+    p(new_ctx, dirty) {
+      ctx = new_ctx;
+      if (dirty[1] & /*dragOverListId, layoutColumns*/
+      1032) {
+        toggle_class(
+          div,
+          "drag-over",
+          /*dragOverListId*/
+          ctx[34] === `col_new_group_${/*colIdx*/
+          ctx[274]}`
+        );
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
+function create_if_block_102(ctx) {
   let div;
   let mounted;
   let dispose;
   function dragover_handler_6(...args) {
     return (
       /*dragover_handler_6*/
-      ctx[156](
+      ctx[158](
         /*colIdx*/
-        ctx[263],
+        ctx[274],
         ...args
       )
     );
@@ -23533,18 +23659,18 @@ function create_if_block_83(ctx) {
   function dragleave_handler_4() {
     return (
       /*dragleave_handler_4*/
-      ctx[157](
+      ctx[159](
         /*colIdx*/
-        ctx[263]
+        ctx[274]
       )
     );
   }
   function drop_handler_6() {
     return (
       /*drop_handler_6*/
-      ctx[158](
+      ctx[160](
         /*colIdx*/
-        ctx[263]
+        ctx[274]
       )
     );
   }
@@ -23558,7 +23684,7 @@ function create_if_block_83(ctx) {
         "drag-over",
         /*dragOverListId*/
         ctx[34] === `col_drop_${/*colIdx*/
-        ctx[263]}`
+        ctx[274]}`
       );
     },
     m(target, anchor) {
@@ -23581,7 +23707,7 @@ function create_if_block_83(ctx) {
           "drag-over",
           /*dragOverListId*/
           ctx[34] === `col_drop_${/*colIdx*/
-          ctx[263]}`
+          ctx[274]}`
         );
       }
     },
@@ -23605,19 +23731,19 @@ function create_each_block4(key_1, ctx) {
   let dispose;
   let if_block0 = (
     /*layoutMode*/
-    ctx[8] === "table" && /*isDraggingGroup*/
-    ctx[42] && create_if_block_222(ctx)
+    ctx[7] === "table" && /*isDraggingGroup*/
+    ctx[42] && create_if_block_25(ctx)
   );
   let each_value_1 = ensure_array_like(
     /*column*/
-    ctx[261]
+    ctx[272]
   );
   const get_key = (ctx2) => (
     /*card*/
-    ctx2[264].id + "_" + /*card*/
-    (ctx2[264].group ? (
+    ctx2[275].id + "_" + /*card*/
+    (ctx2[275].group ? (
       /*card*/
-      ctx2[264].group.isExpanded ? "exp" : "col"
+      ctx2[275].group.isExpanded ? "exp" : "col"
     ) : "root")
   );
   for (let i = 0; i < each_value_1.length; i += 1) {
@@ -23627,25 +23753,24 @@ function create_each_block4(key_1, ctx) {
   }
   let if_block1 = (
     /*layoutMode*/
-    ctx[8] === "table" && /*isDraggingGroup*/
-    ctx[42] && create_if_block_83(ctx)
+    ctx[7] === "table" && create_if_block_92(ctx)
   );
-  function dragover_handler_7(...args) {
+  function dragover_handler_8(...args) {
     return (
-      /*dragover_handler_7*/
-      ctx[159](
+      /*dragover_handler_8*/
+      ctx[164](
         /*colIdx*/
-        ctx[263],
+        ctx[274],
         ...args
       )
     );
   }
-  function drop_handler_7(...args) {
+  function drop_handler_8(...args) {
     return (
-      /*drop_handler_7*/
-      ctx[160](
+      /*drop_handler_8*/
+      ctx[165](
         /*colIdx*/
-        ctx[263],
+        ctx[274],
         ...args
       )
     );
@@ -23684,8 +23809,8 @@ function create_each_block4(key_1, ctx) {
         if_block1.m(div, null);
       if (!mounted) {
         dispose = [
-          listen(div, "dragover", dragover_handler_7),
-          listen(div, "drop", prevent_default(drop_handler_7))
+          listen(div, "dragover", dragover_handler_8),
+          listen(div, "drop", prevent_default(drop_handler_8))
         ];
         mounted = true;
       }
@@ -23694,13 +23819,13 @@ function create_each_block4(key_1, ctx) {
       ctx = new_ctx;
       if (
         /*layoutMode*/
-        ctx[8] === "table" && /*isDraggingGroup*/
+        ctx[7] === "table" && /*isDraggingGroup*/
         ctx[42]
       ) {
         if (if_block0) {
           if_block0.p(ctx, dirty);
         } else {
-          if_block0 = create_if_block_222(ctx);
+          if_block0 = create_if_block_25(ctx);
           if_block0.c();
           if_block0.m(t0.parentNode, t0);
         }
@@ -23709,24 +23834,23 @@ function create_each_block4(key_1, ctx) {
         if_block0 = null;
       }
       if (dirty[0] & /*flatCategories, focusedIndex, isFocusedListMode, focusedListSet, plugin, taskCounts, editingItemId, layoutMode*/
-      1107331465 | dirty[1] & /*dragOverListId, dragListPosition, rootCategories, draggedListId, handleCategoryClick, editingName, renameInputEl, toggleFocusedList, layoutColumns, isDraggingGroup, toggleGroup*/
+      1107313865 | dirty[1] & /*dragOverListId, dragListPosition, rootCategories, draggedListId, handleCategoryClick, editingName, renameInputEl, toggleFocusedList, layoutColumns, isDraggingGroup, toggleGroup*/
       335621151 | dirty[2] & /*handleRootCardDragOver, handleRootCardDragLeave, handleRootCardDrop, setHoveredTarget, clearHoveredTarget, handleListDragStart, handleListDragEnd, handleListDragOver, handleListDragLeave, handleListDrop, showItemContextMenu, commitRename, handleRootDragStart, handleGroupCardDragOver, handleGroupCardDragLeave, handleGroupCardDrop*/
-      15736830) {
+      31465470) {
         each_value_1 = ensure_array_like(
           /*column*/
-          ctx[261]
+          ctx[272]
         );
         each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx, each_value_1, each_1_lookup, div, destroy_block, create_each_block_12, t1, get_each_context_12);
       }
       if (
         /*layoutMode*/
-        ctx[8] === "table" && /*isDraggingGroup*/
-        ctx[42]
+        ctx[7] === "table"
       ) {
         if (if_block1) {
           if_block1.p(ctx, dirty);
         } else {
-          if_block1 = create_if_block_83(ctx);
+          if_block1 = create_if_block_92(ctx);
           if_block1.c();
           if_block1.m(div, null);
         }
@@ -23748,6 +23872,116 @@ function create_each_block4(key_1, ctx) {
       }
       if (if_block1)
         if_block1.d();
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
+function create_if_block_68(ctx) {
+  let if_block_anchor;
+  function select_block_type_14(ctx2, dirty) {
+    if (
+      /*isDraggingGroup*/
+      ctx2[42]
+    )
+      return create_if_block_73;
+    if (
+      /*draggedListId*/
+      ctx2[33]
+    )
+      return create_if_block_83;
+  }
+  let current_block_type = select_block_type_14(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
+  let if_block = current_block_type && current_block_type(ctx);
+  return {
+    c() {
+      if (if_block)
+        if_block.c();
+      if_block_anchor = empty();
+    },
+    m(target, anchor) {
+      if (if_block)
+        if_block.m(target, anchor);
+      insert(target, if_block_anchor, anchor);
+    },
+    p(ctx2, dirty) {
+      if (current_block_type === (current_block_type = select_block_type_14(ctx2, dirty)) && if_block) {
+        if_block.p(ctx2, dirty);
+      } else {
+        if (if_block)
+          if_block.d(1);
+        if_block = current_block_type && current_block_type(ctx2);
+        if (if_block) {
+          if_block.c();
+          if_block.m(if_block_anchor.parentNode, if_block_anchor);
+        }
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(if_block_anchor);
+      }
+      if (if_block) {
+        if_block.d(detaching);
+      }
+    }
+  };
+}
+function create_if_block_83(ctx) {
+  let div;
+  let mounted;
+  let dispose;
+  return {
+    c() {
+      div = element("div");
+      div.innerHTML = `<span class="quick-table-new-col-icon">+</span> <span>New Column</span>`;
+      attr(div, "class", "quick-table-new-col-dropzone is-new-group-zone");
+      toggle_class(
+        div,
+        "drag-over",
+        /*dragOverListId*/
+        ctx[34] === "__new_col_new_group__"
+      );
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      if (!mounted) {
+        dispose = [
+          listen(
+            div,
+            "dragover",
+            /*dragover_handler_10*/
+            ctx[169]
+          ),
+          listen(
+            div,
+            "dragleave",
+            /*dragleave_handler_7*/
+            ctx[170]
+          ),
+          listen(div, "drop", prevent_default(
+            /*drop_handler_10*/
+            ctx[171]
+          ))
+        ];
+        mounted = true;
+      }
+    },
+    p(ctx2, dirty) {
+      if (dirty[1] & /*dragOverListId*/
+      8) {
+        toggle_class(
+          div,
+          "drag-over",
+          /*dragOverListId*/
+          ctx2[34] === "__new_col_new_group__"
+        );
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
       mounted = false;
       run_all(dispose);
     }
@@ -23776,18 +24010,18 @@ function create_if_block_73(ctx) {
           listen(
             div,
             "dragover",
-            /*dragover_handler_8*/
-            ctx[161]
+            /*dragover_handler_9*/
+            ctx[166]
           ),
           listen(
             div,
             "dragleave",
-            /*dragleave_handler_5*/
-            ctx[162]
+            /*dragleave_handler_6*/
+            ctx[167]
           ),
           listen(div, "drop", prevent_default(
-            /*drop_handler_8*/
-            ctx[163]
+            /*drop_handler_9*/
+            ctx[168]
           ))
         ];
         mounted = true;
@@ -23813,160 +24047,78 @@ function create_if_block_73(ctx) {
     }
   };
 }
-function create_if_block6(ctx) {
-  let div0;
+function create_if_block_110(ctx) {
+  let div;
   let t0;
-  let div1;
-  let span0;
-  let t3;
-  let t4;
-  let span1;
-  let t7;
-  let span2;
-  let t10;
-  let span3;
-  let b3;
-  let t12;
-  let t13_value = (
-    /*searchMode*/
-    ctx[9] === "task" ? "Lists" : "Tasks"
-  );
-  let t13;
-  let t14;
-  let span4;
+  let button;
+  let button_title_value;
   let mounted;
   let dispose;
-  function select_block_type_18(ctx2, dirty) {
+  function select_block_type_20(ctx2, dirty) {
     if (
       /*isAddingList*/
       ctx2[26]
     )
-      return create_if_block_310;
+      return create_if_block_210;
     if (
       /*isAddingGroup*/
       ctx2[28]
     )
-      return create_if_block_410;
-    return create_else_block_18;
-  }
-  let current_block_type = select_block_type_18(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
-  let if_block0 = current_block_type(ctx);
-  function select_block_type_19(ctx2, dirty) {
-    if (
-      /*layoutMode*/
-      ctx2[8] === "table"
-    )
-      return create_if_block_110;
-    if (
-      /*layoutMode*/
-      ctx2[8] === "grid"
-    )
-      return create_if_block_210;
+      return create_if_block_310;
     return create_else_block5;
   }
-  let current_block_type_1 = select_block_type_19(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
-  let if_block1 = current_block_type_1(ctx);
+  let current_block_type = select_block_type_20(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
+  let if_block = current_block_type(ctx);
   return {
     c() {
-      div0 = element("div");
-      if_block0.c();
+      div = element("div");
+      if_block.c();
       t0 = space();
-      div1 = element("div");
-      span0 = element("span");
-      span0.innerHTML = `<b>\u2191\u2193\u2190\u2192</b> Navigate`;
-      t3 = space();
-      if_block1.c();
-      t4 = space();
-      span1 = element("span");
-      span1.innerHTML = `<b>F2</b> Rename`;
-      t7 = space();
-      span2 = element("span");
-      span2.innerHTML = `<b>Enter</b> Open in Center View`;
-      t10 = space();
-      span3 = element("span");
-      b3 = element("b");
-      b3.textContent = "Tab";
-      t12 = text(" Switch to ");
-      t13 = text(t13_value);
-      t14 = space();
-      span4 = element("span");
-      span4.innerHTML = `<b>Esc</b> Close`;
-      attr(div0, "class", "quick-modal-list-pane-footer");
-      attr(span4, "class", "quick-status-close-btn");
-      attr(span4, "role", "button");
-      attr(span4, "tabindex", "0");
-      attr(span4, "title", "Close (Esc)");
-      attr(div1, "class", "quick-modal-status-bar");
+      button = element("button");
+      button.textContent = "?";
+      attr(button, "class", "quick-modal-help-btn");
+      attr(button, "title", button_title_value = isChinese() ? "\u5FEB\u6377\u952E\u4E0E\u64CD\u4F5C\u624B\u52BF (? / F1)" : "Shortcuts & Gestures Help (? / F1)");
+      attr(button, "aria-label", "Help");
+      attr(div, "class", "quick-modal-list-pane-footer");
     },
     m(target, anchor) {
-      insert(target, div0, anchor);
-      if_block0.m(div0, null);
-      insert(target, t0, anchor);
-      insert(target, div1, anchor);
-      append(div1, span0);
-      append(div1, t3);
-      if_block1.m(div1, null);
-      append(div1, t4);
-      append(div1, span1);
-      append(div1, t7);
-      append(div1, span2);
-      append(div1, t10);
-      append(div1, span3);
-      append(span3, b3);
-      append(span3, t12);
-      append(span3, t13);
-      append(div1, t14);
-      append(div1, span4);
+      insert(target, div, anchor);
+      if_block.m(div, null);
+      append(div, t0);
+      append(div, button);
       if (!mounted) {
-        dispose = listen(span4, "click", function() {
-          if (is_function(
-            /*closeModal*/
-            ctx[4]
-          ))
-            ctx[4].apply(this, arguments);
-        });
+        dispose = listen(
+          button,
+          "click",
+          /*click_handler_23*/
+          ctx[217]
+        );
         mounted = true;
       }
     },
-    p(new_ctx, dirty) {
-      ctx = new_ctx;
-      if (current_block_type === (current_block_type = select_block_type_18(ctx, dirty)) && if_block0) {
-        if_block0.p(ctx, dirty);
+    p(ctx2, dirty) {
+      if (current_block_type === (current_block_type = select_block_type_20(ctx2, dirty)) && if_block) {
+        if_block.p(ctx2, dirty);
       } else {
-        if_block0.d(1);
-        if_block0 = current_block_type(ctx);
-        if (if_block0) {
-          if_block0.c();
-          if_block0.m(div0, null);
+        if_block.d(1);
+        if_block = current_block_type(ctx2);
+        if (if_block) {
+          if_block.c();
+          if_block.m(div, t0);
         }
       }
-      if (current_block_type_1 !== (current_block_type_1 = select_block_type_19(ctx, dirty))) {
-        if_block1.d(1);
-        if_block1 = current_block_type_1(ctx);
-        if (if_block1) {
-          if_block1.c();
-          if_block1.m(div1, t4);
-        }
-      }
-      if (dirty[0] & /*searchMode*/
-      512 && t13_value !== (t13_value = /*searchMode*/
-      ctx[9] === "task" ? "Lists" : "Tasks"))
-        set_data(t13, t13_value);
     },
     d(detaching) {
       if (detaching) {
-        detach(div0);
-        detach(t0);
-        detach(div1);
+        detach(div);
       }
-      if_block0.d();
-      if_block1.d();
+      if_block.d();
       mounted = false;
       dispose();
     }
   };
 }
-function create_else_block_18(ctx) {
+function create_else_block5(ctx) {
   let button0;
   let t1;
   let button1;
@@ -23992,13 +24144,13 @@ function create_else_block_18(ctx) {
             button0,
             "click",
             /*startAddList*/
-            ctx[86]
+            ctx[87]
           ),
           listen(
             button1,
             "click",
             /*startAddGroup*/
-            ctx[88]
+            ctx[89]
           )
         ];
         mounted = true;
@@ -24016,7 +24168,7 @@ function create_else_block_18(ctx) {
     }
   };
 }
-function create_if_block_410(ctx) {
+function create_if_block_310(ctx) {
   let div;
   let input;
   let input_placeholder_value;
@@ -24040,26 +24192,26 @@ function create_if_block_410(ctx) {
         /*newGroupName*/
         ctx[29]
       );
-      ctx[207](input);
+      ctx[215](input);
       if (!mounted) {
         dispose = [
           listen(
             input,
             "input",
             /*input_input_handler_8*/
-            ctx[206]
+            ctx[214]
           ),
           listen(
             input,
             "keydown",
             /*keydown_handler_1*/
-            ctx[208]
+            ctx[216]
           ),
           listen(
             input,
             "blur",
             /*commitAddGroup*/
-            ctx[89]
+            ctx[90]
           )
         ];
         mounted = true;
@@ -24085,13 +24237,13 @@ function create_if_block_410(ctx) {
       if (detaching) {
         detach(div);
       }
-      ctx[207](null);
+      ctx[215](null);
       mounted = false;
       run_all(dispose);
     }
   };
 }
-function create_if_block_310(ctx) {
+function create_if_block_210(ctx) {
   let div;
   let input;
   let input_placeholder_value;
@@ -24115,26 +24267,26 @@ function create_if_block_310(ctx) {
         /*newListName*/
         ctx[27]
       );
-      ctx[204](input);
+      ctx[212](input);
       if (!mounted) {
         dispose = [
           listen(
             input,
             "input",
             /*input_input_handler_7*/
-            ctx[203]
+            ctx[211]
           ),
           listen(
             input,
             "keydown",
             /*keydown_handler*/
-            ctx[205]
+            ctx[213]
           ),
           listen(
             input,
             "blur",
             /*commitAddList*/
-            ctx[87]
+            ctx[88]
           )
         ];
         mounted = true;
@@ -24160,78 +24312,348 @@ function create_if_block_310(ctx) {
       if (detaching) {
         detach(div);
       }
-      ctx[204](null);
+      ctx[212](null);
       mounted = false;
       run_all(dispose);
     }
   };
 }
-function create_else_block5(ctx) {
-  let span;
-  return {
-    c() {
-      span = element("span");
-      span.innerHTML = `<b>Wheel</b> Scroll List`;
-    },
-    m(target, anchor) {
-      insert(target, span, anchor);
-    },
-    d(detaching) {
-      if (detaching) {
-        detach(span);
-      }
-    }
-  };
-}
-function create_if_block_210(ctx) {
-  let span;
-  return {
-    c() {
-      span = element("span");
-      span.innerHTML = `<b>Wheel</b> Scroll Board`;
-    },
-    m(target, anchor) {
-      insert(target, span, anchor);
-    },
-    d(detaching) {
-      if (detaching) {
-        detach(span);
-      }
-    }
-  };
-}
-function create_if_block_110(ctx) {
+function create_if_block6(ctx) {
+  let div33;
+  let div32;
+  let div1;
+  let div0;
   let span0;
-  let t2;
+  let t1;
   let span1;
+  let t2_value = (
+    /*layoutMode*/
+    ctx[7].toUpperCase() + ""
+  );
+  let t2;
+  let t3;
+  let button;
+  let button_title_value;
   let t5;
+  let div31;
+  let div14;
+  let div2;
+  let t7;
+  let div13;
+  let div4;
   let span2;
+  let t9;
+  let div3;
+  let t17;
+  let div6;
+  let span3;
+  let t19;
+  let div5;
+  let t21;
+  let div8;
+  let span4;
+  let t23;
+  let div7;
+  let t25;
+  let div10;
+  let span5;
+  let t27;
+  let div9;
+  let t29;
+  let div12;
+  let span6;
+  let t31;
+  let div11;
+  let t33;
+  let div25;
+  let div15;
+  let t35;
+  let div24;
+  let div17;
+  let span7;
+  let t37;
+  let div16;
+  let t41;
+  let div19;
+  let span8;
+  let t43;
+  let div18;
+  let t45;
+  let div21;
+  let span9;
+  let t47;
+  let div20;
+  let t49;
+  let div23;
+  let span10;
+  let t51;
+  let div22;
+  let t53;
+  let div30;
+  let div26;
+  let t55;
+  let div29;
+  let div28;
+  let span11;
+  let t57;
+  let div27;
+  let mounted;
+  let dispose;
   return {
     c() {
+      div33 = element("div");
+      div32 = element("div");
+      div1 = element("div");
+      div0 = element("div");
       span0 = element("span");
-      span0.innerHTML = `<b>Wheel / Shift+Wheel</b> Pan Board`;
-      t2 = space();
+      span0.textContent = `${isChinese() ? "\u5FEB\u6377\u952E\u4E0E\u64CD\u4F5C\u624B\u52BF\u6307\u5357" : "Shortcuts & Gestures Guide"}`;
+      t1 = space();
       span1 = element("span");
-      span1.innerHTML = `<b>Edge Pan</b> RTS Auto-Scroll`;
+      t2 = text(t2_value);
+      t3 = space();
+      button = element("button");
+      button.textContent = "\u2715";
       t5 = space();
+      div31 = element("div");
+      div14 = element("div");
+      div2 = element("div");
+      div2.textContent = `${isChinese() ? "\u57FA\u7840\u5BFC\u822A\u4E0E\u68C0\u7D22" : "Navigation & Search"}`;
+      t7 = space();
+      div13 = element("div");
+      div4 = element("div");
       span2 = element("span");
-      span2.innerHTML = `<b>Drag Group</b> Arrange Table`;
+      span2.textContent = `${isChinese() ? "\u65B9\u5411\u952E\u5207\u6362\u7126\u70B9\u9009\u62E9" : "Navigate items / cards"}`;
+      t9 = space();
+      div3 = element("div");
+      div3.innerHTML = `<kbd class="quick-help-kbd">\u2191</kbd> <kbd class="quick-help-kbd">\u2193</kbd> <kbd class="quick-help-kbd">\u2190</kbd> <kbd class="quick-help-kbd">\u2192</kbd>`;
+      t17 = space();
+      div6 = element("div");
+      span3 = element("span");
+      span3.textContent = `${isChinese() ? "\u6253\u5F00\u5F53\u524D\u9009\u4E2D\u7684\u6E05\u5355 / \u4EFB\u52A1" : "Open selected list or task"}`;
+      t19 = space();
+      div5 = element("div");
+      div5.innerHTML = `<kbd class="quick-help-kbd">Enter</kbd>`;
+      t21 = space();
+      div8 = element("div");
+      span4 = element("span");
+      span4.textContent = `${isChinese() ? "\u5207\u6362 \u6E05\u5355\u68C0\u7D22 / \u5168\u5C40\u4EFB\u52A1\u641C\u7D22" : "Toggle Lists / Tasks mode"}`;
+      t23 = space();
+      div7 = element("div");
+      div7.innerHTML = `<kbd class="quick-help-kbd">Tab</kbd>`;
+      t25 = space();
+      div10 = element("div");
+      span5 = element("span");
+      span5.textContent = `${isChinese() ? "\u91CD\u547D\u540D\u5F53\u524D\u9009\u4E2D\u7684\u5206\u7EC4\u6216\u6E05\u5355" : "Rename focused group or list"}`;
+      t27 = space();
+      div9 = element("div");
+      div9.innerHTML = `<kbd class="quick-help-kbd">F2</kbd>`;
+      t29 = space();
+      div12 = element("div");
+      span6 = element("span");
+      span6.textContent = `${isChinese() ? "\u5173\u95ED\u60AC\u6D6E\u7A97" : "Close modal"}`;
+      t31 = space();
+      div11 = element("div");
+      div11.innerHTML = `<kbd class="quick-help-kbd">Esc</kbd>`;
+      t33 = space();
+      div25 = element("div");
+      div15 = element("div");
+      div15.textContent = `${isChinese() ? "\u753B\u5E03\u4E0E\u8868\u683C\u64CD\u4F5C" : "Board & Table Actions"}`;
+      t35 = space();
+      div24 = element("div");
+      div17 = element("div");
+      span7 = element("span");
+      span7.textContent = `${isChinese() ? "\u53CC\u5411\u5E73\u79FB\u753B\u5E03\uFF08\u6EDA\u8F6E\u5782\u76F4\uFF0CShift+\u6EDA\u8F6E\u6C34\u5E73\uFF09" : "Pan canvas (Wheel / Shift+Wheel)"}`;
+      t37 = space();
+      div16 = element("div");
+      div16.innerHTML = `<kbd class="quick-help-kbd">Wheel</kbd> <kbd class="quick-help-kbd">Shift + Wheel</kbd>`;
+      t41 = space();
+      div19 = element("div");
+      span8 = element("span");
+      span8.textContent = `${isChinese() ? "RTS \u8FB9\u7F18\u81EA\u52A8\u5E73\u79FB\uFF08\u9F20\u6807\u79FB\u81F3\u89C6\u53E3\u8FB9\u7F18\uFF09" : "Edge Pan (RTS Auto-Scroll at screen edges)"}`;
+      t43 = space();
+      div18 = element("div");
+      div18.innerHTML = `<kbd class="quick-help-kbd">Edge Pan</kbd>`;
+      t45 = space();
+      div21 = element("div");
+      span9 = element("span");
+      span9.textContent = `${isChinese() ? "\u62D6\u62FD\u5206\u7EC4\u5361\u7247\u81EA\u7531\u6392\u5E03\uFF08\u5217\u95F4\u63D2\u961F\u3001\u5217\u5E95\u63D2\u5165\u3001\u65B0\u5217\uFF09" : "Drag group to arrange columns & cards"}`;
+      t47 = space();
+      div20 = element("div");
+      div20.innerHTML = `<kbd class="quick-help-kbd">Drag Group</kbd>`;
+      t49 = space();
+      div23 = element("div");
+      span10 = element("span");
+      span10.textContent = `${isChinese() ? "\u62D6\u62FD\u6E05\u5355\u81F3\u5E95\u90E8\u5F62\u6210\u65B0\u5206\u7EC4" : "Drag list to bottom '+ New Group'"}`;
+      t51 = space();
+      div22 = element("div");
+      div22.innerHTML = `<kbd class="quick-help-kbd">Drag List \u2192 New Group</kbd>`;
+      t53 = space();
+      div30 = element("div");
+      div26 = element("div");
+      div26.textContent = `${isChinese() ? "\u5FEB\u6377\u5E2E\u52A9" : "Help & Docs"}`;
+      t55 = space();
+      div29 = element("div");
+      div28 = element("div");
+      span11 = element("span");
+      span11.textContent = `${isChinese() ? "\u547C\u51FA / \u5173\u95ED\u672C\u5FEB\u6377\u5E2E\u52A9\u7A97\u53E3" : "Toggle this help overlay"}`;
+      t57 = space();
+      div27 = element("div");
+      div27.innerHTML = `<kbd class="quick-help-kbd">?</kbd> <kbd class="quick-help-kbd">F1</kbd>`;
+      attr(span1, "class", "quick-modal-help-title-badge");
+      attr(div0, "class", "quick-modal-help-title");
+      attr(button, "class", "quick-modal-help-close-btn");
+      attr(button, "title", button_title_value = isChinese() ? "\u5173\u95ED (Esc)" : "Close (Esc)");
+      attr(button, "aria-label", "Close");
+      attr(div1, "class", "quick-modal-help-header");
+      attr(div2, "class", "quick-help-section-title");
+      attr(span2, "class", "quick-help-desc");
+      attr(div3, "class", "quick-help-keys");
+      attr(div4, "class", "quick-help-row");
+      attr(span3, "class", "quick-help-desc");
+      attr(div5, "class", "quick-help-keys");
+      attr(div6, "class", "quick-help-row");
+      attr(span4, "class", "quick-help-desc");
+      attr(div7, "class", "quick-help-keys");
+      attr(div8, "class", "quick-help-row");
+      attr(span5, "class", "quick-help-desc");
+      attr(div9, "class", "quick-help-keys");
+      attr(div10, "class", "quick-help-row");
+      attr(span6, "class", "quick-help-desc");
+      attr(div11, "class", "quick-help-keys");
+      attr(div12, "class", "quick-help-row");
+      attr(div13, "class", "quick-help-grid");
+      attr(div14, "class", "quick-help-section");
+      attr(div15, "class", "quick-help-section-title");
+      attr(span7, "class", "quick-help-desc");
+      attr(div16, "class", "quick-help-keys");
+      attr(div17, "class", "quick-help-row");
+      attr(span8, "class", "quick-help-desc");
+      attr(div18, "class", "quick-help-keys");
+      attr(div19, "class", "quick-help-row");
+      attr(span9, "class", "quick-help-desc");
+      attr(div20, "class", "quick-help-keys");
+      attr(div21, "class", "quick-help-row");
+      attr(span10, "class", "quick-help-desc");
+      attr(div22, "class", "quick-help-keys");
+      attr(div23, "class", "quick-help-row");
+      attr(div24, "class", "quick-help-grid");
+      attr(div25, "class", "quick-help-section");
+      attr(div26, "class", "quick-help-section-title");
+      attr(span11, "class", "quick-help-desc");
+      attr(div27, "class", "quick-help-keys");
+      attr(div28, "class", "quick-help-row");
+      attr(div29, "class", "quick-help-grid");
+      attr(div30, "class", "quick-help-section");
+      attr(div31, "class", "quick-modal-help-content");
+      attr(div32, "class", "quick-modal-help-card");
+      attr(div32, "role", "document");
+      attr(div33, "class", "quick-modal-help-backdrop");
+      attr(div33, "role", "dialog");
+      attr(div33, "aria-modal", "true");
+      attr(div33, "tabindex", "-1");
     },
     m(target, anchor) {
-      insert(target, span0, anchor);
-      insert(target, t2, anchor);
-      insert(target, span1, anchor);
-      insert(target, t5, anchor);
-      insert(target, span2, anchor);
+      insert(target, div33, anchor);
+      append(div33, div32);
+      append(div32, div1);
+      append(div1, div0);
+      append(div0, span0);
+      append(div0, t1);
+      append(div0, span1);
+      append(span1, t2);
+      append(div1, t3);
+      append(div1, button);
+      append(div32, t5);
+      append(div32, div31);
+      append(div31, div14);
+      append(div14, div2);
+      append(div14, t7);
+      append(div14, div13);
+      append(div13, div4);
+      append(div4, span2);
+      append(div4, t9);
+      append(div4, div3);
+      append(div13, t17);
+      append(div13, div6);
+      append(div6, span3);
+      append(div6, t19);
+      append(div6, div5);
+      append(div13, t21);
+      append(div13, div8);
+      append(div8, span4);
+      append(div8, t23);
+      append(div8, div7);
+      append(div13, t25);
+      append(div13, div10);
+      append(div10, span5);
+      append(div10, t27);
+      append(div10, div9);
+      append(div13, t29);
+      append(div13, div12);
+      append(div12, span6);
+      append(div12, t31);
+      append(div12, div11);
+      append(div31, t33);
+      append(div31, div25);
+      append(div25, div15);
+      append(div25, t35);
+      append(div25, div24);
+      append(div24, div17);
+      append(div17, span7);
+      append(div17, t37);
+      append(div17, div16);
+      append(div24, t41);
+      append(div24, div19);
+      append(div19, span8);
+      append(div19, t43);
+      append(div19, div18);
+      append(div24, t45);
+      append(div24, div21);
+      append(div21, span9);
+      append(div21, t47);
+      append(div21, div20);
+      append(div24, t49);
+      append(div24, div23);
+      append(div23, span10);
+      append(div23, t51);
+      append(div23, div22);
+      append(div31, t53);
+      append(div31, div30);
+      append(div30, div26);
+      append(div30, t55);
+      append(div30, div29);
+      append(div29, div28);
+      append(div28, span11);
+      append(div28, t57);
+      append(div28, div27);
+      if (!mounted) {
+        dispose = [
+          listen(
+            button,
+            "click",
+            /*click_handler_24*/
+            ctx[218]
+          ),
+          listen(div33, "click", self(
+            /*click_handler_25*/
+            ctx[219]
+          ))
+        ];
+        mounted = true;
+      }
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*layoutMode*/
+      128 && t2_value !== (t2_value = /*layoutMode*/
+      ctx2[7].toUpperCase() + ""))
+        set_data(t2, t2_value);
     },
     d(detaching) {
       if (detaching) {
-        detach(span0);
-        detach(t2);
-        detach(span1);
-        detach(t5);
-        detach(span2);
+        detach(div33);
       }
+      mounted = false;
+      run_all(dispose);
     }
   };
 }
@@ -24249,48 +24671,53 @@ function create_fragment6(ctx) {
   let t5;
   let show_if = (
     /*searchMode*/
-    ctx[9] === "task" && /*searchQuery*/
-    ctx[6].trim().length > 0
+    ctx[8] === "task" && /*searchQuery*/
+    ctx[5].trim().length > 0
   );
   let t6;
   let t7;
+  let t8;
   let mounted;
   let dispose;
   let if_block0 = (
     /*showTip*/
-    ctx[1] && create_if_block_64(ctx)
+    ctx[1] && create_if_block_67(ctx)
   );
   let if_block1 = (
     /*searchQuery*/
-    ctx[6] && create_if_block_63(ctx)
+    ctx[5] && create_if_block_66(ctx)
   );
   let if_block2 = (
     /*isStarredMatching*/
-    ctx[14] && create_if_block_61(ctx)
+    ctx[13] && create_if_block_64(ctx)
   );
   function select_block_type(ctx2, dirty) {
     if (
       /*isFocusedListMode*/
       ctx2[3]
     )
-      return create_if_block_51;
-    return create_else_block_14;
+      return create_if_block_54;
+    return create_else_block_13;
   }
   let current_block_type = select_block_type(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block3 = current_block_type(ctx);
-  let if_block4 = show_if && create_if_block_46(ctx);
+  let if_block4 = show_if && create_if_block_49(ctx);
   function select_block_type_5(ctx2, dirty) {
     if (
       /*isGridLayout*/
-      ctx2[10]
+      ctx2[9]
     )
-      return create_if_block_510;
-    return create_else_block_7;
+      return create_if_block_43;
+    return create_else_block_6;
   }
   let current_block_type_1 = select_block_type_5(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block5 = current_block_type_1(ctx);
   let if_block6 = !/*isFocusedListMode*/
-  ctx[3] && create_if_block6(ctx);
+  ctx[3] && create_if_block_110(ctx);
+  let if_block7 = (
+    /*showHelpModal*/
+    ctx[22] && create_if_block6(ctx)
+  );
   return {
     c() {
       div1 = element("div");
@@ -24318,13 +24745,16 @@ function create_fragment6(ctx) {
       t7 = space();
       if (if_block6)
         if_block6.c();
+      t8 = space();
+      if (if_block7)
+        if_block7.c();
       attr(span, "class", "quick-modal-filter-icon");
       attr(input, "type", "text");
       attr(input, "class", "quick-modal-filter-input");
       attr(input, "placeholder", input_placeholder_value = /*isFocusedListMode*/
       ctx[3] ? t("focused_lists_search_placeholder") || "Search lists..." : (
         /*searchMode*/
-        ctx[9] === "task" ? t("quick_list_task_search_placeholder") || "Search all tasks (title, steps, notes)..." : "Type to filter lists (\u2191\u2193\u2190\u2192 navigate, F2 rename, Enter to open in center)..."
+        ctx[8] === "task" ? t("quick_list_task_search_placeholder") || "Search all tasks (title, steps, notes)..." : "Type to filter lists (\u2191\u2193\u2190\u2192 navigate, F2 rename, Enter to open in center)..."
       ));
       attr(div0, "class", "quick-modal-filter-bar");
       attr(div1, "class", "quick-modal-container quick-list-only-container");
@@ -24340,20 +24770,20 @@ function create_fragment6(ctx) {
         div1,
         "is-picking-focus",
         /*isPickingDefaultFocus*/
-        ctx[21]
+        ctx[20]
       );
       toggle_class(
         div1,
         "is-dragging-group",
         /*isDraggingGroup*/
         ctx[42] && /*layoutMode*/
-        ctx[8] !== "table"
+        ctx[7] !== "table"
       );
       toggle_class(
         div1,
         "is-table-mode",
         /*layoutMode*/
-        ctx[8] === "table"
+        ctx[7] === "table"
       );
       toggle_class(
         div1,
@@ -24416,9 +24846,9 @@ function create_fragment6(ctx) {
       set_input_value(
         input,
         /*searchQuery*/
-        ctx[6]
+        ctx[5]
       );
-      ctx[109](input);
+      ctx[111](input);
       append(div0, t2);
       if (if_block1)
         if_block1.m(div0, null);
@@ -24435,26 +24865,29 @@ function create_fragment6(ctx) {
       append(div1, t7);
       if (if_block6)
         if_block6.m(div1, null);
-      ctx[209](div1);
+      append(div1, t8);
+      if (if_block7)
+        if_block7.m(div1, null);
+      ctx[220](div1);
       if (!mounted) {
         dispose = [
           listen(
             window_12,
             "keydown",
             /*handleKeydown*/
-            ctx[90]
+            ctx[91]
           ),
           listen(
             window_12,
             "pointermove",
             /*handlePointerMove*/
-            ctx[80]
+            ctx[81]
           ),
           listen(
             input,
             "input",
             /*input_input_handler*/
-            ctx[108]
+            ctx[110]
           ),
           listen(
             input,
@@ -24472,7 +24905,7 @@ function create_fragment6(ctx) {
             div1,
             "pointerleave",
             /*handlePointerLeave*/
-            ctx[81]
+            ctx[82]
           )
         ];
         mounted = true;
@@ -24486,7 +24919,7 @@ function create_fragment6(ctx) {
         if (if_block0) {
           if_block0.p(ctx2, dirty);
         } else {
-          if_block0 = create_if_block_64(ctx2);
+          if_block0 = create_if_block_67(ctx2);
           if_block0.c();
           if_block0.m(div1, t0);
         }
@@ -24495,30 +24928,30 @@ function create_fragment6(ctx) {
         if_block0 = null;
       }
       if (dirty[0] & /*isFocusedListMode, searchMode*/
-      520 && input_placeholder_value !== (input_placeholder_value = /*isFocusedListMode*/
+      264 && input_placeholder_value !== (input_placeholder_value = /*isFocusedListMode*/
       ctx2[3] ? t("focused_lists_search_placeholder") || "Search lists..." : (
         /*searchMode*/
-        ctx2[9] === "task" ? t("quick_list_task_search_placeholder") || "Search all tasks (title, steps, notes)..." : "Type to filter lists (\u2191\u2193\u2190\u2192 navigate, F2 rename, Enter to open in center)..."
+        ctx2[8] === "task" ? t("quick_list_task_search_placeholder") || "Search all tasks (title, steps, notes)..." : "Type to filter lists (\u2191\u2193\u2190\u2192 navigate, F2 rename, Enter to open in center)..."
       ))) {
         attr(input, "placeholder", input_placeholder_value);
       }
       if (dirty[0] & /*searchQuery*/
-      64 && input.value !== /*searchQuery*/
-      ctx2[6]) {
+      32 && input.value !== /*searchQuery*/
+      ctx2[5]) {
         set_input_value(
           input,
           /*searchQuery*/
-          ctx2[6]
+          ctx2[5]
         );
       }
       if (
         /*searchQuery*/
-        ctx2[6]
+        ctx2[5]
       ) {
         if (if_block1) {
           if_block1.p(ctx2, dirty);
         } else {
-          if_block1 = create_if_block_63(ctx2);
+          if_block1 = create_if_block_66(ctx2);
           if_block1.c();
           if_block1.m(div0, t3);
         }
@@ -24528,12 +24961,12 @@ function create_fragment6(ctx) {
       }
       if (
         /*isStarredMatching*/
-        ctx2[14]
+        ctx2[13]
       ) {
         if (if_block2) {
           if_block2.p(ctx2, dirty);
         } else {
-          if_block2 = create_if_block_61(ctx2);
+          if_block2 = create_if_block_64(ctx2);
           if_block2.c();
           if_block2.m(div0, t4);
         }
@@ -24552,15 +24985,15 @@ function create_fragment6(ctx) {
         }
       }
       if (dirty[0] & /*searchMode, searchQuery*/
-      576)
+      288)
         show_if = /*searchMode*/
-        ctx2[9] === "task" && /*searchQuery*/
-        ctx2[6].trim().length > 0;
+        ctx2[8] === "task" && /*searchQuery*/
+        ctx2[5].trim().length > 0;
       if (show_if) {
         if (if_block4) {
           if_block4.p(ctx2, dirty);
         } else {
-          if_block4 = create_if_block_46(ctx2);
+          if_block4 = create_if_block_49(ctx2);
           if_block4.c();
           if_block4.m(div0, null);
         }
@@ -24583,13 +25016,28 @@ function create_fragment6(ctx) {
         if (if_block6) {
           if_block6.p(ctx2, dirty);
         } else {
-          if_block6 = create_if_block6(ctx2);
+          if_block6 = create_if_block_110(ctx2);
           if_block6.c();
-          if_block6.m(div1, null);
+          if_block6.m(div1, t8);
         }
       } else if (if_block6) {
         if_block6.d(1);
         if_block6 = null;
+      }
+      if (
+        /*showHelpModal*/
+        ctx2[22]
+      ) {
+        if (if_block7) {
+          if_block7.p(ctx2, dirty);
+        } else {
+          if_block7 = create_if_block6(ctx2);
+          if_block7.c();
+          if_block7.m(div1, null);
+        }
+      } else if (if_block7) {
+        if_block7.d(1);
+        if_block7 = null;
       }
       if (dirty[0] & /*titleAlignment*/
       8388608) {
@@ -24601,32 +25049,32 @@ function create_fragment6(ctx) {
         );
       }
       if (dirty[0] & /*isPickingDefaultFocus*/
-      2097152) {
+      1048576) {
         toggle_class(
           div1,
           "is-picking-focus",
           /*isPickingDefaultFocus*/
-          ctx2[21]
+          ctx2[20]
         );
       }
       if (dirty[0] & /*layoutMode*/
-      256 | dirty[1] & /*isDraggingGroup*/
+      128 | dirty[1] & /*isDraggingGroup*/
       2048) {
         toggle_class(
           div1,
           "is-dragging-group",
           /*isDraggingGroup*/
           ctx2[42] && /*layoutMode*/
-          ctx2[8] !== "table"
+          ctx2[7] !== "table"
         );
       }
       if (dirty[0] & /*layoutMode*/
-      256) {
+      128) {
         toggle_class(
           div1,
           "is-table-mode",
           /*layoutMode*/
-          ctx2[8] === "table"
+          ctx2[7] === "table"
         );
       }
       if (dirty[1] & /*activeEdgeDirection*/
@@ -24710,7 +25158,7 @@ function create_fragment6(ctx) {
       }
       if (if_block0)
         if_block0.d();
-      ctx[109](null);
+      ctx[111](null);
       if (if_block1)
         if_block1.d();
       if (if_block2)
@@ -24721,7 +25169,9 @@ function create_fragment6(ctx) {
       if_block5.d();
       if (if_block6)
         if_block6.d();
-      ctx[209](null);
+      if (if_block7)
+        if_block7.d();
+      ctx[220](null);
       mounted = false;
       run_all(dispose);
     }
@@ -24822,6 +25272,7 @@ function instance6($$self, $$props, $$invalidate) {
   let prevSearchQuery = "";
   let isPickingDefaultFocus = false;
   let showFocusPopover = false;
+  let showHelpModal = false;
   let titleAlignment = (_i = (_h = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _h.quickListTitleAlignment) != null ? _i : "center";
   let hideLeftSidebar = (_k = (_j = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _j.hideLeftSidebar) != null ? _k : false;
   let minimalPlaceholders = (_m = (_l = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _l.minimalPlaceholders) != null ? _m : false;
@@ -24853,9 +25304,9 @@ function instance6($$self, $$props, $$invalidate) {
   }
   function checkHotkeyStatus() {
     var _a2, _b2;
-    $$invalidate(96, hideLeftSidebar = (_b2 = (_a2 = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _a2.hideLeftSidebar) != null ? _b2 : false);
+    $$invalidate(98, hideLeftSidebar = (_b2 = (_a2 = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _a2.hideLeftSidebar) != null ? _b2 : false);
     if (app) {
-      $$invalidate(97, hasFloatingModalHotkey = isQuickListHotkeyAssigned(app));
+      $$invalidate(99, hasFloatingModalHotkey = isQuickListHotkeyAssigned(app));
     }
   }
   function handleOpenHotkeySettings() {
@@ -24904,11 +25355,11 @@ function instance6($$self, $$props, $$invalidate) {
     }
   }
   function handleCompositionStart() {
-    $$invalidate(94, isComposing = true);
+    $$invalidate(96, isComposing = true);
   }
   function handleCompositionEnd(e) {
-    $$invalidate(94, isComposing = false);
-    $$invalidate(6, searchQuery = e.target.value);
+    $$invalidate(96, isComposing = false);
+    $$invalidate(5, searchQuery = e.target.value);
   }
   let isAddingList = false;
   let newListName = "";
@@ -25205,21 +25656,21 @@ function instance6($$self, $$props, $$invalidate) {
         targetIndex = firstRealIdx !== -1 ? firstRealIdx : 0;
       }
     }
-    $$invalidate(7, focusedIndex = targetIndex);
+    $$invalidate(6, focusedIndex = targetIndex);
     hasInitializedFocus = true;
     scrollFocusedIntoView();
   }
   function togglePickingDefaultFocus() {
-    $$invalidate(21, isPickingDefaultFocus = !isPickingDefaultFocus);
+    $$invalidate(20, isPickingDefaultFocus = !isPickingDefaultFocus);
     if (isPickingDefaultFocus) {
       new import_obsidian13.Notice(t("focus_pick_mode_enabled"));
     }
   }
   function showFocusTooltip() {
-    $$invalidate(22, showFocusPopover = true);
+    $$invalidate(21, showFocusPopover = true);
   }
   function hideFocusTooltip() {
-    $$invalidate(22, showFocusPopover = false);
+    $$invalidate(21, showFocusPopover = false);
   }
   async function handleCategoryClick(cat) {
     if (isFocusedListMode) {
@@ -25227,8 +25678,8 @@ function instance6($$self, $$props, $$invalidate) {
       return;
     }
     if (isPickingDefaultFocus) {
-      $$invalidate(21, isPickingDefaultFocus = false);
-      $$invalidate(22, showFocusPopover = false);
+      $$invalidate(20, isPickingDefaultFocus = false);
+      $$invalidate(21, showFocusPopover = false);
       if (plugin == null ? void 0 : plugin.settings) {
         $$invalidate(0, plugin.settings.defaultQuickListFocusFilepath = cat.filepath, plugin);
         await plugin.saveSettings();
@@ -25236,7 +25687,7 @@ function instance6($$self, $$props, $$invalidate) {
       new import_obsidian13.Notice(t("focus_default_set", cat.name));
       const idx = flatCategories.findIndex((c) => c.filepath === cat.filepath);
       if (idx !== -1) {
-        $$invalidate(7, focusedIndex = idx);
+        $$invalidate(6, focusedIndex = idx);
         scrollFocusedIntoView();
       }
       return;
@@ -25245,11 +25696,11 @@ function instance6($$self, $$props, $$invalidate) {
   }
   async function toggleLayoutMode() {
     if (layoutMode === "grid") {
-      $$invalidate(8, layoutMode = "table");
+      $$invalidate(7, layoutMode = "table");
     } else if (layoutMode === "table") {
-      $$invalidate(8, layoutMode = "list");
+      $$invalidate(7, layoutMode = "list");
     } else {
-      $$invalidate(8, layoutMode = "grid");
+      $$invalidate(7, layoutMode = "grid");
     }
     if (plugin == null ? void 0 : plugin.settings) {
       $$invalidate(0, plugin.settings.quickListLayoutMode = layoutMode, plugin);
@@ -25277,9 +25728,9 @@ function instance6($$self, $$props, $$invalidate) {
     EventBus.on("settings:changed" /* SETTINGS_CHANGED */, handleSettingsChanged);
     searchInputEl == null ? void 0 : searchInputEl.focus();
     if (isFocusedListMode) {
-      $$invalidate(9, searchMode = "list");
+      $$invalidate(8, searchMode = "list");
       if (layoutMode === "list")
-        $$invalidate(8, layoutMode = "grid");
+        $$invalidate(7, layoutMode = "grid");
       setTimeout(
         () => {
           searchInputEl == null ? void 0 : searchInputEl.focus();
@@ -25372,9 +25823,9 @@ function instance6($$self, $$props, $$invalidate) {
   }
   async function handleExternalListChanged(payload) {
     if (payload && Array.isArray(payload.sidebarItems)) {
-      $$invalidate(93, sidebarItems = payload.sidebarItems);
+      $$invalidate(95, sidebarItems = payload.sidebarItems);
       if (isFocusedListMode) {
-        $$invalidate(93, sidebarItems = sidebarItems.map((item) => {
+        $$invalidate(95, sidebarItems = sidebarItems.map((item) => {
           if (item.type === "group") {
             return { ...item, isExpanded: true };
           }
@@ -25399,9 +25850,9 @@ function instance6($$self, $$props, $$invalidate) {
     void refreshTaskCounts();
   }
   async function loadData() {
-    $$invalidate(93, sidebarItems = await dataService.getSidebarItems());
+    $$invalidate(95, sidebarItems = await dataService.getSidebarItems());
     if (isFocusedListMode) {
-      $$invalidate(93, sidebarItems = sidebarItems.map((item) => {
+      $$invalidate(95, sidebarItems = sidebarItems.map((item) => {
         if (item.type === "group") {
           return { ...item, isExpanded: true };
         }
@@ -25423,7 +25874,7 @@ function instance6($$self, $$props, $$invalidate) {
   }
   async function refreshStarredCount() {
     try {
-      $$invalidate(5, starredCount = await dataService.getStarredCount());
+      $$invalidate(4, starredCount = await dataService.getStarredCount());
     } catch (e) {
       console.error("[QuickListModal] Failed to refresh starred count:", e);
     }
@@ -25432,17 +25883,17 @@ function instance6($$self, $$props, $$invalidate) {
     const countPromises = categories.map(async (cat) => {
       try {
         const catTasks = await dataService.getTasks(cat.filepath);
-        $$invalidate(15, taskCounts[cat.filepath] = catTasks.filter((t2) => !t2.completed).length, taskCounts);
+        $$invalidate(14, taskCounts[cat.filepath] = catTasks.filter((t2) => !t2.completed).length, taskCounts);
       } catch (e) {
-        $$invalidate(15, taskCounts[cat.filepath] = 0, taskCounts);
+        $$invalidate(14, taskCounts[cat.filepath] = 0, taskCounts);
       }
     });
     await Promise.all(countPromises);
-    $$invalidate(15, taskCounts = { ...taskCounts });
+    $$invalidate(14, taskCounts = { ...taskCounts });
   }
   async function toggleGroup(group) {
     measuredCardHeights.delete(group.id);
-    $$invalidate(93, sidebarItems = toggleGroupExpandedState(sidebarItems, group.id));
+    $$invalidate(95, sidebarItems = toggleGroupExpandedState(sidebarItems, group.id));
     await tick();
     if (isGridLayout) {
       updateLayoutColumns(true);
@@ -25479,26 +25930,26 @@ function instance6($$self, $$props, $$invalidate) {
       clearTimeout(searchDebounceTimer);
     const q = query.trim();
     if (!q) {
-      $$invalidate(17, taskSearchResults = []);
-      $$invalidate(18, taskFocusedIndex = 0);
-      $$invalidate(19, isSearchingTasks = false);
+      $$invalidate(16, taskSearchResults = []);
+      $$invalidate(17, taskFocusedIndex = 0);
+      $$invalidate(18, isSearchingTasks = false);
       return;
     }
     searchDebounceTimer = setTimeout(
       async () => {
-        $$invalidate(19, isSearchingTasks = true);
+        $$invalidate(18, isSearchingTasks = true);
         try {
           let results = await dataService.searchTasks(q, null);
           if (hideCompleted) {
             results = results.filter((r) => !r.task.completed);
           }
-          $$invalidate(17, taskSearchResults = results);
-          $$invalidate(18, taskFocusedIndex = 0);
+          $$invalidate(16, taskSearchResults = results);
+          $$invalidate(17, taskFocusedIndex = 0);
         } catch (err) {
           console.error("[QuickListModal] Task search failed:", err);
-          $$invalidate(17, taskSearchResults = []);
+          $$invalidate(16, taskSearchResults = []);
         } finally {
-          $$invalidate(19, isSearchingTasks = false);
+          $$invalidate(18, isSearchingTasks = false);
         }
       },
       50
@@ -25509,7 +25960,7 @@ function instance6($$self, $$props, $$invalidate) {
       e.preventDefault();
       e.stopPropagation();
     }
-    $$invalidate(16, hideCompleted = !hideCompleted);
+    $$invalidate(15, hideCompleted = !hideCompleted);
     if (plugin == null ? void 0 : plugin.settings) {
       $$invalidate(0, plugin.settings.searchHideCompleted = hideCompleted, plugin);
       await plugin.saveSettings();
@@ -25520,14 +25971,14 @@ function instance6($$self, $$props, $$invalidate) {
     searchInputEl == null ? void 0 : searchInputEl.focus();
   }
   async function toggleSearchMode() {
-    $$invalidate(9, searchMode = searchMode === "list" ? "task" : "list");
+    $$invalidate(8, searchMode = searchMode === "list" ? "task" : "list");
     if (plugin == null ? void 0 : plugin.settings) {
       $$invalidate(0, plugin.settings.quickListSearchMode = searchMode, plugin);
       await plugin.saveSettings();
     }
-    $$invalidate(6, searchQuery = "");
-    $$invalidate(17, taskSearchResults = []);
-    $$invalidate(18, taskFocusedIndex = 0);
+    $$invalidate(5, searchQuery = "");
+    $$invalidate(16, taskSearchResults = []);
+    $$invalidate(17, taskFocusedIndex = 0);
     if (searchMode === "list") {
       if (isGridLayout) {
         scheduleAdjustSpacing();
@@ -26157,7 +26608,7 @@ function instance6($$self, $$props, $$invalidate) {
       showDragForbiddenNotice();
       return;
     }
-    $$invalidate(93, sidebarItems = moveSidebarItem(sidebarItems, movedId, targetId, pos));
+    $$invalidate(95, sidebarItems = moveSidebarItem(sidebarItems, movedId, targetId, pos));
     categories = getFlatCategories(sidebarItems);
     measuredCardHeights.clear();
     await tick();
@@ -26279,6 +26730,66 @@ function instance6($$self, $$props, $$invalidate) {
     cols.splice(insertCol, 0, [draggedCard]);
     const prunedCols = cols.filter((c) => c.length > 0);
     await saveTableLayoutPositions(prunedCols);
+  }
+  async function createGroupFromListAtColumn(movedId, colIdx) {
+    if (!movedId)
+      return;
+    let listToMove = null;
+    const nextSidebar = [];
+    for (const item of sidebarItems) {
+      if (item.id === movedId || item.filepath === movedId) {
+        listToMove = item;
+      } else if (item.type === "group") {
+        const childIdx = item.items.findIndex((c) => c.id === movedId || c.filepath === movedId);
+        if (childIdx !== -1) {
+          listToMove = item.items[childIdx];
+          nextSidebar.push({
+            ...item,
+            items: item.items.filter((c) => c.id !== movedId && c.filepath !== movedId)
+          });
+        } else {
+          nextSidebar.push(item);
+        }
+      } else {
+        nextSidebar.push(item);
+      }
+    }
+    if (!listToMove)
+      return;
+    const existingGroupNames = nextSidebar.filter((i) => i.type === "group").map((g) => g.name);
+    const desiredName = listToMove.name || "New Group";
+    const groupName = resolveUniqueName(existingGroupNames, desiredName);
+    const newGroupId = Date.now().toString() + Math.random().toString(36).substring(2, 7);
+    const newGroup = {
+      id: newGroupId,
+      type: "group",
+      name: groupName,
+      items: [{ ...listToMove }],
+      isExpanded: true
+    };
+    nextSidebar.push(newGroup);
+    $$invalidate(95, sidebarItems = nextSidebar);
+    categories = getFlatCategories(sidebarItems);
+    const newCard = {
+      id: newGroup.id,
+      name: newGroup.name,
+      group: newGroup,
+      items: newGroup.items,
+      type: "group",
+      height: 60
+    };
+    const cols = layoutColumns.map((col) => [...col]);
+    if (colIdx >= cols.length) {
+      cols.push([newCard]);
+    } else {
+      cols[colIdx].push(newCard);
+    }
+    const prunedCols = cols.filter((c) => c.length > 0);
+    await saveTableLayoutPositions(prunedCols);
+    measuredCardHeights.clear();
+    await tick();
+    await dataService.saveSidebarState(sidebarItems);
+    EventBus.emit("category:list-changed" /* CATEGORY_LIST_CHANGED */, { sidebarItems });
   }
   function handleColumnDragOver(e, colIdx) {
     if (layoutMode !== "table" || !isDraggingGroup || !draggedListId)
@@ -26492,7 +27003,7 @@ function instance6($$self, $$props, $$invalidate) {
       const catPath = item.filepath || item.id;
       const idx = flatCategories.findIndex((c) => c.filepath === catPath || c.id === catPath);
       if (idx >= 0) {
-        $$invalidate(7, focusedIndex = idx);
+        $$invalidate(6, focusedIndex = idx);
       }
     }
     await tick();
@@ -26623,7 +27134,7 @@ function instance6($$self, $$props, $$invalidate) {
       await tick();
       const idx = flatCategories.findIndex((c) => c.filepath === newCat.filepath || c.id === newCat.id);
       if (idx !== -1) {
-        $$invalidate(7, focusedIndex = idx);
+        $$invalidate(6, focusedIndex = idx);
         scrollFocusedIntoView();
       }
     } catch (e) {
@@ -26675,9 +27186,9 @@ function instance6($$self, $$props, $$invalidate) {
       return;
     if (!isGridLayout) {
       if (direction === "down") {
-        $$invalidate(7, focusedIndex = Math.min(flatCategories.length - 1, focusedIndex + 1));
+        $$invalidate(6, focusedIndex = Math.min(flatCategories.length - 1, focusedIndex + 1));
       } else if (direction === "up") {
-        $$invalidate(7, focusedIndex = Math.max(0, focusedIndex - 1));
+        $$invalidate(6, focusedIndex = Math.max(0, focusedIndex - 1));
       }
       scrollFocusedIntoView();
       return;
@@ -26692,7 +27203,7 @@ function instance6($$self, $$props, $$invalidate) {
       const targetPath = currentEl.dataset.filepath;
       const idx = flatCategories.findIndex((c) => c.filepath === targetPath);
       if (idx !== -1)
-        $$invalidate(7, focusedIndex = idx);
+        $$invalidate(6, focusedIndex = idx);
       scrollFocusedIntoView();
       return;
     }
@@ -26744,11 +27255,11 @@ function instance6($$self, $$props, $$invalidate) {
     }
     if (!bestCandidate) {
       if (direction === "down") {
-        $$invalidate(7, focusedIndex = (focusedIndex + 1) % flatCategories.length);
+        $$invalidate(6, focusedIndex = (focusedIndex + 1) % flatCategories.length);
         scrollFocusedIntoView();
         return;
       } else if (direction === "up") {
-        $$invalidate(7, focusedIndex = (focusedIndex - 1 + flatCategories.length) % flatCategories.length);
+        $$invalidate(6, focusedIndex = (focusedIndex - 1 + flatCategories.length) % flatCategories.length);
         scrollFocusedIntoView();
         return;
       } else if (direction === "right") {
@@ -26793,7 +27304,7 @@ function instance6($$self, $$props, $$invalidate) {
       const targetPath = bestCandidate.dataset.filepath;
       const newIndex = flatCategories.findIndex((c) => c.filepath === targetPath);
       if (newIndex !== -1) {
-        $$invalidate(7, focusedIndex = newIndex);
+        $$invalidate(6, focusedIndex = newIndex);
         scrollFocusedIntoView();
       }
     }
@@ -26801,6 +27312,26 @@ function instance6($$self, $$props, $$invalidate) {
   async function handleKeydown(e) {
     if (e.isComposing || isComposing || e.keyCode === 229)
       return;
+    if (showHelpModal) {
+      if (e.key === "Escape" || e.key === "F1" || e.key === "?") {
+        e.preventDefault();
+        e.stopPropagation();
+        $$invalidate(22, showHelpModal = false);
+        return;
+      }
+    }
+    if (e.key === "F1") {
+      e.preventDefault();
+      e.stopPropagation();
+      $$invalidate(22, showHelpModal = !showHelpModal);
+      return;
+    }
+    if (e.key === "?" && document.activeElement !== searchInputEl && !editingItemId && !isAddingList && !isAddingGroup) {
+      e.preventDefault();
+      e.stopPropagation();
+      $$invalidate(22, showHelpModal = !showHelpModal);
+      return;
+    }
     if (editingItemId) {
       if (e.key === "Enter") {
         e.preventDefault();
@@ -26857,7 +27388,7 @@ function instance6($$self, $$props, $$invalidate) {
         e.preventDefault();
         e.stopPropagation();
         if (taskSearchResults.length > 0) {
-          $$invalidate(18, taskFocusedIndex = (taskFocusedIndex + 1) % taskSearchResults.length);
+          $$invalidate(17, taskFocusedIndex = (taskFocusedIndex + 1) % taskSearchResults.length);
           void scrollTaskFocusedIntoView();
         }
         return;
@@ -26866,7 +27397,7 @@ function instance6($$self, $$props, $$invalidate) {
         e.preventDefault();
         e.stopPropagation();
         if (taskSearchResults.length > 0) {
-          $$invalidate(18, taskFocusedIndex = (taskFocusedIndex - 1 + taskSearchResults.length) % taskSearchResults.length);
+          $$invalidate(17, taskFocusedIndex = (taskFocusedIndex - 1 + taskSearchResults.length) % taskSearchResults.length);
           void scrollTaskFocusedIntoView();
         }
         return;
@@ -26882,9 +27413,9 @@ function instance6($$self, $$props, $$invalidate) {
       if (e.key === "Escape") {
         e.preventDefault();
         e.stopPropagation();
-        $$invalidate(6, searchQuery = "");
-        $$invalidate(17, taskSearchResults = []);
-        $$invalidate(18, taskFocusedIndex = 0);
+        $$invalidate(5, searchQuery = "");
+        $$invalidate(16, taskSearchResults = []);
+        $$invalidate(17, taskFocusedIndex = 0);
         return;
       }
       return;
@@ -26939,7 +27470,7 @@ function instance6($$self, $$props, $$invalidate) {
       if (e.key === "Escape") {
         e.preventDefault();
         e.stopPropagation();
-        $$invalidate(21, isPickingDefaultFocus = false);
+        $$invalidate(20, isPickingDefaultFocus = false);
         new import_obsidian13.Notice(t("focus_pick_cancelled"));
         return;
       }
@@ -26991,7 +27522,7 @@ function instance6($$self, $$props, $$invalidate) {
       if (searchQuery) {
         e.preventDefault();
         e.stopPropagation();
-        $$invalidate(6, searchQuery = "");
+        $$invalidate(5, searchQuery = "");
         return;
       }
       closeModal();
@@ -27005,12 +27536,12 @@ function instance6($$self, $$props, $$invalidate) {
           searchInputEl == null ? void 0 : searchInputEl.focus();
           if (searchQuery.length > 0) {
             e.preventDefault();
-            $$invalidate(6, searchQuery = searchQuery.slice(0, -1));
+            $$invalidate(5, searchQuery = searchQuery.slice(0, -1));
           }
         } else if (e.key.length === 1) {
           searchInputEl == null ? void 0 : searchInputEl.focus();
           e.preventDefault();
-          $$invalidate(6, searchQuery += e.key);
+          $$invalidate(5, searchQuery += e.key);
         }
       }
     }
@@ -27064,7 +27595,7 @@ function instance6($$self, $$props, $$invalidate) {
   }
   function input_input_handler() {
     searchQuery = this.value;
-    $$invalidate(6, searchQuery);
+    $$invalidate(5, searchQuery);
   }
   function input_binding($$value) {
     binding_callbacks[$$value ? "unshift" : "push"](() => {
@@ -27073,9 +27604,9 @@ function instance6($$self, $$props, $$invalidate) {
     });
   }
   const click_handler_6 = () => {
-    $$invalidate(6, searchQuery = "");
+    $$invalidate(5, searchQuery = "");
     if (searchMode === "task")
-      $$invalidate(17, taskSearchResults = []);
+      $$invalidate(16, taskSearchResults = []);
     searchInputEl == null ? void 0 : searchInputEl.focus();
   };
   const click_handler_7 = () => toggleFocusedList(STARRED_CATEGORY_PATH);
@@ -27089,13 +27620,13 @@ function instance6($$self, $$props, $$invalidate) {
     }
   };
   const mouseenter_handler = (idx) => {
-    $$invalidate(18, taskFocusedIndex = idx);
+    $$invalidate(17, taskFocusedIndex = idx);
   };
   const click_handler_9 = (item) => openTaskInCenter(item);
   function div_binding($$value) {
     binding_callbacks[$$value ? "unshift" : "push"](() => {
       taskResultsContainerEl = $$value;
-      $$invalidate(20, taskResultsContainerEl);
+      $$invalidate(19, taskResultsContainerEl);
     });
   }
   const dragover_handler = (colIdx, e) => {
@@ -27230,9 +27761,28 @@ function instance6($$self, $$props, $$invalidate) {
     }
     handleListDragEnd();
   };
-  const dragover_handler_7 = (colIdx, e) => handleColumnDragOver(e, colIdx);
-  const drop_handler_7 = (colIdx, e) => handleColumnDrop(e, colIdx);
-  const dragover_handler_8 = (e) => {
+  const dragover_handler_7 = (colIdx, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer)
+      e.dataTransfer.dropEffect = "move";
+    $$invalidate(34, dragOverListId = `col_new_group_${colIdx}`);
+    $$invalidate(35, dragListPosition = "bottom");
+  };
+  const dragleave_handler_5 = (colIdx) => {
+    if (dragOverListId === `col_new_group_${colIdx}`)
+      $$invalidate(34, dragOverListId = "");
+  };
+  const drop_handler_7 = async (colIdx) => {
+    const listId = draggedListId;
+    handleListDragEnd();
+    if (listId) {
+      await createGroupFromListAtColumn(listId, colIdx);
+    }
+  };
+  const dragover_handler_8 = (colIdx, e) => handleColumnDragOver(e, colIdx);
+  const drop_handler_8 = (colIdx, e) => handleColumnDrop(e, colIdx);
+  const dragover_handler_9 = (e) => {
     e.preventDefault();
     e.stopPropagation();
     if (e.dataTransfer)
@@ -27240,15 +27790,34 @@ function instance6($$self, $$props, $$invalidate) {
     $$invalidate(34, dragOverListId = "__new_col_drop__");
     $$invalidate(35, dragListPosition = "inside");
   };
-  const dragleave_handler_5 = () => {
+  const dragleave_handler_6 = () => {
     if (dragOverListId === "__new_col_drop__")
       $$invalidate(34, dragOverListId = "");
   };
-  const drop_handler_8 = async () => {
+  const drop_handler_9 = async () => {
     if (draggedListId) {
       await moveGroupToNewColumn(draggedListId);
     }
     handleListDragEnd();
+  };
+  const dragover_handler_10 = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer)
+      e.dataTransfer.dropEffect = "move";
+    $$invalidate(34, dragOverListId = "__new_col_new_group__");
+    $$invalidate(35, dragListPosition = "inside");
+  };
+  const dragleave_handler_7 = () => {
+    if (dragOverListId === "__new_col_new_group__")
+      $$invalidate(34, dragOverListId = "");
+  };
+  const drop_handler_10 = async () => {
+    const listId = draggedListId;
+    handleListDragEnd();
+    if (listId) {
+      await createGroupFromListAtColumn(listId, layoutColumns.length);
+    }
   };
   function div_binding_1($$value) {
     binding_callbacks[$$value ? "unshift" : "push"](() => {
@@ -27256,7 +27825,7 @@ function instance6($$self, $$props, $$invalidate) {
       $$invalidate(40, boardEl);
     });
   }
-  const dragover_handler_9 = (e) => {
+  const dragover_handler_11 = (e) => {
     if (layoutMode === "table" && isDraggingGroup) {
       e.preventDefault();
       if (e.dataTransfer)
@@ -27284,8 +27853,8 @@ function instance6($$self, $$props, $$invalidate) {
   });
   const mouseleave_handler_3 = (item) => clearHoveredTarget(item.id);
   const dragstart_handler_5 = (item, e) => handleListDragStart(e, item);
-  const dragover_handler_10 = (item, e) => handleListDragOver(e, item, true);
-  const drop_handler_9 = (item, e) => handleGroupCardDrop(e, item);
+  const dragover_handler_12 = (item, e) => handleListDragOver(e, item, true);
+  const drop_handler_11 = (item, e) => handleGroupCardDrop(e, item);
   const contextmenu_handler_4 = (item, e) => showItemContextMenu(e, {
     id: item.id,
     name: item.name,
@@ -27310,9 +27879,9 @@ function instance6($$self, $$props, $$invalidate) {
   });
   const mouseleave_handler_4 = (child) => clearHoveredTarget(child.id || child.filepath);
   const dragstart_handler_6 = (child, e) => handleListDragStart(e, child);
-  const dragover_handler_11 = (child, item, e) => handleListDragOver(e, child, false, item);
-  const dragleave_handler_6 = (child, e) => handleListDragLeave(e, child.id);
-  const drop_handler_10 = (child) => handleListDrop(child);
+  const dragover_handler_13 = (child, item, e) => handleListDragOver(e, child, false, item);
+  const dragleave_handler_8 = (child, e) => handleListDragLeave(e, child.id);
+  const drop_handler_12 = (child) => handleListDrop(child);
   const click_handler_20 = (child) => handleCategoryClick(child);
   const contextmenu_handler_5 = (child, e) => showItemContextMenu(e, {
     id: child.id || "",
@@ -27320,9 +27889,9 @@ function instance6($$self, $$props, $$invalidate) {
     type: "category",
     filepath: child.filepath
   });
-  const dragover_handler_12 = (item, e) => handleGroupCardDragOver(e, item, true);
-  const drop_handler_11 = (item, e) => handleGroupCardDrop(e, item, true);
-  const dragleave_handler_7 = (item, e) => handleGroupCardDragLeave(e, item);
+  const dragover_handler_14 = (item, e) => handleGroupCardDragOver(e, item, true);
+  const drop_handler_13 = (item, e) => handleGroupCardDrop(e, item, true);
+  const dragleave_handler_9 = (item, e) => handleGroupCardDragLeave(e, item);
   const click_handler_21 = (item) => toggleFocusedList(item.filepath);
   function input_input_handler_6() {
     editingName = this.value;
@@ -27342,9 +27911,9 @@ function instance6($$self, $$props, $$invalidate) {
   });
   const mouseleave_handler_5 = (item) => clearHoveredTarget(item.id || item.filepath);
   const dragstart_handler_7 = (item, e) => handleListDragStart(e, item);
-  const dragover_handler_13 = (item, e) => handleListDragOver(e, item, false);
-  const dragleave_handler_8 = (item, e) => handleListDragLeave(e, item.id);
-  const drop_handler_12 = (item) => handleListDrop(item);
+  const dragover_handler_15 = (item, e) => handleListDragOver(e, item, false);
+  const dragleave_handler_10 = (item, e) => handleListDragLeave(e, item.id);
+  const drop_handler_14 = (item) => handleListDrop(item);
   const click_handler_22 = (item) => handleCategoryClick(item);
   const contextmenu_handler_6 = (item, e) => showItemContextMenu(e, {
     id: item.id || "",
@@ -27396,6 +27965,9 @@ function instance6($$self, $$props, $$invalidate) {
       $$invalidate(29, newGroupName = "");
     }
   };
+  const click_handler_23 = () => $$invalidate(22, showHelpModal = true);
+  const click_handler_24 = () => $$invalidate(22, showHelpModal = false);
+  const click_handler_25 = () => $$invalidate(22, showHelpModal = false);
   function div1_binding($$value) {
     binding_callbacks[$$value ? "unshift" : "push"](() => {
       modalContainerEl = $$value;
@@ -27404,11 +27976,11 @@ function instance6($$self, $$props, $$invalidate) {
   }
   $$self.$$set = ($$props2) => {
     if ("app" in $$props2)
-      $$invalidate(91, app = $$props2.app);
+      $$invalidate(92, app = $$props2.app);
     if ("plugin" in $$props2)
       $$invalidate(0, plugin = $$props2.plugin);
     if ("dataService" in $$props2)
-      $$invalidate(92, dataService = $$props2.dataService);
+      $$invalidate(93, dataService = $$props2.dataService);
     if ("showTip" in $$props2)
       $$invalidate(1, showTip = $$props2.showTip);
     if ("remainingTips" in $$props2)
@@ -27416,93 +27988,93 @@ function instance6($$self, $$props, $$invalidate) {
     if ("isFocusedListMode" in $$props2)
       $$invalidate(3, isFocusedListMode = $$props2.isFocusedListMode);
     if ("closeModal" in $$props2)
-      $$invalidate(4, closeModal = $$props2.closeModal);
+      $$invalidate(94, closeModal = $$props2.closeModal);
   };
   $$self.$$.update = () => {
     if ($$self.$$.dirty[0] & /*layoutMode*/
-    256) {
+    128) {
       $:
-        $$invalidate(10, isGridLayout = layoutMode !== "list");
+        $$invalidate(9, isGridLayout = layoutMode !== "list");
     }
     if ($$self.$$.dirty[3] & /*hideLeftSidebar, hasFloatingModalHotkey*/
-    24) {
+    96) {
       $:
         $$invalidate(46, showNoHotkeyWarning = hideLeftSidebar && !hasFloatingModalHotkey);
     }
     if ($$self.$$.dirty[0] & /*searchMode, searchQuery*/
-    576) {
+    288) {
       $:
-        $$invalidate(99, isFiltering = searchMode === "list" && !!searchQuery.trim());
+        $$invalidate(101, isFiltering = searchMode === "list" && !!searchQuery.trim());
     }
     if ($$self.$$.dirty[0] & /*searchMode, searchQuery*/
-    576 | $$self.$$.dirty[3] & /*sidebarItems*/
-    1) {
+    288 | $$self.$$.dirty[3] & /*sidebarItems*/
+    4) {
       $:
-        $$invalidate(12, filteredItems = searchMode === "list" && searchQuery.trim() ? filterSidebarTree(sidebarItems, searchQuery) : sidebarItems);
+        $$invalidate(11, filteredItems = searchMode === "list" && searchQuery.trim() ? filterSidebarTree(sidebarItems, searchQuery) : sidebarItems);
     }
     if ($$self.$$.dirty[0] & /*starredCount, searchQuery*/
-    96 | $$self.$$.dirty[3] & /*isFiltering*/
-    64) {
+    48 | $$self.$$.dirty[3] & /*isFiltering*/
+    256) {
       $:
-        $$invalidate(14, isStarredMatching = starredCount > 0 && (!isFiltering || STARRED_CATEGORY_NAME.toLowerCase().includes(searchQuery.toLowerCase())));
+        $$invalidate(13, isStarredMatching = starredCount > 0 && (!isFiltering || STARRED_CATEGORY_NAME.toLowerCase().includes(searchQuery.toLowerCase())));
     }
     if ($$self.$$.dirty[0] & /*isStarredMatching, starredCategory, filteredItems*/
-    28672) {
+    14336) {
       $:
-        $$invalidate(11, flatCategories = isStarredMatching ? [starredCategory, ...getFlatCategories(filteredItems)] : getFlatCategories(filteredItems));
+        $$invalidate(10, flatCategories = isStarredMatching ? [starredCategory, ...getFlatCategories(filteredItems)] : getFlatCategories(filteredItems));
     }
     if ($$self.$$.dirty[0] & /*filteredItems*/
-    4096) {
+    2048) {
       $:
         groupItems = filteredItems.filter((i) => i.type === "group");
     }
     if ($$self.$$.dirty[0] & /*filteredItems*/
-    4096) {
+    2048) {
       $:
         $$invalidate(44, rootCategories = filteredItems.filter((i) => i.type === "category"));
     }
     if ($$self.$$.dirty[0] & /*flatCategories, plugin*/
-    2049) {
+    1025) {
       $:
-        $$invalidate(98, defaultFocusCategory = flatCategories.find((c) => {
+        $$invalidate(100, defaultFocusCategory = flatCategories.find((c) => {
           var _a2;
           return c.filepath === ((_a2 = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _a2.defaultQuickListFocusFilepath);
         }));
     }
     if ($$self.$$.dirty[3] & /*defaultFocusCategory*/
-    32) {
+    128) {
       $:
         $$invalidate(45, defaultFocusListName = defaultFocusCategory ? defaultFocusCategory.name : "");
     }
     if ($$self.$$.dirty[0] & /*focusedIndex, flatCategories*/
-    2176) {
+    1088) {
       $:
         if (focusedIndex >= 0 && focusedIndex >= flatCategories.length && flatCategories.length > 0) {
-          $$invalidate(7, focusedIndex = Math.max(0, flatCategories.length - 1));
+          $$invalidate(6, focusedIndex = Math.max(0, flatCategories.length - 1));
         }
     }
     if ($$self.$$.dirty[0] & /*searchMode, searchQuery*/
-    576 | $$self.$$.dirty[3] & /*prevSearchQuery*/
-    4) {
+    288 | $$self.$$.dirty[3] & /*prevSearchQuery*/
+    16) {
       $:
         if (searchMode === "list" && searchQuery !== prevSearchQuery) {
-          $$invalidate(95, prevSearchQuery = searchQuery);
+          $$invalidate(97, prevSearchQuery = searchQuery);
           if (searchQuery.trim()) {
-            $$invalidate(7, focusedIndex = 0);
+            $$invalidate(6, focusedIndex = 0);
             scrollFocusedIntoView();
           }
         }
     }
     if ($$self.$$.dirty[0] & /*filteredItems, isGridLayout*/
-    5120) {
+    2560) {
       $:
         if (filteredItems && isGridLayout) {
           scheduleAdjustSpacing();
         }
     }
     if ($$self.$$.dirty[0] & /*searchMode, searchQuery*/
-    576 | $$self.$$.dirty[3] & /*isComposing*/
-    2) {
+    288 | $$self.$$.dirty[3] & /*isComposing*/
+    8) {
       $:
         if (searchMode === "task" && !isComposing) {
           runTaskSearch(searchQuery);
@@ -27510,7 +28082,7 @@ function instance6($$self, $$props, $$invalidate) {
     }
   };
   $:
-    $$invalidate(13, starredCategory = {
+    $$invalidate(12, starredCategory = {
       id: STARRED_CATEGORY_PATH,
       name: STARRED_CATEGORY_NAME,
       filepath: STARRED_CATEGORY_PATH,
@@ -27522,7 +28094,6 @@ function instance6($$self, $$props, $$invalidate) {
     showTip,
     remainingTips,
     isFocusedListMode,
-    closeModal,
     starredCount,
     searchQuery,
     focusedIndex,
@@ -27541,6 +28112,7 @@ function instance6($$self, $$props, $$invalidate) {
     taskResultsContainerEl,
     isPickingDefaultFocus,
     showFocusPopover,
+    showHelpModal,
     titleAlignment,
     minimalPlaceholders,
     focusedListSet,
@@ -27596,6 +28168,7 @@ function instance6($$self, $$props, $$invalidate) {
     moveGroupToColumnBottom,
     moveGroupToNewColumn,
     moveGroupToNewColumnAt,
+    createGroupFromListAtColumn,
     handleColumnDragOver,
     handleColumnDrop,
     handlePointerMove,
@@ -27611,6 +28184,7 @@ function instance6($$self, $$props, $$invalidate) {
     handleKeydown,
     app,
     dataService,
+    closeModal,
     sidebarItems,
     isComposing,
     prevSearchQuery,
@@ -27678,12 +28252,18 @@ function instance6($$self, $$props, $$invalidate) {
     dragleave_handler_4,
     drop_handler_6,
     dragover_handler_7,
+    dragleave_handler_5,
     drop_handler_7,
     dragover_handler_8,
-    dragleave_handler_5,
     drop_handler_8,
-    div_binding_1,
     dragover_handler_9,
+    dragleave_handler_6,
+    drop_handler_9,
+    dragover_handler_10,
+    dragleave_handler_7,
+    drop_handler_10,
+    div_binding_1,
+    dragover_handler_11,
     click_handler_15,
     click_handler_16,
     click_handler_17,
@@ -27693,8 +28273,8 @@ function instance6($$self, $$props, $$invalidate) {
     mouseenter_handler_4,
     mouseleave_handler_3,
     dragstart_handler_5,
-    dragover_handler_10,
-    drop_handler_9,
+    dragover_handler_12,
+    drop_handler_11,
     contextmenu_handler_4,
     click_handler_19,
     input_input_handler_5,
@@ -27702,23 +28282,23 @@ function instance6($$self, $$props, $$invalidate) {
     mouseenter_handler_5,
     mouseleave_handler_4,
     dragstart_handler_6,
-    dragover_handler_11,
-    dragleave_handler_6,
-    drop_handler_10,
+    dragover_handler_13,
+    dragleave_handler_8,
+    drop_handler_12,
     click_handler_20,
     contextmenu_handler_5,
-    dragover_handler_12,
-    drop_handler_11,
-    dragleave_handler_7,
+    dragover_handler_14,
+    drop_handler_13,
+    dragleave_handler_9,
     click_handler_21,
     input_input_handler_6,
     input_binding_6,
     mouseenter_handler_6,
     mouseleave_handler_5,
     dragstart_handler_7,
-    dragover_handler_13,
-    dragleave_handler_8,
-    drop_handler_12,
+    dragover_handler_15,
+    dragleave_handler_10,
+    drop_handler_14,
     click_handler_22,
     contextmenu_handler_6,
     input_input_handler_7,
@@ -27727,6 +28307,9 @@ function instance6($$self, $$props, $$invalidate) {
     input_input_handler_8,
     input_binding_8,
     keydown_handler_1,
+    click_handler_23,
+    click_handler_24,
+    click_handler_25,
     div1_binding
   ];
 }
@@ -27740,13 +28323,13 @@ var QuickListModalView = class extends SvelteComponent {
       create_fragment6,
       safe_not_equal,
       {
-        app: 91,
+        app: 92,
         plugin: 0,
-        dataService: 92,
+        dataService: 93,
         showTip: 1,
         remainingTips: 2,
         isFocusedListMode: 3,
-        closeModal: 4
+        closeModal: 94
       },
       null,
       [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
@@ -29297,11 +29880,11 @@ function create_if_block_312(ctx) {
   let if_block3 = current_block_type_1(ctx);
   let if_block4 = (
     /*isSearchOpen*/
-    ctx[29] && create_if_block_67(ctx)
+    ctx[29] && create_if_block_672(ctx)
   );
   let if_block5 = (
     /*newTaskImages*/
-    ctx[15].length > 0 && create_if_block_66(ctx)
+    ctx[15].length > 0 && create_if_block_662(ctx)
   );
   let each_value_5 = ensure_array_like(
     /*incompleteTasks*/
@@ -29580,7 +30163,7 @@ function create_if_block_312(ctx) {
         if (if_block4) {
           if_block4.p(ctx2, dirty);
         } else {
-          if_block4 = create_if_block_67(ctx2);
+          if_block4 = create_if_block_672(ctx2);
           if_block4.c();
           if_block4.m(t4.parentNode, t4);
         }
@@ -29599,7 +30182,7 @@ function create_if_block_312(ctx) {
             transition_in(if_block5, 1);
           }
         } else {
-          if_block5 = create_if_block_66(ctx2);
+          if_block5 = create_if_block_662(ctx2);
           if_block5.c();
           transition_in(if_block5, 1);
           if_block5.m(div4, t5);
@@ -30905,7 +31488,7 @@ function create_if_block_75(ctx) {
     }
   };
 }
-function create_if_block_67(ctx) {
+function create_if_block_672(ctx) {
   let div1;
   let div0;
   let span;
@@ -30929,7 +31512,7 @@ function create_if_block_67(ctx) {
     /*searchQuery*/
     ctx[30] && create_if_block_732(ctx)
   );
-  let if_block1 = show_if && create_if_block_68(ctx);
+  let if_block1 = show_if && create_if_block_682(ctx);
   return {
     c() {
       div1 = element("div");
@@ -31067,7 +31650,7 @@ function create_if_block_67(ctx) {
         if (if_block1) {
           if_block1.p(ctx2, dirty);
         } else {
-          if_block1 = create_if_block_68(ctx2);
+          if_block1 = create_if_block_682(ctx2);
           if_block1.c();
           if_block1.m(div1, null);
         }
@@ -31122,7 +31705,7 @@ function create_if_block_732(ctx) {
     }
   };
 }
-function create_if_block_68(ctx) {
+function create_if_block_682(ctx) {
   let div;
   function select_block_type_4(ctx2, dirty) {
     if (
@@ -31550,7 +32133,7 @@ function create_each_block_7(key_1, ctx) {
     }
   };
 }
-function create_if_block_66(ctx) {
+function create_if_block_662(ctx) {
   let div;
   let taskimagestrip;
   let current;
@@ -34338,7 +34921,7 @@ function create_if_block_442(ctx) {
     }
   };
 }
-function create_if_block_432(ctx) {
+function create_if_block_433(ctx) {
   let span;
   return {
     c() {
@@ -35440,7 +36023,7 @@ function create_each_block_32(key_1, ctx) {
   );
   let if_block5 = (
     /*task*/
-    ctx[383].recurrence && create_if_block_432(ctx)
+    ctx[383].recurrence && create_if_block_433(ctx)
   );
   let each_value_4 = ensure_array_like(
     /*badgeData*/
@@ -35788,7 +36371,7 @@ function create_each_block_32(key_1, ctx) {
       ) {
         if (if_block5) {
         } else {
-          if_block5 = create_if_block_432(ctx);
+          if_block5 = create_if_block_433(ctx);
           if_block5.c();
           if_block5.m(div1, null);
         }
@@ -38300,7 +38883,7 @@ function create_if_block_84(ctx) {
     }
   };
 }
-function create_if_block_411(ctx) {
+function create_if_block_410(ctx) {
   var _a;
   let div5;
   let div4;
@@ -38328,7 +38911,7 @@ function create_if_block_411(ctx) {
       ctx2[52] > 0
     )
       return create_if_block_511;
-    return create_else_block_19;
+    return create_else_block_18;
   }
   let current_block_type = select_block_type_16(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block1 = current_block_type(ctx);
@@ -38485,7 +39068,7 @@ function create_if_block_710(ctx) {
     }
   };
 }
-function create_else_block_19(ctx) {
+function create_else_block_18(ctx) {
   let span;
   return {
     c() {
@@ -39236,7 +39819,7 @@ function create_fragment8(ctx) {
   );
   let if_block4 = (
     /*showSvgDeleteConfirmModal*/
-    ctx[51] && create_if_block_411(ctx)
+    ctx[51] && create_if_block_410(ctx)
   );
   let if_block5 = (
     /*showPluginDownloadModal*/
@@ -39423,7 +40006,7 @@ function create_fragment8(ctx) {
         if (if_block4) {
           if_block4.p(ctx2, dirty);
         } else {
-          if_block4 = create_if_block_411(ctx2);
+          if_block4 = create_if_block_410(ctx2);
           if_block4.c();
           if_block4.m(div, t4);
         }
@@ -43603,7 +44186,7 @@ function create_if_block9(ctx) {
       /*hasTaskNote*/
       ctx2[7]
     )
-      return create_if_block_433;
+      return create_if_block_434;
     return create_else_block_113;
   }
   let current_block_type_1 = select_block_type_2(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
@@ -44937,7 +45520,7 @@ function create_else_block_113(ctx) {
     }
   };
 }
-function create_if_block_433(ctx) {
+function create_if_block_434(ctx) {
   let svg;
   let path;
   let polyline;
@@ -48792,7 +49375,7 @@ function create_if_block_314(ctx) {
     /*selectedWhyIndex*/
     ctx[25] >= 0 && /*selectedWhyIndex*/
     ctx[25] < /*metaWhyList*/
-    ctx[24].length && create_if_block_414(ctx)
+    ctx[24].length && create_if_block_411(ctx)
   );
   return {
     c() {
@@ -48863,7 +49446,7 @@ function create_if_block_314(ctx) {
         if (if_block1) {
           if_block1.p(ctx2, dirty);
         } else {
-          if_block1 = create_if_block_414(ctx2);
+          if_block1 = create_if_block_411(ctx2);
           if_block1.c();
           if_block1.m(if_block1_anchor.parentNode, if_block1_anchor);
         }
@@ -50098,7 +50681,7 @@ function create_if_block_711(ctx) {
       ctx2[264].trim());
     if (show_if)
       return create_if_block_104;
-    return create_else_block_110;
+    return create_else_block_19;
   }
   let current_block_type = select_block_type_10(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
   let if_block0 = current_block_type(ctx);
@@ -50242,7 +50825,7 @@ function create_if_block_711(ctx) {
     }
   };
 }
-function create_else_block_110(ctx) {
+function create_else_block_19(ctx) {
   let t_1;
   return {
     c() {
@@ -50553,7 +51136,7 @@ function create_each_block7(ctx) {
     }
   };
 }
-function create_if_block_414(ctx) {
+function create_if_block_411(ctx) {
   let div1;
   let div0;
   let t0;
@@ -56722,7 +57305,7 @@ function create_if_block_316(ctx) {
       /*searchResults*/
       ctx2[7].length === 0
     )
-      return create_if_block_415;
+      return create_if_block_414;
     return create_else_block10;
   }
   let current_block_type = select_block_type_7(ctx, [-1, -1, -1, -1, -1, -1, -1]);
@@ -58472,7 +59055,7 @@ function create_else_block10(ctx) {
     }
   };
 }
-function create_if_block_415(ctx) {
+function create_if_block_414(ctx) {
   let div;
   return {
     c() {
@@ -58491,7 +59074,7 @@ function create_if_block_415(ctx) {
     }
   };
 }
-function create_else_block_111(ctx) {
+function create_else_block_110(ctx) {
   let svg;
   let path0;
   let path1;
@@ -58584,7 +59167,7 @@ function create_each_block_24(ctx) {
       ctx2[187].isDedicated
     )
       return create_if_block_613;
-    return create_else_block_111;
+    return create_else_block_110;
   }
   let current_block_type = select_block_type_8(ctx, [-1, -1, -1, -1, -1, -1, -1]);
   let if_block = current_block_type(ctx);

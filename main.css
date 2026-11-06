@@ -4206,6 +4206,189 @@ body .quick-modal-task-item.is-focused {
     color: var(--text-normal);
 }
 
+/* Quick List: Help Button & Help Floating Modal */
+.quick-modal-help-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1px solid var(--background-modifier-border);
+    background: var(--background-primary);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    margin-left: auto;
+    flex-shrink: 0;
+    padding: 0;
+    line-height: 1;
+}
+
+.quick-modal-help-btn:hover {
+    background: var(--background-modifier-hover);
+    color: var(--todo-accent, #8b5cf6);
+    border-color: var(--todo-accent, #8b5cf6);
+    box-shadow: 0 0 10px -2px var(--todo-accent-glow, rgba(139, 92, 246, 0.5));
+}
+
+.quick-modal-help-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+    animation: quickHelpFadeIn 0.15s ease-out;
+}
+
+@keyframes quickHelpFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.quick-modal-help-card {
+    background: var(--background-secondary, #1e1e24);
+    border: 1px solid var(--background-modifier-border, #333);
+    border-radius: 12px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    width: 520px;
+    max-width: 95vw;
+    max-height: 82vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    color: var(--text-normal, #ddd);
+    font-family: var(--font-interface);
+    animation: quickHelpScaleIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes quickHelpScaleIn {
+    from { transform: scale(0.96); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.quick-modal-help-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--background-modifier-border, #333);
+    background: var(--background-secondary-alt, #19191d);
+}
+
+.quick-modal-help-title {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text-normal);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.quick-modal-help-title-badge {
+    font-size: 9.5px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: var(--todo-accent-light, rgba(139, 92, 246, 0.18));
+    color: var(--todo-accent, #8b5cf6);
+    border: 1px solid var(--todo-accent, #8b5cf6);
+}
+
+.quick-modal-help-close-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 15px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.quick-modal-help-close-btn:hover {
+    background: var(--background-modifier-hover);
+    color: var(--text-normal);
+}
+
+.quick-modal-help-content {
+    padding: 14px 18px 18px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.quick-help-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.quick-help-section-title {
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--todo-accent, #8b5cf6);
+}
+
+.quick-help-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.quick-help-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 6px 10px;
+    background: var(--background-primary, #151518);
+    border: 1px solid var(--background-modifier-border, #2a2a30);
+    border-radius: 6px;
+    font-size: 12px;
+}
+
+.quick-help-desc {
+    color: var(--text-muted);
+    flex: 1;
+}
+
+.quick-help-keys {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.quick-help-kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 6px;
+    font-size: 10.5px;
+    font-weight: 600;
+    font-family: var(--font-monospace, monospace);
+    background: var(--background-secondary, #25252b);
+    border: 1px solid var(--background-modifier-border, #3a3a42);
+    border-radius: 4px;
+    color: var(--text-normal);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
 .quick-modal-list-item.drop-hover {
     background-color: var(--todo-accent-light, rgba(139, 92, 246, 0.25)) !important;
     outline: 2px dashed var(--todo-accent, #8b5cf6) !important;
@@ -4559,6 +4742,26 @@ body .quick-modal-task-item.is-focused {
     background: rgba(139, 92, 246, 0.12);
     color: var(--todo-accent, #8b5cf6);
     box-shadow: 0 0 10px -2px var(--todo-accent-glow, rgba(139, 92, 246, 0.4));
+}
+
+.quick-table-col-dropzone.is-new-group-zone {
+    border-style: dashed;
+    color: var(--text-muted);
+}
+
+.quick-table-col-dropzone.is-new-group-zone.drag-over {
+    border-color: var(--todo-accent, #8b5cf6);
+    background: rgba(139, 92, 246, 0.16);
+    color: var(--todo-accent, #8b5cf6);
+    font-weight: 600;
+    box-shadow: 0 0 12px -2px var(--todo-accent-glow, rgba(139, 92, 246, 0.5));
+}
+
+.quick-table-new-col-dropzone.is-new-group-zone.drag-over {
+    border-color: var(--todo-accent, #8b5cf6);
+    background: rgba(139, 92, 246, 0.16);
+    color: var(--todo-accent, #8b5cf6);
+    box-shadow: 0 0 12px -2px var(--todo-accent-glow, rgba(139, 92, 246, 0.5));
 }
 
 .quick-table-new-col-dropzone {

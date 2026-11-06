@@ -4,7 +4,7 @@
     import { EventBus } from "../EventBus";
     import { EventName, VIEW_TYPE_MAIN, STARRED_CATEGORY_PATH, STARRED_CATEGORY_NAME } from "../types";
     import type { CategoryInfo, SidebarItem, GroupInfo, TaskItem } from "../types";
-    import { toggleGroupExpandedState, getFlatCategories, filterSidebarTree, moveSidebarItem } from "../utils/sidebarTreeUtils";
+    import { toggleGroupExpandedState, getFlatCategories, filterSidebarTree, moveSidebarItem, resolveUniqueName } from "../utils/sidebarTreeUtils";
     import { INPUT_FOCUS_DELAY_MS } from "../constants";
     import { Menu, Notice } from "obsidian";
     import type { App } from "obsidian";
@@ -46,6 +46,7 @@
     let prevSearchQuery: string = "";
     let isPickingDefaultFocus: boolean = false;
     let showFocusPopover: boolean = false;
+    let showHelpModal: boolean = false;
     let titleAlignment: 'center' | 'left' = plugin?.settings?.quickListTitleAlignment ?? 'center';
     let hideLeftSidebar: boolean = plugin?.settings?.hideLeftSidebar ?? false;
     let minimalPlaceholders: boolean = plugin?.settings?.minimalPlaceholders ?? false;
@@ -1803,6 +1804,78 @@
         await saveTableLayoutPositions(prunedCols);
     }
 
+    async function createGroupFromListAtColumn(movedId: string, colIdx: number) {
+        if (!movedId) return;
+
+        let listToMove: CategoryInfo | null = null;
+        const nextSidebar: SidebarItem[] = [];
+
+        for (const item of sidebarItems) {
+            if (item.id === movedId || (item as any).filepath === movedId) {
+                listToMove = item as CategoryInfo;
+            } else if (item.type === "group") {
+                const childIdx = item.items.findIndex(c => c.id === movedId || c.filepath === movedId);
+                if (childIdx !== -1) {
+                    listToMove = item.items[childIdx];
+                    nextSidebar.push({
+                        ...item,
+                        items: item.items.filter(c => c.id !== movedId && c.filepath !== movedId)
+                    });
+                } else {
+                    nextSidebar.push(item);
+                }
+            } else {
+                nextSidebar.push(item);
+            }
+        }
+
+        if (!listToMove) return;
+
+        const existingGroupNames = nextSidebar
+            .filter(i => i.type === "group")
+            .map(g => (g as GroupInfo).name);
+        const desiredName = listToMove.name || "New Group";
+        const groupName = resolveUniqueName(existingGroupNames, desiredName);
+
+        const newGroupId = Date.now().toString() + Math.random().toString(36).substring(2, 7);
+        const newGroup: GroupInfo = {
+            id: newGroupId,
+            type: "group",
+            name: groupName,
+            items: [{ ...listToMove }],
+            isExpanded: true
+        };
+
+        nextSidebar.push(newGroup);
+        sidebarItems = nextSidebar;
+        categories = getFlatCategories(sidebarItems);
+
+        const newCard: GridCardData = {
+            id: newGroup.id,
+            name: newGroup.name,
+            group: newGroup,
+            items: newGroup.items,
+            type: "group",
+            height: 60
+        };
+
+        const cols: GridCardData[][] = layoutColumns.map(col => [...col]);
+        if (colIdx >= cols.length) {
+            cols.push([newCard]);
+        } else {
+            cols[colIdx].push(newCard);
+        }
+
+        const prunedCols = cols.filter(c => c.length > 0);
+        await saveTableLayoutPositions(prunedCols);
+
+        measuredCardHeights.clear();
+        await tick();
+
+        await dataService.saveSidebarState(sidebarItems);
+        EventBus.emit(EventName.CATEGORY_LIST_CHANGED, { sidebarItems });
+    }
+
     function handleColumnDragOver(e: DragEvent, colIdx: number) {
         if (layoutMode !== "table" || !isDraggingGroup || !draggedListId) return;
         e.preventDefault();
@@ -2359,6 +2432,29 @@
 
     async function handleKeydown(e: KeyboardEvent) {
         if (e.isComposing || isComposing || e.keyCode === 229) return;
+
+        if (showHelpModal) {
+            if (e.key === "Escape" || e.key === "F1" || e.key === "?") {
+                e.preventDefault();
+                e.stopPropagation();
+                showHelpModal = false;
+                return;
+            }
+        }
+
+        if (e.key === "F1") {
+            e.preventDefault();
+            e.stopPropagation();
+            showHelpModal = !showHelpModal;
+            return;
+        }
+
+        if (e.key === "?" && document.activeElement !== searchInputEl && !editingItemId && !isAddingList && !isAddingGroup) {
+            e.preventDefault();
+            e.stopPropagation();
+            showHelpModal = !showHelpModal;
+            return;
+        }
 
         // If currently editing inline rename, give full precedence to rename controls
         if (editingItemId) {
@@ -3228,57 +3324,110 @@
                             {/if}
                         {/each}
 
-                        {#if layoutMode === "table" && isDraggingGroup}
-                            <div 
-                                class="quick-table-col-dropzone"
-                                class:drag-over={dragOverListId === `col_drop_${colIdx}`}
-                                on:dragover={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
-                                    dragOverListId = `col_drop_${colIdx}`;
-                                    dragListPosition = "bottom";
-                                }}
-                                on:dragleave={() => {
-                                    if (dragOverListId === `col_drop_${colIdx}`) dragOverListId = "";
-                                }}
-                                on:drop|preventDefault={async () => {
-                                    if (draggedListId) {
-                                        await moveGroupToColumnBottom(draggedListId, colIdx);
-                                    }
-                                    handleListDragEnd();
-                                }}
-                            >
-                                + Drop at bottom
-                            </div>
+                        {#if layoutMode === "table"}
+                            {#if isDraggingGroup}
+                                <div 
+                                    class="quick-table-col-dropzone"
+                                    class:drag-over={dragOverListId === `col_drop_${colIdx}`}
+                                    on:dragover={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+                                        dragOverListId = `col_drop_${colIdx}`;
+                                        dragListPosition = "bottom";
+                                    }}
+                                    on:dragleave={() => {
+                                        if (dragOverListId === `col_drop_${colIdx}`) dragOverListId = "";
+                                    }}
+                                    on:drop|preventDefault={async () => {
+                                        if (draggedListId) {
+                                            await moveGroupToColumnBottom(draggedListId, colIdx);
+                                        }
+                                        handleListDragEnd();
+                                    }}
+                                >
+                                    + Drop at bottom
+                                </div>
+                            {:else if draggedListId}
+                                <div 
+                                    class="quick-table-col-dropzone is-new-group-zone"
+                                    class:drag-over={dragOverListId === `col_new_group_${colIdx}`}
+                                    on:dragover={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+                                        dragOverListId = `col_new_group_${colIdx}`;
+                                        dragListPosition = "bottom";
+                                    }}
+                                    on:dragleave={() => {
+                                        if (dragOverListId === `col_new_group_${colIdx}`) dragOverListId = "";
+                                    }}
+                                    on:drop|preventDefault={async () => {
+                                        const listId = draggedListId;
+                                        handleListDragEnd();
+                                        if (listId) {
+                                            await createGroupFromListAtColumn(listId, colIdx);
+                                        }
+                                    }}
+                                >
+                                    + New Group
+                                </div>
+                            {/if}
                         {/if}
                     </div>
                 {/each}
 
-                {#if layoutMode === "table" && isDraggingGroup}
-                    <div 
-                        class="quick-table-new-col-dropzone"
-                        class:drag-over={dragOverListId === "__new_col_drop__"}
-                        on:dragover={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
-                            dragOverListId = "__new_col_drop__";
-                            dragListPosition = "inside";
-                        }}
-                        on:dragleave={() => {
-                            if (dragOverListId === "__new_col_drop__") dragOverListId = "";
-                        }}
-                        on:drop|preventDefault={async () => {
-                            if (draggedListId) {
-                                await moveGroupToNewColumn(draggedListId);
-                            }
-                            handleListDragEnd();
-                        }}
-                    >
-                        <span class="quick-table-new-col-icon">+</span>
-                        <span>New Column</span>
-                    </div>
+                {#if layoutMode === "table"}
+                    {#if isDraggingGroup}
+                        <div 
+                            class="quick-table-new-col-dropzone"
+                            class:drag-over={dragOverListId === "__new_col_drop__"}
+                            on:dragover={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+                                dragOverListId = "__new_col_drop__";
+                                dragListPosition = "inside";
+                            }}
+                            on:dragleave={() => {
+                                if (dragOverListId === "__new_col_drop__") dragOverListId = "";
+                            }}
+                            on:drop|preventDefault={async () => {
+                                if (draggedListId) {
+                                    await moveGroupToNewColumn(draggedListId);
+                                }
+                                handleListDragEnd();
+                            }}
+                        >
+                            <span class="quick-table-new-col-icon">+</span>
+                            <span>New Column</span>
+                        </div>
+                    {:else if draggedListId}
+                        <div 
+                            class="quick-table-new-col-dropzone is-new-group-zone"
+                            class:drag-over={dragOverListId === "__new_col_new_group__"}
+                            on:dragover={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+                                dragOverListId = "__new_col_new_group__";
+                                dragListPosition = "inside";
+                            }}
+                            on:dragleave={() => {
+                                if (dragOverListId === "__new_col_new_group__") dragOverListId = "";
+                            }}
+                            on:drop|preventDefault={async () => {
+                                const listId = draggedListId;
+                                handleListDragEnd();
+                                if (listId) {
+                                    await createGroupFromListAtColumn(listId, layoutColumns.length);
+                                }
+                            }}
+                        >
+                            <span class="quick-table-new-col-icon">+</span>
+                            <span>New Column</span>
+                        </div>
+                    {/if}
                 {/if}
             {/if}
         </div>
@@ -3577,24 +3726,113 @@
                 <button class="quick-modal-bottom-btn" on:click={startAddList}>+ New list</button>
                 <button class="quick-modal-bottom-btn" on:click={startAddGroup}>+ New group</button>
             {/if}
+            <button 
+                class="quick-modal-help-btn" 
+                on:click={() => showHelpModal = true} 
+                title={isChinese() ? "快捷键与操作手势 (? / F1)" : "Shortcuts & Gestures Help (? / F1)"}
+                aria-label="Help"
+            >
+                ?
+            </button>
         </div>
+    {/if}
 
-        <div class="quick-modal-status-bar">
-            <span><b>↑↓←→</b> Navigate</span>
-            {#if layoutMode === "table"}
-                <span><b>Wheel / Shift+Wheel</b> Pan Board</span>
-                <span><b>Edge Pan</b> RTS Auto-Scroll</span>
-                <span><b>Drag Group</b> Arrange Table</span>
-            {:else if layoutMode === "grid"}
-                <span><b>Wheel</b> Scroll Board</span>
-            {:else}
-                <span><b>Wheel</b> Scroll List</span>
-            {/if}
-            <span><b>F2</b> Rename</span>
-            <span><b>Enter</b> Open in Center View</span>
-            <span><b>Tab</b> Switch to {searchMode === 'task' ? 'Lists' : 'Tasks'}</span>
-            <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <span class="quick-status-close-btn" on:click={closeModal} role="button" tabindex="0" title="Close (Esc)"><b>Esc</b> Close</span>
+    {#if showHelpModal}
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <div 
+            class="quick-modal-help-backdrop" 
+            on:click|self={() => showHelpModal = false}
+            role="dialog"
+            aria-modal="true"
+            tabindex="-1"
+        >
+            <div class="quick-modal-help-card" role="document">
+                <div class="quick-modal-help-header">
+                    <div class="quick-modal-help-title">
+                        <span>{isChinese() ? "快捷键与操作手势指南" : "Shortcuts & Gestures Guide"}</span>
+                        <span class="quick-modal-help-title-badge">{layoutMode.toUpperCase()}</span>
+                    </div>
+                    <button 
+                        class="quick-modal-help-close-btn" 
+                        on:click={() => showHelpModal = false}
+                        title={isChinese() ? "关闭 (Esc)" : "Close (Esc)"}
+                        aria-label="Close"
+                    >
+                        ✕
+                    </button>
+                </div>
+
+                <div class="quick-modal-help-content">
+                    <div class="quick-help-section">
+                        <div class="quick-help-section-title">{isChinese() ? "基础导航与检索" : "Navigation & Search"}</div>
+                        <div class="quick-help-grid">
+                            <div class="quick-help-row">
+                                <span class="quick-help-desc">{isChinese() ? "方向键切换焦点选择" : "Navigate items / cards"}</span>
+                                <div class="quick-help-keys">
+                                    <kbd class="quick-help-kbd">↑</kbd>
+                                    <kbd class="quick-help-kbd">↓</kbd>
+                                    <kbd class="quick-help-kbd">←</kbd>
+                                    <kbd class="quick-help-kbd">→</kbd>
+                                </div>
+                            </div>
+                            <div class="quick-help-row">
+                                <span class="quick-help-desc">{isChinese() ? "打开当前选中的清单 / 任务" : "Open selected list or task"}</span>
+                                <div class="quick-help-keys"><kbd class="quick-help-kbd">Enter</kbd></div>
+                            </div>
+                            <div class="quick-help-row">
+                                <span class="quick-help-desc">{isChinese() ? "切换 清单检索 / 全局任务搜索" : "Toggle Lists / Tasks mode"}</span>
+                                <div class="quick-help-keys"><kbd class="quick-help-kbd">Tab</kbd></div>
+                            </div>
+                            <div class="quick-help-row">
+                                <span class="quick-help-desc">{isChinese() ? "重命名当前选中的分组或清单" : "Rename focused group or list"}</span>
+                                <div class="quick-help-keys"><kbd class="quick-help-kbd">F2</kbd></div>
+                            </div>
+                            <div class="quick-help-row">
+                                <span class="quick-help-desc">{isChinese() ? "关闭悬浮窗" : "Close modal"}</span>
+                                <div class="quick-help-keys"><kbd class="quick-help-kbd">Esc</kbd></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="quick-help-section">
+                        <div class="quick-help-section-title">{isChinese() ? "画布与表格操作" : "Board & Table Actions"}</div>
+                        <div class="quick-help-grid">
+                            <div class="quick-help-row">
+                                <span class="quick-help-desc">{isChinese() ? "双向平移画布（滚轮垂直，Shift+滚轮水平）" : "Pan canvas (Wheel / Shift+Wheel)"}</span>
+                                <div class="quick-help-keys">
+                                    <kbd class="quick-help-kbd">Wheel</kbd>
+                                    <kbd class="quick-help-kbd">Shift + Wheel</kbd>
+                                </div>
+                            </div>
+                            <div class="quick-help-row">
+                                <span class="quick-help-desc">{isChinese() ? "RTS 边缘自动平移（鼠标移至视口边缘）" : "Edge Pan (RTS Auto-Scroll at screen edges)"}</span>
+                                <div class="quick-help-keys"><kbd class="quick-help-kbd">Edge Pan</kbd></div>
+                            </div>
+                            <div class="quick-help-row">
+                                <span class="quick-help-desc">{isChinese() ? "拖拽分组卡片自由排布（列间插队、列底插入、新列）" : "Drag group to arrange columns & cards"}</span>
+                                <div class="quick-help-keys"><kbd class="quick-help-kbd">Drag Group</kbd></div>
+                            </div>
+                            <div class="quick-help-row">
+                                <span class="quick-help-desc">{isChinese() ? "拖拽清单至底部形成新分组" : "Drag list to bottom '+ New Group'"}</span>
+                                <div class="quick-help-keys"><kbd class="quick-help-kbd">Drag List → New Group</kbd></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="quick-help-section">
+                        <div class="quick-help-section-title">{isChinese() ? "快捷帮助" : "Help & Docs"}</div>
+                        <div class="quick-help-grid">
+                            <div class="quick-help-row">
+                                <span class="quick-help-desc">{isChinese() ? "呼出 / 关闭本快捷帮助窗口" : "Toggle this help overlay"}</span>
+                                <div class="quick-help-keys">
+                                    <kbd class="quick-help-kbd">?</kbd>
+                                    <kbd class="quick-help-kbd">F1</kbd>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     {/if}
 </div>
