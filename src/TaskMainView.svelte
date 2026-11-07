@@ -26,6 +26,7 @@
     import TaskImageStrip from "./components/TaskImageStrip.svelte";
     import {
         getTitleImages,
+        getNoteImages,
         cleanDisplayTitle,
         removeImageFromTaskTitle,
         copyImageToClipboard,
@@ -242,7 +243,7 @@
     // Meta Badge Hover Popover
     // =============================================
     let popoverTask: TaskItem | null = null;
-    let popoverType: 'why' | 'svg' | 'custom' | 'title' | 'guide' | 'steps' | null = null;
+    let popoverType: PopoverContentType | null = null;
     let popoverSvgIndex: number = 0;
     let popoverX: number = 0;
     let popoverY: number = 0;
@@ -4122,6 +4123,26 @@
                                     {task.steps.filter(s => s.done).length}/{task.steps.length} steps
                                 </span>
                             {/if}
+                            {#if task.note && task.note.trim().length > 0}
+                                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                                <span class="task-meta detail-badge"
+                                      on:click|stopPropagation={() => selectTask(task)}
+                                      on:keydown|stopPropagation={(e) => (e.key === "Enter" || e.key === " ") && selectTask(task)}
+                                      on:mouseenter={(e) => showPopover(e, task, 'note')}
+                                      on:mouseleave={scheduleHidePopover}
+                                      role="button"
+                                      tabindex="0"
+                                      title="Click to open detail panel, hover to preview note">
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                        <polyline points="14 2 14 8 20 8"/>
+                                        <line x1="16" y1="13" x2="8" y2="13"/>
+                                        <line x1="16" y1="17" x2="8" y2="17"/>
+                                        <polyline points="10 9 9 9 8 9"/>
+                                    </svg>
+                                    <span>Detail</span>
+                                </span>
+                            {/if}
                             {#if task.dueDate}
                                 <span class="task-meta due-date">
                                     {task.dueDate}
@@ -4386,6 +4407,26 @@
                                                       tabindex="0"
                                                       title="Click to view & edit subtasks, hover to preview">
                                                     {task.steps.filter(s => s.done).length}/{task.steps.length} steps
+                                                </span>
+                                            {/if}
+                                            {#if task.note && task.note.trim().length > 0}
+                                                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                                                <span class="task-meta detail-badge"
+                                                      on:click|stopPropagation={() => selectTask(task)}
+                                                      on:keydown|stopPropagation={(e) => (e.key === "Enter" || e.key === " ") && selectTask(task)}
+                                                      on:mouseenter={(e) => showPopover(e, task, 'note')}
+                                                      on:mouseleave={scheduleHidePopover}
+                                                      role="button"
+                                                      tabindex="0"
+                                                      title="Click to open detail panel, hover to preview note">
+                                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                                        <polyline points="14 2 14 8 20 8"/>
+                                                        <line x1="16" y1="13" x2="8" y2="13"/>
+                                                        <line x1="16" y1="17" x2="8" y2="17"/>
+                                                        <polyline points="10 9 9 9 8 9"/>
+                                                    </svg>
+                                                    <span>Detail</span>
                                                 </span>
                                             {/if}
                                             {#if task.dueDate}
@@ -4667,6 +4708,54 @@
                             <line x1="3" y1="21" x2="10" y2="14"/>
                         </svg>
                         <span>Click to expand & edit</span>
+                    </div>
+                </div>
+            {:else if popoverType === 'note' && popoverTask && popoverTask.note && popoverTask.note.trim().length > 0}
+                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                <!-- svelte-ignore a11y-click-events-have-key-events -->
+                <div class="meta-popover-steps-card meta-popover-note-card"
+                     on:click|stopPropagation={() => { if (popoverTask) { dismissPopover(); selectTask(popoverTask); } }}
+                     on:keydown|stopPropagation={(e) => { if (e.key === "Enter" && popoverTask) { dismissPopover(); selectTask(popoverTask); } }}
+                     role="button"
+                     tabindex="0"
+                     title="Click to open detail panel">
+                    <div class="meta-popover-header">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--todo-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                                <polyline points="10 9 9 9 8 9"/>
+                            </svg>
+                            <span style="font-weight: 600;">Detail</span>
+                        </div>
+                        {#if popoverTask.title}
+                            <span class="meta-popover-hint">{cleanDisplayTitle(popoverTask.title) || popoverTask.title}</span>
+                        {/if}
+                    </div>
+                    {#if getNoteImages(popoverTask).length > 0}
+                        <div style="margin-top: 6px;">
+                            <TaskImageStrip
+                                images={getNoteImages(popoverTask)}
+                                app={actualApp}
+                                size={32}
+                                showDivider={true}
+                                canDelete={false}
+                            />
+                        </div>
+                    {/if}
+                    <div class="popover-note-content">
+                        {popoverTask.note}
+                    </div>
+                    <div class="meta-popover-expand-hint">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="15 3 21 3 21 9"/>
+                            <polyline points="9 21 3 21 3 15"/>
+                            <line x1="21" y1="3" x2="14" y2="10"/>
+                            <line x1="3" y1="21" x2="10" y2="14"/>
+                        </svg>
+                        <span>Click to open detail panel</span>
                     </div>
                 </div>
             {:else if popoverType === 'title' && popoverTask}

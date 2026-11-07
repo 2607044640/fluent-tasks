@@ -935,6 +935,21 @@
     background-color: var(--todo-hover-bg);
 }
 
+.task-meta.detail-badge {
+    cursor: pointer;
+    transition: color var(--todo-transition), background-color var(--todo-transition);
+    border-radius: 3px;
+    padding: 0 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.task-meta.detail-badge:hover {
+    color: var(--todo-accent);
+    background-color: var(--todo-hover-bg);
+}
+
 .star {
     cursor: pointer;
     padding: 3px;
@@ -3416,6 +3431,22 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     overflow-y: auto;
 }
 
+.popover-note-content {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--todo-text-main);
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    max-height: 220px;
+    overflow-y: auto;
+    margin-top: 6px;
+    background-color: var(--todo-item-bg, var(--background-primary-alt, #282828));
+    border-radius: 6px;
+    padding: 8px 10px;
+    border: 1px solid var(--todo-border, var(--background-modifier-border, #333));
+}
+
 .popover-why-box {
     font-size: 11.5px;
     line-height: 1.4;
@@ -4067,6 +4098,26 @@ body .quick-modal-task-item.is-focused {
     border: 1px solid var(--background-modifier-border);
     color: var(--text-muted);
     flex-shrink: 0;
+}
+
+.quick-modal-detail-badge {
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    color: var(--text-muted);
+    flex-shrink: 0;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    transition: color var(--todo-transition), border-color var(--todo-transition);
+}
+
+.quick-modal-detail-badge:hover {
+    color: var(--todo-accent, #0078d4);
+    border-color: var(--todo-accent, #0078d4);
 }
 
 .quick-modal-why-badge {

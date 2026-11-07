@@ -6,6 +6,8 @@
     import type { CategoryInfo, SidebarItem, TaskItem, GroupInfo } from "../types";
     import { moveSidebarItem, toggleGroupExpandedState, getFlatCategories } from "../utils/sidebarTreeUtils";
     import { calculatePopoverPosition } from "../utils/popoverUtils";
+    import type { PopoverContentType } from "../utils/popoverUtils";
+    import TaskImageStrip from "../components/TaskImageStrip.svelte";
     import { INPUT_FOCUS_DELAY_MS, POPOVER_HIDE_DELAY_MS } from "../constants";
     import { Menu, Notice } from "obsidian";
     import { promptDeleteTaskWithLinkedNote } from "./ConfirmDeleteLinkedNoteModal";
@@ -13,7 +15,7 @@
     import { TaskStepsModal } from "./TaskStepsModal";
     import { MoveToSuggestModal } from "./MoveToSuggestModal";
     import { t, isChinese } from "../lang/helpers";
-    import { cleanDisplayTitle } from "../utils/imageAttachmentUtils";
+    import { cleanDisplayTitle, getNoteImages } from "../utils/imageAttachmentUtils";
     import { autosize } from "../utils/domUtils";
 
     // =============================================
@@ -79,7 +81,7 @@
     // Popover State
     let popoverVisible: boolean = false;
     let popoverTask: TaskItem | null = null;
-    let popoverType: string | null = null;
+    let popoverType: PopoverContentType | null = null;
     let popoverX: number = 0;
     let popoverY: number = 0;
     let popoverPlacement: string = "top";
@@ -268,7 +270,7 @@
     // =============================================
     // Popover Engine
     // =============================================
-    function showPopover(e: any, taskItem: TaskItem | null, type: any) {
+    function showPopover(e: any, taskItem: TaskItem | null, type: PopoverContentType) {
         if (popoverTimeout) clearTimeout(popoverTimeout);
         const target = e?.currentTarget as HTMLElement;
         if (!target) return;
@@ -310,6 +312,21 @@
             ? task.sourceFilepath
             : catPath;
         new TaskStepsModal(plugin.app, plugin, dataService, task, actualSource).open();
+    }
+
+    function openTaskInMainView(task: TaskItem | null) {
+        if (!task) return;
+        dismissPopover();
+        const catPath = isSearching 
+            ? searchResults.find(r => r.task.id === task.id)?.category.filepath 
+            : selectedCategory?.filepath;
+        const cat = categories.find(c => c.filepath === catPath) || selectedCategory;
+        if (cat) {
+            EventBus.emit(EventName.CATEGORY_SELECTED, { category: cat });
+            EventBus.emit(EventName.TASK_SELECTED, { task, categoryFilepath: cat.filepath, skipModal: true });
+            EventBus.emit(EventName.TASK_NAVIGATE, { taskId: task.id, isCompleted: task.completed });
+            closeModal();
+        }
     }
 
     function handleNoteLinkHover(e: MouseEvent, noteLink?: string) {
@@ -1600,6 +1617,27 @@
                                             {task.steps.filter(s => s.done).length}/{task.steps.length}
                                         </span>
                                     {/if}
+                                    {#if task.note && task.note.trim().length > 0}
+                                        <!-- svelte-ignore a11y-no-static-element-interactions -->
+                                        <span 
+                                            class="quick-modal-detail-badge"
+                                            on:click|stopPropagation={() => openTaskInMainView(task)}
+                                            on:keydown|stopPropagation={(e) => (e.key === "Enter" || e.key === " ") && openTaskInMainView(task)}
+                                            on:mouseenter={(e) => showPopover(e, task, 'note')}
+                                            on:mouseleave={scheduleHidePopover}
+                                            role="button" tabindex="0"
+                                            title="Click to open detail, hover to preview"
+                                        >
+                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                                <polyline points="14 2 14 8 20 8"/>
+                                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                                <line x1="16" y1="17" x2="8" y2="17"/>
+                                                <polyline points="10 9 9 9 8 9"/>
+                                            </svg>
+                                            <span>Detail</span>
+                                        </span>
+                                    {/if}
                                     {#if task.why}
                                         <span 
                                             class="quick-modal-why-badge"
@@ -1693,6 +1731,27 @@
                                                 title="Click to view & edit subtasks, hover to preview"
                                             >
                                                 {task.steps.filter(s => s.done).length}/{task.steps.length}
+                                            </span>
+                                        {/if}
+                                        {#if task.note && task.note.trim().length > 0}
+                                            <!-- svelte-ignore a11y-no-static-element-interactions -->
+                                            <span 
+                                                class="quick-modal-detail-badge"
+                                                on:click|stopPropagation={() => openTaskInMainView(task)}
+                                                on:keydown|stopPropagation={(e) => (e.key === "Enter" || e.key === " ") && openTaskInMainView(task)}
+                                                on:mouseenter={(e) => showPopover(e, task, 'note')}
+                                                on:mouseleave={scheduleHidePopover}
+                                                role="button" tabindex="0"
+                                                title="Click to open detail, hover to preview"
+                                            >
+                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                                    <polyline points="14 2 14 8 20 8"/>
+                                                    <line x1="16" y1="13" x2="8" y2="13"/>
+                                                    <line x1="16" y1="17" x2="8" y2="17"/>
+                                                    <polyline points="10 9 9 9 8 9"/>
+                                                </svg>
+                                                <span>Detail</span>
                                             </span>
                                         {/if}
                                         {#if task.why}
@@ -1819,6 +1878,54 @@
                         <line x1="3" y1="21" x2="10" y2="14"/>
                     </svg>
                     <span>Click to expand & edit</span>
+                </div>
+            </div>
+        {:else if popoverType === 'note' && popoverTask && popoverTask.note && popoverTask.note.trim().length > 0}
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <div class="meta-popover-steps-card meta-popover-note-card"
+                 on:click|stopPropagation={() => openTaskInMainView(popoverTask)}
+                 on:keydown|stopPropagation={(e) => { if (e.key === "Enter") openTaskInMainView(popoverTask); }}
+                 role="button"
+                 tabindex="0"
+                 title="Click to open detail in main view">
+                <div class="meta-popover-header">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--todo-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                            <polyline points="10 9 9 9 8 9"/>
+                        </svg>
+                        <span style="font-weight: 600;">Detail</span>
+                    </div>
+                    {#if popoverTask.title}
+                        <span class="meta-popover-hint">{cleanDisplayTitle(popoverTask.title) || popoverTask.title}</span>
+                    {/if}
+                </div>
+                {#if getNoteImages(popoverTask).length > 0}
+                    <div style="margin-top: 6px;">
+                        <TaskImageStrip
+                            images={getNoteImages(popoverTask)}
+                            app={plugin?.app}
+                            size={32}
+                            showDivider={true}
+                            canDelete={false}
+                        />
+                    </div>
+                {/if}
+                <div class="popover-note-content">
+                    {popoverTask.note}
+                </div>
+                <div class="meta-popover-expand-hint">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 3 21 3 21 9"/>
+                        <polyline points="9 21 3 21 3 15"/>
+                        <line x1="21" y1="3" x2="14" y2="10"/>
+                        <line x1="3" y1="21" x2="10" y2="14"/>
+                    </svg>
+                    <span>Click to open in main view</span>
                 </div>
             </div>
         {/if}
