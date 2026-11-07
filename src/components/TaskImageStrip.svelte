@@ -16,23 +16,25 @@
 
 {#if images && images.length > 0}
     <div class="task-image-strip-wrapper" class:is-center-aligned={isCenterAligned}>
-        <div class="task-image-strip-row" class:is-center-aligned={isCenterAligned}>
-            {#each images as imgRef (imgRef)}
-                <TaskImageThumbnail
-                    imageRef={imgRef}
-                    {app}
-                    {size}
-                    {canDelete}
-                    onDelete={onDelete ? () => onDelete(imgRef) : undefined}
-                    onCut={onCut ? () => onCut(imgRef) : undefined}
-                    onHover={onHover ? (isHovered) => onHover(imgRef, isHovered) : undefined}
-                    onClick={onClick ? () => onClick(imgRef) : undefined}
-                />
-            {/each}
+        <div class="task-image-strip-inner" class:is-center-aligned={isCenterAligned}>
+            <div class="task-image-strip-row" class:is-center-aligned={isCenterAligned}>
+                {#each images as imgRef (imgRef)}
+                    <TaskImageThumbnail
+                        imageRef={imgRef}
+                        {app}
+                        {size}
+                        {canDelete}
+                        onDelete={onDelete ? () => onDelete(imgRef) : undefined}
+                        onCut={onCut ? () => onCut(imgRef) : undefined}
+                        onHover={onHover ? (isHovered) => onHover(imgRef, isHovered) : undefined}
+                        onClick={onClick ? () => onClick(imgRef) : undefined}
+                    />
+                {/each}
+            </div>
+            {#if showDivider}
+                <div class="task-image-strip-divider"></div>
+            {/if}
         </div>
-        {#if showDivider}
-            <div class="task-image-strip-divider"></div>
-        {/if}
     </div>
 {/if}
 
@@ -45,6 +47,18 @@
     }
 
     .task-image-strip-wrapper.is-center-aligned {
+        align-items: center;
+    }
+
+    .task-image-strip-inner {
+        display: inline-flex;
+        flex-direction: column;
+        width: fit-content;
+        max-width: 100%;
+        align-items: stretch;
+    }
+
+    .task-image-strip-inner.is-center-aligned {
         align-items: center;
     }
 
@@ -62,6 +76,7 @@
     .task-image-strip-divider {
         height: 1px;
         width: 100%;
+        align-self: stretch;
         background-color: var(--background-modifier-border, rgba(255, 255, 255, 0.12));
         margin-top: 8px;
         margin-bottom: 6px;

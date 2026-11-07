@@ -12856,7 +12856,7 @@ var TaskImageThumbnail_default = TaskImageThumbnail;
 
 // src/components/TaskImageStrip.svelte
 function add_css3(target) {
-  append_styles(target, "svelte-ae6xr6", ".task-image-strip-wrapper.svelte-ae6xr6{display:flex;flex-direction:column;width:100%;margin-bottom:6px}.task-image-strip-wrapper.is-center-aligned.svelte-ae6xr6{align-items:center}.task-image-strip-row.svelte-ae6xr6{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.task-image-strip-row.is-center-aligned.svelte-ae6xr6{justify-content:center}.task-image-strip-divider.svelte-ae6xr6{height:1px;width:100%;background-color:var(--background-modifier-border, rgba(255, 255, 255, 0.12));margin-top:8px;margin-bottom:6px;opacity:0.85}");
+  append_styles(target, "svelte-1it5fb5", ".task-image-strip-wrapper.svelte-1it5fb5{display:flex;flex-direction:column;width:100%;margin-bottom:6px}.task-image-strip-wrapper.is-center-aligned.svelte-1it5fb5{align-items:center}.task-image-strip-inner.svelte-1it5fb5{display:inline-flex;flex-direction:column;width:fit-content;max-width:100%;align-items:stretch}.task-image-strip-inner.is-center-aligned.svelte-1it5fb5{align-items:center}.task-image-strip-row.svelte-1it5fb5{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.task-image-strip-row.is-center-aligned.svelte-1it5fb5{justify-content:center}.task-image-strip-divider.svelte-1it5fb5{height:1px;width:100%;align-self:stretch;background-color:var(--background-modifier-border, rgba(255, 255, 255, 0.12));margin-top:8px;margin-bottom:6px;opacity:0.85}");
 }
 function get_each_context2(ctx, list, i) {
   const child_ctx = ctx.slice();
@@ -12864,6 +12864,7 @@ function get_each_context2(ctx, list, i) {
   return child_ctx;
 }
 function create_if_block4(ctx) {
+  let div2;
   let div1;
   let div0;
   let each_blocks = [];
@@ -12889,6 +12890,7 @@ function create_if_block4(ctx) {
   );
   return {
     c() {
+      div2 = element("div");
       div1 = element("div");
       div0 = element("div");
       for (let i = 0; i < each_blocks.length; i += 1) {
@@ -12897,23 +12899,31 @@ function create_if_block4(ctx) {
       t2 = space();
       if (if_block)
         if_block.c();
-      attr(div0, "class", "task-image-strip-row svelte-ae6xr6");
+      attr(div0, "class", "task-image-strip-row svelte-1it5fb5");
       toggle_class(
         div0,
         "is-center-aligned",
         /*isCenterAligned*/
         ctx[5]
       );
-      attr(div1, "class", "task-image-strip-wrapper svelte-ae6xr6");
+      attr(div1, "class", "task-image-strip-inner svelte-1it5fb5");
       toggle_class(
         div1,
         "is-center-aligned",
         /*isCenterAligned*/
         ctx[5]
       );
+      attr(div2, "class", "task-image-strip-wrapper svelte-1it5fb5");
+      toggle_class(
+        div2,
+        "is-center-aligned",
+        /*isCenterAligned*/
+        ctx[5]
+      );
     },
     m(target, anchor) {
-      insert(target, div1, anchor);
+      insert(target, div2, anchor);
+      append(div2, div1);
       append(div1, div0);
       for (let i = 0; i < each_blocks.length; i += 1) {
         if (each_blocks[i]) {
@@ -12968,6 +12978,15 @@ function create_if_block4(ctx) {
           ctx2[5]
         );
       }
+      if (!current || dirty & /*isCenterAligned*/
+      32) {
+        toggle_class(
+          div2,
+          "is-center-aligned",
+          /*isCenterAligned*/
+          ctx2[5]
+        );
+      }
     },
     i(local) {
       if (current)
@@ -12985,7 +13004,7 @@ function create_if_block4(ctx) {
     },
     d(detaching) {
       if (detaching) {
-        detach(div1);
+        detach(div2);
       }
       for (let i = 0; i < each_blocks.length; i += 1) {
         each_blocks[i].d();
@@ -13145,7 +13164,7 @@ function create_if_block_13(ctx) {
   return {
     c() {
       div = element("div");
-      attr(div, "class", "task-image-strip-divider svelte-ae6xr6");
+      attr(div, "class", "task-image-strip-divider svelte-1it5fb5");
     },
     m(target, anchor) {
       insert(target, div, anchor);

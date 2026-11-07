@@ -7356,6 +7356,14 @@ body .task-detail-floating-modal.is-center-aligned .detail-meta-chips-section {
 }
 
 /* Image Strip Centering in All Centered Contexts */
+.task-image-strip-inner {
+    display: inline-flex;
+    flex-direction: column;
+    width: fit-content;
+    max-width: 100%;
+    align-items: stretch;
+}
+
 .is-center-aligned .task-image-strip-wrapper,
 .center-tasks .task-image-strip-wrapper,
 .task-item.is-center-aligned .task-image-strip-wrapper,
@@ -7366,6 +7374,19 @@ body .task-detail-floating-modal.is-center-aligned .detail-meta-chips-section {
 .steps-modal-text-col.is-center-aligned .task-image-strip-wrapper,
 .step-content-col.is-center-aligned .task-image-strip-wrapper,
 .title-content-col.is-center-aligned .task-image-strip-wrapper {
+    align-items: center !important;
+}
+
+.is-center-aligned .task-image-strip-inner,
+.center-tasks .task-image-strip-inner,
+.task-item.is-center-aligned .task-image-strip-inner,
+.task-steps-floating-modal.is-center-aligned .task-image-strip-inner,
+.task-steps-modal-container.is-center-aligned .task-image-strip-inner,
+.task-detail-floating-modal.is-center-aligned .task-image-strip-inner,
+.detail-container.is-center-aligned .task-image-strip-inner,
+.steps-modal-text-col.is-center-aligned .task-image-strip-inner,
+.step-content-col.is-center-aligned .task-image-strip-inner,
+.title-content-col.is-center-aligned .task-image-strip-inner {
     align-items: center !important;
 }
 
@@ -7380,6 +7401,16 @@ body .task-detail-floating-modal.is-center-aligned .detail-meta-chips-section {
 .step-content-col.is-center-aligned .task-image-strip-row,
 .title-content-col.is-center-aligned .task-image-strip-row {
     justify-content: center !important;
+}
+
+.task-image-strip-divider {
+    height: 1px;
+    width: 100%;
+    align-self: stretch;
+    background-color: var(--background-modifier-border, rgba(255, 255, 255, 0.12));
+    margin-top: 8px;
+    margin-bottom: 6px;
+    opacity: 0.85;
 }
 
 /* =============================================
