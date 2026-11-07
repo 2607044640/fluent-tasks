@@ -247,7 +247,7 @@ export class SidebarCoordinator {
         const leftSplit = this.host.app.workspace.leftSplit as any;
         const splitRect = leftSplit?.containerEl?.getBoundingClientRect();
 
-        const ribbonEl = document.querySelector(".workspace-ribbon.mod-left, .workspace-ribbon") as HTMLElement | null;
+        const ribbonEl = document.querySelector(".workspace-ribbon.mod-left, .workspace-ribbon");
         let ribbonRight = 0;
         if (ribbonEl) {
             const rect = ribbonEl.getBoundingClientRect();
@@ -264,7 +264,7 @@ export class SidebarCoordinator {
         }
 
         // If Fluent Tasks is hosted in a right split pane, also check the left edge of that pane
-        const mainContainer = document.querySelector(".fluent-tasks-main .main-container, .main-container") as HTMLElement | null;
+        const mainContainer = document.querySelector(".fluent-tasks-main .main-container, .main-container");
         if (mainContainer) {
             const mainRect = mainContainer.getBoundingClientRect();
             if (mainRect.left > threshold + 50) {

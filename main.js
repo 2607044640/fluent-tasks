@@ -13400,18 +13400,15 @@ async function copyTextToClipboard(text2) {
   } catch (e) {
   }
   try {
-    if (typeof document !== "undefined") {
-      const textarea = document.createElement("textarea");
+    if (typeof document !== "undefined" && document.body) {
+      const textarea = document.body.createEl("textarea", {
+        cls: "fluent-tasks-clipboard-fallback"
+      });
       textarea.value = text2;
-      textarea.style.position = "fixed";
-      textarea.style.left = "-9999px";
-      textarea.style.top = "-9999px";
-      textarea.style.opacity = "0";
-      document.body.appendChild(textarea);
       textarea.focus();
       textarea.select();
       const success = document.execCommand("copy");
-      document.body.removeChild(textarea);
+      textarea.remove();
       if (success)
         return true;
     }

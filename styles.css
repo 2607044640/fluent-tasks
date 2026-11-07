@@ -8186,6 +8186,15 @@ body.minimal-placeholders .steps-modal-add-input:focus::placeholder {
     opacity: 0.55 !important;
 }
 
+/* Clipboard Fallback Hidden Element */
+.fluent-tasks-clipboard-fallback {
+    position: fixed;
+    left: -9999px;
+    top: -9999px;
+    opacity: 0;
+    pointer-events: none;
+}
+
 
 
 

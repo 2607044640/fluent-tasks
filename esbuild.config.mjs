@@ -74,6 +74,18 @@ const context = await esbuild.context({
 });
 
 if (prod) {
+	// Pre-build verification: enforce zero ESLint errors (including obsidianmd/no-static-styles-assignment)
+	const { ESLint } = await import("eslint");
+	const eslint = new ESLint();
+	const results = await eslint.lintFiles(["src/**/*.{ts,js}"]);
+	const errorCount = results.reduce((sum, r) => sum + r.errorCount, 0);
+	if (errorCount > 0) {
+		const formatter = await eslint.loadFormatter("stylish");
+		const resultText = formatter.format(results.filter(r => r.errorCount > 0));
+		console.error("❌ Build failed: ESLint detected blocking errors:\n", resultText);
+		process.exit(1);
+	}
+
 	await context.rebuild();
 	process.exit(0);
 } else {

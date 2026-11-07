@@ -15,6 +15,8 @@ export default [
     },
     rules: {
       "obsidianmd/no-unsupported-api": "error",
+      "obsidianmd/no-static-styles-assignment": "error",
+      "obsidianmd/prefer-create-el": "error",
       "@typescript-eslint/no-floating-promises": "off",
       "@typescript-eslint/no-misused-promises": "off",
       "@typescript-eslint/no-unsafe-assignment": "off",
