@@ -926,6 +926,20 @@
 /* =============================================
    Task Metadata Badges (Below title, borderless)
    ============================================= */
+.task-steps-detail-col {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    vertical-align: middle;
+}
+
+.task-steps-detail-col .task-meta {
+    margin-top: 0;
+    line-height: 1;
+}
+
 .task-meta.steps-badge {
     cursor: pointer;
     font-size: 11px;
@@ -937,6 +951,8 @@
     padding: 0 1px;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
+    text-align: center;
     transition: color var(--todo-transition);
 }
 
@@ -952,11 +968,22 @@
     padding: 0 1px;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
+    text-align: center;
     transition: color var(--todo-transition);
 }
 
 .task-meta.detail-badge:hover {
     color: var(--todo-accent);
+}
+
+.quick-modal-steps-detail-col {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5px;
+    flex-shrink: 0;
 }
 
 .quick-modal-steps-badge {
@@ -970,6 +997,8 @@
     padding: 0 2px;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
+    text-align: center;
     transition: color var(--todo-transition);
 }
 
@@ -985,6 +1014,8 @@
     padding: 0 2px;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
+    text-align: center;
     transition: color var(--todo-transition);
 }
 
