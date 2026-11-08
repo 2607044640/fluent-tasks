@@ -247,6 +247,8 @@
     let popoverSvgIndex: number = 0;
     let popoverX: number = 0;
     let popoverY: number = 0;
+    let popoverMaxHeight: number = 380;
+    let popoverMaxWidth: number = 460;
     let popoverVisible: boolean = false;
     let popoverTimeout: any = null;
     let showHintsModal: boolean = false;
@@ -1105,6 +1107,8 @@
         popoverPlacement = pos.placement;
         popoverX = pos.x;
         popoverY = pos.y;
+        popoverMaxHeight = pos.maxHeight;
+        popoverMaxWidth = pos.maxWidth;
 
         popoverTask = task;
         popoverType = type;
@@ -4617,7 +4621,7 @@
              class="meta-popover placement-{popoverPlacement}"
              class:guide-popover={popoverType === 'guide'}
              class:is-center-aligned={centerAlignTasks}
-             style="left: {popoverX}px; top: {popoverY}px;"
+             style="left: {popoverX}px; top: {popoverY}px; max-height: {popoverMaxHeight}px; max-width: {popoverMaxWidth}px;"
              on:mouseenter={cancelHidePopover}
              on:mouseleave={scheduleHidePopover}
              on:contextmenu|preventDefault={dismissPopover}

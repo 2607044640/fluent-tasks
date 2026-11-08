@@ -2262,10 +2262,11 @@ body.is-dragging-ghost #dnd-action-dragged-el {
 .meta-popover {
     position: fixed;
     z-index: 100000;
-    min-width: 220px;
+    min-width: 180px;
     max-width: min(480px, 92vw);
-    max-height: 380px;
+    max-height: min(400px, 60vh);
     overflow-y: auto;
+    overflow-x: hidden;
     background-color: var(--todo-item-bg, var(--background-primary-alt, #1e1e2e));
     border: 1px solid var(--todo-border, var(--background-modifier-border-hover, #444));
     border-radius: 8px;
@@ -2273,6 +2274,7 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     padding: 10px 14px;
     pointer-events: auto;
     user-select: text;
+    box-sizing: border-box;
 }
 
 .meta-popover.placement-top {
@@ -3382,10 +3384,8 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    min-width: 220px;
-    max-width: min(460px, 90vw);
-    max-height: 380px;
-    overflow-y: auto;
+    min-width: 180px;
+    max-width: 100%;
 }
 
 /* =============================================
@@ -3395,9 +3395,7 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    max-width: 360px;
-    max-height: 420px;
-    overflow-y: auto;
+    max-width: 100%;
 }
 
 .meta-popover-full-title {

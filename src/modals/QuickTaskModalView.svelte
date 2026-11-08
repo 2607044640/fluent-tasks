@@ -84,6 +84,8 @@
     let popoverType: PopoverContentType | null = null;
     let popoverX: number = 0;
     let popoverY: number = 0;
+    let popoverMaxHeight: number = 380;
+    let popoverMaxWidth: number = 460;
     let popoverPlacement: string = "top";
     let popoverTimeout: any = null;
     let justCreatedTaskId: string | null = null;
@@ -279,6 +281,8 @@
         popoverPlacement = pos.placement;
         popoverX = pos.x;
         popoverY = pos.y;
+        popoverMaxHeight = pos.maxHeight;
+        popoverMaxWidth = pos.maxWidth;
 
         popoverTask = taskItem;
         popoverType = type;
@@ -1866,7 +1870,7 @@
 {#if popoverVisible && popoverTask}
     <div class="meta-popover placement-{popoverPlacement}"
          class:is-center-aligned={centerAlignTasks}
-         style="position: fixed; left: {popoverX}px; top: {popoverY}px; z-index: 10000;"
+         style="position: fixed; left: {popoverX}px; top: {popoverY}px; max-height: {popoverMaxHeight}px; max-width: {popoverMaxWidth}px; z-index: 10000;"
          on:mouseenter={cancelHidePopover}
          on:mouseleave={scheduleHidePopover}
          on:contextmenu|preventDefault={dismissPopover}
