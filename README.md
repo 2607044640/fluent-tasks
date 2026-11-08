@@ -1,6 +1,6 @@
 # Fluent Tasks
 
-A three-pane, local-first task manager for Obsidian inspired by Fluent Design principles. Version **1.0.61** (`manifest.json`). Compatible with desktop and mobile (`isDesktopOnly: false`). Requires Obsidian **1.8.7** or later.
+A three-pane, local-first task manager for Obsidian inspired by Fluent Design principles. Version **1.0.62** (`manifest.json`). Compatible with desktop and mobile (`isDesktopOnly: false`). Requires Obsidian **1.8.7** or later.
 
 Architecture documentation: [ARCHITECTURE.md](./ARCHITECTURE.md).
 
