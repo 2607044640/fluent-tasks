@@ -4115,34 +4115,38 @@
                                         📁 {task.sourceCategoryName}
                                     </span>
                                 {/if}
-                                {#if task.steps && task.steps.length > 0}
-                                    <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
-                                    <span class="task-meta steps-badge"
-                                          on:click|stopPropagation={() => openStepsModal(task)}
-                                          on:mouseenter|stopPropagation={(e) => showPopover(e, task, 'steps')}
-                                          on:mouseleave={scheduleHidePopover}
-                                          role="button"
-                                          tabindex="0"
-                                          title="Subtasks ({task.steps.filter(s => s.done).length}/{task.steps.length})">
-                                        {task.steps.filter(s => s.done).length}/{task.steps.length}
-                                    </span>
-                                {/if}
-                                {#if task.note && task.note.trim().length > 0}
-                                    <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
-                                    <span class="task-meta detail-badge"
-                                          on:click|stopPropagation={() => { if (task) { dismissPopover(); selectTask(task); } }}
-                                          on:mouseenter|stopPropagation={(e) => showPopover(e, task, 'note')}
-                                          on:mouseleave={scheduleHidePopover}
-                                          role="button"
-                                          tabindex="0"
-                                          title="Detail note">
-                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                            <polyline points="14 2 14 8 20 8"/>
-                                            <line x1="16" y1="13" x2="8" y2="13"/>
-                                            <line x1="16" y1="17" x2="8" y2="17"/>
-                                        </svg>
-                                    </span>
+                                {#if (task.steps && task.steps.length > 0) || (task.note && task.note.trim().length > 0)}
+                                    <div class="task-steps-detail-col">
+                                        {#if task.steps && task.steps.length > 0}
+                                            <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
+                                            <span class="task-meta steps-badge"
+                                                  on:click|stopPropagation={() => openStepsModal(task)}
+                                                  on:mouseenter|stopPropagation={(e) => showPopover(e, task, 'steps')}
+                                                  on:mouseleave={scheduleHidePopover}
+                                                  role="button"
+                                                  tabindex="0"
+                                                  title="Subtasks ({task.steps.filter(s => s.done).length}/{task.steps.length})">
+                                                {task.steps.filter(s => s.done).length}/{task.steps.length}
+                                            </span>
+                                        {/if}
+                                        {#if task.note && task.note.trim().length > 0}
+                                            <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
+                                            <span class="task-meta detail-badge"
+                                                  on:click|stopPropagation={() => { if (task) { dismissPopover(); selectTask(task); } }}
+                                                  on:mouseenter|stopPropagation={(e) => showPopover(e, task, 'note')}
+                                                  on:mouseleave={scheduleHidePopover}
+                                                  role="button"
+                                                  tabindex="0"
+                                                  title="Detail note">
+                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                                    <polyline points="14 2 14 8 20 8"/>
+                                                    <line x1="16" y1="13" x2="8" y2="13"/>
+                                                    <line x1="16" y1="17" x2="8" y2="17"/>
+                                                </svg>
+                                            </span>
+                                        {/if}
+                                    </div>
                                 {/if}
                                 {#if task.dueDate}
                                     <span class="task-meta due-date">
