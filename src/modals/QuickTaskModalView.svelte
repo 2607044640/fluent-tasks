@@ -1569,7 +1569,10 @@
                                         </div>
                                     {/if}
                                     <span class="quick-modal-search-category-badge">
-                                        {result.category.name}
+                                        <svg class="source-category-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                                        </svg>
+                                        <span>{result.category.name}</span>
                                     </span>
                                     {#each getQuickTaskNoteBadges(result.task) as badge}
                                         <span 
@@ -1677,7 +1680,10 @@
                                     {/if}
                                     {#if selectedCategory?.filepath === STARRED_CATEGORY_PATH && task.sourceCategoryName}
                                         <span class="quick-modal-search-category-badge" title={`From list: ${task.sourceCategoryName}`}>
-                                            📁 {task.sourceCategoryName}
+                                            <svg class="source-category-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                                            </svg>
+                                            <span>{task.sourceCategoryName}</span>
                                         </span>
                                     {/if}
                                     {#if task.why}
@@ -1793,7 +1799,10 @@
                                         {/if}
                                         {#if selectedCategory?.filepath === STARRED_CATEGORY_PATH && task.sourceCategoryName}
                                             <span class="quick-modal-search-category-badge" title={`From list: ${task.sourceCategoryName}`}>
-                                                📁 {task.sourceCategoryName}
+                                                <svg class="source-category-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                                                </svg>
+                                                <span>{task.sourceCategoryName}</span>
                                             </span>
                                         {/if}
                                         {#if task.why}

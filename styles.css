@@ -866,9 +866,13 @@
 
 .task-meta-row {
     display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    width: 100%;
+}
+.task-meta-row .task-meta {
+    margin-top: 0;
 }
 
 /* Center-Align Tasks Mode (3-column CSS Grid: 1fr left, auto center, 1fr right) */
@@ -903,9 +907,13 @@
 
 .center-tasks .task-meta-row,
 .task-item.is-center-aligned .task-meta-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     justify-content: center;
     text-align: center;
     width: 100%;
+    gap: 3px;
 }
 
 .task-item.is-center-aligned .task-right-controls {
@@ -2015,8 +2023,9 @@ body.is-dragging-ghost #dnd-action-dragged-el {
    ============================================= */
 .task-meta-row {
     display: flex;
-    align-items: center;
-    gap: 8px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
     margin-top: 3px;
 }
 .task-meta-row .task-meta {
@@ -7644,6 +7653,7 @@ body .task-detail-floating-modal.is-center-aligned .detail-meta-chips-section {
 .source-category-badge {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 4px;
     font-size: 11px;
     padding: 1px 6px;
@@ -7660,6 +7670,16 @@ body .task-detail-floating-modal.is-center-aligned .detail-meta-chips-section {
     color: var(--text-normal);
     background-color: var(--background-modifier-hover);
     border-color: var(--todo-accent, #8b5cf6);
+}
+
+.source-category-badge .source-category-icon,
+.quick-modal-search-category-badge .source-category-icon {
+    color: var(--todo-accent, #0078d4);
+    stroke: var(--todo-accent, #0078d4);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
 .quick-modal-list-item.is-smart-item {

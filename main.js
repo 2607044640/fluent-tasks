@@ -32615,14 +32615,17 @@ function create_if_block_642(ctx) {
   };
 }
 function create_if_block_70(ctx) {
-  let span;
+  let span1;
+  let svg;
+  let path;
   let t0;
+  let span0;
   let t1_value = (
     /*task*/
     ctx[389].sourceCategoryName + ""
   );
   let t1;
-  let span_title_value;
+  let span1_title_value;
   let mounted;
   let dispose;
   function click_handler_11() {
@@ -32636,19 +32639,35 @@ function create_if_block_70(ctx) {
   }
   return {
     c() {
-      span = element("span");
-      t0 = text("\u{1F4C1} ");
+      span1 = element("span");
+      svg = svg_element("svg");
+      path = svg_element("path");
+      t0 = space();
+      span0 = element("span");
       t1 = text(t1_value);
-      attr(span, "class", "task-meta source-category-badge");
-      attr(span, "title", span_title_value = `From list: ${/*task*/
+      attr(path, "d", "M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z");
+      attr(svg, "class", "source-category-icon");
+      attr(svg, "width", "11");
+      attr(svg, "height", "11");
+      attr(svg, "viewBox", "0 0 24 24");
+      attr(svg, "fill", "none");
+      attr(svg, "stroke", "currentColor");
+      attr(svg, "stroke-width", "2");
+      attr(svg, "stroke-linecap", "round");
+      attr(svg, "stroke-linejoin", "round");
+      attr(span1, "class", "task-meta source-category-badge");
+      attr(span1, "title", span1_title_value = `From list: ${/*task*/
       ctx[389].sourceCategoryName} (Click to jump)`);
     },
     m(target, anchor) {
-      insert(target, span, anchor);
-      append(span, t0);
-      append(span, t1);
+      insert(target, span1, anchor);
+      append(span1, svg);
+      append(svg, path);
+      append(span1, t0);
+      append(span1, span0);
+      append(span0, t1);
       if (!mounted) {
-        dispose = listen(span, "click", stop_propagation(click_handler_11));
+        dispose = listen(span1, "click", stop_propagation(click_handler_11));
         mounted = true;
       }
     },
@@ -32659,14 +32678,14 @@ function create_if_block_70(ctx) {
       ctx[389].sourceCategoryName + ""))
         set_data(t1, t1_value);
       if (dirty[0] & /*incompleteTasks*/
-      32 && span_title_value !== (span_title_value = `From list: ${/*task*/
+      32 && span1_title_value !== (span1_title_value = `From list: ${/*task*/
       ctx[389].sourceCategoryName} (Click to jump)`)) {
-        attr(span, "title", span_title_value);
+        attr(span1, "title", span1_title_value);
       }
     },
     d(detaching) {
       if (detaching) {
-        detach(span);
+        detach(span1);
       }
       mounted = false;
       dispose();
@@ -35111,14 +35130,17 @@ function create_if_block_452(ctx) {
   };
 }
 function create_if_block_512(ctx) {
-  let span;
+  let span1;
+  let svg;
+  let path;
   let t0;
+  let span0;
   let t1_value = (
     /*task*/
     ctx[389].sourceCategoryName + ""
   );
   let t1;
-  let span_title_value;
+  let span1_title_value;
   let mounted;
   let dispose;
   function click_handler_22() {
@@ -35132,19 +35154,35 @@ function create_if_block_512(ctx) {
   }
   return {
     c() {
-      span = element("span");
-      t0 = text("\u{1F4C1} ");
+      span1 = element("span");
+      svg = svg_element("svg");
+      path = svg_element("path");
+      t0 = space();
+      span0 = element("span");
       t1 = text(t1_value);
-      attr(span, "class", "task-meta source-category-badge");
-      attr(span, "title", span_title_value = `From list: ${/*task*/
+      attr(path, "d", "M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z");
+      attr(svg, "class", "source-category-icon");
+      attr(svg, "width", "11");
+      attr(svg, "height", "11");
+      attr(svg, "viewBox", "0 0 24 24");
+      attr(svg, "fill", "none");
+      attr(svg, "stroke", "currentColor");
+      attr(svg, "stroke-width", "2");
+      attr(svg, "stroke-linecap", "round");
+      attr(svg, "stroke-linejoin", "round");
+      attr(span1, "class", "task-meta source-category-badge");
+      attr(span1, "title", span1_title_value = `From list: ${/*task*/
       ctx[389].sourceCategoryName} (Click to jump)`);
     },
     m(target, anchor) {
-      insert(target, span, anchor);
-      append(span, t0);
-      append(span, t1);
+      insert(target, span1, anchor);
+      append(span1, svg);
+      append(svg, path);
+      append(span1, t0);
+      append(span1, span0);
+      append(span0, t1);
       if (!mounted) {
-        dispose = listen(span, "click", stop_propagation(click_handler_22));
+        dispose = listen(span1, "click", stop_propagation(click_handler_22));
         mounted = true;
       }
     },
@@ -35155,14 +35193,14 @@ function create_if_block_512(ctx) {
       ctx[389].sourceCategoryName + ""))
         set_data(t1, t1_value);
       if (dirty[0] & /*completedTasks*/
-      64 && span_title_value !== (span_title_value = `From list: ${/*task*/
+      64 && span1_title_value !== (span1_title_value = `From list: ${/*task*/
       ctx[389].sourceCategoryName} (Click to jump)`)) {
-        attr(span, "title", span_title_value);
+        attr(span1, "title", span1_title_value);
       }
     },
     d(detaching) {
       if (detaching) {
-        detach(span);
+        detach(span1);
       }
       mounted = false;
       dispose();
@@ -58274,27 +58312,46 @@ function create_if_block_264(ctx) {
   };
 }
 function create_if_block_244(ctx) {
-  let span;
+  let span1;
+  let svg;
+  let path;
   let t0;
+  let span0;
   let t1_value = (
     /*task*/
     ctx[203].sourceCategoryName + ""
   );
   let t1;
-  let span_title_value;
+  let span1_title_value;
   return {
     c() {
-      span = element("span");
-      t0 = text("\u{1F4C1} ");
+      span1 = element("span");
+      svg = svg_element("svg");
+      path = svg_element("path");
+      t0 = space();
+      span0 = element("span");
       t1 = text(t1_value);
-      attr(span, "class", "quick-modal-search-category-badge");
-      attr(span, "title", span_title_value = `From list: ${/*task*/
+      attr(path, "d", "M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z");
+      attr(svg, "class", "source-category-icon");
+      attr(svg, "width", "11");
+      attr(svg, "height", "11");
+      attr(svg, "viewBox", "0 0 24 24");
+      attr(svg, "fill", "none");
+      attr(svg, "stroke", "currentColor");
+      attr(svg, "stroke-width", "2");
+      attr(svg, "stroke-linecap", "round");
+      attr(svg, "stroke-linejoin", "round");
+      attr(span1, "class", "quick-modal-search-category-badge");
+      attr(span1, "title", span1_title_value = `From list: ${/*task*/
       ctx[203].sourceCategoryName}`);
     },
     m(target, anchor) {
-      insert(target, span, anchor);
-      append(span, t0);
-      append(span, t1);
+      insert(target, span1, anchor);
+      append(span1, svg);
+      append(svg, path);
+      append(span1, t0);
+      append(span1, span0);
+      append(span0, t1);
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*incompleteTasks*/
@@ -58302,14 +58359,14 @@ function create_if_block_244(ctx) {
       ctx2[203].sourceCategoryName + ""))
         set_data(t1, t1_value);
       if (dirty[0] & /*incompleteTasks*/
-      16 && span_title_value !== (span_title_value = `From list: ${/*task*/
+      16 && span1_title_value !== (span1_title_value = `From list: ${/*task*/
       ctx2[203].sourceCategoryName}`)) {
-        attr(span, "title", span_title_value);
+        attr(span1, "title", span1_title_value);
       }
     },
     d(detaching) {
       if (detaching) {
-        detach(span);
+        detach(span1);
       }
     }
   };
@@ -59298,27 +59355,46 @@ function create_if_block_194(ctx) {
   };
 }
 function create_if_block_174(ctx) {
-  let span;
+  let span1;
+  let svg;
+  let path;
   let t0;
+  let span0;
   let t1_value = (
     /*task*/
     ctx[203].sourceCategoryName + ""
   );
   let t1;
-  let span_title_value;
+  let span1_title_value;
   return {
     c() {
-      span = element("span");
-      t0 = text("\u{1F4C1} ");
+      span1 = element("span");
+      svg = svg_element("svg");
+      path = svg_element("path");
+      t0 = space();
+      span0 = element("span");
       t1 = text(t1_value);
-      attr(span, "class", "quick-modal-search-category-badge");
-      attr(span, "title", span_title_value = `From list: ${/*task*/
+      attr(path, "d", "M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z");
+      attr(svg, "class", "source-category-icon");
+      attr(svg, "width", "11");
+      attr(svg, "height", "11");
+      attr(svg, "viewBox", "0 0 24 24");
+      attr(svg, "fill", "none");
+      attr(svg, "stroke", "currentColor");
+      attr(svg, "stroke-width", "2");
+      attr(svg, "stroke-linecap", "round");
+      attr(svg, "stroke-linejoin", "round");
+      attr(span1, "class", "quick-modal-search-category-badge");
+      attr(span1, "title", span1_title_value = `From list: ${/*task*/
       ctx[203].sourceCategoryName}`);
     },
     m(target, anchor) {
-      insert(target, span, anchor);
-      append(span, t0);
-      append(span, t1);
+      insert(target, span1, anchor);
+      append(span1, svg);
+      append(svg, path);
+      append(span1, t0);
+      append(span1, span0);
+      append(span0, t1);
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*completedTasks*/
@@ -59326,14 +59402,14 @@ function create_if_block_174(ctx) {
       ctx2[203].sourceCategoryName + ""))
         set_data(t1, t1_value);
       if (dirty[0] & /*completedTasks*/
-      32 && span_title_value !== (span_title_value = `From list: ${/*task*/
+      32 && span1_title_value !== (span1_title_value = `From list: ${/*task*/
       ctx2[203].sourceCategoryName}`)) {
-        attr(span, "title", span_title_value);
+        attr(span1, "title", span1_title_value);
       }
     },
     d(detaching) {
       if (detaching) {
-        detach(span);
+        detach(span1);
       }
     }
   };
@@ -60601,15 +60677,19 @@ function create_each_block_15(key_1, ctx) {
     ctx[197].task.note.trim().length > 0
   );
   let t3;
+  let span2;
+  let svg;
+  let path;
+  let t4;
   let span1;
-  let t4_value = (
+  let t5_value = (
     /*result*/
     ctx[197].category.name + ""
   );
-  let t4;
   let t5;
   let t6;
   let t7;
+  let t8;
   let mounted;
   let dispose;
   function click_handler_52() {
@@ -60685,16 +60765,20 @@ function create_each_block_15(key_1, ctx) {
       if (if_block0)
         if_block0.c();
       t3 = space();
+      span2 = element("span");
+      svg = svg_element("svg");
+      path = svg_element("path");
+      t4 = space();
       span1 = element("span");
-      t4 = text(t4_value);
-      t5 = space();
+      t5 = text(t5_value);
+      t6 = space();
       for (let i = 0; i < each_blocks.length; i += 1) {
         each_blocks[i].c();
       }
-      t6 = space();
+      t7 = space();
       if (if_block1)
         if_block1.c();
-      t7 = space();
+      t8 = space();
       attr(input, "type", "checkbox");
       attr(input, "class", "quick-modal-checkbox");
       input.checked = input_checked_value = /*result*/
@@ -60706,7 +60790,17 @@ function create_each_block_15(key_1, ctx) {
         /*result*/
         ctx[197].task.completed
       );
-      attr(span1, "class", "quick-modal-search-category-badge");
+      attr(path, "d", "M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z");
+      attr(svg, "class", "source-category-icon");
+      attr(svg, "width", "11");
+      attr(svg, "height", "11");
+      attr(svg, "viewBox", "0 0 24 24");
+      attr(svg, "fill", "none");
+      attr(svg, "stroke", "currentColor");
+      attr(svg, "stroke-width", "2");
+      attr(svg, "stroke-linecap", "round");
+      attr(svg, "stroke-linejoin", "round");
+      attr(span2, "class", "quick-modal-search-category-badge");
       attr(div, "class", "quick-modal-task-item");
       attr(div, "role", "button");
       attr(div, "tabindex", "0");
@@ -60736,18 +60830,22 @@ function create_each_block_15(key_1, ctx) {
       if (if_block0)
         if_block0.m(div, null);
       append(div, t3);
-      append(div, span1);
-      append(span1, t4);
-      append(div, t5);
+      append(div, span2);
+      append(span2, svg);
+      append(svg, path);
+      append(span2, t4);
+      append(span2, span1);
+      append(span1, t5);
+      append(div, t6);
       for (let i = 0; i < each_blocks.length; i += 1) {
         if (each_blocks[i]) {
           each_blocks[i].m(div, null);
         }
       }
-      append(div, t6);
+      append(div, t7);
       if (if_block1)
         if_block1.m(div, null);
-      append(div, t7);
+      append(div, t8);
       if (!mounted) {
         dispose = [
           listen(input, "click", stop_propagation(click_handler_52)),
@@ -60799,9 +60897,9 @@ function create_each_block_15(key_1, ctx) {
         if_block0 = null;
       }
       if (dirty[0] & /*searchResults*/
-      128 && t4_value !== (t4_value = /*result*/
+      128 && t5_value !== (t5_value = /*result*/
       ctx[197].category.name + ""))
-        set_data(t4, t4_value);
+        set_data(t5, t5_value);
       if (dirty[0] & /*searchResults*/
       128 | dirty[1] & /*getQuickTaskNoteBadges, handleNoteLinkHover, handleNoteLinkClick*/
       234881024) {
@@ -60820,7 +60918,7 @@ function create_each_block_15(key_1, ctx) {
           } else {
             each_blocks[i] = create_each_block_24(child_ctx);
             each_blocks[i].c();
-            each_blocks[i].m(div, t6);
+            each_blocks[i].m(div, t7);
           }
         }
         for (; i < each_blocks.length; i += 1) {
@@ -60835,7 +60933,7 @@ function create_each_block_15(key_1, ctx) {
         } else {
           if_block1 = create_if_block_712(ctx);
           if_block1.c();
-          if_block1.m(div, t7);
+          if_block1.m(div, t8);
         }
       } else if (if_block1) {
         if_block1.d(1);
