@@ -923,6 +923,54 @@
     gap: 8px;
 }
 
+/* =============================================
+   Task Corner Badges (Superscript, zero flow impact)
+   ============================================= */
+.task-corner-badges {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-left: 4px;
+    vertical-align: super;
+    font-size: 8.5px;
+    line-height: 1;
+    text-decoration: none !important;
+    pointer-events: auto;
+    user-select: none;
+}
+
+.task-corner-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8.5px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 1px 3px;
+    border-radius: 3px;
+    background: var(--background-secondary, rgba(255, 255, 255, 0.08));
+    border: 1px solid var(--background-modifier-border, rgba(255, 255, 255, 0.12));
+    color: var(--todo-text-muted, var(--text-muted));
+    cursor: pointer;
+    transition: color var(--todo-transition), border-color var(--todo-transition), background-color var(--todo-transition);
+    text-decoration: none !important;
+    white-space: nowrap;
+}
+
+.task-corner-badge:hover {
+    color: var(--todo-accent, #0078d4);
+    border-color: var(--todo-accent, #0078d4);
+    background: var(--todo-hover-bg, rgba(255, 255, 255, 0.12));
+}
+
+.task-corner-badge.detail-badge {
+    padding: 1px 2.5px;
+}
+
+.task-corner-badge.detail-badge svg {
+    display: block;
+}
+
 .task-meta.steps-badge {
     cursor: pointer;
     transition: color var(--todo-transition);
@@ -3438,13 +3486,8 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     white-space: pre-wrap;
     word-break: break-word;
     overflow-wrap: anywhere;
-    max-height: 220px;
+    max-height: 260px;
     overflow-y: auto;
-    margin-top: 6px;
-    background-color: var(--todo-item-bg, var(--background-primary-alt, #282828));
-    border-radius: 6px;
-    padding: 8px 10px;
-    border: 1px solid var(--todo-border, var(--background-modifier-border, #333));
 }
 
 .popover-why-box {
