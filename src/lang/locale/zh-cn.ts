@@ -232,6 +232,8 @@ const zhCn: typeof en = {
     setting_collapse_completed_steps_desc: "开启时，悬浮详情弹窗中已完成的子步骤会自动折叠为紧凑的单行预览（点击可展开）；关闭时，已完成步骤保持原有完整多行展开状态。默认开启。",
     setting_show_steps_progress_title: "任务详情：显示子步骤完成进度胶囊",
     setting_show_steps_progress_desc: "在子步骤悬浮弹窗底部显示步骤完成进度胶囊（例如 0/3 steps completed）。默认关闭。",
+    setting_hide_detail_badge_title: "任务详情：隐藏 Detail 笔记图标按钮",
+    setting_hide_detail_badge_desc: "在任务列表及弹窗中隐藏 detail 笔记小图标按钮（鼠标悬浮显示详情悬浮 UI 的图标）。默认关闭。",
 
     setting_quick_list_grid_title: "清单看板：多列卡片网格布局 (Grid Board)",
     setting_quick_list_grid_desc: "将所有列表与分组以多列平铺卡片如看板仪表盘般展示，充分利用可用屏幕空间无需滚动。关闭后恢复为传统单列列表。",

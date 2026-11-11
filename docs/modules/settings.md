@@ -59,6 +59,7 @@ Plugin settings are `FluentTasksSettings` stored by Obsidian `Plugin.saveData` /
 | `openDetailInModal` | `false` |
 | `fullscreenDetailModal` | `true` |
 | `collapseCompletedSteps` | `true` |
+| `hideDetailBadge` | `false` |
 | `hideLeftSidebar` | `false` |
 | `autoExpandSidebarOnDrag` | `false` |
 | `dragToEdgeToExpandSidebar` | `false` |

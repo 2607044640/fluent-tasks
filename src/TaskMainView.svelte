@@ -75,6 +75,7 @@
     let hiddenStarMode: boolean = plugin?.settings?.hiddenStarMode ?? plugin?.settings?.disableStars ?? false;
     let disableStars: boolean = hiddenStarMode;
     let hideLeftSidebar: boolean = plugin?.settings?.hideLeftSidebar ?? false;
+    let hideDetailBadge: boolean = plugin?.settings?.hideDetailBadge ?? false;
     let minimalPlaceholders: boolean = plugin?.settings?.minimalPlaceholders ?? false;
     let hasFloatingModalHotkey: boolean = true;
     $: showNoHotkeyWarning = hideLeftSidebar && !hasFloatingModalHotkey;
@@ -1376,6 +1377,7 @@
         showListTitleInHeader = s.showListTitleInHeader ?? false;
         enableTaskWeightMode = s.enableTaskWeightMode ?? false;
         centerAlignTasks = s.centerAlignTasks ?? true;
+        hideDetailBadge = s.hideDetailBadge ?? false;
         minimalPlaceholders = s.minimalPlaceholders ?? false;
         hiddenStarMode = s.hiddenStarMode !== undefined ? s.hiddenStarMode : (s.disableStars ?? false);
         disableStars = hiddenStarMode;
@@ -4118,7 +4120,7 @@
                                         <span>{task.sourceCategoryName}</span>
                                     </span>
                                 {/if}
-                                {#if (task.steps && task.steps.length > 0) || (task.note && task.note.trim().length > 0)}
+                                {#if (task.steps && task.steps.length > 0) || (!hideDetailBadge && task.note && task.note.trim().length > 0)}
                                     <div class="task-steps-detail-col">
                                         {#if task.steps && task.steps.length > 0}
                                             <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
@@ -4132,7 +4134,7 @@
                                                 {task.steps.filter(s => s.done).length}/{task.steps.length}
                                             </span>
                                         {/if}
-                                        {#if task.note && task.note.trim().length > 0}
+                                        {#if !hideDetailBadge && task.note && task.note.trim().length > 0}
                                             <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
                                             <span class="task-meta detail-badge"
                                                   on:click|stopPropagation={() => { if (task) { dismissPopover(); selectTask(task); } }}
@@ -4409,7 +4411,7 @@
                                                     <span>{task.sourceCategoryName}</span>
                                                 </span>
                                             {/if}
-                                            {#if (task.steps && task.steps.length > 0) || (task.note && task.note.trim().length > 0)}
+                                            {#if (task.steps && task.steps.length > 0) || (!hideDetailBadge && task.note && task.note.trim().length > 0)}
                                                 <div class="task-steps-detail-col">
                                                     {#if task.steps && task.steps.length > 0}
                                                         <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
@@ -4423,7 +4425,7 @@
                                                             {task.steps.filter(s => s.done).length}/{task.steps.length}
                                                         </span>
                                                     {/if}
-                                                    {#if task.note && task.note.trim().length > 0}
+                                                    {#if !hideDetailBadge && task.note && task.note.trim().length > 0}
                                                         <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
                                                         <span class="task-meta detail-badge"
                                                               on:click|stopPropagation={() => { if (task) { dismissPopover(); selectTask(task); } }}

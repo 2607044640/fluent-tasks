@@ -68,6 +68,7 @@
     let disableStars: boolean = plugin?.settings?.disableStars ?? false;
     let hiddenStarMode: boolean = plugin?.settings?.hiddenStarMode ?? plugin?.settings?.disableStars ?? false;
     let centerAlignTasks: boolean = plugin?.settings?.centerAlignTasks ?? true;
+    let hideDetailBadge: boolean = plugin?.settings?.hideDetailBadge ?? false;
     let minimalPlaceholders: boolean = plugin?.settings?.minimalPlaceholders ?? false;
     let starredCount: number = 0;
 
@@ -160,6 +161,11 @@
             centerAlignTasks = payload.settings.centerAlignTasks;
         } else if (plugin?.settings?.centerAlignTasks !== undefined) {
             centerAlignTasks = plugin.settings.centerAlignTasks;
+        }
+        if (payload?.settings?.hideDetailBadge !== undefined) {
+            hideDetailBadge = payload.settings.hideDetailBadge;
+        } else if (plugin?.settings?.hideDetailBadge !== undefined) {
+            hideDetailBadge = plugin.settings.hideDetailBadge;
         }
         if (payload?.settings?.minimalPlaceholders !== undefined) {
             minimalPlaceholders = payload.settings.minimalPlaceholders;
@@ -1535,7 +1541,7 @@
                                     <span class="quick-modal-task-title" class:is-done={result.task.completed}>
                                         {result.task.title}
                                     </span>
-                                    {#if (result.task.steps && result.task.steps.length > 0) || (result.task.note && result.task.note.trim().length > 0)}
+                                    {#if (result.task.steps && result.task.steps.length > 0) || (!hideDetailBadge && result.task.note && result.task.note.trim().length > 0)}
                                         <div class="quick-modal-steps-detail-col">
                                             {#if result.task.steps && result.task.steps.length > 0}
                                                 <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
@@ -1549,7 +1555,7 @@
                                                     {getStepsRatio(result.task.steps)}
                                                 </span>
                                             {/if}
-                                            {#if result.task.note && result.task.note.trim().length > 0}
+                                            {#if !hideDetailBadge && result.task.note && result.task.note.trim().length > 0}
                                                 <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
                                                 <span class="quick-modal-detail-badge"
                                                       on:click|stopPropagation={() => openTaskInMainView(result.task)}
@@ -1645,7 +1651,7 @@
                                     <span class="quick-modal-task-title">
                                         {task.title}
                                     </span>
-                                    {#if (task.steps && task.steps.length > 0) || (task.note && task.note.trim().length > 0)}
+                                    {#if (task.steps && task.steps.length > 0) || (!hideDetailBadge && task.note && task.note.trim().length > 0)}
                                         <div class="quick-modal-steps-detail-col">
                                             {#if task.steps && task.steps.length > 0}
                                                 <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
@@ -1659,7 +1665,7 @@
                                                     {task.steps.filter(s => s.done).length}/{task.steps.length}
                                                 </span>
                                             {/if}
-                                            {#if task.note && task.note.trim().length > 0}
+                                            {#if !hideDetailBadge && task.note && task.note.trim().length > 0}
                                                 <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
                                                 <span class="quick-modal-detail-badge"
                                                       on:click|stopPropagation={() => openTaskInMainView(task)}
@@ -1764,7 +1770,7 @@
                                         <span class="quick-modal-task-title is-done">
                                             {task.title}
                                         </span>
-                                        {#if (task.steps && task.steps.length > 0) || (task.note && task.note.trim().length > 0)}
+                                        {#if (task.steps && task.steps.length > 0) || (!hideDetailBadge && task.note && task.note.trim().length > 0)}
                                             <div class="quick-modal-steps-detail-col">
                                                 {#if task.steps && task.steps.length > 0}
                                                     <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
@@ -1778,7 +1784,7 @@
                                                         {task.steps.filter(s => s.done).length}/{task.steps.length}
                                                     </span>
                                                 {/if}
-                                                {#if task.note && task.note.trim().length > 0}
+                                                {#if !hideDetailBadge && task.note && task.note.trim().length > 0}
                                                     <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
                                                     <span class="quick-modal-detail-badge"
                                                           on:click|stopPropagation={() => openTaskInMainView(task)}

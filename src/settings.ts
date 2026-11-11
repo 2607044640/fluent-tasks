@@ -41,6 +41,7 @@ export interface FluentTasksSettings {
     showListTitleInHeader: boolean;
     taskSeparatorWidth: number;
     collapseCompletedSteps: boolean;
+    hideDetailBadge: boolean;
     minimalPlaceholders: boolean;
     injectAiArchiveDirective: boolean;
 }
@@ -50,6 +51,7 @@ export const DEFAULT_SETTINGS: FluentTasksSettings = {
     openDetailInModal: false,
     fullscreenDetailModal: true,
     collapseCompletedSteps: true,
+    hideDetailBadge: false,
     minimalPlaceholders: false,
     injectAiArchiveDirective: true,
     hideLeftSidebar: false,
@@ -300,6 +302,17 @@ export class FluentTasksSettingTab extends PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.showStepsProgressPill = value;
                     await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName(t("setting_hide_detail_badge_title") || "Task Details: Hide Detail Note Badge")
+            .setDesc(t("setting_hide_detail_badge_desc") || "Hide the detail note badge (hoverable icon displaying task note preview) on task items in the task list and modals. Disabled by default.")
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.hideDetailBadge ?? false)
+                .onChange(async (value) => {
+                    this.plugin.settings.hideDetailBadge = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.applySettings();
                 }));
 
         // =============================================

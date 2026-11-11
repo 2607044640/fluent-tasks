@@ -226,6 +226,8 @@ const en = {
     setting_collapse_completed_steps_desc: "When enabled, completed checklist steps in the floating details modal automatically collapse into a compact single-line preview that can be clicked to expand. When disabled, completed steps remain fully expanded.",
     setting_show_steps_progress_title: "Task Details: Show Subtasks Progress Badge",
     setting_show_steps_progress_desc: "Display step completion progress badge (e.g. 0/3 steps completed) at the bottom of the subtasks floating modal. Disabled by default.",
+    setting_hide_detail_badge_title: "Task Details: Hide Detail Note Badge",
+    setting_hide_detail_badge_desc: "Hide the detail note badge (hoverable icon displaying task note preview) on task items in the task list and modals. Disabled by default.",
 
     setting_quick_list_grid_title: "Quick List: Grid Board Layout",
     setting_quick_list_grid_desc: "Tile lists and groups across multi-column cards like a dashboard chart to fully display lists in the available screen space without scrolling. Turn off to revert to the classic single-column list.",
