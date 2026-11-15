@@ -1937,6 +1937,33 @@ body.is-dragging-ghost #dnd-action-dragged-el {
     transform: none !important;
 }
 
+/* Image Strip Drag-to-Reorder Shield & Ghost */
+body.fluent-tasks-image-dragging,
+body.fluent-tasks-image-dragging * {
+    cursor: grabbing !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+}
+
+.fluent-tasks-image-drag-ghost {
+    position: fixed;
+    z-index: 99999;
+    pointer-events: none;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: var(--background-secondary-alt);
+    border: 1.5px solid var(--todo-accent, var(--interactive-accent, #8b5cf6));
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 10px 1px var(--todo-accent-glow, rgba(139, 92, 246, 0.5));
+    opacity: 0.92;
+    transform: scale(1.06);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* =============================================
    Search Modal - Filter Button
    ============================================= */

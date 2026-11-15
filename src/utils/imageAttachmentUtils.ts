@@ -532,6 +532,47 @@ export function removeImageFromStepItem(step: TaskStep, imageRef: string): void 
 }
 
 /**
+ * Moves an item at `fromIndex` to the gap position `insertPos` (0..images.length) without mutating input.
+ */
+export function reorderImageArray(images: string[], fromIndex: number, insertPos: number): string[] {
+    if (!images || fromIndex < 0 || fromIndex >= images.length || insertPos < 0 || insertPos > images.length) {
+        return images ? [...images] : [];
+    }
+    if (insertPos === fromIndex || insertPos === fromIndex + 1) {
+        return [...images];
+    }
+    const copy = [...images];
+    const [moved] = copy.splice(fromIndex, 1);
+    const targetIdx = insertPos > fromIndex ? insertPos - 1 : insertPos;
+    copy.splice(targetIdx, 0, moved);
+    return copy;
+}
+
+/**
+ * Persists a reordered image list onto a task's titleImages array.
+ */
+export function reorderImagesInTaskTitle(task: TaskItem, reorderedImages: string[]): void {
+    if (!task) return;
+    task.titleImages = [...reorderedImages];
+}
+
+/**
+ * Persists a reordered image list onto a task's note images array.
+ */
+export function reorderImagesInTaskNote(task: TaskItem, reorderedImages: string[]): void {
+    if (!task) return;
+    task.images = [...reorderedImages];
+}
+
+/**
+ * Persists a reordered image list onto a step's images array.
+ */
+export function reorderImagesInStepItem(step: TaskStep, reorderedImages: string[]): void {
+    if (!step) return;
+    step.images = [...reorderedImages];
+}
+
+/**
  * Extracts all unique image references across a task (title, note, and all steps).
  */
 export function getAllImagesInTask(task: TaskItem | null | undefined): string[] {

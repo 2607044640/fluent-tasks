@@ -63,11 +63,13 @@
 <div
     class="task-image-thumbnail-container"
     data-no-toolkit="true"
+    draggable="false"
     style="width: {size}px; height: {size}px; min-width: {size}px; min-height: {size}px;"
     role="button"
     tabindex="0"
     title={t("image_tooltip") || "Click to preview • Hover + Ctrl+C to copy • Hover + Ctrl+X to cut / 点击查看 • 悬浮 Ctrl+C 复制 • 悬浮 Ctrl+X 剪切"}
     on:click|stopPropagation={handleClick}
+    on:dragstart|preventDefault
     on:mouseenter={handleMouseEnter}
     on:mouseleave={handleMouseLeave}
 >

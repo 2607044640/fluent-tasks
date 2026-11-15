@@ -20,6 +20,7 @@
         isSameImageRef,
         getStepImages,
         removeImageFromStepItem,
+        reorderImagesInStepItem,
         cleanupOrphanImageAttachment,
         cleanupOrphanImages,
     } from "../utils/imageAttachmentUtils";
@@ -485,6 +486,15 @@
         if (actualApp && dataService) {
             await cleanupOrphanImageAttachment(imageRef, actualApp, dataService);
         }
+    }
+
+    async function reorderImagesInStep(stepId: string | undefined, newImages: string[]) {
+        if (!stepId) return;
+        const step = steps.find(s => s.id === stepId);
+        if (!step) return;
+        reorderImagesInStepItem(step, newImages);
+        steps = [...steps];
+        await persistTask();
     }
 
     async function handleCutHoveredImage() {
@@ -1140,6 +1150,7 @@
                                         isCenterAligned={centerAlignTasks}
                                         onDelete={(imgRef) => removeImageFromStep(step.id, imgRef)}
                                         onCut={(imgRef) => removeImageFromStep(step.id, imgRef)}
+                                        onReorder={(newImages) => reorderImagesInStep(step.id, newImages)}
                                         onHover={(imgRef, isHovered) => {
                                             if (isHovered && step.id) {
                                                 hoveredImageRef = { imageRef: imgRef, stepId: step.id };
@@ -1216,6 +1227,7 @@
                     isCenterAligned={centerAlignTasks}
                     onDelete={(imgRef) => removeNewStepImage(imgRef)}
                     onCut={(imgRef) => removeNewStepImage(imgRef)}
+                    onReorder={(newImages) => { newStepImages = newImages; }}
                     onHover={(imgRef, isHovered) => {
                         if (isHovered) {
                             hoveredImageRef = { imageRef: imgRef, isNewDraft: true };

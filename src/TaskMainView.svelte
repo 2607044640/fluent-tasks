@@ -29,6 +29,7 @@
         getNoteImages,
         cleanDisplayTitle,
         removeImageFromTaskTitle,
+        reorderImagesInTaskTitle,
         copyImageToClipboard,
         getImagesFromClipboard,
         saveImageAttachment,
@@ -2486,6 +2487,23 @@
         await removeImageFromMainTaskTitle(task, imageRef);
     }
 
+    async function reorderImagesInMainTaskTitle(task: TaskItem, newImages: string[]) {
+        reorderImagesInTaskTitle(task, newImages);
+        incompleteTasks = [...incompleteTasks];
+        completedTasks = [...completedTasks];
+        const targetCatPath = (currentCategory?.filepath === STARRED_CATEGORY_PATH && task.sourceFilepath)
+            ? task.sourceFilepath
+            : (currentCategory?.filepath || task.sourceFilepath || "");
+        if (targetCatPath) {
+            await dataService.updateTask(targetCatPath, task);
+            EventBus.emit(EventName.TASK_UPDATED, {
+                task,
+                categoryFilepath: targetCatPath,
+                source: 'main-view',
+            });
+        }
+    }
+
     function handleGlobalPaste(e: ClipboardEvent) {
         const activeEl = document.activeElement;
         if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || (activeEl as HTMLElement).isContentEditable)) {
@@ -4009,6 +4027,7 @@
                         onDelete={(imgRef) => removeNewTaskImage(imgRef)}
                         onCut={(imgRef) => cutNewTaskImage(imgRef)}
                         onHover={(imgRef, isHovered) => handleNewTaskImageHover(imgRef, isHovered)}
+                        onReorder={(newImages) => { newTaskImages = newImages; }}
                     />
                 </div>
             {/if}
@@ -4096,6 +4115,7 @@
                                 onDelete={(imgRef) => removeImageFromMainTaskTitle(task, imgRef)}
                                 onCut={(imgRef) => cutImageFromMainTaskTitle(task, imgRef)}
                                 onHover={(imgRef, isHovered) => handleThumbnailHover(task, imgRef, isHovered)}
+                                onReorder={(newImages) => reorderImagesInMainTaskTitle(task, newImages)}
                             />
                         {/if}
                         <!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -4387,6 +4407,7 @@
                                             onDelete={(imgRef) => removeImageFromMainTaskTitle(task, imgRef)}
                                             onCut={(imgRef) => cutImageFromMainTaskTitle(task, imgRef)}
                                             onHover={(imgRef, isHovered) => handleThumbnailHover(task, imgRef, isHovered)}
+                                            onReorder={(newImages) => reorderImagesInMainTaskTitle(task, newImages)}
                                         />
                                     {/if}
                                     <!-- svelte-ignore a11y-no-static-element-interactions -->

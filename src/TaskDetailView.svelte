@@ -33,6 +33,9 @@
         removeImageFromTaskTitle,
         removeImageFromTaskNote,
         removeImageFromStepItem,
+        reorderImagesInTaskTitle,
+        reorderImagesInTaskNote,
+        reorderImagesInStepItem,
         cleanupOrphanImageAttachment,
         cleanupOrphanImages,
     } from "./utils/imageAttachmentUtils";
@@ -1025,6 +1028,29 @@
         }
     }
 
+    async function reorderImagesInTitle(newImages: string[]) {
+        if (!task) return;
+        reorderImagesInTaskTitle(task, newImages);
+        task = task;
+        await immediateSave();
+    }
+
+    async function reorderImagesInStep(stepId: string | undefined, newImages: string[]) {
+        if (!task || !task.steps || !stepId) return;
+        const step = task.steps.find(s => s.id === stepId);
+        if (!step) return;
+        reorderImagesInStepItem(step, newImages);
+        task = task;
+        await immediateSave();
+    }
+
+    async function reorderImagesInNote(newImages: string[]) {
+        if (!task) return;
+        reorderImagesInTaskNote(task, newImages);
+        task = task;
+        await immediateSave();
+    }
+
     async function handleCutHoveredImage() {
         if (!hoveredImageRef || !actualApp) return;
         const { imageRef, stepId, isNewDraft, isNote, isTitle } = hoveredImageRef;
@@ -1856,6 +1882,7 @@
                             isCenterAligned={centerAlignTasks}
                             onDelete={(imgRef) => removeImageFromTitle(imgRef)}
                             onCut={(imgRef) => removeImageFromTitle(imgRef)}
+                            onReorder={(newImages) => reorderImagesInTitle(newImages)}
                             onHover={(imgRef, isHovered) => {
                                 if (isHovered) {
                                     hoveredImageRef = { imageRef: imgRef, isTitle: true };
@@ -2051,6 +2078,7 @@
                                                 isCenterAligned={centerAlignTasks}
                                                 onDelete={(imgRef) => removeImageFromStep(step.id, imgRef)}
                                                 onCut={(imgRef) => removeImageFromStep(step.id, imgRef)}
+                                                onReorder={(newImages) => reorderImagesInStep(step.id, newImages)}
                                                 onHover={(imgRef, isHovered) => {
                                                     if (isHovered && step.id) {
                                                         hoveredImageRef = { imageRef: imgRef, stepId: step.id };
@@ -2127,6 +2155,7 @@
                             isCenterAligned={centerAlignTasks}
                             onDelete={(imgRef) => removeNewStepImage(imgRef)}
                             onCut={(imgRef) => removeNewStepImage(imgRef)}
+                            onReorder={(newImages) => { newStepImages = newImages; }}
                             onHover={(imgRef, isHovered) => {
                                 if (isHovered) {
                                     hoveredImageRef = { imageRef: imgRef, isNewDraft: true };
@@ -2174,6 +2203,7 @@
                     isCenterAligned={centerAlignTasks}
                     onDelete={(imgRef) => removeImageFromNote(imgRef)}
                     onCut={(imgRef) => removeImageFromNote(imgRef)}
+                    onReorder={(newImages) => reorderImagesInNote(newImages)}
                     onHover={(imgRef, isHovered) => {
                         if (isHovered) {
                             hoveredImageRef = { imageRef: imgRef, isNote: true };
