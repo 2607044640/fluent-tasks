@@ -2,7 +2,7 @@
     import { onMount, onDestroy, tick } from "svelte";
     import { DataService } from "../DataService";
     import { EventBus } from "../EventBus";
-    import { EventName, VIEW_TYPE_MAIN, STARRED_CATEGORY_PATH, STARRED_CATEGORY_NAME } from "../types";
+    import { EventName, VIEW_TYPE_MAIN, STARRED_CATEGORY_PATH, STARRED_CATEGORY_NAME, makeFocusedGroupKey } from "../types";
     import type { CategoryInfo, SidebarItem, GroupInfo, TaskItem } from "../types";
     import { toggleGroupExpandedState, getFlatCategories, filterSidebarTree, moveSidebarItem, resolveUniqueName } from "../utils/sidebarTreeUtils";
     import { INPUT_FOCUS_DELAY_MS } from "../constants";
@@ -92,6 +92,10 @@
             await plugin.saveSettings();
             EventBus.emit(EventName.SETTINGS_CHANGED, plugin.settings);
         }
+    }
+
+    async function toggleFocusedGroup(groupId: string) {
+        await toggleFocusedList(makeFocusedGroupKey(groupId));
     }
 
     async function handleClearAllFocused() {
@@ -2355,6 +2359,7 @@
                                     <!-- svelte-ignore a11y-click-events-have-key-events -->
                                     <div 
                                         class="quick-grid-card-header"
+                                        class:is-focused-selected={isFocusedListMode && focusedListSet.has(makeFocusedGroupKey(group.id))}
                                         data-group-id={group.id}
                                         role="button"
                                         tabindex="0"
@@ -2362,9 +2367,20 @@
                                         on:mouseleave={() => clearHoveredTarget(group.id)}
                                         on:pointerdown={(e) => handleHeaderPointerDown(e, { kind: "group", id: group.id, name: group.name, count: group.items ? group.items.length : 0, isRoot: false })}
                                         on:dragstart|preventDefault
+                                        on:click={() => { if (isFocusedListMode && !wasDragJustPerformed()) void toggleFocusedGroup(group.id); }}
                                         on:contextmenu={(e) => showItemContextMenu(e, { id: group.id, name: group.name, type: "group" })}
                                     >
                                         <div class="quick-grid-card-title-wrap">
+                                            {#if isFocusedListMode}
+                                                <input 
+                                                    type="checkbox" 
+                                                    class="focused-list-item-checkbox focused-group-checkbox"
+                                                    checked={focusedListSet.has(makeFocusedGroupKey(group.id))}
+                                                    tabindex="-1"
+                                                    on:pointerdown|stopPropagation
+                                                    on:click|stopPropagation={() => toggleFocusedGroup(group.id)}
+                                                />
+                                            {/if}
                                             <!-- svelte-ignore a11y-click-events-have-key-events -->
                                             <span 
                                                 class="quick-modal-group-chevron" 
@@ -2583,13 +2599,25 @@
                             <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
                             <div 
                                 class="quick-modal-group-header"
+                                class:is-focused-selected={isFocusedListMode && focusedListSet.has(makeFocusedGroupKey(item.id))}
                                 data-group-id={item.id}
                                 on:mouseenter={() => setHoveredTarget({ id: item.id, name: item.name, type: "group" })}
                                 on:mouseleave={() => clearHoveredTarget(item.id)}
                                 on:pointerdown={(e) => handleHeaderPointerDown(e, { kind: "group", id: item.id, name: item.name, count: item.items ? item.items.length : 0, isRoot: false })}
                                 on:dragstart|preventDefault
+                                on:click={() => { if (isFocusedListMode && !wasDragJustPerformed()) void toggleFocusedGroup(item.id); }}
                                 on:contextmenu={(e) => showItemContextMenu(e, { id: item.id, name: item.name, type: "group" })}
                             >
+                                {#if isFocusedListMode}
+                                    <input 
+                                        type="checkbox" 
+                                        class="focused-list-item-checkbox focused-group-checkbox"
+                                        checked={focusedListSet.has(makeFocusedGroupKey(item.id))}
+                                        tabindex="-1"
+                                        on:pointerdown|stopPropagation
+                                        on:click|stopPropagation={() => toggleFocusedGroup(item.id)}
+                                    />
+                                {/if}
                                 <!-- svelte-ignore a11y-click-events-have-key-events -->
                                 <span class="quick-modal-group-chevron" on:click|stopPropagation={() => { if (!wasDragJustPerformed()) void toggleGroup(item); }}>
                                     {item.isExpanded ? "▼" : "▶"}
@@ -2606,7 +2634,7 @@
                                         on:click|stopPropagation
                                     />
                                 {:else}
-                                    <span class="quick-modal-group-title" on:click={() => { if (!wasDragJustPerformed()) void toggleGroup(item); }}>
+                                    <span class="quick-modal-group-title" on:click={() => { if (!wasDragJustPerformed()) { if (isFocusedListMode) { void toggleFocusedGroup(item.id); } else { void toggleGroup(item); } } }}>
                                         {item.name}
                                     </span>
                                 {/if}

@@ -14,6 +14,17 @@ export const VIEW_TYPE_DETAIL = "fluent-tasks-detail";
 export const DATA_FOLDER = "TodoData";
 export const STARRED_CATEGORY_PATH = "__starred__";
 export const STARRED_CATEGORY_NAME = "Starred";
+export const FOCUSED_GROUP_PREFIX = "group:";
+
+export function makeFocusedGroupKey(groupId: string): string {
+    return `${FOCUSED_GROUP_PREFIX}${groupId}`;
+}
+
+export function parseFocusedGroupKey(key: string): string | null {
+    if (!key || !key.startsWith(FOCUSED_GROUP_PREFIX)) return null;
+    const id = key.slice(FOCUSED_GROUP_PREFIX.length);
+    return id || null;
+}
 
 // =============================================
 // Data Models
@@ -94,6 +105,10 @@ export interface GroupInfo {
 }
 
 export type SidebarItem = CategoryInfo | GroupInfo;
+
+export type FocusedPillItem =
+    | { kind: "category"; id: string; key: string; name: string; category: CategoryInfo }
+    | { kind: "group"; id: string; key: string; name: string; group: GroupInfo };
 
 export interface SidebarCategoryEntry {
     name: string;

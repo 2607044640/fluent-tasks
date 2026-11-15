@@ -4,7 +4,7 @@
     import { flip } from "svelte/animate";
     import { EventBus } from "./EventBus";
     import { DataService } from "./DataService";
-    import { EventName, VIEW_TYPE_MAIN, type CategoryInfo, type TaskItem, STARRED_CATEGORY_PATH, STARRED_CATEGORY_NAME } from "./types";
+    import { EventName, VIEW_TYPE_MAIN, type CategoryInfo, type GroupInfo, type TaskItem, type FocusedPillItem, parseFocusedGroupKey, STARRED_CATEGORY_PATH, STARRED_CATEGORY_NAME } from "./types";
     import { killDndGhostElement, removeDndGhostShield, injectDndGhostShield } from "./utils/dndUtils";
     import { portal, autosize } from "./utils/domUtils";
     import { calculatePopoverPosition, type PopoverContentType } from "./utils/popoverUtils";
@@ -81,93 +81,142 @@
     let hasFloatingModalHotkey: boolean = true;
     $: showNoHotkeyWarning = hideLeftSidebar && !hasFloatingModalHotkey;
 
-    // Focused Lists State
+    // Focused Lists & Groups State
     let enableFocusedLists: boolean = plugin?.settings?.enableFocusedLists ?? false;
-    let focusedCategories: CategoryInfo[] = [];
+    let focusedPills: FocusedPillItem[] = [];
     let dragOverFocusedPath: string = "";
     let lastFocusedDropTime: number = 0;
     let isDraggingFocusedPills: boolean = false;
     let lastFocusedPillDragTime: number = 0;
-    let preDragFocusedCategories: CategoryInfo[] = [];
+    let preDragFocusedPills: FocusedPillItem[] = [];
 
-    function isShadowPill(cat: CategoryInfo): boolean {
-        return Boolean((cat as any)[SHADOW_ITEM_MARKER_PROPERTY_NAME]);
+    // Focused Group Dropdown Popover State
+    let openFocusedGroupId: string | null = null;
+    let focusedGroupDropdownPos: { left: number; top: number } = { left: 0, top: 0 };
+    let focusedGroupDropdownEl: HTMLElement | null = null;
+    let focusedGroupHighlightIdx: number = -1;
+    let focusedGroupTaskCounts: Record<string, number> = {};
+
+    $: openFocusedGroup = openFocusedGroupId
+        ? (focusedPills.find((p): p is Extract<FocusedPillItem, { kind: "group" }> => p.kind === "group" && p.group.id === openFocusedGroupId)?.group ?? null)
+        : null;
+
+    function isShadowPill(item: FocusedPillItem): boolean {
+        return Boolean((item as any)[SHADOW_ITEM_MARKER_PROPERTY_NAME]);
     }
 
     async function updateFocusedCategories() {
         enableFocusedLists = plugin?.settings?.enableFocusedLists ?? false;
         if (!enableFocusedLists) {
-            focusedCategories = [];
+            focusedPills = [];
+            openFocusedGroupId = null;
             return;
         }
-        const paths: string[] = plugin?.settings?.focusedLists || [];
-        if (paths.length === 0) {
-            focusedCategories = [];
+        const keys: string[] = plugin?.settings?.focusedLists || [];
+        if (keys.length === 0) {
+            focusedPills = [];
+            openFocusedGroupId = null;
             return;
         }
         try {
-            const allCats = await dataService.getCategories();
-            const map = new Map<string, CategoryInfo>();
+            const [allCats, sidebarItems] = await Promise.all([
+                dataService.getCategories(),
+                dataService.getSidebarItems(),
+            ]);
+            const catMap = new Map<string, CategoryInfo>();
             for (const c of allCats) {
-                map.set(c.filepath, c);
+                catMap.set(c.filepath, c);
             }
-            map.set(STARRED_CATEGORY_PATH, {
+            catMap.set(STARRED_CATEGORY_PATH, {
                 id: STARRED_CATEGORY_PATH,
                 name: STARRED_CATEGORY_NAME,
                 filepath: STARRED_CATEGORY_PATH,
                 type: "category",
                 isSmartList: true
             });
-            const list: CategoryInfo[] = [];
-            for (const p of paths) {
-                const found = map.get(p);
-                if (found) {
-                    list.push({ ...found, id: found.id || found.filepath });
+            const groupMap = new Map<string, GroupInfo>();
+            for (const item of sidebarItems) {
+                if (item.type === "group") {
+                    groupMap.set(item.id, item);
                 }
             }
-            focusedCategories = list;
+
+            const list: FocusedPillItem[] = [];
+            for (const rawKey of keys) {
+                const groupId = parseFocusedGroupKey(rawKey);
+                if (groupId) {
+                    const grp = groupMap.get(groupId);
+                    if (grp) {
+                        list.push({
+                            kind: "group",
+                            id: rawKey,
+                            key: rawKey,
+                            name: grp.name,
+                            group: grp,
+                        });
+                    }
+                    continue;
+                }
+                const found = catMap.get(rawKey);
+                if (found) {
+                    const cat = { ...found, id: found.id || found.filepath };
+                    list.push({
+                        kind: "category",
+                        id: cat.id,
+                        key: cat.filepath,
+                        name: cat.name,
+                        category: cat,
+                    });
+                }
+            }
+            focusedPills = list;
+            if (openFocusedGroupId && !groupMap.has(openFocusedGroupId)) {
+                openFocusedGroupId = null;
+            }
         } catch (err) {
             console.error("[TaskMainView] Error updating focused categories:", err);
         }
     }
 
     function openFocusedListsModal() {
+        openFocusedGroupId = null;
         new FocusedListsModal(actualApp, plugin, dataService).open();
     }
 
-    function handleFocusedPillsConsider(e: CustomEvent<{ items: CategoryInfo[]; info: any }>) {
+    function handleFocusedPillsConsider(e: CustomEvent<{ items: FocusedPillItem[]; info: any }>) {
         if (!isDraggingFocusedPills) {
             isDraggingFocusedPills = true;
-            preDragFocusedCategories = [...focusedCategories];
+            openFocusedGroupId = null;
+            preDragFocusedPills = [...focusedPills];
         }
-        focusedCategories = e.detail.items;
+        focusedPills = e.detail.items;
     }
 
-    async function handleFocusedPillsFinalize(e: CustomEvent<{ items: CategoryInfo[]; info: any }>) {
+    async function handleFocusedPillsFinalize(e: CustomEvent<{ items: FocusedPillItem[]; info: any }>) {
         isDraggingFocusedPills = false;
         lastFocusedPillDragTime = Date.now();
         lastFocusedDropTime = Date.now();
 
         if (e.detail.info?.trigger === TRIGGERS.DROPPED_OUTSIDE_OF_ANY) {
-            if (preDragFocusedCategories.length > 0) {
-                focusedCategories = [...preDragFocusedCategories];
+            if (preDragFocusedPills.length > 0) {
+                focusedPills = [...preDragFocusedPills];
             }
-            preDragFocusedCategories = [];
+            preDragFocusedPills = [];
             return;
         }
 
-        const cleanItems = (e.detail.items || []).filter(cat => !isShadowPill(cat));
-        focusedCategories = cleanItems;
-        preDragFocusedCategories = [];
+        const cleanItems = (e.detail.items || []).filter(item => !isShadowPill(item));
+        focusedPills = cleanItems;
+        preDragFocusedPills = [];
 
         if (plugin?.settings) {
-            const reorderedPaths: string[] = cleanItems.map(c => c.filepath).filter(Boolean);
-            const originalPaths: string[] = plugin.settings.focusedLists || [];
-            const missingPaths: string[] = originalPaths.filter((p: string) => !reorderedPaths.includes(p));
-            const newFocusedLists: string[] = [...reorderedPaths, ...missingPaths];
+            const reorderedKeys: string[] = cleanItems.map(item => item.key).filter(Boolean);
+            const originalKeys: string[] = plugin.settings.focusedLists || [];
+            const missingKeys: string[] = originalKeys.filter((k: string) => !reorderedKeys.includes(k));
+            const newFocusedLists: string[] = [...reorderedKeys, ...missingKeys];
 
-            const hasChanged = originalPaths.length !== newFocusedLists.length ||
-                originalPaths.some((p: string, i: number) => p !== newFocusedLists[i]);
+            const hasChanged = originalKeys.length !== newFocusedLists.length ||
+                originalKeys.some((k: string, i: number) => k !== newFocusedLists[i]);
 
             if (hasChanged) {
                 plugin.settings.focusedLists = newFocusedLists;
@@ -180,8 +229,105 @@
         if (isDraggingFocusedPills) return;
         if (Date.now() - lastFocusedPillDragTime < 300) return;
         if (Date.now() - lastFocusedDropTime < 300) return;
+        openFocusedGroupId = null;
         if (!cat || currentCategory?.filepath === cat.filepath) return;
         EventBus.emit(EventName.CATEGORY_SELECTED, { category: cat });
+    }
+
+    async function refreshFocusedGroupCounts(group: GroupInfo) {
+        const items = group.items || [];
+        if (items.length === 0) return;
+        const nextCounts: Record<string, number> = { ...focusedGroupTaskCounts };
+        await Promise.all(items.map(async (cat) => {
+            try {
+                const catTasks = await dataService.getTasks(cat.filepath);
+                nextCounts[cat.filepath] = catTasks.filter(t => !t.completed).length;
+            } catch {
+                nextCounts[cat.filepath] = 0;
+            }
+        }));
+        focusedGroupTaskCounts = nextCounts;
+    }
+
+    function toggleFocusedGroupDropdown(group: GroupInfo, pillEl: HTMLElement | null) {
+        if (isDraggingFocusedPills) return;
+        if (Date.now() - lastFocusedPillDragTime < 300) return;
+        if (Date.now() - lastFocusedDropTime < 300) return;
+
+        if (openFocusedGroupId === group.id) {
+            openFocusedGroupId = null;
+            focusedGroupHighlightIdx = -1;
+            return;
+        }
+
+        const rect = pillEl?.getBoundingClientRect();
+        const dropdownWidth = 230;
+        const estimatedHeight = Math.min(340, 44 + Math.max(1, group.items.length) * 32);
+        const left = rect
+            ? Math.max(8, Math.min(window.innerWidth - dropdownWidth - 8, rect.left))
+            : 16;
+        const top = rect
+            ? Math.max(8, Math.min(window.innerHeight - estimatedHeight - 8, rect.bottom + 6))
+            : 64;
+
+        focusedGroupDropdownPos = { left, top };
+        openFocusedGroupId = group.id;
+        const activeIdx = group.items.findIndex(c => c.filepath === currentCategory?.filepath);
+        focusedGroupHighlightIdx = activeIdx >= 0 ? activeIdx : (group.items.length > 0 ? 0 : -1);
+        void refreshFocusedGroupCounts(group);
+    }
+
+    function closeFocusedGroupDropdown() {
+        openFocusedGroupId = null;
+        focusedGroupHighlightIdx = -1;
+    }
+
+    function handleSelectGroupChild(cat: CategoryInfo) {
+        closeFocusedGroupDropdown();
+        if (!cat || currentCategory?.filepath === cat.filepath) return;
+        EventBus.emit(EventName.CATEGORY_SELECTED, { category: cat });
+    }
+
+    function handleFocusedGroupOutsidePointerDown(e: PointerEvent) {
+        const target = e.target as HTMLElement | null;
+        if (!target) {
+            closeFocusedGroupDropdown();
+            return;
+        }
+        if (focusedGroupDropdownEl?.contains(target)) return;
+        if (target.closest(".focused-list-pill.is-group-pill")) return;
+        closeFocusedGroupDropdown();
+    }
+
+    function handleFocusedGroupDropdownKeydown(e: KeyboardEvent): boolean {
+        if (!openFocusedGroupId || !openFocusedGroup) return false;
+        if (e.key === "Escape") {
+            e.preventDefault();
+            e.stopPropagation();
+            closeFocusedGroupDropdown();
+            return true;
+        }
+        const items = openFocusedGroup.items || [];
+        if (items.length === 0) return false;
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            e.stopPropagation();
+            focusedGroupHighlightIdx = (focusedGroupHighlightIdx + 1) % items.length;
+            return true;
+        }
+        if (e.key === "ArrowUp") {
+            e.preventDefault();
+            e.stopPropagation();
+            focusedGroupHighlightIdx = (focusedGroupHighlightIdx - 1 + items.length) % items.length;
+            return true;
+        }
+        if (e.key === "Enter" && focusedGroupHighlightIdx >= 0 && items[focusedGroupHighlightIdx]) {
+            e.preventDefault();
+            e.stopPropagation();
+            handleSelectGroupChild(items[focusedGroupHighlightIdx]);
+            return true;
+        }
+        return false;
     }
 
     // Inline Category Rename State
@@ -2811,7 +2957,8 @@
         }
 
         if (dragData && targetFocusedPath && targetFocusedPath !== dragData.sourceFilepath && targetFocusedPath !== currentCategory?.filepath) {
-            const targetCat = focusedCategories.find(c => c.filepath === targetFocusedPath);
+            const targetPill = focusedPills.find((p): p is Extract<FocusedPillItem, { kind: "category" }> => p.kind === "category" && p.category.filepath === targetFocusedPath);
+            const targetCat = targetPill?.category;
             if (targetCat && dragData.task) {
                 lastFocusedDropTime = Date.now();
                 if (targetCat.filepath !== STARRED_CATEGORY_PATH) {
@@ -3673,6 +3820,7 @@
 
 <svelte:window 
     on:contextmenu={() => { if (popoverVisible) dismissPopover(); }} 
+    on:pointerdown={(e) => { if (openFocusedGroupId) handleFocusedGroupOutsidePointerDown(e); }}
     on:wheel|capture={handleLightboxWheel}
     on:keydown|capture={(e) => {
         if (ImagePreviewModal.isImagePreviewActive()) {
@@ -3680,6 +3828,9 @@
         }
         if (lightboxData) {
             handleLightboxKeydown(e);
+            return;
+        }
+        if (openFocusedGroupId && handleFocusedGroupDropdownKeydown(e)) {
             return;
         }
         if (isMultiSelectMode && e.key === "Escape") {
@@ -3761,11 +3912,11 @@
                             </svg>
                         </button>
 
-                        {#if focusedCategories.length > 0}
+                        {#if focusedPills.length > 0}
                             <div 
                                 class="focused-lists-pills"
                                 use:dndzone={{
-                                    items: focusedCategories,
+                                    items: focusedPills,
                                     flipDurationMs: DND_FLIP_DURATION,
                                     dropAnimationDisabled: true,
                                     dropTargetStyle: {},
@@ -3774,24 +3925,93 @@
                                 on:consider={handleFocusedPillsConsider}
                                 on:finalize={handleFocusedPillsFinalize}
                             >
-                                {#each focusedCategories as cat (cat.id)}
+                                {#each focusedPills as item (item.id)}
                                     <!-- svelte-ignore a11y-click-events-have-key-events -->
-                                    <div 
+                                    <div
                                         class="focused-list-pill"
-                                        class:is-active={currentCategory?.filepath === cat.filepath}
-                                        class:drag-over={dragOverFocusedPath === cat.filepath}
-                                        class:is-shadow={isShadowPill(cat)}
-                                        data-filepath={cat.filepath}
+                                        class:is-group-pill={item.kind === "group"}
+                                        class:is-active={item.kind === "group"
+                                            ? Boolean(currentCategory && item.group.items.some(c => c.filepath === currentCategory?.filepath))
+                                            : currentCategory?.filepath === item.category.filepath}
+                                        class:is-open={item.kind === "group" && openFocusedGroupId === item.group.id}
+                                        class:drag-over={item.kind === "category" && dragOverFocusedPath === item.category.filepath}
+                                        class:is-shadow={isShadowPill(item)}
+                                        data-filepath={item.kind === "category" ? item.category.filepath : undefined}
+                                        data-group-id={item.kind === "group" ? item.group.id : undefined}
                                         role="button"
                                         tabindex="0"
-                                        title={cat.name}
+                                        aria-expanded={item.kind === "group" ? openFocusedGroupId === item.group.id : undefined}
+                                        title={item.kind === "group" ? `${item.name} (${item.group.items.length})` : item.name}
                                         animate:flip={{ duration: DND_FLIP_DURATION }}
-                                        on:click={() => handleSelectFocusedCategory(cat)}
-                                        on:keydown={(e) => e.key === "Enter" && handleSelectFocusedCategory(cat)}
+                                        on:click={(e) => item.kind === "group"
+                                            ? toggleFocusedGroupDropdown(item.group, e.currentTarget)
+                                            : handleSelectFocusedCategory(item.category)}
+                                        on:keydown={(e) => {
+                                            if (item.kind === "group") {
+                                                if (e.key === "Enter" || e.key === " ") toggleFocusedGroupDropdown(item.group, e.currentTarget);
+                                            } else if (e.key === "Enter") {
+                                                handleSelectFocusedCategory(item.category);
+                                            }
+                                        }}
                                     >
-                                        {cat.name}
+                                        {#if item.kind === "group"}
+                                            <span class="focused-group-pill-icon" aria-hidden="true">
+                                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                                </svg>
+                                            </span>
+                                            <span class="focused-pill-label">{item.name}</span>
+                                            <span class="focused-group-pill-caret" aria-hidden="true">{openFocusedGroupId === item.group.id ? "▴" : "▾"}</span>
+                                        {:else}
+                                            {item.name}
+                                        {/if}
                                     </div>
                                 {/each}
+                            </div>
+                        {/if}
+
+                        {#if openFocusedGroup}
+                            <div
+                                use:portal
+                                bind:this={focusedGroupDropdownEl}
+                                class="focused-group-dropdown"
+                                style="left: {focusedGroupDropdownPos.left}px; top: {focusedGroupDropdownPos.top}px;"
+                                role="menu"
+                            >
+                                <div class="focused-group-dropdown-header">
+                                    <span class="focused-group-dropdown-title">{openFocusedGroup.name}</span>
+                                    <span class="focused-group-dropdown-count">{openFocusedGroup.items.length}</span>
+                                </div>
+                                {#if openFocusedGroup.items.length === 0}
+                                    <div class="focused-group-dropdown-empty">
+                                        {isChinese() ? "该分组暂无清单" : "No lists in this group"}
+                                    </div>
+                                {:else}
+                                    <div class="focused-group-dropdown-list">
+                                        {#each openFocusedGroup.items as child, idx (child.id || child.filepath)}
+                                            <!-- svelte-ignore a11y-click-events-have-key-events -->
+                                            <div
+                                                class="focused-group-dropdown-item"
+                                                class:is-active={currentCategory?.filepath === child.filepath}
+                                                class:is-highlighted={focusedGroupHighlightIdx === idx}
+                                                role="menuitem"
+                                                tabindex="-1"
+                                                on:mouseenter={() => { focusedGroupHighlightIdx = idx; }}
+                                                on:click={() => handleSelectGroupChild(child)}
+                                            >
+                                                <span class="focused-group-dropdown-item-icon" aria-hidden="true">
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
+                                                    </svg>
+                                                </span>
+                                                <span class="focused-group-dropdown-item-name" title={child.name}>{child.name}</span>
+                                                {#if (focusedGroupTaskCounts[child.filepath] ?? 0) > 0}
+                                                    <span class="focused-group-dropdown-item-badge">{focusedGroupTaskCounts[child.filepath]}</span>
+                                                {/if}
+                                            </div>
+                                        {/each}
+                                    </div>
+                                {/if}
                             </div>
                         {/if}
                     </div>
