@@ -4867,6 +4867,7 @@
         <div use:portal
              class="meta-popover placement-{popoverPlacement}"
              class:guide-popover={popoverType === 'guide'}
+             class:is-steps-popover={popoverType === 'steps'}
              class:is-center-aligned={centerAlignTasks}
              style="left: {popoverX}px; top: {popoverY}px; max-height: {popoverMaxHeight}px; max-width: {popoverMaxWidth}px;"
              on:mouseenter={cancelHidePopover}
@@ -4931,6 +4932,12 @@
                     {/each}
                 </div>
             {:else if popoverType === 'steps' && popoverTask && popoverTask.steps && popoverTask.steps.length > 0}
+                <div class="popover-corner-icon is-steps-corner-icon" aria-hidden="true">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 11 12 14 22 4"/>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                    </svg>
+                </div>
                 <!-- svelte-ignore a11y-no-static-element-interactions -->
                 <!-- svelte-ignore a11y-click-events-have-key-events -->
                 <div class="meta-popover-steps-card"
@@ -4939,17 +4946,14 @@
                      role="button"
                      tabindex="0"
                      title="Click to open big subtasks editor">
-                    <div class="popover-corner-icon">
-                        <svg width="10.5" height="10.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="9 11 12 14 22 4"/>
-                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-                        </svg>
-                    </div>
                     <div class="popover-steps-list">
                         {#each popoverTask.steps as step}
                             <div class="popover-step-item" class:done={step.done}>
-                                <span class="step-bullet">{step.done ? "✓" : "○"}</span>
-                                <span class="step-text">{cleanDisplayTitle(step.text) || step.text}</span>
+                                <span class="step-bullet" aria-hidden="true">{step.done ? "✓" : "○"}</span>
+                                <span class="step-text">{(cleanDisplayTitle(step.text) || step.text || "").trim()}</span>
+                                {#if centerAlignTasks}
+                                    <span class="step-balance-spacer" aria-hidden="true"></span>
+                                {/if}
                             </div>
                         {/each}
                     </div>

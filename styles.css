@@ -3604,13 +3604,31 @@ body.fluent-tasks-image-dragging * {
 /* =============================================
    Popover Steps Checklist Card
    ============================================= */
+.meta-popover.is-steps-popover {
+    min-width: min(480px, 86vw);
+    max-width: min(680px, 90vw);
+    max-height: min(540px, 74vh);
+    padding: 14px 18px;
+}
+
+.popover-corner-icon.is-steps-corner-icon {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    opacity: 0.85;
+}
+
 .meta-popover-steps-card {
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    width: 100%;
     min-width: 180px;
     max-width: 100%;
+}
+
+.meta-popover.is-steps-popover .meta-popover-steps-card {
+    padding-right: 16px;
 }
 
 /* =============================================
@@ -3654,16 +3672,33 @@ body.fluent-tasks-image-dragging * {
 .popover-steps-list {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    align-items: stretch;
+    width: 100%;
+    white-space: normal;
 }
 
 .popover-step-item {
     display: flex;
     align-items: flex-start;
-    gap: 6px;
-    font-size: 11.5px;
-    line-height: 1.45;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 2px;
+    font-size: 12.5px;
+    line-height: 1.5;
     color: var(--todo-text-main);
+    white-space: normal;
+}
+
+.popover-step-item:first-child {
+    padding-top: 2px;
+}
+
+.popover-step-item:last-child {
+    padding-bottom: 2px;
+}
+
+.popover-step-item + .popover-step-item {
+    border-top: 1px solid var(--todo-border, var(--background-modifier-border, #333));
 }
 
 .popover-step-item.done {
@@ -3672,11 +3707,20 @@ body.fluent-tasks-image-dragging * {
 }
 
 .popover-step-item .step-bullet {
-    font-size: 11px;
-    color: var(--todo-accent);
+    width: 14px;
     flex-shrink: 0;
-    line-height: 1.45;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    font-size: 12px;
+    color: var(--todo-accent);
+    line-height: 1.5;
     margin-top: 1px;
+}
+
+.popover-step-item .step-balance-spacer {
+    width: 14px;
+    flex-shrink: 0;
 }
 
 .popover-step-item.done .step-bullet {
@@ -3689,7 +3733,7 @@ body.fluent-tasks-image-dragging * {
     white-space: pre-wrap;
     word-break: break-word;
     overflow-wrap: anywhere;
-    line-height: 1.45;
+    line-height: 1.5;
 }
 
 .popover-note-box {
@@ -7334,12 +7378,11 @@ body .task-steps-floating-modal .steps-modal-delete-btn:hover {
 }
 
 .meta-popover.is-center-aligned .popover-steps-list {
-    align-items: center;
+    align-items: stretch;
 }
 
 .meta-popover.is-center-aligned .popover-step-item {
-    justify-content: center;
-    text-align: center;
+    justify-content: flex-start;
 }
 
 .meta-popover.is-center-aligned .popover-step-item .step-text {

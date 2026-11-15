@@ -25,9 +25,14 @@ export function calculatePopoverPosition(
     const spaceAbove = Math.max(0, rect.top - margin);
     const spaceBelow = Math.max(0, winH - rect.bottom - margin);
 
-    // Dynamic viewport-adaptive max limits: never exceed 60% of viewport height (or 400px)
-    const maxScreenHeight = Math.min(400, Math.floor(winH * 0.6));
-    const maxWidth = Math.min(480, Math.floor(winW * 0.88), Math.max(240, winW - 32));
+    // Dynamic viewport-adaptive max limits: steps popover gets a larger comfortable reading box
+    const isSteps = type === 'steps';
+    const maxScreenHeight = isSteps
+        ? Math.min(540, Math.floor(winH * 0.74))
+        : Math.min(400, Math.floor(winH * 0.6));
+    const maxWidth = isSteps
+        ? Math.min(680, Math.floor(winW * 0.9), Math.max(360, winW - 32))
+        : Math.min(480, Math.floor(winW * 0.88), Math.max(240, winW - 32));
 
     // Determine placement: prefer the side that comfortably fits content (~240px)
     // or whichever side provides more room
