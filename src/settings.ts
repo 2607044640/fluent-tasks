@@ -499,7 +499,7 @@ export class FluentTasksSettingTab extends PluginSettingTab {
             .setName(t("setting_undo_duration_title") || "System: Deletion Undo Duration")
             .setDesc(t("setting_undo_duration_desc") || "Duration in seconds that the floating undo toast remains visible after deleting a task, step, or list (default: 2.5s).")
             .addSlider(slider => slider
-                .setLimits(1, 10, 0.5)
+                .setLimits(0.1, 10, 0.1)
                 .setValue(this.plugin.settings.undoDurationSeconds ?? 2.5)
                 .setDynamicTooltip()
                 .onChange(async (value) => {
