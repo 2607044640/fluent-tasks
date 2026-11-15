@@ -614,7 +614,7 @@
             resizeDebounceTimer = null;
         }
         if (rafId !== null) {
-            cancelAnimationFrame(rafId);
+            window.cancelAnimationFrame(rafId);
             rafId = null;
         }
         window.removeEventListener("resize", scheduleAdjustSpacing);
@@ -893,8 +893,9 @@
         const clampedTop = Math.max(bRect.top + 4, dropTarget.lineTop);
         const clampedBottom = Math.min(bRect.bottom - 4, dropTarget.lineTop + dropTarget.lineHeight);
         const clampedHeight = Math.max(24, clampedBottom - clampedTop);
+        const clampedLeft = Math.max(Math.round(bRect.left + 2), Math.min(Math.round(bRect.right - 2), Math.round(dropTarget.lineX)));
         return {
-            left: Math.round(dropTarget.lineX),
+            left: clampedLeft,
             top: Math.round(clampedTop),
             height: Math.round(clampedHeight),
         };
@@ -1202,11 +1203,16 @@
     }
 
     function getTargetUnderMouse(): RenameTarget | null {
+        let hitInsideModal = false;
+
         // Priority 1: Pointer coordinates hit-test (dynamic cursor position)
-        if (lastMouseX >= 0 && lastMouseY >= 0) {
+        if (lastMouseX >= 0 && lastMouseY >= 0 && typeof document.elementFromPoint === "function") {
             try {
                 const el = document.elementFromPoint(lastMouseX, lastMouseY);
                 if (el) {
+                    if (!modalContainerEl || modalContainerEl.contains(el)) {
+                        hitInsideModal = true;
+                    }
                     // Check if hovering over a category list item
                     const listItemEl = el.closest(".quick-modal-list-item") as HTMLElement | null;
                     if (listItemEl) {
@@ -1265,6 +1271,13 @@
             }
         }
 
+        // If elementFromPoint confirmed the cursor is over a non-target element inside the modal
+        // (e.g. blank board space or non-renamable root card after DOM shifted), drop stale hover state.
+        if (hitInsideModal) {
+            hoveredRenameTarget = null;
+            return null;
+        }
+
         // Priority 3: Explicit mouseenter/mouseleave target tracking
         if (hoveredRenameTarget) {
             const clean = (p?: string) => (p || "").replace(/\\/g, "/").replace(/^\/+/, "");
@@ -1303,7 +1316,7 @@
         await tick();
         renameInputEl?.focus();
         renameInputEl?.select();
-        setTimeout(() => {
+        window.setTimeout(() => {
             if (renameInputEl && document.activeElement !== renameInputEl) {
                 renameInputEl.focus();
                 renameInputEl.select();
@@ -1349,11 +1362,15 @@
                         plugin.settings.defaultQuickListFocusFilepath = newCat.filepath;
                         await plugin.saveSettings();
                     }
+                    await loadData();
                 }
             } else {
-                await dataService.renameGroup(itemId, newName);
+                const grp = groupItems.find(g => g.id === itemId) || (sidebarItems.find(i => i.id === itemId && i.type === "group") as GroupInfo | undefined);
+                if (!grp || grp.name !== newName) {
+                    await dataService.renameGroup(itemId, newName);
+                    await loadData();
+                }
             }
-            await loadData();
         } catch (e) {
             console.error("[QuickListModal] Rename failed:", e);
         } finally {

@@ -17583,7 +17583,7 @@ function computeTableColumns(cards, existingPositions = {}) {
   const colMap = /* @__PURE__ */ new Map();
   const unassigned = [];
   for (const card of cards) {
-    const rawPos = (_a = existingPositions[card.name]) != null ? _a : existingPositions[card.id];
+    const rawPos = (_a = existingPositions[card.id]) != null ? _a : existingPositions[card.name];
     if (rawPos && Array.isArray(rawPos) && typeof rawPos[0] === "number" && typeof rawPos[1] === "number") {
       const col = Math.max(0, Math.floor(rawPos[0]));
       const row = Math.max(0, Math.floor(rawPos[1]));
@@ -17621,9 +17621,15 @@ function computeTableColumns(cards, existingPositions = {}) {
     const initialPositions = {};
     for (const [c, items] of colMap.entries()) {
       for (const item of items) {
-        initialPositions[item.card.name] = [c, item.row];
-        if (item.card.id && item.card.id !== item.card.name) {
+        if (item.card.id) {
           initialPositions[item.card.id] = [c, item.row];
+        }
+      }
+    }
+    for (const [c, items] of colMap.entries()) {
+      for (const item of items) {
+        if (item.card.name && !Object.prototype.hasOwnProperty.call(initialPositions, item.card.name)) {
+          initialPositions[item.card.name] = [c, item.row];
         }
       }
     }
@@ -17712,11 +17718,17 @@ function buildTablePositions(prunedCols, existingPositions, preserveUnlisted = f
     }
     const rowSet = occupiedRowsByCol.get(colIdx);
     colCards.forEach((card, rowIdx) => {
-      positions[card.name] = [colIdx, rowIdx];
-      if (card.id && card.id !== card.name) {
+      if (card.id) {
         positions[card.id] = [colIdx, rowIdx];
       }
       rowSet.add(rowIdx);
+    });
+  });
+  prunedCols.forEach((colCards, colIdx) => {
+    colCards.forEach((card, rowIdx) => {
+      if (card.name && !Object.prototype.hasOwnProperty.call(positions, card.name)) {
+        positions[card.name] = [colIdx, rowIdx];
+      }
     });
   });
   if (preserveUnlisted && existingPositions) {
@@ -18048,9 +18060,10 @@ function resolveBoardPointerTarget(params) {
       const res = moveCardToNewColumn(layoutColumns, draggedId);
       return res.changed ? { kind: "new-col-end" } : { kind: "none" };
     }
+    const isInsideColSurface = (col) => Boolean(col.bottomDropzoneRect && pointInRect(clientX, clientY, col.bottomDropzoneRect, 0)) || col.cards.some((card) => pointInRect(clientX, clientY, card.rect, 0));
     if (columns.length > 0) {
       const firstCol = columns[0];
-      if (clientX >= Math.max(boardRect.left - 8, firstCol.rect.left - 24) && clientX <= firstCol.rect.left + 2 && clientY >= boardRect.top && clientY <= boardRect.bottom) {
+      if (clientX >= Math.max(boardRect.left - 8, firstCol.rect.left - 24) && clientX <= firstCol.rect.left + 2 && clientY >= boardRect.top && clientY <= boardRect.bottom && (clientX < firstCol.rect.left || !isInsideColSurface(firstCol))) {
         const res = moveCardToNewColumnAt(layoutColumns, draggedId, 0);
         if (res.changed) {
           const lineX = Math.max(boardRect.left + 4, firstCol.rect.left - 8);
@@ -18068,7 +18081,7 @@ function resolveBoardPointerTarget(params) {
       for (let c = 1; c < columns.length; c++) {
         const prev = columns[c - 1];
         const curr = columns[c];
-        if (clientX >= prev.rect.right - 3 && clientX <= curr.rect.left + 3 && clientY >= boardRect.top && clientY <= boardRect.bottom) {
+        if (clientX >= prev.rect.right - 3 && clientX <= curr.rect.left + 3 && clientY >= boardRect.top && clientY <= boardRect.bottom && (clientX > prev.rect.right && clientX < curr.rect.left || !isInsideColSurface(prev) && !isInsideColSurface(curr))) {
           const res = moveCardToNewColumnAt(layoutColumns, draggedId, c);
           if (res.changed) {
             const prevTop = prev.cards.length > 0 ? prev.cards[0].rect.top : prev.rect.top;
@@ -18368,6 +18381,8 @@ var QuickListDragController = class {
         if (payload && committedTarget.kind !== "none") {
           await this.host.onCommitDrop(payload, committedTarget);
         }
+      } catch (err) {
+        console.error("[QuickListDragController] Drop commit failed:", err);
       } finally {
         this.host.onDragSessionEnded();
       }
@@ -18420,8 +18435,9 @@ var QuickListDragController = class {
           }
         }
       } else if (this.host.getLayoutMode() === "grid" && boardEl) {
-        if (e.deltaY !== 0 && boardEl.scrollWidth > boardEl.clientWidth) {
-          boardEl.scrollLeft += e.deltaY;
+        const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+        if (delta !== 0 && boardEl.scrollWidth > boardEl.clientWidth) {
+          boardEl.scrollLeft += delta;
         }
       } else if (listPaneEl && e.deltaY !== 0) {
         listPaneEl.scrollTop += e.deltaY;
@@ -18453,6 +18469,7 @@ var QuickListDragController = class {
     if (this.isSessionActive()) {
       this.stopSession();
     }
+    this.clearClickShield();
     const rect = sourceEl.getBoundingClientRect();
     this.activePointerId = e.pointerId;
     this.lastClientX = e.clientX;
@@ -26867,8 +26884,8 @@ function instance6($$self, $$props, $$invalidate) {
       return;
     }
     if (rafId !== null)
-      cancelAnimationFrame(rafId);
-    rafId = requestAnimationFrame(() => {
+      window.cancelAnimationFrame(rafId);
+    rafId = window.requestAnimationFrame(() => {
       rafId = null;
       updateLayoutColumns();
     });
@@ -27178,7 +27195,7 @@ function instance6($$self, $$props, $$invalidate) {
       resizeDebounceTimer = null;
     }
     if (rafId !== null) {
-      cancelAnimationFrame(rafId);
+      window.cancelAnimationFrame(rafId);
       rafId = null;
     }
     window.removeEventListener("resize", scheduleAdjustSpacing);
@@ -27687,10 +27704,14 @@ function instance6($$self, $$props, $$invalidate) {
     }
   }
   function getTargetUnderMouse() {
-    if (lastMouseX >= 0 && lastMouseY >= 0) {
+    let hitInsideModal = false;
+    if (lastMouseX >= 0 && lastMouseY >= 0 && typeof document.elementFromPoint === "function") {
       try {
         const el = document.elementFromPoint(lastMouseX, lastMouseY);
         if (el) {
+          if (!modalContainerEl || modalContainerEl.contains(el)) {
+            hitInsideModal = true;
+          }
           const listItemEl = el.closest(".quick-modal-list-item");
           if (listItemEl) {
             const filepath = listItemEl.dataset.filepath;
@@ -27756,6 +27777,10 @@ function instance6($$self, $$props, $$invalidate) {
       } catch (e) {
       }
     }
+    if (hitInsideModal) {
+      hoveredRenameTarget = null;
+      return null;
+    }
     if (hoveredRenameTarget) {
       const clean = (p) => (p || "").replace(/\\/g, "/").replace(/^\/+/, "");
       const hId = clean(hoveredRenameTarget.id);
@@ -27801,7 +27826,7 @@ function instance6($$self, $$props, $$invalidate) {
     await tick();
     renameInputEl == null ? void 0 : renameInputEl.focus();
     renameInputEl == null ? void 0 : renameInputEl.select();
-    setTimeout(
+    window.setTimeout(
       () => {
         if (renameInputEl && document.activeElement !== renameInputEl) {
           renameInputEl.focus();
@@ -27852,11 +27877,15 @@ function instance6($$self, $$props, $$invalidate) {
             $$invalidate(0, plugin.settings.defaultQuickListFocusFilepath = newCat.filepath, plugin);
             await plugin.saveSettings();
           }
+          await loadData();
         }
       } else {
-        await dataService.renameGroup(itemId, newName);
+        const grp = groupItems.find((g) => g.id === itemId) || sidebarItems.find((i) => i.id === itemId && i.type === "group");
+        if (!grp || grp.name !== newName) {
+          await dataService.renameGroup(itemId, newName);
+          await loadData();
+        }
       }
-      await loadData();
     } catch (e) {
       console.error("[QuickListModal] Rename failed:", e);
     } finally {
@@ -28843,8 +28872,9 @@ function instance6($$self, $$props, $$invalidate) {
           const clampedTop = Math.max(bRect.top + 4, dropTarget.lineTop);
           const clampedBottom = Math.min(bRect.bottom - 4, dropTarget.lineTop + dropTarget.lineHeight);
           const clampedHeight = Math.max(24, clampedBottom - clampedTop);
+          const clampedLeft = Math.max(Math.round(bRect.left + 2), Math.min(Math.round(bRect.right - 2), Math.round(dropTarget.lineX)));
           return {
-            left: Math.round(dropTarget.lineX),
+            left: clampedLeft,
             top: Math.round(clampedTop),
             height: Math.round(clampedHeight)
           };
