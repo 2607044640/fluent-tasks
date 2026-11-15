@@ -4090,6 +4090,9 @@ body .task-quick-modal .modal-content {
     margin: 2px 0;
     cursor: pointer;
     font-size: 12.5px;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
     transition: background-color 0.15s ease, color 0.15s ease;
 }
 
@@ -4661,10 +4664,12 @@ body .quick-modal-task-item.is-focused {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     color: var(--text-muted);
-    cursor: pointer;
+    cursor: not-allowed;
     border-radius: 6px;
     transition: background-color 0.15s ease, color 0.15s ease;
     user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
 }
 
 .quick-modal-group-header:hover {
@@ -4710,8 +4715,28 @@ body .quick-modal-task-item.is-focused {
 .quick-modal-container.is-dragging-group,
 .quick-modal-container.is-dragging-group *,
 .task-quick-list-modal.is-dragging-group,
-.task-quick-list-modal.is-dragging-group * {
+.task-quick-list-modal.is-dragging-group *,
+body.fluent-tasks-quicklist-forbidden-drag,
+body.fluent-tasks-quicklist-forbidden-drag * {
     cursor: not-allowed !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+}
+
+body.fluent-tasks-quicklist-dragging {
+    cursor: grabbing;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+}
+
+body.fluent-tasks-quicklist-dragging *:not(.quick-modal-container.edge-dir-left):not(.quick-modal-container.edge-dir-right):not(.quick-modal-container.edge-dir-up):not(.quick-modal-container.edge-dir-down):not(.quick-modal-container.edge-dir-up-left):not(.quick-modal-container.edge-dir-up-right):not(.quick-modal-container.edge-dir-down-left):not(.quick-modal-container.edge-dir-down-right) {
+    user-select: none !important;
+    -webkit-user-select: none !important;
+}
+
+body.fluent-tasks-quicklist-dragging .quick-modal-container:not([class*="edge-dir-"]),
+body.fluent-tasks-quicklist-dragging .quick-modal-container:not([class*="edge-dir-"]) * {
+    cursor: grabbing !important;
 }
 
 .quick-modal-group-header {
@@ -4729,8 +4754,67 @@ body .quick-modal-task-item.is-focused {
 }
 
 .quick-modal-group-header.is-dragging,
+.quick-modal-group-container.is-dragging,
 :not(.is-table-mode) .quick-grid-card.is-dragging {
     cursor: not-allowed !important;
+}
+
+/* Pointer Drag Floating Ghost Portal */
+.fluent-tasks-quicklist-drag-ghost {
+    position: fixed;
+    z-index: 99999;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 7px;
+    background: var(--background-primary);
+    border: 1.5px solid var(--todo-accent, #8b5cf6);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(139, 92, 246, 0.25);
+    color: var(--text-normal);
+    font-size: 12px;
+    font-weight: 600;
+    opacity: 0.94;
+    box-sizing: border-box;
+    transform: rotate(0.6deg);
+}
+
+.fluent-tasks-quicklist-drag-ghost.is-group-ghost {
+    background: var(--background-secondary);
+    font-weight: 700;
+}
+
+.fluent-tasks-quicklist-drag-ghost-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--todo-accent, #8b5cf6);
+    font-size: 10px;
+    flex-shrink: 0;
+}
+
+.fluent-tasks-quicklist-drag-ghost-title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fluent-tasks-quicklist-drag-ghost-count {
+    font-size: 9.5px;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: var(--background-secondary-alt, var(--background-modifier-hover));
+    padding: 0 5px;
+    min-width: 15px;
+    height: 15px;
+    line-height: 15px;
+    text-align: center;
+    border-radius: 8px;
+    border: 1px solid var(--background-modifier-border);
+    flex-shrink: 0;
 }
 
 .drag-over-top {
@@ -4779,6 +4863,12 @@ body .quick-modal-task-item.is-focused {
     background: var(--background-primary) !important;
     color: var(--text-normal) !important;
     outline: none !important;
+    pointer-events: auto !important;
+    cursor: text !important;
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    -webkit-user-drag: none !important;
+    touch-action: auto;
 }
 
 .quick-modal-add-form {
@@ -5041,30 +5131,14 @@ body .quick-modal-task-item.is-focused {
     pointer-events: none;
 }
 
-/* Inter-Column Insertion Zones */
-.quick-table-col-insert-zone {
-    width: 16px;
-    margin: 0 -8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    align-self: stretch;
-    min-height: 200px;
-    z-index: 20;
-    cursor: col-resize;
-}
-
-.quick-table-col-insert-line {
+/* Fixed Inter-Column Insertion Overlay (zero layout shift) */
+.quick-table-col-insert-overlay {
+    position: fixed;
     width: 3px;
-    height: 100%;
-    min-height: 180px;
+    transform: translateX(-50%);
+    pointer-events: none;
+    z-index: 99990;
     border-radius: 3px;
-    background: transparent;
-    transition: background 0.15s ease, box-shadow 0.15s ease;
-}
-
-.quick-table-col-insert-zone.drag-over .quick-table-col-insert-line {
     background: var(--todo-accent, #8b5cf6);
     box-shadow: 0 0 12px 2px var(--todo-accent-glow, rgba(139, 92, 246, 0.85));
 }
@@ -5202,17 +5276,36 @@ body .quick-modal-task-item.is-focused {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding-bottom: 3px;
-    margin-bottom: 2px;
+    padding: 6px 8px 4px 8px;
+    margin: -6px -8px 2px -8px;
+    border-top-left-radius: 7px;
+    border-top-right-radius: 7px;
     border-bottom: 1px solid var(--background-modifier-border);
-    cursor: grab !important;
+    cursor: not-allowed;
     user-select: none !important;
     -webkit-user-select: none !important;
-    -webkit-user-drag: element !important;
+    -webkit-user-drag: none !important;
+    touch-action: none;
 }
 
-.quick-grid-card-header:active {
+.quick-grid-card-header:last-child {
+    margin-bottom: -6px;
+    padding-bottom: 6px;
+    border-bottom: none;
+    border-radius: 7px;
+}
+
+.quick-list-grid-board.is-table-mode .quick-grid-card-header {
+    cursor: grab !important;
+}
+
+.quick-list-grid-board.is-table-mode .quick-grid-card-header:active {
     cursor: grabbing !important;
+}
+
+.quick-list-grid-board:not(.is-table-mode) .quick-grid-card-header.is-root-header,
+.quick-list-grid-board:not(.is-table-mode) .quick-grid-card-header.is-root-header * {
+    cursor: default !important;
 }
 
 .quick-grid-card-header.is-dragging {
@@ -5229,8 +5322,8 @@ body .quick-modal-task-item.is-focused {
     min-width: 0;
     user-select: none !important;
     -webkit-user-select: none !important;
-    -webkit-user-drag: element !important;
-    cursor: grab !important;
+    -webkit-user-drag: none !important;
+    cursor: inherit !important;
 }
 
 .quick-grid-card-title {
@@ -5243,8 +5336,8 @@ body .quick-modal-task-item.is-focused {
     letter-spacing: 0.2px;
     user-select: none !important;
     -webkit-user-select: none !important;
-    -webkit-user-drag: element !important;
-    cursor: grab !important;
+    -webkit-user-drag: none !important;
+    cursor: inherit !important;
 }
 
 .quick-grid-card-count {
@@ -5263,18 +5356,18 @@ body .quick-modal-task-item.is-focused {
     margin-left: 4px;
     user-select: none !important;
     -webkit-user-select: none !important;
-    -webkit-user-drag: element !important;
-    cursor: grab !important;
+    -webkit-user-drag: none !important;
+    cursor: inherit !important;
 }
 
 .quick-grid-card-icon {
     user-select: none !important;
     -webkit-user-select: none !important;
-    -webkit-user-drag: element !important;
-    cursor: grab !important;
+    -webkit-user-drag: none !important;
+    cursor: inherit !important;
 }
 
-.quick-grid-card-header .quick-modal-group-chevron {
+.quick-list-grid-board .quick-grid-card-header .quick-modal-group-chevron {
     pointer-events: auto !important;
     cursor: pointer !important;
     user-select: none !important;
@@ -5282,12 +5375,13 @@ body .quick-modal-task-item.is-focused {
     -webkit-user-drag: none !important;
 }
 
-.quick-grid-card-header .quick-modal-inline-rename-input {
+.quick-list-grid-board .quick-grid-card-header .quick-modal-inline-rename-input {
     pointer-events: auto !important;
     cursor: text !important;
     user-select: text !important;
     -webkit-user-select: text !important;
     -webkit-user-drag: none !important;
+    touch-action: auto;
 }
 
 .quick-grid-card-items {

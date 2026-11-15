@@ -10,6 +10,30 @@
     import type { App } from "obsidian";
     import { t, isChinese } from "../lang/helpers";
     import { isQuickListHotkeyAssigned, openHotkeySettingsForQuickList } from "../utils/hotkeyUtils";
+    import { portal } from "../utils/domUtils";
+    import {
+        areLayoutColumnsEqual,
+        buildTablePositions,
+        computeGridBins,
+        computeTableColumns,
+        createGroupFromListInBoard,
+        moveCardInTable,
+        moveCardToColumnBottom,
+        moveCardToNewColumn,
+        moveCardToNewColumnAt,
+        type BoardDropTarget,
+        type ClassicGroupGeometry,
+        type ColumnGeometry,
+        type GridCardData,
+        type ListItemGeometry,
+        type QuickListLayoutMode,
+        type TablePositionsMap,
+    } from "../utils/quickListBoardUtils";
+    import {
+        QuickListDragController,
+        type DragPayload,
+        type DragControllerState,
+    } from "../utils/quickListDragController";
 
     // =============================================
     // Props
@@ -31,7 +55,7 @@
     let starredCount: number = 0;
     let searchQuery: string = "";
     let focusedIndex: number = -1;
-    let layoutMode: 'grid' | 'table' | 'list' = plugin?.settings?.quickListLayoutMode ?? (plugin?.settings?.quickListGridLayout === false ? 'list' : 'grid');
+    let layoutMode: QuickListLayoutMode = plugin?.settings?.quickListLayoutMode ?? (plugin?.settings?.quickListGridLayout === false ? 'list' : 'grid');
     $: isGridLayout = layoutMode !== 'list';
     let searchMode: 'list' | 'task' = isFocusedListMode ? 'list' : (plugin?.settings?.quickListSearchMode ?? 'list');
     let hideCompleted: boolean = plugin?.settings?.searchHideCompleted ?? true;
@@ -162,11 +186,20 @@
     let editingName: string = "";
     let isCommittingRename: boolean = false;
     let renameInputEl: HTMLInputElement;
+    let focusRestoreTimer: number | null = null;
 
-    // Drag & Drop reordering state
+    // Drag & Drop reordering state (synced from QuickListDragController)
     let draggedListId: string = "";
-    let dragOverListId: string = "";
-    let dragListPosition: "top" | "bottom" | "inside" | null = null;
+    let isDraggingGroup: boolean = false;
+    let isPointerDragging: boolean = false;
+    let isForbiddenGroupDrag: boolean = false;
+    let activeDragPayload: DragPayload | null = null;
+    let ghostX: number = 0;
+    let ghostY: number = 0;
+    let ghostWidth: number = 240;
+    let dropTarget: BoardDropTarget = { kind: "none" };
+    let activeEdgeDirection: string | null = null;
+    let listPaneEl: HTMLElement | null = null;
 
     // DOM Element Bindings
     let searchInputEl: HTMLInputElement;
@@ -214,17 +247,9 @@
         runTaskSearch(searchQuery);
     }
 
-    interface GridCardData {
-        id: string;
-        type: "root" | "group";
-        name: string;
-        group?: GroupInfo;
-        items?: CategoryInfo[];
-        height: number;
-    }
-
     let layoutColumns: GridCardData[][] = [];
     let rafId: number | null = null;
+    let pendingLayoutRefreshAfterDrag: boolean = false;
 
     interface CardHeightRecord {
         height: number;
@@ -232,126 +257,25 @@
     }
     let measuredCardHeights = new Map<string, CardHeightRecord>();
 
-    function areColumnsEqual(colsA: GridCardData[][], colsB: GridCardData[][]): boolean {
-        if (colsA.length !== colsB.length) return false;
-        for (let i = 0; i < colsA.length; i++) {
-            const colA = colsA[i];
-            const colB = colsB[i];
-            if (colA.length !== colB.length) return false;
-            for (let j = 0; j < colA.length; j++) {
-                const cardA = colA[j];
-                const cardB = colB[j];
-                if (cardA.id !== cardB.id) return false;
-                if (cardA.name !== cardB.name) return false;
-                // CRITICAL: Compare expansion state
-                if (cardA.group?.isExpanded !== cardB.group?.isExpanded) return false;
-                if (Math.abs(cardA.height - cardB.height) > 4) return false;
-                const itemsA = cardA.items || cardA.group?.items || [];
-                const itemsB = cardB.items || cardB.group?.items || [];
-                if (itemsA.length !== itemsB.length) return false;
-                for (let k = 0; k < itemsA.length; k++) {
-                    if (itemsA[k].id !== itemsB[k].id) return false;
-                }
-            }
-        }
-        return true;
-    }
-
     function scheduleAdjustSpacing() {
         if (!isGridLayout) return;
-        if (rafId !== null) cancelAnimationFrame(rafId);
-        rafId = requestAnimationFrame(() => {
+        if (isPointerDragging) {
+            pendingLayoutRefreshAfterDrag = true;
+            return;
+        }
+        if (rafId !== null) window.cancelAnimationFrame(rafId);
+        rafId = window.requestAnimationFrame(() => {
             rafId = null;
             updateLayoutColumns();
         });
     }
 
-    function computeTableColumns(cards: GridCardData[]): GridCardData[][] {
-        const positions = plugin?.settings?.quickListGroupPositions || {};
-        const colMap = new Map<number, Array<{ card: GridCardData; row: number }>>();
-        const unassigned: GridCardData[] = [];
-
-        for (const card of cards) {
-            const rawPos = positions[card.name] ?? positions[card.id];
-            if (rawPos && Array.isArray(rawPos) && typeof rawPos[0] === "number") {
-                const col = Math.max(0, Math.floor(rawPos[0]));
-                const row = Math.max(0, Math.floor(rawPos[1]));
-                if (!colMap.has(col)) colMap.set(col, []);
-                colMap.get(col)!.push({ card, row });
-            } else {
-                unassigned.push(card);
-            }
-        }
-
-        if (colMap.size > 0) {
-            for (const card of unassigned) {
-                let minCol = 0;
-                let minCount = Infinity;
-                for (const [colIdx, items] of colMap.entries()) {
-                    if (items.length < minCount) {
-                        minCount = items.length;
-                        minCol = colIdx;
-                    }
-                }
-                const colItems = colMap.get(minCol)!;
-                const maxRow = colItems.length > 0 ? Math.max(...colItems.map(i => i.row)) + 1 : 0;
-                colItems.push({ card, row: maxRow });
-            }
-        } else if (cards.length > 0) {
-            const targetCols = Math.min(4, Math.max(1, cards.length));
-            for (let i = 0; i < cards.length; i++) {
-                const col = i % targetCols;
-                const row = Math.floor(i / targetCols);
-                if (!colMap.has(col)) colMap.set(col, []);
-                colMap.get(col)!.push({ card: cards[i], row });
-            }
-            const initialPositions: Record<string, [number, number]> = {};
-            for (const [c, items] of colMap.entries()) {
-                for (const item of items) {
-                    initialPositions[item.card.name] = [c, item.row];
-                    if (item.card.id && item.card.id !== item.card.name) {
-                        initialPositions[item.card.id] = [c, item.row];
-                    }
-                }
-            }
-            if (plugin?.settings) {
-                plugin.settings.quickListGroupPositions = initialPositions;
-                void plugin.saveSettings();
-            }
-        }
-
-        const sortedColIndices = Array.from(colMap.keys()).sort((a, b) => a - b);
-        const result: GridCardData[][] = [];
-
-        for (const colIdx of sortedColIndices) {
-            const items = colMap.get(colIdx) || [];
-            if (items.length === 0) continue;
-            items.sort((a, b) => a.row - b.row);
-            result.push(items.map(i => i.card));
-        }
-
-        return result;
-    }
-
-    function packCardsIntoK(cardsToPack: GridCardData[], k: number, rowGap: number): { items: GridCardData[]; h: number }[] {
-        const maxPerCol = Math.ceil(cardsToPack.length / k);
-        const sorted = [...cardsToPack].sort((a, b) => b.height - a.height);
-        const bins = Array.from({ length: k }, () => ({ items: [] as GridCardData[], h: 0 }));
-
-        for (const c of sorted) {
-            let valid = bins.filter(b => b.items.length < maxPerCol);
-            if (valid.length === 0) valid = bins;
-            valid.sort((a, b) => a.h - b.h);
-            const best = valid[0];
-            const needed = best.items.length === 0 ? c.height : (c.height + rowGap);
-            best.items.push(c);
-            best.h += needed;
-        }
-        return bins;
-    }
-
     function updateLayoutColumns(force: boolean = false) {
         if (!isGridLayout) return;
+        if (isPointerDragging) {
+            pendingLayoutRefreshAfterDrag = true;
+            return;
+        }
 
         // 1. Live base font size and scale detection (relative to standard 14px)
         const baseFontSize = boardEl
@@ -402,7 +326,8 @@
         // 3. Measure actual rendered DOM heights if available and expansion state matches
         if (boardEl) {
             for (const c of cards) {
-                const el = boardEl.querySelector<HTMLElement>(`.quick-grid-card[data-card-id="${c.id}"]`);
+                const safeCardId = typeof CSS !== "undefined" && typeof CSS.escape === "function" ? CSS.escape(c.id) : c.id;
+                const el = boardEl.querySelector<HTMLElement>(`.quick-grid-card[data-card-id="${safeCardId}"]`);
                 if (el && el.offsetHeight > 0) {
                     if (c.type === "group" && c.group) {
                         const hasDomItems = !!el.querySelector(".quick-grid-card-items");
@@ -455,8 +380,12 @@
         let bestBins: { items: GridCardData[]; h: number }[] | null = null;
 
         if (layoutMode === "table") {
-            const tableCols = computeTableColumns(cards);
-            bestBins = tableCols.map(colItems => {
+            const tableRes = computeTableColumns(cards, plugin?.settings?.quickListGroupPositions || {});
+            if (tableRes.generatedInitialPositions && plugin?.settings) {
+                plugin.settings.quickListGroupPositions = tableRes.generatedInitialPositions;
+                void plugin.saveSettings();
+            }
+            bestBins = tableRes.columns.map(colItems => {
                 let colH = 0;
                 for (let idx = 0; idx < colItems.length; idx++) {
                     colH += idx === 0 ? colItems[idx].height : (colItems[idx].height + rowGap);
@@ -465,61 +394,13 @@
             });
             bestK = Math.max(1, bestBins.length);
         } else {
-            let bestScore = Infinity;
-            const sortedCards = [...cards].sort((a, b) => b.height - a.height);
-
-            for (let k = maxCandidateK; k >= 1; k--) {
-                const bins: { items: GridCardData[]; h: number }[] = Array.from({ length: k }, () => ({ items: [], h: 0 }));
-
-                for (const c of sortedCards) {
-                    bins.sort((a, b) => a.h - b.h);
-                    // Try to find a bin where adding this card stays <= targetPeakH
-                    const underTarget = bins.filter(b => (b.h + (b.items.length === 0 ? c.height : c.height + rowGap)) <= targetPeakH);
-                    const chosen = underTarget.length > 0 ? underTarget[0] : bins[0];
-                    const needed = chosen.items.length === 0 ? c.height : (c.height + rowGap);
-                    chosen.items.push(c);
-                    chosen.h += needed;
-                }
-
-                const peakH = Math.max(...bins.map(b => b.h));
-
-                // Heavy penalty if columns exceed usable screen height to prevent bottom cut-offs
-                const overflow = Math.max(0, peakH - maxUsableH);
-                const overflowPenalty = overflow * 20000;
-
-                const excess = Math.max(0, peakH - targetPeakH);
-                const excessPenalty = excess * 150;
-                const shortPenalty = Math.max(0, Math.round(180 * fontScale) - peakH) * 40;
-                const avgH = bins.reduce((sum, b) => sum + b.h, 0) / k;
-                const variance = bins.reduce((sum, b) => sum + (b.h - avgH) ** 2, 0) / k;
-                const kBonus = (maxCandidateK - k) * 60;
-
-                const score = overflowPenalty + excessPenalty + shortPenalty + Math.sqrt(variance) * 5 + kBonus;
-
-                if (score < bestScore) {
-                    bestScore = score;
-                    bestK = k;
-                    bestBins = bins;
-                }
-            }
-
-            if (!bestBins) {
-                bestBins = packCardsIntoK(cards, maxCandidateK, rowGap);
-                bestK = maxCandidateK;
-            }
-
-            // Sort columns so that taller/anchor cards are balanced by initial order
-            const cardOrderMap = new Map(cards.map((c, i) => [c.id, i]));
-            bestBins.sort((a, b) => {
-                const orderA = cardOrderMap.get(a.items[0]?.id || "") ?? 0;
-                const orderB = cardOrderMap.get(b.items[0]?.id || "") ?? 0;
-                return orderA - orderB;
-            });
+            bestBins = computeGridBins(cards, maxCandidateK, rowGap, targetPeakH, maxUsableH, fontScale);
+            bestK = Math.max(1, bestBins.length);
         }
 
         // 6. Update layoutColumns when forced or when column structure/items change
         const newColumns = bestBins.map(b => b.items);
-        if (force || !areColumnsEqual(layoutColumns, newColumns)) {
+        if (force || !areLayoutColumnsEqual(layoutColumns, newColumns)) {
             layoutColumns = newColumns;
         }
 
@@ -717,7 +598,11 @@
     });
 
     onDestroy(() => {
-        stopTableDragSession();
+        dragController.destroy();
+        if (focusRestoreTimer !== null) {
+            window.clearTimeout(focusRestoreTimer);
+            focusRestoreTimer = null;
+        }
         window.removeEventListener("focus", checkHotkeyStatus);
         document.removeEventListener("visibilitychange", checkHotkeyStatus);
         if (searchDebounceTimer) {
@@ -998,10 +883,22 @@
     }
 
     // =============================================
-    // Drag & Drop Lists / Groups (Group dragging disabled in Quick Modal)
+    // Pointer-Event Drag & Drop Engine + RTS Edge Panning
     // =============================================
-    let isDraggingGroup: boolean = false;
     let lastDragNoticeTime: number = 0;
+
+    $: colInsertOverlayStyle = (() => {
+        if (dropTarget.kind !== "col-insert" || !boardEl) return null;
+        const bRect = boardEl.getBoundingClientRect();
+        const clampedTop = Math.max(bRect.top + 4, dropTarget.lineTop);
+        const clampedBottom = Math.min(bRect.bottom - 4, dropTarget.lineTop + dropTarget.lineHeight);
+        const clampedHeight = Math.max(24, clampedBottom - clampedTop);
+        return {
+            left: Math.round(dropTarget.lineX),
+            top: Math.round(clampedTop),
+            height: Math.round(clampedHeight),
+        };
+    })();
 
     function showDragForbiddenNotice() {
         const now = Date.now();
@@ -1014,965 +911,259 @@
         }
     }
 
-    function getDraggedItem(): SidebarItem | null {
-        for (const item of sidebarItems) {
-            if (item.id === draggedListId) return item;
-            if (item.type === "group" && item.items) {
-                const child = item.items.find(c => c.id === draggedListId);
-                if (child) return child;
-            }
-        }
-        return null;
-    }
-
-    // =============================================
-    // RTS Screen Edge Auto-Panning & Drag Wheel
-    // =============================================
-    let edgeRafId: number | null = null;
-    let edgeScrollVx = 0;
-    let edgeScrollVy = 0;
-    let activeEdgeDirection: string | null = null;
-    const EDGE_PAN_THRESHOLD = 56;
-
-    function startTableDragSession() {
-        window.addEventListener("dragover", handleGlobalTableDragOver, { capture: true });
-        window.addEventListener("drag", handleGlobalTableDrag, { capture: true });
-        window.addEventListener("wheel", handleGlobalTableWheel, { capture: true, passive: false });
-    }
-
-    function stopTableDragSession() {
-        window.removeEventListener("dragover", handleGlobalTableDragOver, { capture: true });
-        window.removeEventListener("drag", handleGlobalTableDrag, { capture: true });
-        window.removeEventListener("wheel", handleGlobalTableWheel, { capture: true });
-        stopEdgePanning();
-    }
-
-    function handleGlobalTableWheel(e: WheelEvent) {
-        if (!boardEl || layoutMode !== "table") return;
-        e.preventDefault();
-        e.stopPropagation();
-
-        if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
-            const delta = e.shiftKey ? e.deltaY : e.deltaX;
-            boardEl.scrollLeft += delta;
-        } else if (e.deltaY !== 0) {
-            const canScrollUp = e.deltaY < 0 && boardEl.scrollTop > 1;
-            const canScrollDown = e.deltaY > 0 && boardEl.scrollTop + boardEl.clientHeight < boardEl.scrollHeight - 1;
-            if (canScrollUp || canScrollDown) {
-                boardEl.scrollTop += e.deltaY;
-            } else if (boardEl.scrollWidth > boardEl.clientWidth) {
-                boardEl.scrollLeft += e.deltaY;
-            }
-        }
-    }
-
-    function handleGlobalTableDragOver(e: DragEvent) {
-        if (layoutMode !== "table" || (!isDraggingGroup && !draggedListId)) return;
-        updateEdgePanning(e.clientX, e.clientY);
-    }
-
-    function handleGlobalTableDrag(e: DragEvent) {
-        if (layoutMode !== "table" || (!isDraggingGroup && !draggedListId)) return;
-        if (e.clientX !== 0 || e.clientY !== 0) {
-            updateEdgePanning(e.clientX, e.clientY);
-        }
-    }
-
-    function updateEdgePanning(clientX: number, clientY: number) {
-        if (!boardEl || layoutMode !== "table") {
-            stopEdgePanning();
-            return;
-        }
-
-        const rect = boardEl.getBoundingClientRect();
-        if (clientX <= 0 && clientY <= 0) return;
-        if (clientX < rect.left - 60 || clientX > rect.right + 60 || clientY < rect.top - 60 || clientY > rect.bottom + 60) {
-            stopEdgePanning();
-            return;
-        }
-
-        const distLeft = clientX - rect.left;
-        const distRight = rect.right - clientX;
-        const distTop = clientY - rect.top;
-        const distBottom = rect.bottom - clientY;
-
-        const canScrollLeft = boardEl.scrollLeft > 1;
-        const canScrollRight = boardEl.scrollLeft + boardEl.clientWidth < boardEl.scrollWidth - 2;
-        const canScrollUp = boardEl.scrollTop > 1;
-        const canScrollDown = boardEl.scrollTop + boardEl.clientHeight < boardEl.scrollHeight - 2;
-
-        let vx = 0;
-        let vy = 0;
-        let dirX: "left" | "right" | null = null;
-        let dirY: "up" | "down" | null = null;
-
-        if (distLeft <= EDGE_PAN_THRESHOLD && clientX >= 0) {
-            dirX = "left";
-            if (canScrollLeft) {
-                vx = -calculateEdgeSpeed(Math.max(0, distLeft), EDGE_PAN_THRESHOLD);
-            }
-        } else if (distRight <= EDGE_PAN_THRESHOLD && clientX <= window.innerWidth) {
-            dirX = "right";
-            if (canScrollRight) {
-                vx = calculateEdgeSpeed(Math.max(0, distRight), EDGE_PAN_THRESHOLD);
-            }
-        }
-
-        if (distTop <= EDGE_PAN_THRESHOLD && clientY >= 0) {
-            dirY = "up";
-            if (canScrollUp) {
-                vy = -calculateEdgeSpeed(Math.max(0, distTop), EDGE_PAN_THRESHOLD);
-            }
-        } else if (distBottom <= EDGE_PAN_THRESHOLD && clientY <= window.innerHeight) {
-            dirY = "down";
-            if (canScrollDown) {
-                vy = calculateEdgeSpeed(Math.max(0, distBottom), EDGE_PAN_THRESHOLD);
-            }
-        }
-
-        if (dirX && dirY) {
-            activeEdgeDirection = `${dirY}-${dirX}`;
-        } else if (dirX) {
-            activeEdgeDirection = dirX;
-        } else if (dirY) {
-            activeEdgeDirection = dirY;
-        } else {
-            activeEdgeDirection = null;
-        }
-
-        edgeScrollVx = vx;
-        edgeScrollVy = vy;
-
-        if (edgeScrollVx !== 0 || edgeScrollVy !== 0) {
-            if (edgeRafId === null) {
-                edgeRafId = requestAnimationFrame(edgePanStep);
-            }
-        } else {
-            if (edgeRafId !== null) {
-                cancelAnimationFrame(edgeRafId);
-                edgeRafId = null;
-            }
-        }
-    }
-
-    function calculateEdgeSpeed(dist: number, maxZone: number): number {
-        const clamped = Math.max(0, Math.min(dist, maxZone));
-        const factor = 1 - (clamped / maxZone);
-        return Math.round(8 + factor * 22);
-    }
-
-    function edgePanStep() {
-        if (!boardEl || (edgeScrollVx === 0 && edgeScrollVy === 0)) {
-            edgeRafId = null;
-            return;
-        }
-        if (edgeScrollVx < 0 && boardEl.scrollLeft <= 0) {
-            edgeScrollVx = 0;
-        } else if (edgeScrollVx > 0 && boardEl.scrollLeft + boardEl.clientWidth >= boardEl.scrollWidth - 1) {
-            edgeScrollVx = 0;
-        }
-        if (edgeScrollVy < 0 && boardEl.scrollTop <= 0) {
-            edgeScrollVy = 0;
-        } else if (edgeScrollVy > 0 && boardEl.scrollTop + boardEl.clientHeight >= boardEl.scrollHeight - 1) {
-            edgeScrollVy = 0;
-        }
-        if (edgeScrollVx === 0 && edgeScrollVy === 0) {
-            edgeRafId = null;
-            return;
-        }
-        boardEl.scrollLeft += edgeScrollVx;
-        boardEl.scrollTop += edgeScrollVy;
-        edgeRafId = requestAnimationFrame(edgePanStep);
-    }
-
-    function stopEdgePanning() {
-        if (edgeRafId !== null) {
-            cancelAnimationFrame(edgeRafId);
-            edgeRafId = null;
-        }
-        edgeScrollVx = 0;
-        edgeScrollVy = 0;
-        activeEdgeDirection = null;
-    }
-
-    function handleRootDragStart(e: DragEvent) {
-        handleListDragStart(e, { id: "__root__", name: "Lists", type: "root" } as any);
-    }
-
-    function handleListDragStart(e: DragEvent, item: SidebarItem | CategoryInfo) {
-        if (layoutMode === "table") {
-            startTableDragSession();
-        }
-
-        if (item.type === "group" || (item as any).type === "root" || item.id === "__root__") {
-            isDraggingGroup = true;
-            draggedListId = item.id;
-            (window as any).__mstodo_category_drag = true;
-            if (e.dataTransfer) {
-                e.dataTransfer.setData("text/plain", item.id);
-                if (layoutMode === "table") {
-                    e.dataTransfer.effectAllowed = "move";
-                    const headerEl = (e.currentTarget as HTMLElement)?.closest(".quick-grid-card-header") as HTMLElement
-                        || (e.currentTarget as HTMLElement)
-                        || (e.target as HTMLElement)?.closest(".quick-grid-card-header") as HTMLElement;
-                    if (headerEl && typeof e.dataTransfer.setDragImage === "function") {
-                        const rect = headerEl.getBoundingClientRect();
-                        const offsetX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
-                        const offsetY = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
-                        e.dataTransfer.setDragImage(headerEl, offsetX, offsetY);
-                    }
-                    return;
+    const dragController = new QuickListDragController({
+        getLayoutMode: () => layoutMode,
+        isGridLayout: () => isGridLayout,
+        getBoardEl: () => boardEl,
+        getListPaneEl: () => listPaneEl,
+        getModalContainerEl: () => modalContainerEl || null,
+        getLayoutColumns: () => layoutColumns,
+        getRootCount: () => rootCategories.length,
+        getEditingItemId: () => editingItemId,
+        collectBoardGeometry: (draggedId: string) => collectBoardGeometry(draggedId),
+        collectClassicListGeometry: (draggedId: string) => collectClassicListGeometry(draggedId),
+        onStateChange: (state: DragControllerState) => {
+            isPointerDragging = state.isPointerDragging;
+            isForbiddenGroupDrag = state.isForbiddenGroupDrag;
+            isDraggingGroup = state.isDraggingGroup;
+            draggedListId = state.draggedListId;
+            activeDragPayload = state.activeDragPayload;
+            ghostX = state.ghostX;
+            ghostY = state.ghostY;
+            ghostWidth = state.ghostWidth;
+            dropTarget = state.dropTarget;
+            activeEdgeDirection = state.activeEdgeDirection;
+        },
+        onForbiddenGroupDrag: () => {
+            showDragForbiddenNotice();
+        },
+        onCommitDrop: async (payload: DragPayload, target: BoardDropTarget) => {
+            await commitBoardDrop(payload, target);
+        },
+        onDragSessionEnded: () => {
+            if (pendingLayoutRefreshAfterDrag) {
+                pendingLayoutRefreshAfterDrag = false;
+                if (isGridLayout) {
+                    updateLayoutColumns(true);
+                    scheduleAdjustSpacing();
                 }
-                e.dataTransfer.effectAllowed = "none";
             }
-            if (layoutMode !== "table") {
-                showDragForbiddenNotice();
-            }
-            return;
-        }
+        },
+    });
 
-        isDraggingGroup = false;
-        draggedListId = item.id;
-        (window as any).__mstodo_category_drag = true;
-        if (e.dataTransfer) {
-            e.dataTransfer.setData("text/plain", item.id);
-            e.dataTransfer.effectAllowed = "move";
-        }
+    function wasDragJustPerformed(): boolean {
+        return dragController.wasDragJustPerformed();
     }
 
-    function handleListDragEnd() {
-        stopTableDragSession();
-        draggedListId = "";
-        dragOverListId = "";
-        dragListPosition = null;
-        isDraggingGroup = false;
-        (window as any).__mstodo_category_drag = false;
+    function handleHeaderPointerDown(e: PointerEvent, payload: DragPayload) {
+        const headerEl = e.currentTarget as HTMLElement | null;
+        dragController.beginCandidate(e, payload, headerEl);
     }
 
-    function handleListDragLeave(e: DragEvent, targetId?: string) {
-        const el = e.currentTarget as HTMLElement;
-        const related = e.relatedTarget as HTMLElement | null;
-        if (!related || !el.contains(related)) {
-            if (!targetId || dragOverListId === targetId) {
-                dragOverListId = "";
-                dragListPosition = null;
-            }
-        }
+    function handleListItemPointerDown(e: PointerEvent, item: CategoryInfo) {
+        e.stopPropagation();
+        if (item.filepath === STARRED_CATEGORY_PATH || item.isSmartList) return;
+        const itemEl = e.currentTarget as HTMLElement | null;
+        dragController.beginCandidate(
+            e,
+            {
+                kind: "category",
+                id: item.id,
+                name: item.name,
+                filepath: item.filepath,
+                count: taskCounts[item.filepath] ?? 0,
+            },
+            itemEl
+        );
     }
 
-    function handleGroupCardDragLeave(e: DragEvent, group: GroupInfo) {
-        const el = e.currentTarget as HTMLElement;
-        const related = e.relatedTarget as HTMLElement | null;
-        if (!related || !el.contains(related)) {
-            const isChildTarget = group.items?.some(c => c.id === dragOverListId) ?? false;
-            if (dragOverListId === group.id || isChildTarget) {
-                dragOverListId = "";
-                dragListPosition = null;
-            }
-        }
-    }
-
-    function handleRootCardDragLeave(e: DragEvent) {
-        const el = e.currentTarget as HTMLElement;
-        const related = e.relatedTarget as HTMLElement | null;
-        if (!related || !el.contains(related)) {
-            const isRootChildTarget = rootCategories.some(c => c.id === dragOverListId);
-            if (dragOverListId === "__root__" || isRootChildTarget) {
-                dragOverListId = "";
-                dragListPosition = null;
-            }
-        }
-    }
-
-    function resolveListChildDropTarget(
-        clientY: number,
-        items: CategoryInfo[],
-        cardSelector: string,
-        contextEl?: HTMLElement | null
-    ): { targetId: string; position: "top" | "bottom" } | null {
-        if (!items || items.length === 0) return null;
-
-        const cardEl =
-            (contextEl?.closest(cardSelector) as HTMLElement | null) ||
-            modalContainerEl?.querySelector<HTMLElement>(cardSelector) ||
-            null;
-
-        const itemEls = cardEl
-            ? Array.from(cardEl.querySelectorAll<HTMLElement>(".quick-modal-list-item"))
-            : [];
-
-        if (itemEls.length === 0) {
-            return { targetId: items[items.length - 1].id, position: "bottom" };
-        }
-
-        const firstRect = itemEls[0].getBoundingClientRect();
-        if (clientY < firstRect.top + firstRect.height * 0.5) {
+    function collectBoardGeometry(draggedId: string = ""): {
+        columns: ColumnGeometry[];
+        newColDropzoneRect: DOMRect | null;
+    } {
+        if (!boardEl) return { columns: [], newColDropzoneRect: null };
+        const colEls = Array.from(boardEl.querySelectorAll<HTMLElement>(".quick-grid-column"));
+        const columns: ColumnGeometry[] = colEls.map((colEl, colIdx) => {
+            const dataCol = layoutColumns[colIdx] || [];
+            const cardMap = new Map(dataCol.map(c => [c.id, c]));
+            const cardEls = Array.from(colEl.querySelectorAll<HTMLElement>(".quick-grid-card"));
+            const cards = cardEls.map((cardEl) => {
+                const id = cardEl.dataset.cardId || cardEl.dataset.groupId || "";
+                const data = cardMap.get(id);
+                const isRoot = id === "__root__" || data?.type === "root";
+                const isExpanded = isRoot ? true : Boolean(data?.group?.isExpanded);
+                const groupChildren = data?.group?.items || data?.items || [];
+                const itemsCount = isRoot ? rootCategories.length : groupChildren.length;
+                const containsDragged = Boolean(
+                    draggedId && groupChildren.some(ch => ch.id === draggedId || ch.filepath === draggedId)
+                );
+                const itemEls = Array.from(cardEl.querySelectorAll<HTMLElement>(".quick-modal-list-item"));
+                const items: ListItemGeometry[] = itemEls
+                    .map(el => ({ id: el.dataset.itemId || "", rect: el.getBoundingClientRect() }))
+                    .filter(item => Boolean(item.id));
+                return {
+                    id,
+                    type: isRoot ? ("root" as const) : ("group" as const),
+                    isExpanded,
+                    itemsCount,
+                    containsDragged,
+                    rect: cardEl.getBoundingClientRect(),
+                    items,
+                };
+            });
+            const bottomDropEl = colEl.querySelector<HTMLElement>(".quick-table-col-dropzone");
             return {
-                targetId: itemEls[0].dataset.itemId || items[0].id,
-                position: "top",
+                colIdx,
+                rect: colEl.getBoundingClientRect(),
+                cards,
+                bottomDropzoneRect: bottomDropEl ? bottomDropEl.getBoundingClientRect() : null,
             };
-        }
-
-        for (let i = 0; i < itemEls.length - 1; i++) {
-            const rectA = itemEls[i].getBoundingClientRect();
-            const rectB = itemEls[i + 1].getBoundingClientRect();
-            const gapMid = (rectA.bottom + rectB.top) * 0.5;
-            const midB = rectB.top + rectB.height * 0.5;
-
-            if (clientY <= gapMid) {
-                return {
-                    targetId: itemEls[i].dataset.itemId || items[i]?.id || "",
-                    position: "bottom",
-                };
-            }
-            if (clientY < midB) {
-                return {
-                    targetId: itemEls[i + 1].dataset.itemId || items[i + 1]?.id || "",
-                    position: "top",
-                };
-            }
-        }
-
-        const lastIdx = itemEls.length - 1;
+        });
+        const newColEl = boardEl.querySelector<HTMLElement>(".quick-table-new-col-dropzone");
         return {
-            targetId: itemEls[lastIdx].dataset.itemId || items[lastIdx]?.id || "",
-            position: "bottom",
+            columns,
+            newColDropzoneRect: newColEl ? newColEl.getBoundingClientRect() : null,
         };
     }
 
-    function handleListDragOver(e: DragEvent, target: SidebarItem | CategoryInfo, isGroupHeader: boolean = false, parentGroup?: any) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        if (isDraggingGroup) {
-            if (layoutMode === "table") {
-                if (parentGroup) {
-                    handleGroupCardDragOver(e, parentGroup);
-                    return;
-                }
-                handleRootCardDragOver(e);
-                return;
-            }
-            if (e.dataTransfer) e.dataTransfer.dropEffect = "none";
-            dragOverListId = "";
-            dragListPosition = null;
-            return;
-        }
-
-        if (!draggedListId || target.id === draggedListId) {
-            dragOverListId = "";
-            dragListPosition = null;
-            return;
-        }
-
-        const draggedItem = getDraggedItem();
-        if (!draggedItem || draggedItem.type === "group") {
-            dragOverListId = "";
-            dragListPosition = null;
-            return;
-        }
-
-        const el = e.currentTarget as HTMLElement;
-
-        if (isGroupHeader) {
-            const grp = target as GroupInfo;
-            const hasItems = !!(grp.items && grp.items.length > 0);
-            if (!hasItems) {
-                if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
-                dragOverListId = grp.id;
-                dragListPosition = "inside";
-            } else if (grp.isExpanded) {
-                if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
-                const resolved = resolveListChildDropTarget(e.clientY, grp.items!, `[data-group-id="${grp.id}"]`, el);
-                if (resolved && resolved.targetId && resolved.targetId !== draggedListId) {
-                    dragOverListId = resolved.targetId;
-                    dragListPosition = resolved.position;
-                } else {
-                    dragOverListId = "";
-                    dragListPosition = null;
-                }
-            } else {
-                if (e.dataTransfer) e.dataTransfer.dropEffect = "none";
-                dragOverListId = "";
-                dragListPosition = null;
-            }
-            return;
-        }
-
-        if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
-        dragOverListId = target.id || "";
-        const rect = el.getBoundingClientRect();
-        const relY = e.clientY - rect.top;
-        dragListPosition = relY < rect.height * 0.5 ? "top" : "bottom";
-    }
-
-    function handleGroupCardDragOver(e: DragEvent, group: GroupInfo, isItemsContainer: boolean = false) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        if (layoutMode === "table" && isDraggingGroup) {
-            if (!draggedListId || group.id === draggedListId) {
-                dragOverListId = "";
-                dragListPosition = null;
-                return;
-            }
-            if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
-            const targetEl = (e.currentTarget as HTMLElement).closest(".quick-grid-card") as HTMLElement || (e.currentTarget as HTMLElement);
-            const rect = targetEl.getBoundingClientRect();
-            const relY = e.clientY - rect.top;
-            dragListPosition = relY < rect.height * 0.5 ? "top" : "bottom";
-            dragOverListId = group.id;
-            return;
-        }
-
-        if (isDraggingGroup) {
-            if (e.dataTransfer) e.dataTransfer.dropEffect = "none";
-            dragOverListId = "";
-            dragListPosition = null;
-            return;
-        }
-
-        if (!draggedListId || group.id === draggedListId) {
-            dragOverListId = "";
-            dragListPosition = null;
-            return;
-        }
-
-        const draggedItem = getDraggedItem();
-        if (!draggedItem || draggedItem.type === "group") {
-            dragOverListId = "";
-            dragListPosition = null;
-            return;
-        }
-
-        const hasItems = !!(group.items && group.items.length > 0);
-        if (!hasItems) {
-            if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
-            dragOverListId = group.id;
-            dragListPosition = "inside";
-            return;
-        }
-
-        if (!group.isExpanded) {
-            if (e.dataTransfer) e.dataTransfer.dropEffect = "none";
-            dragOverListId = "";
-            dragListPosition = null;
-            return;
-        }
-
-        if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
-        const resolved = resolveListChildDropTarget(
-            e.clientY,
-            group.items!,
-            `[data-group-id="${group.id}"]`,
-            e.currentTarget as HTMLElement
-        );
-        if (resolved && resolved.targetId && resolved.targetId !== draggedListId) {
-            dragOverListId = resolved.targetId;
-            dragListPosition = resolved.position;
-        } else {
-            dragOverListId = "";
-            dragListPosition = null;
-        }
-    }
-
-    function handleRootCardDragOver(e: DragEvent) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        if (layoutMode === "table" && isDraggingGroup) {
-            if (!draggedListId || draggedListId === "__root__") {
-                dragOverListId = "";
-                dragListPosition = null;
-                return;
-            }
-            if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
-            const targetEl = (e.currentTarget as HTMLElement).closest(".quick-grid-card") as HTMLElement || (e.currentTarget as HTMLElement);
-            const rect = targetEl.getBoundingClientRect();
-            const relY = e.clientY - rect.top;
-            dragListPosition = relY < rect.height * 0.5 ? "top" : "bottom";
-            dragOverListId = "__root__";
-            return;
-        }
-
-        if (isDraggingGroup) {
-            if (e.dataTransfer) e.dataTransfer.dropEffect = "none";
-            dragOverListId = "";
-            dragListPosition = null;
-            return;
-        }
-
-        if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
-
-        if (!draggedListId) return;
-        const draggedItem = getDraggedItem();
-        if (!draggedItem || draggedItem.type === "group") {
-            dragOverListId = "";
-            dragListPosition = null;
-            return;
-        }
-
-        if (rootCategories.length > 0) {
-            const resolved = resolveListChildDropTarget(
-                e.clientY,
-                rootCategories,
-                `[data-card-id="__root__"]`,
-                e.currentTarget as HTMLElement
+    function collectClassicListGeometry(draggedId: string = ""): {
+        groups: ClassicGroupGeometry[];
+        allListItems: ListItemGeometry[];
+    } {
+        if (!listPaneEl) return { groups: [], allListItems: [] };
+        const groupMap = new Map(groupItems.map(g => [g.id, g]));
+        const groupEls = Array.from(listPaneEl.querySelectorAll<HTMLElement>(".quick-modal-group-container"));
+        const groups: ClassicGroupGeometry[] = [];
+        for (const grpEl of groupEls) {
+            const id = grpEl.dataset.groupId || "";
+            const grp = groupMap.get(id);
+            const headerEl = grpEl.querySelector<HTMLElement>(".quick-modal-group-header");
+            if (!id || !grp || !headerEl) continue;
+            const childEls = Array.from(grpEl.querySelectorAll<HTMLElement>(".quick-modal-list-item"));
+            const items: ListItemGeometry[] = childEls
+                .map(el => ({ id: el.dataset.itemId || "", rect: el.getBoundingClientRect() }))
+                .filter(it => Boolean(it.id));
+            const containsDragged = Boolean(
+                draggedId && (grp.items || []).some(ch => ch.id === draggedId || ch.filepath === draggedId)
             );
-            if (resolved && resolved.targetId && resolved.targetId !== draggedListId) {
-                dragOverListId = resolved.targetId;
-                dragListPosition = resolved.position;
-            } else {
-                dragOverListId = "";
-                dragListPosition = null;
-            }
-        } else {
-            dragOverListId = "__root__";
-            dragListPosition = "top";
+            groups.push({
+                id,
+                itemsCount: grp.items ? grp.items.length : 0,
+                isExpanded: Boolean(grp.isExpanded),
+                containsDragged,
+                rect: grpEl.getBoundingClientRect(),
+                headerRect: headerEl.getBoundingClientRect(),
+                items,
+            });
         }
+        const allListItems: ListItemGeometry[] = Array.from(
+            listPaneEl.querySelectorAll<HTMLElement>(".quick-modal-list-item[data-item-id]")
+        )
+            .map(el => ({ id: el.dataset.itemId || "", rect: el.getBoundingClientRect() }))
+            .filter(it => Boolean(it.id) && it.id !== STARRED_CATEGORY_PATH);
+        return { groups, allListItems };
     }
 
-    async function handleRootCardDrop(e: DragEvent) {
-        e.preventDefault();
-        e.stopPropagation();
+    async function commitBoardDrop(payload: DragPayload, target: BoardDropTarget) {
+        if (payload.kind === "group") {
+            if (layoutMode !== "table") return;
 
-        if (isDraggingGroup) {
-            if (layoutMode === "table" && draggedListId && draggedListId !== "__root__") {
-                await moveGroupInTable(draggedListId, "__root__", dragListPosition || "bottom");
-                handleListDragEnd();
-                return;
-            }
-            handleListDragEnd();
-            showDragForbiddenNotice();
-            return;
-        }
-
-        const draggedItem = getDraggedItem();
-        if (!draggedItem || draggedItem.type === "group") {
-            handleListDragEnd();
-            return;
-        }
-
-        if (rootCategories.length > 0) {
-            const resolved = resolveListChildDropTarget(
-                e.clientY,
-                rootCategories,
-                `[data-card-id="__root__"]`,
-                e.currentTarget as HTMLElement
-            );
-            if (resolved && resolved.targetId && resolved.targetId !== draggedListId) {
-                const targetCat = rootCategories.find(c => c.id === resolved.targetId);
-                if (targetCat) {
-                    await handleListDrop(targetCat, resolved.position);
+            let moveRes: { columns: GridCardData[][]; changed: boolean } = { columns: layoutColumns, changed: false };
+            switch (target.kind) {
+                case "card-slot":
+                    moveRes = moveCardInTable(layoutColumns, payload.id, target.cardId, target.position);
+                    break;
+                case "col-bottom":
+                    moveRes = moveCardToColumnBottom(layoutColumns, payload.id, target.colIdx);
+                    break;
+                case "col-insert":
+                    moveRes = moveCardToNewColumnAt(layoutColumns, payload.id, target.colIdx);
+                    break;
+                case "new-col-end":
+                    moveRes = moveCardToNewColumn(layoutColumns, payload.id);
+                    break;
+                default:
                     return;
-                }
             }
-            handleListDragEnd();
-        } else {
-            await handleListDrop({ id: "__root__", name: "Lists", type: "category", filepath: "" } as any, "top");
-        }
-    }
-
-    async function handleGroupCardDrop(e: DragEvent, group: GroupInfo, isItemsContainer: boolean = false) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        if (isDraggingGroup) {
-            if (layoutMode === "table" && draggedListId && draggedListId !== group.id) {
-                await moveGroupInTable(draggedListId, group.id, dragListPosition || "bottom");
-                handleListDragEnd();
-                return;
+            if (moveRes.changed) {
+                await saveTableLayoutPositions(moveRes.columns);
             }
-            handleListDragEnd();
-            showDragForbiddenNotice();
             return;
         }
 
-        const draggedItem = getDraggedItem();
-        if (!draggedItem || draggedItem.type === "group") {
-            handleListDragEnd();
+        // List (category) drops
+        if (target.kind === "new-group-col" || target.kind === "new-group-new-col") {
+            const colIdx = target.kind === "new-group-col" ? target.colIdx : layoutColumns.length;
+            await createGroupFromListAtColumn(payload.id, colIdx);
             return;
         }
 
-        const hasItems = !!(group.items && group.items.length > 0);
-        if (!hasItems) {
-            await handleListDrop(group, "inside");
-            return;
+        let movedId = payload.id;
+        let targetId = "";
+        let pos: "top" | "bottom" | "inside" | null = null;
+
+        if (target.kind === "list-item") {
+            targetId = target.targetId;
+            pos = target.position;
+        } else if (target.kind === "group-inside") {
+            targetId = target.groupId;
+            pos = "inside";
+        } else if (target.kind === "root-empty") {
+            targetId = "__root__";
+            pos = "top";
         }
-
-        if (!group.isExpanded) {
-            handleListDragEnd();
-            return;
-        }
-
-        const resolved = resolveListChildDropTarget(
-            e.clientY,
-            group.items!,
-            `[data-group-id="${group.id}"]`,
-            e.currentTarget as HTMLElement
-        );
-        if (resolved && resolved.targetId && resolved.targetId !== draggedListId) {
-            const targetChild = group.items!.find(c => c.id === resolved.targetId);
-            if (targetChild) {
-                await handleListDrop(targetChild, resolved.position);
-                return;
-            }
-        }
-        handleListDragEnd();
-    }
-
-    async function handleListDrop(target?: SidebarItem | CategoryInfo, forcedPosition?: "top" | "bottom" | "inside") {
-        if (isDraggingGroup) {
-            if (layoutMode === "table" && draggedListId) {
-                const targetCardId = dragOverListId || (target as any)?.id;
-                if (targetCardId && targetCardId !== draggedListId) {
-                    await moveGroupInTable(draggedListId, targetCardId, dragListPosition || "bottom");
-                }
-            } else {
-                showDragForbiddenNotice();
-            }
-            handleListDragEnd();
-            return;
-        }
-
-        const movedId = draggedListId;
-        const targetId = target?.id || dragOverListId || "";
-        const pos = forcedPosition || dragListPosition;
-        const draggedItem = getDraggedItem();
-
-        handleListDragEnd();
 
         if (!movedId || !targetId || !pos || movedId === targetId) return;
 
-        // Invariant: groups cannot be moved in Quick View
-        if (draggedItem?.type === "group") {
-            showDragForbiddenNotice();
-            return;
-        }
-
-        // 1. Move item in sidebar tree
         sidebarItems = moveSidebarItem(sidebarItems, movedId, targetId, pos);
         categories = getFlatCategories(sidebarItems);
-
-        // 2. Invalidate card measurement cache to ensure complete recalculation
         measuredCardHeights.clear();
-
-        // 3. Await reactivity tick so derived stores ($: groupItems, $: rootCategories) refresh
         await tick();
 
-        // 4. Force immediate grid layout recalculation
         if (isGridLayout) {
             updateLayoutColumns(true);
             scheduleAdjustSpacing();
         }
 
-        // 5. Persist to disk and notify peers
         await dataService.saveSidebarState(sidebarItems);
         EventBus.emit(EventName.CATEGORY_LIST_CHANGED, { sidebarItems });
-    }
-
-    async function moveGroupInTable(draggedId: string, targetCardId: string, position: 'top' | 'bottom' | 'inside') {
-        let srcColIdx = -1;
-        let srcRowIdx = -1;
-        let tgtColIdx = -1;
-        let tgtRowIdx = -1;
-        let draggedCard: GridCardData | null = null;
-
-        for (let c = 0; c < layoutColumns.length; c++) {
-            const col = layoutColumns[c];
-            for (let r = 0; r < col.length; r++) {
-                if (col[r].id === draggedId) {
-                    srcColIdx = c;
-                    srcRowIdx = r;
-                    draggedCard = col[r];
-                }
-                if (col[r].id === targetCardId) {
-                    tgtColIdx = c;
-                    tgtRowIdx = r;
-                }
-            }
-        }
-
-        if (!draggedCard || tgtColIdx === -1) return;
-
-        const cols: GridCardData[][] = layoutColumns.map(col => [...col]);
-        cols[srcColIdx].splice(srcRowIdx, 1);
-
-        if (srcColIdx === tgtColIdx && srcRowIdx < tgtRowIdx) {
-            tgtRowIdx--;
-        }
-
-        const insertAt = position === "top" ? tgtRowIdx : tgtRowIdx + 1;
-        cols[tgtColIdx].splice(insertAt, 0, draggedCard);
-
-        const prunedCols = cols.filter(c => c.length > 0);
-        await saveTableLayoutPositions(prunedCols);
-    }
-
-
-
-    async function moveGroupToColumnBottom(draggedId: string, targetColIdx: number) {
-        let srcColIdx = -1;
-        let srcRowIdx = -1;
-        let draggedCard: GridCardData | null = null;
-
-        for (let c = 0; c < layoutColumns.length; c++) {
-            const col = layoutColumns[c];
-            for (let r = 0; r < col.length; r++) {
-                if (col[r].id === draggedId) {
-                    srcColIdx = c;
-                    srcRowIdx = r;
-                    draggedCard = col[r];
-                    break;
-                }
-            }
-            if (draggedCard) break;
-        }
-
-        if (!draggedCard || targetColIdx >= layoutColumns.length) return;
-
-        const cols: GridCardData[][] = layoutColumns.map(col => [...col]);
-        cols[srcColIdx].splice(srcRowIdx, 1);
-        cols[targetColIdx].push(draggedCard);
-
-        const prunedCols = cols.filter(c => c.length > 0);
-        await saveTableLayoutPositions(prunedCols);
-    }
-
-
-
-    async function moveGroupToNewColumn(draggedId: string) {
-        let srcColIdx = -1;
-        let srcRowIdx = -1;
-        let draggedCard: GridCardData | null = null;
-
-        for (let c = 0; c < layoutColumns.length; c++) {
-            const col = layoutColumns[c];
-            for (let r = 0; r < col.length; r++) {
-                if (col[r].id === draggedId) {
-                    srcColIdx = c;
-                    srcRowIdx = r;
-                    draggedCard = col[r];
-                    break;
-                }
-            }
-            if (draggedCard) break;
-        }
-
-        if (!draggedCard) return;
-
-        const cols: GridCardData[][] = layoutColumns.map(col => [...col]);
-        cols[srcColIdx].splice(srcRowIdx, 1);
-        cols.push([draggedCard]);
-
-        const prunedCols = cols.filter(c => c.length > 0);
-        await saveTableLayoutPositions(prunedCols);
-    }
-
-    async function moveGroupToNewColumnAt(draggedId: string, targetColIdx: number) {
-        let srcColIdx = -1;
-        let srcRowIdx = -1;
-        let draggedCard: GridCardData | null = null;
-
-        for (let c = 0; c < layoutColumns.length; c++) {
-            const col = layoutColumns[c];
-            for (let r = 0; r < col.length; r++) {
-                if (col[r].id === draggedId) {
-                    srcColIdx = c;
-                    srcRowIdx = r;
-                    draggedCard = col[r];
-                    break;
-                }
-            }
-            if (draggedCard) break;
-        }
-
-        if (!draggedCard) return;
-
-        const cols: GridCardData[][] = layoutColumns.map(col => [...col]);
-        cols[srcColIdx].splice(srcRowIdx, 1);
-
-        let insertCol = targetColIdx;
-        if (srcColIdx < targetColIdx && cols[srcColIdx].length === 0) {
-            insertCol = Math.max(0, insertCol - 1);
-        }
-        insertCol = Math.max(0, Math.min(insertCol, cols.length));
-
-        cols.splice(insertCol, 0, [draggedCard]);
-
-        const prunedCols = cols.filter(c => c.length > 0);
-        await saveTableLayoutPositions(prunedCols);
     }
 
     async function createGroupFromListAtColumn(movedId: string, colIdx: number) {
-        if (!movedId) return;
-
-        let listToMove: CategoryInfo | null = null;
-        const nextSidebar: SidebarItem[] = [];
-
-        for (const item of sidebarItems) {
-            if (item.id === movedId || (item as any).filepath === movedId) {
-                listToMove = item as CategoryInfo;
-            } else if (item.type === "group") {
-                const childIdx = item.items.findIndex(c => c.id === movedId || c.filepath === movedId);
-                if (childIdx !== -1) {
-                    listToMove = item.items[childIdx];
-                    nextSidebar.push({
-                        ...item,
-                        items: item.items.filter(c => c.id !== movedId && c.filepath !== movedId)
-                    });
-                } else {
-                    nextSidebar.push(item);
-                }
-            } else {
-                nextSidebar.push(item);
-            }
-        }
-
-        if (!listToMove) return;
-
-        const existingGroupNames = nextSidebar
-            .filter(i => i.type === "group")
-            .map(g => (g as GroupInfo).name);
-        const desiredName = listToMove.name || "New Group";
-        const groupName = resolveUniqueName(existingGroupNames, desiredName);
-
         const newGroupId = Date.now().toString() + Math.random().toString(36).substring(2, 7);
-        const newGroup: GroupInfo = {
-            id: newGroupId,
-            type: "group",
-            name: groupName,
-            items: [{ ...listToMove }],
-            isExpanded: true
-        };
+        const created = createGroupFromListInBoard(sidebarItems, layoutColumns, movedId, colIdx, newGroupId);
+        if (!created) return;
 
-        nextSidebar.push(newGroup);
-        sidebarItems = nextSidebar;
+        sidebarItems = created.sidebarItems;
         categories = getFlatCategories(sidebarItems);
-
-        const newCard: GridCardData = {
-            id: newGroup.id,
-            name: newGroup.name,
-            group: newGroup,
-            items: newGroup.items,
-            type: "group",
-            height: 60
-        };
-
-        const cols: GridCardData[][] = layoutColumns.map(col => [...col]);
-        if (colIdx >= cols.length) {
-            cols.push([newCard]);
-        } else {
-            cols[colIdx].push(newCard);
-        }
-
-        const prunedCols = cols.filter(c => c.length > 0);
-        await saveTableLayoutPositions(prunedCols);
-
         measuredCardHeights.clear();
+
+        await saveTableLayoutPositions(created.columns);
         await tick();
+
+        if (isGridLayout) {
+            updateLayoutColumns(true);
+            scheduleAdjustSpacing();
+        }
 
         await dataService.saveSidebarState(sidebarItems);
         EventBus.emit(EventName.CATEGORY_LIST_CHANGED, { sidebarItems });
     }
 
-    function handleColumnDragOver(e: DragEvent, colIdx: number) {
-        if (layoutMode !== "table" || !isDraggingGroup || !draggedListId) return;
-        e.preventDefault();
-        if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
-
-        const colCards = layoutColumns[colIdx];
-        if (!colCards || colCards.length === 0) {
-            dragOverListId = `col_drop_${colIdx}`;
-            dragListPosition = "bottom";
-            return;
-        }
-
-        const colEl = e.currentTarget as HTMLElement;
-        const cardEls = Array.from(colEl.querySelectorAll<HTMLElement>(".quick-grid-card"));
-        if (cardEls.length === 0) {
-            dragOverListId = `col_drop_${colIdx}`;
-            dragListPosition = "bottom";
-            return;
-        }
-
-        let closestCardId = "";
-        let closestPos: "top" | "bottom" = "bottom";
-        let minDistance = Infinity;
-
-        for (const cardEl of cardEls) {
-            const cardId = cardEl.getAttribute("data-card-id") || cardEl.getAttribute("data-group-id");
-            if (!cardId || cardId === draggedListId) continue;
-            const rect = cardEl.getBoundingClientRect();
-
-            if (e.clientY >= rect.top && e.clientY <= rect.bottom) {
-                closestCardId = cardId;
-                closestPos = (e.clientY - rect.top < rect.height * 0.5) ? "top" : "bottom";
-                minDistance = 0;
-                break;
-            }
-
-            const distToTop = Math.abs(e.clientY - rect.top);
-            if (distToTop < minDistance) {
-                minDistance = distToTop;
-                closestCardId = cardId;
-                closestPos = "top";
-            }
-
-            const distToBottom = Math.abs(e.clientY - rect.bottom);
-            if (distToBottom < minDistance) {
-                minDistance = distToBottom;
-                closestCardId = cardId;
-                closestPos = "bottom";
-            }
-        }
-
-        if (closestCardId) {
-            dragOverListId = closestCardId;
-            dragListPosition = closestPos;
-        }
-    }
-
-    async function handleColumnDrop(e: DragEvent, colIdx: number) {
-        if (layoutMode !== "table" || !isDraggingGroup || !draggedListId) return;
-        e.preventDefault();
-        e.stopPropagation();
-
-        if (dragOverListId && dragListPosition) {
-            if (dragOverListId.startsWith("col_drop_")) {
-                await moveGroupToColumnBottom(draggedListId, colIdx);
-            } else if (dragOverListId.startsWith("col_insert_")) {
-                const targetIdx = parseInt(dragOverListId.replace("col_insert_", ""), 10);
-                await moveGroupToNewColumnAt(draggedListId, isNaN(targetIdx) ? colIdx : targetIdx);
-            } else if (dragOverListId !== draggedListId) {
-                await moveGroupInTable(draggedListId, dragOverListId, dragListPosition);
-            }
-        } else {
-            await moveGroupToColumnBottom(draggedListId, colIdx);
-        }
-        handleListDragEnd();
-    }
-
-
-
     async function saveTableLayoutPositions(prunedCols: GridCardData[][]) {
-        const positions: Record<string, [number, number]> = {};
-        prunedCols.forEach((colCards, colIdx) => {
-            colCards.forEach((card, rowIdx) => {
-                positions[card.name] = [colIdx, rowIdx];
-                if (card.id && card.id !== card.name) {
-                    positions[card.id] = [colIdx, rowIdx];
-                }
-            });
-        });
+        const existingPositions = plugin?.settings?.quickListGroupPositions as TablePositionsMap | undefined;
+        const positions = buildTablePositions(prunedCols, existingPositions, isFiltering);
 
+        // Optimistic UI: update rendered columns & settings synchronously before awaiting disk write.
+        layoutColumns = prunedCols;
         if (plugin?.settings) {
             plugin.settings.quickListGroupPositions = positions;
+        }
+        scheduleAdjustSpacing();
+
+        if (plugin?.settings) {
             await plugin.saveSettings();
         }
-
-        layoutColumns = prunedCols;
-        scheduleAdjustSpacing();
     }
 
     // =============================================
@@ -2012,7 +1203,7 @@
 
     function getTargetUnderMouse(): RenameTarget | null {
         // Priority 1: Pointer coordinates hit-test (dynamic cursor position)
-        if (lastMouseX > 0 && lastMouseY > 0) {
+        if (lastMouseX >= 0 && lastMouseY >= 0) {
             try {
                 const el = document.elementFromPoint(lastMouseX, lastMouseY);
                 if (el) {
@@ -2095,6 +1286,10 @@
 
     async function startRenameItem(item: { id: string; name: string; type: "category" | "group"; filepath?: string }) {
         if (item.id === STARRED_CATEGORY_PATH || item.filepath === STARRED_CATEGORY_PATH) return;
+        if (focusRestoreTimer !== null) {
+            window.clearTimeout(focusRestoreTimer);
+            focusRestoreTimer = null;
+        }
         editingItemId = item.id || item.filepath || "";
         editingItemType = item.type;
         editingName = item.name;
@@ -2112,6 +1307,18 @@
             if (renameInputEl && document.activeElement !== renameInputEl) {
                 renameInputEl.focus();
                 renameInputEl.select();
+            }
+        }, 30);
+    }
+
+    function scheduleModalFocusRestore() {
+        if (focusRestoreTimer !== null) {
+            window.clearTimeout(focusRestoreTimer);
+        }
+        focusRestoreTimer = window.setTimeout(() => {
+            focusRestoreTimer = null;
+            if (!editingItemId && !dragController.isSessionActive()) {
+                modalContainerEl?.focus();
             }
         }, 30);
     }
@@ -2151,19 +1358,14 @@
             console.error("[QuickListModal] Rename failed:", e);
         } finally {
             isCommittingRename = false;
-            setTimeout(() => {
-                modalContainerEl?.focus();
-            }, 30);
+            scheduleModalFocusRestore();
         }
     }
 
     function cancelRename() {
         editingItemId = "";
         editingName = "";
-        hoveredRenameTarget = null;
-        setTimeout(() => {
-            modalContainerEl?.focus();
-        }, 30);
+        scheduleModalFocusRestore();
     }
 
     function showItemContextMenu(e: MouseEvent, item: { id: string; name: string; type: "category" | "group"; filepath?: string }) {
@@ -2486,7 +1688,7 @@
         if (e.key === "F2") {
             e.preventDefault();
             e.stopPropagation();
-            if (isCommittingRename) return;
+            if (isCommittingRename || dragController.isSessionActive()) return;
 
             const target = getTargetUnderMouse();
             if (target) {
@@ -2712,7 +1914,8 @@
     class="quick-modal-container quick-list-only-container"
     class:is-centered-titles={titleAlignment === 'center'}
     class:is-picking-focus={isPickingDefaultFocus}
-    class:is-dragging-group={isDraggingGroup && layoutMode !== "table"}
+    class:is-dragging-group={isForbiddenGroupDrag}
+    class:is-pointer-dragging={isPointerDragging}
     class:is-table-mode={layoutMode === "table"}
     class:edge-dir-left={activeEdgeDirection === 'left'}
     class:edge-dir-right={activeEdgeDirection === 'right'}
@@ -2995,12 +2198,6 @@
             class:is-table-mode={layoutMode === "table"} 
             bind:this={boardEl} 
             on:wheel={handleBoardWheel}
-            on:dragover={(e) => {
-                if (layoutMode === "table" && isDraggingGroup) {
-                    e.preventDefault();
-                    if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
-                }
-            }}
         >
             {#if activeEdgeDirection}
                 <div class="quick-table-edge-arrow is-{activeEdgeDirection}">
@@ -3020,100 +2217,60 @@
                 <div class="quick-modal-empty">No matching lists or groups found.</div>
             {:else}
                 {#each layoutColumns as column, colIdx (colIdx)}
-                    {#if layoutMode === "table" && isDraggingGroup}
-                        <div 
-                            class="quick-table-col-insert-zone"
-                            class:drag-over={dragOverListId === `col_insert_${colIdx}`}
-                            on:dragover={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
-                                dragOverListId = `col_insert_${colIdx}`;
-                                dragListPosition = "inside";
-                            }}
-                            on:dragleave={() => {
-                                if (dragOverListId === `col_insert_${colIdx}`) dragOverListId = "";
-                            }}
-                            on:drop|preventDefault={async (e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                if (draggedListId) {
-                                    await moveGroupToNewColumnAt(draggedListId, colIdx);
-                                }
-                                handleListDragEnd();
-                            }}
-                        >
-                            <div class="quick-table-col-insert-line"></div>
-                        </div>
-                    {/if}
-
-                    <div 
-                        class="quick-grid-column"
-                        on:dragover={(e) => handleColumnDragOver(e, colIdx)}
-                        on:drop|preventDefault={(e) => handleColumnDrop(e, colIdx)}
-                    >
+                    <div class="quick-grid-column">
                         {#each column as card (card.id + "_" + (card.group ? (card.group.isExpanded ? "exp" : "col") : "root"))}
                             {#if card.type === "root"}
                                 <!-- Standalone Root Categories Card -->
                                 <div 
                                     class="quick-grid-card is-root-card" 
                                     data-card-id="__root__"
-                                    class:drag-over-top={dragOverListId === "__root__" && dragListPosition === "top"}
-                                    class:drag-over-bottom={dragOverListId === "__root__" && dragListPosition === "bottom"}
-                                    class:drag-over-inside={rootCategories.length === 0 && dragOverListId === "__root__"}
-                                    on:dragover={handleRootCardDragOver}
-                                    on:dragleave={handleRootCardDragLeave}
-                                    on:drop|preventDefault={handleRootCardDrop}
+                                    class:is-dragging={isPointerDragging && draggedListId === "__root__"}
+                                    class:drag-over-top={dropTarget.kind === "card-slot" && dropTarget.cardId === "__root__" && dropTarget.position === "top"}
+                                    class:drag-over-bottom={dropTarget.kind === "card-slot" && dropTarget.cardId === "__root__" && dropTarget.position === "bottom"}
+                                    class:drag-over-inside={dropTarget.kind === "root-empty"}
                                 >
+                                    <!-- svelte-ignore a11y-click-events-have-key-events -->
                                     <div 
                                         class="quick-grid-card-header is-root-header"
                                         data-group-id="__root__"
                                         role="button"
                                         tabindex="0"
-                                        draggable={layoutMode === "table"}
-                                        on:dragstart={handleRootDragStart}
-                                        on:dragend={handleListDragEnd}
-                                        on:dragover={handleRootCardDragOver}
-                                        on:drop|preventDefault={handleRootCardDrop}
+                                        on:pointerdown={(e) => handleHeaderPointerDown(e, { kind: "group", id: "__root__", name: "Lists", count: rootCategories.length, isRoot: true })}
+                                        on:dragstart|preventDefault
                                     >
-                                        <div class="quick-grid-card-title-wrap" draggable={layoutMode === "table"}>
-                                            <span class="quick-grid-card-icon" draggable={layoutMode === "table"}>
+                                        <div class="quick-grid-card-title-wrap">
+                                            <span class="quick-grid-card-icon">
                                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                     <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
                                                 </svg>
                                             </span>
-                                            <span class="quick-grid-card-title" draggable={layoutMode === "table"}>Lists</span>
+                                            <span class="quick-grid-card-title">Lists</span>
                                         </div>
-                                        <span class="quick-grid-card-count" draggable={layoutMode === "table"}>{rootCategories.length}</span>
+                                        <span class="quick-grid-card-count">{rootCategories.length}</span>
                                     </div>
                                     <div 
                                         class="quick-grid-card-items"
                                         class:is-empty={rootCategories.length === 0}
-                                        on:dragover={handleRootCardDragOver}
-                                        on:drop|preventDefault={handleRootCardDrop}
                                     >
                                         {#each rootCategories as cat (cat.id)}
+                                            <!-- svelte-ignore a11y-click-events-have-key-events -->
                                             <div 
                                                 class="quick-modal-list-item is-grid-item"
                                                 class:is-focused={flatCategories[focusedIndex]?.filepath === cat.filepath}
                                                 class:is-focused-selected={isFocusedListMode && focusedListSet.has(cat.filepath)}
                                                 class:is-default-focus={!isFocusedListMode && plugin?.settings?.defaultQuickListFocusFilepath === cat.filepath}
-                                                class:is-dragging={draggedListId === cat.id}
-                                                class:drag-over-top={dragOverListId === cat.id && dragListPosition === "top"}
-                                                class:drag-over-bottom={dragOverListId === cat.id && dragListPosition === "bottom"}
+                                                class:is-dragging={isPointerDragging && draggedListId === cat.id}
+                                                class:drag-over-top={dropTarget.kind === "list-item" && dropTarget.targetId === cat.id && dropTarget.position === "top"}
+                                                class:drag-over-bottom={dropTarget.kind === "list-item" && dropTarget.targetId === cat.id && dropTarget.position === "bottom"}
                                                 data-filepath={cat.filepath}
                                                 data-item-id={cat.id}
                                                 role="button"
                                                 tabindex="0"
-                                                draggable="true"
                                                 on:mouseenter={() => setHoveredTarget({ id: cat.id || cat.filepath, name: cat.name, type: "category", filepath: cat.filepath })}
                                                 on:mouseleave={() => clearHoveredTarget(cat.id || cat.filepath)}
-                                                on:dragstart={(e) => handleListDragStart(e, cat)}
-                                                on:dragend={handleListDragEnd}
-                                                on:dragover={(e) => handleListDragOver(e, cat, false)}
-                                                on:dragleave={(e) => handleListDragLeave(e, cat.id)}
-                                                on:drop|preventDefault={() => handleListDrop(cat)}
-                                                on:click={() => handleCategoryClick(cat)}
+                                                on:pointerdown={(e) => handleListItemPointerDown(e, cat)}
+                                                on:dragstart|preventDefault
+                                                on:click={() => { if (!wasDragJustPerformed()) void handleCategoryClick(cat); }}
                                                 on:contextmenu={(e) => showItemContextMenu(e, { id: cat.id || "", name: cat.name, type: "category", filepath: cat.filepath })}
                                             >
                                                 <span class="quick-modal-list-icon">
@@ -3123,6 +2280,7 @@
                                                             class="focused-list-item-checkbox" 
                                                             checked={focusedListSet.has(cat.filepath)}
                                                             tabindex="-1"
+                                                            on:pointerdown|stopPropagation
                                                             on:click|stopPropagation={() => toggleFocusedList(cat.filepath)}
                                                         />
                                                     {/if}
@@ -3138,6 +2296,7 @@
                                                         bind:value={editingName}
                                                         bind:this={renameInputEl}
                                                         on:blur={commitRename}
+                                                        on:pointerdown|stopPropagation
                                                         on:click|stopPropagation
                                                     />
                                                 {:else}
@@ -3171,41 +2330,28 @@
                                     class="quick-grid-card"
                                     data-card-id={group.id}
                                     data-group-id={group.id}
-                                    class:is-dragging={draggedListId === group.id}
-                                    class:drag-over-top={dragOverListId === group.id && dragListPosition === "top"}
-                                    class:drag-over-bottom={dragOverListId === group.id && dragListPosition === "bottom"}
-                                    class:drag-over-inside={(!group.items || group.items.length === 0) && dragOverListId === group.id && dragListPosition === "inside"}
-                                    on:dragover={(e) => handleGroupCardDragOver(e, group)}
-                                    on:dragleave={(e) => handleGroupCardDragLeave(e, group)}
-                                    on:drop|preventDefault={(e) => handleGroupCardDrop(e, group)}
+                                    class:is-dragging={(isPointerDragging || isForbiddenGroupDrag) && draggedListId === group.id}
+                                    class:drag-over-top={dropTarget.kind === "card-slot" && dropTarget.cardId === group.id && dropTarget.position === "top"}
+                                    class:drag-over-bottom={dropTarget.kind === "card-slot" && dropTarget.cardId === group.id && dropTarget.position === "bottom"}
+                                    class:drag-over-inside={dropTarget.kind === "group-inside" && dropTarget.groupId === group.id}
                                 >
+                                    <!-- svelte-ignore a11y-click-events-have-key-events -->
                                     <div 
                                         class="quick-grid-card-header"
                                         data-group-id={group.id}
                                         role="button"
                                         tabindex="0"
-                                        draggable="true"
                                         on:mouseenter={() => setHoveredTarget({ id: group.id, name: group.name, type: "group" })}
                                         on:mouseleave={() => clearHoveredTarget(group.id)}
-                                        on:dragstart={(e) => handleListDragStart(e, group)}
-                                        on:dragend={handleListDragEnd}
-                                        on:dragover={(e) => {
-                                            if (layoutMode === "table" && isDraggingGroup) {
-                                                handleGroupCardDragOver(e, group);
-                                            } else {
-                                                handleListDragOver(e, group, true);
-                                            }
-                                        }}
-                                        on:drop|preventDefault={(e) => handleGroupCardDrop(e, group)}
+                                        on:pointerdown={(e) => handleHeaderPointerDown(e, { kind: "group", id: group.id, name: group.name, count: group.items ? group.items.length : 0, isRoot: false })}
+                                        on:dragstart|preventDefault
                                         on:contextmenu={(e) => showItemContextMenu(e, { id: group.id, name: group.name, type: "group" })}
                                     >
-                                        <div class="quick-grid-card-title-wrap" draggable="true">
+                                        <div class="quick-grid-card-title-wrap">
                                             <!-- svelte-ignore a11y-click-events-have-key-events -->
                                             <span 
                                                 class="quick-modal-group-chevron" 
-                                                draggable="false"
-                                                on:dragstart|stopPropagation|preventDefault
-                                                on:click|stopPropagation={() => toggleGroup(group)}
+                                                on:click|stopPropagation={() => { if (!wasDragJustPerformed()) void toggleGroup(group); }}
                                             >
                                                 {group.isExpanded ? "▼" : "▶"}
                                             </span>
@@ -3214,21 +2360,20 @@
                                                 <input 
                                                     type="text" 
                                                     class="quick-modal-inline-rename-input"
-                                                    draggable="false"
-                                                    on:dragstart|stopPropagation
                                                     bind:value={editingName}
                                                     bind:this={renameInputEl}
                                                     on:blur={commitRename}
+                                                    on:pointerdown|stopPropagation
                                                     on:click|stopPropagation
                                                 />
                                             {:else}
-                                                <span class="quick-grid-card-title" draggable="true">
+                                                <span class="quick-grid-card-title">
                                                     {group.name}
                                                 </span>
                                             {/if}
                                         </div>
 
-                                        <span class="quick-grid-card-count" draggable="true">
+                                        <span class="quick-grid-card-count">
                                             {group.items ? group.items.length : 0}
                                         </span>
                                     </div>
@@ -3237,33 +2382,28 @@
                                         <div 
                                             class="quick-grid-card-items"
                                             class:is-empty={!group.items || group.items.length === 0}
-                                            class:drag-over-inside={(!group.items || group.items.length === 0) && dragOverListId === group.id && dragListPosition === "inside"}
-                                            on:dragover={(e) => handleGroupCardDragOver(e, group, true)}
-                                            on:drop|preventDefault={(e) => handleGroupCardDrop(e, group, true)}
+                                            class:drag-over-inside={dropTarget.kind === "group-inside" && dropTarget.groupId === group.id}
                                         >
                                             {#if group.items && group.items.length > 0}
                                                 {#each group.items as child (child.id)}
+                                                    <!-- svelte-ignore a11y-click-events-have-key-events -->
                                                     <div 
                                                         class="quick-modal-list-item is-grid-item"
                                                         class:is-focused={flatCategories[focusedIndex]?.filepath === child.filepath}
                                                         class:is-focused-selected={isFocusedListMode && focusedListSet.has(child.filepath)}
                                                         class:is-default-focus={!isFocusedListMode && plugin?.settings?.defaultQuickListFocusFilepath === child.filepath}
-                                                        class:is-dragging={draggedListId === child.id}
-                                                        class:drag-over-top={dragOverListId === child.id && dragListPosition === "top"}
-                                                        class:drag-over-bottom={dragOverListId === child.id && dragListPosition === "bottom"}
+                                                        class:is-dragging={isPointerDragging && draggedListId === child.id}
+                                                        class:drag-over-top={dropTarget.kind === "list-item" && dropTarget.targetId === child.id && dropTarget.position === "top"}
+                                                        class:drag-over-bottom={dropTarget.kind === "list-item" && dropTarget.targetId === child.id && dropTarget.position === "bottom"}
                                                         data-filepath={child.filepath}
                                                         data-item-id={child.id}
                                                         role="button"
                                                         tabindex="0"
-                                                        draggable="true"
                                                         on:mouseenter={() => setHoveredTarget({ id: child.id || child.filepath, name: child.name, type: "category", filepath: child.filepath })}
                                                         on:mouseleave={() => clearHoveredTarget(child.id || child.filepath)}
-                                                        on:dragstart={(e) => handleListDragStart(e, child)}
-                                                        on:dragend={handleListDragEnd}
-                                                        on:dragover={(e) => handleListDragOver(e, child, false, group)}
-                                                        on:dragleave={(e) => handleListDragLeave(e, child.id)}
-                                                        on:drop|preventDefault={() => handleListDrop(child)}
-                                                        on:click={() => handleCategoryClick(child)}
+                                                        on:pointerdown={(e) => handleListItemPointerDown(e, child)}
+                                                        on:dragstart|preventDefault
+                                                        on:click={() => { if (!wasDragJustPerformed()) void handleCategoryClick(child); }}
                                                         on:contextmenu={(e) => showItemContextMenu(e, { id: child.id || "", name: child.name, type: "category", filepath: child.filepath })}
                                                     >
                                                         <span class="quick-modal-list-icon">
@@ -3273,6 +2413,7 @@
                                                                     class="focused-list-item-checkbox" 
                                                                     checked={focusedListSet.has(child.filepath)}
                                                                     tabindex="-1"
+                                                                    on:pointerdown|stopPropagation
                                                                     on:click|stopPropagation={() => toggleFocusedList(child.filepath)}
                                                                 />
                                                             {/if}
@@ -3288,6 +2429,7 @@
                                                                 bind:value={editingName}
                                                                 bind:this={renameInputEl}
                                                                 on:blur={commitRename}
+                                                                on:pointerdown|stopPropagation
                                                                 on:click|stopPropagation
                                                             />
                                                         {:else}
@@ -3324,51 +2466,18 @@
                             {/if}
                         {/each}
 
-                        {#if layoutMode === "table"}
+                        {#if layoutMode === "table" && isPointerDragging}
                             {#if isDraggingGroup}
                                 <div 
                                     class="quick-table-col-dropzone"
-                                    class:drag-over={dragOverListId === `col_drop_${colIdx}`}
-                                    on:dragover={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
-                                        dragOverListId = `col_drop_${colIdx}`;
-                                        dragListPosition = "bottom";
-                                    }}
-                                    on:dragleave={() => {
-                                        if (dragOverListId === `col_drop_${colIdx}`) dragOverListId = "";
-                                    }}
-                                    on:drop|preventDefault={async () => {
-                                        if (draggedListId) {
-                                            await moveGroupToColumnBottom(draggedListId, colIdx);
-                                        }
-                                        handleListDragEnd();
-                                    }}
+                                    class:drag-over={dropTarget.kind === "col-bottom" && dropTarget.colIdx === colIdx}
                                 >
                                     + Drop at bottom
                                 </div>
                             {:else if draggedListId}
                                 <div 
                                     class="quick-table-col-dropzone is-new-group-zone"
-                                    class:drag-over={dragOverListId === `col_new_group_${colIdx}`}
-                                    on:dragover={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
-                                        dragOverListId = `col_new_group_${colIdx}`;
-                                        dragListPosition = "bottom";
-                                    }}
-                                    on:dragleave={() => {
-                                        if (dragOverListId === `col_new_group_${colIdx}`) dragOverListId = "";
-                                    }}
-                                    on:drop|preventDefault={async () => {
-                                        const listId = draggedListId;
-                                        handleListDragEnd();
-                                        if (listId) {
-                                            await createGroupFromListAtColumn(listId, colIdx);
-                                        }
-                                    }}
+                                    class:drag-over={dropTarget.kind === "new-group-col" && dropTarget.colIdx === colIdx}
                                 >
                                     + New Group
                                 </div>
@@ -3377,27 +2486,11 @@
                     </div>
                 {/each}
 
-                {#if layoutMode === "table"}
+                {#if layoutMode === "table" && isPointerDragging}
                     {#if isDraggingGroup}
                         <div 
                             class="quick-table-new-col-dropzone"
-                            class:drag-over={dragOverListId === "__new_col_drop__"}
-                            on:dragover={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
-                                dragOverListId = "__new_col_drop__";
-                                dragListPosition = "inside";
-                            }}
-                            on:dragleave={() => {
-                                if (dragOverListId === "__new_col_drop__") dragOverListId = "";
-                            }}
-                            on:drop|preventDefault={async () => {
-                                if (draggedListId) {
-                                    await moveGroupToNewColumn(draggedListId);
-                                }
-                                handleListDragEnd();
-                            }}
+                            class:drag-over={dropTarget.kind === "new-col-end"}
                         >
                             <span class="quick-table-new-col-icon">+</span>
                             <span>New Column</span>
@@ -3405,24 +2498,7 @@
                     {:else if draggedListId}
                         <div 
                             class="quick-table-new-col-dropzone is-new-group-zone"
-                            class:drag-over={dragOverListId === "__new_col_new_group__"}
-                            on:dragover={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
-                                dragOverListId = "__new_col_new_group__";
-                                dragListPosition = "inside";
-                            }}
-                            on:dragleave={() => {
-                                if (dragOverListId === "__new_col_new_group__") dragOverListId = "";
-                            }}
-                            on:drop|preventDefault={async () => {
-                                const listId = draggedListId;
-                                handleListDragEnd();
-                                if (listId) {
-                                    await createGroupFromListAtColumn(listId, layoutColumns.length);
-                                }
-                            }}
+                            class:drag-over={dropTarget.kind === "new-group-new-col"}
                         >
                             <span class="quick-table-new-col-icon">+</span>
                             <span>New Column</span>
@@ -3431,11 +2507,19 @@
                 {/if}
             {/if}
         </div>
+
+        {#if isPointerDragging && layoutMode === "table" && colInsertOverlayStyle}
+            <div
+                use:portal
+                class="quick-table-col-insert-overlay"
+                style="left: {colInsertOverlayStyle.left}px; top: {colInsertOverlayStyle.top}px; height: {colInsertOverlayStyle.height}px;"
+            ></div>
+        {/if}
     {:else}
         <!-- =============================================
              Classic Single-Column Hierarchical Tree Body
              ============================================= -->
-        <div class="quick-list-scrollable">
+        <div class="quick-list-scrollable" bind:this={listPaneEl}>
             {#if isStarredMatching}
                 <!-- svelte-ignore a11y-click-events-have-key-events -->
                 <div 
@@ -3476,26 +2560,21 @@
                         <div 
                             class="quick-modal-group-container"
                             data-group-id={item.id}
-                            class:is-dragging={draggedListId === item.id}
-                            class:drag-over-top={dragOverListId === item.id && dragListPosition === "top"}
-                            class:drag-over-bottom={dragOverListId === item.id && dragListPosition === "bottom"}
-                            class:drag-over-inside={(!item.items || item.items.length === 0) && dragOverListId === item.id && dragListPosition === "inside"}
-                            on:dragleave={(e) => handleGroupCardDragLeave(e, item)}
+                            class:is-dragging={isForbiddenGroupDrag && draggedListId === item.id}
+                            class:drag-over-inside={dropTarget.kind === "group-inside" && dropTarget.groupId === item.id}
                         >
+                            <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
                             <div 
                                 class="quick-modal-group-header"
                                 data-group-id={item.id}
-                                draggable="true"
                                 on:mouseenter={() => setHoveredTarget({ id: item.id, name: item.name, type: "group" })}
                                 on:mouseleave={() => clearHoveredTarget(item.id)}
-                                on:dragstart={(e) => handleListDragStart(e, item)}
-                                on:dragend={handleListDragEnd}
-                                on:dragover={(e) => handleListDragOver(e, item, true)}
-                                on:drop|preventDefault={(e) => handleGroupCardDrop(e, item)}
+                                on:pointerdown={(e) => handleHeaderPointerDown(e, { kind: "group", id: item.id, name: item.name, count: item.items ? item.items.length : 0, isRoot: false })}
+                                on:dragstart|preventDefault
                                 on:contextmenu={(e) => showItemContextMenu(e, { id: item.id, name: item.name, type: "group" })}
                             >
                                 <!-- svelte-ignore a11y-click-events-have-key-events -->
-                                <span class="quick-modal-group-chevron" on:click|stopPropagation={() => toggleGroup(item)}>
+                                <span class="quick-modal-group-chevron" on:click|stopPropagation={() => { if (!wasDragJustPerformed()) void toggleGroup(item); }}>
                                     {item.isExpanded ? "▼" : "▶"}
                                 </span>
 
@@ -3506,10 +2585,11 @@
                                         bind:value={editingName}
                                         bind:this={renameInputEl}
                                         on:blur={commitRename}
+                                        on:pointerdown|stopPropagation
                                         on:click|stopPropagation
                                     />
                                 {:else}
-                                    <span class="quick-modal-group-title" on:click={() => toggleGroup(item)}>
+                                    <span class="quick-modal-group-title" on:click={() => { if (!wasDragJustPerformed()) void toggleGroup(item); }}>
                                         {item.name}
                                     </span>
                                 {/if}
@@ -3517,33 +2597,26 @@
 
                             <!-- Nested Group Children -->
                             {#if item.isExpanded && item.items}
-                                <div 
-                                    class="quick-modal-group-children"
-                                    on:dragover={(e) => handleGroupCardDragOver(e, item, true)}
-                                    on:drop|preventDefault={(e) => handleGroupCardDrop(e, item, true)}
-                                >
+                                <div class="quick-modal-group-children">
                                     {#each item.items as child (child.id)}
+                                        <!-- svelte-ignore a11y-click-events-have-key-events -->
                                         <div 
                                             class="quick-modal-list-item is-nested"
                                             class:is-focused={flatCategories[focusedIndex]?.filepath === child.filepath}
                                             class:is-focused-selected={isFocusedListMode && focusedListSet.has(child.filepath)}
                                             class:is-default-focus={!isFocusedListMode && plugin?.settings?.defaultQuickListFocusFilepath === child.filepath}
-                                            class:is-dragging={draggedListId === child.id}
-                                            class:drag-over-top={dragOverListId === child.id && dragListPosition === "top"}
-                                            class:drag-over-bottom={dragOverListId === child.id && dragListPosition === "bottom"}
+                                            class:is-dragging={isPointerDragging && draggedListId === child.id}
+                                            class:drag-over-top={dropTarget.kind === "list-item" && dropTarget.targetId === child.id && dropTarget.position === "top"}
+                                            class:drag-over-bottom={dropTarget.kind === "list-item" && dropTarget.targetId === child.id && dropTarget.position === "bottom"}
                                             data-filepath={child.filepath}
                                             data-item-id={child.id}
                                             role="button"
                                             tabindex="0"
-                                            draggable="true"
                                             on:mouseenter={() => setHoveredTarget({ id: child.id || child.filepath, name: child.name, type: "category", filepath: child.filepath })}
                                             on:mouseleave={() => clearHoveredTarget(child.id || child.filepath)}
-                                            on:dragstart={(e) => handleListDragStart(e, child)}
-                                            on:dragend={handleListDragEnd}
-                                            on:dragover={(e) => handleListDragOver(e, child, false, item)}
-                                            on:dragleave={(e) => handleListDragLeave(e, child.id)}
-                                            on:drop|preventDefault={() => handleListDrop(child)}
-                                            on:click={() => handleCategoryClick(child)}
+                                            on:pointerdown={(e) => handleListItemPointerDown(e, child)}
+                                            on:dragstart|preventDefault
+                                            on:click={() => { if (!wasDragJustPerformed()) void handleCategoryClick(child); }}
                                             on:contextmenu={(e) => showItemContextMenu(e, { id: child.id || "", name: child.name, type: "category", filepath: child.filepath })}
                                         >
                                             <span class="quick-modal-list-icon">
@@ -3553,6 +2626,7 @@
                                                         class="focused-list-item-checkbox" 
                                                         checked={focusedListSet.has(child.filepath)}
                                                         tabindex="-1"
+                                                        on:pointerdown|stopPropagation
                                                         on:click|stopPropagation={() => toggleFocusedList(child.filepath)}
                                                     />
                                                 {/if}
@@ -3568,6 +2642,7 @@
                                                     bind:value={editingName}
                                                     bind:this={renameInputEl}
                                                     on:blur={commitRename}
+                                                    on:pointerdown|stopPropagation
                                                     on:click|stopPropagation
                                                 />
                                             {:else}
@@ -3598,27 +2673,24 @@
                         </div>
                     {:else}
                         <!-- Root Category Item -->
+                        <!-- svelte-ignore a11y-click-events-have-key-events -->
                         <div 
                             class="quick-modal-list-item"
                             class:is-focused={flatCategories[focusedIndex]?.filepath === item.filepath}
                             class:is-focused-selected={isFocusedListMode && focusedListSet.has(item.filepath)}
                             class:is-default-focus={!isFocusedListMode && plugin?.settings?.defaultQuickListFocusFilepath === item.filepath}
-                            class:is-dragging={draggedListId === item.id}
-                            class:drag-over-top={dragOverListId === item.id && dragListPosition === "top"}
-                            class:drag-over-bottom={dragOverListId === item.id && dragListPosition === "bottom"}
+                            class:is-dragging={isPointerDragging && draggedListId === item.id}
+                            class:drag-over-top={dropTarget.kind === "list-item" && dropTarget.targetId === item.id && dropTarget.position === "top"}
+                            class:drag-over-bottom={dropTarget.kind === "list-item" && dropTarget.targetId === item.id && dropTarget.position === "bottom"}
                             data-filepath={item.filepath}
                             data-item-id={item.id}
                             role="button"
                             tabindex="0"
-                            draggable="true"
                             on:mouseenter={() => setHoveredTarget({ id: item.id || item.filepath, name: item.name, type: "category", filepath: item.filepath })}
                             on:mouseleave={() => clearHoveredTarget(item.id || item.filepath)}
-                            on:dragstart={(e) => handleListDragStart(e, item)}
-                            on:dragend={handleListDragEnd}
-                            on:dragover={(e) => handleListDragOver(e, item, false)}
-                            on:dragleave={(e) => handleListDragLeave(e, item.id)}
-                            on:drop|preventDefault={() => handleListDrop(item)}
-                            on:click={() => handleCategoryClick(item)}
+                            on:pointerdown={(e) => handleListItemPointerDown(e, item)}
+                            on:dragstart|preventDefault
+                            on:click={() => { if (!wasDragJustPerformed()) void handleCategoryClick(item); }}
                             on:contextmenu={(e) => showItemContextMenu(e, { id: item.id || "", name: item.name, type: "category", filepath: item.filepath })}
                         >
                             <span class="quick-modal-list-icon">
@@ -3628,6 +2700,7 @@
                                         class="focused-list-item-checkbox" 
                                         checked={focusedListSet.has(item.filepath)}
                                         tabindex="-1"
+                                        on:pointerdown|stopPropagation
                                         on:click|stopPropagation={() => toggleFocusedList(item.filepath)}
                                     />
                                 {/if}
@@ -3643,6 +2716,7 @@
                                     bind:value={editingName}
                                     bind:this={renameInputEl}
                                     on:blur={commitRename}
+                                    on:pointerdown|stopPropagation
                                     on:click|stopPropagation
                                 />
                             {:else}
@@ -3669,6 +2743,29 @@
                         </div>
                     {/if}
                 {/each}
+            {/if}
+        </div>
+    {/if}
+
+    {#if isPointerDragging && activeDragPayload}
+        <div
+            use:portal
+            class="fluent-tasks-quicklist-drag-ghost"
+            class:is-group-ghost={activeDragPayload.kind === "group"}
+            style="left: {ghostX}px; top: {ghostY}px; width: {ghostWidth}px;"
+        >
+            <span class="fluent-tasks-quicklist-drag-ghost-icon">
+                {#if activeDragPayload.kind === "group" && !activeDragPayload.isRoot}
+                    ▼
+                {:else}
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
+                    </svg>
+                {/if}
+            </span>
+            <span class="fluent-tasks-quicklist-drag-ghost-title">{activeDragPayload.name}</span>
+            {#if (activeDragPayload.count ?? 0) > 0}
+                <span class="fluent-tasks-quicklist-drag-ghost-count">{activeDragPayload.count}</span>
             {/if}
         </div>
     {/if}
