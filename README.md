@@ -1,6 +1,6 @@
 # Fluent Tasks
 
-A three-pane, local-first task manager for Obsidian inspired by Fluent Design principles. Version **1.0.62** (`manifest.json`). Compatible with desktop and mobile (`isDesktopOnly: false`). Requires Obsidian **1.8.7** or later.
+A three-pane, local-first task manager for Obsidian inspired by Fluent Design principles. Version **1.0.63** (`manifest.json`). Compatible with desktop and mobile (`isDesktopOnly: false`). Requires Obsidian **1.8.7** or later.
 
 Architecture documentation: [ARCHITECTURE.md](./ARCHITECTURE.md).
 
@@ -54,7 +54,7 @@ All data remains entirely local to your vault.
 - Cascade Deletion Safeguards: Deleting a task with an attached note offers the choice to retain the document or trash both together.
 
 #### Quick Switcher & Header Integration
-- Pinned List Header Pills: Frequently accessed lists can be pinned as horizontal pills in the main view header for rapid switching.
+- Pinned List & Group Header Pills: Frequently accessed lists and list groups can be pinned as horizontal pills in the main view header for rapid switching; clicking a focused group pill opens a floating dropdown of its lists for direct navigation.
 - Active List Title in Window Header: The active list name can display directly within the native Obsidian window leaf header, maximizing vertical reading space.
 
 ### 3. Drag-and-Drop & Blueprint Boards
@@ -80,11 +80,13 @@ All data remains entirely local to your vault.
 
 #### Subtask Checklists & Progressive Disclosure
 - Multi-Item Subtask Checklists: Tasks support detailed subtask checklists with independent completion toggling.
+- Hover Steps Preview & Configurable Detail Badge: Hovering a subtask progress pill opens a divider-separated checklist popover, and the inline detail peek badge can be hidden via plugin preferences.
 - Auto-Collapsing Completed Steps: Completed subtasks collapse into single-line strikethrough preview rows to declutter the workspace, with single-click expansion available when needed.
 - Blank Step Auto-Pruning: Empty step drafts automatically clean up upon saving or removing attachments.
 
 #### Image Attachments & Full-Screen Lightbox
 - Clipboard & Drag-and-Drop Images: Screenshots and image files paste or drop directly into tasks, steps, or notes, stored in the designated vault attachment directory.
+- Drag-to-Reorder Thumbnails: Attached image strips across tasks, subtask steps, and detail notes support horizontal drag-and-drop reordering.
 - Top-Aligned Compact Thumbnails: Thumbnails render above step and note text in a clean, consistent row without disrupting text alignment.
 - Full-Screen Lightbox Viewer: Embedded images open in a dedicated modal featuring multi-level zoom, pan, and direct navigation to the original Obsidian asset.
 - Garbage Collection for Orphan Attachments: Image attachments unreferenced by any task or step are purged automatically to conserve disk space.
