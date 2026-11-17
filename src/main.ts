@@ -1035,11 +1035,13 @@ export default class FluentTasksPlugin extends Plugin implements ISidebarPluginH
         }
         this.settings.disableStars = this.settings.hiddenStarMode;
         MarkdownParser.injectAiArchiveDirective = this.settings.injectAiArchiveDirective !== false;
+        MarkdownParser.enableTaskWeightMode = Boolean(this.settings.enableTaskWeightMode);
     }
 
     async saveSettings() {
         this.settings.disableStars = this.settings.hiddenStarMode;
         MarkdownParser.injectAiArchiveDirective = this.settings.injectAiArchiveDirective !== false;
+        MarkdownParser.enableTaskWeightMode = Boolean(this.settings.enableTaskWeightMode);
         await this.saveData(this.settings);
         EventBus.emit(EventName.SETTINGS_CHANGED, { settings: this.settings });
 

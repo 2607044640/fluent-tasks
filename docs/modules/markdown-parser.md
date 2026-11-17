@@ -23,7 +23,7 @@ Pure Markdown ↔ `TaskItem[]` codec. No vault access, no plugin state. Not a to
 2. Continuation lines without checklist prefixes are accumulated into the active task block until its `%%{...}%%` metadata is detected.
 3. Checkbox `x` → `completed: true`. Title is extracted with `%%...%%` tail stripped, then `<br>` / `<br/>` tags are decoded to `\n`.
 4. `JSON.parse` of `%%(\{.*?\})%%` fills `starred`, `steps` (including step `images`), `note`, `createdAt`, optional `completedAt`, `dueDate`, `msGraphId`, `msGraphListId`, `recurrence`, `why`, `svgs`, `note_link` (or legacy `noteLink`), `images`, `customMeta`.
-5. `serializeTasksToMarkdown(tasks)` encodes all `\r?\n` in titles to `<br>` and writes one physical line per task: `- [x]? {title} %%{...}%%`. Empty optional fields and empty arrays (e.g. `images: []`) are omitted. Serialize always writes `note_link` (never `noteLink`).
+5. `serializeTasksToMarkdown(tasks, options?)` encodes all `\r?\n` in titles to `<br>` and writes one physical line per task: `- [x]? {title} %%{...}%%`. When `task.weight` is a number, `serializeSingleTask` places `"weight"` as the first JSON key so priority stays immediately visible before long `steps` arrays. When both `injectAiArchiveDirective` and `enableTaskWeightMode` are enabled, `AI_WEIGHT_DIRECTIVE` is prepended above incomplete tasks (keeping physical task line order untouched so turning off weight mode remains lossless) and `AI_COMPLETED_DIRECTIVE` guards `- [x]` tasks below. Empty optional fields and empty arrays (e.g. `images: []`) are omitted. Serialize always writes `note_link` (never `noteLink`).
 6. `createTask(title)` sets `completed/starred` false, empty `steps`/`note`, `createdAt` now, hashed `id`.
 
 ## Side-effects API
@@ -31,7 +31,7 @@ Pure Markdown ↔ `TaskItem[]` codec. No vault access, no plugin state. Not a to
 | Method | Signature | Side-Effects |
 |---|---|---|
 | `parseTasksFromMarkdown` | `(content: string): TaskItem[]` | None (pure) |
-| `serializeTasksToMarkdown` | `(tasks: TaskItem[]): string` | None (pure) |
+| `serializeTasksToMarkdown` | `(tasks: TaskItem[], options?: { injectAiDirective?: boolean; injectWeightDirective?: boolean }): string` | None (pure) |
 | `findTaskIndex` | `(tasks: TaskItem[], target: TaskItem): number` | None (pure) |
 | `createTask` | `(title: string): TaskItem` | None (pure; uses `Date` for `createdAt`) |
 

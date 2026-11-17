@@ -442,6 +442,14 @@ var AI_COMPLETED_DIRECTIVE = [
   "<!-- 3. \u5524\u9192\u4F8B\u5916\uFF1A\u4EC5\u5F53\u7528\u6237\u5728 Prompt \u4E2D\u660E\u786E\u8981\u6C42\u201C\u53C2\u8003/\u8C03\u53D6/\u6062\u590D\u5386\u53F2\u5F52\u6863\u8BBE\u8BA1\u201D\u65F6\uFF0C\u624D\u5141\u8BB8\u67E5\u9605\u4E0E\u5F15\u7528\u4EE5\u4E0B\u6761\u76EE\u3002 -->",
   "<!-- ========================================================================= -->"
 ].join("\n");
+var AI_WEIGHT_DIRECTIVE = [
+  "<!-- ========================================================================= -->",
+  "<!-- \u26A0\uFE0F [AI AGENT DIRECTIVE / \u6743\u91CD\u4F18\u5148\u7EA7\u4E0E\u9605\u8BFB\u8BF4\u660E] -->",
+  '<!-- 1. \u6743\u91CD\u89C4\u5219\uFF1A\u6BCF\u6761\u4EFB\u52A1 %%{...}%% \u4E2D\u7684 "weight" (1-9) \u4EE3\u8868\u6838\u5FC3\u4F18\u5148\u7EA7\uFF089 \u6700\u9AD8\uFF0C1 \u6700\u4F4E\uFF1B\u672A\u6807\u6CE8\u65F6\u9ED8\u8BA4\u6743\u91CD\u4E3A 5\uFF09\u3002 -->',
+  "<!-- 2. \u987A\u5E8F\u8B66\u793A\uFF1A\u672C\u6587\u4EF6\u7269\u7406\u884C\u987A\u5E8F\u4E3A\u4EBA\u7C7B\u521B\u5EFA/\u624B\u52A8\u987A\u5E8F\uFF0C\u3010\u7EDD\u975E\u3011\u91CD\u8981\u5EA6\u987A\u5E8F\uFF08\u4F8B\u5982\u7B2C 1 \u884C\u53EF\u80FD\u662F\u521A\u65B0\u5EFA\u7684\u4F4E\u6743\u91CD\u6761\u76EE\uFF09\u3002 -->",
+  "<!-- 3. \u9605\u8BFB\u51C6\u5219\uFF1AAI \u5206\u6790\u6216\u6267\u884C\u65F6\u5FC5\u987B\u6309 weight \u4ECE\u9AD8\u5230\u4F4E\uFF089 \u2192 1\uFF09\u6392\u5B9A\u4F18\u5148\u7EA7\uFF0C\u4F18\u5148\u4F7F\u7528 TaskBoard \u6280\u80FD\u6309\u6743\u91CD\u8BFB\u53D6\u3002 -->",
+  "<!-- ========================================================================= -->"
+].join("\n");
 function generateStableId(title, createdAt) {
   const raw = title + createdAt;
   let hash2 = 0;
@@ -579,6 +587,7 @@ var MarkdownParser = class {
       return stepObj;
     }) : [];
     const meta = {
+      ...typeof task.weight === "number" ? { weight: task.weight } : {},
       id: task.id,
       starred: task.starred,
       steps: cleanSteps,
@@ -623,8 +632,6 @@ var MarkdownParser = class {
     }
     if (task.customMeta && Object.keys(task.customMeta).length > 0)
       meta.customMeta = task.customMeta;
-    if (typeof task.weight === "number")
-      meta.weight = task.weight;
     const safeTitle = (task.title || "").replace(/\r?\n/g, "<br>");
     return `- ${checkbox} ${safeTitle} %%${JSON.stringify(meta)}%%`;
   }
@@ -635,22 +642,24 @@ var MarkdownParser = class {
    * guarded by AI_COMPLETED_DIRECTIVE to prevent external AI hallucination.
    */
   static serializeTasksToMarkdown(tasks2, options) {
-    var _a;
+    var _a, _b;
     const incomplete = tasks2.filter((t2) => !t2.completed);
     const completed = tasks2.filter((t2) => t2.completed);
     const incompleteLines = incomplete.map((t2) => this.serializeSingleTask(t2));
     const shouldInject = (_a = options == null ? void 0 : options.injectAiDirective) != null ? _a : this.injectAiArchiveDirective;
+    const shouldInjectWeight = shouldInject && ((_b = options == null ? void 0 : options.injectWeightDirective) != null ? _b : this.enableTaskWeightMode);
+    const activeIncompleteLines = shouldInjectWeight && incompleteLines.length > 0 ? [AI_WEIGHT_DIRECTIVE, ...incompleteLines] : incompleteLines;
     if (completed.length === 0) {
-      return incompleteLines.join("\n");
+      return activeIncompleteLines.join("\n");
     }
     const completedLines = completed.map((t2) => this.serializeSingleTask(t2));
     if (!shouldInject) {
-      return [...incompleteLines, ...completedLines].join("\n");
+      return [...activeIncompleteLines, ...completedLines].join("\n");
     }
     if (incompleteLines.length === 0) {
       return [AI_COMPLETED_DIRECTIVE, ...completedLines].join("\n");
     }
-    return [...incompleteLines, "", AI_COMPLETED_DIRECTIVE, ...completedLines].join("\n");
+    return [...activeIncompleteLines, "", AI_COMPLETED_DIRECTIVE, ...completedLines].join("\n");
   }
   /**
    * Find a task's index using stable ID, falling back to content fingerprint.
@@ -686,6 +695,7 @@ var MarkdownParser = class {
   }
 };
 MarkdownParser.injectAiArchiveDirective = true;
+MarkdownParser.enableTaskWeightMode = false;
 
 // src/utils/imageAttachmentUtils.ts
 var import_obsidian4 = require("obsidian");
@@ -67210,11 +67220,13 @@ var FluentTasksPlugin = class extends import_obsidian29.Plugin {
     }
     this.settings.disableStars = this.settings.hiddenStarMode;
     MarkdownParser.injectAiArchiveDirective = this.settings.injectAiArchiveDirective !== false;
+    MarkdownParser.enableTaskWeightMode = Boolean(this.settings.enableTaskWeightMode);
   }
   async saveSettings() {
     var _a, _b, _c, _d;
     this.settings.disableStars = this.settings.hiddenStarMode;
     MarkdownParser.injectAiArchiveDirective = this.settings.injectAiArchiveDirective !== false;
+    MarkdownParser.enableTaskWeightMode = Boolean(this.settings.enableTaskWeightMode);
     await this.saveData(this.settings);
     EventBus.emit("settings:changed" /* SETTINGS_CHANGED */, { settings: this.settings });
     const mainLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MAIN);

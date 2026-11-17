@@ -30,6 +30,15 @@ export const AI_COMPLETED_DIRECTIVE = [
     "<!-- ========================================================================= -->"
 ].join("\n");
 
+export const AI_WEIGHT_DIRECTIVE = [
+    "<!-- ========================================================================= -->",
+    "<!-- ⚠️ [AI AGENT DIRECTIVE / 权重优先级与阅读说明] -->",
+    "<!-- 1. 权重规则：每条任务 %%{...}%% 中的 \"weight\" (1-9) 代表核心优先级（9 最高，1 最低；未标注时默认权重为 5）。 -->",
+    "<!-- 2. 顺序警示：本文件物理行顺序为人类创建/手动顺序，【绝非】重要度顺序（例如第 1 行可能是刚新建的低权重条目）。 -->",
+    "<!-- 3. 阅读准则：AI 分析或执行时必须按 weight 从高到低（9 → 1）排定优先级，优先使用 TaskBoard 技能按权重读取。 -->",
+    "<!-- ========================================================================= -->"
+].join("\n");
+
 // =============================================
 // Helpers
 // =============================================
@@ -52,6 +61,7 @@ function generateStableId(title: string, createdAt: string): string {
 
 export class MarkdownParser {
     public static injectAiArchiveDirective: boolean = true;
+    public static enableTaskWeightMode: boolean = false;
 
     /**
      * Parse raw markdown content into a TaskItem array.
@@ -216,6 +226,7 @@ export class MarkdownParser {
             : [];
 
         const meta: Record<string, unknown> = {
+            ...(typeof task.weight === "number" ? { weight: task.weight } : {}),
             id: task.id,
             starred: task.starred,
             steps: cleanSteps,
@@ -252,7 +263,6 @@ export class MarkdownParser {
             meta.note_link = task.note_link;
         }
         if (task.customMeta && Object.keys(task.customMeta).length > 0) meta.customMeta = task.customMeta;
-        if (typeof task.weight === "number") meta.weight = task.weight;
 
         const safeTitle = (task.title || "").replace(/\r?\n/g, "<br>");
         return `- ${checkbox} ${safeTitle} %%${JSON.stringify(meta)}%%`;
@@ -264,28 +274,35 @@ export class MarkdownParser {
      * Partitions incomplete tasks at the top, and groups completed tasks at the bottom
      * guarded by AI_COMPLETED_DIRECTIVE to prevent external AI hallucination.
      */
-    static serializeTasksToMarkdown(tasks: TaskItem[], options?: { injectAiDirective?: boolean }): string {
+    static serializeTasksToMarkdown(
+        tasks: TaskItem[],
+        options?: { injectAiDirective?: boolean; injectWeightDirective?: boolean }
+    ): string {
         const incomplete = tasks.filter(t => !t.completed);
         const completed = tasks.filter(t => t.completed);
 
         const incompleteLines = incomplete.map(t => this.serializeSingleTask(t));
         const shouldInject = options?.injectAiDirective ?? this.injectAiArchiveDirective;
+        const shouldInjectWeight = shouldInject && (options?.injectWeightDirective ?? this.enableTaskWeightMode);
+        const activeIncompleteLines = (shouldInjectWeight && incompleteLines.length > 0)
+            ? [AI_WEIGHT_DIRECTIVE, ...incompleteLines]
+            : incompleteLines;
 
         if (completed.length === 0) {
-            return incompleteLines.join("\n");
+            return activeIncompleteLines.join("\n");
         }
 
         const completedLines = completed.map(t => this.serializeSingleTask(t));
 
         if (!shouldInject) {
-            return [...incompleteLines, ...completedLines].join("\n");
+            return [...activeIncompleteLines, ...completedLines].join("\n");
         }
 
         if (incompleteLines.length === 0) {
             return [AI_COMPLETED_DIRECTIVE, ...completedLines].join("\n");
         }
 
-        return [...incompleteLines, "", AI_COMPLETED_DIRECTIVE, ...completedLines].join("\n");
+        return [...activeIncompleteLines, "", AI_COMPLETED_DIRECTIVE, ...completedLines].join("\n");
     }
 
     /**
