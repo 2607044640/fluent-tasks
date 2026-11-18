@@ -17,13 +17,16 @@
         computeGridBins,
         computeTableColumns,
         createGroupFromListInBoard,
+        getColumnDisplayTitle,
         moveCardInTable,
         moveCardToColumnBottom,
         moveCardToNewColumn,
         moveCardToNewColumnAt,
+        remapTableColumnTitles,
         type BoardDropTarget,
         type ClassicGroupGeometry,
         type ColumnGeometry,
+        type ColumnTitlesMap,
         type GridCardData,
         type ListItemGeometry,
         type QuickListLayoutMode,
@@ -186,7 +189,7 @@
 
     // Inline Rename State
     let editingItemId: string = "";
-    let editingItemType: "category" | "group" = "category";
+    let editingItemType: "category" | "group" | "column" = "category";
     let editingName: string = "";
     let isCommittingRename: boolean = false;
     let renameInputEl: HTMLInputElement;
@@ -252,6 +255,8 @@
     }
 
     let layoutColumns: GridCardData[][] = [];
+    let layoutColumnKeys: number[] = [];
+    let columnTitles: ColumnTitlesMap = { ...(plugin?.settings?.quickListColumnTitles || {}) };
     let rafId: number | null = null;
     let pendingLayoutRefreshAfterDrag: boolean = false;
 
@@ -324,8 +329,14 @@
 
         if (cards.length === 0) {
             layoutColumns = [];
+            layoutColumnKeys = [];
             return;
         }
+
+        const headerEl = boardEl?.querySelector<HTMLElement>(".quick-grid-column-header");
+        const measuredColHeaderH = (headerEl && headerEl.offsetHeight > 0)
+            ? headerEl.offsetHeight
+            : Math.round(30 * fontScale);
 
         // 3. Measure actual rendered DOM heights if available and expansion state matches
         if (boardEl) {
@@ -374,14 +385,16 @@
         const maxColsByW = Math.max(1, Math.floor((availContentW + minColGap) / (minCardW + minColGap)));
         const maxCandidateK = Math.min(cards.length, maxColsByW);
 
-        // Target peak height and maximum usable vertical bounds without overflow
-        const maxUsableH = Math.max(160, availH - minPadY * 2);
+        // Target peak height and maximum usable vertical bounds without overflow (reserve top column header slot)
+        const colHeaderBlockH = measuredColHeaderH + rowGap;
+        const maxUsableH = Math.max(140, availH - minPadY * 2 - colHeaderBlockH);
         const maxSingleH = Math.max(...cards.map(c => c.height));
-        const targetPeakH = Math.min(maxUsableH, Math.max(maxSingleH, Math.floor(availH * 0.82)));
+        const targetPeakH = Math.min(maxUsableH, Math.max(maxSingleH, Math.floor((availH - colHeaderBlockH) * 0.82)));
 
         // 5. Find optimal K or compute Table mode columns
         let bestK = 1;
         let bestBins: { items: GridCardData[]; h: number }[] | null = null;
+        let newColumnKeys: number[] = [];
 
         if (layoutMode === "table") {
             const tableRes = computeTableColumns(cards, plugin?.settings?.quickListGroupPositions || {});
@@ -389,8 +402,9 @@
                 plugin.settings.quickListGroupPositions = tableRes.generatedInitialPositions;
                 void plugin.saveSettings();
             }
+            newColumnKeys = tableRes.columnKeys;
             bestBins = tableRes.columns.map(colItems => {
-                let colH = 0;
+                let colH = colHeaderBlockH;
                 for (let idx = 0; idx < colItems.length; idx++) {
                     colH += idx === 0 ? colItems[idx].height : (colItems[idx].height + rowGap);
                 }
@@ -398,14 +412,19 @@
             });
             bestK = Math.max(1, bestBins.length);
         } else {
-            bestBins = computeGridBins(cards, maxCandidateK, rowGap, targetPeakH, maxUsableH, fontScale);
+            bestBins = computeGridBins(cards, maxCandidateK, rowGap, targetPeakH, maxUsableH, fontScale)
+                .map(bin => ({ items: bin.items, h: bin.h + colHeaderBlockH }));
             bestK = Math.max(1, bestBins.length);
+            newColumnKeys = bestBins.map((_, i) => i);
         }
 
         // 6. Update layoutColumns when forced or when column structure/items change
         const newColumns = bestBins.map(b => b.items);
-        if (force || !areLayoutColumnsEqual(layoutColumns, newColumns)) {
+        const keysChanged = layoutColumnKeys.length !== newColumnKeys.length ||
+            layoutColumnKeys.some((k, idx) => k !== newColumnKeys[idx]);
+        if (force || keysChanged || !areLayoutColumnsEqual(layoutColumns, newColumns)) {
             layoutColumns = newColumns;
+            layoutColumnKeys = newColumnKeys;
         }
 
         // 7. Calculate elastic card width, column gap, and symmetrical top/bottom padding to center vertically
@@ -646,6 +665,10 @@
         } else if (plugin?.settings?.minimalPlaceholders !== undefined) {
             minimalPlaceholders = plugin.settings.minimalPlaceholders;
         }
+        const nextTitles = payload?.settings?.quickListColumnTitles ?? plugin?.settings?.quickListColumnTitles;
+        if (nextTitles && typeof nextTitles === "object") {
+            columnTitles = { ...nextTitles };
+        }
         if (isGridLayout) {
             scheduleAdjustSpacing();
         }
@@ -682,6 +705,7 @@
     }
 
     async function loadData() {
+        columnTitles = { ...(plugin?.settings?.quickListColumnTitles || {}) };
         sidebarItems = await dataService.getSidebarItems();
         if (isFocusedListMode) {
             sidebarItems = sidebarItems.map(item => {
@@ -1073,7 +1097,11 @@
         if (payload.kind === "group") {
             if (layoutMode !== "table") return;
 
-            let moveRes: { columns: GridCardData[][]; changed: boolean } = { columns: layoutColumns, changed: false };
+            const prevColKeys = [...layoutColumnKeys];
+            let moveRes: { columns: GridCardData[][]; changed: boolean; moveMeta?: import("../utils/quickListBoardUtils").TableColumnMoveMeta } = {
+                columns: layoutColumns,
+                changed: false,
+            };
             switch (target.kind) {
                 case "card-slot":
                     moveRes = moveCardInTable(layoutColumns, payload.id, target.cardId, target.position);
@@ -1091,7 +1119,10 @@
                     return;
             }
             if (moveRes.changed) {
-                await saveTableLayoutPositions(moveRes.columns);
+                const nextColumnTitles = !isFiltering && moveRes.moveMeta
+                    ? remapTableColumnTitles(columnTitles, prevColKeys, moveRes.moveMeta)
+                    : undefined;
+                await saveTableLayoutPositions(moveRes.columns, nextColumnTitles);
             }
             return;
         }
@@ -1155,14 +1186,19 @@
         EventBus.emit(EventName.CATEGORY_LIST_CHANGED, { sidebarItems });
     }
 
-    async function saveTableLayoutPositions(prunedCols: GridCardData[][]) {
+    async function saveTableLayoutPositions(prunedCols: GridCardData[][], nextColumnTitles?: ColumnTitlesMap) {
         const existingPositions = plugin?.settings?.quickListGroupPositions as TablePositionsMap | undefined;
         const positions = buildTablePositions(prunedCols, existingPositions, isFiltering);
 
         // Optimistic UI: update rendered columns & settings synchronously before awaiting disk write.
         layoutColumns = prunedCols;
+        layoutColumnKeys = prunedCols.map((_, idx) => idx);
         if (plugin?.settings) {
             plugin.settings.quickListGroupPositions = positions;
+            if (nextColumnTitles) {
+                plugin.settings.quickListColumnTitles = nextColumnTitles;
+                columnTitles = nextColumnTitles;
+            }
         }
         scheduleAdjustSpacing();
 
@@ -1174,11 +1210,34 @@
     // =============================================
     // Inline Rename & Context Menus
     // =============================================
+    const COL_RENAME_PREFIX = "__col__:";
+
+    function makeColRenameId(colKey: number): string {
+        return `${COL_RENAME_PREFIX}${colKey}`;
+    }
+
+    async function saveSingleColumnTitle(colKey: number, rawName: string) {
+        if (!plugin?.settings) return;
+        const trimmed = rawName.trim();
+        const defaultTitle = `Column ${colKey + 1}`;
+        const nextTitles: ColumnTitlesMap = { ...(plugin.settings.quickListColumnTitles || {}) };
+        if (!trimmed || trimmed === defaultTitle) {
+            delete nextTitles[String(colKey)];
+        } else {
+            nextTitles[String(colKey)] = trimmed;
+        }
+        plugin.settings.quickListColumnTitles = nextTitles;
+        columnTitles = nextTitles;
+        await plugin.saveSettings();
+        scheduleAdjustSpacing();
+    }
+
     interface RenameTarget {
         id: string;
         name: string;
-        type: "category" | "group";
+        type: "category" | "group" | "column";
         filepath?: string;
+        colKey?: number;
     }
 
     let hoveredRenameTarget: RenameTarget | null = null;
@@ -1229,6 +1288,20 @@
                         }
                     }
 
+                    // Check if hovering over a column title header
+                    const colHeaderEl = el.closest(".quick-grid-column-header") as HTMLElement | null;
+                    if (colHeaderEl && colHeaderEl.dataset.colKey !== undefined) {
+                        const colKey = parseInt(colHeaderEl.dataset.colKey, 10);
+                        if (!Number.isNaN(colKey)) {
+                            return {
+                                id: makeColRenameId(colKey),
+                                name: getColumnDisplayTitle(columnTitles, colKey),
+                                type: "column",
+                                colKey,
+                            };
+                        }
+                    }
+
                     // Check if hovering over a group header or group container/card
                     const groupEl = el.closest(".quick-grid-card-header, .quick-modal-group-header, .quick-grid-card, .quick-modal-group-container") as HTMLElement | null;
                     if (groupEl) {
@@ -1260,6 +1333,19 @@
                     }
                 }
 
+                const hoveredColEl = modalContainerEl.querySelector(".quick-grid-column-header:hover") as HTMLElement | null;
+                if (hoveredColEl && hoveredColEl.dataset.colKey !== undefined) {
+                    const colKey = parseInt(hoveredColEl.dataset.colKey, 10);
+                    if (!Number.isNaN(colKey)) {
+                        return {
+                            id: makeColRenameId(colKey),
+                            name: getColumnDisplayTitle(columnTitles, colKey),
+                            type: "column",
+                            colKey,
+                        };
+                    }
+                }
+
                 const hoveredGroupEl = modalContainerEl.querySelector(".quick-grid-card-header:hover, .quick-modal-group-header:hover, .quick-grid-card:hover, .quick-modal-group-container:hover") as HTMLElement | null;
                 if (hoveredGroupEl) {
                     const groupId = hoveredGroupEl.dataset.groupId || hoveredGroupEl.dataset.cardId;
@@ -1284,6 +1370,15 @@
 
         // Priority 3: Explicit mouseenter/mouseleave target tracking
         if (hoveredRenameTarget) {
+            if (hoveredRenameTarget.type === "column" && hoveredRenameTarget.colKey !== undefined) {
+                const colKey = hoveredRenameTarget.colKey;
+                return {
+                    id: makeColRenameId(colKey),
+                    name: getColumnDisplayTitle(columnTitles, colKey),
+                    type: "column",
+                    colKey,
+                };
+            }
             const clean = (p?: string) => (p || "").replace(/\\/g, "/").replace(/^\/+/, "");
             const hId = clean(hoveredRenameTarget.id);
             const hFp = clean(hoveredRenameTarget.filepath);
@@ -1301,7 +1396,7 @@
         return null;
     }
 
-    async function startRenameItem(item: { id: string; name: string; type: "category" | "group"; filepath?: string }) {
+    async function startRenameItem(item: { id: string; name: string; type: "category" | "group" | "column"; filepath?: string; colKey?: number }) {
         if (item.id === STARRED_CATEGORY_PATH || item.filepath === STARRED_CATEGORY_PATH) return;
         if (focusRestoreTimer !== null) {
             window.clearTimeout(focusRestoreTimer);
@@ -1368,6 +1463,13 @@
                     }
                     await loadData();
                 }
+            } else if (itemType === "column") {
+                if (itemId.startsWith(COL_RENAME_PREFIX)) {
+                    const colKey = parseInt(itemId.slice(COL_RENAME_PREFIX.length), 10);
+                    if (!Number.isNaN(colKey) && getColumnDisplayTitle(columnTitles, colKey) !== newName) {
+                        await saveSingleColumnTitle(colKey, newName);
+                    }
+                }
             } else {
                 const grp = groupItems.find(g => g.id === itemId) || (sidebarItems.find(i => i.id === itemId && i.type === "group") as GroupInfo | undefined);
                 if (!grp || grp.name !== newName) {
@@ -1381,6 +1483,39 @@
             isCommittingRename = false;
             scheduleModalFocusRestore();
         }
+    }
+
+    function showColumnContextMenu(e: MouseEvent, colKey: number) {
+        e.preventDefault();
+        e.stopPropagation();
+        const menu = new Menu();
+        const displayName = getColumnDisplayTitle(columnTitles, colKey);
+        const hasCustom = Boolean(columnTitles[String(colKey)]?.trim());
+
+        menu.addItem((item) => {
+            item.setTitle("Rename column (F2)")
+                .setIcon("edit")
+                .onClick(() => {
+                    void startRenameItem({
+                        id: makeColRenameId(colKey),
+                        name: displayName,
+                        type: "column",
+                        colKey,
+                    });
+                });
+        });
+
+        if (hasCustom) {
+            menu.addItem((item) => {
+                item.setTitle(`Reset to default (Column ${colKey + 1})`)
+                    .setIcon("rotate-ccw")
+                    .onClick(async () => {
+                        await saveSingleColumnTitle(colKey, "");
+                    });
+            });
+        }
+
+        menu.showAtMouseEvent(e);
     }
 
     function cancelRename() {
@@ -2238,7 +2373,37 @@
                 <div class="quick-modal-empty">No matching lists or groups found.</div>
             {:else}
                 {#each layoutColumns as column, colIdx (colIdx)}
-                    <div class="quick-grid-column">
+                    {@const colKey = layoutColumnKeys[colIdx] ?? colIdx}
+                    <div class="quick-grid-column" data-col-key={colKey}>
+                        <!-- svelte-ignore a11y-no-static-element-interactions -->
+                        <div
+                            class="quick-grid-column-header"
+                            class:is-editing={editingItemId === makeColRenameId(colKey)}
+                            class:is-custom={Boolean(columnTitles[String(colKey)]?.trim())}
+                            data-col-key={colKey}
+                            on:mouseenter={() => setHoveredTarget({ id: makeColRenameId(colKey), name: getColumnDisplayTitle(columnTitles, colKey), type: "column", colKey })}
+                            on:mouseleave={() => clearHoveredTarget(makeColRenameId(colKey))}
+                            on:contextmenu={(e) => showColumnContextMenu(e, colKey)}
+                        >
+                            {#if editingItemId === makeColRenameId(colKey)}
+                                <input
+                                    type="text"
+                                    class="quick-grid-column-rename-input"
+                                    bind:value={editingName}
+                                    bind:this={renameInputEl}
+                                    on:blur={commitRename}
+                                    on:pointerdown|stopPropagation
+                                    on:click|stopPropagation
+                                />
+                            {:else}
+                                <span
+                                    class="quick-grid-column-title"
+                                    title={`${getColumnDisplayTitle(columnTitles, colKey)} (Hover + F2 to rename)`}
+                                >
+                                    {getColumnDisplayTitle(columnTitles, colKey)}
+                                </span>
+                            {/if}
+                        </div>
                         {#each column as card (card.id + "_" + (card.group ? (card.group.isExpanded ? "exp" : "col") : "root"))}
                             {#if card.type === "root"}
                                 <!-- Standalone Root Categories Card -->

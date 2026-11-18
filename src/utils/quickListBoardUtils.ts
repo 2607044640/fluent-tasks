@@ -3,6 +3,7 @@ import { resolveUniqueName } from "./sidebarTreeUtils";
 
 export type QuickListLayoutMode = "grid" | "table" | "list";
 export type TablePositionsMap = Record<string, [number, number]>;
+export type ColumnTitlesMap = Record<string, string>;
 
 export interface GridCardData {
     id: string;
@@ -68,12 +69,20 @@ export type BoardDropTarget =
 
 export interface TableColumnsComputation {
     columns: GridCardData[][];
+    columnKeys: number[];
     generatedInitialPositions?: TablePositionsMap;
+}
+
+export interface TableColumnMoveMeta {
+    srcColIdx: number;
+    srcWasSingleCard: boolean;
+    insertedColIdx: number | null;
 }
 
 export interface TableMoveResult {
     columns: GridCardData[][];
     changed: boolean;
+    moveMeta?: TableColumnMoveMeta;
 }
 
 export interface EdgePanResult {
@@ -187,15 +196,74 @@ export function computeTableColumns(
 
     const sortedColIndices = Array.from(colMap.keys()).sort((a, b) => a - b);
     const columns: GridCardData[][] = [];
+    const columnKeys: number[] = [];
 
     for (const colIdx of sortedColIndices) {
         const items = colMap.get(colIdx) || [];
         if (items.length === 0) continue;
         items.sort((a, b) => a.row - b.row);
         columns.push(items.map(i => i.card));
+        columnKeys.push(colIdx);
     }
 
-    return { columns, generatedInitialPositions };
+    return { columns, columnKeys, generatedInitialPositions };
+}
+
+/** Resolve column display name, defaulting to "Column N" (1-based) when unset. */
+export function getColumnDisplayTitle(
+    columnTitles: ColumnTitlesMap | undefined,
+    colKey: number
+): string {
+    const custom = columnTitles?.[String(colKey)]?.trim();
+    return custom || `Column ${colKey + 1}`;
+}
+
+/**
+ * Remap custom column titles after a Table-mode card drag changes column indices.
+ * Single-card columns moved to a new column slot preserve their title; emptied columns drop theirs.
+ */
+export function remapTableColumnTitles(
+    prevTitles: ColumnTitlesMap | undefined,
+    prevColKeys: number[],
+    moveMeta: TableColumnMoveMeta | undefined
+): ColumnTitlesMap {
+    const sourceTitles = prevTitles || {};
+    if (!moveMeta) return { ...sourceTitles };
+
+    const { srcColIdx, srcWasSingleCard, insertedColIdx } = moveMeta;
+    const prevCount = prevColKeys.length;
+    const nextTitles: ColumnTitlesMap = {};
+
+    const getTitleForOldSlot = (oldSlot: number): string | undefined => {
+        const key = String(prevColKeys[oldSlot] ?? oldSlot);
+        const val = sourceTitles[key]?.trim();
+        return val || undefined;
+    };
+
+    if (insertedColIdx !== null) {
+        let writeIdx = 0;
+        for (let oldSlot = 0; oldSlot < prevCount; oldSlot++) {
+            if (srcWasSingleCard && oldSlot === srcColIdx) continue;
+            if (writeIdx === insertedColIdx) writeIdx++;
+            const title = getTitleForOldSlot(oldSlot);
+            if (title) nextTitles[String(writeIdx)] = title;
+            writeIdx++;
+        }
+        if (srcWasSingleCard) {
+            const movedTitle = getTitleForOldSlot(srcColIdx);
+            if (movedTitle) nextTitles[String(insertedColIdx)] = movedTitle;
+        }
+    } else {
+        let writeIdx = 0;
+        for (let oldSlot = 0; oldSlot < prevCount; oldSlot++) {
+            if (srcWasSingleCard && oldSlot === srcColIdx) continue;
+            const title = getTitleForOldSlot(oldSlot);
+            if (title) nextTitles[String(writeIdx)] = title;
+            writeIdx++;
+        }
+    }
+
+    return nextTitles;
 }
 
 export function packCardsIntoK(
@@ -386,12 +454,14 @@ export function moveCardInTable(
         return { columns, changed: false };
     }
 
+    const srcWasSingleCard = columns[src.colIdx].length === 1;
     const cols = columns.map(col => [...col]);
     cols[src.colIdx].splice(src.rowIdx, 1);
     cols[tgt.colIdx].splice(insertAt, 0, src.card);
     return {
         columns: cols.filter(c => c.length > 0),
         changed: true,
+        moveMeta: { srcColIdx: src.colIdx, srcWasSingleCard, insertedColIdx: null },
     };
 }
 
@@ -409,12 +479,14 @@ export function moveCardToColumnBottom(
         return { columns, changed: false };
     }
 
+    const srcWasSingleCard = columns[src.colIdx].length === 1;
     const cols = columns.map(col => [...col]);
     cols[src.colIdx].splice(src.rowIdx, 1);
     cols[targetColIdx].push(src.card);
     return {
         columns: cols.filter(c => c.length > 0),
         changed: true,
+        moveMeta: { srcColIdx: src.colIdx, srcWasSingleCard, insertedColIdx: null },
     };
 }
 
@@ -430,12 +502,15 @@ export function moveCardToNewColumn(
         return { columns, changed: false };
     }
 
+    const srcWasSingleCard = columns[src.colIdx].length === 1;
     const cols = columns.map(col => [...col]);
     cols[src.colIdx].splice(src.rowIdx, 1);
     cols.push([src.card]);
+    const finalCols = cols.filter(c => c.length > 0);
     return {
-        columns: cols.filter(c => c.length > 0),
+        columns: finalCols,
         changed: true,
+        moveMeta: { srcColIdx: src.colIdx, srcWasSingleCard, insertedColIdx: finalCols.length - 1 },
     };
 }
 
@@ -456,6 +531,7 @@ export function moveCardToNewColumnAt(
         return { columns, changed: false };
     }
 
+    const srcWasSingleCard = columns[src.colIdx].length === 1;
     const cols = columns.map(col => [...col]);
     cols[src.colIdx].splice(src.rowIdx, 1);
 
@@ -472,6 +548,7 @@ export function moveCardToNewColumnAt(
     return {
         columns: cols,
         changed: true,
+        moveMeta: { srcColIdx: src.colIdx, srcWasSingleCard, insertedColIdx: insertCol },
     };
 }
 

@@ -20,6 +20,7 @@ export interface FluentTasksSettings {
     quickListGridLayout: boolean;
     quickListLayoutMode: 'grid' | 'table' | 'list';
     quickListGroupPositions: Record<string, [number, number]>;
+    quickListColumnTitles: Record<string, string>;
     quickListMinColGap: number;
     quickListMinRowGap: number;
     quickListFocusCenter: boolean;
@@ -73,6 +74,7 @@ export const DEFAULT_SETTINGS: FluentTasksSettings = {
     quickListGridLayout: true,
     quickListLayoutMode: 'grid',
     quickListGroupPositions: {},
+    quickListColumnTitles: {},
     quickListMinColGap: 14,
     quickListMinRowGap: 10,
     quickListMaxCardWidth: 380,

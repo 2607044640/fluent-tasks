@@ -1,6 +1,6 @@
 # Fluent Tasks
 
-A three-pane, local-first task manager for Obsidian inspired by Fluent Design principles. Version **1.0.63** (`manifest.json`). Compatible with desktop and mobile (`isDesktopOnly: false`). Requires Obsidian **1.8.7** or later.
+A three-pane, local-first task manager for Obsidian inspired by Fluent Design principles. Version **1.0.64** (`manifest.json`). Compatible with desktop and mobile (`isDesktopOnly: false`). Requires Obsidian **1.8.7** or later.
 
 Architecture documentation: [ARCHITECTURE.md](./ARCHITECTURE.md).
 
@@ -70,6 +70,7 @@ All data remains entirely local to your vault.
 
 #### Blueprint Table Board & RTS Panning Engine
 - Three View Layouts: The board supports switching between an automated pixel-height packing Grid, a freeform multi-column Table Blueprint, and a Classic Single-Column List.
+- Named Board Columns: Columns display bold, centered headers (`Column 1`, `Column 2`, ...) with persistent inline renaming and automatic title remapping when Table columns shift or merge.
 - Freeform Column & Row Arrangement: In Table mode, group cards can be repositioned into arbitrary columns and rows, automatically pruning empty columns and persisting coordinates locally.
 - Zero-Dead-Zone Header Dragging: Full group card headers serve as drag handles, with text selection shields preventing accidental text highlights from blocking drag initiation.
 - Glowing Insertion Lines with Leading Pip: Visual drop indicators render as glowing gap-filling accent lines with leading circular pips between cards.
