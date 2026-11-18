@@ -7147,7 +7147,7 @@ body .task-steps-floating-modal .steps-modal-delete-btn:hover {
     position: fixed;
     bottom: 24px;
     right: 24px;
-    z-index: 10000;
+    z-index: 2147483647 !important;
     display: flex;
     flex-direction: column-reverse;
     gap: 10px;
@@ -8615,7 +8615,7 @@ body .task-focused-lists-modal .modal-content {
     position: fixed;
     top: 40px;
     right: 26px;
-    z-index: 10000;
+    z-index: 2147483647 !important;
     pointer-events: none;
     display: flex;
     flex-direction: column;

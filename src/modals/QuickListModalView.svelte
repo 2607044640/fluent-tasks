@@ -1791,6 +1791,19 @@
     async function handleKeydown(e: KeyboardEvent) {
         if (e.isComposing || isComposing || e.keyCode === 229) return;
 
+        if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+            const keyLower = e.key.toLowerCase();
+            if (keyLower === "z" || keyLower === "y") {
+                const active = document.activeElement;
+                const inTextInput = active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement;
+                if (!inTextInput) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                return;
+            }
+        }
+
         if (showHelpModal) {
             if (e.key === "Escape" || e.key === "F1" || e.key === "?") {
                 e.preventDefault();

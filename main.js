@@ -28842,6 +28842,18 @@ function instance6($$self, $$props, $$invalidate) {
   async function handleKeydown(e) {
     if (e.isComposing || isComposing || e.keyCode === 229)
       return;
+    if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+      const keyLower = e.key.toLowerCase();
+      if (keyLower === "z" || keyLower === "y") {
+        const active2 = document.activeElement;
+        const inTextInput = active2 instanceof HTMLInputElement || active2 instanceof HTMLTextAreaElement;
+        if (!inTextInput) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        return;
+      }
+    }
     if (showHelpModal) {
       if (e.key === "Escape" || e.key === "F1" || e.key === "?") {
         e.preventDefault();
@@ -67208,6 +67220,13 @@ var FluentTasksPlugin = class extends import_obsidian29.Plugin {
       const isRedo = e.key === "y" || e.key === "Y" || (e.key === "z" || e.key === "Z") && e.shiftKey;
       if (!isUndo && !isRedo)
         return;
+      if (this.isQuickListModalOpen()) {
+        if (!this.isUserActivelyTyping()) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        return;
+      }
       if (!this.isFluentTasksFocused()) {
         return;
       }
@@ -67910,7 +67929,13 @@ var FluentTasksPlugin = class extends import_obsidian29.Plugin {
     }
     return leaf;
   }
+  isQuickListModalOpen() {
+    return Boolean(document.querySelector(".task-quick-list-modal, .quick-modal-container"));
+  }
   isFluentTasksFocused() {
+    if (this.isQuickListModalOpen()) {
+      return false;
+    }
     const activeEl = document.activeElement;
     if (activeEl == null ? void 0 : activeEl.closest(".prompt, .mod-settings")) {
       return false;

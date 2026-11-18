@@ -481,6 +481,14 @@ export default class FluentTasksPlugin extends Plugin implements ISidebarPluginH
 
             if (!isUndo && !isRedo) return;
 
+            if (this.isQuickListModalOpen()) {
+                if (!this.isUserActivelyTyping()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                return;
+            }
+
             if (!this.isFluentTasksFocused()) {
                 return;
             }
@@ -1297,7 +1305,15 @@ export default class FluentTasksPlugin extends Plugin implements ISidebarPluginH
         return leaf;
     }
 
+    private isQuickListModalOpen(): boolean {
+        return Boolean(document.querySelector(".task-quick-list-modal, .quick-modal-container"));
+    }
+
     isFluentTasksFocused(): boolean {
+        if (this.isQuickListModalOpen()) {
+            return false;
+        }
+
         const activeEl = document.activeElement;
 
         // 1. If Obsidian core prompt, command palette, or settings is open and has focus, NOT fluent-tasks
