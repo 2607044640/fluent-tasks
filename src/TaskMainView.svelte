@@ -92,6 +92,8 @@
 
     // Focused Group Dropdown Popover State
     let openFocusedGroupId: string | null = null;
+    let openedFocusedGroupByDrag: boolean = false;
+    let dragHoveredGroupId: string = "";
     let focusedGroupDropdownPos: { left: number; top: number } = { left: 0, top: 0 };
     let focusedGroupDropdownEl: HTMLElement | null = null;
     let focusedGroupHighlightIdx: number = -1;
@@ -249,17 +251,7 @@
         focusedGroupTaskCounts = nextCounts;
     }
 
-    function toggleFocusedGroupDropdown(group: GroupInfo, pillEl: HTMLElement | null) {
-        if (isDraggingFocusedPills) return;
-        if (Date.now() - lastFocusedPillDragTime < 300) return;
-        if (Date.now() - lastFocusedDropTime < 300) return;
-
-        if (openFocusedGroupId === group.id) {
-            openFocusedGroupId = null;
-            focusedGroupHighlightIdx = -1;
-            return;
-        }
-
+    function openFocusedGroupDropdown(group: GroupInfo, pillEl: HTMLElement | null) {
         const rect = pillEl?.getBoundingClientRect();
         const dropdownWidth = 230;
         const estimatedHeight = Math.min(340, 44 + Math.max(1, group.items.length) * 32);
@@ -277,8 +269,23 @@
         void refreshFocusedGroupCounts(group);
     }
 
+    function toggleFocusedGroupDropdown(group: GroupInfo, pillEl: HTMLElement | null) {
+        if (isDraggingFocusedPills) return;
+        if (Date.now() - lastFocusedPillDragTime < 300) return;
+        if (Date.now() - lastFocusedDropTime < 300) return;
+
+        if (openFocusedGroupId === group.id) {
+            closeFocusedGroupDropdown();
+            return;
+        }
+
+        openedFocusedGroupByDrag = false;
+        openFocusedGroupDropdown(group, pillEl);
+    }
+
     function closeFocusedGroupDropdown() {
         openFocusedGroupId = null;
+        openedFocusedGroupByDrag = false;
         focusedGroupHighlightIdx = -1;
     }
 
@@ -2927,6 +2934,38 @@
         }
     }
 
+    function findHitFocusedFilepath(
+        container: HTMLElement | null,
+        selector: string,
+        clientX: number,
+        clientY: number,
+        sourceFilepath?: string
+    ): string {
+        if (!container) return "";
+        const nodes = container.querySelectorAll(selector);
+        for (let i = 0; i < nodes.length; i++) {
+            const el = nodes[i] as HTMLElement;
+            const rect = el.getBoundingClientRect();
+            if (clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom) {
+                const path = el.getAttribute("data-filepath") || "";
+                if (path && path !== sourceFilepath && path !== currentCategory?.filepath) {
+                    return path;
+                }
+                return "";
+            }
+        }
+        return "";
+    }
+
+    function findTargetCategoryByFilepath(filepath: string): CategoryInfo | undefined {
+        const pill = focusedPills.find(
+            (p): p is Extract<FocusedPillItem, { kind: "category" }> =>
+                p.kind === "category" && p.category.filepath === filepath
+        );
+        if (pill) return pill.category;
+        return openFocusedGroup?.items.find(c => c.filepath === filepath);
+    }
+
     function handleGlobalPointerUp(e?: PointerEvent) {
         const wasDndActive = isDndActive;
         isDndActive = false;
@@ -2935,30 +2974,16 @@
         const dragData = (window as any).__mstodo_drag_data;
         let targetFocusedPath = dragOverFocusedPath;
         dragOverFocusedPath = "";
+        dragHoveredGroupId = "";
 
-        if (!targetFocusedPath && e && mainContainerEl && dragData && wasDndActive) {
-            const pills = mainContainerEl.querySelectorAll('.focused-list-pill[data-filepath]');
-            for (let i = 0; i < pills.length; i++) {
-                const pill = pills[i] as HTMLElement;
-                const rect = pill.getBoundingClientRect();
-                if (
-                    e.clientX >= rect.left &&
-                    e.clientX <= rect.right &&
-                    e.clientY >= rect.top &&
-                    e.clientY <= rect.bottom
-                ) {
-                    const path = pill.getAttribute('data-filepath') || "";
-                    if (path && path !== dragData.sourceFilepath && path !== currentCategory?.filepath) {
-                        targetFocusedPath = path;
-                    }
-                    break;
-                }
-            }
+        if (!targetFocusedPath && e && dragData && wasDndActive) {
+            targetFocusedPath =
+                findHitFocusedFilepath(focusedGroupDropdownEl, ".focused-group-dropdown-item[data-filepath]", e.clientX, e.clientY, dragData.sourceFilepath) ||
+                findHitFocusedFilepath(mainContainerEl, ".focused-list-pill[data-filepath]", e.clientX, e.clientY, dragData.sourceFilepath);
         }
 
         if (dragData && targetFocusedPath && targetFocusedPath !== dragData.sourceFilepath && targetFocusedPath !== currentCategory?.filepath) {
-            const targetPill = focusedPills.find((p): p is Extract<FocusedPillItem, { kind: "category" }> => p.kind === "category" && p.category.filepath === targetFocusedPath);
-            const targetCat = targetPill?.category;
+            const targetCat = findTargetCategoryByFilepath(targetFocusedPath);
             if (targetCat && dragData.task) {
                 lastFocusedDropTime = Date.now();
                 if (targetCat.filepath !== STARRED_CATEGORY_PATH) {
@@ -2967,9 +2992,14 @@
                     if (domNode) domNode.style.display = 'none';
                 }
                 killDndGhostElement();
+                closeFocusedGroupDropdown();
                 void moveTaskToCategory(dragData.task, targetCat);
                 return;
             }
+        }
+
+        if (openedFocusedGroupByDrag) {
+            closeFocusedGroupDropdown();
         }
 
         if (dragData) {
@@ -2981,43 +3011,120 @@
         }
     }
 
+    function isPointerOverGroupBridgeOrDropdown(clientX: number, clientY: number, groupId: string): boolean {
+        if (!focusedGroupDropdownEl) return false;
+        const dropRect = focusedGroupDropdownEl.getBoundingClientRect();
+        if (clientX >= dropRect.left && clientX <= dropRect.right && clientY >= dropRect.top && clientY <= dropRect.bottom) {
+            return true;
+        }
+        const safeId = typeof CSS !== "undefined" && typeof CSS.escape === "function" ? CSS.escape(groupId) : groupId;
+        const pillEl = mainContainerEl?.querySelector(`.focused-list-pill.is-group-pill[data-group-id="${safeId}"]`) as HTMLElement | null;
+        if (!pillEl) return false;
+        const pillRect = pillEl.getBoundingClientRect();
+        const minX = Math.min(pillRect.left, dropRect.left) - 6;
+        const maxX = Math.max(pillRect.right, dropRect.right) + 6;
+        return clientX >= minX && clientX <= maxX && clientY >= pillRect.top && clientY <= dropRect.top + 4;
+    }
+
     function handleDragPointerMove(e: PointerEvent) {
         if (e.buttons !== 1) {
             if (dragOverFocusedPath) dragOverFocusedPath = "";
+            if (dragHoveredGroupId) dragHoveredGroupId = "";
+            if (openedFocusedGroupByDrag) closeFocusedGroupDropdown();
             return;
         }
         const dragData = (window as any).__mstodo_drag_data;
         if (!isDndActive && !dragData) {
             if (dragOverFocusedPath) dragOverFocusedPath = "";
+            if (dragHoveredGroupId) dragHoveredGroupId = "";
             return;
         }
         if (isDndActive) {
             updateAutoScroll(e.clientY);
         }
-        if (mainContainerEl && dragData) {
-            const pills = mainContainerEl.querySelectorAll('.focused-list-pill[data-filepath]');
-            let foundPath = "";
-            for (let i = 0; i < pills.length; i++) {
-                const pill = pills[i] as HTMLElement;
+        if (!dragData) {
+            if (dragOverFocusedPath) dragOverFocusedPath = "";
+            if (dragHoveredGroupId) dragHoveredGroupId = "";
+            return;
+        }
+
+        // 1. Check open group dropdown list items first
+        if (openFocusedGroupId && focusedGroupDropdownEl) {
+            const hitChildPath = findHitFocusedFilepath(
+                focusedGroupDropdownEl,
+                ".focused-group-dropdown-item[data-filepath]",
+                e.clientX,
+                e.clientY,
+                dragData.sourceFilepath
+            );
+            const dropRect = focusedGroupDropdownEl.getBoundingClientRect();
+            const insideDropdown = e.clientX >= dropRect.left && e.clientX <= dropRect.right &&
+                e.clientY >= dropRect.top && e.clientY <= dropRect.bottom;
+            if (insideDropdown) {
+                if (dragOverFocusedPath !== hitChildPath) dragOverFocusedPath = hitChildPath;
+                if (dragHoveredGroupId !== openFocusedGroupId) dragHoveredGroupId = openFocusedGroupId;
+                return;
+            }
+        }
+
+        // 2. Check focused pills (both group pills and category pills)
+        let foundPath = "";
+        let hoveredGroupEl: HTMLElement | null = null;
+        let hoveredGroupObj: GroupInfo | null = null;
+
+        if (mainContainerEl) {
+            const allPills = mainContainerEl.querySelectorAll(".focused-list-pill");
+            for (let i = 0; i < allPills.length; i++) {
+                const pill = allPills[i] as HTMLElement;
                 const rect = pill.getBoundingClientRect();
-                if (
-                    e.clientX >= rect.left &&
-                    e.clientX <= rect.right &&
-                    e.clientY >= rect.top &&
-                    e.clientY <= rect.bottom
-                ) {
-                    const path = pill.getAttribute('data-filepath') || "";
-                    if (path && path !== dragData.sourceFilepath && path !== currentCategory?.filepath) {
-                        foundPath = path;
+                if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                    const groupId = pill.getAttribute("data-group-id");
+                    if (groupId) {
+                        const grpPill = focusedPills.find(
+                            (p): p is Extract<FocusedPillItem, { kind: "group" }> =>
+                                p.kind === "group" && p.group.id === groupId
+                        );
+                        if (grpPill) {
+                            hoveredGroupEl = pill;
+                            hoveredGroupObj = grpPill.group;
+                        }
+                    } else {
+                        const path = pill.getAttribute("data-filepath") || "";
+                        if (path && path !== dragData.sourceFilepath && path !== currentCategory?.filepath) {
+                            foundPath = path;
+                        }
                     }
                     break;
                 }
             }
-            if (dragOverFocusedPath !== foundPath) {
-                dragOverFocusedPath = foundPath;
+        }
+
+        if (hoveredGroupObj && hoveredGroupEl) {
+            if (dragOverFocusedPath) dragOverFocusedPath = "";
+            if (dragHoveredGroupId !== hoveredGroupObj.id) dragHoveredGroupId = hoveredGroupObj.id;
+            if (openFocusedGroupId !== hoveredGroupObj.id) {
+                openedFocusedGroupByDrag = true;
+                openFocusedGroupDropdown(hoveredGroupObj, hoveredGroupEl);
             }
-        } else if (dragOverFocusedPath) {
-            dragOverFocusedPath = "";
+            return;
+        }
+
+        if (foundPath) {
+            if (dragHoveredGroupId) dragHoveredGroupId = "";
+            if (openedFocusedGroupByDrag) closeFocusedGroupDropdown();
+            if (dragOverFocusedPath !== foundPath) dragOverFocusedPath = foundPath;
+            return;
+        }
+
+        if (dragOverFocusedPath) dragOverFocusedPath = "";
+        if (openFocusedGroupId && openedFocusedGroupByDrag && isPointerOverGroupBridgeOrDropdown(e.clientX, e.clientY, openFocusedGroupId)) {
+            if (dragHoveredGroupId !== openFocusedGroupId) dragHoveredGroupId = openFocusedGroupId;
+            return;
+        }
+
+        if (dragHoveredGroupId) dragHoveredGroupId = "";
+        if (openedFocusedGroupByDrag) {
+            closeFocusedGroupDropdown();
         }
     }
 
@@ -3934,7 +4041,9 @@
                                             ? Boolean(currentCategory && item.group.items.some(c => c.filepath === currentCategory?.filepath))
                                             : currentCategory?.filepath === item.category.filepath}
                                         class:is-open={item.kind === "group" && openFocusedGroupId === item.group.id}
-                                        class:drag-over={item.kind === "category" && dragOverFocusedPath === item.category.filepath}
+                                        class:drag-over={item.kind === "category"
+                                            ? dragOverFocusedPath === item.category.filepath
+                                            : dragHoveredGroupId === item.group.id}
                                         class:is-shadow={isShadowPill(item)}
                                         data-filepath={item.kind === "category" ? item.category.filepath : undefined}
                                         data-group-id={item.kind === "group" ? item.group.id : undefined}
@@ -3994,6 +4103,8 @@
                                                 class="focused-group-dropdown-item"
                                                 class:is-active={currentCategory?.filepath === child.filepath}
                                                 class:is-highlighted={focusedGroupHighlightIdx === idx}
+                                                class:drag-over={dragOverFocusedPath === child.filepath}
+                                                data-filepath={child.filepath}
                                                 role="menuitem"
                                                 tabindex="-1"
                                                 on:mouseenter={() => { focusedGroupHighlightIdx = idx; }}

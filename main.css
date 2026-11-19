@@ -564,6 +564,15 @@
     background: var(--background-modifier-hover);
 }
 
+.focused-group-dropdown-item.drag-over {
+    color: var(--todo-text-main, var(--text-normal));
+    background: var(--todo-accent-light, rgba(139, 92, 246, 0.25));
+    outline: 1.5px dashed var(--todo-accent, #8b5cf6);
+    outline-offset: -1px;
+    box-shadow: 0 0 8px var(--todo-accent-glow, rgba(139, 92, 246, 0.45));
+    font-weight: 600;
+}
+
 .focused-group-dropdown-item.is-active {
     color: var(--todo-accent, #8b5cf6);
     background: var(--todo-accent-light, rgba(139, 92, 246, 0.14));

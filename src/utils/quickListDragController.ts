@@ -532,23 +532,16 @@ export class QuickListDragController {
         e.preventDefault();
         e.stopPropagation();
 
-        if (this.host.getLayoutMode() === "table" && boardEl) {
-            if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
-                const delta = e.shiftKey ? e.deltaY : e.deltaX;
-                boardEl.scrollLeft += delta;
-            } else if (e.deltaY !== 0) {
-                const canScrollUp = e.deltaY < 0 && boardEl.scrollTop > 1;
-                const canScrollDown = e.deltaY > 0 && boardEl.scrollTop + boardEl.clientHeight < boardEl.scrollHeight - 1;
-                if (canScrollUp || canScrollDown) {
-                    boardEl.scrollTop += e.deltaY;
-                } else if (boardEl.scrollWidth > boardEl.clientWidth) {
-                    boardEl.scrollLeft += e.deltaY;
+        if (isGrid && boardEl) {
+            if (e.shiftKey) {
+                if (boardEl.scrollWidth > boardEl.clientWidth) {
+                    const delta = e.deltaY !== 0 ? e.deltaY : e.deltaX;
+                    if (delta !== 0) {
+                        boardEl.scrollLeft += delta;
+                    }
                 }
-            }
-        } else if (this.host.getLayoutMode() === "grid" && boardEl) {
-            const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-            if (delta !== 0 && boardEl.scrollWidth > boardEl.clientWidth) {
-                boardEl.scrollLeft += delta;
+            } else if (e.deltaY !== 0) {
+                boardEl.scrollTop += e.deltaY;
             }
         } else if (listPaneEl && e.deltaY !== 0) {
             listPaneEl.scrollTop += e.deltaY;

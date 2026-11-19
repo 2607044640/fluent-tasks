@@ -129,7 +129,19 @@
         const board = e.currentTarget as HTMLElement;
         if (!board) return;
 
-        // If hovering over an inner scrollable list container, let it scroll its own content
+        // Horizontal scroll strictly requires holding Shift
+        if (e.shiftKey) {
+            if (board.scrollWidth > board.clientWidth) {
+                const delta = e.deltaY !== 0 ? e.deltaY : e.deltaX;
+                if (delta !== 0) {
+                    board.scrollLeft += delta;
+                }
+            }
+            e.preventDefault();
+            return;
+        }
+
+        // If hovering over an inner scrollable list container, let it scroll its own content vertically
         const target = e.target as HTMLElement | null;
         const cardItems = target?.closest(".quick-grid-card-items") as HTMLElement | null;
         if (cardItems && cardItems.scrollHeight > cardItems.clientHeight) {
@@ -140,33 +152,12 @@
             }
         }
 
-        if (layoutMode === "table") {
-            // Table Mode: Shift + Wheel or trackpad deltaX -> horizontal scroll
-            if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
-                if (board.scrollWidth > board.clientWidth) {
-                    const delta = e.shiftKey ? e.deltaY : e.deltaX;
-                    board.scrollLeft += delta;
-                    e.preventDefault();
-                }
-            } else if (e.deltaY !== 0) {
-                const canScrollUp = e.deltaY < 0 && board.scrollTop > 1;
-                const canScrollDown = e.deltaY > 0 && board.scrollTop + board.clientHeight < board.scrollHeight - 1;
-                if (canScrollUp || canScrollDown) {
-                    board.scrollTop += e.deltaY;
-                    e.preventDefault();
-                } else if (board.scrollWidth > board.clientWidth) {
-                    // Fallback to horizontal scroll if vertical boundary reached
-                    board.scrollLeft += e.deltaY;
-                    e.preventDefault();
-                }
-            }
-        } else if (layoutMode === "grid") {
-            if (e.deltaY !== 0 && !e.shiftKey) {
-                if (board.scrollWidth > board.clientWidth) {
-                    board.scrollLeft += e.deltaY;
-                    e.preventDefault();
-                }
-            }
+        // Without Shift, only scroll vertically (never fall back to horizontal scrolling at boundaries)
+        if (e.deltaY !== 0) {
+            board.scrollTop += e.deltaY;
+            e.preventDefault();
+        } else if (e.deltaX !== 0) {
+            e.preventDefault();
         }
     }
 
